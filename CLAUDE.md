@@ -1,10 +1,10 @@
-# HeartSync
+# HEART SYNC
 
 버블챗 스타일의 캐릭터 대화형 에피소드 플랫폼. 단일 파일(index.html) 프로토타입.
 
 - 배포: https://claude.ai/artifact/3sfDYFeJ13dHrkWwBFj1YG (같은 파일 경로로 다시 publish하면 같은 URL 유지)
-- 이름: HeartSync(2026-11-03 HEARTVERSE에서 바꿈, 사용자 요청 — 저장소 이름·웹 주소도 HeartSync). 데이터·암호 호환 때문에 내부 이름은 그대로: localStorage hv1_ 접두사, IndexedDB "heartverse", 금고 소금 "heartverse-vault:"+uid, window.HEARTVERSE_CONFIG — 바꾸면 기존 데이터·계정 키를 못 읽음
-- 아이콘: icons/(favicon-32 — 32px에선 글자가 뭉개져 가운데 하트만, icon-192, apple-touch-icon 180 불투명) — 사용자가 준 그림(2000px, 금테 둥근 사각형)에서 만듦. 화면 로고는 LOGO(.logo .mark 배경 그림 + Heart<i>Sync</i>), 로그인 카드는 그림을 크게. claude.ai에 publish할 땐 icons/도 files로 함께
+- 이름: HEART SYNC(2026-11-03 HEARTVERSE에서 바꿈, 사용자 요청 — 처음엔 HeartSync로 했다가 같은 날 대문자·띄어쓰기 HEART SYNC로 다시 정함). 저장소 이름·웹 주소는 띄어쓰기 없이 HeartSync. 대화 내보내기 파일은 HEART_SYNC_… 데이터·암호 호환 때문에 내부 이름은 그대로: localStorage hv1_ 접두사, IndexedDB "heartverse", 금고 소금 "heartverse-vault:"+uid, window.HEARTVERSE_CONFIG — 바꾸면 기존 데이터·계정 키를 못 읽음
+- 아이콘: icons/(favicon-32 — 32px에선 글자가 뭉개져 가운데 하트만, icon-192, apple-touch-icon 180 불투명) — 사용자가 준 그림(2000px, 금테 둥근 사각형)에서 만듦. 화면 로고는 LOGO(.logo .mark 배경 그림 + HEART <i>SYNC</i>), 로그인 카드는 그림을 크게. claude.ai에 publish할 땐 icons/도 files로 함께
 - 웹 주소: GitHub Pages https://20232497.github.io/HeartSync/ (main 브랜치 루트, main에 병합하면 자동 갱신). 파일 모드와 같은 BYOK 동작(IN_CLAUDE 아님). 저장소는 공개라 키·개인 데이터를 파일에 넣지 않기
 - 개인정보처리방침: privacy.html(스크립트 없는 정적 페이지, 같은 색 토큰). 로그인 화면(viewLogin) 맨 아래 링크, Google OAuth 브랜딩의 개인정보처리방침 주소. 수집 항목·저장 위치(Supabase 아일랜드 eu-west-1)·AI 전송 대상·계정 삭제 방법이 바뀌면 같이 고치고 시행일을 바꾸기
 - capabilities: sample(AI 호출), db(뷰어별 저장 data/users/<id>/<key>, 커뮤니티 pub/<id>), user, assets(이미지), downloads(대화 내보내기)

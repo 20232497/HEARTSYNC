@@ -1,4 +1,4 @@
-# HeartSync 로드맵 — 아키텍처 가이드 검토 결과
+# HEART SYNC 로드맵 — 아키텍처 가이드 검토 결과
 
 외부에서 받은 「Master Architecture & Refactoring Guide」(Next.js 전면 재작성 + 백엔드 + 성인 모드 제안)를 지금 코드와 대조해, **지금 구조(단일 index.html)에서 바로 고칠 수 있는 것은 고치고**, 서버가 있어야 하는 것은 단계로 정리했습니다.
 

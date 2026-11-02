@@ -1,4 +1,4 @@
--- HeartSync 계정 저장(Supabase) — SQL Editor에 붙여 넣고 한 번 실행
+-- HEART SYNC 계정 저장(Supabase) — SQL Editor에 붙여 넣고 한 번 실행
 -- 앱은 로그인한 사람의 데이터를 public.kv 한 표에 키-값으로 저장한다(대화방·작품·설정·그림 등).
 -- RLS(행 수준 보안)로 본인 행만 읽고 쓸 수 있으므로, 앱에 들어 있는 publishable 키가 공개돼도 남의 데이터는 볼 수 없다.
 
