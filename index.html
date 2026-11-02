@@ -170,6 +170,12 @@ h2.sec small, h1.sec small { font-family:var(--sans); font-size:12.5px; color:va
 .login-card { width:100%; max-width:400px; background:var(--surface); border:1px solid var(--line); border-radius:20px; padding:26px 20px 20px; }
 .login-card .logo { flex-direction:column; justify-content:center; gap:10px; font-size:26px; padding:0 0 6px; }
 .login-card .logo .mark { width:76px; height:76px; border-radius:18px; }
+/* 모바일 로그인: 아이콘 왼쪽, 이름은 오른쪽에 HEART / SYNC 두 줄 */
+@media (max-width:899px) {
+  .login-card .logo { flex-direction:row; gap:14px; padding:0 0 12px; }
+  .login-card .logo .mark { width:64px; height:64px; border-radius:16px; }
+  .login-card .logo > span:not(.mark) { display:flex; flex-direction:column; align-items:flex-start; font-size:28px; line-height:1.08; }
+}
 .login-card .lead { text-align:center; color:var(--muted); font-size:14px; margin:0 0 16px; line-height:1.6; }
 .login-card .seg { margin-bottom:6px; }
 .login-card .note { margin:14px 0 0; font-size:12px; line-height:1.6; }
