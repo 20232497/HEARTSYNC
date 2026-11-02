@@ -1,0 +1,69 @@
+/* ── 홈 */
+.hero { display:grid; grid-auto-flow:column; grid-auto-columns:min(560px, 86%); gap:14px; overflow-x:auto; scroll-snap-type:x mandatory; padding-bottom:6px; scrollbar-width:thin; }
+.hero-card { scroll-snap-align:start; border-radius:18px; overflow:hidden; border:0; padding:0; text-align:left; display:grid; grid-template-columns:42% 1fr; background:var(--surface); min-height:230px; box-shadow:0 1px 0 var(--line); }
+.hero-card .cover { height:100%; min-height:230px; }
+.hero-card .body { padding:18px 18px 16px; display:flex; flex-direction:column; gap:8px; min-width:0; }
+.hero-card .k { font-size:11.5px; color:var(--accent); font-weight:600; letter-spacing:.06em; }
+.hero-card h3 { margin:0; font-family:var(--display); font-size:22px; line-height:1.25; text-wrap:balance; }
+.hero-card p { margin:0; color:var(--muted); font-size:13.5px; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+.hero-card .who { margin-top:auto; font-size:13px; font-weight:600; }
+@media (max-width:520px) { .hero-card { grid-template-columns:1fr; } .hero-card .cover { min-height:170px; } }
+.grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(168px, 1fr)); gap:16px 14px; }
+.row-scroll { display:grid; grid-auto-flow:column; grid-auto-columns:minmax(160px, 200px); gap:14px; overflow-x:auto; scroll-snap-type:x mandatory; padding-bottom:6px; scrollbar-width:thin; }
+.row-scroll > * { scroll-snap-align:start; }
+.card .cast-n { position:absolute; left:8px; bottom:8px; z-index:3; font-size:11px; font-weight:600; background:rgba(0,0,0,.45); backdrop-filter:blur(6px); padding:2px 8px; border-radius:999px; color:#fff; white-space:nowrap; }
+@media (max-width:420px) { .grid { grid-template-columns:repeat(2, minmax(0,1fr)); gap:14px 10px; } }
+.card { border:0; padding:0; background:none; text-align:left; display:flex; flex-direction:column; gap:7px; min-width:0; }
+.card .cover { aspect-ratio:3/4; border-radius:14px; width:100%; max-width:100%; transition:transform .2s; }
+.card:hover .cover { transform:translateY(-3px); }
+.card .t { font-weight:700; font-size:14.5px; line-height:1.35; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.card .d { color:var(--muted); font-size:12.5px; line-height:1.45; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; min-height:2.9em; }
+.card .meta { display:flex; gap:6px; font-size:11.5px; color:var(--muted); flex-wrap:wrap; }
+.card .meta .aud-tag { color:var(--accent); font-weight:700; }
+/* 로그인 */
+.login-page { min-height:calc(100vh - 140px); display:flex; align-items:center; justify-content:center; padding:24px 0; }
+.login-card { width:100%; max-width:400px; background:var(--surface); border:1px solid var(--line); border-radius:20px; padding:26px 20px 20px; }
+.login-card .logo { flex-direction:column; justify-content:center; gap:10px; font-size:26px; padding:0 0 6px; }
+.login-card .logo .mark { width:76px; height:76px; border-radius:18px; }
+/* 모바일 로그인: 아이콘 왼쪽, 이름은 오른쪽에 HEART / SYNC 두 줄 */
+@media (max-width:899px) {
+  .login-card .logo { flex-direction:row; gap:14px; padding:0 0 12px; }
+  .login-card .logo .mark { width:64px; height:64px; border-radius:16px; }
+  .login-card .logo > span:not(.mark) { display:flex; flex-direction:column; align-items:flex-start; font-size:28px; line-height:1.08; }
+}
+.login-card .lead { text-align:center; color:var(--muted); font-size:14px; margin:0 0 16px; line-height:1.6; }
+.login-card .seg { margin-bottom:6px; }
+.login-card .note { margin:14px 0 0; font-size:12px; line-height:1.6; }
+.lerr { color:var(--err); font-size:13px; min-height:1.2em; margin:6px 0 8px; line-height:1.5; }
+.lerr.ok { color:var(--ok); }
+.lnk { background:none; border:0; color:var(--muted); font-size:13px; text-decoration:underline; padding:4px; cursor:pointer; }
+.lrow { display:flex; justify-content:center; margin-top:8px; }
+.lsep { display:flex; align-items:center; gap:10px; color:var(--muted); font-size:12px; margin:12px 0; }
+.lsep::before, .lsep::after { content:""; flex:1; height:1px; background:var(--line); }
+.oauth-list { display:flex; flex-direction:column; gap:8px; }
+.oauth-btn { position:relative; height:44px; }
+.oauth-btn svg { position:absolute; left:16px; top:50%; width:18px; height:18px; margin-top:-9px; }
+.oauth-btn.kakao { background:#FEE500; color:rgba(0,0,0,.85); border-color:#FEE500; }
+.oauth-btn.naver { background:#03C75A; color:#fff; border-color:#03C75A; }
+.oauth-btn.google { background:#fff; color:#1f1f1f; border-color:#dadce0; }
+.oauth-btn:hover { filter:brightness(.97); }
+.login-card .lnote { margin:8px 0 12px; text-align:center; }
+.login-card .lpriv { margin-top:10px; text-align:center; }
+.lpriv a { color:var(--muted); }
+#loerr { min-height:0; margin:8px 0 0; text-align:center; }
+#loerr:empty { display:none; }
+.acct-row { display:flex; align-items:center; gap:8px; flex-wrap:wrap; min-width:0; }
+.acct-row b { overflow-wrap:anywhere; }
+.vault-box { margin-top:8px; }
+.vault-box .note { margin:0; }
+.vault-lock { display:flex; flex-wrap:wrap; align-items:center; gap:8px 10px; padding:10px 12px; border-radius:12px; background:var(--surface2); font-size:13px; line-height:1.5; }
+.vault-lock span { flex:1 1 170px; min-width:0; }
+.vault-lock .btn { flex:none; }
+.aud-seg button { min-width:0; padding:8px 4px; }
+.cat { position:absolute; top:8px; right:8px; z-index:3; font-size:10.5px; font-weight:600; background:rgba(0,0,0,.42); backdrop-filter:blur(6px); padding:2px 8px; border-radius:999px; color:#fff; }
+.cont { display:grid; grid-template-columns:repeat(auto-fill, minmax(260px,1fr)); gap:10px; }
+.cont > button { display:flex; gap:12px; align-items:center; text-align:left; padding:10px; border-radius:14px; border:1px solid var(--line); background:var(--surface); min-width:0; }
+.cont .cover { width:52px; height:52px; border-radius:12px; flex:none; }
+.cont .x { min-width:0; flex:1; }
+.cont .x b { display:block; font-size:14px; }
+.cont .x span { display:block; color:var(--muted); font-size:12.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }

@@ -1,0 +1,5 @@
+node_modules/
+.build/
+tests/.shots/
+# 빌드가 content/ 폴더로 만드는 작품 데이터 모듈(소스는 content/**/work.js)
+src/js/content/generated.js

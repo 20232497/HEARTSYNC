@@ -1,0 +1,14 @@
+/* ── MY */
+.plist { display:grid; gap:8px; }
+.prow { display:flex; gap:12px; align-items:center; padding:12px 14px; border:1px solid var(--line); border-radius:14px; background:var(--bg); }
+.prow.on { border-color:var(--accent); box-shadow:0 0 0 1px var(--accent) inset; }
+.prow .pav { width:42px; height:42px; border-radius:12px; flex:none; }
+.prow .x { flex:1; min-width:0; cursor:pointer; }
+.prow .x b { display:flex; align-items:center; gap:6px; }
+.prow .x span { color:var(--muted); font-size:13px; display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.prow .chk { width:18px; height:18px; border-radius:50%; background:var(--accent); color:var(--accent-ink); font-size:11px; display:inline-flex; align-items:center; justify-content:center; font-weight:800; }
+.avatar-pick { display:flex; gap:14px; align-items:center; }
+.avatar-pick .pav { width:84px; height:84px; border-radius:18px; font-size:28px; }
+.toast { position:fixed; left:50%; bottom:calc(80px + env(safe-area-inset-bottom,0px)); transform:translateX(-50%); background:var(--fg); color:var(--bg); padding:9px 16px; border-radius:12px; font-size:13.5px; z-index:80; animation:up .2s; max-width:calc(100% - 32px); }
+.engine-warn { background:var(--accent-soft); border-radius:12px; padding:12px 14px; font-size:13px; margin-bottom:12px; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation:none !important; transition:none !important; scroll-behavior:auto !important; } }

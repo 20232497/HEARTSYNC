@@ -1,0 +1,14 @@
+/* 인물 외모 문구: 설정의 "이름(나이, 성별)"·"외모:"와 출연진 look을 합쳐 castLook — S에 의존하지 않아 Node에서도 쓸 수 있음 */
+/* 출연진 외모가 비었을 때: 캐릭터 설정의 "이름(나이, 성별)"과 "외모:" 부분으로 대신(성별이 틀린 1girl 기본값 방지) */
+function personaWho(c) { const w = String(c?.persona || "").match(/\((\d{1,2})\s*,\s*([남여])\)/); return w ? `${w[1]}세 ${w[2] === "남" ? "남성" : "여성"}` : ""; }
+function personaLook(c) {
+  const look = (String(c?.persona || "").match(/외모\s*[:：]\s*([^\n]+)/) || [])[1] || "";
+  return [personaWho(c), look.trim().replace(/[.。]\s*$/, "")].filter(Boolean).join(", ");
+}
+/* 인물 외모 태그 자리: 출연진 외모 → 비었으면 설정의 외모. 주인공(c) 외모에 성별이 없으면 설정의 "나이 성별"을 앞에 붙임 */
+export function castLook(cast, c) {
+  const l = String(cast?.look || "").trim();
+  if (!l) return personaLook(c);
+  const who = cast.code === "c" && !/남성|여성|남자|여자|\b(?:male|female|girl|boy|man|woman)\b/i.test(l) ? personaWho(c) : "";
+  return [who, l].filter(Boolean).join(", ");
+}

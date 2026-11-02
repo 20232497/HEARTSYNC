@@ -1,0 +1,156 @@
+/* 계정 저장(CLOUD): KV를 계정 kv 표에 모아 올리고 받기, 기기별 설정 분리 */
+import { roomKey } from "../core/rooms.js";
+import { S, room } from "../core/state.js";
+import { IDB, KV } from "../core/storage.js";
+import { $, ago } from "../core/util.js";
+import { validRef } from "./images.js";
+import { SB } from "./supabase.js";
+import { VAULT, VAULT_FIELDS } from "./vault.js";
+
+/* KV ↔ 계정 동기화. 쓰기는 KV.set → put()이 키마다 0.8초 모아 upsert(지우기는 DELETE).
+   읽기는 그림(img…)을 뺀 키를 받아 이 기기에 씀 — 처음 로그인하면 전부, 그 뒤엔 updated_at이 바뀐 것만. 그림은 IMG.load가 필요할 때 한 장씩.
+   이 기기에서 아직 못 올린 키(pending)는 받은 값으로 덮지 않음. 설정은 "settings" 키(글자 크기·Enter로 보내기는 기기마다 따로) */
+const DEVICE_SETTINGS = ["fs", "enterSend"];
+export const CLOUD = {
+  on: false, uid: null, pending: {}, timer: null, state: "", at: 0, pulledAt: 0, noTable: false,
+  lastKey() { return "hv1_cloudlast_" + this.uid; },
+  start() { this.on = SB.on() && !!(SB.s && SB.s.user && SB.s.user.id); this.uid = this.on ? SB.s.user.id : null; this.noTable = false; if (this.on) VAULT.load(this.uid); },
+  stop() { this.on = false; this.uid = null; this.pending = {}; clearTimeout(this.timer); clearTimeout(VAULT.timer); VAULT.timer = null; this.setState(""); },
+  setState(s) { this.state = s; if (s === "ok") this.at = Date.now(); const el = $("#cloudState"); if (el) el.textContent = cloudStateText(); },
+  put(k, v) {
+    if (!this.on || this.noTable) return;
+    this.pending[k] = v === undefined ? null : { v };
+    clearTimeout(this.timer); this.timer = setTimeout(() => this.flush(), 800);
+  },
+  async check(r) {
+    if (r.ok) return;
+    const j = await r.json().catch(() => ({}));
+    if (r.status === 404 || j.code === "PGRST205" || j.code === "42P01") { this.noTable = true; this.setState("notable"); }
+    throw j;
+  },
+  async flush() {
+    clearTimeout(this.timer);
+    const items = Object.entries(this.pending);
+    if (!items.length || !this.on || this.noTable) return;
+    this.pending = {}; this.setState("sync");
+    try {
+      const ups = items.filter((x) => x[1]).map(([key, x]) => ({ user_id: this.uid, key, value: x.v }));
+      const dels = items.filter((x) => !x[1]).map((x) => x[0]);
+      for (const batch of chunkBy(ups, 1500000)) // 그림이 섞이면 요청이 커지므로 1.5MB씩
+        await this.check(await SB.req("/rest/v1/kv?on_conflict=user_id,key", { method: "POST", headers: { Prefer: "resolution=merge-duplicates,return=minimal" }, body: JSON.stringify(batch) }));
+      for (let i = 0; i < dels.length; i += 40)
+        await this.check(await SB.req("/rest/v1/kv?key=in.(" + encodeURIComponent(dels.slice(i, i + 40).map((k) => '"' + k.replace(/"/g, "") + '"').join(",")) + ")", { method: "DELETE" }));
+      this.setState("ok");
+    } catch (e) {
+      // 못 올린 것은 되돌려 두고(그사이 새로 바뀐 값이 있으면 그게 우선) 15초 뒤 다시
+      items.forEach(([k, x]) => { if (!(k in this.pending)) this.pending[k] = x; });
+      if (this.noTable) { this.pending = {}; return; }
+      this.setState("err"); this.timer = setTimeout(() => this.flush(), 15000);
+    }
+  },
+  // 계정의 행 읽기(그림 제외). since가 있으면 그 뒤에 바뀐 것만. 1000행 제한이 있어 500행씩
+  async rows(since) {
+    const out = [];
+    for (let off = 0; ; off += 500) {
+      // 그림 본문(img…)은 빼되 그림 칸 연결(imgpacks)은 받음 — 예전에는 not.like.img*가 imgpacks까지 빼서 다른 기기에 그림 칸이 안 넘어감
+      let q = "/rest/v1/kv?select=key,value,updated_at&or=" + encodeURIComponent("(key.not.like.img*,key.eq.imgpacks)") + "&order=updated_at.asc&limit=500&offset=" + off;
+      if (since) q += "&updated_at=gt." + encodeURIComponent(since);
+      const r = await SB.req(q); await this.check(r);
+      const part = await r.json(); out.push(...part);
+      if (part.length < 500) return out;
+    }
+  },
+  async imgKeys() {
+    const out = [];
+    for (let off = 0; ; off += 1000) {
+      const r = await SB.req("/rest/v1/kv?select=key&key=like.img*&key=neq.imgpacks&limit=1000&offset=" + off); await this.check(r);
+      const part = await r.json(); out.push(...part.map((x) => x.key));
+      if (part.length < 1000) return out;
+    }
+  },
+  async getOne(k) {
+    if (!this.on || this.noTable) return undefined;
+    try { const r = await SB.req("/rest/v1/kv?select=value&key=eq." + encodeURIComponent(k)); if (!r.ok) return undefined; const j = await r.json(); return j[0] ? j[0].value : undefined; } catch { return undefined; }
+  },
+  // 그림 여러 장을 한 번에(20장씩) — { key: value }
+  async getMany(keys) {
+    const out = {};
+    if (!this.on || this.noTable) return out;
+    for (let i = 0; i < keys.length; i += 20) {
+      try {
+        const r = await SB.req("/rest/v1/kv?select=key,value&key=in.(" + encodeURIComponent(keys.slice(i, i + 20).map((k) => '"' + k.replace(/"/g, "") + '"').join(",")) + ")");
+        if (r.ok) (await r.json()).forEach((x) => { out[x.key] = x.value; });
+      } catch {}
+    }
+    return out;
+  },
+  // 받은 행을 이 기기에 씀. 열려 있는 대화방은 덮지 않음(대화 중에 바뀌면 헷갈림). 바뀐 키 수를 돌려줌
+  apply(rows) {
+    let n = 0;
+    const open = room && location.hash === "#r-" + room.id ? roomKey(room.id) : "";
+    rows.forEach((x) => {
+      if (x.updated_at && x.updated_at > (localStorage.getItem(this.lastKey()) || "")) try { localStorage.setItem(this.lastKey(), x.updated_at); } catch {}
+      if (x.key === "vault") { this.vault = x.value; return; } // 잠긴 API 키 — VAULT.take가 풂
+      if (x.key in this.pending || x.key === open) return;
+      if (x.key === "settings") { mergeCloudSettings(x.value); n++; return; }
+      KV.setLocal(x.key, x.value === null ? undefined : x.value); n++;
+    });
+    this.pulledAt = Date.now();
+    return n;
+  },
+  takeVault() { const v = this.vault; this.vault = undefined; return v; },
+  async pull() { const n = this.apply(await this.rows(localStorage.getItem(this.lastKey()) || "")); return n + (await VAULT.take(this.takeVault())); },
+  // 이 기기의 모든 데이터를 계정에 올림(계정이 비었을 때·합칠 때). 그림은 계정에 없는 것만 한 장씩 읽어 묶어 보냄
+  // (그림 본문은 IndexedDB에, IndexedDB가 막힌 브라우저에서는 localStorage에 있음)
+  async pushAll(keys) {
+    (keys || localKVKeys()).forEach((k) => { const v = KV.getLocal(k); if (v !== undefined) this.pending[k] = { v }; });
+    this.pending.settings = { v: cloudSettings() };
+    await this.flush();
+    const isImg = (k) => /^img[a-z0-9]{6,30}$/.test(k), have = new Set(await this.imgKeys());
+    let ls = []; try { ls = Object.keys(localStorage).filter((k) => k.indexOf("hv1_img") === 0).map((k) => k.slice(4)); } catch {}
+    const mine = Array.from(new Set((await IDB.keys()).concat(ls))).filter((k) => isImg(k) && !have.has(k));
+    let batch = [], size = 0;
+    const send = async () => { if (!batch.length) return; await this.check(await SB.req("/rest/v1/kv?on_conflict=user_id,key", { method: "POST", headers: { Prefer: "resolution=merge-duplicates,return=minimal" }, body: JSON.stringify(batch) })); batch = []; size = 0; };
+    for (const k of mine) {
+      let v = await IDB.get(k); if (typeof v !== "string") v = KV.getLocal(k);
+      if (typeof v !== "string" || !validRef(v)) continue;
+      batch.push({ user_id: this.uid, key: k, value: v }); size += v.length;
+      if (size > 1500000) await send();
+    }
+    await send();
+    this.setState("ok");
+  },
+  async wipe() { if (this.on && !this.noTable) { this.pending = {}; if (VAULT.rec) { VAULT.rec.seen = null; VAULT.store(); } await SB.req("/rest/v1/kv?user_id=eq." + encodeURIComponent(this.uid), { method: "DELETE" }); } }
+};
+function chunkBy(items, max) {
+  const out = []; let cur = [], size = 0;
+  items.forEach((x) => { const n = JSON.stringify(x).length; if (cur.length && size + n > max) { out.push(cur); cur = []; size = 0; } cur.push(x); size += n; });
+  if (cur.length) out.push(cur);
+  return out;
+}
+// 이 기기 KV 키(그림·설정·세션·키 잠금 제외 — 그림은 IndexedDB, 설정은 "settings" 키로 따로)
+function localKVKeys() {
+  try { return Object.keys(localStorage).filter((k) => k.indexOf("hv1_") === 0).map((k) => k.slice(4)).filter((k) => !/^(settings|auth|guest|cloudlast_.*|cloudfix_.*|vault_.*|img[a-z0-9]{6,30})$/.test(k)); } catch { return []; }
+}
+// 계정에 올리는 설정: 기기별 설정과 API 키는 뺌(키는 비밀번호로 잠가 "vault" 행에만 — VAULT. 서버의 표도 settings에 키 칸이 있으면 거부)
+export function cloudSettings() {
+  const s = Object.assign({}, S.settings);
+  DEVICE_SETTINGS.concat(VAULT_FIELDS).forEach((k) => delete s[k]);
+  return s;
+}
+function mergeCloudSettings(v) {
+  if (!v || typeof v !== "object") return;
+  const keep = {};
+  DEVICE_SETTINGS.concat(VAULT_FIELDS).forEach((k) => { if (k in S.settings) keep[k] = S.settings[k]; });
+  const next = Object.assign({}, S.settings, v, keep);
+  delete next.keysLocal;
+  S.settings = next;
+  try { localStorage.setItem("hv1_settings", JSON.stringify(S.settings)); } catch {}
+}
+export function cloudStateText() {
+  if (!CLOUD.on) return "";
+  if (CLOUD.state === "notable") return "⚠️ 계정 저장 표가 아직 없어요 (docs/supabase.sql을 실행해 주세요)";
+  if (CLOUD.state === "err") return "⚠️ 계정에 저장하지 못했어요. 잠시 뒤 다시 시도해요";
+  if (CLOUD.state === "sync") return "저장하는 중…";
+  return CLOUD.at ? "계정에 저장됨 · " + ago(CLOUD.at) : "계정과 연결됨";
+}
