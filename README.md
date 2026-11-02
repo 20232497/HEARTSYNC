@@ -31,7 +31,7 @@ tools/build.mjs      합치기 + 검사,  tools/dev.mjs 개발 서버,  tests/ �
 | `npm run dev` | http://localhost:5173 으로 띄우고, `src/`·`content/`를 저장할 때마다 다시 빌드해 브라우저를 새로 고침. 빌드 오류는 화면 아래에, 런타임 오류는 원본 모듈 파일:줄로 콘솔에 |
 | `npm run check` | `index.html`이 지금 소스로 만든 결과와 같은지만 확인(GitHub Actions '빌드 확인'이 PR·main마다 실행) |
 | `npm test` | 단위 테스트(1초) — Node가 `src/js` 모듈을 바로 import |
-| `npm run e2e` | Playwright 흐름 시험 7종(3~5분, 처음엔 `npx playwright install webkit chromium`) |
+| `npm run e2e` | Playwright 흐름 시험 8종(4~6분, 처음엔 `npx playwright install webkit chromium`) |
 
 - **모듈은 표준 ES 모듈**(`import { 이름 } from "./…/파일.js"`, `export`)이지만 **배포물은 클래식 스크립트 하나**예요. 빌드가 import 그래프 순서(의존 모듈이 먼저)로 이어 붙이면서 import/export만 벗기니, file://·GitHub Pages·claude.ai에서 그대로 돌고 전역(`S`·`room`…)도 예전과 같아요. 규칙: 상대 경로의 이름 있는 import만(이름 바꾸기·default·`export *` 없음), 다른 모듈의 `let`은 그 모듈의 `set…()`로만 바꾸기, 전체에서 같은 이름 두 번 선언하지 않기.
 - **빌드가 잡는 실수**: 선언도 import도 안 된 이름, export 안 된 이름 import, 같은 이름 두 번, import에 대입, 순환 의존에서 맨 윗단이 뒤 모듈의 const를 쓰는 초기화 순서 위반, 결과 스크립트 문법, 오래된 iOS에서 안 도는 문법(`||=`·`Array.at`·lookbehind·`structuredClone`…), 작품 폴더 규칙(폴더와 aud·row, id 중복, 출연진 성별과 폴더, 미성년 인물). 오류는 `src/js/ui/chat/generate.js:42`처럼 원본 위치로 알려 줘요.

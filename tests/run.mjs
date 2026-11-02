@@ -16,7 +16,8 @@ const SUITES = {
   audience: "관심있는 대화(전체·남성향·여성향) 첫 시작 창 → 홈 필터 → 설정 → 신작 대화방",
   chatflow: "대화방: 스트리밍 표시, 자동 스크롤 끔/켬, AI 추천 수동, 출력 설정, 설정 페이지",
   mobile: "휴대폰 셸: iPhone 13·SE(WebKit)·Galaxy(Chromium)에서 표준 모드·탭바·가로 넘침 없음",
-  file: "파일(file://)로 열어도 부팅·홈(전체·여성향·남성향)·상세가 그려짐 — 단일 파일 배포(BYOK) 확인"
+  file: "파일(file://)로 열어도 부팅·홈(전체·여성향·남성향)·상세가 그려짐 — 단일 파일 배포(BYOK) 확인",
+  views: "스모크: 다섯 화면·오리지널 전부의 상세·각 작품의 대화방(오프닝·상태창·입력창)·드로어와 시트 9종이 오류 없이 그려짐"
 };
 const BAD_KEYS = ["fail", "error", "errors", "errs", "pageerror"];
 const only = process.argv.slice(2).filter((a) => !a.startsWith("-"));
