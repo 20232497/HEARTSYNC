@@ -23,6 +23,7 @@
 | `chatflow.mjs` | 대화방 스트리밍(가짜 llm), 자동 스크롤 끔/켬, ✦ AI 추천 수동, 출력 설정 카드, 설정 페이지 |
 | `mobile.mjs` | 휴대폰 셸: 표준 모드 문서, bootMsg 사라짐, 탭바, 가로 넘침 0 |
 | `file.mjs` | 파일(file://)로 열어도 부팅·홈(전체·여성향·남성향 대표 작품 4개씩, 가로 줄)·상세가 그려짐 — 단일 파일 배포(BYOK 모드)가 깨지지 않았는지 |
+| `views.mjs` | 스모크(Desktop Chrome·iPhone 13): 홈·대화·만들기·스토어·MY, 오리지널 작품 전부의 상세, 각 작품의 첫 시작 상황으로 연 대화방(오프닝 본문·상태창·입력창), 드로어(기본·출력 설정)·모델·이미지 슬롯·세계관 일러스트·페르소나·관심있는 대화·추천 칸·PLUS·확인 시트가 오류 없이 열림. 모듈 분리 뒤 어느 화면에서든 ReferenceError가 나면 여기서 잡힘 |
 
 ## 단위 테스트(unit)
 `node:test`. 모듈이 `window`·`document`를 맨 윗단에서 건드리지 않아야 Node에서 import된다 — 순수 모듈(`core/constants`·`core/cast`·`core/safety`·`ai/parse`·`ai/prompt/lore`)이 그렇다. 새 테스트는 `tests/unit/<모듈>.test.mjs`.
