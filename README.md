@@ -53,4 +53,5 @@
 
 ## 폴더
 - `index.html` 현재 버전(v2)
+- `privacy.html` 개인정보처리방침(정적 페이지, 로그인 화면과 Google OAuth 브랜딩에서 연결)
 - `archive/heartverse_v1.html` 최초 시험 버전
