@@ -1,0 +1,18 @@
+# index.html(배포물)이 src/·content/로 빌드한 결과와 같은지 확인. 다르면 index.html을 직접 고쳤거나 빌드를 안 하고 커밋한 것
+name: 빌드 확인
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: 작품 검사 + index.html이 소스와 같은지 (npm run check)
+        run: node tools/build.mjs --check

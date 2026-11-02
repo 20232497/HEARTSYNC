@@ -1,6 +1,6 @@
 # HEART SYNC
 
-버블챗 스타일의 캐릭터 대화형 에피소드 플랫폼. 단일 파일(index.html) 프로토타입.
+버블챗 스타일의 캐릭터 대화형 에피소드 플랫폼. 배포물은 단일 파일(index.html) — 소스는 src/·content/로 나누고 빌드로 합침(아래 '소스 구조·빌드').
 
 - 배포: https://claude.ai/artifact/3sfDYFeJ13dHrkWwBFj1YG (같은 파일 경로로 다시 publish하면 같은 URL 유지)
 - 이름: HEART SYNC(2026-11-03 HEARTVERSE에서 바꿈, 사용자 요청 — 처음엔 HeartSync로 했다가 같은 날 대문자·띄어쓰기 HEART SYNC로 다시 정함). 저장소 이름·웹 주소는 띄어쓰기 없이 대문자 HEARTSYNC(사용자가 저장소 이름을 HeartSync → HEARTSYNC로 바꿈). GitHub Pages 경로는 대소문자를 구분하고 예전 주소로 넘겨 주지 않아 /HeartSync/·/HeartVerse/는 404 — 주소를 바꾸면 Supabase URL Configuration·Google 브랜딩 링크·네이버 서비스 URL도 함께. 대화 내보내기 파일은 HEART_SYNC_… 데이터·암호 호환 때문에 내부 이름은 그대로: localStorage hv1_ 접두사, IndexedDB "heartverse", 금고 소금 "heartverse-vault:"+uid, window.HEARTVERSE_CONFIG — 바꾸면 기존 데이터·계정 키를 못 읽음
@@ -10,11 +10,23 @@
 - capabilities: sample(AI 호출), db(뷰어별 저장 data/users/<id>/<key>, 커뮤니티 pub/<id>), user, assets(이미지), downloads(대화 내보내기)
 - 로컬 파일로 열면 Anthropic API 키(BYOK) 모드로 동작
 
-## 구조 (index.html 안)
-- ORIGINALS: 오리지널 작품 데이터. 신작 세계관 GODSEATS(「신님들, 관전 매너 좀」). 남녀가 섞여 애매했던 「서울, 멸망 D+37」(seoulzero)은 뺌(사용자 요청 2026-11, 이미 연 방은 방 안의 작품 사본으로 계속됨)
-- 관심있는 대화(사용자 요청 2026-11): S.settings.audience = all 전체 · m 남성향(여성 캐릭터와의 대화) · f 여성향(남성 캐릭터와의 대화). 작품의 aud(오리지널은 AUD_OF 표와 신작의 aud 칸), 없으면 guessAud()가 출연진 외모(castLook)의 성별로 짐작 — 여자만 m, 남자만 f, 섞이거나 모르면 all(전체에서만 보임). audOf/audOK로 홈의 대표 작품(전체면 여성향·남성향을 번갈아)·가로 줄(HOME_ROWS)·오리지널·커뮤니티를 거름. 내가 만든 작품은 늘 보임. 처음 시작할 때 audSheet(true)(로그인 페이지가 있으면 로그인·둘러보기 다음), 홈 '둘러보기' 위와 MY → 설정에 audSegHTML(). 스튜디오에 '관심있는 대화' 칸(자동·남성향·여성향·전체), cleanChar가 aud를 지킴. 전체일 때 카드에 남성향·여성향 표시
-- FATE(row: "fate", 홈의 "다섯 남자, 하나의 비밀" 가로 줄, 여성향): 계약 황후의 백 일(로판 궁정 추리)·서촌 오월 하숙집(현대 힐링·가족 미스터리)·호텔 레테: 마흔아홉 번째 밤(저승 호텔 오컬트). SURVIVE와 같은 틀 — world_mode 군상극, 남주 5인(모두 성인), 시작 상황 3개(첫 등장마다 [[img:코드:0]]), [진상] 블록, 키워드북 10개, "❤️ 호감도" 다인원 칸. 상태창 칸 이름은 3글자 안팎(길면 잘림). [서사 원칙]의 군상극 줄은 '주요 인물들은'(히로인·남주 공통)
-- SURVIVE(row: "survive", 홈의 "살아남는 자가 역사를 쓴다" 가로 줄): 대연궁 검시록(궁중 추리)·백야호(빙하기 열차 생존)·십절곡(무협 봉쇄 계곡). 모두 world_mode 군상극, 히로인 5인, 시작 상황 3개. 진상은 persona의 [진상] 블록에 두고 단서로 단계적으로 공개, 인물·장소 설정은 키워드북(lore)에. 히로인별 호감도는 "❤️ 호감도" 한 칸에 "이름 n · …" 문자열
+## 소스 구조·빌드 (2026-11-03, 사용자 요청 — 확장성을 위해 섹터별로 나누고 구동할 땐 한 파일로)
+- **index.html은 빌드 결과물 — 직접 고치지 않기.** src/·content/를 고친 뒤 npm run build(node tools/build.mjs), 바뀐 index.html도 같이 커밋. GitHub Actions(.github/workflows/build.yml '빌드 확인')가 PR·main마다 npm run check(node tools/build.mjs --check)로 index.html이 소스 빌드 결과와 같은지 확인. 결과 맨 위에 그 안내 주석 한 줄이 들어감
+- src/page.html: 뼈대(doctype·메타·마크업·부팅 안내 ES5 스크립트). 줄 전체가 `<!-- @include css/*.css -->`·`<!-- @content -->`·`<!-- @include js/*.js -->`인 자리에 조각이 들어감
+- src/css/NN-이름.css 13개(10-base 색 토큰·기본 → 15-shell → 20-buttons → 25-cover → 30-home → 35-detail → 40-scene → 45-chat → 50-sheets → 55-image-slots → 60-store → 65-studio → 70-my), src/js/NN-이름.js 21개(05-originals 출연진 없는 작품의 cast → 10-constants → 15-utils → 20-storage → 25-account(SB·CLOUD·VAULT) → 30-image-store(IMG) → 35-image-gen(Runware·태그) → 40-state → 45-llm(성인 모드 포함) → 50-prompt → 55-room-store → 60-shell → 65-home(상세 포함) → 70-chat(장기기억 포함) → 75-sheets(대화방 관리 드로어) → 80-image-slots(세계관 일러스트) → 83-chat-list → 85-studio → 90-store → 95-my(로그인·계정) → 99-boot). 파일 이름 순서대로, 조각 사이에 빈 줄 하나로 이어 붙임 — 새 조각은 사이 번호로
+- 모든 JS 조각은 예전처럼 **한 클래식 스크립트**(전역 함수·상수를 서로 그대로 부름, ES 모듈·import 없음 — 재배선 위험이 크고 file://에서 모듈이 막힘). 맨 윗단에서 뒤쪽 조각의 const를 바로 쓰면 TDZ 오류
+- content/<aud>/[<줄>/]<id>/work.js: 작품 하나 = 폴더 하나(목록 파일 없음, 폴더를 더하면 자동 등록). 맨 위 폴더 f(여성향)·m(남성향)·all(전체)이 작품의 aud, _row.json(title·sub·order)이 든 폴더가 홈 가로 줄(폴더 이름 = row, f·m·all 전체에서 하나), 작품 폴더 이름 = id. work.js는 export default { 작품 } + export const order(작을수록 홈 대표 작품·오리지널 목록 앞, 없으면 맨 뒤). aud·row는 work.js에 쓰지 않음(쓰면 폴더와 같아야). 빌드가 Node에서 import해 값만 JSON으로 `<!-- @content -->` 자리에 ORIGINALS·HOME_ROWS로 넣음(글·숫자·참거짓·배열·객체만, `</`와 U+2028·2029 이스케이프) — work.js 안의 const·import(예: godseats의 RPG_STATUS)는 빌드 때만. 새 세계관은 비슷한 작품 폴더 복사(content/README.md)
+- 빌드 검사(실패하면 원본 파일:줄로 안내): 인라인 스크립트 문법(vm.Script), 오래된 iOS 문법(||=·&&=·??=·.at(·lookbehind·structuredClone·findLast·Object.hasOwn), 작품 — 맨 위 폴더 이름, id = 폴더·중복, aud·row와 폴더, 출연진 성별과 폴더(guessAud가 반대 성별이면 실패, 섞이면 통과), minorFlags, 필수 칸·cat·pal·motif, 시작 상황 [[img:코드:0~14]]가 cast에 있는지. 경고: gauge·status 칸이 fields에 없음, 작품 없는 줄. guessAud·minorFlags·SIT·CATS 등은 tools/build.mjs의 APP_RULES 이름으로 src/js에서 꺼내 씀 — 이름을 바꾸면 APP_RULES도
+- npm run dev(tools/dev.mjs): http://localhost:5173(--port), src/·content/를 저장할 때마다 새 프로세스로 빌드(work.js import 캐시 때문) → SSE로 새로 고침, 실패하면 화면 아래 오류. 새로 고침 스크립트는 응답에만 붙이고 디스크의 index.html에는 안 넣음
+- 나눌 때 무결성: 첫 단계(CSS·JS 조각) 빌드가 기존 index.html과 바이트 단위로 같았고, 작품을 content/로 옮긴 뒤엔 작품 영역 밖은 바이트 단위로 같고 ORIGINALS·HOME_ROWS를 실행한 값이 깊은 비교로 같음(row·aud 키가 객체 끝으로 간 것만 다름 — 키 순서를 쓰는 코드 없음)
+- 작업 사본 줄바꿈은 CRLF일 수 있음(autocrlf) — 빌드는 LF로 읽고 LF로 씀
+- package.json(의존성 없음, 스크립트 build·check·dev만)의 "type": "module"은 content/**/work.js(export default)를 Node가 ESM으로 읽기 위한 것 — 지우지 않기. Playwright 흐름 시험 스크립트는 저장소에 없고 세션 scratchpad(pw/)에 있음(social·vault·cloud2·mobile·audience·chatflow.mjs, 인자로 로컬 URL)
+
+## 구조
+- ORIGINALS: 오리지널 작품 데이터(content/에서 빌드). 신작 세계관 godseats(「신님들, 관전 매너 좀」, content/m/godseats). 남녀가 섞여 애매했던 「서울, 멸망 D+37」(seoulzero)은 뺌(사용자 요청 2026-11, 이미 연 방은 방 안의 작품 사본으로 계속됨)
+- 관심있는 대화(사용자 요청 2026-11): S.settings.audience = all 전체 · m 남성향(여성 캐릭터와의 대화) · f 여성향(남성 캐릭터와의 대화). 작품의 aud(오리지널은 content/의 맨 위 폴더 f·m·all이 정함), 없으면 guessAud()가 출연진 외모(castLook)의 성별로 짐작 — 여자만 m, 남자만 f, 섞이거나 모르면 all(전체에서만 보임). audOf/audOK로 홈의 대표 작품(전체면 여성향·남성향을 번갈아)·가로 줄(HOME_ROWS)·오리지널·커뮤니티를 거름. 내가 만든 작품은 늘 보임. 처음 시작할 때 audSheet(true)(로그인 페이지가 있으면 로그인·둘러보기 다음), 홈 '둘러보기' 위와 MY → 설정에 audSegHTML(). 스튜디오에 '관심있는 대화' 칸(자동·남성향·여성향·전체), cleanChar가 aud를 지킴. 전체일 때 카드에 남성향·여성향 표시
+- fate 줄(content/f/fate/, 홈의 "다섯 남자, 하나의 비밀" 가로 줄, 여성향): 계약 황후의 백 일(로판 궁정 추리)·서촌 오월 하숙집(현대 힐링·가족 미스터리)·호텔 레테: 마흔아홉 번째 밤(저승 호텔 오컬트). survive와 같은 틀 — world_mode 군상극, 남주 5인(모두 성인), 시작 상황 3개(첫 등장마다 [[img:코드:0]]), [진상] 블록, 키워드북 10개, "❤️ 호감도" 다인원 칸. 상태창 칸 이름은 3글자 안팎(길면 잘림). [서사 원칙]의 군상극 줄은 '주요 인물들은'(히로인·남주 공통)
+- survive 줄(content/m/survive/, 홈의 "살아남는 자가 역사를 쓴다" 가로 줄, 남성향): 대연궁 검시록(궁중 추리)·백야호(빙하기 열차 생존)·십절곡(무협 봉쇄 계곡). 모두 world_mode 군상극, 히로인 5인, 시작 상황 3개. 진상은 persona의 [진상] 블록에 두고 단서로 단계적으로 공개, 인물·장소 설정은 키워드북(lore)에. 히로인별 호감도는 "❤️ 호감도" 한 칸에 "이름 n · …" 문자열
 - 서사 원칙: rulesPrompt의 [서사 원칙] 블록(인과·연속성·내면·감정 축적·떡밥·진전·장면 설계, world_mode면 군상극 항목 추가). relStage()는 게이지 이름이 호감·신뢰 등 관계형이고 숫자일 때만 관계 단계를 덧붙임. 장기기억 요약 지침은 원인→결과·감정 변화·약속/비밀·미해결 떡밥 4항목
 - 이미지: 본문 태그 [[img:인물코드:상황번호]], 상황 0~14 (SIT 배열). 슬롯은 char.images 또는 S.imgpacks. **매 응답, 나온 인물마다 한 장**(사용자 요청 2026-11): rulesPrompt [장면 이미지 — 매 응답 필수]가 말하거나 움직이는 인물마다 그 인물의 첫 줄 위에 태그를 넣게 하고, 유저 행동에 대한 반응으로 번호를 고르는 지침(놀림 → 부끄러움·삐침, 칭찬 → 웃음 …, 번호는 sn()으로 SIT에서 찾음)과 인물별로 그림이 든 칸 번호(ready)를 줌. buildInput의 [이번 응답]에 sitHints(유저 입력 → SIT_KEYS·SIT_KEYS_EXTRA·직접 만든 칸 이름 낱말 점수, 상위 2개)를 번호 후보로 붙임. 응답이 끝나면 addCastImages()가 태그를 빠뜨린 인물(이름: 대사, 없으면 지문 속 이름, 출연진이 한 명이면 첫 대사)에 붙임 — 처음 등장은 0, 아니면 그 인물 줄의 낱말 점수×2 + 유저 입력(그 인물을 불렀거나 아무도 안 불렀으면 첫 인물만), 그림이 있는 칸 +0.5, 없으면 1, 최대 5장. 여러 장이면 말풍선에 many-img(그림을 작게), 글 없이 이어진 그림은 fmt가 .scene-row로 나란히
 - 직접 추가하는 이미지 칸: S.settings.customSits = [{n(15~, 최대 60개, 지운 번호는 다시 씀), name, prompt(한국어 가능), rating}] — 모든 인물에 공통. 슬롯 시트의 '+ 칸 추가'·'고치기'(sitEditor, 시트 위 overlay). 칸 이름은 sitName(n), 정의는 sitDef(n), 시트에 보이는 번호는 slotNums()(성인 수위 칸은 ageOK일 때만). buildPonyPrompt는 칸 prompt를 상황 태그 자리에 씀. AI 버튼·빈 칸 채우기는 칸의 rating으로 생성. 목록으로 추가(sitListSheet, parseSitList): 한 줄에 "이름"·"이름=번호"·"번호 = 이름"·"이름 | 프롬프트", 번호는 무시하고 15번부터, 프롬프트가 없으면 이름(만들 때 번역), 기본 칸·있는 칸과 같은 이름은 뺌, .txt(UTF-8/EUC-KR) 불러오기, 고른 칸을 한 수위로 추가(성인 수위면 minorHint 있는 칸은 뺌). 칸 편집기의 수위도 ratingFieldHTML. rulesPrompt [장면 이미지] 번호 목록에 넣되 성인 수위 칸은 unfilteredRoute(r)일 때만(Claude에는 안 보임). 성인 수위 칸은 이름·프롬프트에 minorHint가 있으면 저장 거부. 칸을 지우면 dropSitImages가 모든 인물의 그 칸 그림도 지움. 추천 칸(SIT_PRESETS, 슬롯 시트의 '추천 칸' → sitPresetSheet): 일상·감정·장소·데이트·로맨스·의상(전체이용가)과 세미 수위(questionable, ageOK일 때만)를 골라 한 번에 추가. 칸 프롬프트(성행위 묘사 등)는 사용자가 직접 씀 — 노골적인 칸·프롬프트는 미리 채워 넣지 않기
@@ -56,8 +68,8 @@
 ## 원칙
 - 답변과 UI 문구는 한국어
 - 수위: 성인 캐릭터. 기본(보호 모드)은 노골적 성적 묘사 금지(암전 처리). 성인 모드는 로컬 파일 + 성인 확인 + OpenRouter 키일 때만이고, 미성년(또는 미성년으로 보이는) 인물의 성적 묘사·그림은 어떤 설정에서도 막음. 성인 지시를 Claude(sample·BYOK)에 보내지 않기
-- 수정 후: node --check로 스크립트 문법 확인 → Playwright로 흐름 테스트 → publish
-- index.html 맨 위의 <!doctype html>·<html lang="ko">·charset·viewport 메타는 지우지 않기. GitHub Pages·로컬 파일은 그대로 띄우므로 doctype이 없으면 쿼크 모드가 됨(claude.ai publish 래퍼에도 있지만 그 밖에서는 없음)
+- 수정 후: npm run build(스크립트 문법·오래된 iOS 문법·작품 규칙 검사 포함) → Playwright로 흐름 테스트 → publish(빌드한 index.html + icons/)
+- src/page.html 맨 위의 <!doctype html>·<html lang="ko">·charset·viewport 메타는 지우지 않기. GitHub Pages·로컬 파일은 그대로 띄우므로 doctype이 없으면 쿼크 모드가 됨(claude.ai publish 래퍼에도 있지만 그 밖에서는 없음)
 - 모바일: 오래된 iOS(13 이하)·인앱 브라우저도 돌도록 아주 새 문법(||= 같은 논리 할당, Array.at, 정규식 lookbehind, structuredClone 등)은 쓰지 않기. #view 안의 bootMsg("불러오는 중…")와 앞쪽의 작은 ES5 스크립트가, 앱 스크립트가 멈추면 빈 화면 대신 이유를 보여 줌. 휴대폰은 파일이 아니라 웹 주소로 열어야 함. 테스트는 Playwright WebKit(iPhone 13·SE)·Chromium(Galaxy)으로
-- 파일이 크니(2,400줄+) 전체를 다시 쓰지 말고 필요한 함수·CSS 블록만 고치기. 설명할 때도 바뀐 부분만 보여 주기
-- 구조 분리를 제안할 땐 단일 파일을 점진적으로 나누는 방법을 먼저 검토. 단, 로컬 파일(file://)로 열면 <script type="module" src>가 CORS로 막혀 BYOK 모드가 깨지므로, 소스를 모듈로 나누더라도 배포물은 번들러로 합친 단일 index.html로 유지
+- 조각 파일도 크니(chat·image-gen·my는 500줄+) 전체를 다시 쓰지 말고 필요한 함수·CSS 블록만 고치기. 설명할 때도 바뀐 부분만 보여 주기
+- 배포물은 늘 빌드로 합친 단일 index.html. 로컬 파일(file://)로 열면 <script type="module" src>가 CORS로 막혀 BYOK 모드가 깨지므로 index.html이 다른 js·css 파일을 불러오게 바꾸지 않기. 빌드 도구는 의존성 없는 Node(tools/) 그대로 — 번들러·패키지를 더하지 않기

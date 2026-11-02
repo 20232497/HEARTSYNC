@@ -117,42 +117,46 @@ async function buildContent(R) {
   for (const f of fs.readdirSync(CONTENT, { withFileTypes: true })) {
     if (f.isDirectory() && visible(f.name) && !AUD_DIRS[f.name]) errors.push(`content/${f.name}: 이 자리에는 ${Object.keys(AUD_DIRS).map((k) => `${k}/(${AUD_DIRS[k]})`).join("·")} 폴더만 둘 수 있어요`);
   }
+  // 작품 폴더 = work.js가 있는 폴더. content/<aud>/<id>/ 이면 홈 줄 없이, content/<aud>/<줄>/<id>/ 이면 그 줄(_row.json)에 들어감
+  const addWork = async (dir, wrel, id, aud, row) => {
+    let mod;
+    try { mod = await import(pathToFileURL(path.join(dir, "work.js")).href); }
+    catch (e) { return errors.push(`${wrel}/work.js: 불러오지 못했어요 — ${String(e.stack || e).split("\n").slice(0, 3).join(" / ")}`); }
+    const before = errors.length;
+    const c = checkWork(mod, { aud, row, id, wrel, R, errors, warnings });
+    const dup = works.find((w) => w.c.id === id);
+    if (dup) errors.push(`${wrel}: id "${id}"가 ${dup.rel}에도 있어요`);
+    if (errors.length === before) { works.push({ c, aud, row, rel: wrel, order: mod.order }); if (row) row.n++; }
+  };
+  const readRow = (dir, grel, key) => {
+    let r;
+    try { r = JSON.parse(readText(path.join(dir, "_row.json"))); } catch (e) { return errors.push(`${grel}/_row.json: JSON 형식이 아니에요 — ${e.message}`), null; }
+    if (!isObj(r) || !str(r.title)) return errors.push(`${grel}/_row.json: "title"(홈에 보일 줄 제목)이 있어야 해요`), null;
+    if (r.sub !== undefined && typeof r.sub !== "string") errors.push(`${grel}/_row.json: "sub"는 글이어야 해요`);
+    if (r.order !== undefined && !Number.isFinite(r.order)) errors.push(`${grel}/_row.json: "order"는 숫자여야 해요`);
+    const extra = Object.keys(r).filter((k) => !["title", "sub", "order"].includes(k));
+    if (extra.length) warnings.push(`${grel}/_row.json: 쓰지 않는 칸 ${extra.join(", ")}`);
+    if (!/^[a-z0-9][a-z0-9_-]*$/.test(key)) errors.push(`${grel}: 줄 폴더 이름은 영문 소문자·숫자·-·_로(이름이 곧 작품의 row 값)`);
+    const dup = rows.find((x) => x.key === key);
+    if (dup) errors.push(`${grel}: 같은 이름의 줄이 ${dup.rel}에도 있어요 — 줄 폴더 이름은 f·m·all 전체에서 하나만`);
+    const row = { key, title: r.title, sub: r.sub || "", order: r.order, rel: grel, n: 0 };
+    rows.push(row);
+    return row;
+  };
+  const has = (dir, f) => fs.existsSync(path.join(dir, f));
   for (const aud of Object.keys(AUD_DIRS)) {
     const adir = path.join(CONTENT, aud);
     if (!fs.existsSync(adir)) continue;
-    for (const group of subdirs(adir)) {
-      const gdir = path.join(adir, group), grel = `content/${aud}/${group}`;
-      let row = null;
-      const rowFile = path.join(gdir, "_row.json");
-      if (fs.existsSync(rowFile)) {
-        let r;
-        try { r = JSON.parse(readText(rowFile)); } catch (e) { errors.push(`${grel}/_row.json: JSON 형식이 아니에요 — ${e.message}`); r = null; }
-        if (r) {
-          if (!isObj(r) || !str(r.title)) errors.push(`${grel}/_row.json: "title"(홈에 보일 줄 제목)이 있어야 해요`);
-          else {
-            if (r.sub !== undefined && typeof r.sub !== "string") errors.push(`${grel}/_row.json: "sub"는 글이어야 해요`);
-            if (r.order !== undefined && !Number.isFinite(r.order)) errors.push(`${grel}/_row.json: "order"는 숫자여야 해요`);
-            const extra = Object.keys(r).filter((k) => !["title", "sub", "order"].includes(k));
-            if (extra.length) warnings.push(`${grel}/_row.json: 쓰지 않는 칸 ${extra.join(", ")}`);
-            if (!/^[a-z0-9][a-z0-9_-]*$/.test(group)) errors.push(`${grel}: 줄 폴더 이름은 영문 소문자·숫자·-·_로 (이름이 곧 작품의 row 값)`);
-            const dup = rows.find((x) => x.key === group);
-            if (dup) errors.push(`${grel}: 같은 이름의 줄이 ${dup.rel}에도 있어요 — 줄 폴더 이름은 전체에서 하나만`);
-            row = { key: group, title: r.title, sub: r.sub || "", order: r.order, rel: grel, n: 0 };
-            rows.push(row);
-          }
-        }
-      }
-      for (const id of subdirs(gdir)) {
-        const wrel = `${grel}/${id}`, file = path.join(gdir, id, "work.js");
-        if (!fs.existsSync(file)) { errors.push(`${wrel}: work.js가 없어요(작품 폴더마다 work.js 하나)`); continue; }
-        let mod;
-        try { mod = await import(pathToFileURL(file).href); }
-        catch (e) { errors.push(`${wrel}/work.js: 불러오지 못했어요 — ${String(e.stack || e).split("\n").slice(0, 3).join(" / ")}`); continue; }
-        const before = errors.length;
-        const c = checkWork(mod, { aud, row, id, wrel, R, errors, warnings });
-        const dup = works.find((w) => w.c.id === id);
-        if (dup) errors.push(`${wrel}: id "${id}"가 ${dup.rel}에도 있어요`);
-        if (errors.length === before) { works.push({ c, aud, row, rel: wrel, order: mod.order }); if (row) row.n++; }
+    for (const name of subdirs(adir)) {
+      const dir = path.join(adir, name), grel = `content/${aud}/${name}`;
+      if (has(dir, "work.js") && has(dir, "_row.json")) { errors.push(`${grel}: work.js(작품)와 _row.json(홈 줄)을 한 폴더에 같이 둘 수 없어요`); continue; }
+      if (has(dir, "work.js")) { await addWork(dir, grel, name, aud, null); continue; }
+      if (!has(dir, "_row.json")) { errors.push(`${grel}: work.js(작품 폴더)나 _row.json(홈 가로 줄 폴더)이 있어야 해요`); continue; }
+      const row = readRow(dir, grel, name);
+      for (const id of subdirs(dir)) {
+        const wdir = path.join(dir, id), wrel = `${grel}/${id}`;
+        if (!has(wdir, "work.js")) errors.push(`${wrel}: work.js가 없어요${has(wdir, "_row.json") ? "(줄 안에 줄은 둘 수 없어요)" : "(작품 폴더마다 work.js 하나)"}`);
+        else await addWork(wdir, wrel, id, aud, row);
       }
     }
   }
@@ -241,8 +245,8 @@ function checkWork(mod, { aud, row, id, wrel, R, errors, warnings }) {
     }
   });
 
-  // 앱과 같은 규칙: 미성년 인물 막기(minorFlags), 출연진 성별로 짐작한 aud(guessAud)
-  if (errors.some((x) => x.startsWith(wrel + ":"))) return c;
+  // 앱과 같은 규칙: 미성년 인물 막기(minorFlags), 출연진 성별로 짐작한 aud(guessAud) — 다른 오류가 있어도 늘 검사
+  if (!cast.length || !cast.every(isObj)) return c;
   const probe = { ...c, cast };
   const minors = R.minorFlags(probe);
   if (minors.length) e(`19세 미만이거나 학생으로 보이는 인물이 있어요: ${minors.join(", ")} — 모든 인물은 성인이어야 해요(minorFlags)`);
@@ -286,7 +290,7 @@ function checkScripts(html, map) {
     try { new vm.Script(m[1], { filename: `script${k}`, lineOffset: startLine - 1 }); }
     catch (e) {
       const ln = +(String(e.stack).match(new RegExp(`script${k}:(\\d+)`)) || [])[1];
-      errors.push(`${ln ? where(map, ln) : `<script> ${k}번째`}: 문법 오류 — ${e.message}`);
+      errors.push(`${ln ? where(map, ln) : `<script> ${k}번째`}: 문법 오류 — ${e.message} (괄호가 안 닫혔다면 바로 앞 줄·앞 파일 끝일 수도 있어요)`);
     }
     m[1].split("\n").forEach((text, i) => {
       for (const [re2, name] of OLD_IOS) if (re2.test(text)) errors.push(`${where(map, startLine + i)}: 오래된 iOS에서 안 도는 문법(${name}) — CLAUDE.md '모바일'`);

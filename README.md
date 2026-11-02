@@ -4,7 +4,31 @@
 
 - 웹 주소(GitHub Pages): https://20232497.github.io/HEARTSYNC/ — `main`의 `index.html`을 그대로 띄움. API 키는 MY → 설정에 넣으면 각자 브라우저에만 저장. **휴대폰에서는 이 주소로 열기** — 내려받은 html 파일이나 GitHub 코드 화면은 휴대폰에서 앱이 실행되지 않음
 - 데모: https://claude.ai/artifact/3sfDYFeJ13dHrkWwBFj1YG (비공개, 공유 시 열람 가능)
-- `index.html` 하나로 동작. 브라우저에서 직접 열면 MY → 설정에 Anthropic API 키를 넣어 사용 (AI 이미지 생성은 Runware API 키)
+- 배포물은 `index.html` 하나로 동작. 브라우저에서 직접 열면 MY → 설정에 Anthropic API 키를 넣어 사용 (AI 이미지 생성은 Runware API 키)
+- 소스는 `src/`(화면·기능별 CSS·JS 조각)와 `content/`(작품 폴더)로 나뉘어 있고, `npm run build`가 합쳐 `index.html`을 만듦 — 아래 '소스 구조'
+
+## 소스 구조와 빌드
+`index.html`은 빌드 결과물이라 직접 고치지 않아요. 고칠 곳은 `src/`와 `content/`, 합치는 건 `tools/build.mjs`(Node 18+, 설치할 패키지 없음).
+
+```
+src/page.html        뼈대: <head>·메타·마크업, 그리고 조각이 들어갈 자리(@include css/*.css · @content · @include js/*.js)
+src/css/NN-이름.css   화면별 CSS(10-base 색 토큰 → 15-shell → 20-buttons → … → 70-my)
+src/js/NN-이름.js     기능별 JS(10-constants → 15-utils → 20-storage → 25-account → … → 99-boot)
+content/f|m|all/…    작품 폴더(여성향·남성향·전체) — content/README.md
+tools/build.mjs      합치기 + 검사,  tools/dev.mjs  개발 서버
+```
+
+| 명령 | 하는 일 |
+|---|---|
+| `npm run build` | `index.html` 만들기 |
+| `npm run dev` | http://localhost:5173 으로 띄우고, `src/`·`content/`를 저장할 때마다 다시 빌드해 브라우저를 새로 고침(빌드 오류는 화면 아래에 표시) |
+| `npm run check` | `index.html`이 지금 소스로 만든 결과와 같은지만 확인(GitHub Actions '빌드 확인'이 PR·main마다 실행) |
+
+- **조각 순서**는 파일 이름 앞 두 자리 번호. 새 조각은 사이 번호로 넣어요(예: `67-gallery.js`). 조각은 하나의 클래식 스크립트로 이어 붙여지므로 지금처럼 전역 함수·상수를 그대로 서로 부를 수 있어요(모듈 import/export 없음). 단, 위쪽 조각의 맨 윗단에서 아래쪽 조각의 `const`를 바로 쓰면 안 돼요(실행 순서).
+- **작품**은 `content/<f|m|all>/[<홈 줄>/]<id>/work.js`. 맨 위 폴더가 여성향·남성향을 정하고, 새 세계관은 비슷한 작품 폴더를 복사하면 같은 줄에 나란히 들어가요. 방법·칸 설명은 [content/README.md](content/README.md).
+- **빌드가 검사하는 것**: 인라인 스크립트 문법(오류는 `src/js/70-chat.js:120`처럼 원본 파일·줄로), 오래된 iOS에서 안 도는 문법(`||=`·`Array.at`·정규식 lookbehind·`structuredClone` 등), 작품 폴더 규칙(폴더와 aud·row, id 중복, 출연진 성별과 폴더, 미성년 인물 — 앱의 `minorFlags`·`guessAud`를 그대로 꺼내 씀)
+- 결과는 늘 한 파일: GitHub Pages가 `main` 루트의 `index.html`을 그대로 띄우고, 파일(file://)로 열어도 돌아가고(모듈 파일로 나누면 CORS로 막힘), claude.ai artifact로도 그대로 올라감
+- 커밋할 때는 고친 소스와 `npm run build`로 바뀐 `index.html`을 같이 커밋
 
 ## 주요 기능
 - 로그인·계정 저장(Supabase): 이메일 또는 카카오·네이버·Google 계정으로 가입·로그인하면(소셜 계정은 이메일이 없어도 됨) 대화·작품·설정·그림·API 키가 계정에 저장돼 PC와 휴대폰에서 이어짐. 처음 로그인할 때 이 기기 데이터(그림 칸·표지·세계관 일러스트·그림체 세트 포함)를 계정으로 옮기거나 합침, 로그아웃·계정 삭제. API 키는 로그인 비밀번호(소셜 계정은 따로 정하는 키 잠금 암호)로 기기에서 암호화한 뒤 올려서 서버·관리자도 볼 수 없음(다른 기기는 같은 비밀번호·암호를 한 번 넣으면 받음, 'API 키도 계정에 저장'은 MY → 계정에서 끌 수 있음). 로그인 없이 둘러보기도 됨. 설정 방법은 아래 '계정 서버 설정'
@@ -52,6 +76,7 @@
 - 같은 이메일로 이메일 가입과 소셜 로그인을 하면 Supabase가 한 계정으로 이어 줌(그때는 API 키도 로그인 비밀번호로 잠금)
 
 ## 폴더
-- `index.html` 현재 버전(v2)
+- `index.html` 현재 버전(v2) — 빌드 결과물(위 '소스 구조와 빌드')
+- `src/`·`content/`·`tools/` 소스·작품·빌드 도구, `.github/workflows/build.yml` 빌드 확인
 - `privacy.html` 개인정보처리방침(정적 페이지, 로그인 화면과 Google OAuth 브랜딩에서 연결)
 - `archive/heartverse_v1.html` 최초 시험 버전
