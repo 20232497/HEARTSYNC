@@ -7,7 +7,7 @@
 - `index.html` 하나로 동작. 브라우저에서 직접 열면 MY → 설정에 Anthropic API 키를 넣어 사용 (AI 이미지 생성은 Runware API 키)
 
 ## 주요 기능
-- 로그인·계정 저장(Supabase): 이메일로 가입·로그인하면 대화·작품·설정·그림·API 키가 계정에 저장돼 PC와 휴대폰에서 이어짐. 처음 로그인할 때 이 기기 데이터를 계정으로 옮기거나 합침, 로그아웃·계정 삭제. API 키는 로그인 비밀번호로 기기에서 암호화한 뒤 올려서 서버·관리자도 볼 수 없음(다른 기기는 같은 비밀번호로 로그인하면 받음, 'API 키도 계정에 저장'은 MY → 계정에서 끌 수 있음). 로그인 없이 둘러보기도 됨. 설정 방법은 아래 '계정 서버 설정'
+- 로그인·계정 저장(Supabase): 이메일 또는 카카오·네이버·Google 계정으로 가입·로그인하면(소셜 계정은 이메일이 없어도 됨) 대화·작품·설정·그림·API 키가 계정에 저장돼 PC와 휴대폰에서 이어짐. 처음 로그인할 때 이 기기 데이터(그림 칸·표지·세계관 일러스트·그림체 세트 포함)를 계정으로 옮기거나 합침, 로그아웃·계정 삭제. API 키는 로그인 비밀번호(소셜 계정은 따로 정하는 키 잠금 암호)로 기기에서 암호화한 뒤 올려서 서버·관리자도 볼 수 없음(다른 기기는 같은 비밀번호·암호를 한 번 넣으면 받음, 'API 키도 계정에 저장'은 MY → 계정에서 끌 수 있음). 로그인 없이 둘러보기도 됨. 설정 방법은 아래 '계정 서버 설정'
 - 관심있는 대화: 처음 시작할 때와 MY → 설정·홈에서 전체·남성향(여성 캐릭터와의 대화)·여성향(남성 캐릭터와의 대화)을 고르면 홈에 그쪽 작품만 보임. 작품마다 남성향·여성향 분류(직접 만든 작품은 스튜디오에서 고르거나 출연진 성별로 자동)
 - 캐릭터·세계관 탐색, 상세 페이지, 게임 모드(시작 상황) 선택
 - 세계관 군상극 신작 3편(「살아남는 자가 역사를 쓴다」, 남성향): 대연궁 검시록, 백야호: 열세 번째 겨울, 십절곡: 백 일의 봉문 — 각 히로인 5인·시작 상황 3개·키워드북
@@ -40,9 +40,16 @@
 1. Supabase 대시보드 → 프로젝트 → **SQL Editor**에 [docs/supabase.sql](docs/supabase.sql)을 붙여 넣고 실행(계정 저장 표 `kv`, 본인 행만 보이게 하는 RLS, 계정 삭제 함수)
 2. **Authentication → URL Configuration**: Site URL을 `https://20232497.github.io/HeartVerse/`로, Redirect URLs에 `https://20232497.github.io/HeartVerse/**` 추가(인증 메일·비밀번호 재설정 링크가 돌아올 곳)
 3. **Authentication → Sign In / Providers → Email**: Minimum password length 8(앱의 가입 규칙과 같게 — 비밀번호가 API 키 잠금에도 쓰임)
-4. (선택) 같은 화면에서 카카오·구글을 켜면 로그인 화면에 버튼이 저절로 생김(소셜 로그인 계정은 API 키를 기기에만 둠)
+4. 소셜 로그인은 아래 '소셜 로그인 켜기' — 켜기 전에는 버튼을 누르면 '준비 중' 안내가 나옴
 - 앱에 들어 있는 publishable 키는 브라우저용 공개 키라 저장소에 있어도 괜찮음(데이터는 RLS로 본인만 읽음). secret 키는 절대 넣지 않기
 - 무료 요금제는 일주일 넘게 안 쓰면 프로젝트가 잠들 수 있음(대시보드에서 다시 깨움)
+
+### 소셜 로그인 켜기(카카오·네이버·Google)
+세 곳 모두 '돌아올 주소(Callback·Redirect URI)'는 `https://mblvphojbmxiuqnlxisi.supabase.co/auth/v1/callback`. 발급받은 Client Secret은 Supabase 대시보드에만 넣고 저장소·앱에는 넣지 않기.
+1. **카카오** — [카카오 디벨로퍼스](https://developers.kakao.com) → 내 애플리케이션 → 앱 추가 → 플랫폼 Web 사이트 도메인 `https://20232497.github.io` → 카카오 로그인 활성화, Redirect URI 등록 → 동의항목은 닉네임·프로필 사진(이메일 필수 동의는 비즈 앱만 가능) → 보안에서 Client Secret 만들고 활성화. Supabase **Authentication → Sign In / Providers → Kakao**: REST API 키(Client ID)·Client Secret을 넣고 켜기, **Allow users without an email** 켜기(이메일 동의 없이 가입되게)
+2. **Google** — [Google Cloud 콘솔](https://console.cloud.google.com) → API 및 서비스 → OAuth 동의 화면(외부) → 사용자 인증 정보 → OAuth 클라이언트 ID(웹 애플리케이션): 승인된 JavaScript 원본 `https://20232497.github.io`, 승인된 리디렉션 URI는 위 주소. 동의 화면을 '프로덕션'으로 게시해야 시험 사용자 말고도 로그인됨. Supabase **Providers → Google**에 Client ID·Secret
+3. **네이버** — [네이버 개발자 센터](https://developers.naver.com) → Application → 애플리케이션 등록 → 사용 API '네이버 로그인'(제공 정보는 별명 정도만, 이메일은 안 받아도 됨) → 환경 PC 웹: 서비스 URL `https://20232497.github.io/HeartVerse/`, Callback URL은 위 주소. 검수 전에는 '멤버 관리'에 등록한 아이디만 로그인됨. Supabase **Providers → 사용자 지정 공급자 추가(New Provider)**: 종류 OIDC, 식별자 `custom:naver`(앱이 이 이름으로 부름), 이름 네이버, Client ID·Secret, Issuer·Discovery `https://nid.naver.com/.well-known/openid-configuration`, Scopes `openid`, 이메일 없이 허용(email optional) 켜기. 네이버는 Supabase 기본 공급자가 아니라 OIDC로 붙이므로 켠 뒤 실제 계정으로 한 번 시험해 볼 것
+- 같은 이메일로 이메일 가입과 소셜 로그인을 하면 Supabase가 한 계정으로 이어 줌(그때는 API 키도 로그인 비밀번호로 잠금)
 
 ## 폴더
 - `index.html` 현재 버전(v2)

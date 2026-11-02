@@ -173,8 +173,16 @@ h2.sec small, h1.sec small { font-family:var(--sans); font-size:12.5px; color:va
 .lrow { display:flex; justify-content:center; margin-top:8px; }
 .lsep { display:flex; align-items:center; gap:10px; color:var(--muted); font-size:12px; margin:12px 0; }
 .lsep::before, .lsep::after { content:""; flex:1; height:1px; background:var(--line); }
-.oauth-btn { margin-top:8px; }
-.oauth-btn.kakao { background:#FEE500; color:#191919; border-color:#FEE500; }
+.oauth-list { display:flex; flex-direction:column; gap:8px; }
+.oauth-btn { position:relative; height:44px; }
+.oauth-btn svg { position:absolute; left:16px; top:50%; width:18px; height:18px; margin-top:-9px; }
+.oauth-btn.kakao { background:#FEE500; color:rgba(0,0,0,.85); border-color:#FEE500; }
+.oauth-btn.naver { background:#03C75A; color:#fff; border-color:#03C75A; }
+.oauth-btn.google { background:#fff; color:#1f1f1f; border-color:#dadce0; }
+.oauth-btn:hover { filter:brightness(.97); }
+.login-card .lnote { margin:8px 0 12px; text-align:center; }
+#loerr { min-height:0; margin:8px 0 0; text-align:center; }
+#loerr:empty { display:none; }
 .acct-row { display:flex; align-items:center; gap:8px; flex-wrap:wrap; min-width:0; }
 .acct-row b { overflow-wrap:anywhere; }
 .vault-box { margin-top:8px; }
@@ -1691,7 +1699,9 @@ const SB = {
   on() { return !IN_CLAUDE && !!(this.url && this.key); },
   load() { try { const s = JSON.parse(localStorage.getItem("hv1_auth") || "null"); this.s = s && s.access_token && s.user && s.user.id ? s : null; } catch { this.s = null; } },
   keep(s) { this.s = s; try { if (s) localStorage.setItem("hv1_auth", JSON.stringify(s)); else localStorage.removeItem("hv1_auth"); } catch {} },
-  session(j) { const u = j.user || {}; return { access_token: j.access_token, refresh_token: j.refresh_token, expires_at: Date.now() + (+j.expires_in || 3600) * 1000, user: { id: u.id, email: u.email || "", provider: (u.app_metadata && u.app_metadata.provider) || "" } }; },
+  session(j) { return { access_token: j.access_token, refresh_token: j.refresh_token, expires_at: Date.now() + (+j.expires_in || 3600) * 1000, user: this.who(j.user || {}) }; },
+  // providers: 이 계정에 연결된 로그인 방법(email·kakao·google·custom:naver) — email이 없으면 비밀번호가 없는 소셜 전용 계정
+  who(u) { const m = u.app_metadata || {}; return { id: u.id, email: u.email || "", provider: m.provider || "", providers: Array.isArray(m.providers) ? m.providers : m.provider ? [m.provider] : [] }; },
   // 인증 메일·소셜 로그인이 돌아올 주소. 파일로 열었으면 웹 주소로
   site() { return location.protocol === "file:" ? "https://20232497.github.io/HeartVerse/" : location.origin + location.pathname; },
   async req(path, opt = {}, retried = false) {
@@ -1735,25 +1745,29 @@ const SB = {
   },
   recover(email) { return this.auth("recover?redirect_to=" + encodeURIComponent(this.site()), { email }); },
   setPassword(password) { return this.auth("user", { password }, "PUT"); },
-  oauth(provider) { location.href = this.url + "/auth/v1/authorize?provider=" + encodeURIComponent(provider) + "&redirect_to=" + encodeURIComponent(this.site()); },
+  // 소셜 로그인·가입(카카오·구글·네이버). 대시보드에서 켠 공급자면 그 로그인 화면으로 넘어가고(302), 안 켰으면 400 → false
+  async oauth(provider) {
+    const u = this.url + "/auth/v1/authorize?provider=" + encodeURIComponent(provider) + "&redirect_to=" + encodeURIComponent(this.site());
+    try {
+      const r = await fetch(u, { redirect: "manual" });
+      if (r.status === 400) { const j = await r.json().catch(() => ({})); if (/not enabled|not found|unsupported provider/i.test(String(j.msg || j.error_description || ""))) return false; }
+    } catch {} // 확인하지 못하면 그냥 넘어감(꺼져 있으면 Supabase가 오류를 보여 줌)
+    location.href = u;
+    return true;
+  },
   async signOut() { if (this.s) { try { await this.req("/auth/v1/logout", { method: "POST" }); } catch {} } this.keep(null); VAULT.forget(); },
   // 인증 메일·소셜 로그인·비밀번호 재설정 링크는 #access_token=…&type=… 로 돌아옴 → 세션으로 바꾸고 주소에서 지움
+  // 소셜 로그인을 취소했거나 실패하면 오류가 #… 또는 ?… 로 옴
   async fromHash() {
-    const h = location.hash.slice(1);
-    if (!/(^|&)(access_token|error_description)=/.test(h)) return "";
-    const p = {}; h.split("&").forEach((kv) => { const i = kv.indexOf("="); if (i > 0) p[decodeURIComponent(kv.slice(0, i))] = decodeURIComponent(kv.slice(i + 1).replace(/\+/g, " ")); });
-    try { history.replaceState(null, "", location.pathname + location.search); } catch { location.hash = ""; }
-    if (p.error_description) { setTimeout(() => toast("로그인하지 못했어요: " + p.error_description), 300); return ""; }
+    const h = location.hash.slice(1), q = location.search.slice(1), hit = (t) => /(^|&)(access_token|error_description)=/.test(t);
+    if (!hit(h) && !hit(q)) return "";
+    const p = {}; (hit(h) ? h : q).split("&").forEach((kv) => { const i = kv.indexOf("="); if (i > 0) p[decodeURIComponent(kv.slice(0, i))] = decodeURIComponent(kv.slice(i + 1).replace(/\+/g, " ")); });
+    try { history.replaceState(null, "", location.pathname + (hit(q) ? "" : location.search)); } catch { location.hash = ""; }
+    if (p.error_description) { setTimeout(() => toast(oauthMsg(p)), 300); return ""; }
     this.keep({ access_token: p.access_token, refresh_token: p.refresh_token, expires_at: Date.now() + (+p.expires_in || 3600) * 1000, user: { id: "", email: "" } });
-    try { const r = await this.req("/auth/v1/user"); const u = r.ok ? await r.json() : null; if (u && u.id) this.keep(Object.assign({}, this.s, { user: { id: u.id, email: u.email || "", provider: (u.app_metadata && u.app_metadata.provider) || "" } })); else this.keep(null); }
+    try { const r = await this.req("/auth/v1/user"); const u = r.ok ? await r.json() : null; if (u && u.id) this.keep(Object.assign({}, this.s, { user: this.who(u) })); else this.keep(null); }
     catch { this.keep(null); }
     return this.s ? p.type || "login" : "";
-  },
-  // 대시보드에서 켠 소셜 로그인만 버튼으로 보여 줌
-  async providers() {
-    if (this.prov) return this.prov;
-    try { const r = await fetch(this.url + "/auth/v1/settings", { headers: { apikey: this.key } }); const j = r.ok ? await r.json() : {}; this.prov = j.external || {}; } catch { this.prov = {}; }
-    return this.prov;
   }
 };
 function authMsg(j, status) {
@@ -1767,6 +1781,22 @@ function authMsg(j, status) {
   if (/email_address_invalid|validation_failed/.test(c)) return "이메일 주소를 확인해 주세요.";
   return m ? "계정 서버 오류: " + m.slice(0, 80) : "계정 서버 오류(" + status + ")";
 }
+// 소셜 로그인에서 돌아온 오류
+function oauthMsg(p) {
+  const e = String(p.error || ""), d = String(p.error_description || "");
+  if (/access_denied/.test(e) || /cancel|denied/i.test(d)) return "로그인을 취소했어요.";
+  if (/email/i.test(d) && /provider/i.test(d)) return "이 계정에서 이메일을 받지 못해 가입하지 못했어요. 관리자에게 알려 주세요.";
+  return "로그인하지 못했어요: " + d.slice(0, 80);
+}
+const PROVIDERS = [["kakao", "카카오"], ["custom:naver", "네이버"], ["google", "Google"]];
+const OAUTH_ICONS = {
+  kakao: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#191919" d="M12 3C6.48 3 2 6.53 2 10.88c0 2.82 1.88 5.29 4.7 6.68l-.96 3.53c-.08.31.27.56.54.38l4.2-2.78c.5.05 1 .08 1.52.08 5.52 0 10-3.53 10-7.89S17.52 3 12 3z"/></svg>',
+  "custom:naver": '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#fff" d="M16.27 12.85 7.38 0H0v24h7.73V11.16L16.62 24H24V0h-7.73z" transform="translate(4 4) scale(.667)"/></svg>',
+  google: '<svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>'
+};
+function provName(p) { const x = PROVIDERS.find((y) => y[0] === p || y[0] === "custom:" + p); return x ? x[1] : ""; }
+// 화면에 보일 계정 이름: 이메일, 없으면(카카오·네이버 등 이메일 없이 가입) '카카오 계정'
+function acctName() { const u = SB.s && SB.s.user; if (!u) return ""; return u.email || (provName(u.provider) || "소셜") + " 계정"; }
 /* KV ↔ 계정 동기화. 쓰기는 KV.set → put()이 키마다 0.8초 모아 upsert(지우기는 DELETE).
    읽기는 그림(img…)을 뺀 키를 받아 이 기기에 씀 — 처음 로그인하면 전부, 그 뒤엔 updated_at이 바뀐 것만. 그림은 IMG.load가 필요할 때 한 장씩.
    이 기기에서 아직 못 올린 키(pending)는 받은 값으로 덮지 않음. 설정은 "settings" 키(글자 크기·Enter로 보내기는 기기마다 따로) */
@@ -1812,7 +1842,8 @@ const CLOUD = {
   async rows(since) {
     const out = [];
     for (let off = 0; ; off += 500) {
-      let q = "/rest/v1/kv?select=key,value,updated_at&key=not.like.img*&order=updated_at.asc&limit=500&offset=" + off;
+      // 그림 본문(img…)은 빼되 그림 칸 연결(imgpacks)은 받음 — 예전에는 not.like.img*가 imgpacks까지 빼서 다른 기기에 그림 칸이 안 넘어감
+      let q = "/rest/v1/kv?select=key,value,updated_at&or=" + encodeURIComponent("(key.not.like.img*,key.eq.imgpacks)") + "&order=updated_at.asc&limit=500&offset=" + off;
       if (since) q += "&updated_at=gt." + encodeURIComponent(since);
       const r = await SB.req(q); await this.check(r);
       const part = await r.json(); out.push(...part);
@@ -1822,7 +1853,7 @@ const CLOUD = {
   async imgKeys() {
     const out = [];
     for (let off = 0; ; off += 1000) {
-      const r = await SB.req("/rest/v1/kv?select=key&key=like.img*&limit=1000&offset=" + off); await this.check(r);
+      const r = await SB.req("/rest/v1/kv?select=key&key=like.img*&key=neq.imgpacks&limit=1000&offset=" + off); await this.check(r);
       const part = await r.json(); out.push(...part.map((x) => x.key));
       if (part.length < 1000) return out;
     }
@@ -1830,6 +1861,18 @@ const CLOUD = {
   async getOne(k) {
     if (!this.on || this.noTable) return undefined;
     try { const r = await SB.req("/rest/v1/kv?select=value&key=eq." + encodeURIComponent(k)); if (!r.ok) return undefined; const j = await r.json(); return j[0] ? j[0].value : undefined; } catch { return undefined; }
+  },
+  // 그림 여러 장을 한 번에(20장씩) — { key: value }
+  async getMany(keys) {
+    const out = {};
+    if (!this.on || this.noTable) return out;
+    for (let i = 0; i < keys.length; i += 20) {
+      try {
+        const r = await SB.req("/rest/v1/kv?select=key,value&key=in.(" + encodeURIComponent(keys.slice(i, i + 20).map((k) => '"' + k.replace(/"/g, "") + '"').join(",")) + ")");
+        if (r.ok) (await r.json()).forEach((x) => { out[x.key] = x.value; });
+      } catch {}
+    }
+    return out;
   },
   // 받은 행을 이 기기에 씀. 열려 있는 대화방은 덮지 않음(대화 중에 바뀌면 헷갈림). 바뀐 키 수를 돌려줌
   apply(rows) {
@@ -1848,15 +1891,19 @@ const CLOUD = {
   takeVault() { const v = this.vault; this.vault = undefined; return v; },
   async pull() { const n = this.apply(await this.rows(localStorage.getItem(this.lastKey()) || "")); return n + (await VAULT.take(this.takeVault())); },
   // 이 기기의 모든 데이터를 계정에 올림(계정이 비었을 때·합칠 때). 그림은 계정에 없는 것만 한 장씩 읽어 묶어 보냄
+  // (그림 본문은 IndexedDB에, IndexedDB가 막힌 브라우저에서는 localStorage에 있음)
   async pushAll(keys) {
     (keys || localKVKeys()).forEach((k) => { const v = KV.getLocal(k); if (v !== undefined) this.pending[k] = { v }; });
     this.pending.settings = { v: cloudSettings() };
     await this.flush();
-    const have = new Set(await this.imgKeys()), mine = (await IDB.keys()).filter((k) => /^img[a-z0-9]{6,30}$/.test(k) && !have.has(k));
+    const isImg = (k) => /^img[a-z0-9]{6,30}$/.test(k), have = new Set(await this.imgKeys());
+    let ls = []; try { ls = Object.keys(localStorage).filter((k) => k.indexOf("hv1_img") === 0).map((k) => k.slice(4)); } catch {}
+    const mine = Array.from(new Set((await IDB.keys()).concat(ls))).filter((k) => isImg(k) && !have.has(k));
     let batch = [], size = 0;
     const send = async () => { if (!batch.length) return; await this.check(await SB.req("/rest/v1/kv?on_conflict=user_id,key", { method: "POST", headers: { Prefer: "resolution=merge-duplicates,return=minimal" }, body: JSON.stringify(batch) })); batch = []; size = 0; };
     for (const k of mine) {
-      const v = await IDB.get(k); if (typeof v !== "string") continue;
+      let v = await IDB.get(k); if (typeof v !== "string") v = KV.getLocal(k);
+      if (typeof v !== "string" || !validRef(v)) continue;
       batch.push({ user_id: this.uid, key: k, value: v }); size += v.length;
       if (size > 1500000) await send();
     }
@@ -1873,7 +1920,7 @@ function chunkBy(items, max) {
 }
 // 이 기기 KV 키(그림·설정·세션·키 잠금 제외 — 그림은 IndexedDB, 설정은 "settings" 키로 따로)
 function localKVKeys() {
-  try { return Object.keys(localStorage).filter((k) => k.indexOf("hv1_") === 0).map((k) => k.slice(4)).filter((k) => !/^(settings|auth|guest|cloudlast_.*|vault_.*|img[a-z0-9]{6,30})$/.test(k)); } catch { return []; }
+  try { return Object.keys(localStorage).filter((k) => k.indexOf("hv1_") === 0).map((k) => k.slice(4)).filter((k) => !/^(settings|auth|guest|cloudlast_.*|cloudfix_.*|vault_.*|img[a-z0-9]{6,30})$/.test(k)); } catch { return []; }
 }
 // 계정에 올리는 설정: 기기별 설정과 API 키는 뺌(키는 비밀번호로 잠가 "vault" 행에만 — VAULT. 서버의 표도 settings에 키 칸이 있으면 거부)
 function cloudSettings() {
@@ -1900,13 +1947,15 @@ function cloudStateText() {
 /* API 키 금고(사용자 요청 2026-11 — 키가 계정 서버에 평문으로 남지 않게): Anthropic·Runware·OpenRouter 키는 "settings" 행에 넣지 않고,
    로그인 비밀번호로 이 기기에서 만든 잠금 키(PBKDF2-SHA256 60만 번, 소금은 사용자 id)로 AES-GCM 암호화해 "vault" 행에만 올림.
    서버·관리자는 비밀번호를 모르니 키를 볼 수 없음. 잠금 키는 이 기기 localStorage(hv1_vault_<uid>)에만 — 키 원문도 이 기기에 있으니 더 약해지지 않음.
-   비밀번호 없이 들어온 기기(다른 기기에서 연 인증 메일 링크)는 MY → 계정에서 비밀번호를 한 번 넣어야 풀림. 소셜 로그인 계정은 키를 기기에만 둠.
+   비밀번호 없이 들어온 기기(다른 기기에서 연 인증 메일 링크)는 MY → 계정에서 비밀번호를 한 번 넣어야 풀림.
+   비밀번호가 없는 계정(카카오·네이버·구글로만 가입)은 '키 잠금 암호'를 따로 정함 — 서버가 확인해 줄 수 없으니 계정의 잠금(kid)과 맞을 때만 받아들임(phraseSheet).
    비밀번호를 재설정하면 새 잠금(kid)으로 다시 올림. 예전 잠금을 가진 기기는 같은 kid일 때만 고치는 PATCH라 덮어쓰지 못하고 '비밀번호 입력'을 띄움 */
 const VAULT_FIELDS = ["apiKey", "runwareKey", "openRouterKey"];
 const VAULT = {
   rec: null, ck: null, state: "", timer: null, fresh: false, // rec { uid, k(잠금 키 base64), kid, seen(마지막으로 계정과 맞춘 키 묶음의 해시) }
   ok() { return !!(window.crypto && crypto.subtle && window.TextEncoder); },
-  social() { const p = SB.s && SB.s.user && SB.s.user.provider; return !!p && p !== "email"; },
+  // 비밀번호가 없는 계정(소셜 로그인만 연결됨) — 키 잠금 암호를 씀. 같은 이메일로 이메일 가입도 연결돼 있으면 비밀번호
+  phrase() { const u = SB.s && SB.s.user; if (!u) return false; const ps = u.providers && u.providers.length ? u.providers : u.provider ? [u.provider] : []; return ps.length > 0 && ps.indexOf("email") < 0; },
   load(uid) {
     if (this.rec && this.rec.uid === uid) return; // 방금 비밀번호로 만든 잠금은 그대로(fresh 유지)
     this.ck = null; this.fresh = false; this.state = "";
@@ -1915,20 +1964,28 @@ const VAULT = {
   store() { if (this.rec) try { localStorage.setItem("hv1_vault_" + this.rec.uid, JSON.stringify(this.rec)); } catch {} },
   forget() { this.rec = null; this.ck = null; this.fresh = false; this.state = ""; clearTimeout(this.timer); this.timer = null; try { Object.keys(localStorage).filter((k) => k.indexOf("hv1_vault_") === 0).forEach((k) => localStorage.removeItem(k)); } catch {} },
   setState(s) { this.state = s; paintVault(); },
+  async derive(secret, uid) {
+    const enc = new TextEncoder();
+    const base = await crypto.subtle.importKey("raw", enc.encode(secret), { name: "PBKDF2" }, false, ["deriveBits"]);
+    const bits = new Uint8Array(await crypto.subtle.deriveBits({ name: "PBKDF2", hash: "SHA-256", salt: enc.encode("heartverse-vault:" + uid), iterations: 600000 }, base, 256));
+    return { k: b64(bits), kid: b64(new Uint8Array(await crypto.subtle.digest("SHA-256", bits))).replace(/[+/=]/g, "").slice(0, 16) };
+  },
+  use(d, uid, fresh) {
+    // seen(마지막으로 계정과 맞춘 키 묶음)은 잠금이 바뀌어도 이어 감 — 잠긴 사이 이 기기에서 바꾼 키를 알아보려고
+    this.rec = { uid, k: d.k, kid: d.kid, seen: this.rec && this.rec.uid === uid ? this.rec.seen : null };
+    this.ck = null; this.fresh = fresh; this.state = ""; this.store();
+  },
   // 서버가 비밀번호를 확인해 준 직후에만 부름(로그인·가입·재설정·잠금 풀기)
   async fromPassword(password, uid) {
     if (!this.ok() || !uid || !password) return false;
-    try {
-      const enc = new TextEncoder();
-      const base = await crypto.subtle.importKey("raw", enc.encode(password), { name: "PBKDF2" }, false, ["deriveBits"]);
-      const bits = new Uint8Array(await crypto.subtle.deriveBits({ name: "PBKDF2", hash: "SHA-256", salt: enc.encode("heartverse-vault:" + uid), iterations: 600000 }, base, 256));
-      const kid = b64(new Uint8Array(await crypto.subtle.digest("SHA-256", bits))).replace(/[+/=]/g, "").slice(0, 16);
-      // seen(마지막으로 계정과 맞춘 키 묶음)은 잠금이 바뀌어도 이어 감 — 잠긴 사이 이 기기에서 바꾼 키를 알아보려고
-      this.rec = { uid, k: b64(bits), kid, seen: this.rec && this.rec.uid === uid ? this.rec.seen : null };
-      this.ck = null; this.fresh = true; this.state = ""; this.store();
-      return true;
-    } catch { return false; }
+    try { this.use(await this.derive(password, uid), uid, true); return true; } catch { return false; }
   },
+  // 키 잠금 암호: 계정에 잠긴 키(box)가 있으면 그 잠금과 같을 때만(틀린 암호로 계정 키를 덮지 않게 fresh도 켜지 않음). box가 없으면 처음 정하는 것
+  async fromPhrase(phrase, uid, box) {
+    if (!this.ok() || !uid || !phrase) return false;
+    try { const d = await this.derive(phrase, uid); if (box && box.kid !== d.kid) return false; this.use(d, uid, false); return true; } catch { return false; }
+  },
+  unset() { if (this.rec) try { localStorage.removeItem("hv1_vault_" + this.rec.uid); } catch {} this.rec = null; this.ck = null; this.fresh = false; this.state = ""; },
   async key() { if (!this.ck) this.ck = await crypto.subtle.importKey("raw", unb64(this.rec.k), { name: "AES-GCM" }, false, ["encrypt", "decrypt"]); return this.ck; },
   async seal(o) {
     const iv = crypto.getRandomValues(new Uint8Array(12));
@@ -1937,7 +1994,7 @@ const VAULT = {
   },
   async open(box) { return JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({ name: "AES-GCM", iv: unb64(box.iv) }, await this.key(), unb64(box.ct)))); },
   pick() { const o = {}; VAULT_FIELDS.forEach((f) => { o[f] = typeof S.settings[f] === "string" ? S.settings[f] : ""; }); return o; },
-  canWrite() { return CLOUD.on && !CLOUD.noTable && S.settings.syncKeys !== false && !this.social() && !!this.rec && this.ok(); },
+  canWrite() { return CLOUD.on && !CLOUD.noTable && S.settings.syncKeys !== false && !!this.rec && this.ok(); },
   save() { if (!this.canWrite() || this.state === "stale") return; clearTimeout(this.timer); this.timer = setTimeout(() => { this.timer = null; this.write().catch(() => {}); }, 800); },
   // force: 비밀번호를 바꾼 직후 — 지금 잠금으로 덮어씀
   async write(force) {
@@ -1965,7 +2022,7 @@ const VAULT = {
   // 계정의 "vault" 행(없으면 null, 안 받았으면 undefined)을 이 기기 키로. 키가 바뀌었으면 1
   // merge(처음 로그인·잠금 풀기): 빈 칸은 서로 채우고 다시 올림. 이 기기에서 바꾼 뒤 못 올린 키(dirty)가 있으면 그게 우선
   async take(box, merge) {
-    if (box === undefined || !this.ok() || this.social() || S.settings.syncKeys === false) return 0;
+    if (box === undefined || !this.ok() || S.settings.syncKeys === false) return 0;
     const fresh = this.fresh; this.fresh = false; // '방금 확인한 비밀번호'는 로그인·잠금 풀기 직후 한 번만
     if (!this.rec) { if (box) this.setState("locked"); return 0; }
     if (!box) { if (merge) { this.rec.seen = null; await this.write(); } return 0; }
@@ -2016,12 +2073,19 @@ const IMG = {
     return "kv:" + key;
   },
   /* kv: 그림 읽기 — 메모리 → IndexedDB → (계정 db·예전 localStorage) 순서 */
-  async load(k) {
+  async local(k) {
     if (this.cache[k]) return this.cache[k];
     let v = await IDB.get(k);
     if (typeof v !== "string") v = await KV.get(k);
-    if (typeof v !== "string" && CLOUD.on) { v = await CLOUD.getOne(k); if (typeof v === "string" && validRef(v)) IDB.set(k, v); } // 다른 기기에서 만든 그림
     if (typeof v === "string" && validRef(v)) this.cache[k] = v;
+    return this.cache[k];
+  },
+  // 계정에서 받은 그림은 IndexedDB에도 둠(다음부터는 받지 않음)
+  keep(k, v) { if (typeof v === "string" && validRef(v)) { this.cache[k] = v; IDB.set(k, v); } },
+  async load(k) {
+    const v = await this.local(k);
+    if (v || !CLOUD.on) return v;
+    this.keep(k, await CLOUD.getOne(k)); // 다른 기기에서 만든 그림
     return this.cache[k];
   },
   drop(ref) { if (typeof ref === "string" && ref.startsWith("kv:")) { const k = ref.slice(3); KV.set(k, undefined); IDB.set(k, undefined); delete this.cache[k]; } },
@@ -2043,12 +2107,14 @@ const IMG = {
     if (ref.startsWith("kv:")) { const k = ref.slice(3); return this.cache[k] ? `<img src="${this.cache[k]}" alt="">` : `<img data-kv="${k}" alt="">`; }
     return `<img src="${ref}" alt="" loading="lazy">`;
   },
+  // 이 기기에 있는 그림은 바로, 없는 그림(다른 기기에서 만든 것)은 계정에서 한 번에 받아 채움
   async hydrate(root = document) {
-    for (const el of $$("img[data-kv]", root)) {
-      const k = el.dataset.kv; el.removeAttribute("data-kv");
-      const v = await this.load(k);
-      if (v) el.src = v;
-    }
+    const els = $$("img[data-kv]", root).map((el) => { const k = el.dataset.kv; el.removeAttribute("data-kv"); return [el, k]; }), miss = [];
+    for (const [el, k] of els) { const v = await this.local(k); if (v) el.src = v; else if (miss.indexOf(k) < 0) miss.push(k); }
+    if (!miss.length || !CLOUD.on) return;
+    const got = await CLOUD.getMany(miss);
+    Object.keys(got).forEach((k) => this.keep(k, got[k]));
+    els.forEach(([el, k]) => { if (miss.indexOf(k) >= 0 && this.cache[k]) el.src = this.cache[k]; });
   }
 };
 function shrink(file, max, q, asBlob) {
@@ -4675,7 +4741,7 @@ function viewLogin() {
   const v = $("#view");
   if (!SB.on() || SB.s) {
     v.innerHTML = `<div class="page"><div class="login-page"><div class="login-card"><div class="logo">HEART<i>VERSE</i></div>
-      <p class="lead">${!SB.on() ? (IN_CLAUDE ? "claude.ai 안에서는 claude.ai 계정에 자동으로 저장돼요." : "계정 서버가 아직 연결되지 않았어요.") : `<b>${esc(SB.s.user.email || "계정")}</b>(으)로 로그인되어 있어요.`}</p>
+      <p class="lead">${!SB.on() ? (IN_CLAUDE ? "claude.ai 안에서는 claude.ai 계정에 자동으로 저장돼요." : "계정 서버가 아직 연결되지 않았어요.") : `<b>${esc(acctName())}</b>(으)로 로그인되어 있어요.`}</p>
       <button class="btn pri block" data-go="home">홈으로</button>${SB.s ? `<div class="lrow"><button type="button" class="lnk" data-go="me">MY에서 계정 관리</button></div>` : ""}</div></div></div>`;
     bindGo(v); return;
   }
@@ -4691,11 +4757,13 @@ function viewLogin() {
       <p class="lerr" id="lerr" role="alert"></p>
       <button class="btn pri block" id="lgo" type="submit">로그인</button>
     </form>
-    <div id="loauth"></div>
     <div class="lrow"><button type="button" class="lnk" id="lforgot">비밀번호를 잊었어요</button></div>
     <div class="lsep"><span>또는</span></div>
+    <div class="oauth-list" id="loauth">${PROVIDERS.map(([k, n]) => `<button type="button" class="btn block oauth-btn ${k.replace("custom:", "")}" data-oauth="${k}">${OAUTH_ICONS[k]}<span>${n}로 시작하기</span></button>`).join("")}</div>
+    <p class="lerr" id="loerr" role="alert"></p>
+    <p class="note lnote">이메일이 없어도 카카오·네이버·Google 계정으로 바로 가입돼요.</p>
     <button type="button" class="btn ghost block" id="lguest">로그인 없이 둘러보기</button>
-    <p class="note">처음 로그인할 때 이 기기에 있던 대화·작품을 계정으로 옮길 수 있어요. API 키는 로그인 비밀번호로 이 기기에서 암호화한 뒤 저장해서 서버에서도 볼 수 없어요(MY → 계정에서 끌 수 있어요).</p>
+    <p class="note">처음 로그인할 때 이 기기에 있던 대화·작품·그림을 계정으로 옮길 수 있어요. API 키는 로그인 비밀번호(소셜 로그인은 따로 정하는 키 잠금 암호)로 이 기기에서 암호화한 뒤 저장해서 서버에서도 볼 수 없어요(MY → 계정에서 끌 수 있어요).</p>
   </div></div></div>`;
   const err = $("#lerr"), go2 = $("#lgo"), say = (t, ok) => { err.textContent = t; err.classList.toggle("ok", !!ok); };
   $$("#lmode button").forEach((b) => b.onclick = () => {
@@ -4728,11 +4796,14 @@ function viewLogin() {
     catch (x) { say((x && x.msg) || "메일을 보내지 못했어요."); }
   };
   $("#lguest").onclick = () => { try { localStorage.setItem("hv1_guest", "1"); } catch {} go("home"); setTimeout(() => { if (!AUDS[S.settings.audience]) audSheet(true); }, 80); };
-  // 대시보드에서 켠 소셜 로그인만 버튼으로
-  SB.providers().then((p) => {
-    const box = $("#loauth"); if (!box) return;
-    box.innerHTML = [["kakao", "카카오로 계속하기"], ["google", "Google로 계속하기"]].filter((x) => p[x[0]]).map(([k, l]) => `<button type="button" class="btn block oauth-btn ${k}" data-oauth="${k}">${l}</button>`).join("");
-    $$("[data-oauth]", box).forEach((b) => b.onclick = () => SB.oauth(b.dataset.oauth));
+  // 소셜 로그인 = 가입(처음이면 계정이 저절로 만들어짐). 대시보드에서 아직 안 켠 공급자는 안내만
+  const obs = $$("[data-oauth]", v), lock = (on) => obs.forEach((x) => { x.disabled = on; });
+  obs.forEach((b) => b.onclick = async () => {
+    const oerr = $("#loerr");
+    lock(true); say(""); oerr.textContent = "";
+    const ok = await SB.oauth(b.dataset.oauth);
+    if (!ok) oerr.textContent = provName(b.dataset.oauth) + " 로그인은 아직 준비 중이에요. 이메일이나 다른 방법으로 시작해 주세요.";
+    setTimeout(() => lock(false), ok ? 4000 : 0); // 넘어갔다가 뒤로 돌아와도 다시 누를 수 있게
   });
 }
 async function loggedIn() {
@@ -4748,11 +4819,29 @@ async function afterLogin(fresh) {
   CLOUD.start();
   if (!CLOUD.on) return;
   try {
-    if (fresh) await firstSync();
-    else if (await CLOUD.pull()) await reloadFromCloud();
+    // 그림 칸 연결 합치기는 받아 오기(pull)보다 먼저 — 받은 값이 이 기기 칸을 덮기 전에
+    if (fresh) { await firstSync(); await fixImgpacks(true); }
+    else { const fixed = await fixImgpacks(false); if ((await CLOUD.pull()) || fixed) await reloadFromCloud(); }
     CLOUD.setState(CLOUD.state === "notable" ? "notable" : "ok");
   } catch (e) { if (!CLOUD.noTable) CLOUD.setState("err"); }
-  if (fresh && VAULT.state === "locked") setTimeout(() => toast("계정의 API 키를 받으려면 MY → 계정에서 비밀번호를 한 번 넣어 주세요"), 1500);
+  const ph = VAULT.phrase();
+  if (fresh && VAULT.state === "locked") setTimeout(() => toast(ph ? "계정의 API 키를 받으려면 MY → 계정에서 키 잠금 암호를 넣어 주세요" : "계정의 API 키를 받으려면 MY → 계정에서 비밀번호를 한 번 넣어 주세요"), 1500);
+  else if (fresh && ph && !VAULT.rec && S.settings.syncKeys !== false && VAULT_FIELDS.some((f) => S.settings[f])) setTimeout(() => toast("API 키도 계정에 저장하려면 MY → 계정에서 키 잠금 암호를 정해 주세요"), 1500);
+}
+// 예전 버전은 계정에서 그림 칸 연결(imgpacks)을 받지 않아 기기마다 따로 놀았음 → 기기·계정마다 한 번, 계정 것과 합쳐(이 기기 것이 우선) 다시 올림
+async function fixImgpacks(fresh) {
+  const flag = "hv1_cloudfix_" + CLOUD.uid;
+  try { if (localStorage.getItem(flag)) return false; } catch { return false; }
+  let changed = false;
+  if (!fresh) {
+    const r = await SB.req("/rest/v1/kv?select=value&key=eq.imgpacks"); await CLOUD.check(r);
+    const j = await r.json(), remote = j[0] ? j[0].value : null, mine = KV.getLocal("imgpacks") || {};
+    const merged = fillIn(mine, remote);
+    changed = JSON.stringify(merged) !== JSON.stringify(mine);
+    if (changed || (Object.keys(mine).length && JSON.stringify(merged) !== JSON.stringify(remote))) KV.set("imgpacks", merged);
+  }
+  try { localStorage.setItem(flag, "1"); } catch {}
+  return changed;
 }
 async function firstSync() {
   try { localStorage.removeItem(CLOUD.lastKey()); } catch {}
@@ -4760,9 +4849,10 @@ async function firstSync() {
   const remote = {}; rows.forEach((x) => { remote[x.key] = x.value; });
   // 계정이 비었으면 이 기기 데이터가 계정의 첫 데이터(API 키는 잠가서 따로 — VAULT)
   if (!rows.some((x) => x.key !== "settings" && x.key !== "vault")) { await CLOUD.pushAll(); await VAULT.take(remote.vault || null, true); toast("이 기기의 데이터를 계정에 저장했어요"); return; }
-  const local = { rooms: S.rooms, mine: S.mine, personas: S.personas, imgpacks: S.imgpacks, coverpacks: S.coverpacks, lorepacks: S.lorepacks, tagpacks: S.tagpacks, ponytags: KV.getLocal("ponytags") };
+  const local = { rooms: S.rooms, mine: S.mine, personas: S.personas, imgpacks: S.imgpacks, coverpacks: S.coverpacks, lorepacks: S.lorepacks, tagpacks: S.tagpacks, ponytags: KV.getLocal("ponytags"),
+    customSits: S.settings.customSits, styleSets: S.settings.styleSets };
   const has = (list, id) => (Array.isArray(list) ? list : []).some((x) => x && x.id === id);
-  const onlyRooms = local.rooms.filter((r) => !has(remote.rooms, r.id)), onlyMine = local.mine.filter((c) => !has(remote.mine, c.id));
+  const onlyRooms = local.rooms.filter((r) => !has(remote.rooms, r.id)), onlyMine = local.mine.filter((c) => !has(remote.mine, c.id)), pics = guestPics(remote, local);
   const use = async (merge) => {
     CLOUD.apply(rows);
     await VAULT.take(CLOUD.takeVault() || null, true);
@@ -4770,8 +4860,9 @@ async function firstSync() {
     await reloadFromCloud();
     toast(merge ? "이 기기의 데이터를 계정에 합쳤어요" : "계정 데이터를 불러왔어요");
   };
-  if (!onlyRooms.length && !onlyMine.length) return use(false);
-  const ov = sheet(`<h2>이 기기의 데이터를 합칠까요?</h2><p class="sub">계정에 이미 저장된 데이터가 있어요. 이 기기에만 있는 대화 ${onlyRooms.length}개·작품 ${onlyMine.length}개를 계정에 합칠 수 있어요.</p>
+  if (!onlyRooms.length && !onlyMine.length && !pics) return use(false);
+  const what = [onlyRooms.length ? `대화 ${onlyRooms.length}개` : "", onlyMine.length ? `작품 ${onlyMine.length}개` : "", pics ? `그림 ${pics}장` : ""].filter(Boolean).join("·");
+  const ov = sheet(`<h2>이 기기의 데이터를 합칠까요?</h2><p class="sub">계정에 이미 저장된 데이터가 있어요. 이 기기에만 있는 데이터(${what})를 계정에 합칠 수 있어요. 계정에 있던 것은 그대로 남아요.</p>
     <div class="cta-row"><button class="btn ghost" id="mNo">계정 것만 쓰기</button><span class="spacer"></span><button class="btn pri" id="mYes">합치기</button></div>`);
   return new Promise((res) => {
     let done = false;
@@ -4780,18 +4871,71 @@ async function firstSync() {
     ov.addEventListener("click", (e) => { if (e.target === ov) pick(true); }); // 그냥 닫으면 아무것도 잃지 않게 합침
   });
 }
+function isObj(x) { return !!x && typeof x === "object" && !Array.isArray(x); }
+// a는 그대로 두고 빈 자리만 b로 채움 — 객체는 안쪽까지(그림 칸 하나하나)
+function fillIn(a, b) {
+  const out = Object.assign({}, isObj(a) ? a : {});
+  Object.keys(isObj(b) ? b : {}).forEach((k) => { const x = out[k], y = b[k]; if (x == null || x === "") out[k] = y; else if (isObj(x) && isObj(y)) out[k] = fillIn(x, y); });
+  return out;
+}
+// 이 기기에만 있는 그림 수(작품 그림 칸·표지·세계관 일러스트 중 계정에서 비어 있는 자리 + 계정에 없는 그림체 세트의 그림)
+function guestPics(remote, local) {
+  let n = 0;
+  const walk = (a, b) => Object.keys(b || {}).forEach((k) => { const y = isObj(a) ? a[k] : undefined; if (isObj(b[k])) walk(y, b[k]); else if (validRef(b[k]) && !y) n++; });
+  walk(remote.imgpacks, guestPacks(remote, local).imgpacks);
+  ["coverpacks", "lorepacks"].forEach((k) => walk(remote[k], local[k]));
+  const rs = isObj(remote.settings) && Array.isArray(remote.settings.styleSets) ? remote.settings.styleSets : [];
+  (local.styleSets || []).forEach((x) => { if (x && !rs.some((y) => y && y.id === x.id)) n += (x.refs || []).filter(validRef).length; });
+  return n;
+}
+// 직접 만든 이미지 칸(15번~): 계정 칸에 이 기기에만 있는 칸을 더함. 같은 이름이면 계정 번호로, 번호만 겹치면 빈 번호로 옮김
+// → { sits, move: {이 기기 번호: 계정 번호(자리가 없으면 -1)} }
+function mergeSits(remote, local) {
+  const sits = (Array.isArray(remote) ? remote : []).slice(), move = {}, num = {};
+  sits.forEach((d) => { num[d.name] = d.n; });
+  (Array.isArray(local) ? local : []).forEach((d) => {
+    if (!d || !Number.isInteger(d.n)) return;
+    if (d.name in num) { if (num[d.name] !== d.n) move[d.n] = num[d.name]; return; }
+    let n = d.n;
+    if (sits.some((x) => x.n === n)) { n = CUSTOM_BASE; while (sits.some((x) => x.n === n)) n++; }
+    if (sits.length >= CUSTOM_MAX || n >= 100) { move[d.n] = -1; return; }
+    sits.push(Object.assign({}, d, { n })); num[d.name] = n;
+    if (n !== d.n) move[d.n] = n;
+  });
+  return { sits, move };
+}
+// 칸 번호로 된 객체({번호: 값})의 번호를 옮김(-1은 뺌)
+function moveSits(o, move) {
+  if (!isObj(o)) return o;
+  const out = {};
+  Object.keys(o).forEach((k) => { const to = k in move ? move[k] : k; if (to !== -1 && !(to in out && out[to])) out[to] = o[k]; });
+  return out;
+}
+// 이 기기의 그림 칸(imgpacks[작품][인물][칸])·저장 태그를 계정의 칸 번호에 맞춤 → { sits(합친 칸 정의), imgpacks, tagpacks }
+// 계정 설정에 직접 만든 칸 목록이 없으면 이 기기 목록이 그대로 남음
+function guestPacks(remote, local) {
+  const rs = isObj(remote.settings) && Array.isArray(remote.settings.customSits) ? remote.settings.customSits : local.customSits;
+  const ms = mergeSits(rs, local.customSits), mv = Object.keys(ms.move).length;
+  const each = (packs, f) => { const out = {}; Object.keys(packs || {}).forEach((c) => { const by = packs[c]; out[c] = {}; Object.keys(isObj(by) ? by : {}).forEach((code) => { out[c][code] = mv ? f(by[code]) : by[code]; }); }); return out; };
+  return { sits: ms.sits, imgpacks: each(local.imgpacks, (o) => moveSits(o, ms.move)), tagpacks: each(local.tagpacks, (t) => isObj(t) ? Object.assign({}, t, { sits: moveSits(t.sits, ms.move) }) : t) };
+}
 // 계정 값 위에 이 기기에만 있던 대화·작품·페르소나·그림 연결을 더함(같은 것이 있으면 계정 값)
 function mergeGuest(remote, local) {
   const list = (a) => Array.isArray(a) ? a : [];
   const byId = (a, b) => { const ids = new Set(list(a).map((x) => x && x.id)); return list(a).concat(list(b).filter((x) => x && !ids.has(x.id))); };
-  const two = (a, b) => { const out = Object.assign({}, b || {}); Object.keys(a || {}).forEach((k) => { out[k] = a[k] && typeof a[k] === "object" && !Array.isArray(a[k]) && out[k] && typeof out[k] === "object" ? Object.assign({}, out[k], a[k]) : a[k]; }); return out; };
   KV.set("rooms", byId(remote.rooms, local.rooms).sort((x, y) => (y.at || 0) - (x.at || 0)));
   local.rooms.forEach((r) => { if (!list(remote.rooms).some((x) => x.id === r.id)) { const v = KV.getLocal(roomKey(r.id)); if (v) KV.set(roomKey(r.id), v); } });
   KV.set("mine", byId(remote.mine, local.mine));
   const ps = byId(remote.personas, list(local.personas).map((p) => Object.assign({}, p, { def: false })));
   if (ps.length && !ps.some((p) => p.def)) ps[0].def = true;
   if (ps.length) KV.set("personas", ps);
-  ["imgpacks", "coverpacks", "lorepacks", "tagpacks", "ponytags"].forEach((k) => { if (local[k] && Object.keys(local[k]).length) KV.set(k, two(remote[k], local[k])); });
+  // 직접 만든 칸·그림체 세트(설정)도 합침 — 칸 번호가 옮겨지면 그 칸의 그림·저장 태그도 같이 옮김
+  const gp = guestPacks(remote, local);
+  const sets = list(S.settings.styleSets), add = list(local.styleSets).filter((x) => x && !sets.some((y) => y && y.id === x.id));
+  if (gp.sits.length !== list(S.settings.customSits).length || add.length) { S.settings.customSits = gp.sits; S.settings.styleSets = sets.concat(add); saveSettings(); }
+  const packs = { imgpacks: gp.imgpacks, coverpacks: local.coverpacks, lorepacks: local.lorepacks, tagpacks: gp.tagpacks, ponytags: local.ponytags };
+  // 계정 값은 그대로 두고 빈 자리만 이 기기 값으로(같은 인물의 다른 칸 그림도 살림)
+  Object.keys(packs).forEach((k) => { if (packs[k] && Object.keys(packs[k]).length) KV.set(k, fillIn(remote[k], packs[k])); });
 }
 // 계정에서 받은 것을 화면에 반영(입력 중이거나 응답을 받는 중이면 화면은 그대로)
 async function reloadFromCloud() {
@@ -4817,11 +4961,46 @@ function newPasswordSheet() {
 function vaultHTML() {
   if (S.settings.syncKeys === false) return `<p class="note">API 키는 이 기기에만 있어요.</p>`;
   if (!VAULT.ok()) return `<p class="note">이 브라우저는 암호화를 지원하지 않아 API 키는 이 기기에만 둬요.</p>`;
-  if (VAULT.social()) return `<p class="note">소셜 로그인 계정은 키를 잠글 비밀번호가 없어 API 키를 이 기기에만 둬요.</p>`;
-  if (!VAULT.rec || VAULT.state === "stale") return `<div class="vault-lock"><span>🔒 ${VAULT.rec ? "다른 기기에서 비밀번호가 바뀌었어요. 새 비밀번호를 넣으면 API 키를 받아요." : "계정의 API 키가 잠겨 있어요. 로그인 비밀번호를 한 번 넣으면 받아요."}</span><button class="btn sm" id="vUnlock">비밀번호 입력</button></div>`;
-  return `<p class="note">🔐 API 키는 로그인 비밀번호로 이 기기에서 암호화한 뒤 올려요. 서버와 관리자도 키를 볼 수 없어요.</p>`;
+  const ph = VAULT.phrase();
+  if (ph && !VAULT.rec && VAULT.state !== "locked") return `<div class="vault-lock"><span>🔑 비밀번호 없이 가입한 계정이에요. 키 잠금 암호를 한 번 정하면 API 키를 암호화해 계정에 저장해요.</span><button class="btn sm" id="vUnlock">암호 정하기</button></div>`;
+  if (!VAULT.rec || VAULT.state === "stale") return `<div class="vault-lock"><span>🔒 ${VAULT.rec ? (ph ? "다른 기기에서 키 잠금 암호를 새로 정했어요. 새 암호를 넣으면 API 키를 받아요." : "다른 기기에서 비밀번호가 바뀌었어요. 새 비밀번호를 넣으면 API 키를 받아요.") : ph ? "계정의 API 키가 잠겨 있어요. 키 잠금 암호를 한 번 넣으면 받아요." : "계정의 API 키가 잠겨 있어요. 로그인 비밀번호를 한 번 넣으면 받아요."}</span><button class="btn sm" id="vUnlock">${ph ? "암호 입력" : "비밀번호 입력"}</button></div>`;
+  return `<p class="note">🔐 API 키는 ${ph ? "키 잠금 암호" : "로그인 비밀번호"}로 이 기기에서 암호화한 뒤 올려요. 서버와 관리자도 키를 볼 수 없어요.</p>`;
 }
-function paintVault() { const el = $("#vaultBox"); if (!el) return; el.innerHTML = vaultHTML(); const b = $("#vUnlock", el); if (b) b.onclick = vaultSheet; }
+function paintVault() { const el = $("#vaultBox"); if (!el) return; el.innerHTML = vaultHTML(); const b = $("#vUnlock", el); if (b) b.onclick = () => { if (VAULT.phrase()) phraseSheet(); else vaultSheet(); }; }
+// 비밀번호 없는 계정의 키 잠금 암호: 계정에 잠긴 키가 없으면 정하고, 있으면 넣어서 풂(reset: 잊어서 새로 정함 — 계정의 잠긴 키는 이 기기 키로 바뀜)
+async function phraseSheet(reset) {
+  if (!SB.s) return;
+  let box;
+  try { box = await VAULT.remote(); } catch { toast("계정에 연결하지 못했어요. 잠시 뒤 다시 해 주세요"); return; }
+  const make = !box || !!reset;
+  const ov = sheet(`<h2>${!make ? "API 키 잠금 풀기" : box ? "키 잠금 암호 새로 정하기" : "키 잠금 암호 정하기"}</h2>
+    <p class="sub">${!make ? "계정의 API 키는 키 잠금 암호로 잠겨 있어요. 이 기기에서 한 번만 넣으면 돼요."
+      : box ? "계정에 잠겨 있던 API 키는 지워지고, 이 기기의 API 키를 새 암호로 잠가 올려요. 다른 기기에서는 새 암호를 한 번 넣어야 해요."
+      : "비밀번호 없이 가입한 계정이라 API 키를 잠글 암호를 따로 정해요. 다른 기기에서 이 암호를 한 번 넣으면 키를 받아요. 암호는 어디에도 저장되지 않아 잊으면 찾을 수 없어요."}</p>
+    <form id="vform"><div class="field"><label for="vpw">키 잠금 암호${make ? " (8자 이상)" : ""}</label><input id="vpw" type="password" autocomplete="${make ? "new-password" : "current-password"}" maxlength="72"></div>
+    ${make ? `<div class="field"><label for="vpw2">암호 확인</label><input id="vpw2" type="password" autocomplete="new-password" maxlength="72"></div>` : ""}
+    <p class="lerr" id="verr" role="alert"></p>
+    ${make ? "" : `<div class="lrow"><button type="button" class="lnk" id="vreset">암호를 잊었어요</button></div>`}
+    <div class="cta-row"><span class="spacer"></span><button type="button" class="btn ghost" data-x>나중에</button><button class="btn pri" id="vok" type="submit">${make ? "정하기" : "풀기"}</button></div></form>`);
+  const rb = $("#vreset", ov); if (rb) rb.onclick = () => { ov.remove(); phraseSheet(true); };
+  $("#vform", ov).onsubmit = async (e) => {
+    e.preventDefault();
+    const pw = $("#vpw", ov).value, btn = $("#vok", ov), err = $("#verr", ov), uid = SB.s && SB.s.user.id;
+    if (!pw || !uid) return;
+    if (make && pw.length < 8) { err.textContent = "8자 이상으로 정해 주세요."; return; }
+    if (make && pw !== $("#vpw2", ov).value) { err.textContent = "암호 확인이 달라요."; return; }
+    btn.disabled = true; btn.textContent = "확인하는 중…"; err.textContent = "";
+    try {
+      if (!(await VAULT.fromPhrase(pw, uid, make ? null : box))) throw { msg: make ? "이 브라우저에서는 키를 잠글 수 없어요." : "암호가 맞지 않아요." };
+      let n = 0;
+      if (!make) n = await VAULT.take(box, true);
+      else if (box) await VAULT.write(true);
+      else { await VAULT.write(); if (VAULT.state === "stale") { VAULT.unset(); throw { msg: "다른 기기에서 먼저 암호를 정했어요. 그 암호를 넣어 주세요." }; } }
+      ov.remove(); toast(!make ? (n ? "계정의 API 키를 받았어요" : "키 잠금을 풀었어요") : "키 잠금 암호를 정했어요. API 키는 암호화해 계정에 저장해요");
+      if (location.hash === "#me") viewMe(); else paintVault();
+    } catch (x) { err.textContent = (x && x.msg) || "잠시 뒤 다시 해 주세요."; btn.disabled = false; btn.textContent = make ? "정하기" : "풀기"; }
+  };
+}
 function vaultSheet() {
   if (!SB.s) return;
   const ov = sheet(`<h2>API 키 잠금 풀기</h2><p class="sub">계정의 API 키는 로그인 비밀번호로 잠겨 있어요. 이 기기에서 한 번만 넣으면 돼요.</p>
@@ -4846,7 +5025,7 @@ function accountBoxHTML() {
   if (!SB.on()) return "";
   if (!SB.s) return `<h2 class="sec">계정</h2><div class="box"><p>로그인하면 PC와 휴대폰에서 대화·작품·설정이 그대로 이어져요.</p><div class="cta-row" style="margin-top:12px"><button class="btn pri" data-go="login">로그인 · 회원가입</button></div></div>`;
   return `<h2 class="sec">계정 <small id="cloudState">${esc(cloudStateText())}</small></h2><div class="box">
-    <div class="acct-row"><span class="pill ok">로그인</span><b>${esc(SB.s.user.email || "계정")}</b></div>
+    <div class="acct-row"><span class="pill ok">로그인</span><b>${esc(acctName())}</b>${provName(SB.s.user.provider) ? `<span class="note">${esc(provName(SB.s.user.provider))}로 가입</span>` : ""}</div>
     <div class="toggle" style="margin-top:12px"><label for="syncKeys">API 키도 계정에 저장 <span class="note">켜 두면 휴대폰에서 키를 다시 넣지 않아도 돼요</span></label><input type="checkbox" id="syncKeys" ${S.settings.syncKeys !== false ? "checked" : ""}></div>
     <div id="vaultBox" class="vault-box">${vaultHTML()}</div>
     <div class="cta-row" style="margin-top:12px"><button class="btn sm" id="cSync">지금 동기화</button><span class="spacer"></span><button class="btn sm ghost" id="cOut">로그아웃</button><button class="btn sm danger" id="cDel">계정 삭제</button></div></div>`;
@@ -4857,7 +5036,7 @@ function bindAccount(v) {
   $("#syncKeys", v).onchange = async (e) => {
     S.settings.syncKeys = e.target.checked; saveSettings(); paintVault();
     if (!e.target.checked) { VAULT.drop().catch(() => {}); toast("API 키는 이 기기에만 둬요. 계정에 있던 키는 지웠어요"); return; }
-    if (!VAULT.canWrite()) { toast("API 키는 이 기기에만 있어요"); if (VAULT.ok() && !VAULT.social()) vaultSheet(); return; }
+    if (!VAULT.canWrite()) { toast("API 키는 이 기기에만 있어요"); if (VAULT.ok()) { if (VAULT.phrase()) phraseSheet(); else vaultSheet(); } return; }
     try { await VAULT.take(await VAULT.remote(), true); toast("API 키를 암호화해서 계정에 저장해요"); } catch { toast("계정에 저장하지 못했어요. 잠시 뒤 다시 해 주세요"); }
   };
   $("#cSync", v).onclick = async (e) => {
