@@ -47,10 +47,11 @@
 ### 소셜 로그인 켜기(카카오·네이버·Google)
 세 곳 모두 '돌아올 주소(Callback·Redirect URI)'는 `https://mblvphojbmxiuqnlxisi.supabase.co/auth/v1/callback`. 발급받은 Client Secret은 Supabase 대시보드에만 넣고 저장소·앱에는 넣지 않기.
 1. **카카오** — [카카오 디벨로퍼스](https://developers.kakao.com) → 앱 생성(앱 대표 도메인 `https://20232497.github.io`) → **앱 → 플랫폼 키 → REST API 키**에서 카카오 로그인 리다이렉트 URI 등록(클라이언트 시크릿은 키를 만들 때 이미 켜져 있음) → **카카오 로그인 → 일반**에서 사용 설정 ON → **동의항목**: 닉네임 필수, 프로필 사진 선택, **카카오계정(이메일) 선택**. Supabase 카카오 공급자는 이메일(`account_email`)을 늘 함께 요청해서, 이메일 동의항목이 없으면 카카오가 KOE205(설정하지 않은 동의 항목)를 냄 → 이메일 항목은 비즈 앱만 켤 수 있으니 **앱 → 일반 → 비즈니스 정보 → 개인 개발자 비즈 앱 전환**(앱 아이콘 등록 → 본인인증·카카오비즈니스 통합 서비스 약관 동의 → 전환, 사업자 번호 없어도 됨). Supabase **Authentication → Sign In / Providers → Kakao**: REST API 키·클라이언트 시크릿을 넣고 켜기, **Allow users without an email** 켜기(이메일 동의를 거부해도 가입되게)
-2. **Google** — [Google Cloud 콘솔](https://console.cloud.google.com) → API 및 서비스 → OAuth 동의 화면(외부) → 사용자 인증 정보 → OAuth 클라이언트 ID(웹 애플리케이션): 승인된 JavaScript 원본 `https://20232497.github.io`, 승인된 리디렉션 URI는 위 주소. Supabase **Providers → Google**에 Client ID·Secret. 지금은 동의 화면이 '테스트 중'이라 **대상 → 테스트 사용자**에 넣은 계정만 로그인됨(최대 100명). '프로덕션'으로 게시하려면 브랜딩에 홈페이지·개인정보처리방침 링크가 있어야 함(방침 페이지는 아직 없음)
+2. **Google** — [Google Cloud 콘솔](https://console.cloud.google.com) → API 및 서비스 → OAuth 동의 화면(외부) → 사용자 인증 정보 → OAuth 클라이언트 ID(웹 애플리케이션): 승인된 JavaScript 원본 `https://20232497.github.io`, 승인된 리디렉션 URI는 위 주소. Supabase **Providers → Google**에 Client ID·Secret. 지금은 동의 화면이 '테스트 중'이라 **대상 → 테스트 사용자**에 넣은 계정만 로그인됨(최대 100명). '프로덕션'으로 게시하려면 브랜딩에 홈페이지·개인정보처리방침 링크가 있어야 함(방침은 `privacy.html` → `https://20232497.github.io/HeartVerse/privacy.html`)
 3. **네이버** — [네이버 개발자 센터](https://developers.naver.com) → Application → 애플리케이션 등록 → 사용 API '네이버 로그인'(제공 정보는 별명 정도만, 이메일은 안 받아도 됨) → 환경 PC 웹: 서비스 URL `https://20232497.github.io/HeartVerse/`, Callback URL은 위 주소. 검수 전에는 '멤버 관리'에 등록한 아이디만 로그인됨. Supabase **Providers → Custom Providers → New Provider**: 식별자 `naver`(앱은 `custom:naver`로 부름), 이름 네이버, Auto-discovery, Issuer URL `https://nid.naver.com`(Discovery URL은 비움), Client ID·Secret, Scopes `openid`, **Allow users without email** 켜기. 네이버는 Supabase 기본 공급자가 아니라 OIDC로 붙이므로 켠 뒤 실제 계정으로 한 번 시험해 볼 것
 - 같은 이메일로 이메일 가입과 소셜 로그인을 하면 Supabase가 한 계정으로 이어 줌(그때는 API 키도 로그인 비밀번호로 잠금)
 
 ## 폴더
 - `index.html` 현재 버전(v2)
+- `privacy.html` 개인정보처리방침(정적 페이지, 로그인 화면과 Google OAuth 브랜딩에서 연결)
 - `archive/heartverse_v1.html` 최초 시험 버전
