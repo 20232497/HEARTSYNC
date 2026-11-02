@@ -15,10 +15,14 @@ const TYPES = { ".html": "text/html; charset=utf-8", ".js": "text/javascript; ch
   ".json": "application/json; charset=utf-8", ".png": "image/png", ".jpg": "image/jpeg", ".webp": "image/webp", ".svg": "image/svg+xml", ".ico": "image/x-icon",
   ".md": "text/plain; charset=utf-8", ".txt": "text/plain; charset=utf-8", ".sql": "text/plain; charset=utf-8" };
 
-/* 브라우저 쪽: 빌드가 끝나면 새로 고침, 실패하면 오류 표시(오래된 브라우저에서도 돌게 ES5). 디스크의 index.html에는 넣지 않고 응답에만 붙임 */
-const CLIENT = `<script>(function(){var es=new EventSource("/__dev/events"),box;
+/* 브라우저 쪽: 빌드가 끝나면 새로 고침, 실패하면 오류 표시, 런타임 오류는 index.html 줄 번호를 원본 모듈 파일:줄로 바꿔 콘솔에 보여 줌
+   (.build/linemap.json). 오래된 브라우저에서도 돌게 ES5. 디스크의 index.html에는 넣지 않고 응답에만 붙임 */
+const CLIENT = `<script>(function(){var es=new EventSource("/__dev/events"),box,map=null;
 es.addEventListener("reload",function(){location.reload()});
 es.addEventListener("fail",function(e){if(!box){box=document.createElement("pre");box.style.cssText="position:fixed;left:8px;right:8px;bottom:8px;z-index:2147483647;max-height:45vh;overflow:auto;margin:0;padding:12px 14px;border-radius:10px;background:#2a0d14;color:#ffd7df;font:12px/1.6 ui-monospace,monospace;white-space:pre-wrap";document.body.appendChild(box)}box.textContent=JSON.parse(e.data)});
+fetch("/__dev/linemap").then(function(r){return r.json()}).then(function(m){map=m}).catch(function(){});
+function where(line){if(!map)return"";for(var i=0;i<map.length;i++){var x=map[i];if(line>=x.start&&line<=x.end)return x.from+":"+(x.fromLine+line-x.start)}return""}
+window.addEventListener("error",function(e){if(!e.lineno||String(e.filename||"").indexOf(location.pathname)<0)return;var w=where(e.lineno);if(w)console.error("[dev] 원본 위치 "+w+" — "+e.message)});
 })();</script>`;
 
 const clients = new Set();
@@ -56,6 +60,7 @@ let timer = null;
 for (const dir of ["src", "content"]) {
   fs.watch(path.join(ROOT, dir), { recursive: true }, (ev, file) => {
     if (!file || /(^|[\\/])\.|~$|\.swp$/.test(file)) return;
+    if (/generated\.js$/.test(file)) return; // 빌드가 content/로 만드는 파일 — 다시 빌드를 일으키면 무한 반복
     clearTimeout(timer);
     timer = setTimeout(() => rebuild(`${dir}/${String(file).split(path.sep).join("/")}`), 120);
   });
@@ -69,6 +74,13 @@ http.createServer((req, res) => {
     if (lastError) res.write(`event: fail\ndata: ${JSON.stringify(lastError)}\n\n`);
     clients.add(res);
     req.on("close", () => clients.delete(res));
+    return;
+  }
+  if (url.pathname === "/__dev/linemap") {
+    fs.readFile(path.join(ROOT, ".build", "linemap.json"), (err, buf) => {
+      if (err) { res.writeHead(404).end("[]"); return; }
+      res.writeHead(200, { "content-type": "application/json", "cache-control": "no-store" }).end(buf);
+    });
     return;
   }
   let rel = decodeURIComponent(url.pathname);

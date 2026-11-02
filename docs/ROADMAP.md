@@ -31,7 +31,7 @@
 
 > 상용화 기준으로 다시 정리한 순서(로그인 → 서버 AI·하트 → 결제 → 운영)와 구성은 [COMMERCIALIZATION.md](COMMERCIALIZATION.md)에 있습니다. 아래는 그 전에 세운 기술 단계입니다.
 
-1. **번들 빌드 도입** — 2026-11-03 첫 단계 완료: `src/`(뼈대·CSS·JS 조각)와 `content/`(작품 폴더)를 의존성 없는 `tools/build.mjs`로 단일 index.html에 합침(README '소스 구조와 빌드'). 남은 것: 순수 함수(`splitReply`·`repairJSON`·`mergeMulti`·`parseState`·`rulesPrompt`·`matchLore`)의 단위 테스트 — 빌드의 `APP_RULES`처럼 src/js에서 꺼내 Node에서 돌리면 됨.
+1. **번들 빌드 도입** — 2026-11-03 완료: 소스를 `src/js/` ES 모듈 60개(core·content·services·images·ai·ui)와 `content/`(작품 폴더)로 나누고, `tools/build.mjs`가 import 그래프 순서로 이어 붙여 단일 index.html을 만들며 이름·import/export·초기화 순서를 검사(README '소스 구조와 빌드'). 단위 테스트는 `npm test`(`ai/parse`·`ai/prompt/lore`·`core/safety`), 흐름 시험은 `npm run e2e`. 남은 것: `rulesPrompt`·`buildInput`처럼 `S`에 의존하는 모듈의 테스트(상태를 주입할 수 있게 다듬은 뒤), esbuild 같은 번들러로 바꾸기(main.js를 진입점으로 그대로 쓰면 됨 — 압축·구문 하향이 필요해질 때).
 2. **서버 프록시(BFF)** — `HEARTVERSE_CONFIG`로 연결(`anthropicUrl`·`runwareUrl`·`openRouterUrl`). 키 은닉, 레이트 리밋, 입·출력 모더레이션. 성인 모드를 출시한다면 연령 확인 결과(`adult_verified`)도 서버가 판단해 성인 경로를 열고 닫아야 함.
 3. **인증 + 서버 원장 + DB** — 하트·무료 턴·PLUS를 서버 트랜잭션으로(가이드 5-1 스키마 참고). 차감·실패 환불을 서버에서.
 4. **이미지 스토리지(R2/S3)** — `IMG` 어댑터에 서버 업로드 경로를 세 번째 참조 형식으로 추가(`kv:`·`/_blob/` 다음).

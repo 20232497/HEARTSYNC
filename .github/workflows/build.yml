@@ -1,4 +1,4 @@
-# index.html(배포물)이 src/·content/로 빌드한 결과와 같은지 확인. 다르면 index.html을 직접 고쳤거나 빌드를 안 하고 커밋한 것
+# 소스(src/·content/)로 만든 index.html이 커밋된 것과 같은지 + 단위 테스트. 다르면 index.html을 직접 고쳤거나 빌드를 안 하고 커밋한 것
 name: 빌드 확인
 on:
   push:
@@ -14,5 +14,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: 작품 검사 + index.html이 소스와 같은지 (npm run check)
-        run: node tools/build.mjs --check
+          cache: npm
+      - run: npm ci
+      - name: 모듈·작품 검사 + index.html이 소스와 같은지 (npm run check)
+        run: npm run check
+      - name: 단위 테스트 (npm test)
+        run: npm test

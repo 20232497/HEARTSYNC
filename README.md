@@ -5,28 +5,37 @@
 - 웹 주소(GitHub Pages): https://20232497.github.io/HEARTSYNC/ — `main`의 `index.html`을 그대로 띄움. API 키는 MY → 설정에 넣으면 각자 브라우저에만 저장. **휴대폰에서는 이 주소로 열기** — 내려받은 html 파일이나 GitHub 코드 화면은 휴대폰에서 앱이 실행되지 않음
 - 데모: https://claude.ai/artifact/3sfDYFeJ13dHrkWwBFj1YG (비공개, 공유 시 열람 가능)
 - 배포물은 `index.html` 하나로 동작. 브라우저에서 직접 열면 MY → 설정에 Anthropic API 키를 넣어 사용 (AI 이미지 생성은 Runware API 키)
-- 소스는 `src/`(화면·기능별 CSS·JS 조각)와 `content/`(작품 폴더)로 나뉘어 있고, `npm run build`가 합쳐 `index.html`을 만듦 — 아래 '소스 구조'
+- 소스는 `src/`(CSS 조각 + 기능별 ES 모듈 60개)와 `content/`(작품 폴더)로 나뉘어 있고, `npm run build`가 합쳐 `index.html` 한 파일을 만듦 — 아래 '소스 구조와 빌드'
 
 ## 소스 구조와 빌드
-`index.html`은 빌드 결과물이라 직접 고치지 않아요. 고칠 곳은 `src/`와 `content/`, 합치는 건 `tools/build.mjs`(Node 18+, 설치할 패키지 없음).
+`index.html`은 빌드 결과물이라 직접 고치지 않아요. 고칠 곳은 `src/`와 `content/`, 합치는 건 `tools/build.mjs`(Node 18+). 처음 한 번 `npm install`(빌드 검사용 파서와 Playwright — 개발 의존성만, 앱 런타임은 여전히 라이브러리 0).
 
 ```
-src/page.html        뼈대: <head>·메타·마크업, 그리고 조각이 들어갈 자리(@include css/*.css · @content · @include js/*.js)
-src/css/NN-이름.css   화면별 CSS(10-base 색 토큰 → 15-shell → 20-buttons → … → 70-my)
-src/js/NN-이름.js     기능별 JS(10-constants → 15-utils → 20-storage → 25-account → … → 99-boot)
+src/page.html        뼈대: <head>·메타·마크업, 조각 자리(@include css/*.css · @script js/main.js)
+src/css/NN-이름.css   화면별 CSS 13조각(번호 순)
+src/js/              ES 모듈 60개 — 파일 하나 = 책임 하나, 첫 줄 주석이 설명
+  core/              설정·상수·유틸·저장소·전역 상태·인물 외모·관심있는 대화·요금·작품 찾기·안전·대화방·설정
+  content/           작품 목록(빌드가 content/ 폴더로 만든 generated.js를 읽어 내보냄)
+  services/          Supabase 인증·계정 저장·API 키 금고·동기화·그림 저장
+  images/            그림체·수위·그림 찾기·상황 칸·이미지 프롬프트·태그 번역·Runware 호출
+  ai/                모델 등급·llm()·성인 경로·OpenRouter·응답 파싱, prompt/(규칙·입력·키워드북·장기기억)  ← 모델 고도화는 여기만
+  ui/                화면: 아이콘·시트·셸·표지·홈·상세·대화방(chat/)·결제·슬롯·세계관 일러스트·스튜디오·스토어·로그인·계정·MY
+  boot.js, main.js   부팅과 진입점(층 순서로 import)
 content/f|m|all/…    작품 폴더(여성향·남성향·전체) — content/README.md
-tools/build.mjs      합치기 + 검사,  tools/dev.mjs  개발 서버
+tools/build.mjs      합치기 + 검사,  tools/dev.mjs 개발 서버,  tests/ 시험 — tests/README.md
 ```
 
 | 명령 | 하는 일 |
 |---|---|
-| `npm run build` | `index.html` 만들기 |
-| `npm run dev` | http://localhost:5173 으로 띄우고, `src/`·`content/`를 저장할 때마다 다시 빌드해 브라우저를 새로 고침(빌드 오류는 화면 아래에 표시) |
+| `npm run build` | `index.html` 만들기(검사 포함) |
+| `npm run dev` | http://localhost:5173 으로 띄우고, `src/`·`content/`를 저장할 때마다 다시 빌드해 브라우저를 새로 고침. 빌드 오류는 화면 아래에, 런타임 오류는 원본 모듈 파일:줄로 콘솔에 |
 | `npm run check` | `index.html`이 지금 소스로 만든 결과와 같은지만 확인(GitHub Actions '빌드 확인'이 PR·main마다 실행) |
+| `npm test` | 단위 테스트(1초) — Node가 `src/js` 모듈을 바로 import |
+| `npm run e2e` | Playwright 흐름 시험 7종(3~5분, 처음엔 `npx playwright install webkit chromium`) |
 
-- **조각 순서**는 파일 이름 앞 두 자리 번호. 새 조각은 사이 번호로 넣어요(예: `67-gallery.js`). 조각은 하나의 클래식 스크립트로 이어 붙여지므로 지금처럼 전역 함수·상수를 그대로 서로 부를 수 있어요(모듈 import/export 없음). 단, 위쪽 조각의 맨 윗단에서 아래쪽 조각의 `const`를 바로 쓰면 안 돼요(실행 순서).
+- **모듈은 표준 ES 모듈**(`import { 이름 } from "./…/파일.js"`, `export`)이지만 **배포물은 클래식 스크립트 하나**예요. 빌드가 import 그래프 순서(의존 모듈이 먼저)로 이어 붙이면서 import/export만 벗기니, file://·GitHub Pages·claude.ai에서 그대로 돌고 전역(`S`·`room`…)도 예전과 같아요. 규칙: 상대 경로의 이름 있는 import만(이름 바꾸기·default·`export *` 없음), 다른 모듈의 `let`은 그 모듈의 `set…()`로만 바꾸기, 전체에서 같은 이름 두 번 선언하지 않기.
+- **빌드가 잡는 실수**: 선언도 import도 안 된 이름, export 안 된 이름 import, 같은 이름 두 번, import에 대입, 순환 의존에서 맨 윗단이 뒤 모듈의 const를 쓰는 초기화 순서 위반, 결과 스크립트 문법, 오래된 iOS에서 안 도는 문법(`||=`·`Array.at`·lookbehind·`structuredClone`…), 작품 폴더 규칙(폴더와 aud·row, id 중복, 출연진 성별과 폴더, 미성년 인물). 오류는 `src/js/ui/chat/generate.js:42`처럼 원본 위치로 알려 줘요.
 - **작품**은 `content/<f|m|all>/[<홈 줄>/]<id>/work.js`. 맨 위 폴더가 여성향·남성향을 정하고, 새 세계관은 비슷한 작품 폴더를 복사하면 같은 줄에 나란히 들어가요. 방법·칸 설명은 [content/README.md](content/README.md).
-- **빌드가 검사하는 것**: 인라인 스크립트 문법(오류는 `src/js/70-chat.js:120`처럼 원본 파일·줄로), 오래된 iOS에서 안 도는 문법(`||=`·`Array.at`·정규식 lookbehind·`structuredClone` 등), 작품 폴더 규칙(폴더와 aud·row, id 중복, 출연진 성별과 폴더, 미성년 인물 — 앱의 `minorFlags`·`guessAud`를 그대로 꺼내 씀)
 - 결과는 늘 한 파일: GitHub Pages가 `main` 루트의 `index.html`을 그대로 띄우고, 파일(file://)로 열어도 돌아가고(모듈 파일로 나누면 CORS로 막힘), claude.ai artifact로도 그대로 올라감
 - 커밋할 때는 고친 소스와 `npm run build`로 바뀐 `index.html`을 같이 커밋
 - `vercel.json`은 저장소에 붙어 있는 Vercel 미리보기 배포용(PR마다 `Vercel` 체크) — 빌드 뒤 저장소 루트를 그대로 서빙하게 해 GitHub Pages와 같은 모양으로 맞춤. 기준 배포 주소는 위 GitHub Pages
@@ -78,6 +87,6 @@ tools/build.mjs      합치기 + 검사,  tools/dev.mjs  개발 서버
 
 ## 폴더
 - `index.html` 현재 버전(v2) — 빌드 결과물(위 '소스 구조와 빌드')
-- `src/`·`content/`·`tools/` 소스·작품·빌드 도구, `.github/workflows/build.yml` 빌드 확인
+- `src/`(뼈대·CSS·ES 모듈)·`content/`(작품 폴더)·`tools/`(빌드·개발 서버)·`tests/`(단위·흐름 시험), `.github/workflows/build.yml` 빌드 확인
 - `privacy.html` 개인정보처리방침(정적 페이지, 로그인 화면과 Google OAuth 브랜딩에서 연결)
 - `archive/heartverse_v1.html` 최초 시험 버전

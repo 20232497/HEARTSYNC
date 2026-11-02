@@ -6,9 +6,17 @@
   "scripts": {
     "build": "node tools/build.mjs",
     "check": "node tools/build.mjs --check",
-    "dev": "node tools/dev.mjs"
+    "dev": "node tools/dev.mjs",
+    "test": "node --test",
+    "e2e": "node tests/run.mjs",
+    "serve": "node tests/serve.mjs"
   },
   "engines": {
     "node": ">=18"
+  },
+  "devDependencies": {
+    "eslint-scope": "^8.4.0",
+    "espree": "^10.4.0",
+    "playwright": "^1.56.1"
   }
 }

@@ -1,15 +1,22 @@
-// HEART SYNC 빌드: src/(뼈대·CSS·JS 조각)와 content/(작품 폴더)를 합쳐 저장소 루트에 index.html 한 파일을 만든다.
-// 의존성 없음(Node 18+). 배포물은 늘 이 한 파일 — GitHub Pages·로컬 파일(file://)·claude.ai artifact가 그대로 띄운다.
+// HEART SYNC 빌드: src/(뼈대·CSS·ES 모듈)와 content/(작품 폴더)를 합쳐 저장소 루트에 index.html 한 파일을 만든다.
+// 배포물은 늘 이 한 파일(클래식 스크립트 하나) — GitHub Pages·로컬 파일(file://)·claude.ai artifact가 그대로 띄운다.
 //   node tools/build.mjs           index.html 만들기 (npm run build)
 //   node tools/build.mjs --check   index.html이 지금 소스로 만든 결과와 같은지만 확인 (npm run check, GitHub Actions)
+//
+// 모듈 번들: src/js/main.js에서 import를 따라가며 모듈을 읽고, 의존 모듈이 먼저 오도록 순서를 정한 뒤 import/export 줄만 벗겨
+// 이어 붙인다(모듈 안의 줄 번호는 그대로). 그 전에 검사한다 — 선언도 import도 안 된 이름, export 안 된 이름 import, 같은 이름 두 번 선언,
+// import한 바인딩에 대입, 맨 윗단(함수 밖)에서 뒤에 오는 모듈의 const/class 사용(순환 의존), 인라인 스크립트 문법, 오래된 iOS 문법.
 import fs from "node:fs";
 import path from "node:path";
 import vm from "node:vm";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import * as espree from "espree";
+import * as scope from "eslint-scope";
+import { BROWSER_GLOBALS } from "./globals.mjs";
 
 export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const SRC = path.join(ROOT, "src"), CONTENT = path.join(ROOT, "content"), OUT = path.join(ROOT, "index.html");
-const PAGE = path.join(SRC, "page.html");
+const SRC = path.join(ROOT, "src"), JS = path.join(SRC, "js"), CONTENT = path.join(ROOT, "content"), OUT = path.join(ROOT, "index.html");
+const PAGE = path.join(SRC, "page.html"), GEN_FILE = path.join(JS, "content", "generated.js"), BUILD_DIR = path.join(ROOT, ".build");
 
 /* 폴더 이름이 곧 작품의 aud(관심있는 대화) 값 */
 export const AUD_DIRS = { f: "여성향(남성 캐릭터와의 대화)", m: "남성향(여성 캐릭터와의 대화)", all: "전체(남녀가 섞임)" };
@@ -25,9 +32,10 @@ const readText = (p) => fs.readFileSync(p, "utf8").replace(/^﻿/, "").replace(/
 const rel = (p) => path.relative(ROOT, p).split(path.sep).join("/");
 const visible = (name) => !name.startsWith(".") && !name.startsWith("_");
 const subdirs = (dir) => fs.readdirSync(dir, { withFileTypes: true }).filter((d) => d.isDirectory() && visible(d.name)).map((d) => d.name).sort();
+const writeIfChanged = (p, text) => { if (!fs.existsSync(p) || readText(p) !== text) { fs.mkdirSync(path.dirname(p), { recursive: true }); fs.writeFileSync(p, text); return true; } return false; };
 
 /* ---------------------------------------------------------------- 뼈대(src/page.html) 펼치기 */
-const INCLUDE = /^\s*<!--\s*@include\s+(\S+)\s*-->\s*$/, CONTENT_MARK = /^\s*<!--\s*@content\s*-->\s*$/;
+const INCLUDE = /^\s*<!--\s*@include\s+(\S+)\s*-->\s*$/, SCRIPT = /^\s*<!--\s*@script\s+(\S+)\s*-->\s*$/;
 
 function includeFiles(pattern) {
   const m = pattern.match(/^([\w-]+(?:\/[\w-]+)*)\/\*(\.\w+)$/);
@@ -42,7 +50,7 @@ const tidy = (text) => text.replace(/^\n+/, "").replace(/\n*$/, "\n");
 
 async function assemble() {
   const out = [], map = []; // map: 결과 줄 → 원본 파일(오류 위치 안내용)
-  let line = 1, jsText = "";
+  let line = 1, css = 0, bundle = null;
   const push = (text, from, fromLine = 1) => {
     const n = text.split("\n").length - 1;
     map.push({ start: line, end: line + n - 1, from, fromLine });
@@ -50,49 +58,148 @@ async function assemble() {
   };
   const tpl = readText(PAGE).split("\n");
   if (tpl[tpl.length - 1] === "") tpl.pop();
-  let content = null;
   for (let i = 0; i < tpl.length; i++) {
-    const inc = tpl[i].match(INCLUDE);
+    const inc = tpl[i].match(INCLUDE), scr = tpl[i].match(SCRIPT);
     if (inc) {
       const files = includeFiles(inc[1]).map((f) => ({ f, text: readText(f) })).filter((x) => x.text.trim());
-      files.forEach(({ f, text }, k) => {
-        const lead = text.match(/^\n*/)[0].length;
-        if (k) push("\n", "(빈 줄)");
-        push(tidy(text), rel(f), lead + 1);
-        if (f.endsWith(".js")) jsText += text + "\n";
-      });
-    } else if (CONTENT_MARK.test(tpl[i])) {
-      content = { at: out.length, line };
-      push("", "content/"); // 자리만 잡아 두고 JS 규칙을 다 읽은 뒤 채움
+      files.forEach(({ f, text }, k) => { if (k) push("\n", "(빈 줄)"); push(tidy(text), rel(f), text.match(/^\n*/)[0].length + 1); css++; });
+    } else if (scr) {
+      if (bundle) throw new BuildError(["src/page.html: @script는 한 번만"]);
+      bundle = bundleModules(path.join(SRC, scr[1]));
+      bundle.pieces.forEach((p) => { push(p.header, "(모듈 머리)"); push(p.text, p.rel, 1); });
     } else push(tpl[i] + "\n", "src/page.html", i + 1);
   }
-  let stats = null;
-  if (content) {
-    const rules = appRules(jsText);
-    const built = await buildContent(rules);
-    stats = built.stats;
-    const n = built.code.split("\n").length - 1;
-    out[content.at] = built.code;
-    // 뒤쪽 줄 번호를 밀어 줌
-    const slot = map.findIndex((m) => m.from === "content/" && m.start === content.line);
-    map[slot] = { start: content.line, end: content.line + n - 1, from: "content/ (빌드가 만든 작품 목록)", fromLine: 1 };
-    for (let k = slot + 1; k < map.length; k++) { map[k].start += n; map[k].end += n; }
-    stats.warnings = built.warnings;
-  }
-  return { html: out.join(""), map, stats };
+  if (!bundle) throw new BuildError(["src/page.html에 <!-- @script js/main.js --> 자리가 없어요"]);
+  return { html: out.join(""), map, css, bundle };
 }
 
-/* ---------------------------------------------------------------- 앱 규칙 꺼내기 */
-function appRules(js) {
-  const lines = js.split("\n"), parts = [];
+/* ---------------------------------------------------------------- 모듈 번들러 */
+const parseModule = (code, file) => {
+  try { return espree.parse(code, { ecmaVersion: 2022, sourceType: "module", range: true, loc: true }); }
+  catch (e) { throw new BuildError([`${rel(file)}:${e.lineNumber || "?"}: 문법 오류 — ${e.message.replace(/\s*\(\d+:\d+\)$/, "")}`]); }
+};
+const patNames = (p) => p.type === "Identifier" ? [p.name] : p.type === "ObjectPattern" ? p.properties.flatMap((x) => x.type === "RestElement" ? patNames(x.argument) : patNames(x.value))
+  : p.type === "ArrayPattern" ? p.elements.filter(Boolean).flatMap(patNames) : p.type === "AssignmentPattern" ? patNames(p.left) : p.type === "RestElement" ? patNames(p.argument) : [];
+const declOf = (d) => d.type === "FunctionDeclaration" ? [[d.id.name, "function"]] : d.type === "ClassDeclaration" ? [[d.id.name, "class"]]
+  : d.type === "VariableDeclaration" ? d.declarations.flatMap((x) => patNames(x.id).map((n) => [n, "var"])) : [];
+
+function loadModule(file, mods, errors, chain) {
+  if (mods.has(file)) return mods.get(file);
+  if (!fs.existsSync(file)) { errors.push(`${chain}: ${rel(file)} 파일이 없어요`); return null; }
+  const code = readText(file), ast = parseModule(code, file), r = rel(file);
+  const info = { file, rel: r, code, ast, imports: [], importOrder: [], declared: new Map(), exports: new Map(), bindings: new Map(), cuts: [] };
+  mods.set(file, info);
+  for (const st of ast.body) {
+    if (st.type === "ImportDeclaration") {
+      const spec = st.source.value;
+      if (!/^\.\.?\//.test(spec) || !spec.endsWith(".js")) errors.push(`${r}:${st.loc.start.line}: import는 "./…/이름.js" 상대 경로만 (${spec})`);
+      const target = path.resolve(path.dirname(file), spec);
+      const names = [];
+      for (const s of st.specifiers) {
+        if (s.type !== "ImportSpecifier") { errors.push(`${r}:${st.loc.start.line}: default·namespace import는 쓸 수 없어요 — import { 이름 } 만`); continue; }
+        if (s.imported.name !== s.local.name) errors.push(`${r}:${st.loc.start.line}: import { ${s.imported.name} as ${s.local.name} } — 이름을 바꿔 들여올 수 없어요(합칠 때 이름이 그대로 전역이 됨)`);
+        names.push(s.local.name); info.bindings.set(s.local.name, { from: target, line: s.loc.start.line });
+      }
+      info.imports.push({ target, names, line: st.loc.start.line }); info.importOrder.push(target);
+      info.cuts.push({ range: st.range, blank: true });
+    } else if (st.type === "ExportNamedDeclaration") {
+      if (st.source) { errors.push(`${r}:${st.loc.start.line}: export … from 은 쓸 수 없어요 — import한 뒤 export { 이름 } 으로`); continue; }
+      if (st.declaration) {
+        for (const [n, kind] of declOf(st.declaration)) { info.declared.set(n, { kind, line: st.loc.start.line }); info.exports.set(n, kind); }
+        info.cuts.push({ range: [st.range[0], st.declaration.range[0]], blank: false });
+      } else {
+        for (const s of st.specifiers) {
+          if (s.exported.name !== s.local.name) errors.push(`${r}:${st.loc.start.line}: export { ${s.local.name} as ${s.exported.name} } — 이름을 바꿔 내보낼 수 없어요`);
+          info.exports.set(s.local.name, info.declared.get(s.local.name)?.kind || (info.bindings.has(s.local.name) ? "reexport" : null));
+          if (!info.exports.get(s.local.name)) errors.push(`${r}:${st.loc.start.line}: export { ${s.local.name} } — 이 모듈에 선언도 import도 없는 이름`);
+        }
+        info.cuts.push({ range: st.range, blank: true });
+      }
+    } else if (st.type === "ExportDefaultDeclaration" || st.type === "ExportAllDeclaration") errors.push(`${r}:${st.loc.start.line}: export default / export * 는 쓸 수 없어요 — 이름 있는 export만`);
+    else for (const [n, kind] of declOf(st)) info.declared.set(n, { kind, line: st.loc.start.line });
+  }
+  // 스코프 분석: 자유 변수, import 바인딩에 대입, 맨 윗단에서의 참조
+  const sm = scope.analyze(ast, { ecmaVersion: 2022, sourceType: "module" });
+  const moduleScope = sm.globalScope.childScopes.find((s) => s.type === "module");
+  for (const ref of sm.globalScope.through) {
+    const n = ref.identifier.name;
+    if (!BROWSER_GLOBALS.has(n)) errors.push(`${r}:${ref.identifier.loc.start.line}: "${n}"는 선언도 import도 안 된 이름이에요 — 다른 모듈의 것이면 import { ${n} } from "…", 브라우저 전역이면 tools/globals.mjs에 추가`);
+  }
+  for (const v of moduleScope.variables) {
+    if (v.defs[0]?.type !== "ImportBinding") continue;
+    const w = v.references.find((x) => x.isWrite());
+    if (w) errors.push(`${r}:${w.identifier.loc.start.line}: import한 "${v.name}"에 대입할 수 없어요 — 그 모듈이 내보내는 set…() 함수를 쓰세요`);
+    if (!v.references.length) info.unused = (info.unused || []).concat(v.name);
+  }
+  const inFunction = (s) => { for (; s && s !== moduleScope; s = s.upper) if (/^(function|class-field-initializer|class-static-block)$/.test(s.type)) return true; return false; };
+  info.evalRefs = []; // 함수 밖(모듈을 읽을 때 바로 실행되는 자리)에서 쓰는 import 이름
+  for (const s of sm.scopes) {
+    if (s === sm.globalScope || inFunction(s)) continue;
+    for (const ref of s.references) if (ref.resolved?.defs[0]?.type === "ImportBinding") info.evalRefs.push({ name: ref.identifier.name, line: ref.identifier.loc.start.line });
+  }
+  for (const t of info.importOrder) loadModule(t, mods, errors, `${r}`);
+  return info;
+}
+
+function bundleModules(entry) {
+  const errors = [], warnings = [], mods = new Map();
+  if (!fs.existsSync(entry)) throw new BuildError([`진입 모듈 ${rel(entry)}이 없어요`]);
+  loadModule(entry, mods, errors, "src/page.html");
+  if (errors.length) throw new BuildError(errors);
+  // 순서: 진입점에서 import 순서대로 깊이 우선, 의존 모듈이 먼저(진입점이 맨 뒤)
+  const order = [], state = new Map();
+  const visit = (file) => {
+    if (state.get(file)) return; state.set(file, 1);
+    for (const t of mods.get(file).importOrder) visit(t);
+    state.set(file, 2); order.push(mods.get(file));
+  };
+  visit(entry);
+  // 같은 이름 두 번 선언 / import ↔ export / 순환 의존의 초기화 순서
+  const owner = new Map();
+  for (const m of order) for (const [n, d] of m.declared) {
+    if (owner.has(n)) errors.push(`${m.rel}:${d.line}: "${n}"가 ${owner.get(n)}에도 선언돼 있어요 — 합치면 하나의 스크립트라 이름이 겹치면 안 돼요`);
+    else owner.set(n, m.rel);
+  }
+  const pos = new Map(order.map((m, i) => [m.file, i]));
+  for (const m of order) {
+    for (const imp of m.imports) {
+      const t = mods.get(imp.target); if (!t) continue;
+      for (const n of imp.names) if (!t.exports.has(n)) errors.push(`${m.rel}:${imp.line}: ${t.rel}은 "${n}"을 내보내지 않아요${t.declared.has(n) ? ` — ${t.rel}:${t.declared.get(n).line}의 선언 앞에 export를 붙이세요` : ""}`);
+    }
+    for (const ref of m.evalRefs) {
+      const b = m.bindings.get(ref.name), t = b && mods.get(b.from); if (!t) continue;
+      const kind = t.exports.get(ref.name);
+      if (kind !== "function" && pos.get(t.file) > pos.get(m.file)) errors.push(`${m.rel}:${ref.line}: 맨 윗단에서 "${ref.name}"을 쓰는데 그걸 내보내는 ${t.rel}이 순환 의존 때문에 뒤에 와요(초기화 전 접근) — 함수 안으로 옮기거나 import 고리를 끊으세요`);
+    }
+    if (m.unused) warnings.push(`${m.rel}: 쓰지 않는 import ${m.unused.join(", ")}`);
+  }
+  if (errors.length) throw new BuildError([...new Set(errors)]);
+  // 출력: import/export 벗기기(줄 수 유지)
+  const pieces = order.map((m) => {
+    let text = m.code;
+    for (const c of [...m.cuts].sort((a, b) => b.range[0] - a.range[0])) {
+      const orig = text.slice(c.range[0], c.range[1]);
+      text = text.slice(0, c.range[0]) + (c.blank ? "\n".repeat((orig.match(/\n/g) || []).length) : "") + text.slice(c.range[1]);
+    }
+    text = text.replace(/\n*$/, "\n");
+    return { rel: m.rel, header: `/* ── ${m.rel} */\n`, text };
+  });
+  return { pieces, warnings, count: order.length };
+}
+
+/* ---------------------------------------------------------------- 앱 규칙 꺼내기(작품 검사용) */
+function appRules() {
+  const files = [];
+  (function walk(d) { for (const e of fs.readdirSync(d, { withFileTypes: true })) { const p = path.join(d, e.name); if (e.isDirectory()) walk(p); else if (e.name.endsWith(".js") && p !== GEN_FILE) files.push(p); } })(JS);
+  const lines = files.flatMap((f) => readText(f).split("\n")), parts = [];
   for (const name of APP_RULES) {
-    const fn = new RegExp(`^function\\s+${name}\\s*\\(`), cn = new RegExp(`^const\\s+${name}\\s*=`);
+    const fn = new RegExp(`^(?:export )?function\\s+${name}\\s*\\(`), cn = new RegExp(`^(?:export )?const\\s+${name}\\s*=`);
     const i = lines.findIndex((l) => fn.test(l) || cn.test(l));
     if (i < 0) throw new BuildError([`src/js에서 ${name}을(를) 찾지 못했어요 — 이름을 바꿨다면 tools/build.mjs의 APP_RULES도 고쳐 주세요`]);
     let j = i;
     if (fn.test(lines[i])) { if (!/}\s*$/.test(lines[i])) while (j < lines.length && lines[j] !== "}") j++; }
     else while (j < lines.length && !/;\s*$/.test(lines[j])) j++;
-    parts.push(lines.slice(i, j + 1).join("\n"));
+    parts.push(lines.slice(i, j + 1).join("\n").replace(/^export /, ""));
   }
   const ctx = vm.createContext({});
   try { vm.runInContext(`"use strict";\n${parts.join("\n")}\nglobalThis.R = { ${APP_RULES.join(", ")} };`, ctx); }
@@ -100,7 +207,7 @@ function appRules(js) {
   return ctx.R;
 }
 
-/* ---------------------------------------------------------------- 작품(content/) */
+/* ---------------------------------------------------------------- 작품(content/) → src/js/content/generated.js */
 const isObj = (v) => !!v && typeof v === "object" && !Array.isArray(v) && Object.getPrototypeOf(v) === Object.prototype;
 const str = (v) => typeof v === "string" && v.trim() !== "";
 function plainData(v, at, bad) {
@@ -173,17 +280,18 @@ async function buildContent(R) {
     if (o.aud === undefined) o.aud = aud;
     return `/* ${rel.slice("content/".length)} */ ${ser(o, "")}`;
   });
-  const code = `/* ---------------------------------------------------------------- 작품: 빌드가 content/ 폴더로 만듦(직접 고치지 말고 content/의 work.js — content/README.md) */
-const ORIGINALS = [
+  const code = `/* 빌드가 content/ 폴더로 만든 작품 데이터 — 직접 고치지 말고 content/<f|m|all>/…/work.js를 고치세요(content/README.md). git에 넣지 않음 */
+export const ORIGINALS = [
 ${objs.join(",\n")}
 ];
 // 홈의 가로 줄(content/<aud>/<줄>/_row.json) — 관심있는 대화에 맞는 작품이 있을 때만 보임
-const HOME_ROWS = [
+export const HOME_ROWS = [
 ${rows.map((r) => "  " + JSON.stringify({ key: r.key, title: r.title, sub: r.sub })).join(",\n")}
 ];
 `;
+  writeIfChanged(GEN_FILE, jsSafe(code));
   const count = (a) => works.filter((w) => w.aud === a).length;
-  return { code: jsSafe(code), warnings, stats: { works: works.length, f: count("f"), m: count("m"), all: count("all"), rows: rows.length } };
+  return { warnings, stats: { works: works.length, f: count("f"), m: count("m"), all: count("all"), rows: rows.length } };
 }
 
 function checkWork(mod, { aud, row, id, wrel, R, errors, warnings }) {
@@ -216,7 +324,7 @@ function checkWork(mod, { aud, row, id, wrel, R, errors, warnings }) {
     else if (c.row !== row.key) e(`row("${c.row}")가 줄 폴더(${row.key}/)와 달라요 — row는 폴더가 정하니 지우세요`);
   }
 
-  // 출연진: 없으면 앱이 설정의 "외모:" 줄로 한 명(code c)을 만든다(js/05-originals.js) — 검사도 같은 모양으로
+  // 출연진: 없으면 앱이 설정의 "외모:" 줄로 한 명(code c)을 만든다(src/js/content/index.js) — 검사도 같은 모양으로
   let cast = c.cast;
   if (cast === undefined) cast = [{ code: "c", name: c.name, look: (String(c.persona || "").match(/외모:\s*([^\n]+)/) || [])[1] || "" }];
   else if (!Array.isArray(cast) || !cast.length) { e("cast는 출연진 배열(한 명 이상)"); cast = []; }
@@ -290,7 +398,7 @@ function checkScripts(html, map) {
     try { new vm.Script(m[1], { filename: `script${k}`, lineOffset: startLine - 1 }); }
     catch (e) {
       const ln = +(String(e.stack).match(new RegExp(`script${k}:(\\d+)`)) || [])[1];
-      errors.push(`${ln ? where(map, ln) : `<script> ${k}번째`}: 문법 오류 — ${e.message} (괄호가 안 닫혔다면 바로 앞 줄·앞 파일 끝일 수도 있어요)`);
+      errors.push(`${ln ? where(map, ln) : `<script> ${k}번째`}: 문법 오류 — ${e.message}`);
     }
     m[1].split("\n").forEach((text, i) => {
       for (const [re2, name] of OLD_IOS) if (re2.test(text)) errors.push(`${where(map, startLine + i)}: 오래된 iOS에서 안 도는 문법(${name}) — CLAUDE.md '모바일'`);
@@ -302,30 +410,34 @@ function checkScripts(html, map) {
 
 export async function build() {
   if (!fs.existsSync(PAGE)) throw new BuildError(["src/page.html이 없어요"]);
-  const { html, map, stats } = await assemble();
+  const content = await buildContent(appRules());
+  const { html: raw, map, css, bundle } = await assemble();
+  const html = raw.replace(/<\/script(?![\s>])/gi, "<\\/script").split(LS).join("\\u2028").split(PS).join("\\u2029");
   const errors = checkScripts(html, map);
   if (errors.length) throw new BuildError(errors);
-  return { html, stats: stats || { works: 0, warnings: [] }, pieces: map.filter((m) => /^src\/(css|js)\//.test(m.from)).length };
+  fs.mkdirSync(BUILD_DIR, { recursive: true });
+  fs.writeFileSync(path.join(BUILD_DIR, "linemap.json"), JSON.stringify(map));
+  return { html, stats: content.stats, warnings: [...content.warnings, ...bundle.warnings], css, modules: bundle.count };
 }
 
 /* ---------------------------------------------------------------- 명령줄 */
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const check = process.argv.includes("--check");
   try {
-    const { html, stats, pieces } = await build();
-    (stats.warnings || []).forEach((x) => console.warn("⚠ " + x));
+    const { html, stats, warnings, css, modules } = await build();
+    warnings.forEach((x) => console.warn("⚠ " + x));
     const cur = fs.existsSync(OUT) ? readText(OUT) : null;
     const kb = (Buffer.byteLength(html) / 1024).toFixed(0) + "KB";
-    const summary = stats.works ? ` · 작품 ${stats.works}개(여성향 ${stats.f} · 남성향 ${stats.m} · 전체 ${stats.all}), 홈 줄 ${stats.rows}개` : "";
+    const summary = ` · CSS ${css}개 · 모듈 ${modules}개 · 작품 ${stats.works}개(여성향 ${stats.f} · 남성향 ${stats.m} · 전체 ${stats.all}), 홈 줄 ${stats.rows}개`;
     if (check) {
       if (cur !== html) {
         console.error("✗ index.html이 src/·content/로 만든 결과와 달라요. index.html을 직접 고쳤거나 빌드를 안 했어요 → npm run build 후 index.html도 같이 커밋하세요.");
         process.exit(1);
       }
-      console.log(`✓ index.html이 소스와 같아요 (${kb}, 조각 ${pieces}개${summary})`);
+      console.log(`✓ index.html이 소스와 같아요 (${kb}${summary})`);
     } else {
       if (cur !== html) fs.writeFileSync(OUT, html);
-      console.log(`${cur === html ? "= index.html 그대로" : "✓ index.html 만듦"} (${kb}, 조각 ${pieces}개${summary})`);
+      console.log(`${cur === html ? "= index.html 그대로" : "✓ index.html 만듦"} (${kb}${summary})`);
     }
   } catch (e) {
     if (!(e instanceof BuildError)) throw e;
