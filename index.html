@@ -1717,7 +1717,7 @@ const SB = {
   // providers: 이 계정에 연결된 로그인 방법(email·kakao·google·custom:naver) — email이 없으면 비밀번호가 없는 소셜 전용 계정
   who(u) { const m = u.app_metadata || {}; return { id: u.id, email: u.email || "", provider: m.provider || "", providers: Array.isArray(m.providers) ? m.providers : m.provider ? [m.provider] : [] }; },
   // 인증 메일·소셜 로그인이 돌아올 주소. 파일로 열었으면 웹 주소로
-  site() { return location.protocol === "file:" ? "https://20232497.github.io/HeartSync/" : location.origin + location.pathname; },
+  site() { return location.protocol === "file:" ? "https://20232497.github.io/HEARTSYNC/" : location.origin + location.pathname; },
   async req(path, opt = {}, retried = false) {
     const h = Object.assign({ apikey: this.key, "Content-Type": "application/json" }, opt.headers || {});
     if (this.s) { await this.fresh(); if (this.s) h.Authorization = "Bearer " + this.s.access_token; }
@@ -3026,7 +3026,7 @@ async function openRouterStream(messages, { tier, onText, signal, json, maxToken
       res = await fetch(CFG.openRouterUrl, {
         method: "POST", signal,
         headers: { "content-type": "application/json", ...(S.settings.openRouterKey ? { authorization: "Bearer " + S.settings.openRouterKey } : {}),
-          "HTTP-Referer": location.origin !== "null" ? location.origin : "https://20232497.github.io/HeartSync/", "X-Title": "HEART SYNC" },
+          "HTTP-Referer": location.origin !== "null" ? location.origin : "https://20232497.github.io/HEARTSYNC/", "X-Title": "HEART SYNC" },
         body: JSON.stringify({ model, max_tokens: maxTokens, stream: true, ...sampling, messages: [{ role: "system", content: messages[0].content }, ...rest] })
       });
     } catch (e) { if (e.name === "AbortError") throw { code: "cancelled" }; throw { code: "or_network" }; }
