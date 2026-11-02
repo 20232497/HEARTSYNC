@@ -1,0 +1,30 @@
+/* Layout: 앱 셸 — 데스크톱은 왼쪽 레일 + 본문, 모바일은 하단 탭바. 대화방은 전체 높이 3단(헤더·로그·입력창), 관리 메뉴는 오른쪽 드로어. */
+:root {
+  --bg:#f6f4f9; --surface:#ffffff; --surface2:#efecf5; --line:#e2dcec; --fg:#1c1827; --muted:#6c6580;
+  --narr:#5a536d; --accent:#e23d74; --accent-ink:#ffffff; --accent-soft:rgba(226,61,116,.10); --gold:#b9780f; --ok:#2b8a57; --err:#c92a3a;
+  --sys:#5b4fc4; --sys-soft:rgba(91,79,196,.09);
+  --scrim:rgba(20,16,30,.45);
+  --display:"Hahmlet","Nanum Myeongjo",serif; --sans:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif; --serif:"Gowun Batang","Nanum Myeongjo",serif;
+  --chat-fs:15.5px; --chat-lh:1.8; --narr-font:var(--serif); --r:14px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg:#0f0d15; --surface:#18151f; --surface2:#211d2b; --line:#2e2939; --fg:#eeeaf6; --muted:#9a93ae;
+  --narr:#b4acc7; --accent:#ff5b8e; --accent-ink:#1a0b12; --accent-soft:rgba(255,91,142,.14); --gold:#f0b54a; --ok:#53c48a; --err:#ff6b7a;
+  --sys:#a99cff; --sys-soft:rgba(169,156,255,.10);
+  --scrim:rgba(0,0,0,.6); color-scheme:dark; } }
+:root[data-theme="dark"] {
+  --bg:#0f0d15; --surface:#18151f; --surface2:#211d2b; --line:#2e2939; --fg:#eeeaf6; --muted:#9a93ae;
+  --narr:#b4acc7; --accent:#ff5b8e; --accent-ink:#1a0b12; --accent-soft:rgba(255,91,142,.14); --gold:#f0b54a; --ok:#53c48a; --err:#ff6b7a;
+  --sys:#a99cff; --sys-soft:rgba(169,156,255,.10);
+  --scrim:rgba(0,0,0,.6); color-scheme:dark; }
+
+* { box-sizing:border-box; }
+html, body { height:100%; }
+body { margin:0; background:var(--bg); color:var(--fg); font-family:var(--sans); font-size:14.5px; line-height:1.6; overflow:hidden; }
+body::before { content:""; position:fixed; inset:0 0 auto; height:env(safe-area-inset-top,0px); z-index:10; background:var(--bg); }
+button, input, textarea, select { font:inherit; color:inherit; }
+button { cursor:pointer; }
+:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+[hidden] { display:none !important; }
+.sr { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); }
+.spacer { flex:1; }

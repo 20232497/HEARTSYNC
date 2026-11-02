@@ -1,0 +1,53 @@
+/* ── 이미지 슬롯 */
+.slot-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(104px,1fr)); gap:10px; }
+.slot { border:1px solid var(--line); border-radius:12px; padding:6px; display:grid; gap:5px; text-align:center; font-size:12px; }
+.slot .pic { aspect-ratio:4/5; border-radius:9px; overflow:hidden; background:var(--surface2); position:relative; }
+.slot .pic img { width:100%; height:100%; object-fit:cover; display:block; }
+.slot .pic .artcard { aspect-ratio:auto; height:100%; opacity:.55; }
+.slot .lb { font-weight:600; }
+.slot .lb small { color:var(--muted); font-weight:400; }
+.slot .bs { display:flex; gap:4px; justify-content:center; flex-wrap:wrap; }
+.slot .bs button[data-ai] { color:var(--accent); border-color:var(--accent); }
+.slot .pic.busy::after { content:"생성 중…"; position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:var(--scrim); color:#fff; font-weight:600; }
+.gen-ov { z-index:45; }
+.gen-pv { margin-top:12px; min-height:120px; border:1px dashed var(--line); border-radius:12px; display:flex; align-items:center; justify-content:center; padding:10px; text-align:center; }
+.gen-pv img { max-width:100%; max-height:52vh; border-radius:10px; display:block; }
+.tgroup + .tgroup { margin-top:10px; }
+.tgroup .lbl { display:block; margin-bottom:5px; }
+.tchips { display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
+.tchip { display:inline-flex; align-items:center; max-width:100%; border:1px solid var(--line); background:var(--bg); border-radius:999px; font-size:13px; }
+.tchip button { border:0; background:none; color:inherit; font:inherit; padding:5px 3px 5px 11px; overflow-wrap:anywhere; text-align:left; }
+.tchip .tx { padding:5px 10px 5px 4px; color:var(--muted); }
+.tchip.on { border-color:var(--accent); background:var(--accent-soft); color:var(--accent); font-weight:600; }
+.tadd { border:1px dashed var(--line); background:none; color:var(--fg); border-radius:999px; padding:5px 11px; font-size:13px; width:8.5em; outline:none; }
+.tadd:focus { border-color:var(--accent); width:12em; }
+.rate-field { margin:0 0 12px; max-width:340px; }
+.gen-ov .rate-field { margin-top:12px; max-width:none; }
+.rate-field .note { margin:0; }
+.gen-save { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin:10px 0 0; }
+.gen-save .note { flex:1 1 140px; margin:0; }
+.gen-auto { margin-top:6px; }
+.gen-auto summary { cursor:pointer; color:var(--muted); font-size:12.5px; }
+.gen-auto p { margin:4px 0 0; }
+.tchip.pick { padding:5px 11px; gap:5px; cursor:pointer; }
+.tchip.pick input { accent-color:var(--accent); margin:0; }
+.slot .bs button { border:1px solid var(--line); background:var(--bg); border-radius:7px; font-size:11.5px; padding:2px 7px; }
+.casttabs { display:flex; gap:6px; overflow-x:auto; padding-bottom:4px; margin-bottom:10px; }
+.wgal { display:grid; grid-template-columns:repeat(auto-fill, minmax(210px, 1fr)); gap:10px; }
+.wcard { margin:0; border:1px solid var(--line); border-radius:12px; overflow:hidden; background:var(--bg); display:flex; flex-direction:column; }
+.wpic { display:block; width:100%; aspect-ratio:16/9; border:0; padding:0; background:var(--surface2); overflow:hidden; cursor:zoom-in; }
+.wpic img { width:100%; height:100%; object-fit:cover; display:block; }
+.wpic.ph { display:flex; align-items:center; justify-content:center; height:100%; font-family:var(--display); font-weight:700; color:var(--muted); cursor:default; background:linear-gradient(135deg, var(--surface2), var(--bg)); }
+.wcard figcaption { padding:8px 10px 10px; display:grid; gap:3px; font-size:12.5px; }
+.wcard figcaption b { font-size:13.5px; }
+.wcard figcaption span { color:var(--muted); display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+.warts { display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:10px; align-items:start; }
+.warts .pic.land { aspect-ratio:16/9; }
+.warts .pic.cover-pic { aspect-ratio:3/4; }
+.ssets { display:grid; grid-template-columns:repeat(auto-fill, minmax(230px, 1fr)); gap:10px; }
+.sset { border:1px solid var(--line); border-radius:12px; padding:10px; display:grid; gap:6px; background:var(--bg); }
+.sset.on { border-color:var(--accent); box-shadow:0 0 0 1px var(--accent) inset; }
+.sset .th { display:grid; grid-template-columns:repeat(3, 1fr); gap:6px; }
+.sset .th span { aspect-ratio:1; border-radius:8px; overflow:hidden; background:var(--surface2); }
+.sset .th img { width:100%; height:100%; object-fit:cover; display:block; }
+.sset .note { margin:0; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }

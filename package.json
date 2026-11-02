@@ -1,0 +1,14 @@
+{
+  "name": "heartsync",
+  "private": true,
+  "description": "HEART SYNC — src/·content/를 합쳐 index.html 한 파일로 빌드(의존성 없음)",
+  "type": "module",
+  "scripts": {
+    "build": "node tools/build.mjs",
+    "check": "node tools/build.mjs --check",
+    "dev": "node tools/dev.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
