@@ -2,7 +2,11 @@
 <html lang="ko">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>HEARTVERSE</title>
+<title>HeartSync</title>
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-title" content="HeartSync">
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -44,6 +48,7 @@ button { cursor:pointer; }
 .rail { border-right:1px solid var(--line); background:var(--surface); display:flex; flex-direction:column; padding:18px 12px; gap:4px; overflow-y:auto; }
 .logo { font-family:var(--display); font-weight:800; font-size:21px; letter-spacing:.06em; padding:4px 10px 16px; display:flex; align-items:center; gap:8px; }
 .logo i { font-style:normal; color:var(--accent); }
+.logo .mark { width:26px; height:26px; flex:none; border-radius:7px; background:url(icons/icon-192.png) center/cover no-repeat; }
 .nav { display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:10px; border:0; background:none; text-align:left; width:100%; color:var(--muted); font-weight:500; }
 .nav:hover { background:var(--surface2); color:var(--fg); }
 .nav.on { background:var(--accent-soft); color:var(--accent); font-weight:600; }
@@ -163,7 +168,8 @@ h2.sec small, h1.sec small { font-family:var(--sans); font-size:12.5px; color:va
 /* 로그인 */
 .login-page { min-height:calc(100vh - 140px); display:flex; align-items:center; justify-content:center; padding:24px 0; }
 .login-card { width:100%; max-width:400px; background:var(--surface); border:1px solid var(--line); border-radius:20px; padding:26px 20px 20px; }
-.login-card .logo { justify-content:center; font-size:26px; padding:0 0 6px; }
+.login-card .logo { flex-direction:column; justify-content:center; gap:10px; font-size:26px; padding:0 0 6px; }
+.login-card .logo .mark { width:76px; height:76px; border-radius:18px; }
 .login-card .lead { text-align:center; color:var(--muted); font-size:14px; margin:0 0 16px; line-height:1.6; }
 .login-card .seg { margin-bottom:6px; }
 .login-card .note { margin:14px 0 0; font-size:12px; line-height:1.6; }
@@ -588,7 +594,7 @@ window.addEventListener("error", function (e) {
 <script>
 "use strict";
 /* ================================================================
-   HEARTVERSE — 캐릭터 대화형 에피소드 플랫폼 (단일 파일 프로토타입 v2)
+   HeartSync — 캐릭터 대화형 에피소드 플랫폼 (단일 파일 프로토타입 v2)
    - LLM: claude.ai 아티팩트에서는 sample capability(뷰어 계정), 로컬 파일에서는 Anthropic API 키(BYOK)
    - 저장: db capability(뷰어 비공개 공간) 우선, 없으면 localStorage / 이미지: assets → 없으면 압축 data URL
    - 결제: 하트·멤버십 경제 시스템은 데모(실제 청구 없음)
@@ -1598,7 +1604,7 @@ function toast(msg) {
 let errAt = 0;
 function reportError(err) {
   if (!err || err.name === "AbortError" || err.code === "cancelled") return;
-  console.error("[HEARTVERSE]", err);
+  console.error("[HeartSync]", err);
   if (Date.now() - errAt < 8000) return;
   errAt = Date.now(); toast("일시적인 오류가 있었어요. 계속되면 새로고침해 주세요.");
 }
@@ -1705,7 +1711,7 @@ const SB = {
   // providers: 이 계정에 연결된 로그인 방법(email·kakao·google·custom:naver) — email이 없으면 비밀번호가 없는 소셜 전용 계정
   who(u) { const m = u.app_metadata || {}; return { id: u.id, email: u.email || "", provider: m.provider || "", providers: Array.isArray(m.providers) ? m.providers : m.provider ? [m.provider] : [] }; },
   // 인증 메일·소셜 로그인이 돌아올 주소. 파일로 열었으면 웹 주소로
-  site() { return location.protocol === "file:" ? "https://20232497.github.io/HeartVerse/" : location.origin + location.pathname; },
+  site() { return location.protocol === "file:" ? "https://20232497.github.io/HeartSync/" : location.origin + location.pathname; },
   async req(path, opt = {}, retried = false) {
     const h = Object.assign({ apikey: this.key, "Content-Type": "application/json" }, opt.headers || {});
     if (this.s) { await this.fresh(); if (this.s) h.Authorization = "Bearer " + this.s.access_token; }
@@ -2872,7 +2878,7 @@ function lightbox(src) {
 
 /* ---------------------------------------------------------------- LLM 엔진 */
 async function waitEngine() { if (S.engine === "pending") await samplePromise; }
-function engineName() { return S.engine === "sample" ? "claude.ai 계정" : S.engine === "byok" ? (S.settings.apiKey ? "API 키" : "HEARTVERSE 서버") : "연결 안 됨"; }
+function engineName() { return S.engine === "sample" ? "claude.ai 계정" : S.engine === "byok" ? (S.settings.apiKey ? "API 키" : "HeartSync 서버") : "연결 안 됨"; }
 /* ---------------------------------------------------------------- 성인 모드
    claude.ai 안(아티팩트)에서는 켜지 않음. 성인 서사는 OpenRouter 모델로만 보내고 Claude에는 성인 지시를 보내지 않음.
    미성년(19세 미만·학생·아동) 암시는 수위와 상관없이 성인 경로·우회·성인 수위 그림에서 뺌 */
@@ -3014,7 +3020,7 @@ async function openRouterStream(messages, { tier, onText, signal, json, maxToken
       res = await fetch(CFG.openRouterUrl, {
         method: "POST", signal,
         headers: { "content-type": "application/json", ...(S.settings.openRouterKey ? { authorization: "Bearer " + S.settings.openRouterKey } : {}),
-          "HTTP-Referer": location.origin !== "null" ? location.origin : "https://heartverse.app", "X-Title": "HEARTVERSE" },
+          "HTTP-Referer": location.origin !== "null" ? location.origin : "https://20232497.github.io/HeartSync/", "X-Title": "HeartSync" },
         body: JSON.stringify({ model, max_tokens: maxTokens, stream: true, ...sampling, messages: [{ role: "system", content: messages[0].content }, ...rest] })
       });
     } catch (e) { if (e.name === "AbortError") throw { code: "cancelled" }; throw { code: "or_network" }; }
@@ -3281,9 +3287,10 @@ function route() {
   if (base === "login") return viewLogin();
   return viewHome();
 }
+const LOGO = `<div class="logo"><span class="mark" aria-hidden="true"></span><span>Heart<i>Sync</i></span></div>`;
 const NAVS = [["home", "홈", "home"], ["chats", "대화", "chat"], ["studio", "만들기", "plus"], ["store", "스토어", "heart"], ["me", "MY", "user"]];
 function renderShell() {
-  $("#rail").innerHTML = `<div class="logo">HEART<i>VERSE</i></div>` +
+  $("#rail").innerHTML = LOGO +
     NAVS.map(([k, l, i]) => `<button class="nav" data-nav="${k}">${ICON[i]}<span>${l}</span></button>`).join("") +
     `<h4>최근 대화</h4><div id="railRecent"></div><div class="rail-foot"><button class="wallet" id="railWallet" aria-label="내 재화, 스토어로 이동"></button></div>`;
   $("#tabbar").innerHTML = NAVS.map(([k, l, i]) => `<button data-nav="${k}">${ICON[i]}<span>${l}</span></button>`).join("");
@@ -3305,7 +3312,7 @@ function walletHTML() {
 }
 function renderWalletChips() { $$(".wallet").forEach((w) => { w.innerHTML = walletHTML(); w.classList.toggle("pro", isPro()); }); updateComposer(); }
 function topbar(extra = "") {
-  return `<div class="topbar"><div class="logo">HEART<i>VERSE</i></div>${extra}<span class="spacer"></span>
+  return `<div class="topbar">${LOGO}${extra}<span class="spacer"></span>
     <button class="wallet" data-go="store" aria-label="내 재화, 스토어로 이동">${walletHTML()}</button></div>`;
 }
 function bindGo(root) { $$("[data-go]", root).forEach((b) => b.onclick = () => go(b.dataset.go)); }
@@ -3342,7 +3349,7 @@ function viewHome() {
     ${S.engine === "none" ? `<div class="engine-warn">AI 연결이 아직 없어요. claude.ai에서 열면 바로 대화할 수 있고, 파일로 열었다면 <b>MY → 설정</b>에서 Anthropic API 키를 넣어 주세요.</div>` : ""}
     ${!S.q ? `<div class="hero">${hero.map((c) => `
       <button class="hero-card" data-char="${esc(c.id)}">${coverHTML(c, "", { vt: true })}
-        <div class="body"><span class="k">${c.isNew ? "NEW · " : ""}${esc(c.cat)} · HEARTVERSE 오리지널</span><h3>${esc(c.title)}</h3><p>${esc(c.desc)}</p>
+        <div class="body"><span class="k">${c.isNew ? "NEW · " : ""}${esc(c.cat)} · HeartSync 오리지널</span><h3>${esc(c.title)}</h3><p>${esc(c.desc)}</p>
         <span class="who">${c.world_mode ? "세계관 입장하기" : esc(c.name) + "와 대화하기"} →</span></div></button>`).join("")}</div>` : ""}
     ${S.rooms.length && !S.q ? `<h2 class="sec">이어서 대화하기</h2><div class="cont">${S.rooms.slice(0, 4).map((r) => `
       <button data-room="${esc(r.id)}">${coverHTML(r)}<span class="x"><b>${esc(r.name)}</b><span>${esc(r.last)}</span></span><span class="note">${ago(r.at)}</span></button>`).join("")}</div>` : ""}
@@ -3350,7 +3357,7 @@ function viewHome() {
     <h2 class="sec">둘러보기 <small>관심있는 대화</small></h2>
     ${audSegHTML()}
     <div class="chips" style="margin-top:10px">${["전체", ...CATS].map((c) => `<button class="chip ${S.cat === c ? "on" : ""}" data-cat="${c}">${c}</button>`).join("")}</div>
-    <h2 class="sec">HEARTVERSE 오리지널 <small>에디터가 직접 만든 작품</small></h2>
+    <h2 class="sec">HeartSync 오리지널 <small>에디터가 직접 만든 작품</small></h2>
     ${originals.length ? `<div class="grid">${originals.map(cardHTML).join("")}</div>` : `<div class="empty">조건에 맞는 오리지널 작품이 없어요.${hidden ? `<br>지금은 ${AUDS[audience()].name} 작품만 보여요.<br><button class="btn sm" data-aud="all">전체 보기</button>` : ""}</div>`}
     <h2 class="sec">커뮤니티 신작 <small>${S.community.length ? "크리에이터가 공개한 캐릭터" : ""}</small></h2>
     ${comm.length ? `<div class="grid">${comm.map(cardHTML).join("")}</div>` :
@@ -3372,7 +3379,7 @@ function viewDetail(id) {
   const rooms = S.rooms.filter((r) => r.charId === c.id);
   const persona = S.personas.find((p) => p.def) || S.personas[0];
   const isMine = S.mine.some((m) => m.id === c.id);
-  const creator = ORIGINALS.includes(c) ? "HEARTVERSE 스튜디오" : (c.creator || "익명 크리에이터");
+  const creator = ORIGINALS.includes(c) ? "HeartSync 스튜디오" : (c.creator || "익명 크리에이터");
   v.innerHTML = `<div class="page">
     ${topbar(`<button class="icon-btn" data-go="home" aria-label="뒤로">${ICON.back}</button>`)}
     <div class="detail">
@@ -4039,7 +4046,7 @@ function paywall(q, r) {
   const lite = quote({ ...r.set, model: "lite" });
   const ov = sheet(`<h2>하트가 부족해요</h2><p class="sub">이번 턴에 ♥${q.n}이 필요한데 지금 ♥${num(S.wallet.hearts)}이 있어요.</p>
     <div class="minipacks">${PACKS.slice(0, 3).map((p) => `<button data-pack="${p.id}"><b>♥ ${num(p.n + p.bonus)}</b><span class="note">${MODELS[r.set.model].name} 약 ${Math.floor((p.n + p.bonus) / q.list)}턴</span><span class="p">${won(p.price)}</span></button>`).join("")}</div>
-    <div class="member" style="padding:16px"><div class="row"><b style="font-family:var(--display);font-size:18px">HEARTVERSE<em style="font-style:normal;color:#f0b54a">+</em></b><span class="spacer"></span><span>${won(PLUS.price)}/월</span></div>
+    <div class="member" style="padding:16px"><div class="row"><b style="font-family:var(--display);font-size:18px">HeartSync<em style="font-style:normal;color:#f0b54a">+</em></b><span class="spacer"></span><span>${won(PLUS.price)}/월</span></div>
       <p style="margin:6px 0 12px;color:#e9dfcf;font-size:13px">라이트 무제한 · 스토리·마스터 50% 할인 · 매달 ♥${PLUS_MONTHLY}</p><button class="btn gold block" id="upPlus">PLUS 시작하기</button></div>
     ${r.set.model !== "lite" ? `<button class="btn ghost block" id="toLite" style="margin-top:8px">라이트 모델로 계속하기 (${lite.type === "free" ? "오늘 무료 " + freeLeft() + "턴 남음" : "턴당 ♥" + lite.n})</button>` : ""}
     <button class="btn ghost block" data-x style="margin-top:4px">닫기</button>`);
@@ -4054,7 +4061,7 @@ function plusSheet(reason) {
     mem: ["더 오래 기억하려면 PLUS가 필요해요", `무료 요금제는 기억력 ${PLAN.free.memTurns}턴, 장기기억 ${num(PLAN.free.memoMax)}자까지예요. PLUS는 ${PLAN.pro.memTurns}턴, ${num(PLAN.pro.memoMax)}자까지 기억해요.`]
   }[reason];
   const ov = sheet(`<h2>${esc(copy[0])}</h2><p class="sub">${esc(copy[1])}</p>
-    <div class="member" style="padding:16px"><div class="row"><b style="font-family:var(--display);font-size:18px">HEARTVERSE<em style="font-style:normal;color:#f0b54a">+</em></b><span class="spacer"></span><span>${won(PLUS.price)}/월</span></div>
+    <div class="member" style="padding:16px"><div class="row"><b style="font-family:var(--display);font-size:18px">HeartSync<em style="font-style:normal;color:#f0b54a">+</em></b><span class="spacer"></span><span>${won(PLUS.price)}/월</span></div>
     <p style="margin:6px 0 12px;color:#e9dfcf;font-size:13px">라이트 무제한 · 스토리·마스터 50% 할인 · 매달 ♥${PLUS_MONTHLY} · 기억 3배 이상</p><button class="btn gold block" id="upPlus">PLUS 시작하기</button></div>
     <button class="btn ghost block" data-x style="margin-top:8px">닫기</button>`);
   $("#upPlus", ov).onclick = () => checkout(PLUS, afterBuy);
@@ -4261,7 +4268,7 @@ function exportText(r) {
   return head + r.msgs.filter((m) => curText(m) && !m.sys).map((m) => `${m.role === "ai" ? speakerName(r) : r.persona.name}: ${curText(m).replace(/\[\[img:([a-z0-9]+):(\d+)\]\]/gi, (_, a, b) => `[이미지: ${(r.char.cast.find((x) => x.code === a.toLowerCase()) || {}).name || a} · ${sitName(+b)}]`)}`).join("\n\n");
 }
 async function exportRoom(r) {
-  const data = exportText(r), filename = `HEARTVERSE_${r.char.title.replace(/[^\w가-힣]+/g, "_")}_${new Date().toISOString().slice(0, 10)}.txt`;
+  const data = exportText(r), filename = `HeartSync_${r.char.title.replace(/[^\w가-힣]+/g, "_")}_${new Date().toISOString().slice(0, 10)}.txt`;
   if (DOWNLOADS) { try { await DOWNLOADS.save({ filename, data }); } catch (e) { if (e?.code !== "cancelled" && e?.code !== "declined") toast("내보내지 못했어요. 대화 복사를 써 주세요."); } return; }
   try { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([data], { type: "text/plain" })); a.download = filename; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); }
   catch { copyText(data, "내보내기가 막혀 있어서 대신 복사했어요"); }
@@ -4652,7 +4659,7 @@ const PACKS = [
   { id: "h1000", n: 1000, bonus: 150, price: 14900, best: true },
   { id: "h3000", n: 3000, bonus: 600, price: 39000 }
 ];
-const PLUS = { id: "plus", name: "HEARTVERSE+ 1개월", price: 9900 };
+const PLUS = { id: "plus", name: "HeartSync+ 1개월", price: 9900 };
 function buyPack(id, after) { const p = PACKS.find((x) => x.id === id); checkout({ id: p.id, name: "하트 " + num(p.n + p.bonus) + "개", price: p.price, hearts: p.n + p.bonus }, after); }
 function viewStore() {
   const v = $("#view"), pro = isPro(), story = listPrice("story", "mid", 10);
@@ -4675,7 +4682,7 @@ function viewStore() {
 
     <h2 class="sec">멤버십</h2>
     <div class="member">
-      <h2>HEARTVERSE<em>+</em></h2>
+      <h2>HeartSync<em>+</em></h2>
       <ul>
         <li>라이트 모델 무제한</li><li>스토리·마스터 모델 50% 할인</li><li>매달 하트 ${PLUS_MONTHLY}개 지급</li>
         <li>장기기억 ${num(PLAN.free.memoMax)}자 → ${num(PLAN.pro.memoMax)}자</li><li>기억력 최대 ${PLAN.free.memTurns}턴 → ${PLAN.pro.memTurns}턴</li><li>대화방 무제한 · 기억 히스토리 ${PLAN.pro.hist}개</li>
@@ -4730,7 +4737,7 @@ function checkout(item, after) {
       S.wallet.history.unshift({ at: Date.now(), name: item.name, price: item.price }); S.wallet.history = S.wallet.history.slice(0, 50);
       saveWallet();
       $(".sheet", ov).innerHTML = `<div class="ok-mark">♥</div><h2 style="text-align:center">결제 완료</h2>
-        <p class="sub" style="text-align:center">${item.id === "plus" ? `HEARTVERSE+가 시작됐어요. 라이트 무제한, 하트 ${PLUS_MONTHLY}개가 지급됐어요.` : `하트 ${num(item.hearts)}개가 지급됐어요. 지금 ♥ ${num(S.wallet.hearts)}`}</p>
+        <p class="sub" style="text-align:center">${item.id === "plus" ? `HeartSync+가 시작됐어요. 라이트 무제한, 하트 ${PLUS_MONTHLY}개가 지급됐어요.` : `하트 ${num(item.hearts)}개가 지급됐어요. 지금 ♥ ${num(S.wallet.hearts)}`}</p>
         <button class="btn pri block" id="done">${after ? "대화로 돌아가기" : "확인"}</button>`;
       $("#done", ov).onclick = () => { ov.remove(); if (after) after(); else route(); };
     }, 1000);
@@ -4742,14 +4749,14 @@ function checkout(item, after) {
 function viewLogin() {
   const v = $("#view");
   if (!SB.on() || SB.s) {
-    v.innerHTML = `<div class="page"><div class="login-page"><div class="login-card"><div class="logo">HEART<i>VERSE</i></div>
+    v.innerHTML = `<div class="page"><div class="login-page"><div class="login-card">${LOGO}
       <p class="lead">${!SB.on() ? (IN_CLAUDE ? "claude.ai 안에서는 claude.ai 계정에 자동으로 저장돼요." : "계정 서버가 아직 연결되지 않았어요.") : `<b>${esc(acctName())}</b>(으)로 로그인되어 있어요.`}</p>
       <button class="btn pri block" data-go="home">홈으로</button>${SB.s ? `<div class="lrow"><button type="button" class="lnk" data-go="me">MY에서 계정 관리</button></div>` : ""}</div></div></div>`;
     bindGo(v); return;
   }
   let mode = "in";
   v.innerHTML = `<div class="page"><div class="login-page"><div class="login-card">
-    <div class="logo">HEART<i>VERSE</i></div>
+    ${LOGO}
     <p class="lead">로그인하면 PC와 휴대폰에서<br>대화·작품·설정이 그대로 이어져요.</p>
     <div class="seg" id="lmode"><button type="button" data-m="in" class="on">로그인</button><button type="button" data-m="up">회원가입</button></div>
     <form id="lform" novalidate>
@@ -5069,7 +5076,7 @@ function bindAccount(v) {
     } catch (x) { toast("계정을 삭제하지 못했어요" + (x && x.code === "PGRST202" ? " (docs/supabase.sql의 delete_me 함수가 없어요)" : "")); }
   });
 }
-// 이 기기의 HEARTVERSE 데이터 전부(설정·키·그림 포함)를 지움 — 같이 쓰는 기기에서 로그아웃할 때
+// 이 기기의 HeartSync 데이터 전부(설정·키·그림 포함)를 지움 — 같이 쓰는 기기에서 로그아웃할 때
 async function wipeDevice() {
   await IDB.clear();
   try { Object.keys(localStorage).filter((k) => k.indexOf("hv1_") === 0).forEach((k) => localStorage.removeItem(k)); } catch {}
