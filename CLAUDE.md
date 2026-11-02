@@ -20,6 +20,7 @@
 - npm run dev(tools/dev.mjs): http://localhost:5173(--port), src/·content/를 저장할 때마다 새 프로세스로 빌드(work.js import 캐시 때문) → SSE로 새로 고침, 실패하면 화면 아래 오류. 새로 고침 스크립트는 응답에만 붙이고 디스크의 index.html에는 안 넣음
 - 나눌 때 무결성: 첫 단계(CSS·JS 조각) 빌드가 기존 index.html과 바이트 단위로 같았고, 작품을 content/로 옮긴 뒤엔 작품 영역 밖은 바이트 단위로 같고 ORIGINALS·HOME_ROWS를 실행한 값이 깊은 비교로 같음(row·aud 키가 객체 끝으로 간 것만 다름 — 키 순서를 쓰는 코드 없음)
 - 작업 사본 줄바꿈은 CRLF일 수 있음(autocrlf) — 빌드는 LF로 읽고 LF로 씀
+- vercel.json: 저장소에 Vercel 미리보기 배포 연동(프로젝트 heart-verse/heartverse, PR마다 Vercel 체크·봇 댓글)이 붙어 있음 — 기준 배포는 GitHub Pages지만 사용자가 2026-11-03 Vercel도 유지하기로 함. package.json이 생기면서 Vercel이 npm run build를 돌리고 결과를 기본 출력 폴더 public/에서 찾아 실패했으므로 outputDirectory "."(빌드 뒤 저장소 루트를 그대로 서빙, GitHub Pages와 같은 모양)로 지정. 지우면 PR의 Vercel 체크가 실패함
 - package.json(의존성 없음, 스크립트 build·check·dev만)의 "type": "module"은 content/**/work.js(export default)를 Node가 ESM으로 읽기 위한 것 — 지우지 않기. Playwright 흐름 시험 스크립트는 저장소에 없고 세션 scratchpad(pw/)에 있음(social·vault·cloud2·mobile·audience·chatflow.mjs, 인자로 로컬 URL)
 
 ## 구조
