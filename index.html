@@ -205,6 +205,12 @@ h2.sec small, h1.sec small { font-family:var(--sans); font-size:12.5px; color:va
 .scene-img { margin:4px 0 8px; max-width:min(380px, 100%); border-radius:16px; overflow:hidden; background:var(--surface2); position:relative; }
 .scene-img img { display:block; width:100%; height:auto; max-height:520px; object-fit:cover; cursor:zoom-in; }
 .scene-img figcaption { position:absolute; left:10px; bottom:9px; font-size:11.5px; font-weight:600; color:#fff; background:rgba(0,0,0,.45); backdrop-filter:blur(4px); border-radius:999px; padding:2px 10px; }
+/* 한 응답에 인물 그림이 여러 장이면 작게, 글 없이 이어진 그림은 나란히 */
+.many-img .scene-img { max-width:min(220px, 62%); }
+.many-img .scene-img img { max-height:300px; }
+.scene-row { display:flex; gap:8px; margin:4px 0 8px; }
+.scene-row .scene-img { flex:1 1 0; min-width:0; max-width:200px; margin:0; }
+.scene-row .scene-img figcaption { left:6px; bottom:6px; font-size:10.5px; padding:2px 7px; }
 .artcard { position:relative; aspect-ratio:4/5; width:100%; overflow:hidden; isolation:isolate; container-type:inline-size; color:#fff;
   background:radial-gradient(80% 60% at 70% 20%, color-mix(in srgb, var(--tint) 55%, transparent), transparent 70%), radial-gradient(60% 50% at 20% 90%, color-mix(in srgb, var(--c3) 40%, transparent), transparent 70%), linear-gradient(160deg, var(--c1), var(--c2)); }
 .artcard::before { content:""; position:absolute; inset:0; background:repeating-linear-gradient(135deg, rgba(255,255,255,.05) 0 2px, transparent 2px 10px); z-index:0; }
@@ -428,6 +434,8 @@ details.stat[open] summary::after { content:"▴"; }
 .rate-field { margin:0 0 12px; max-width:340px; }
 .gen-ov .rate-field { margin-top:12px; max-width:none; }
 .rate-field .note { margin:0; }
+.gen-save { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin:10px 0 0; }
+.gen-save .note { flex:1 1 140px; margin:0; }
 .gen-auto { margin-top:6px; }
 .gen-auto summary { cursor:pointer; color:var(--muted); font-size:12.5px; }
 .gen-auto p { margin:4px 0 0; }
@@ -1438,6 +1446,35 @@ function sitDef(n) { return n >= CUSTOM_BASE ? (S.settings.customSits || []).fin
 function sitName(n) { return SIT[n] || sitDef(n)?.name || "칸 " + n; }
 function customSits() { return (S.settings.customSits || []).filter((d) => d.rating === "safe" || ageOK()); }
 const slotNums = () => [...SIT.keys(), ...customSits().map((d) => d.n)]; // 슬롯 시트에 보이는 칸 번호
+/* 상황 번호를 고르는 낱말(정규식 조각). AI가 그림을 빠뜨린 인물의 번호를 고를 때와, 유저 입력에서 번호 후보를 뽑을 때 씀 */
+const SIT_KEYS = { 2: "웃|미소|싱긋|방긋|피식|킥킥|깔깔|농담|재밌", 3: "부끄|수줍|민망|얼굴이 (?:붉|빨개)|귀까지|빨개|장난|놀리|놀려|짓궂|칭찬|예쁘|예쁜|예뻐|귀여|귀엽",
+  4: "울먹|울었|우는|눈물|슬프|슬퍼|흐느|서럽|그리워", 5: "놀라|놀란|깜짝|화들짝|헉|휘둥그|설마", 6: "화가|화를|화난|분노|노려|버럭|소리쳤|이를 악|짜증|열받|닥쳐",
+  7: "삐졌|삐친|삐죽|토라|흥[,.!…]|볼을 부풀|서운|입을 내밀", 8: "무서|두려|겁에|겁먹|떨리|떨었|비명|공포|소름", 9: "다쳤|다친|부상|피를|피가|상처|쓰러",
+  10: "치료|붕대|회복|응급", 11: "쉬자|쉬어|잠들|졸려|하품|휴식|기지개|낮잠", 12: "공격|휘둘|베었|베어|찔렀|쏘았|쐈|주먹|덤벼|전투|싸우",
+  13: "각성|힘이 솟|눈빛이 변|폭주|기운이 치솟", 14: "설레|두근|심장이|가슴이 뛰|손을 잡|손잡|안아|포옹|고백|좋아해|데이트" };
+// 추천 칸 이름별 낱말. 그 밖의 직접 만든 칸은 칸 이름 자체로 찾음
+const SIT_KEYS_EXTRA = { 식사: "식사|밥|먹", 만남: "처음 뵙|반가워|반갑", 정색: "정색|굳은 얼굴|차갑게", 행복: "행복|기뻐|기쁘", 경계: "경계|의심|수상", 고민: "고민|생각에 잠|망설",
+  지침: "지쳐|지친|피곤|녹초", 비웃음: "비웃|코웃음", 취함: "취했|취한|술잔|건배", 요리: "요리|부엌|앞치마", 게임: "게임", 카페: "카페|커피", 해변: "해변|바다|파도",
+  놀이공원: "놀이공원|관람차", "밤 산책": "산책|밤길", 벚꽃: "벚꽃", 크리스마스: "크리스마스|성탄", "비 오는 날": "비가|우산|빗속", 영화관: "영화",
+  손잡기: "손을 잡|손잡", 포옹: "안아|포옹|껴안|품에", 고백: "고백|좋아해|사랑해", 질투: "질투|샘이", 무릎베개: "무릎베개|무릎에 누", "키스 직전": "입술|입맞|키스", 잠옷: "잠옷|파자마", 수영복: "수영복|수영장" };
+function sitKeys(n) {
+  if (SIT_KEYS[n]) return SIT_KEYS[n];
+  const d = sitDef(n); if (!d || !d.name.trim()) return "";
+  return [SIT_KEYS_EXTRA[d.name.trim()], d.name.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&")].filter(Boolean).join("|");
+}
+/* 글 속 낱말로 상황 번호마다 점수(adult면 성인 수위 칸도 후보). 직접 만든 칸은 더 구체적이라 0.5 더함 */
+function sitScores(text, adult) {
+  const out = new Map(), s = String(text || "");
+  if (!s.trim()) return out;
+  for (const n of [...SIT.keys(), ...customSits().filter((d) => d.rating === "safe" || adult).map((d) => d.n)]) {
+    const k = sitKeys(n); if (!k) continue;
+    const hits = (s.match(new RegExp(k, "g")) || []).length;
+    if (hits) out.set(n, hits + (n >= CUSTOM_BASE ? 0.5 : 0));
+  }
+  return out;
+}
+/* 유저 입력에 맞는 상황 번호 후보 두 개("3 부끄러움") — [이번 응답]에 붙여 AI가 고르게 */
+function sitHints(text, adult) { return [...sitScores(text, adult)].sort((a, b) => b[1] - a[1]).slice(0, 2).map(([n]) => n + " " + sitName(n)); }
 /* 이미지 칸 프롬프트를 묶음별로: 장면(표정·자세) → 인물(성별·외모) → 배경. 장면이 앞에 와야 표정이 반영됨(2026-11 비교 생성으로 확인).
    그림체·품질·수위 태그는 runwareImage가 뒤에 붙임 */
 /* 외모 글 → 인원·성별 태그. 남자는 male focus까지 넣어야 Pony 계열이 여자로 바꿔 그리지 않음. 사람 낱말 없이 동물만 있으면 사람 없는 그림 */
@@ -1457,13 +1494,64 @@ function slotParts(cast, i, c) {
     { key: "bg", label: "배경", tags: [i === 0 ? "simple background" : "detailed background"] }
   ];
 }
-function buildPonyPrompt(cast, i, c) { return slotParts(cast, i, c).flatMap((p) => p.tags).join(", "); }
-/* 묶음별로 영문 태그로 바꿔 이어 붙임. 인물(외모) 묶음은 수위와 상관없이 같은 번역(같은 인물로 보이게) */
-async function partsTags(parts, adult) {
-  if (adult && minorHint(parts.flatMap((g) => g.tags).join(", "))) throw { code: "minor_block" };
+function buildPonyPrompt(cast, i, c) { return savedParts(c, cast, i).flatMap((p) => p.tags.map((x) => x.strong ? `(${x.t}:1.3)` : x.t)).filter(Boolean).join(", "); }
+const asTag = (t) => (typeof t === "string" ? { t, strong: false } : t);
+/* 인물별로 저장한 태그(S.tagpacks[작품 id][인물 코드] = {look, sits: {칸 번호: {scene, extra, bg}}}, KV "tagpacks").
+   기본 태그와의 차이 {add, del, strong}만 저장해서, 작품의 외모 설정이 바뀌어도 사용자가 고친 부분만 남음.
+   인물(look)은 그 인물의 모든 칸에, 장면·추가·배경은 그 칸에만 */
+function castPack(c, code) { return ((S.tagpacks || {})[c.id] || {})[code] || null; }
+function savedParts(c, cast, i) {
+  const pack = castPack(c, cast.code) || {}, sd = (pack.sits || {})[i] || {};
+  const apply = (tags, d) => {
+    if (!d) return tags.map(asTag);
+    const del = d.del || [], add = d.add || [], strong = d.strong || [];
+    return [...tags.filter((t) => !del.includes(t)), ...add.filter((t) => !tags.includes(t))].map((t) => ({ t, strong: strong.includes(t) }));
+  };
+  const out = slotParts(cast, i, c).map((g) => ({ ...g, tags: apply(g.tags, g.key === "look" ? pack.look : sd[g.key]) }));
+  out.splice(1, 0, { key: "extra", label: "추가", tags: apply([], sd.extra) }); // 직접 더한 태그는 장면 바로 다음
+  return out;
+}
+function hasSavedTags(c, code, i) { const p = castPack(c, code); return !!(p && (p.look || (p.sits || {})[i])); }
+function saveCastTags(c, cast, i, groups) {
+  const base = slotParts(cast, i, c), baseOf = (k) => (base.find((g) => g.key === k) || { tags: [] }).tags;
+  const diff = (k) => {
+    const g = groups.find((x) => x.key === k); if (!g) return null;
+    const b = baseOf(k), cur = g.tags.map((x) => x.t);
+    const d = { add: cur.filter((t) => !b.includes(t)), del: b.filter((t) => !cur.includes(t)), strong: g.tags.filter((x) => x.strong).map((x) => x.t) };
+    return d.add.length || d.del.length || d.strong.length ? d : null;
+  };
+  S.tagpacks[c.id] = S.tagpacks[c.id] || {};
+  const pack = S.tagpacks[c.id][cast.code] = { sits: {}, ...(S.tagpacks[c.id][cast.code] || {}) };
+  const look = diff("look"); if (look) pack.look = look; else delete pack.look;
+  const sd = {}; ["scene", "extra", "bg"].forEach((k) => { const d = diff(k); if (d) sd[k] = d; });
+  if (Object.keys(sd).length) pack.sits[i] = sd; else delete pack.sits[i];
+  if (!pack.look && !Object.keys(pack.sits).length) delete S.tagpacks[c.id][cast.code];
+  if (!Object.keys(S.tagpacks[c.id]).length) delete S.tagpacks[c.id];
+  KV.set("tagpacks", S.tagpacks);
+}
+function clearCastTags(c, cast, i) {
+  const pack = castPack(c, cast.code); if (!pack) return;
+  delete pack.look; if (pack.sits) delete pack.sits[i];
+  if (!Object.keys(pack.sits || {}).length) delete S.tagpacks[c.id][cast.code];
+  if (!Object.keys(S.tagpacks[c.id]).length) delete S.tagpacks[c.id];
+  KV.set("tagpacks", S.tagpacks);
+}
+/* 태그 묶음 → 영문 프롬프트. 강조(★) 태그는 하나씩 번역해 "(태그:1.3)"로, 나머지는 묶음째 번역.
+   인물(외모) 묶음은 수위와 상관없이 같은 길로 번역 — 수위마다 번역이 달라 머리색·옷이 바뀌던 문제 */
+async function groupsPrompt(groups, adult) {
   const out = [];
-  for (const g of parts) out.push(await ponyTags(g.tags.join(", "), g.key === "look" ? false : adult));
+  for (const g of groups) {
+    const ad = g.key === "look" ? false : adult, tags = g.tags.map(asTag);
+    for (const x of tags.filter((y) => y.strong)) out.push(...splitTags(await ponyTags(x.t, ad)).map((t) => /[():]/.test(t) ? t : `(${t}:1.3)`));
+    const plain = tags.filter((y) => !y.strong).map((y) => y.t);
+    if (plain.length) out.push(await ponyTags(plain.join(", "), ad));
+  }
   return out.filter(Boolean).join(", ");
+}
+/* 빈 칸 채우기용: 묶음별로 영문 태그로 바꿔 이어 붙임(인물별 저장 태그·강조 포함) */
+async function partsTags(parts, adult) {
+  if (adult && minorHint(parts.flatMap((g) => g.tags.map((x) => asTag(x).t)).join(", "))) throw { code: "minor_block" };
+  return groupsPrompt(parts, adult);
 }
 /* 칸을 지우면 모든 인물에 저장된 그 칸의 그림도 지움 */
 function dropSitImages(n) {
@@ -1788,13 +1876,15 @@ function genErr(e) {
 }
 /* 다른 시트 위에 겹쳐 뜨는 생성 창. 프롬프트는 묶음별 태그 칩(누르면 ★강조, ×로 빼기, 칸에 한국어·영어로 더하기).
    그림체·품질·수위·금지 태그는 숨겨 두고 runwareImage가 붙임. parts가 없으면 prompt 문자열을 한 묶음으로. onUse(blob)가 끝나면 닫혀요 */
-function genImageSheet({ title = "AI로 이미지 만들기", prompt = "", parts, aspect = "4:5", rating, onUse }) {
+/* save: {c, cast, i}를 주면(이미지 슬롯) 고친 태그를 그 인물에 저장·기본값으로 되돌리는 줄을 보여 줌 */
+function genImageSheet({ title = "AI로 이미지 만들기", prompt = "", parts, aspect = "4:5", rating, onUse, save }) {
   const model = imgModelInfo(imgModelId()).name;
-  const groups = (parts || [{ key: "main", label: "프롬프트", tags: splitTags(prompt) }]).map((g) => ({ ...g, tags: g.tags.map((t) => ({ t, strong: false })) }));
-  groups.splice(1, 0, { key: "extra", label: "추가", tags: [] }); // 직접 더한 태그는 장면 바로 다음(앞쪽일수록 잘 반영됨)
+  const toGroups = (ps) => { const gs = ps.map((g) => ({ ...g, tags: g.tags.map((t) => ({ ...asTag(t) })) })); if (!gs.some((g) => g.key === "extra")) gs.splice(1, 0, { key: "extra", label: "추가", tags: [] }); return gs; }; // 직접 더한 태그는 장면 바로 다음(앞쪽일수록 잘 반영됨)
+  const groups = toGroups(parts || [{ key: "main", label: "프롬프트", tags: splitTags(prompt) }]);
   const ov = document.createElement("div"); ov.className = "overlay gen-ov";
   ov.innerHTML = `<div class="sheet" role="dialog" aria-modal="true"><div class="sheet-head"><h2>${esc(title)}</h2><button class="icon-btn" data-x aria-label="닫기">${ICON.close}</button></div>
     <div id="gtags"></div>
+    ${save ? `<div class="gen-save"><button type="button" class="btn sm pri" id="gsave">이 인물에 태그 저장</button><button type="button" class="btn sm ghost" id="greset">기본값으로</button><span class="note" id="gsaved"></span></div>` : ""}
     <p class="note" style="margin:8px 0 0">태그를 누르면 ★강조, ×는 빼기. ${S.engine === "none" && !hasOpenRouterKey() ? "AI 연결이 없어 한글은 빼고 보내요." : "한국어로 써도 영문 태그로 바꿔 보내요."}</p>
     <details class="gen-auto"><summary>자동으로 붙는 태그</summary><p class="note">그림체(${esc(styleLabel())}) · 품질 · 수위 · 금지(저품질·글자·미성년) 태그 · 모델 ${esc(model)}</p></details>
     ${ratingFieldHTML("grt", rating)}
@@ -1813,18 +1903,14 @@ function genImageSheet({ title = "AI로 이미지 만들기", prompt = "", parts
     if (focusGroup != null) $(`[data-ag="${focusGroup}"]`, ov)?.focus();
   };
   paintTags();
-  // 묶음 순서대로 영문 태그로: 강조(★) 태그는 하나씩 번역해 "(태그:1.3)"로, 나머지는 묶음째 번역.
-  // 인물(외모) 묶음은 수위와 상관없이 같은 길로 번역 — 수위마다 번역이 달라 머리색·옷이 바뀌던 문제
-  const buildPrompt = async (adult) => {
-    const out = [];
-    for (const g of groups) {
-      const ad = g.key === "look" ? false : adult;
-      for (const x of g.tags.filter((y) => y.strong)) out.push(...splitTags(await ponyTags(x.t, ad)).map((t) => /[():]/.test(t) ? t : `(${t}:1.3)`));
-      const plain = g.tags.filter((y) => !y.strong).map((y) => y.t);
-      if (plain.length) out.push(await ponyTags(plain.join(", "), ad));
-    }
-    return out.filter(Boolean).join(", ");
-  };
+  const buildPrompt = (adult) => groupsPrompt(groups, adult);
+  if (save) {
+    const { c, cast, i } = save, note = $("#gsaved", ov);
+    const paintSaved = () => { note.textContent = hasSavedTags(c, cast.code, i) ? "저장한 태그를 쓰는 중이에요" : "기본 태그예요"; };
+    $("#gsave", ov).onclick = () => { saveCastTags(c, cast, i, groups); paintSaved(); toast(`${cast.name}에 저장했어요. 인물 태그는 모든 칸에, 장면·추가·배경 태그는 이 칸에 써요`); };
+    $("#greset", ov).onclick = () => { clearCastTags(c, cast, i); groups.splice(0, groups.length, ...toGroups(savedParts(c, cast, i))); paintTags(); paintSaved(); toast("기본 태그로 되돌렸어요"); };
+    paintSaved();
+  }
   let blob = null, url = "", ctl = null;
   const close = () => { ctl && ctl.abort(); url && URL.revokeObjectURL(url); ov.remove(); };
   ov.addEventListener("click", (e) => { if (e.target === ov || e.target.closest("[data-x]")) close(); });
@@ -1852,7 +1938,7 @@ function genImageSheet({ title = "AI로 이미지 만들기", prompt = "", parts
 const S = {
   wallet: { hearts: 0, freeDay: today(), freeUsed: 0, pro: null, history: [], ledger: [], ack: {} },
   personas: [{ id: "p1", name: "유저", memo: "", desc: "", img: "", def: true }],
-  profile: { nick: "" }, mine: [], rooms: [], community: [], imgpacks: {}, coverpacks: {}, lorepacks: {},
+  profile: { nick: "" }, mine: [], rooms: [], community: [], imgpacks: {}, coverpacks: {}, lorepacks: {}, tagpacks: {},
   settings: { fs: 15.5, chatLh: 1.8, narrFont: "serif", enterSend: true, sceneImg: true, apiKey: "", runwareKey: "", customSits: [], imgModel: IMG_MODELS[0].id, imgStyle: "webtoon", imgStyleCustom: "", styleRefs: [], styleSets: [], styleV2: true, memCfg: { auto: true, every: 5, limit: 3000, guide: "auto", custom: "" },
     // 성인 모드: 자기 확인(isAgeVerified) 전에는 모두 꺼진 것과 같음. contentFilter false면 모든 대화방이 성인 모드
     isAgeVerified: false, contentFilter: true, autoFallback: true, openRouterKey: "", unfilteredModels: { ...OR_TIER }, customUnfilteredModel: "" },
@@ -2055,6 +2141,18 @@ function garbled(t) {
   return cnt(/[a-z]{2,}[A-Z][a-z]{2,}|\w+\.(?:cpp|js|py|h|java)\b|[A-Za-z]+_[A-Za-z]*/g) + cnt(/[가-힣][a-z]{3,}|[a-z]{3,}[가-힣]/g)
     + cnt(/[가-힣][一-鿿]|[一-鿿][가-힣]/g) + cnt(/\b(?=[a-z]*\d)(?=\d*[a-z])[a-z\d]{6,}\b/gi) >= 2;
 }
+/* 같은 문단 묶음(1~4문단, 합쳐 30자 이상)이 바로 이어서 되풀이되면 두 번째 묶음이 시작하는 위치, 아니면 -1.
+   롤플레이 12B 모델이 같은 두세 줄을 출력 한도까지 반복하다 상태창 없이 끊기는 것을 막음(2026-11 Rocinante). 쓰는 중인 마지막 줄은 빼고 봄 */
+function loopAt(body) {
+  const paras = [], re = /[^\n]+/g; let m;
+  while ((m = re.exec(body))) { const t = m[0].trim(); if (t) paras.push({ t, at: m.index }); }
+  if (!/\n\s*$/.test(body)) paras.pop();
+  for (let k = 1; k <= 4 && paras.length >= 2 * k; k++) {
+    const a = paras.slice(-2 * k, -k), b = paras.slice(-k);
+    if (a.every((p, i) => p.t === b[i].t) && a.reduce((n, p) => n + p.t.length, 0) >= 30) return b[0].at;
+  }
+  return -1;
+}
 /* OpenRouter(OpenAI 호환 SSE). 메시지 모양(첫 메시지 = 시스템, 같은 역할 이어 붙이기)과 json 처리는 byok와 같음.
    model을 주면 등급 대신 그 모델, sampling은 샘플링 값. 대화 요청(시스템에 MARK)의 본문이 깨지면 멈추고 temperature를 낮춰 한 번 다시 씀 */
 async function openRouterStream(messages, { tier, onText, signal, json, maxTokens, model: pinned = "", sampling = OR_SAMPLING, retry = true }) {
@@ -2102,8 +2200,13 @@ async function openRouterStream(messages, { tier, onText, signal, json, maxToken
         if (ev.error) { err = ev.error; fin = true; break; }
         const delta = ev.choices?.[0]?.delta?.content;
         if (delta) { text += delta; onText?.({ text, delta }); }
-        // 본문이 깨지기 시작하면 바로 멈춤(100자마다 검사)
-        if (chat && text.length >= 120 && text.length - checked >= 100) { checked = text.length; if (garbled(splitReply(text).body)) { bad = fin = true; break; } }
+        // 본문이 깨지기 시작하면 바로 멈춤, 같은 문단을 되풀이하기 시작하면 첫 번째까지만 남기고 멈춤(100자마다 검사)
+        if (chat && text.length >= 120 && text.length - checked >= 100) {
+          checked = text.length; const body = splitReply(text).body;
+          if (garbled(body)) { bad = fin = true; break; }
+          const at = text.indexOf(MARK) < 0 ? loopAt(body) : -1;
+          if (at >= 0) { text = body.slice(0, at).trimEnd(); onText?.({ text, delta: "" }); fin = true; try { reader.cancel(); } catch {} break; }
+        }
       }
     }
   } catch (e) { throw { code: e.name === "AbortError" ? "cancelled" : "upstream_error", text }; }
@@ -2174,8 +2277,11 @@ const ADULT_RULE = "모든 등장인물은 법적 성인(20세 이상)이다. �
 function rulesPrompt(r, lore = [], hist = r.msgs) {
   const c = r.char, p = r.persona, len = LEN[r.set.len] || LEN.mid;
   const fields = c.fields.map((f) => `"${f}":${f === c.gauge && typeof r.status?.[f] === "number" ? "0~100 정수" : '"짧은 값"'}`).join(",");
-  const seen = new Set(); r.msgs.forEach((m) => imgTags(curText(m)).forEach((t) => seen.add(t.code)));
+  const seen = new Set(); hist.forEach((m) => imgTags(curText(m)).forEach((t) => seen.add(t.code)));
   const castLine = (c.cast || []).map((x) => `${x.code}=${x.name}`).join(", ");
+  const sn = (name) => SIT.indexOf(name) + " " + name, okSit = (n) => n < CUSTOM_BASE || (sitDef(n) && (sitDef(n).rating === "safe" || unfilteredRoute(r)));
+  // 인물별로 그림이 들어 있는 칸 번호(준비된 이미지셋 안에서 고르게)
+  const ready = (c.cast || []).map((x) => { const m = imagesOf(c)[x.code] || {}; const ns = Object.keys(m).filter((k) => validRef(m[k])).map(Number).filter(okSit).sort((a, b) => a - b); return ns.length ? `${x.name} ${ns.join("·")}` : ""; }).filter(Boolean);
   return `너는 한국어 캐릭터 롤플레이 플랫폼의 연기 엔진이다. 아래 설정의 ${c.world_mode ? "세계관 내레이터로서 모든 인물과 세계를" : "캐릭터 「" + c.name + "」를"} 연기하며 유저와 함께 이야기를 만든다.
 
 [작품] ${c.title}
@@ -2220,12 +2326,13 @@ ${lore.length ? "\n[키워드북 — 이번 장면에 나온 키워드의 설정
 - 장면 설계: 매 응답은 '인물이 지금 원하는 것 → 그것을 막는 것 → 달라진 상황'으로 움직이고, 유저가 반응하지 않을 수 없는 순간(질문·선택·위기·고백)에서 멈춘다.${c.world_mode ? "\n- 군상극: 인물마다 자기 목적과 일정이 있고 서로 동맹·질투·부채로 얽혀 있다. 유저가 없는 곳에서도 세력은 움직이고 그 결과가 유저에게 돌아온다. 히로인들은 유저만 바라보는 인형이 아니다. 한 장면에 너무 많은 인물을 몰아넣지 않는다." : ""}${relStage(c, r.status)}
 
 ${(() => { const used = usedOpeners(hist); return used.length ? `\n[이미 쓴 문장 — 이렇게 시작하거나 같은 묘사를 되풀이하지 않는다]\n${used.map((s) => "- " + s + "…").join("\n")}\n` : ""; })()}
-[장면 이미지]
-- 그림을 넣으려면 본문 중 별도 줄에 [[img:코드:번호]] 만 쓴다. 설명을 덧붙이지 않는다.
+[장면 이미지 — 매 응답 필수]
+- 이번 응답에 나오는(말하거나 움직이는) 인물마다 그림을 한 장씩 넣는다. 그 인물이 처음 말하거나 등장하는 줄 바로 위에 별도 줄로 [[img:코드:번호]] 만 쓴다. 설명을 덧붙이지 않는다.
 - 인물 코드: ${castLine}
 - 번호: ${[...SIT.map((s, i) => i + " " + s), ...customSits().filter((d) => d.rating === "safe" || unfilteredRoute(r)).map((d) => d.n + " " + d.name)].join(", ")}
-- 인물이 이야기에 처음 등장하는 순간에는 그 인물의 0번(프로필)을 반드시 넣는다. 이미 등장한 인물: ${[...seen].join(", ") || "없음"}
-- 그 밖에는 감정이나 상황이 크게 바뀌는 순간에만, 한 응답에 최대 2장. 직전 응답과 같은 이미지를 반복하지 않는다.
+- 번호는 그 순간 그 인물의 표정·상황으로 고르고, 유저의 말과 행동에 대한 반응을 먼저 본다: 놀림·짓궂은 장난 → ${sn("부끄러움")}·${sn("삐침")}, 칭찬·농담 → ${sn("웃음")}, 고백·스킨십 → ${sn("설렘")}·${sn("부끄러움")}, 무례·배신 → ${sn("분노")}, 위협·괴물 → ${sn("공포")}·${sn("놀람")}, 싸움 → ${sn("공격")}, 다침 → ${sn("부상")}. 장소·행동에 맞는 추가 번호(식사·데이트 등)가 있으면 그 번호.
+- 인물이 이야기에 처음 등장하는 순간은 0번(프로필). 이미 등장한 인물: ${[...seen].join(", ") || "없음"}${ready.length ? `\n- 그림이 준비된 번호(되도록 이 안에서 고른다): ${ready.join(" / ")}` : ""}
+- 같은 인물은 한 응답에 한 장(감정이 크게 뒤집히면 두 장까지). 감정이 이어지면 직전과 같은 번호를 써도 된다.
 
 [출력 형식 — 반드시 이 순서]
 1) 장면 본문
@@ -2260,7 +2367,7 @@ function buildInput(r, uptoIdx, statusBefore, direction) {
     if (m.role === "ai") { out.push({ role: "assistant", content: curText(m) }); return; }
     let t = m.sys ? "// 직전 장면에서 자연스럽게 이어서 다음 장면을 써라. 유저의 행동은 쓰지 않는다." : m.text;
     // 분량·대화·새 전개 지시는 시스템 프롬프트에도 있지만, 모델이 가장 잘 따르는 마지막 입력 옆에 한 번 더
-    if (last) t = `[현재 상태창 — 이번 장면은 여기서 출발한다]\n${JSON.stringify(statusBefore || {})}\n\n[${r.persona.name}의 입력]\n${t}${direction ? "\n\n// 다시 쓰기 지침: " + direction : ""}\n\n[이번 응답] 위 입력을 본문에 다시 옮겨 적지 말고 그 직후의 반응부터 쓴다. 본문 ${len.chars}, 대사 ${len.lines}줄 이상을 주고받고, 직전 응답과 다른 새 전개를 넣는다.`;
+    if (last) t = `[현재 상태창 — 이번 장면은 여기서 출발한다]\n${JSON.stringify(statusBefore || {})}\n\n[${r.persona.name}의 입력]\n${t}${direction ? "\n\n// 다시 쓰기 지침: " + direction : ""}\n\n[이번 응답] 위 입력을 본문에 다시 옮겨 적지 말고 그 직후의 반응부터 쓴다. 본문 ${len.chars}, 대사 ${len.lines}줄 이상을 주고받고, 직전 응답과 다른 새 전개를 넣는다. 나오는 인물마다 [[img:코드:번호]]를 한 장씩 넣는다${(() => { const h = m.sys ? [] : sitHints(m.text, unfilteredRoute(r)); return h.length ? `(유저 입력에 맞는 번호 후보: ${h.join(", ")})` : ""; })()}.`;
     out.push({ role: "user", content: t });
   });
   return out;
@@ -2590,17 +2697,20 @@ function fmtLine(line, names) {
 }
 function fmt(text, c, persona) {
   const names = new Set([c.name, persona?.name, ...(c.cast || []).map((x) => x.name)].filter(Boolean));
-  const out = [];
+  // 글 없이 이어진 그림(여러 인물)은 한 줄(.scene-row)로 나란히
+  const out = []; let row = [];
+  const flush = () => { if (row.length > 1) out.push(`<div class="scene-row">${row.join("")}</div>`); else if (row.length) out.push(row[0]); row = []; };
   for (const raw of String(text).split(/\n+/)) {
     const line = raw.trim(); if (!line) continue;
     let buf = "";
     for (const part of line.split(/(\[\[img:[a-z0-9]+:\d{1,2}\]\])/i)) {
       const m = part.match(/^\[\[img:([a-z0-9]+):(\d{1,2})\]\]$/i);
-      if (m) { if (buf.trim()) { out.push(fmtLine(buf.trim(), names)); buf = ""; } out.push(figHTML(c, m[1].toLowerCase(), +m[2])); }
+      if (m) { if (buf.trim()) { flush(); out.push(fmtLine(buf.trim(), names)); buf = ""; } const f = figHTML(c, m[1].toLowerCase(), +m[2]); if (f) row.push(f); }
       else buf += part;
     }
-    if (buf.trim()) out.push(fmtLine(buf.trim(), names));
+    if (buf.trim()) { flush(); out.push(fmtLine(buf.trim(), names)); }
   }
+  flush();
   return out.join("");
 }
 function pavHTML(p) { const img = IMG.tag(p.img); return `<div class="pav">${img || esc((p.name || "?").slice(0, 1))}</div>`; }
@@ -2621,6 +2731,7 @@ function liveFill(el, text, c, persona, anim = true) {
   if (!done) { el.innerHTML = `<div class="lv-done"></div><div class="lv-cur"></div>`; done = el.firstChild; cur = el.lastChild; el.dataset.n = "0"; }
   const lines = text.split("\n"), last = lines.pop(), n = +(el.dataset.n || 0);
   if (lines.length < n) { el.innerHTML = ""; return liveFill(el, text, c, persona, anim); } // 글이 처음부터 다시 오면(깨진 응답을 다시 쓸 때) 비우고 새로
+  el.classList.toggle("many-img", imgTags(text).length >= 2);
   if (lines.length > n) {
     const before = done.children.length;
     done.insertAdjacentHTML("beforeend", fmt(lines.slice(n).join("\n"), c, persona));
@@ -2671,7 +2782,7 @@ function renderLog(scroll) {
     let body;
     if (m.editing) body = editBox(alt.text, i);
     else if (pending && !alt.text) body = `<div class="bubble"><span class="thinking" aria-label="응답 생성 중"><i></i><i></i><i></i></span></div>`;
-    else body = pending ? `<div class="bubble typing" id="liveBubble"></div>` : `<div class="bubble">${fmt(alt.text || "", c, r.persona)}</div>`;
+    else body = pending ? `<div class="bubble typing" id="liveBubble"></div>` : `<div class="bubble${imgTags(alt.text || "").length >= 2 ? " many-img" : ""}">${fmt(alt.text || "", c, r.persona)}</div>`;
     html += `<div class="msg" data-id="${m.id}">${coverHTML(c)}<div class="col"><span class="nm">${esc(speakerName(r))}</span>${body}`;
     if (!pending && !m.editing) {
       html += statusBlock(c, alt.status, m.statusBefore, { open: isLast, live: isLast });
@@ -2782,6 +2893,42 @@ function dropEcho(body, said) {
   const ga = grams(a), gb = grams(b); let hit = 0; ga.forEach((g) => { if (gb.has(g)) hit++; });
   return hit / ga.size >= 0.7 ? body.slice(m[0].length).replace(/^\s+/, "") : body;
 }
+/* 매 응답, 장면에 나온 인물마다 그림 한 장: AI가 [[img]]를 빠뜨린 인물은 그 인물이 처음 말하거나(이름: …) 지문에 나오는 줄 위에 붙임.
+   번호는 처음 등장이면 0, 아니면 그 인물의 대사·지문 낱말(×2)과 유저 입력 낱말(그 인물을 불렀거나, 아무도 안 불렀으면 처음 나온 인물만)로
+   sitScores가 가장 높은 번호(그림이 있는 칸이면 0.5 더함), 없으면 1(기본). 출연진이 한 명이면 첫 대사 위(없으면 맨 위) */
+function addCastImages(body, r, prev, said) {
+  const c = r.char, cast = (c.cast || []).filter((x) => x.name && x.name !== r.persona.name);
+  if (!cast.length || !body.trim()) return body;
+  const lines = body.split("\n"), have = new Set(imgTags(body).map((t) => t.code)), imgs = imagesOf(c), adult = unfilteredRoute(r);
+  const seen = new Set(); prev.forEach((m) => imgTags(curText(m)).forEach((t) => seen.add(t.code)));
+  const keysOf = (x) => { const n = x.name.trim(), k = [n], first = n.split(/\s+/)[0]; if (first !== n && first.length >= 2) k.push(first); if (/^[가-힣]{3,4}$/.test(n)) k.push(n.slice(1)); return k; };
+  const said2 = said || "", anyNamed = cast.some((x) => keysOf(x).some((k) => said2.includes(k)));
+  const found = [];
+  for (const x of cast) {
+    const keys = keysOf(x);
+    const speaks = (l) => keys.some((k) => new RegExp("^\\s*" + k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\s*:").test(l));
+    const mentions = (l) => keys.some((k) => l.includes(k));
+    let at = lines.findIndex(speaks);
+    if (at < 0) at = lines.findIndex((l) => /^\s*\*/.test(l) && mentions(l));
+    if (at < 0 && cast.length === 1) at = Math.max(0, lines.findIndex((l) => /["“]/.test(l)));
+    if (at >= 0) found.push({ x, keys, at, own: lines.filter((l) => speaks(l) || (cast.length === 1 ? !/^\s*\[/.test(l) : mentions(l))).join("\n") });
+  }
+  found.sort((a, b) => a.at - b.at);
+  const adds = [];
+  found.forEach((f, i) => {
+    if (have.has(f.x.code)) return;
+    let sit = 1;
+    if (!seen.has(f.x.code)) sit = 0;
+    else {
+      const sc = new Map(); sitScores(f.own, adult).forEach((v, k) => sc.set(k, v * 2));
+      if (said2 && (f.keys.some((k) => said2.includes(k)) || (!anyNamed && i === 0))) sitScores(said2, adult).forEach((v, k) => sc.set(k, (sc.get(k) || 0) + v));
+      let best = 0; sc.forEach((v, k) => { const s = v + (validRef((imgs[f.x.code] || {})[k]) ? 0.5 : 0); if (s > best) { best = s; sit = k; } });
+    }
+    adds.push({ at: f.at, tag: `[[img:${f.x.code}:${sit}]]` });
+  });
+  adds.slice(0, 5).sort((a, b) => b.at - a.at).forEach((a) => lines.splice(a.at, 0, a.tag, ""));
+  return lines.join("\n");
+}
 /* target 없으면 새 AI 메시지, 있으면 그 메시지에 새 버전(alt) 추가 */
 async function generate(target, q, direction = "", isEdit = false) {
   const r = room, c = r.char, model = r.set.model;
@@ -2813,7 +2960,8 @@ async function generate(target, q, direction = "", isEdit = false) {
     const text = await llm(input, { tier: MODELS[model].tier, signal: ctl.signal, onText: ({ text }) => show(text), maxTokens: (LEN[r.set.len] || LEN.mid).tokens, room: r });
     show(text);
     const parsed = parseState(text, c, msg.statusBefore);
-    Object.assign(msg.alts[altIdx], parsed, { text: msg.alts[altIdx].text || "(빈 응답)", cost: qShort(q), lore: input.lore });
+    const bodyText = msg.alts[altIdx].text ? addCastImages(msg.alts[altIdx].text, r, r.msgs.slice(0, r.msgs.indexOf(msg)), said) : "(빈 응답)";
+    Object.assign(msg.alts[altIdx], parsed, { text: bodyText, cost: qShort(q), lore: input.lore });
     r.status = parsed.status;
     if (!target && !isEdit) { r.turn = (r.turn || 0) + 1; r.sinceMem = (r.sinceMem || 0) + 1; }
   } catch (e) {
@@ -3295,7 +3443,7 @@ function openImageSlots(c, code) {
     $$("[data-rm]", ov).forEach((b) => b.onclick = () => { const m = store()[cur] || {}; IMG.drop(m[b.dataset.rm]); delete m[b.dataset.rm]; store()[cur] = m; persist(); paint(); });
     $$("[data-ai]", ov).forEach((b) => b.onclick = () => {
       const i = +b.dataset.ai, code = cur;
-      genImageSheet({ title: `${cast.name} · ${i} ${sitName(i)}`, parts: slotParts(cast, i, c), aspect: "4:5", rating: slotRating(i),
+      genImageSheet({ title: `${cast.name} · ${i} ${sitName(i)}`, parts: savedParts(c, cast, i), save: { c, cast, i }, aspect: "4:5", rating: slotRating(i),
         onUse: async (blob) => { await put(blob, i, code); persist(); if (live?.isConnected) paint(); toast("이미지를 등록했어요"); } });
     });
     $$("[data-ed]", ov).forEach((b) => b.onclick = () => sitEditor(sitDef(+b.dataset.ed), paint));
@@ -3312,7 +3460,7 @@ function openImageSlots(c, code) {
       for (const i of todo) {
         if (bulk.stop) break;
         bulk.at = i; if (live?.isConnected) paint(); toast(`AI로 채우는 중… ${ok + 1}/${todo.length}`);
-        try { const rt = imgRating(slotRating(i)); await put(await runwareImage(await partsTags(slotParts(ca, i, c), rt !== "safe"), { aspect: "4:5", rating: rt }), i, code); persist(); ok++; }
+        try { const rt = imgRating(slotRating(i)); await put(await runwareImage(await partsTags(savedParts(c, ca, i), rt !== "safe"), { aspect: "4:5", rating: rt }), i, code); persist(); ok++; }
         catch (e) { err = e; if (["no_key", "bad_key", "no_funds", "bad_model", "network", "rate_limited", "minor_block"].includes(e?.code)) break; }
       }
       const stopped = bulk.stop; bulk = null; if (live?.isConnected) paint();
@@ -3895,7 +4043,7 @@ function viewMe() {
   };
   $("#reset").onclick = () => confirmSheet("모든 데이터를 지울까요?", "대화방, 만든 캐릭터, 하트, 페르소나, 이미지 연결이 모두 지워져요. 되돌릴 수 없어요.", "전부 삭제", () => {
     S.rooms.forEach((r) => KV.set(roomKey(r.id), undefined));
-    ["rooms", "mine", "wallet", "personas", "profile", "imgpacks", "coverpacks", "lorepacks", "ponytags"].forEach((k) => KV.set(k, undefined));
+    ["rooms", "mine", "wallet", "personas", "profile", "imgpacks", "coverpacks", "lorepacks", "tagpacks", "ponytags"].forEach((k) => KV.set(k, undefined));
     IDB.clear(); try { Object.keys(localStorage).filter((k) => /^hv1_img[a-z0-9]{10,30}$/.test(k)).forEach((k) => localStorage.removeItem(k)); } catch {}
     S.mine = []; publishCommunity();
     setTimeout(() => location.reload(), 600);
@@ -3950,8 +4098,9 @@ function applySettings() {
 
 /* ---------------------------------------------------------------- 부팅 */
 async function loadAll() {
-  const [w, p, pr, mine, rooms, packs, mc, cps, lps] = await Promise.all(["wallet", "personas", "profile", "mine", "rooms", "imgpacks", "memcfg", "coverpacks", "lorepacks"].map((k) => KV.get(k)));
+  const [w, p, pr, mine, rooms, packs, mc, cps, lps, tps] = await Promise.all(["wallet", "personas", "profile", "mine", "rooms", "imgpacks", "memcfg", "coverpacks", "lorepacks", "tagpacks"].map((k) => KV.get(k)));
   if (cps && typeof cps === "object") S.coverpacks = cps;
+  if (tps && typeof tps === "object") S.tagpacks = tps;
   if (lps && typeof lps === "object") S.lorepacks = lps;
   if (w && typeof w === "object") S.wallet = { ...S.wallet, ...w, history: Array.isArray(w.history) ? w.history : [], ledger: Array.isArray(w.ledger) ? w.ledger : [], ack: w.ack && typeof w.ack === "object" ? w.ack : {} };
   else if (!S.wallet.welcomed) { S.wallet.hearts = WELCOME; S.wallet.welcomed = true; ledger(WELCOME, "첫 방문 보너스"); KV.set("wallet", S.wallet); }
@@ -4027,7 +4176,7 @@ async function boot() {
           DB = db; KV.db = db; KV.uid = id; KV.dbOk = true;
           const remoteRooms = await KV.get("rooms");
           if (remoteRooms === undefined || remoteRooms === null) {
-            ["wallet", "personas", "profile", "mine", "rooms", "imgpacks", "memcfg", "coverpacks", "lorepacks"].forEach((k) => { const v = KV.getLocal(k); if (v !== undefined) KV.set(k, v); });
+            ["wallet", "personas", "profile", "mine", "rooms", "imgpacks", "memcfg", "coverpacks", "lorepacks", "tagpacks"].forEach((k) => { const v = KV.getLocal(k); if (v !== undefined) KV.set(k, v); });
             S.rooms.forEach((r) => { const v = KV.getLocal(roomKey(r.id)); if (v) KV.set(roomKey(r.id), v); });
           } else { await loadAll(); renderRailRecent(); renderWalletChips(); if (!location.hash.startsWith("#r-")) route(); }
           watchCommunity();
