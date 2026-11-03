@@ -517,6 +517,10 @@ details.stat[open] summary::after { content:"▴"; }
 .sset .th span { aspect-ratio:1; border-radius:8px; overflow:hidden; background:var(--surface2); }
 .sset .th img { width:100%; height:100%; object-fit:cover; display:block; }
 .sset .note { margin:0; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+.sset .over { font-size:12.5px; display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+.sset .over select { font-size:12.5px; padding:3px 6px; max-width:100%; }
+.bset .th span[hidden] { display:none; }
+.bset .note { -webkit-line-clamp:4; }
 
 /* ── 스토어 */
 .member { border-radius:20px; padding:22px; color:#fbf3e4; background:radial-gradient(90% 120% at 100% 0%, #6b4a17, transparent 60%), linear-gradient(150deg, #241a2e, #120e18); position:relative; overflow:hidden; }
@@ -1876,7 +1880,7 @@ function provName(p) { const x = PROVIDERS.find((y) => y[0] === p || y[0] === "c
 // 화면에 보일 계정 이름: 이메일, 없으면(카카오·네이버 등 이메일 없이 가입) '카카오 계정'
 function acctName() { const u = SB.s && SB.s.user; if (!u) return ""; return u.email || (provName(u.provider) || "소셜") + " 계정"; }
 /* ── src/js/images/styles.js */
-/* 그림체: 모델 목록·프리셋·세트(ZIP 가져오기, Claude가 그림체 태그 작성) */
+/* 그림체: 모델 목록·내장 기본 화풍(BUILTIN_SETS)·프리셋·세트(ZIP 가져오기, Claude가 그림체 태그 작성), 상황에 맞는 그림체 고르기(styleFor) */
 
 
 
@@ -1899,6 +1903,45 @@ const ARCH = {
   illustrious: { pos: "masterpiece, best quality, amazing quality, very aesthetic, absurdres, newest", neg: "bad quality, worst quality, worst detail, sketch, lowres, jpeg artifacts", cfg: 6 }
 };
 const imgModelInfo = (id) => IMG_MODELS.find((m) => m.id === id) || { id, name: id, arch: "pony" };
+/* ---------------------------------------------------------------- 내장 기본 화풍(2026-11-03, 사용자가 준 참고 그림 59장 — 프롬1 남성향 일상 14·여성향 일상 10, 프롬2 남성향 애니 13·여성향 세계관 표지 11, 프롬3 남성향 세계관 표지 11)
+   네 묶음(일상 둘·표지 둘)은 같은 한국 반실사 2.5D 계열이라 공통 중간값(SEMI)을 두고 묶음마다 조명·색·마무리만 더함. 애니 묶음만 다른 모델.
+   참고 그림 자체는 외부 서비스 화면이라 저장소·배포물에 넣지 않고(CLAUDE.md), 뽑아낸 프롬프트·모델과 우리가 만든 견본(styles/<id>-n.jpg)만 둠.
+   사용자가 같은 이름(match)의 세트를 ZIP으로 올리면 그 세트가 덮고(overrides), 세트를 지우면 다시 내장으로 돌아옴(effectiveSet). 태그는 그림체만(인물·구도·배경 금지).
+   samples: 저장소 styles/<id>-1.jpg … 에 둔 견본 수(설정 카드에 보여 줌 — 없는 파일을 가리키면 404가 나므로 수를 맞춰 적음) */
+const SEMI = "korean, semi-realistic, 2.5d, realistic proportions, glossy hair, detailed hair, soft skin shading, realistic skin texture, detailed eyes, cinematic lighting, depth of field, high detail";
+const BUILTIN_SETS = [
+  { id: "mdaily", name: "프롬1 남성향 일상", kind: "daily", aud: "m", match: /프롬\s*1.*남성향|남성향.*일상/, model: IMG_MODELS[0].id,
+    desc: "참고 그림 프롬1(남성향 일상) 14장에서 뽑은 화풍 — 한국 반실사 2.5D, 윤기 있는 머리칼과 부드러운 피부 음영, 자연스러운 비율, 영화 같은 조명. 남성향 작품(여성 인물)의 인물 그림 기본값",
+    prompt: SEMI + ", korean beauty, glossy lips, natural makeup, soft bloom, clean skin, vivid natural colors" },
+  { id: "fdaily", name: "프롬1 여성향 일상", kind: "daily", aud: "f", match: /프롬\s*1.*여성향|여성향.*일상/, model: IMG_MODELS[0].id,
+    desc: "프롬1(여성향 일상) 10장 — 같은 반실사 계열의 남성 인물: 또렷한 턱선과 이목구비, 차분한 조명과 채도, 회화적 음영. 여성향 작품(남성 인물)의 인물 그림 기본값",
+    prompt: SEMI + ", handsome, sharp jawline, defined facial features, moody soft lighting, muted warm tones, painterly soft shading, manhwa style" },
+  { id: "manime", name: "프롬2 남성향 애니", kind: "anime", aud: "m", match: /애니|anime/i, model: IMG_MODELS[2].id,
+    desc: "프롬2(남성향 애니) 13장 — 애니 키 비주얼: 또렷한 선화와 셀 채색, 높은 대비와 선명한 색, 빛 입자·섬광 효과. 자동으로는 쓰지 않고 고르면 애니 일러스트 모델로 그려요",
+    prompt: "anime illustration, key visual, detailed lineart, cel shading, high contrast, vivid colors, dramatic lighting, glowing particles, light effects, splash art, shiny hair, beautiful detailed eyes" },
+  { id: "fworld", name: "프롬2 여성향 세계관", kind: "world", aud: "f", match: /프롬\s*2.*여성향|여성향.*(?:세계관|표지)/, model: IMG_MODELS[0].id,
+    desc: "프롬2(여성향 세계관 표지) 11장 — 어둡고 로맨틱한 저조도 조명(촛불·달빛), 차분하고 깊은 색, 반실사 남성 인물. 여성향 작품의 표지·세계관 일러스트 기본값",
+    prompt: SEMI + ", cinematic cover illustration, dramatic low-key lighting, candlelight, moonlight, dark romantic atmosphere, rich muted palette, intricate details" },
+  { id: "mworld", name: "프롬3 남성향 세계관", kind: "world", aud: "m", match: /프롬\s*3.*남성향|남성향.*(?:세계관|표지)/, model: IMG_MODELS[0].id,
+    desc: "프롬3(남성향 세계관 표지) 11장 — 네온·무대 조명의 강한 림라이트, 선명한 채도와 윤기, 보케. 남성향 작품의 표지·세계관 일러스트 기본값",
+    prompt: SEMI + ", cinematic cover illustration, dramatic rim lighting, neon lights, stage lighting, vivid saturated colors, glossy finish, bokeh, intricate details" }
+];
+BUILTIN_SETS.forEach((b) => { b.samples = 0; });
+const builtinSet = (id) => BUILTIN_SETS.find((b) => b.id === id) || null;
+/* 세트 이름이 내장 화풍 이름과 맞으면 그 id(ZIP 폴더 이름 프롬1_남성향_일상 …) */
+function matchBuiltin(name) { const b = BUILTIN_SETS.find((x) => x.match.test(String(name || ""))); return b ? b.id : ""; }
+/* 내장 화풍의 실제 값: 사용자의 세트가 덮고 있으면(overrides) 그 세트의 문구·모델, 아니면 내장 */
+function overridingSet(id) { return (S.settings.styleSets || []).find((s) => s && s.overrides === id) || null; }
+function effectiveSet(id) {
+  const b = builtinSet(id); if (!b) return null;
+  const o = overridingSet(id);
+  return o ? { ...b, prompt: o.prompt || b.prompt, model: o.model || b.model, over: o } : b;
+}
+/* 상황에 맞는 내장 화풍 id: 표지·세계관(world)은 작품 성향으로, 인물(daily)은 작품 성향 → 없으면(전체) 인물 성별로. 애니는 자동으로 고르지 않음 */
+function autoSetId(ctx = {}) {
+  const aud = ctx.aud === "m" || ctx.aud === "f" ? ctx.aud : (ctx.male ? "f" : "m");
+  return ctx.kind === "world" ? (aud === "f" ? "fworld" : "mworld") : (aud === "f" ? "fdaily" : "mdaily");
+}
 /* 그림체 프리셋: 모델 + 그림체 태그(그림체만 — 인물·구도·배경 태그를 넣으면 모든 그림이 그쪽으로 끌려감). 직접 입력·세트는 모델을 따로 고름 */
 const IMG_STYLES = {
   webtoon: { name: "한국 웹툰 · 세미리얼", desc: "동양적인 얼굴과 자연스러운 반실사 채색. 로맨스·일상 웹툰 표지 느낌", model: IMG_MODELS[0].id, tags: "korean, semi-realistic, natural lighting, soft shading, realistic skin texture, natural makeup, detailed eyes" },
@@ -1910,34 +1953,40 @@ const IMG_STYLES = {
 };
 const OLD_STYLES = { novel: "webtoon", none: "webtoon" };
  // 예전 프리셋 이름 → 지금 이름
-/* 그림체 세트: 그림 3장 + 그림체 문구 + 모델(S.settings.styleSets). imgStyle이 "set:<id>"면 세트를 씀 */
+/* 그림체 세트: 그림 여러 장 + 그림체 문구 + 모델(S.settings.styleSets = [{id, name, refs, prompt, model, overrides?}]). imgStyle이 "set:<id>"면 세트를 씀 */
 function activeSet() { const k = String(S.settings.imgStyle || ""); return k.startsWith("set:") ? (S.settings.styleSets || []).find((s) => "set:" + s.id === k) || null : null; }
-function stylePreset() { return activeSet() ? null : IMG_STYLES[S.settings.imgStyle] || IMG_STYLES.webtoon; }
-function styleLabel() { const s = activeSet(); return s ? "세트 · " + s.name : stylePreset().name; }
-function imgStyleText() { const s = activeSet(); return (s ? s.prompt || "" : S.settings.imgStyle === "custom" ? S.settings.imgStyleCustom || "" : stylePreset().tags).trim(); }
-/* 지금 그림체가 쓰는 모델: 프리셋은 고정, 세트·직접 입력은 고른 모델 */
-function imgModelId() { const s = activeSet(); return (s ? s.model : stylePreset().model) || S.settings.imgModel || IMG_MODELS[0].id; }
+/* 지금 쓸 그림체 {id, name, prompt, model}. 설정이 '기본 화풍(자동)'이면 ctx(kind daily·world, aud, male)에 맞는 내장 화풍(덮어쓴 세트가 있으면 그것),
+   "sys:<id>"면 그 내장 화풍, "set:<id>"면 사용자의 세트, 그 밖은 프리셋·직접 입력 — 어디서 그리든 이 함수 하나로 정함 */
+function styleFor(ctx = {}) {
+  const k = String(S.settings.imgStyle || "auto");
+  const sys = (id) => { const s = effectiveSet(id) || effectiveSet(autoSetId(ctx)); return { id: "sys:" + s.id, name: `기본 화풍 · ${s.name}${s.over ? " (내 세트)" : ""}`, prompt: s.prompt, model: s.model || IMG_MODELS[0].id }; };
+  if (k === "auto") return sys(autoSetId(ctx));
+  if (k.startsWith("sys:")) return sys(k.slice(4));
+  if (k.startsWith("set:")) { const s = activeSet(); if (s) return { id: k, name: "세트 · " + s.name, prompt: s.prompt || "", model: s.model || S.settings.imgModel || IMG_MODELS[0].id }; return sys(autoSetId(ctx)); }
+  if (k === "custom") return { id: k, name: IMG_STYLES.custom.name, prompt: S.settings.imgStyleCustom || "", model: S.settings.imgModel || IMG_MODELS[0].id };
+  const p = IMG_STYLES[k] || IMG_STYLES.webtoon;
+  return { id: k, name: p.name, prompt: p.tags, model: p.model };
+}
+function styleLabel() { return styleFor().name; }
+function imgStyleText() { return styleFor().prompt.trim(); }
+/* 지금 그림체가 쓰는 모델: 내장·프리셋은 고정, 세트·직접 입력은 고른 모델 */
+function imgModelId() { return styleFor().model; }
 function styleOptionsHTML() {
-  const cur = S.settings.imgStyle;
-  return [...Object.entries(IMG_STYLES).map(([k, p]) => [k, p.name]), ...(S.settings.styleSets || []).map((s) => ["set:" + s.id, "세트 · " + s.name])]
+  const cur = String(S.settings.imgStyle || "auto");
+  return [["auto", "기본 화풍 (자동 — 작품 성향·인물에 맞춰)"], ...BUILTIN_SETS.map((b) => ["sys:" + b.id, `기본 화풍 · ${b.name}${overridingSet(b.id) ? " (내 세트로 덮음)" : ""}`]),
+    ...Object.entries(IMG_STYLES).map(([k, p]) => [k, p.name]), ...(S.settings.styleSets || []).map((s) => ["set:" + s.id, "세트 · " + s.name])]
     .map(([k, l]) => `<option value="${esc(k)}" ${cur === k ? "selected" : ""}>${esc(l)}</option>`).join("");
 }
-/* 이름 앞부분이 같은 파일끼리(프롬1_…, 프롬2_…) 3장씩 묶음. 앞부분이 모두 다르면 이름 순서대로 3장씩 */
+/* 이름 앞부분이 같은 파일끼리(프롬1_남성향_일상1.png, 프롬1_남성향_일상2.png …) 한 세트로(그림은 SET_REFS장까지). 앞부분이 모두 다르면 전부 한 세트 */
+const SET_REFS = 8;
 function groupStyleFiles(files) {
-  const base = (n) => n.replace(/\.[^.]+$/, ""), split = (n) => /^(.+?)[_\-\s.](.*)$/.exec(base(n));
+  const base = (n) => n.replace(/\.[^.]+$/, ""), stem = (n) => base(n).replace(/\s*[\(\[]?\d+[\)\]]?\s*$/, "").replace(/[_\-\s.]+$/, "").trim();
   const sorted = [...files].sort((a, b) => base(a.name).localeCompare(base(b.name), "ko", { numeric: true }));
-  const key = (n) => (split(n)?.[1] || base(n).replace(/\d+$/, "")).trim() || base(n);
   const map = new Map();
-  for (const f of sorted) { const k = key(f.name); if (!map.has(k)) map.set(k, []); map.get(k).push(f); }
-  let groups = [...map.entries()].map(([k, fs]) => ({ k, fs, plain: false }));
-  if (sorted.length > 1 && groups.every((g) => g.fs.length === 1)) groups = [{ k: "세트", fs: sorted, plain: true }];
-  const out = [];
-  for (const g of groups) for (let i = 0; i < g.fs.length; i += 3) {
-    const fs = g.fs.slice(i, i + 3), desc = (split(fs[0].name)?.[2] || "").replace(/\d+$/, "").trim();
-    const name = g.plain ? `세트 ${out.length + 1}` : g.k + (g.fs.length > 3 ? ` (${i / 3 + 1})` : "") + (desc ? ` · ${desc}` : "");
-    out.push({ name: name.slice(0, 30), files: fs });
-  }
-  return out;
+  for (const f of sorted) { const k = stem(f.name) || base(f.name); if (!map.has(k)) map.set(k, []); map.get(k).push(f); }
+  let groups = [...map.entries()].map(([k, fs]) => ({ k, fs }));
+  if (sorted.length > 1 && groups.every((g) => g.fs.length === 1)) groups = [{ k: "세트", fs: sorted }];
+  return groups.map((g) => ({ name: g.k.slice(0, 30), files: g.fs.slice(0, SET_REFS) }));
 }
 /* 브라우저만으로 ZIP 안의 그림 꺼내기 (무압축·deflate, 파일 이름 UTF-8/EUC-KR) */
 async function unzipImages(file) {
@@ -1959,15 +2008,15 @@ async function unzipImages(file) {
   }
   return out;
 }
-/* 세트 이름으로 미리 고르는 문구·모델(그림을 읽기 전) — '애니'면 애니 일러스트, 그 밖은 한국 웹툰 세미리얼 */
+/* 세트 이름으로 미리 고르는 문구·모델(그림을 읽기 전) — 내장 화풍 이름과 맞으면 그 화풍, '애니'면 애니 일러스트, 그 밖은 한국 웹툰 세미리얼 */
 const animeName = (name) => /애니|anime|만화|셀/i.test(name);
-function guessStylePrompt(name) { return (animeName(name) ? IMG_STYLES.anime : IMG_STYLES.webtoon).tags; }
-function guessStyleModel(name) { return (animeName(name) ? IMG_STYLES.anime : IMG_STYLES.webtoon).model; }
-/* 그림체 세트 그림을 Claude(Anthropic API 키·서버 프록시)에게 보여 주고 공통 화풍만 Pony용 영문 태그로 받아옴 */
+function guessStylePrompt(name) { const b = builtinSet(matchBuiltin(name)); return b ? b.prompt : (animeName(name) ? IMG_STYLES.anime : IMG_STYLES.webtoon).tags; }
+function guessStyleModel(name) { const b = builtinSet(matchBuiltin(name)); return b ? b.model : (animeName(name) ? IMG_STYLES.anime : IMG_STYLES.webtoon).model; }
+/* 그림체 세트 그림(앞 4장)을 Claude(Anthropic API 키·서버 프록시)에게 보여 주고 공통 화풍만 Pony용 영문 태그로 받아옴 */
 async function claudeStyleTags(refs) {
   if (!hasClaudeKey()) throw { code: "no_claude" };
   const content = [];
-  for (const r of refs) {
+  for (const r of (refs || []).slice(0, 4)) {
     const d = validRef(r) && await refDataURL(r), m = typeof d === "string" && d.match(/^data:(image\/(?:jpeg|png|webp|gif));base64,(.+)$/);
     if (m) content.push({ type: "image", source: { type: "base64", media_type: m[1], data: m[2] } });
   }
@@ -2096,17 +2145,18 @@ function fixSubject(tags, subj) {
   if (subj === "male" && !out.some((t) => bare(t) === "male focus")) out.splice(out.findIndex((t) => /\b\d*boys?\b/.test(bare(t))) + 1, 0, "male focus");
   return out.join(", ");
 }
-/* Runware 이미지 생성 → Blob (IMG.put에 그대로 넣을 수 있음). 그림은 dataURI로 받아 두 번째 요청·CORS 문제를 피하고, URL로 오면 내려받음 */
-async function runwareImage(prompt, { aspect = "4:5", rating = imgRating(), signal } = {}) {
+/* Runware 이미지 생성 → Blob (IMG.put에 그대로 넣을 수 있음). 그림은 dataURI로 받아 두 번째 요청·CORS 문제를 피하고, URL로 오면 내려받음.
+   style은 styleFor(ctx)가 고른 {prompt, model} — 없으면 설정의 그림체 그대로(styleFor()) */
+async function runwareImage(prompt, { aspect = "4:5", rating = imgRating(), signal, style: styleOpt } = {}) {
   if (!hasRunwareKey()) throw { code: "no_key" };
   rating = imgRating(rating);
-  const adult = rating !== "safe";
+  const adult = rating !== "safe", st = styleOpt || styleFor();
   if (adult && minorHint(prompt)) throw { code: "minor_block" };
-  const rawTags = await ponyTags(prompt, adult), rawStyle = await ponyTags(imgStyleText(), adult);
+  const rawTags = await ponyTags(prompt, adult), rawStyle = await ponyTags(st.prompt || "", adult);
   if (adult && minorHint(rawTags + ", " + rawStyle)) throw { code: "minor_block" };
   const subj = imgSubject(rawTags), Sb = SUBJ[subj] || {};
   const tags = fixSubject(rawTags, subj), style = splitTags(rawStyle).filter((t) => !(Sb.strip && Sb.strip.test(t))).join(", ");
-  const [width, height] = RW_SIZES[aspect] || RW_SIZES["4:5"], R = RATINGS[rating], M = imgModelInfo(imgModelId()), A = ARCH[M.arch] || ARCH.pony;
+  const [width, height] = RW_SIZES[aspect] || RW_SIZES["4:5"], R = RATINGS[rating], M = imgModelInfo(st.model), A = ARCH[M.arch] || ARCH.pony;
   // 사람 없는 그림에는 수위의 adult·mature 태그를 빼야 사람이 끼어들지 않음
   const rpos = splitTags(M.arch === "illustrious" ? R.ill : R.pos).filter((t) => subj !== "none" || !/^(?:adult|mature|nsfw)$/.test(t)).join(", ");
   // 내용(장면·인물) 다음에 그림체 — 그림체가 앞이면 표정·자세가 묻힘. "(태그:1.3)" 강조가 있으면 Runware 가중치 문법(sdEmbeds)을 켬
@@ -2369,10 +2419,13 @@ async function boot() {
     if ("geminiKey" in S.settings) { delete S.settings.geminiKey; moved = true; }
     if (!/^[a-z][a-z0-9-]*:\d+@\d+$/i.test(String(S.settings.imgModel || "")) || BAD_IMG_MODELS.includes(S.settings.imgModel)) { S.settings.imgModel = IMG_MODELS[0].id; moved = true; }
     // 그림체: 예전 프리셋 이름은 새 이름으로, 세트에는 모델을 붙이고, 예전 기본 문구(인물·구도 태그가 섞인 것)는 새 그림체 문구로
-    const st = S.settings.imgStyle;
-    if (OLD_STYLES[st]) { S.settings.imgStyle = OLD_STYLES[st]; moved = true; }
-    else if (!String(st).startsWith("set:") && !IMG_STYLES[st]) { S.settings.imgStyle = "webtoon"; moved = true; }
+    let st = S.settings.imgStyle;
+    if (OLD_STYLES[st]) { st = S.settings.imgStyle = OLD_STYLES[st]; moved = true; }
+    // 기본 화풍(2026-11-03): 예전 기본값(webtoon)을 그대로 쓰던 설정은 한 번 '자동'으로(직접 고른 다른 프리셋·세트는 그대로)
+    if (!S.settings.styleV3) { if (st === "webtoon") st = S.settings.imgStyle = "auto"; S.settings.styleV3 = true; moved = true; }
+    if (st !== "auto" && !(String(st).startsWith("sys:") && builtinSet(String(st).slice(4))) && !String(st).startsWith("set:") && !IMG_STYLES[st]) { S.settings.imgStyle = "auto"; moved = true; }
     S.settings.styleSets.forEach((x) => {
+      if (x.overrides && !builtinSet(x.overrides)) { delete x.overrides; moved = true; }
       if (!x.model || BAD_IMG_MODELS.includes(x.model)) { x.model = guessStyleModel(x.name); moved = true; }
       // 예전 기본 문구(인물·구도 태그가 섞인 것, 인위적인 세미리얼 문구)는 지금 문구로
       if (/^(anime coloring, cel shading, sharp lineart|semi-realistic, 2\.5d, detailed face, porcelain skin|korean, semi-realistic, 2\.5d, detailed face, pale skin)/.test(x.prompt || "")) { x.prompt = guessStylePrompt(x.name); moved = true; }
@@ -2829,9 +2882,10 @@ function plusSheet(reason) {
 
 /* 다른 시트 위에 겹쳐 뜨는 생성 창. 프롬프트는 묶음별 태그 칩(누르면 ★강조, ×로 빼기, 칸에 한국어·영어로 더하기).
    그림체·품질·수위·금지 태그는 숨겨 두고 runwareImage가 붙임. parts가 없으면 prompt 문자열을 한 묶음으로. onUse(blob)가 끝나면 닫혀요 */
-/* save: {c, cast, i}를 주면(이미지 슬롯) 고친 태그를 그 인물에 저장·기본값으로 되돌리는 줄을 보여 줌 */
-function genImageSheet({ title = "AI로 이미지 만들기", prompt = "", parts, aspect = "4:5", rating, onUse, save }) {
-  const model = imgModelInfo(imgModelId()).name;
+/* save: {c, cast, i}를 주면(이미지 슬롯) 고친 태그를 그 인물에 저장·기본값으로 되돌리는 줄을 보여 줌.
+   ctx({kind: "daily"|"world", aud, male})는 설정이 '기본 화풍(자동)'일 때 어느 내장 화풍으로 그릴지 정함(styleFor) */
+function genImageSheet({ title = "AI로 이미지 만들기", prompt = "", parts, aspect = "4:5", rating, onUse, save, ctx }) {
+  const st = styleFor(ctx || {}), model = imgModelInfo(st.model).name, styleName = st.name;
   const toGroups = (ps) => { const gs = ps.map((g) => ({ ...g, tags: g.tags.map((t) => ({ ...asTag(t) })) })); if (!gs.some((g) => g.key === "extra")) gs.splice(1, 0, { key: "extra", label: "추가", tags: [] }); return gs; }; // 직접 더한 태그는 장면 바로 다음(앞쪽일수록 잘 반영됨)
   const groups = toGroups(parts || [{ key: "main", label: "프롬프트", tags: splitTags(prompt) }]);
   const ov = document.createElement("div"); ov.className = "overlay gen-ov";
@@ -2839,9 +2893,9 @@ function genImageSheet({ title = "AI로 이미지 만들기", prompt = "", parts
     <div id="gtags"></div>
     ${save ? `<div class="gen-save"><button type="button" class="btn sm pri" id="gsave">이 인물에 태그 저장</button><button type="button" class="btn sm ghost" id="greset">기본값으로</button><span class="note" id="gsaved"></span></div>` : ""}
     <p class="note" style="margin:8px 0 0">태그를 누르면 ★강조, ×는 빼기. ${S.engine === "none" && !hasOpenRouterKey() ? "AI 연결이 없어 한글은 빼고 보내요." : "한국어로 써도 영문 태그로 바꿔 보내요."}</p>
-    <details class="gen-auto"><summary>자동으로 붙는 태그</summary><p class="note">그림체(${esc(styleLabel())}) · 품질 · 수위 · 금지(저품질·글자·미성년) 태그 · 모델 ${esc(model)}</p></details>
+    <details class="gen-auto"><summary>자동으로 붙는 태그</summary><p class="note">그림체(${esc(styleName)}) · 품질 · 수위 · 금지(저품질·글자·미성년) 태그 · 모델 ${esc(model)}</p></details>
     ${ratingFieldHTML("grt", rating)}
-    <div class="gen-pv" id="gpv"><span class="note">${hasRunwareKey() ? `비율 ${esc(aspect)} · 그림체 ${esc(styleLabel())}` : "설정에서 Runware API 키를 먼저 넣어 주세요."}</span></div>
+    <div class="gen-pv" id="gpv"><span class="note">${hasRunwareKey() ? `비율 ${esc(aspect)} · 그림체 ${esc(styleName)}` : "설정에서 Runware API 키를 먼저 넣어 주세요."}</span></div>
     <div class="cta-row"><button class="btn ghost" data-x>닫기</button><span class="spacer"></span><button class="btn" id="gmk">생성</button><button class="btn pri" id="guse" disabled>이 이미지 쓰기</button></div></div>`;
   document.body.append(ov);
   const paintTags = (focusGroup) => {
@@ -2874,7 +2928,7 @@ function genImageSheet({ title = "AI로 이미지 만들기", prompt = "", parts
     mk.disabled = use.disabled = true; pv.innerHTML = `<span class="note">만드는 중… 10~30초쯤 걸려요</span>`; ctl = new AbortController();
     try {
       if (adult && minorHint(groups.flatMap((g) => g.tags.map((x) => x.t)).join(", "))) throw { code: "minor_block" };
-      blob = await runwareImage(await buildPrompt(adult), { aspect, rating: rt, signal: ctl.signal });
+      blob = await runwareImage(await buildPrompt(adult), { aspect, rating: rt, signal: ctl.signal, style: st });
       url && URL.revokeObjectURL(url); url = URL.createObjectURL(blob);
       pv.innerHTML = `<img src="${url}" alt="생성된 이미지">`; use.disabled = false; mk.textContent = "다시 생성";
     } catch (e) { if (!ov.isConnected) return; blob = null; pv.innerHTML = `<span class="note">${esc(genErr(e))}</span>`; }
@@ -3094,6 +3148,9 @@ function codeTableSheet(after) {
 
 
 
+
+
+
 function openImageSlots(c, code) {
   c = normalizeChar(c);
   const mine = S.mine.find((m) => m.id === c.id);
@@ -3102,6 +3159,7 @@ function openImageSlots(c, code) {
   const prompt = (cast, key) => buildPonyPrompt(cast, key, c);
   // 그림 수위: 기본 칸(0~14)은 이 작품의 시트 수위(기본 전체이용가), 직접 만든·내장 칸은 그 칸의 수위 — 조합이면 가장 높은 것
   const rating = (key) => imgRating(codeRating(parseCodes(String(key)), c));
+  const ctxOf = (cast) => ({ kind: "daily", aud: audOf(c), male: lookIsMale(castLook(cast, c)) }); // 기본 화풍(자동): 작품 성향 → 인물 성별
   let live = null, bulk = null;
   const paint = () => {
     const cast = c.cast.find((x) => x.code === cur), slots = imagesOf(c)[cur] || {}, nums = slotNums();
@@ -3124,7 +3182,7 @@ function openImageSlots(c, code) {
     $$("[data-rm],[data-crm]", ov).forEach((b) => b.onclick = () => { putCastImage(c, cur, b.dataset.rm || b.dataset.crm, null); paint(); });
     $$("[data-ai],[data-cai]", ov).forEach((b) => b.onclick = () => {
       const key = b.dataset.ai || b.dataset.cai, code = cur;
-      genImageSheet({ title: `${cast.name} · ${keyName(key)}`, parts: savedParts(c, cast, key), save: { c, cast, i: key }, aspect: "4:5", rating: rating(key),
+      genImageSheet({ title: `${cast.name} · ${keyName(key)}`, parts: savedParts(c, cast, key), save: { c, cast, i: key }, aspect: "4:5", rating: rating(key), ctx: ctxOf(cast),
         onUse: async (blob) => { await put(blob, key, code); if (live?.isConnected) paint(); toast("이미지를 등록했어요"); } });
     });
     $$("[data-ed]", ov).forEach((b) => b.onclick = () => sitEditor(sitDef(+b.dataset.ed), paint));
@@ -3143,7 +3201,7 @@ function openImageSlots(c, code) {
       for (const i of todo) {
         if (bulk.stop) break;
         bulk.at = i; if (live?.isConnected) paint(); toast(`AI로 채우는 중… ${ok + 1}/${todo.length}`);
-        try { const rt = rating(i); await put(await runwareImage(await partsTags(savedParts(c, ca, i), rt !== "safe"), { aspect: "4:5", rating: rt }), i, code); ok++; }
+        try { const rt = rating(i); await put(await runwareImage(await partsTags(savedParts(c, ca, i), rt !== "safe"), { aspect: "4:5", rating: rt, style: styleFor(ctxOf(ca)) }), i, code); ok++; }
         catch (e) { err = e; if (["no_key", "bad_key", "no_funds", "bad_model", "network", "rate_limited", "minor_block"].includes(e?.code)) break; }
       }
       const stopped = bulk.stop; bulk = null; if (live?.isConnected) paint();
@@ -3188,7 +3246,7 @@ function comboSheet(c, cast, after) {
   const show = () => { const k = key(); $("#cbKey", ov).textContent = `[[img:${cast.code}:${k}]] · ${keyName(k)}`; };
   ["#cbA", "#cbW", "#cbP"].forEach((s) => $(s, ov).onchange = show); show();
   const saved = async (blob, k) => { putCastImage(c, cast.code, k, await IMG.put(blob)); close(); after && after(); toast("조합 그림을 등록했어요"); };
-  $("#cbAi", ov).onclick = () => { const k = key(); genImageSheet({ title: `${cast.name} · ${keyName(k)}`, parts: savedParts(c, cast, k), save: { c, cast, i: k }, aspect: "4:5", rating: imgRating(codeRating(parseCodes(k), c)), onUse: (blob) => saved(blob, k) }); };
+  $("#cbAi", ov).onclick = () => { const k = key(); genImageSheet({ title: `${cast.name} · ${keyName(k)}`, parts: savedParts(c, cast, k), save: { c, cast, i: k }, aspect: "4:5", rating: imgRating(codeRating(parseCodes(k), c)), ctx: { kind: "daily", aud: audOf(c), male: lookIsMale(castLook(cast, c)) }, onUse: (blob) => saved(blob, k) }); };
   $("#cbUp", ov).onclick = () => $("#cbFile", ov).click();
   $("#cbFile", ov).onchange = async (e) => { const f = e.target.files[0]; if (!f) return; toast("올리는 중…"); try { await saved(f, key()); } catch { toast("이미지를 읽지 못했어요. PNG·JPG로 다시 올려 주세요."); } };
 }
@@ -3810,6 +3868,7 @@ function restoreStatus() {
 
 
 
+
 function viewMe() {
   const v = $("#view"), cur = S.personas.find((p) => p.def) || S.personas[0];
   v.innerHTML = `<div class="page">${topbar()}
@@ -3867,7 +3926,9 @@ function viewMe() {
       <div class="toggle" style="margin:0 0 12px"><label for="autoImg">대화 중 장면 그림 자동 생성 <span class="note">${IN_CLAUDE ? "파일·웹으로 열었을 때만 돼요" : "AI가 고른 감정·의상·장소 조합의 그림이 없으면 Runware로 만들어 저장해요(장당 약 $0.0025, 같은 조합은 다시 만들지 않음)"}</span></label><input type="checkbox" id="autoImg" ${S.settings.autoImg ? "checked" : ""} ${IN_CLAUDE ? "disabled" : ""}></div>
       <div class="field"><label for="gstyle">그림체</label><select id="gstyle">${styleOptionsHTML()}</select><p class="note" id="gstyleDesc" style="margin:2px 0 0"></p></div>
       <div class="field" id="gmodelBox"><label for="gmodel">이미지 모델</label><select id="gmodel">${[...IMG_MODELS, ...(IMG_MODELS.some((m) => m.id === S.settings.imgModel) ? [] : [{ id: S.settings.imgModel, name: S.settings.imgModel }])].map((m) => `<option value="${esc(m.id)}">${esc(m.name)}</option>`).join("")}</select></div>
-      <div class="field" id="gstyleBox"><label for="gstyleTxt">그림체 문구 <span class="note">한국어로 써도 돼요</span></label><textarea id="gstyleTxt" maxlength="600" style="min-height:76px" placeholder="예: 한국 웹툰 그림체, 깔끔한 선화, 부드러운 피부 음영"></textarea></div>
+      <div class="field" id="gstyleBox"><label for="gstyleTxt">그림체 문구 <span class="note" id="gstyleTxtNote">한국어로 써도 돼요</span></label><textarea id="gstyleTxt" maxlength="600" style="min-height:76px" placeholder="예: 한국 웹툰 그림체, 깔끔한 선화, 부드러운 피부 음영"></textarea></div>
+      <div class="field"><span class="lbl">기본 화풍 <span class="note">참고 그림에서 뽑아 내장한 그림체. 같은 이름(프롬1_남성향_일상 …)의 ZIP 세트를 올리면 그 세트가 덮고, 지우면 다시 내장으로 돌아와요</span></span>
+        <div class="ssets" id="bsets"></div></div>
       <div class="field"><span class="lbl">그림체 세트</span>
         <div class="ssets" id="ssets"></div><input type="file" id="ssetFile" accept="image/png,image/jpeg,image/webp,.zip,application/zip" multiple hidden>
         <div class="cta-row" style="margin-top:6px"><button class="btn sm" id="ssetAdd" type="button">+ 세트 가져오기 (그림 또는 ZIP)</button></div>
@@ -3885,12 +3946,16 @@ function viewMe() {
   const gs = $("#gstyle"), gt = $("#gstyleTxt"), gm = $("#gmodel");
   const findSet = (k) => (S.settings.styleSets || []).find((s) => "set:" + s.id === k);
   // 고른 그림체에 맞춰 설명·모델·문구 칸을 보여 줌(프리셋은 모델·문구 고정, 세트·직접 입력은 고칠 수 있음)
+  // 자동·내장·프리셋은 모델·문구 고정(내장 문구는 읽기만), 세트·직접 입력은 고칠 수 있음
   gs.onchange = () => {
-    const k = gs.value, set = findSet(k), p = set ? null : IMG_STYLES[k];
-    $("#gstyleDesc").textContent = set ? "올린 그림에서 읽은 그림체예요. 문구와 모델을 고칠 수 있어요." : p.desc + (p.model ? ` · 모델: ${imgModelInfo(p.model).name}` : "");
-    $("#gmodelBox").hidden = !!p?.model; $("#gstyleBox").hidden = !!p?.model;
-    gm.value = (set ? set.model : p.model) || S.settings.imgModel;
-    gt.value = set ? set.prompt || "" : k === "custom" ? S.settings.imgStyleCustom || "" : "";
+    const k = gs.value, set = findSet(k), sys = k.startsWith("sys:") ? effectiveSet(k.slice(4)) : null, p = set || sys || k === "auto" ? null : IMG_STYLES[k];
+    $("#gstyleDesc").textContent = k === "auto" ? "작품 성향(남성향·여성향, 전체면 인물 성별)에 맞춰 내장 기본 화풍을 자동으로 골라요. 표지·세계관 일러스트는 표지 화풍으로 그려요."
+      : sys ? `${sys.desc} · 모델: ${imgModelInfo(sys.model).name}${sys.over ? ` · 지금은 내 세트 '${sys.over.name}'이 덮고 있어요` : ""}`
+      : set ? "올린 그림에서 읽은 그림체예요. 문구와 모델을 고칠 수 있어요." : p.desc + (p.model ? ` · 모델: ${imgModelInfo(p.model).name}` : "");
+    $("#gmodelBox").hidden = k === "auto" || !!sys || !!p?.model; $("#gstyleBox").hidden = k === "auto" || !!p?.model;
+    gt.readOnly = !!sys; $("#gstyleTxtNote").textContent = sys ? "내장 문구(읽기만) — 바꾸려면 같은 이름의 세트로 덮어쓰거나 직접 입력을 골라요" : "한국어로 써도 돼요";
+    gm.value = (set ? set.model : sys ? sys.model : p?.model) || S.settings.imgModel;
+    gt.value = set ? set.prompt || "" : sys ? sys.prompt : k === "custom" ? S.settings.imgStyleCustom || "" : "";
   };
   gt.oninput = () => { const set = findSet(gs.value); if (set) { set.prompt = gt.value; saveSettings(); paintSets(); } };
   gm.onchange = () => { const set = findSet(gs.value); if (set) { set.model = gm.value; saveSettings(); paintSets(); } };
@@ -3899,20 +3964,38 @@ function viewMe() {
   gs.onchange();
   const paintSets = () => {
     const box = $("#ssets"); if (!box) return;
-    const sets = S.settings.styleSets || [];
+    const sets = S.settings.styleSets || [], bb = $("#bsets");
+    // 내장 기본 화풍 카드: 견본(styles/<id>-n.jpg, 없으면 칸 숨김)·설명·덮어쓴 세트
+    bb.innerHTML = BUILTIN_SETS.map((b) => { const o = overridingSet(b.id), on = S.settings.imgStyle === "sys:" + b.id; return `<div class="sset bset ${on ? "on" : ""}" data-bset="${b.id}">
+      ${b.samples ? `<div class="th">${[1, 2, 3].slice(0, b.samples).map((n) => `<span><img src="styles/${b.id}-${n}.jpg" alt="" loading="lazy"></span>`).join("")}</div>` : ""}
+      <b>${esc(b.name)}${on ? ' <span class="pill">사용 중</span>' : ""}${o ? ` <span class="pill">내 세트 '${esc(o.name)}'로 덮음</span>` : ""}</b>
+      <p class="note">${esc(b.desc)}</p>
+      <div class="cta-row" style="margin:0"><button class="btn sm ${on ? "" : "pri"}" data-buse="${b.id}" ${on ? "disabled" : ""}>이 화풍으로</button>${o ? `<button class="btn sm ghost" data-bres="${b.id}">내장으로 되돌리기</button>` : ""}</div></div>`; }).join("");
+    $$(".bset img", bb).forEach((im) => { im.onerror = () => { im.parentElement.hidden = true; }; });
+    $$("[data-buse]", bb).forEach((b) => b.onclick = () => { S.settings.imgStyle = "sys:" + b.dataset.buse; saveSettings(); refreshStyle(); toast("이 기본 화풍으로 만들도록 바꿨어요"); });
+    $$("[data-bres]", bb).forEach((b) => b.onclick = () => { const o = overridingSet(b.dataset.bres); if (!o) return; delete o.overrides; saveSettings(); refreshStyle(); toast("내장 화풍으로 돌아왔어요. 세트는 그대로 남아 있어요"); });
     box.innerHTML = sets.length ? sets.map((s) => { const on = S.settings.imgStyle === "set:" + s.id; return `<div class="sset ${on ? "on" : ""}">
       <div class="th">${(s.refs || []).filter(validRef).map((r) => `<span>${IMG.tag(r)}</span>`).join("")}</div>
       <b>${esc(s.name)}${on ? ' <span class="pill">사용 중</span>' : ""}</b>
       <p class="note">${esc(s.prompt || "아직 그림체 문구가 없어요. '문구 뽑기'를 눌러 주세요.")}<br>모델: ${esc(imgModelInfo(s.model || IMG_MODELS[0].id).name)}</p>
+      <label class="over">덮어쓸 기본 화풍 <select data-sover="${esc(s.id)}">${[["", "없음"], ...BUILTIN_SETS.map((b) => [b.id, b.name])].map(([v, l]) => `<option value="${esc(v)}" ${(s.overrides || "") === v ? "selected" : ""}>${esc(l)}</option>`).join("")}</select></label>
       <div class="cta-row" style="margin:0"><button class="btn sm ${on ? "" : "pri"}" data-suse="${esc(s.id)}" ${on ? "disabled" : ""}>사용</button><button class="btn sm" data-sgen="${esc(s.id)}">문구 뽑기</button><button class="btn sm ghost" data-sdel="${esc(s.id)}">삭제</button></div></div>`; }).join("") : `<p class="note">아직 세트가 없어요.</p>`;
     IMG.hydrate(box);
     $$("[data-suse]", box).forEach((b) => b.onclick = () => { S.settings.imgStyle = "set:" + b.dataset.suse; saveSettings(); refreshStyle(); toast("이 세트의 그림체로 만들도록 바꿨어요"); });
     $$("[data-sgen]", box).forEach((b) => b.onclick = () => readSets([b.dataset.sgen]));
+    // 세트가 내장 기본 화풍을 덮게 하기(한 화풍은 세트 하나만 덮음). '없음'이면 내장으로
+    $$("[data-sover]", box).forEach((sel) => sel.onchange = () => {
+      const s = findSet("set:" + sel.dataset.sover); if (!s) return;
+      sets.forEach((x) => { if (x !== s && x.overrides === sel.value) delete x.overrides; });
+      if (sel.value) s.overrides = sel.value; else delete s.overrides;
+      saveSettings(); refreshStyle(); toast(sel.value ? "이 세트가 그 기본 화풍을 덮어요" : "덮어쓰기를 풀었어요. 내장 화풍으로 돌아와요");
+    });
     $$("[data-sdel]", box).forEach((b) => b.onclick = () => {
       const s = findSet("set:" + b.dataset.sdel); if (!s) return;
+      const over = !!s.overrides;
       (s.refs || []).forEach((r) => IMG.drop(r)); S.settings.styleSets = S.settings.styleSets.filter((x) => x !== s);
-      if (S.settings.imgStyle === "set:" + s.id) S.settings.imgStyle = "novel";
-      saveSettings(); refreshStyle(); toast("세트를 지웠어요");
+      if (S.settings.imgStyle === "set:" + s.id) S.settings.imgStyle = "auto";
+      saveSettings(); refreshStyle(); toast(over ? "세트를 지웠어요. 기본 화풍은 내장으로 돌아왔어요" : "세트를 지웠어요");
     });
   };
   const readSets = async (ids) => {
@@ -3939,12 +4022,16 @@ function viewMe() {
       if (!files.length) { toast("그림 파일을 찾지 못했어요. PNG·JPG·WEBP 또는 그 그림이 든 ZIP을 골라 주세요."); return; }
       for (const g of groupStyleFiles(files).slice(0, 12)) {
         const refs = []; for (const f of g.files) refs.push(await IMG.put(f));
-        made.push({ id: uid("ss"), name: g.name, refs, prompt: guessStylePrompt(g.name), model: guessStyleModel(g.name) });
+        // 이름이 내장 기본 화풍과 맞으면(프롬1_남성향_일상 …) 그 화풍을 덮음 — 같은 화풍을 덮던 예전 세트는 덮기를 풂
+        const ov = matchBuiltin(g.name); if (ov) (S.settings.styleSets || []).forEach((x) => { if (x.overrides === ov) delete x.overrides; });
+        made.push({ id: uid("ss"), name: g.name, refs, prompt: guessStylePrompt(g.name), model: guessStyleModel(g.name), ...(ov ? { overrides: ov } : {}) });
       }
       S.settings.styleSets = [...(S.settings.styleSets || []), ...made];
-      if (!activeSet()) S.settings.imgStyle = "set:" + made[0].id;
+      const cur = String(S.settings.imgStyle || "auto");
+      if (!made.some((s) => s.overrides) && !activeSet() && cur !== "auto" && !cur.startsWith("sys:")) S.settings.imgStyle = "set:" + made[0].id;
       saveSettings(); refreshStyle();
-      toast(`세트 ${made.length}개를 만들었어요 (${made.map((s) => s.name).join(", ")})`);
+      const overs = made.filter((s) => s.overrides).map((s) => s.name);
+      toast(`세트 ${made.length}개를 만들었어요 (${made.map((s) => s.name).join(", ")})${overs.length ? ` · 기본 화풍을 덮어요: ${overs.join(", ")}` : ""}`);
     } catch (err) { toast(err?.code === "nozip" ? "이 브라우저는 ZIP을 바로 열 수 없어요. 압축을 풀어 그림 파일들을 골라 주세요." : "파일을 읽지 못했어요. PNG·JPG·ZIP인지 확인해 주세요."); return; }
     if (hasClaudeKey() || $("#key")?.value.trim()) await readSets(made.map((s) => s.id));
   };
@@ -3980,7 +4067,7 @@ function viewMe() {
   };
   $("#gtest").onclick = () => {
     S.settings.runwareKey = $("#rkey").value.trim(); saveStyle(); saveSettings();
-    genImageSheet({ title: "Runware 연결 테스트", aspect: "1:1", prompt: "1girl, solo, adult, sitting by the window, holding coffee cup, cat, warm afternoon sunlight, cozy room",
+    genImageSheet({ title: "Runware 연결 테스트", aspect: "1:1", prompt: "1girl, solo, adult, sitting by the window, holding coffee cup, cat, warm afternoon sunlight, cozy room", ctx: { kind: "daily", aud: "m" },
       onUse: async () => toast("테스트 이미지는 저장하지 않아요. Runware 연결이 잘 돼요!") });
   };
   $("#reset").onclick = () => confirmSheet("모든 데이터를 지울까요?", "대화방, 만든 캐릭터, 하트, 페르소나, 이미지 연결이 모두 지워져요." + (CLOUD.on ? " 로그인되어 있어서 계정에 저장된 데이터도 지워져요." : "") + " 되돌릴 수 없어요.", "전부 삭제", () => {
@@ -4003,7 +4090,7 @@ function personaSheet(p, after) {
   IMG.hydrate(ov);
   $("#avBtn", ov).onclick = () => $("#av", ov).click();
   $("#av", ov).onchange = async (e) => { const f = e.target.files[0]; if (!f) return; try { img = await IMG.put(f); $("#avBox", ov).innerHTML = pavHTML({ name: $("#pn", ov).value || "?", img }); IMG.hydrate(ov); $("#avDel", ov).hidden = false; } catch { toast("이미지를 읽지 못했어요."); } };
-  $("#avAi", ov).onclick = () => genImageSheet({ title: "AI로 페르소나 이미지 만들기", aspect: "1:1",
+  $("#avAi", ov).onclick = () => genImageSheet({ title: "AI로 페르소나 이미지 만들기", aspect: "1:1", ctx: { kind: "daily", male: lookIsMale($("#pd", ov).value) },
     prompt: ["solo, adult, portrait, upper body, looking at viewer", $("#pd", ov).value.trim() || $("#pn", ov).value.trim(), "simple background"].filter(Boolean).join(", "),
     onUse: async (blob) => { img = await IMG.put(blob); $("#avBox", ov).innerHTML = pavHTML({ name: $("#pn", ov).value || "?", img }); IMG.hydrate(ov); $("#avDel", ov).hidden = false; } });
   $("#avDel", ov).onclick = () => { img = ""; $("#avBox", ov).innerHTML = pavHTML({ name: $("#pn", ov).value || "?", img: "" }); $("#avDel", ov).hidden = true; };
@@ -4589,11 +4676,11 @@ const splitTags = (t) => String(t || "").split(/\s*,\s*/).map((x) => x.trim()).f
 /* 외모 글 → 인원·성별 태그. 남자는 male focus까지 넣어야 Pony 계열이 여자로 바꿔 그리지 않음. 사람 낱말 없이 동물만 있으면 사람 없는 그림 */
 const HUMAN_RE = /남성|여성|남자|여자|소년|소녀|청년|사람|인간|\d+\s*세|\b(?:male|female|man|woman|boy|girl|human|person)\b/i;
 const ANIMAL_RE = /고양이|강아지|진돗개|늑대|여우|토끼|곰|사슴|호랑이|사자|까마귀|부엉이|올빼미|독수리|참새|비둘기|드래곤|뱀|물고기|고래|햄스터|다람쥐|판다|펭귄|동물|짐승|\b(?:cat|dog|puppy|kitten|wolf|fox|rabbit|bear|deer|tiger|lion|horse|bird|crow|owl|eagle|hawk|dragon|snake|fish|whale|hamster|squirrel|panda|penguin|animal|creature|beast)s?\b/i;
+const lookIsMale = (look) => /남성|남자|\b(?:male|man|boy)\b/i.test(String(look || "")) && !/여성|여자|\b(?:female|woman|girl)\b/i.test(String(look || ""));
 function whoTags(look) {
   const l = String(look || "");
   if (!HUMAN_RE.test(l) && ANIMAL_RE.test(l)) return ["no humans", "animal focus"];
-  const boy = /남성|남자|\b(?:male|man|boy)\b/i.test(l) && !/여성|여자|\b(?:female|woman|girl)\b/i.test(l);
-  return boy ? ["1boy", "male focus", "solo"] : ["1girl", "solo"];
+  return lookIsMale(l) ? ["1boy", "male focus", "solo"] : ["1girl", "solo"];
 }
 /* 저장 태그(tagpacks)는 감정/행동 번호에 묶임 — 의상·장소는 칸 정의가 모든 인물에 공통이라 따로 저장하지 않음 */
 const actKeyOf = (key) => keyOf(splitDims(parseCodes(String(key))).act) || "1";
@@ -4790,7 +4877,7 @@ function viewStudio(id) {
   const imgDel = $("#imgDel"); if (imgDel) imgDel.onclick = () => { collect(); d.img = ""; viewStudio(id); };
   $("#imgAi").onclick = () => {
     collect();
-    genImageSheet({ title: "AI로 표지 만들기", aspect: "3:4", prompt: coverPrompt(d),
+    genImageSheet({ title: "AI로 표지 만들기", aspect: "3:4", prompt: coverPrompt(d), ctx: { kind: "world", aud: audOf(d) },
       onUse: async (blob) => { collect(); d.img = await IMG.put(blob); viewStudio(id); toast("표지 이미지를 넣었어요"); } });
   };
   const sl = $("#slots"); if (sl) sl.onclick = () => { const m = S.mine.find((x) => x.id === d.id); if (m) openImageSlots(m); };
@@ -5097,6 +5184,9 @@ function buildInput(r, uptoIdx, statusBefore, direction) {
 
 
 
+
+
+
 async function sendTurn(text, { cont = false } = {}) {
   if (gen) return false;
   const q = await ensurePay(room); if (!q) return false;
@@ -5181,7 +5271,8 @@ async function autoImages(r, body) {
     autoBusy.add(j.id); figsOf(j.cast.code, j.key).forEach((f) => f.classList.add("gen"));
     try {
       const rt = imgRating(codeRating(j.codes, c)), adult = rt !== "safe";
-      const ref = await IMG.put(await runwareImage(await partsTags(savedParts(c, j.cast, j.key), adult), { aspect: "4:5", rating: rt }));
+      const style = styleFor({ kind: "daily", aud: audOf(c), male: lookIsMale(castLook(j.cast, c)) }); // 기본 화풍(자동): 작품 성향 → 인물 성별
+      const ref = await IMG.put(await runwareImage(await partsTags(savedParts(c, j.cast, j.key), adult), { aspect: "4:5", rating: rt, style }));
       putCastImage(c, j.cast.code, j.key, ref);
       figsOf(j.cast.code, j.key).forEach((f) => { f.innerHTML = figInner(c, j.cast, j.key, ref); IMG.hydrate(f); $$("img", f).forEach((im) => im.onclick = () => lightbox(im.src)); });
     } catch (e) { err = e; }
@@ -5278,6 +5369,7 @@ function viewChats() {
 
 
 
+
 /* ---------------------------------------------------------------- 세계관 일러스트: 대표 일러스트(표지) + 키워드북 항목별 그림.
    내 작품은 작품(img·loreImages)에, 그 밖의 작품은 내 계정(coverpacks·lorepacks)에 저장 */
 function loreImg(c, key) { const live = getChar(c.id) || c; return (S.lorepacks[c.id] || {})[key] || (live.loreImages || {})[key] || ""; }
@@ -5323,7 +5415,7 @@ function openWorldArt(c) {
     const rs = $("#worldRt", ov); if (rs) rs.onchange = () => setSheetRating("w:" + c.id, rs.value);
     $$("[data-wai]", ov).forEach((b) => b.onclick = () => {
       const key = b.dataset.wai, e = lore.find((x) => x.keys[0] === key), cover = key === "__cover";
-      genImageSheet({ title: `${c.title} · ${cover ? "대표 일러스트" : key}`, aspect: cover ? "3:4" : "16:9", prompt: cover ? coverPrompt(c) : lorePrompt(c, e), rating: sheetRating("w:" + c.id),
+      genImageSheet({ title: `${c.title} · ${cover ? "대표 일러스트" : key}`, aspect: cover ? "3:4" : "16:9", prompt: cover ? coverPrompt(c) : lorePrompt(c, e), rating: sheetRating("w:" + c.id), ctx: { kind: "world", aud: audOf(c) },
         onUse: async (blob) => { setRef(key, await IMG.put(blob)); if (live?.isConnected) paint(); toast(cover ? "대표 일러스트를 넣었어요" : "세계관 일러스트를 넣었어요"); } });
     });
   };
@@ -5536,7 +5628,7 @@ const S = {
   wallet: { hearts: 0, freeDay: today(), freeUsed: 0, pro: null, history: [], ledger: [], ack: {} },
   personas: [{ id: "p1", name: "유저", memo: "", desc: "", img: "", def: true }],
   profile: { nick: "" }, mine: [], rooms: [], community: [], imgpacks: {}, coverpacks: {}, lorepacks: {}, tagpacks: {},
-  settings: { fs: 15.5, chatLh: 1.8, narrFont: "serif", enterSend: true, sceneImg: true, autoImg: false, apiKey: "", runwareKey: "", customSits: [], imgModel: IMG_MODELS[0].id, imgStyle: "webtoon", imgStyleCustom: "", styleRefs: [], styleSets: [], styleV2: true, memCfg: { auto: true, every: 5, limit: 3000, guide: "auto", custom: "" },
+  settings: { fs: 15.5, chatLh: 1.8, narrFont: "serif", enterSend: true, sceneImg: true, autoImg: false, apiKey: "", runwareKey: "", customSits: [], imgModel: IMG_MODELS[0].id, imgStyle: "auto", imgStyleCustom: "", styleRefs: [], styleSets: [], styleV2: true, styleV3: true, memCfg: { auto: true, every: 5, limit: 3000, guide: "auto", custom: "" },
     // 성인 모드: 자기 확인(isAgeVerified) 전에는 모두 꺼진 것과 같음. contentFilter false면 모든 대화방이 성인 모드
     isAgeVerified: false, contentFilter: true, autoFallback: true, openRouterKey: "", unfilteredModels: { ...OR_TIER }, customUnfilteredModel: "" },
   engine: "pending", cat: "전체", q: ""

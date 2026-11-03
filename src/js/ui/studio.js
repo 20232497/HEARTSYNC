@@ -1,7 +1,7 @@
 /* 크리에이터 스튜디오: 작품 쓰기·AI 초안·저장·공개용 정리(cleanChar)·커뮤니티 공개 */
 import { errCopy, llm } from "../ai/llm.js";
 import { loreText, parseLore } from "../ai/prompt/lore.js";
-import { AUDS, guessAud } from "../core/audience.js";
+import { AUDS, audOf, guessAud } from "../core/audience.js";
 import { CATS, MOTIFS, PALETTES } from "../core/constants.js";
 import { minorFlags } from "../core/safety.js";
 import { DB, S } from "../core/state.js";
@@ -113,7 +113,7 @@ export function viewStudio(id) {
   const imgDel = $("#imgDel"); if (imgDel) imgDel.onclick = () => { collect(); d.img = ""; viewStudio(id); };
   $("#imgAi").onclick = () => {
     collect();
-    genImageSheet({ title: "AI로 표지 만들기", aspect: "3:4", prompt: coverPrompt(d),
+    genImageSheet({ title: "AI로 표지 만들기", aspect: "3:4", prompt: coverPrompt(d), ctx: { kind: "world", aud: audOf(d) },
       onUse: async (blob) => { collect(); d.img = await IMG.put(blob); viewStudio(id); toast("표지 이미지를 넣었어요"); } });
   };
   const sl = $("#slots"); if (sl) sl.onclick = () => { const m = S.mine.find((x) => x.id === d.id); if (m) openImageSlots(m); };

@@ -1,14 +1,17 @@
 /* 이미지 슬롯 시트(인물·칸별 그림)와 조합 그림(감정 + 의상 + 장소) 갤러리·조합 만들기 */
+import { audOf } from "../core/audience.js";
+import { castLook } from "../core/cast.js";
 import { normalizeChar } from "../core/character.js";
 import { SIT } from "../core/constants.js";
 import { S, hasRunwareKey } from "../core/state.js";
 import { $, $$, esc, toast } from "../core/util.js";
 import { DIM_NAMES, RESET, keyOf, parseCodes } from "../images/codes.js";
 import { imagesOf, putCastImage } from "../images/pick.js";
-import { buildPonyPrompt, partsTags, savedParts } from "../images/prompt.js";
+import { buildPonyPrompt, lookIsMale, partsTags, savedParts } from "../images/prompt.js";
 import { imgRating, ratingFieldHTML, setSheetRating, sheetRating } from "../images/rating.js";
 import { genErr, runwareImage } from "../images/runware.js";
 import { codeDefs, codeRating, keyName, knownCodes, sitDef, sitName, slotNums } from "../images/situations.js";
+import { styleFor } from "../images/styles.js";
 import { IMG, validRef } from "../services/images.js";
 import { copyText } from "./chat/log.js";
 import { artHTML } from "./cover.js";
@@ -25,6 +28,7 @@ export function openImageSlots(c, code) {
   const prompt = (cast, key) => buildPonyPrompt(cast, key, c);
   // 그림 수위: 기본 칸(0~14)은 이 작품의 시트 수위(기본 전체이용가), 직접 만든·내장 칸은 그 칸의 수위 — 조합이면 가장 높은 것
   const rating = (key) => imgRating(codeRating(parseCodes(String(key)), c));
+  const ctxOf = (cast) => ({ kind: "daily", aud: audOf(c), male: lookIsMale(castLook(cast, c)) }); // 기본 화풍(자동): 작품 성향 → 인물 성별
   let live = null, bulk = null;
   const paint = () => {
     const cast = c.cast.find((x) => x.code === cur), slots = imagesOf(c)[cur] || {}, nums = slotNums();
@@ -47,7 +51,7 @@ export function openImageSlots(c, code) {
     $$("[data-rm],[data-crm]", ov).forEach((b) => b.onclick = () => { putCastImage(c, cur, b.dataset.rm || b.dataset.crm, null); paint(); });
     $$("[data-ai],[data-cai]", ov).forEach((b) => b.onclick = () => {
       const key = b.dataset.ai || b.dataset.cai, code = cur;
-      genImageSheet({ title: `${cast.name} · ${keyName(key)}`, parts: savedParts(c, cast, key), save: { c, cast, i: key }, aspect: "4:5", rating: rating(key),
+      genImageSheet({ title: `${cast.name} · ${keyName(key)}`, parts: savedParts(c, cast, key), save: { c, cast, i: key }, aspect: "4:5", rating: rating(key), ctx: ctxOf(cast),
         onUse: async (blob) => { await put(blob, key, code); if (live?.isConnected) paint(); toast("이미지를 등록했어요"); } });
     });
     $$("[data-ed]", ov).forEach((b) => b.onclick = () => sitEditor(sitDef(+b.dataset.ed), paint));
@@ -66,7 +70,7 @@ export function openImageSlots(c, code) {
       for (const i of todo) {
         if (bulk.stop) break;
         bulk.at = i; if (live?.isConnected) paint(); toast(`AI로 채우는 중… ${ok + 1}/${todo.length}`);
-        try { const rt = rating(i); await put(await runwareImage(await partsTags(savedParts(c, ca, i), rt !== "safe"), { aspect: "4:5", rating: rt }), i, code); ok++; }
+        try { const rt = rating(i); await put(await runwareImage(await partsTags(savedParts(c, ca, i), rt !== "safe"), { aspect: "4:5", rating: rt, style: styleFor(ctxOf(ca)) }), i, code); ok++; }
         catch (e) { err = e; if (["no_key", "bad_key", "no_funds", "bad_model", "network", "rate_limited", "minor_block"].includes(e?.code)) break; }
       }
       const stopped = bulk.stop; bulk = null; if (live?.isConnected) paint();
@@ -111,7 +115,7 @@ function comboSheet(c, cast, after) {
   const show = () => { const k = key(); $("#cbKey", ov).textContent = `[[img:${cast.code}:${k}]] · ${keyName(k)}`; };
   ["#cbA", "#cbW", "#cbP"].forEach((s) => $(s, ov).onchange = show); show();
   const saved = async (blob, k) => { putCastImage(c, cast.code, k, await IMG.put(blob)); close(); after && after(); toast("조합 그림을 등록했어요"); };
-  $("#cbAi", ov).onclick = () => { const k = key(); genImageSheet({ title: `${cast.name} · ${keyName(k)}`, parts: savedParts(c, cast, k), save: { c, cast, i: k }, aspect: "4:5", rating: imgRating(codeRating(parseCodes(k), c)), onUse: (blob) => saved(blob, k) }); };
+  $("#cbAi", ov).onclick = () => { const k = key(); genImageSheet({ title: `${cast.name} · ${keyName(k)}`, parts: savedParts(c, cast, k), save: { c, cast, i: k }, aspect: "4:5", rating: imgRating(codeRating(parseCodes(k), c)), ctx: { kind: "daily", aud: audOf(c), male: lookIsMale(castLook(cast, c)) }, onUse: (blob) => saved(blob, k) }); };
   $("#cbUp", ov).onclick = () => $("#cbFile", ov).click();
   $("#cbFile", ov).onchange = async (e) => { const f = e.target.files[0]; if (!f) return; toast("올리는 중…"); try { await saved(f, key()); } catch { toast("이미지를 읽지 못했어요. PNG·JPG로 다시 올려 주세요."); } };
 }

@@ -46,11 +46,11 @@ export const splitTags = (t) => String(t || "").split(/\s*,\s*/).map((x) => x.tr
 /* 외모 글 → 인원·성별 태그. 남자는 male focus까지 넣어야 Pony 계열이 여자로 바꿔 그리지 않음. 사람 낱말 없이 동물만 있으면 사람 없는 그림 */
 const HUMAN_RE = /남성|여성|남자|여자|소년|소녀|청년|사람|인간|\d+\s*세|\b(?:male|female|man|woman|boy|girl|human|person)\b/i;
 const ANIMAL_RE = /고양이|강아지|진돗개|늑대|여우|토끼|곰|사슴|호랑이|사자|까마귀|부엉이|올빼미|독수리|참새|비둘기|드래곤|뱀|물고기|고래|햄스터|다람쥐|판다|펭귄|동물|짐승|\b(?:cat|dog|puppy|kitten|wolf|fox|rabbit|bear|deer|tiger|lion|horse|bird|crow|owl|eagle|hawk|dragon|snake|fish|whale|hamster|squirrel|panda|penguin|animal|creature|beast)s?\b/i;
+export const lookIsMale = (look) => /남성|남자|\b(?:male|man|boy)\b/i.test(String(look || "")) && !/여성|여자|\b(?:female|woman|girl)\b/i.test(String(look || ""));
 function whoTags(look) {
   const l = String(look || "");
   if (!HUMAN_RE.test(l) && ANIMAL_RE.test(l)) return ["no humans", "animal focus"];
-  const boy = /남성|남자|\b(?:male|man|boy)\b/i.test(l) && !/여성|여자|\b(?:female|woman|girl)\b/i.test(l);
-  return boy ? ["1boy", "male focus", "solo"] : ["1girl", "solo"];
+  return lookIsMale(l) ? ["1boy", "male focus", "solo"] : ["1girl", "solo"];
 }
 /* 저장 태그(tagpacks)는 감정/행동 번호에 묶임 — 의상·장소는 칸 정의가 모든 인물에 공통이라 따로 저장하지 않음 */
 const actKeyOf = (key) => keyOf(splitDims(parseCodes(String(key))).act) || "1";

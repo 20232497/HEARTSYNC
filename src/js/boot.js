@@ -11,7 +11,7 @@ import { WELCOME, ledger, refreshFree } from "./core/wallet.js";
 import { RATINGS } from "./images/rating.js";
 import { BAD_IMG_MODELS } from "./images/runware.js";
 import { CODE_MAX, CUSTOM_BASE } from "./images/situations.js";
-import { IMG_MODELS, IMG_STYLES, OLD_STYLES, guessStyleModel, guessStylePrompt } from "./images/styles.js";
+import { IMG_MODELS, IMG_STYLES, OLD_STYLES, builtinSet, guessStyleModel, guessStylePrompt } from "./images/styles.js";
 import { TAGS, setTags } from "./images/tags.js";
 import { CLOUD } from "./services/cloud.js";
 import { IMG } from "./services/images.js";
@@ -58,10 +58,13 @@ export async function boot() {
     if ("geminiKey" in S.settings) { delete S.settings.geminiKey; moved = true; }
     if (!/^[a-z][a-z0-9-]*:\d+@\d+$/i.test(String(S.settings.imgModel || "")) || BAD_IMG_MODELS.includes(S.settings.imgModel)) { S.settings.imgModel = IMG_MODELS[0].id; moved = true; }
     // 그림체: 예전 프리셋 이름은 새 이름으로, 세트에는 모델을 붙이고, 예전 기본 문구(인물·구도 태그가 섞인 것)는 새 그림체 문구로
-    const st = S.settings.imgStyle;
-    if (OLD_STYLES[st]) { S.settings.imgStyle = OLD_STYLES[st]; moved = true; }
-    else if (!String(st).startsWith("set:") && !IMG_STYLES[st]) { S.settings.imgStyle = "webtoon"; moved = true; }
+    let st = S.settings.imgStyle;
+    if (OLD_STYLES[st]) { st = S.settings.imgStyle = OLD_STYLES[st]; moved = true; }
+    // 기본 화풍(2026-11-03): 예전 기본값(webtoon)을 그대로 쓰던 설정은 한 번 '자동'으로(직접 고른 다른 프리셋·세트는 그대로)
+    if (!S.settings.styleV3) { if (st === "webtoon") st = S.settings.imgStyle = "auto"; S.settings.styleV3 = true; moved = true; }
+    if (st !== "auto" && !(String(st).startsWith("sys:") && builtinSet(String(st).slice(4))) && !String(st).startsWith("set:") && !IMG_STYLES[st]) { S.settings.imgStyle = "auto"; moved = true; }
     S.settings.styleSets.forEach((x) => {
+      if (x.overrides && !builtinSet(x.overrides)) { delete x.overrides; moved = true; }
       if (!x.model || BAD_IMG_MODELS.includes(x.model)) { x.model = guessStyleModel(x.name); moved = true; }
       // 예전 기본 문구(인물·구도 태그가 섞인 것, 인위적인 세미리얼 문구)는 지금 문구로
       if (/^(anime coloring, cel shading, sharp lineart|semi-realistic, 2\.5d, detailed face, porcelain skin|korean, semi-realistic, 2\.5d, detailed face, pale skin)/.test(x.prompt || "")) { x.prompt = guessStylePrompt(x.name); moved = true; }

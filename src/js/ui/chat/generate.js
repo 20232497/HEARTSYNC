@@ -5,6 +5,8 @@ import { LEN, MODELS } from "../../ai/models.js";
 import { dropEcho, parseState, splitReply } from "../../ai/parse.js";
 import { buildInput } from "../../ai/prompt/input.js";
 import { maybeSummarize } from "../../ai/prompt/memory.js";
+import { audOf } from "../../core/audience.js";
+import { castLook } from "../../core/cast.js";
 import { IN_CLAUDE } from "../../core/config.js";
 import { curText, saveRoom } from "../../core/rooms.js";
 import { S, gen, hasRunwareKey, room, setGen } from "../../core/state.js";
@@ -12,10 +14,11 @@ import { $, $$, toast, uid } from "../../core/util.js";
 import { charge, qShort, quote, refund } from "../../core/wallet.js";
 import { applyDims, dimOf, imgTags, lastDims, parseCodes } from "../../images/codes.js";
 import { hasImg, imagesOf, putCastImage } from "../../images/pick.js";
-import { partsTags, savedParts } from "../../images/prompt.js";
+import { lookIsMale, partsTags, savedParts } from "../../images/prompt.js";
 import { imgRating } from "../../images/rating.js";
 import { genErr, runwareImage } from "../../images/runware.js";
 import { codeRating, dimPick, sitScores } from "../../images/situations.js";
+import { styleFor } from "../../images/styles.js";
 import { IMG, validRef } from "../../services/images.js";
 import { autoScroll, followLog, renderLog, setStick, stick, syncJump } from "./log.js";
 import { liveFill } from "./render.js";
@@ -109,7 +112,8 @@ async function autoImages(r, body) {
     autoBusy.add(j.id); figsOf(j.cast.code, j.key).forEach((f) => f.classList.add("gen"));
     try {
       const rt = imgRating(codeRating(j.codes, c)), adult = rt !== "safe";
-      const ref = await IMG.put(await runwareImage(await partsTags(savedParts(c, j.cast, j.key), adult), { aspect: "4:5", rating: rt }));
+      const style = styleFor({ kind: "daily", aud: audOf(c), male: lookIsMale(castLook(j.cast, c)) }); // 기본 화풍(자동): 작품 성향 → 인물 성별
+      const ref = await IMG.put(await runwareImage(await partsTags(savedParts(c, j.cast, j.key), adult), { aspect: "4:5", rating: rt, style }));
       putCastImage(c, j.cast.code, j.key, ref);
       figsOf(j.cast.code, j.key).forEach((f) => { f.innerHTML = figInner(c, j.cast, j.key, ref); IMG.hydrate(f); $$("img", f).forEach((im) => im.onclick = () => lightbox(im.src)); });
     } catch (e) { err = e; }

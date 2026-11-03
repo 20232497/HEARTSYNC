@@ -1,4 +1,4 @@
-/* 그림체: 모델 목록·프리셋·세트(ZIP 가져오기, Claude가 그림체 태그 작성) */
+/* 그림체: 모델 목록·내장 기본 화풍(BUILTIN_SETS)·프리셋·세트(ZIP 가져오기, Claude가 그림체 태그 작성), 상황에 맞는 그림체 고르기(styleFor) */
 import { CFG } from "../core/config.js";
 import { S, hasClaudeKey } from "../core/state.js";
 import { esc } from "../core/util.js";
@@ -21,6 +21,45 @@ export const ARCH = {
   illustrious: { pos: "masterpiece, best quality, amazing quality, very aesthetic, absurdres, newest", neg: "bad quality, worst quality, worst detail, sketch, lowres, jpeg artifacts", cfg: 6 }
 };
 export const imgModelInfo = (id) => IMG_MODELS.find((m) => m.id === id) || { id, name: id, arch: "pony" };
+/* ---------------------------------------------------------------- 내장 기본 화풍(2026-11-03, 사용자가 준 참고 그림 59장 — 프롬1 남성향 일상 14·여성향 일상 10, 프롬2 남성향 애니 13·여성향 세계관 표지 11, 프롬3 남성향 세계관 표지 11)
+   네 묶음(일상 둘·표지 둘)은 같은 한국 반실사 2.5D 계열이라 공통 중간값(SEMI)을 두고 묶음마다 조명·색·마무리만 더함. 애니 묶음만 다른 모델.
+   참고 그림 자체는 외부 서비스 화면이라 저장소·배포물에 넣지 않고(CLAUDE.md), 뽑아낸 프롬프트·모델과 우리가 만든 견본(styles/<id>-n.jpg)만 둠.
+   사용자가 같은 이름(match)의 세트를 ZIP으로 올리면 그 세트가 덮고(overrides), 세트를 지우면 다시 내장으로 돌아옴(effectiveSet). 태그는 그림체만(인물·구도·배경 금지).
+   samples: 저장소 styles/<id>-1.jpg … 에 둔 견본 수(설정 카드에 보여 줌 — 없는 파일을 가리키면 404가 나므로 수를 맞춰 적음) */
+const SEMI = "korean, semi-realistic, 2.5d, realistic proportions, glossy hair, detailed hair, soft skin shading, realistic skin texture, detailed eyes, cinematic lighting, depth of field, high detail";
+export const BUILTIN_SETS = [
+  { id: "mdaily", name: "프롬1 남성향 일상", kind: "daily", aud: "m", match: /프롬\s*1.*남성향|남성향.*일상/, model: IMG_MODELS[0].id,
+    desc: "참고 그림 프롬1(남성향 일상) 14장에서 뽑은 화풍 — 한국 반실사 2.5D, 윤기 있는 머리칼과 부드러운 피부 음영, 자연스러운 비율, 영화 같은 조명. 남성향 작품(여성 인물)의 인물 그림 기본값",
+    prompt: SEMI + ", korean beauty, glossy lips, natural makeup, soft bloom, clean skin, vivid natural colors" },
+  { id: "fdaily", name: "프롬1 여성향 일상", kind: "daily", aud: "f", match: /프롬\s*1.*여성향|여성향.*일상/, model: IMG_MODELS[0].id,
+    desc: "프롬1(여성향 일상) 10장 — 같은 반실사 계열의 남성 인물: 또렷한 턱선과 이목구비, 차분한 조명과 채도, 회화적 음영. 여성향 작품(남성 인물)의 인물 그림 기본값",
+    prompt: SEMI + ", handsome, sharp jawline, defined facial features, moody soft lighting, muted warm tones, painterly soft shading, manhwa style" },
+  { id: "manime", name: "프롬2 남성향 애니", kind: "anime", aud: "m", match: /애니|anime/i, model: IMG_MODELS[2].id,
+    desc: "프롬2(남성향 애니) 13장 — 애니 키 비주얼: 또렷한 선화와 셀 채색, 높은 대비와 선명한 색, 빛 입자·섬광 효과. 자동으로는 쓰지 않고 고르면 애니 일러스트 모델로 그려요",
+    prompt: "anime illustration, key visual, detailed lineart, cel shading, high contrast, vivid colors, dramatic lighting, glowing particles, light effects, splash art, shiny hair, beautiful detailed eyes" },
+  { id: "fworld", name: "프롬2 여성향 세계관", kind: "world", aud: "f", match: /프롬\s*2.*여성향|여성향.*(?:세계관|표지)/, model: IMG_MODELS[0].id,
+    desc: "프롬2(여성향 세계관 표지) 11장 — 어둡고 로맨틱한 저조도 조명(촛불·달빛), 차분하고 깊은 색, 반실사 남성 인물. 여성향 작품의 표지·세계관 일러스트 기본값",
+    prompt: SEMI + ", cinematic cover illustration, dramatic low-key lighting, candlelight, moonlight, dark romantic atmosphere, rich muted palette, intricate details" },
+  { id: "mworld", name: "프롬3 남성향 세계관", kind: "world", aud: "m", match: /프롬\s*3.*남성향|남성향.*(?:세계관|표지)/, model: IMG_MODELS[0].id,
+    desc: "프롬3(남성향 세계관 표지) 11장 — 네온·무대 조명의 강한 림라이트, 선명한 채도와 윤기, 보케. 남성향 작품의 표지·세계관 일러스트 기본값",
+    prompt: SEMI + ", cinematic cover illustration, dramatic rim lighting, neon lights, stage lighting, vivid saturated colors, glossy finish, bokeh, intricate details" }
+];
+BUILTIN_SETS.forEach((b) => { b.samples = 0; });
+export const builtinSet = (id) => BUILTIN_SETS.find((b) => b.id === id) || null;
+/* 세트 이름이 내장 화풍 이름과 맞으면 그 id(ZIP 폴더 이름 프롬1_남성향_일상 …) */
+export function matchBuiltin(name) { const b = BUILTIN_SETS.find((x) => x.match.test(String(name || ""))); return b ? b.id : ""; }
+/* 내장 화풍의 실제 값: 사용자의 세트가 덮고 있으면(overrides) 그 세트의 문구·모델, 아니면 내장 */
+export function overridingSet(id) { return (S.settings.styleSets || []).find((s) => s && s.overrides === id) || null; }
+export function effectiveSet(id) {
+  const b = builtinSet(id); if (!b) return null;
+  const o = overridingSet(id);
+  return o ? { ...b, prompt: o.prompt || b.prompt, model: o.model || b.model, over: o } : b;
+}
+/* 상황에 맞는 내장 화풍 id: 표지·세계관(world)은 작품 성향으로, 인물(daily)은 작품 성향 → 없으면(전체) 인물 성별로. 애니는 자동으로 고르지 않음 */
+export function autoSetId(ctx = {}) {
+  const aud = ctx.aud === "m" || ctx.aud === "f" ? ctx.aud : (ctx.male ? "f" : "m");
+  return ctx.kind === "world" ? (aud === "f" ? "fworld" : "mworld") : (aud === "f" ? "fdaily" : "mdaily");
+}
 /* 그림체 프리셋: 모델 + 그림체 태그(그림체만 — 인물·구도·배경 태그를 넣으면 모든 그림이 그쪽으로 끌려감). 직접 입력·세트는 모델을 따로 고름 */
 export const IMG_STYLES = {
   webtoon: { name: "한국 웹툰 · 세미리얼", desc: "동양적인 얼굴과 자연스러운 반실사 채색. 로맨스·일상 웹툰 표지 느낌", model: IMG_MODELS[0].id, tags: "korean, semi-realistic, natural lighting, soft shading, realistic skin texture, natural makeup, detailed eyes" },
@@ -32,34 +71,40 @@ export const IMG_STYLES = {
 };
 export const OLD_STYLES = { novel: "webtoon", none: "webtoon" };
  // 예전 프리셋 이름 → 지금 이름
-/* 그림체 세트: 그림 3장 + 그림체 문구 + 모델(S.settings.styleSets). imgStyle이 "set:<id>"면 세트를 씀 */
+/* 그림체 세트: 그림 여러 장 + 그림체 문구 + 모델(S.settings.styleSets = [{id, name, refs, prompt, model, overrides?}]). imgStyle이 "set:<id>"면 세트를 씀 */
 export function activeSet() { const k = String(S.settings.imgStyle || ""); return k.startsWith("set:") ? (S.settings.styleSets || []).find((s) => "set:" + s.id === k) || null : null; }
-function stylePreset() { return activeSet() ? null : IMG_STYLES[S.settings.imgStyle] || IMG_STYLES.webtoon; }
-export function styleLabel() { const s = activeSet(); return s ? "세트 · " + s.name : stylePreset().name; }
-export function imgStyleText() { const s = activeSet(); return (s ? s.prompt || "" : S.settings.imgStyle === "custom" ? S.settings.imgStyleCustom || "" : stylePreset().tags).trim(); }
-/* 지금 그림체가 쓰는 모델: 프리셋은 고정, 세트·직접 입력은 고른 모델 */
-export function imgModelId() { const s = activeSet(); return (s ? s.model : stylePreset().model) || S.settings.imgModel || IMG_MODELS[0].id; }
+/* 지금 쓸 그림체 {id, name, prompt, model}. 설정이 '기본 화풍(자동)'이면 ctx(kind daily·world, aud, male)에 맞는 내장 화풍(덮어쓴 세트가 있으면 그것),
+   "sys:<id>"면 그 내장 화풍, "set:<id>"면 사용자의 세트, 그 밖은 프리셋·직접 입력 — 어디서 그리든 이 함수 하나로 정함 */
+export function styleFor(ctx = {}) {
+  const k = String(S.settings.imgStyle || "auto");
+  const sys = (id) => { const s = effectiveSet(id) || effectiveSet(autoSetId(ctx)); return { id: "sys:" + s.id, name: `기본 화풍 · ${s.name}${s.over ? " (내 세트)" : ""}`, prompt: s.prompt, model: s.model || IMG_MODELS[0].id }; };
+  if (k === "auto") return sys(autoSetId(ctx));
+  if (k.startsWith("sys:")) return sys(k.slice(4));
+  if (k.startsWith("set:")) { const s = activeSet(); if (s) return { id: k, name: "세트 · " + s.name, prompt: s.prompt || "", model: s.model || S.settings.imgModel || IMG_MODELS[0].id }; return sys(autoSetId(ctx)); }
+  if (k === "custom") return { id: k, name: IMG_STYLES.custom.name, prompt: S.settings.imgStyleCustom || "", model: S.settings.imgModel || IMG_MODELS[0].id };
+  const p = IMG_STYLES[k] || IMG_STYLES.webtoon;
+  return { id: k, name: p.name, prompt: p.tags, model: p.model };
+}
+export function styleLabel() { return styleFor().name; }
+export function imgStyleText() { return styleFor().prompt.trim(); }
+/* 지금 그림체가 쓰는 모델: 내장·프리셋은 고정, 세트·직접 입력은 고른 모델 */
+export function imgModelId() { return styleFor().model; }
 export function styleOptionsHTML() {
-  const cur = S.settings.imgStyle;
-  return [...Object.entries(IMG_STYLES).map(([k, p]) => [k, p.name]), ...(S.settings.styleSets || []).map((s) => ["set:" + s.id, "세트 · " + s.name])]
+  const cur = String(S.settings.imgStyle || "auto");
+  return [["auto", "기본 화풍 (자동 — 작품 성향·인물에 맞춰)"], ...BUILTIN_SETS.map((b) => ["sys:" + b.id, `기본 화풍 · ${b.name}${overridingSet(b.id) ? " (내 세트로 덮음)" : ""}`]),
+    ...Object.entries(IMG_STYLES).map(([k, p]) => [k, p.name]), ...(S.settings.styleSets || []).map((s) => ["set:" + s.id, "세트 · " + s.name])]
     .map(([k, l]) => `<option value="${esc(k)}" ${cur === k ? "selected" : ""}>${esc(l)}</option>`).join("");
 }
-/* 이름 앞부분이 같은 파일끼리(프롬1_…, 프롬2_…) 3장씩 묶음. 앞부분이 모두 다르면 이름 순서대로 3장씩 */
+/* 이름 앞부분이 같은 파일끼리(프롬1_남성향_일상1.png, 프롬1_남성향_일상2.png …) 한 세트로(그림은 SET_REFS장까지). 앞부분이 모두 다르면 전부 한 세트 */
+export const SET_REFS = 8;
 export function groupStyleFiles(files) {
-  const base = (n) => n.replace(/\.[^.]+$/, ""), split = (n) => /^(.+?)[_\-\s.](.*)$/.exec(base(n));
+  const base = (n) => n.replace(/\.[^.]+$/, ""), stem = (n) => base(n).replace(/\s*[\(\[]?\d+[\)\]]?\s*$/, "").replace(/[_\-\s.]+$/, "").trim();
   const sorted = [...files].sort((a, b) => base(a.name).localeCompare(base(b.name), "ko", { numeric: true }));
-  const key = (n) => (split(n)?.[1] || base(n).replace(/\d+$/, "")).trim() || base(n);
   const map = new Map();
-  for (const f of sorted) { const k = key(f.name); if (!map.has(k)) map.set(k, []); map.get(k).push(f); }
-  let groups = [...map.entries()].map(([k, fs]) => ({ k, fs, plain: false }));
-  if (sorted.length > 1 && groups.every((g) => g.fs.length === 1)) groups = [{ k: "세트", fs: sorted, plain: true }];
-  const out = [];
-  for (const g of groups) for (let i = 0; i < g.fs.length; i += 3) {
-    const fs = g.fs.slice(i, i + 3), desc = (split(fs[0].name)?.[2] || "").replace(/\d+$/, "").trim();
-    const name = g.plain ? `세트 ${out.length + 1}` : g.k + (g.fs.length > 3 ? ` (${i / 3 + 1})` : "") + (desc ? ` · ${desc}` : "");
-    out.push({ name: name.slice(0, 30), files: fs });
-  }
-  return out;
+  for (const f of sorted) { const k = stem(f.name) || base(f.name); if (!map.has(k)) map.set(k, []); map.get(k).push(f); }
+  let groups = [...map.entries()].map(([k, fs]) => ({ k, fs }));
+  if (sorted.length > 1 && groups.every((g) => g.fs.length === 1)) groups = [{ k: "세트", fs: sorted }];
+  return groups.map((g) => ({ name: g.k.slice(0, 30), files: g.fs.slice(0, SET_REFS) }));
 }
 /* 브라우저만으로 ZIP 안의 그림 꺼내기 (무압축·deflate, 파일 이름 UTF-8/EUC-KR) */
 export async function unzipImages(file) {
@@ -81,15 +126,15 @@ export async function unzipImages(file) {
   }
   return out;
 }
-/* 세트 이름으로 미리 고르는 문구·모델(그림을 읽기 전) — '애니'면 애니 일러스트, 그 밖은 한국 웹툰 세미리얼 */
+/* 세트 이름으로 미리 고르는 문구·모델(그림을 읽기 전) — 내장 화풍 이름과 맞으면 그 화풍, '애니'면 애니 일러스트, 그 밖은 한국 웹툰 세미리얼 */
 const animeName = (name) => /애니|anime|만화|셀/i.test(name);
-export function guessStylePrompt(name) { return (animeName(name) ? IMG_STYLES.anime : IMG_STYLES.webtoon).tags; }
-export function guessStyleModel(name) { return (animeName(name) ? IMG_STYLES.anime : IMG_STYLES.webtoon).model; }
-/* 그림체 세트 그림을 Claude(Anthropic API 키·서버 프록시)에게 보여 주고 공통 화풍만 Pony용 영문 태그로 받아옴 */
+export function guessStylePrompt(name) { const b = builtinSet(matchBuiltin(name)); return b ? b.prompt : (animeName(name) ? IMG_STYLES.anime : IMG_STYLES.webtoon).tags; }
+export function guessStyleModel(name) { const b = builtinSet(matchBuiltin(name)); return b ? b.model : (animeName(name) ? IMG_STYLES.anime : IMG_STYLES.webtoon).model; }
+/* 그림체 세트 그림(앞 4장)을 Claude(Anthropic API 키·서버 프록시)에게 보여 주고 공통 화풍만 Pony용 영문 태그로 받아옴 */
 export async function claudeStyleTags(refs) {
   if (!hasClaudeKey()) throw { code: "no_claude" };
   const content = [];
-  for (const r of refs) {
+  for (const r of (refs || []).slice(0, 4)) {
     const d = validRef(r) && await refDataURL(r), m = typeof d === "string" && d.match(/^data:(image\/(?:jpeg|png|webp|gif));base64,(.+)$/);
     if (m) content.push({ type: "image", source: { type: "base64", media_type: m[1], data: m[2] } });
   }

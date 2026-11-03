@@ -10,7 +10,8 @@ import { IDB, KV } from "../core/storage.js";
 import { $, $$, esc, toast, uid } from "../core/util.js";
 import { isPro } from "../core/wallet.js";
 import { genErr } from "../images/runware.js";
-import { IMG_MODELS, IMG_STYLES, activeSet, claudeStyleTags, groupStyleFiles, guessStyleModel, guessStylePrompt, imgModelInfo, styleOptionsHTML, unzipImages } from "../images/styles.js";
+import { lookIsMale } from "../images/prompt.js";
+import { BUILTIN_SETS, IMG_MODELS, IMG_STYLES, activeSet, claudeStyleTags, effectiveSet, groupStyleFiles, guessStyleModel, guessStylePrompt, imgModelInfo, matchBuiltin, overridingSet, styleOptionsHTML, unzipImages } from "../images/styles.js";
 import { CLOUD } from "../services/cloud.js";
 import { IMG, validRef } from "../services/images.js";
 import { accountBoxHTML, bindAccount } from "./account.js";
@@ -80,7 +81,9 @@ export function viewMe() {
       <div class="toggle" style="margin:0 0 12px"><label for="autoImg">대화 중 장면 그림 자동 생성 <span class="note">${IN_CLAUDE ? "파일·웹으로 열었을 때만 돼요" : "AI가 고른 감정·의상·장소 조합의 그림이 없으면 Runware로 만들어 저장해요(장당 약 $0.0025, 같은 조합은 다시 만들지 않음)"}</span></label><input type="checkbox" id="autoImg" ${S.settings.autoImg ? "checked" : ""} ${IN_CLAUDE ? "disabled" : ""}></div>
       <div class="field"><label for="gstyle">그림체</label><select id="gstyle">${styleOptionsHTML()}</select><p class="note" id="gstyleDesc" style="margin:2px 0 0"></p></div>
       <div class="field" id="gmodelBox"><label for="gmodel">이미지 모델</label><select id="gmodel">${[...IMG_MODELS, ...(IMG_MODELS.some((m) => m.id === S.settings.imgModel) ? [] : [{ id: S.settings.imgModel, name: S.settings.imgModel }])].map((m) => `<option value="${esc(m.id)}">${esc(m.name)}</option>`).join("")}</select></div>
-      <div class="field" id="gstyleBox"><label for="gstyleTxt">그림체 문구 <span class="note">한국어로 써도 돼요</span></label><textarea id="gstyleTxt" maxlength="600" style="min-height:76px" placeholder="예: 한국 웹툰 그림체, 깔끔한 선화, 부드러운 피부 음영"></textarea></div>
+      <div class="field" id="gstyleBox"><label for="gstyleTxt">그림체 문구 <span class="note" id="gstyleTxtNote">한국어로 써도 돼요</span></label><textarea id="gstyleTxt" maxlength="600" style="min-height:76px" placeholder="예: 한국 웹툰 그림체, 깔끔한 선화, 부드러운 피부 음영"></textarea></div>
+      <div class="field"><span class="lbl">기본 화풍 <span class="note">참고 그림에서 뽑아 내장한 그림체. 같은 이름(프롬1_남성향_일상 …)의 ZIP 세트를 올리면 그 세트가 덮고, 지우면 다시 내장으로 돌아와요</span></span>
+        <div class="ssets" id="bsets"></div></div>
       <div class="field"><span class="lbl">그림체 세트</span>
         <div class="ssets" id="ssets"></div><input type="file" id="ssetFile" accept="image/png,image/jpeg,image/webp,.zip,application/zip" multiple hidden>
         <div class="cta-row" style="margin-top:6px"><button class="btn sm" id="ssetAdd" type="button">+ 세트 가져오기 (그림 또는 ZIP)</button></div>
@@ -98,12 +101,16 @@ export function viewMe() {
   const gs = $("#gstyle"), gt = $("#gstyleTxt"), gm = $("#gmodel");
   const findSet = (k) => (S.settings.styleSets || []).find((s) => "set:" + s.id === k);
   // 고른 그림체에 맞춰 설명·모델·문구 칸을 보여 줌(프리셋은 모델·문구 고정, 세트·직접 입력은 고칠 수 있음)
+  // 자동·내장·프리셋은 모델·문구 고정(내장 문구는 읽기만), 세트·직접 입력은 고칠 수 있음
   gs.onchange = () => {
-    const k = gs.value, set = findSet(k), p = set ? null : IMG_STYLES[k];
-    $("#gstyleDesc").textContent = set ? "올린 그림에서 읽은 그림체예요. 문구와 모델을 고칠 수 있어요." : p.desc + (p.model ? ` · 모델: ${imgModelInfo(p.model).name}` : "");
-    $("#gmodelBox").hidden = !!p?.model; $("#gstyleBox").hidden = !!p?.model;
-    gm.value = (set ? set.model : p.model) || S.settings.imgModel;
-    gt.value = set ? set.prompt || "" : k === "custom" ? S.settings.imgStyleCustom || "" : "";
+    const k = gs.value, set = findSet(k), sys = k.startsWith("sys:") ? effectiveSet(k.slice(4)) : null, p = set || sys || k === "auto" ? null : IMG_STYLES[k];
+    $("#gstyleDesc").textContent = k === "auto" ? "작품 성향(남성향·여성향, 전체면 인물 성별)에 맞춰 내장 기본 화풍을 자동으로 골라요. 표지·세계관 일러스트는 표지 화풍으로 그려요."
+      : sys ? `${sys.desc} · 모델: ${imgModelInfo(sys.model).name}${sys.over ? ` · 지금은 내 세트 '${sys.over.name}'이 덮고 있어요` : ""}`
+      : set ? "올린 그림에서 읽은 그림체예요. 문구와 모델을 고칠 수 있어요." : p.desc + (p.model ? ` · 모델: ${imgModelInfo(p.model).name}` : "");
+    $("#gmodelBox").hidden = k === "auto" || !!sys || !!p?.model; $("#gstyleBox").hidden = k === "auto" || !!p?.model;
+    gt.readOnly = !!sys; $("#gstyleTxtNote").textContent = sys ? "내장 문구(읽기만) — 바꾸려면 같은 이름의 세트로 덮어쓰거나 직접 입력을 골라요" : "한국어로 써도 돼요";
+    gm.value = (set ? set.model : sys ? sys.model : p?.model) || S.settings.imgModel;
+    gt.value = set ? set.prompt || "" : sys ? sys.prompt : k === "custom" ? S.settings.imgStyleCustom || "" : "";
   };
   gt.oninput = () => { const set = findSet(gs.value); if (set) { set.prompt = gt.value; saveSettings(); paintSets(); } };
   gm.onchange = () => { const set = findSet(gs.value); if (set) { set.model = gm.value; saveSettings(); paintSets(); } };
@@ -112,20 +119,38 @@ export function viewMe() {
   gs.onchange();
   const paintSets = () => {
     const box = $("#ssets"); if (!box) return;
-    const sets = S.settings.styleSets || [];
+    const sets = S.settings.styleSets || [], bb = $("#bsets");
+    // 내장 기본 화풍 카드: 견본(styles/<id>-n.jpg, 없으면 칸 숨김)·설명·덮어쓴 세트
+    bb.innerHTML = BUILTIN_SETS.map((b) => { const o = overridingSet(b.id), on = S.settings.imgStyle === "sys:" + b.id; return `<div class="sset bset ${on ? "on" : ""}" data-bset="${b.id}">
+      ${b.samples ? `<div class="th">${[1, 2, 3].slice(0, b.samples).map((n) => `<span><img src="styles/${b.id}-${n}.jpg" alt="" loading="lazy"></span>`).join("")}</div>` : ""}
+      <b>${esc(b.name)}${on ? ' <span class="pill">사용 중</span>' : ""}${o ? ` <span class="pill">내 세트 '${esc(o.name)}'로 덮음</span>` : ""}</b>
+      <p class="note">${esc(b.desc)}</p>
+      <div class="cta-row" style="margin:0"><button class="btn sm ${on ? "" : "pri"}" data-buse="${b.id}" ${on ? "disabled" : ""}>이 화풍으로</button>${o ? `<button class="btn sm ghost" data-bres="${b.id}">내장으로 되돌리기</button>` : ""}</div></div>`; }).join("");
+    $$(".bset img", bb).forEach((im) => { im.onerror = () => { im.parentElement.hidden = true; }; });
+    $$("[data-buse]", bb).forEach((b) => b.onclick = () => { S.settings.imgStyle = "sys:" + b.dataset.buse; saveSettings(); refreshStyle(); toast("이 기본 화풍으로 만들도록 바꿨어요"); });
+    $$("[data-bres]", bb).forEach((b) => b.onclick = () => { const o = overridingSet(b.dataset.bres); if (!o) return; delete o.overrides; saveSettings(); refreshStyle(); toast("내장 화풍으로 돌아왔어요. 세트는 그대로 남아 있어요"); });
     box.innerHTML = sets.length ? sets.map((s) => { const on = S.settings.imgStyle === "set:" + s.id; return `<div class="sset ${on ? "on" : ""}">
       <div class="th">${(s.refs || []).filter(validRef).map((r) => `<span>${IMG.tag(r)}</span>`).join("")}</div>
       <b>${esc(s.name)}${on ? ' <span class="pill">사용 중</span>' : ""}</b>
       <p class="note">${esc(s.prompt || "아직 그림체 문구가 없어요. '문구 뽑기'를 눌러 주세요.")}<br>모델: ${esc(imgModelInfo(s.model || IMG_MODELS[0].id).name)}</p>
+      <label class="over">덮어쓸 기본 화풍 <select data-sover="${esc(s.id)}">${[["", "없음"], ...BUILTIN_SETS.map((b) => [b.id, b.name])].map(([v, l]) => `<option value="${esc(v)}" ${(s.overrides || "") === v ? "selected" : ""}>${esc(l)}</option>`).join("")}</select></label>
       <div class="cta-row" style="margin:0"><button class="btn sm ${on ? "" : "pri"}" data-suse="${esc(s.id)}" ${on ? "disabled" : ""}>사용</button><button class="btn sm" data-sgen="${esc(s.id)}">문구 뽑기</button><button class="btn sm ghost" data-sdel="${esc(s.id)}">삭제</button></div></div>`; }).join("") : `<p class="note">아직 세트가 없어요.</p>`;
     IMG.hydrate(box);
     $$("[data-suse]", box).forEach((b) => b.onclick = () => { S.settings.imgStyle = "set:" + b.dataset.suse; saveSettings(); refreshStyle(); toast("이 세트의 그림체로 만들도록 바꿨어요"); });
     $$("[data-sgen]", box).forEach((b) => b.onclick = () => readSets([b.dataset.sgen]));
+    // 세트가 내장 기본 화풍을 덮게 하기(한 화풍은 세트 하나만 덮음). '없음'이면 내장으로
+    $$("[data-sover]", box).forEach((sel) => sel.onchange = () => {
+      const s = findSet("set:" + sel.dataset.sover); if (!s) return;
+      sets.forEach((x) => { if (x !== s && x.overrides === sel.value) delete x.overrides; });
+      if (sel.value) s.overrides = sel.value; else delete s.overrides;
+      saveSettings(); refreshStyle(); toast(sel.value ? "이 세트가 그 기본 화풍을 덮어요" : "덮어쓰기를 풀었어요. 내장 화풍으로 돌아와요");
+    });
     $$("[data-sdel]", box).forEach((b) => b.onclick = () => {
       const s = findSet("set:" + b.dataset.sdel); if (!s) return;
+      const over = !!s.overrides;
       (s.refs || []).forEach((r) => IMG.drop(r)); S.settings.styleSets = S.settings.styleSets.filter((x) => x !== s);
-      if (S.settings.imgStyle === "set:" + s.id) S.settings.imgStyle = "novel";
-      saveSettings(); refreshStyle(); toast("세트를 지웠어요");
+      if (S.settings.imgStyle === "set:" + s.id) S.settings.imgStyle = "auto";
+      saveSettings(); refreshStyle(); toast(over ? "세트를 지웠어요. 기본 화풍은 내장으로 돌아왔어요" : "세트를 지웠어요");
     });
   };
   const readSets = async (ids) => {
@@ -152,12 +177,16 @@ export function viewMe() {
       if (!files.length) { toast("그림 파일을 찾지 못했어요. PNG·JPG·WEBP 또는 그 그림이 든 ZIP을 골라 주세요."); return; }
       for (const g of groupStyleFiles(files).slice(0, 12)) {
         const refs = []; for (const f of g.files) refs.push(await IMG.put(f));
-        made.push({ id: uid("ss"), name: g.name, refs, prompt: guessStylePrompt(g.name), model: guessStyleModel(g.name) });
+        // 이름이 내장 기본 화풍과 맞으면(프롬1_남성향_일상 …) 그 화풍을 덮음 — 같은 화풍을 덮던 예전 세트는 덮기를 풂
+        const ov = matchBuiltin(g.name); if (ov) (S.settings.styleSets || []).forEach((x) => { if (x.overrides === ov) delete x.overrides; });
+        made.push({ id: uid("ss"), name: g.name, refs, prompt: guessStylePrompt(g.name), model: guessStyleModel(g.name), ...(ov ? { overrides: ov } : {}) });
       }
       S.settings.styleSets = [...(S.settings.styleSets || []), ...made];
-      if (!activeSet()) S.settings.imgStyle = "set:" + made[0].id;
+      const cur = String(S.settings.imgStyle || "auto");
+      if (!made.some((s) => s.overrides) && !activeSet() && cur !== "auto" && !cur.startsWith("sys:")) S.settings.imgStyle = "set:" + made[0].id;
       saveSettings(); refreshStyle();
-      toast(`세트 ${made.length}개를 만들었어요 (${made.map((s) => s.name).join(", ")})`);
+      const overs = made.filter((s) => s.overrides).map((s) => s.name);
+      toast(`세트 ${made.length}개를 만들었어요 (${made.map((s) => s.name).join(", ")})${overs.length ? ` · 기본 화풍을 덮어요: ${overs.join(", ")}` : ""}`);
     } catch (err) { toast(err?.code === "nozip" ? "이 브라우저는 ZIP을 바로 열 수 없어요. 압축을 풀어 그림 파일들을 골라 주세요." : "파일을 읽지 못했어요. PNG·JPG·ZIP인지 확인해 주세요."); return; }
     if (hasClaudeKey() || $("#key")?.value.trim()) await readSets(made.map((s) => s.id));
   };
@@ -193,7 +222,7 @@ export function viewMe() {
   };
   $("#gtest").onclick = () => {
     S.settings.runwareKey = $("#rkey").value.trim(); saveStyle(); saveSettings();
-    genImageSheet({ title: "Runware 연결 테스트", aspect: "1:1", prompt: "1girl, solo, adult, sitting by the window, holding coffee cup, cat, warm afternoon sunlight, cozy room",
+    genImageSheet({ title: "Runware 연결 테스트", aspect: "1:1", prompt: "1girl, solo, adult, sitting by the window, holding coffee cup, cat, warm afternoon sunlight, cozy room", ctx: { kind: "daily", aud: "m" },
       onUse: async () => toast("테스트 이미지는 저장하지 않아요. Runware 연결이 잘 돼요!") });
   };
   $("#reset").onclick = () => confirmSheet("모든 데이터를 지울까요?", "대화방, 만든 캐릭터, 하트, 페르소나, 이미지 연결이 모두 지워져요." + (CLOUD.on ? " 로그인되어 있어서 계정에 저장된 데이터도 지워져요." : "") + " 되돌릴 수 없어요.", "전부 삭제", () => {
@@ -216,7 +245,7 @@ export function personaSheet(p, after) {
   IMG.hydrate(ov);
   $("#avBtn", ov).onclick = () => $("#av", ov).click();
   $("#av", ov).onchange = async (e) => { const f = e.target.files[0]; if (!f) return; try { img = await IMG.put(f); $("#avBox", ov).innerHTML = pavHTML({ name: $("#pn", ov).value || "?", img }); IMG.hydrate(ov); $("#avDel", ov).hidden = false; } catch { toast("이미지를 읽지 못했어요."); } };
-  $("#avAi", ov).onclick = () => genImageSheet({ title: "AI로 페르소나 이미지 만들기", aspect: "1:1",
+  $("#avAi", ov).onclick = () => genImageSheet({ title: "AI로 페르소나 이미지 만들기", aspect: "1:1", ctx: { kind: "daily", male: lookIsMale($("#pd", ov).value) },
     prompt: ["solo, adult, portrait, upper body, looking at viewer", $("#pd", ov).value.trim() || $("#pn", ov).value.trim(), "simple background"].filter(Boolean).join(", "),
     onUse: async (blob) => { img = await IMG.put(blob); $("#avBox", ov).innerHTML = pavHTML({ name: $("#pn", ov).value || "?", img }); IMG.hydrate(ov); $("#avDel", ov).hidden = false; } });
   $("#avDel", ov).onclick = () => { img = ""; $("#avBox", ov).innerHTML = pavHTML({ name: $("#pn", ov).value || "?", img: "" }); $("#avDel", ov).hidden = true; };
