@@ -41,7 +41,7 @@ export function genImageSheet({ title = "AI로 이미지 만들기", prompt = ""
   if (save) {
     const { c, cast, i } = save, note = $("#gsaved", ov);
     const paintSaved = () => { note.textContent = hasSavedTags(c, cast.code, i) ? "저장한 태그를 쓰는 중이에요" : "기본 태그예요"; };
-    $("#gsave", ov).onclick = () => { saveCastTags(c, cast, i, groups); paintSaved(); toast(`${cast.name}에 저장했어요. 인물 태그는 모든 칸에, 장면·추가·배경 태그는 이 칸에 써요`); };
+    $("#gsave", ov).onclick = () => { saveCastTags(c, cast, i, groups); paintSaved(); toast(`${cast.name}에 저장했어요. 인물 태그는 모든 칸에, 장면·추가·배경 태그는 이 감정 칸에 써요(의상 태그는 코드 표에서 고쳐요)`); };
     $("#greset", ov).onclick = () => { clearCastTags(c, cast, i); groups.splice(0, groups.length, ...toGroups(savedParts(c, cast, i))); paintTags(); paintSaved(); toast("기본 태그로 되돌렸어요"); };
     paintSaved();
   }

@@ -53,11 +53,11 @@ export default {
     { keys: ["통로", "비밀 통로"], text: "궁 지하에는 선대 왕이 만든 비밀 통로가 있다. 국무당 단비만 지도를 안다. 동궁, 수라간 뒤뜰, 대비전 담 아래로 이어진다." }
   ],
   cast: [
-    { code: "ih", name: "이화", look: "22세 여성, 상복 차림의 공주, 흰 비단 당의, 올림머리에 은비녀, 차가운 눈매" },
-    { code: "sr", name: "설련", look: "24세 여성, 포도청 다모 복장, 질끈 묶은 머리, 쇠도리깨, 뺨의 작은 흉터" },
-    { code: "jo", name: "정옥", look: "23세 여성, 내의원 의녀, 연두색 저고리, 단정한 쪽머리, 약초 바구니" },
-    { code: "wh", name: "월하", look: "27세 여성, 기방 행수, 짙은 남색 치마, 화려한 떨잠, 접부채, 웃는 눈" },
-    { code: "db", name: "단비", look: "25세 여성, 국무당, 붉은 무복과 갓, 방울과 부채, 겁먹은 큰 눈" }
+    { code: "ih", name: "이화", look: "22세 여성, 상복 차림의 공주, 흰 비단 당의, 올림머리에 은비녀, 차가운 눈매", tags: "black hair, hair up, silver hairpin, binyeo, white hanbok, mourning dress, silk dangui, princess, joseon" },
+    { code: "sr", name: "설련", look: "24세 여성, 포도청 다모 복장, 질끈 묶은 머리, 쇠도리깨, 뺨의 작은 흉터", tags: "black hair, tied hair, joseon police uniform, damo, hanbok, iron flail, small scar on cheek" },
+    { code: "jo", name: "정옥", look: "23세 여성, 내의원 의녀, 연두색 저고리, 단정한 쪽머리, 약초 바구니", tags: "black hair, neat chignon, light green jeogori, hanbok, herb basket, physician" },
+    { code: "wh", name: "월하", look: "27세 여성, 기방 행수, 짙은 남색 치마, 화려한 떨잠, 접부채, 웃는 눈", tags: "black hair, elaborate updo, ornate hair ornament, dark navy chima, hanbok, folding fan, gisaeng" },
+    { code: "db", name: "단비", look: "25세 여성, 국무당, 붉은 무복과 갓, 방울과 부채, 겁먹은 큰 눈", tags: "black hair, red shaman robe, gat, korean hat, hanbok, bells, fan, shaman, big eyes" }
   ],
   openings: [
     { title: "⚖️ 참형까지 이레 · 옥사에서", directive: "기본 시작. 이화와 설련이 옥사로 찾아온다. 첫 장면에서 사건 개요와 7일 기한을 분명히 하고, 첫 단서로 이어질 실마리를 하나 남긴다.",

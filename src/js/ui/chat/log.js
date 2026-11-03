@@ -3,7 +3,7 @@ import { speakerName } from "../../ai/prompt/rules.js";
 import { curText, saveRoom } from "../../core/rooms.js";
 import { gen, room } from "../../core/state.js";
 import { $, $$, clamp, esc, toast } from "../../core/util.js";
-import { imgTags } from "../../images/pick.js";
+import { imgTags } from "../../images/codes.js";
 import { IMG } from "../../services/images.js";
 import { generate, regen, regenAsk, sendTurn } from "./generate.js";
 import { fmt, liveFill, statusBlock } from "./render.js";

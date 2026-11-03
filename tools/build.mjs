@@ -21,7 +21,7 @@ const PAGE = path.join(SRC, "page.html"), GEN_FILE = path.join(JS, "content", "g
 /* 폴더 이름이 곧 작품의 aud(관심있는 대화) 값 */
 export const AUD_DIRS = { f: "여성향(남성 캐릭터와의 대화)", m: "남성향(여성 캐릭터와의 대화)", all: "전체(남녀가 섞임)" };
 /* 빌드 검사에 쓰는 앱 규칙 — src/js에서 같은 코드를 꺼내 쓴다(규칙이 두 군데로 갈라지지 않게) */
-const APP_RULES = ["SIT", "PALETTES", "MOTIFS", "CATS", "guessAud", "personaWho", "personaLook", "castLook", "minorFlags"];
+const APP_RULES = ["SIT", "PALETTES", "MOTIFS", "CATS", "guessAud", "personaWho", "personaLook", "castLook", "minorFlags", "dimOf", "dimDef", "DIMS"];
 /* 오래된 iOS(13 이하)·인앱 브라우저에서 문법 오류가 나는 것들 */
 const OLD_IOS = [[/\|\|=|&&=|\?\?=/, "논리 할당(||= &&= ??=)"], [/\.at\(/, "Array.at()"], [/\(\?<[=!]/, "정규식 lookbehind"],
   [/\bstructuredClone\b/, "structuredClone"], [/\.findLast(?:Index)?\(/, "findLast()"], [/\bObject\.hasOwn\(/, "Object.hasOwn()"]];
@@ -334,9 +334,12 @@ function checkWork(mod, { aud, row, id, wrel, R, errors, warnings }) {
     if (codes.has(x.code)) e(`cast 코드 "${x.code}"가 겹쳐요`);
     codes.add(x.code);
     if (x.look !== undefined && typeof x.look !== "string") e(`cast[${i}].look은 글이어야 해요`);
+    if (x.tags !== undefined && (typeof x.tags !== "string" || /[가-힣]/.test(x.tags))) e(`cast[${i}].tags는 영문 Danbooru 태그 글이어야 해요(한국어 외모는 look에)`);
   });
-  if (c.lore !== undefined && (!Array.isArray(c.lore) || c.lore.some((x) => !isObj(x) || !Array.isArray(x.keys) || !x.keys.length || x.keys.some((k) => !str(k)) || !str(x.text))))
-    e("lore(키워드북)는 [{ keys: [\"키워드\", …], text: \"설명\" }, …]");
+  if (c.lookTags !== undefined && (typeof c.lookTags !== "string" || /[가-힣]/.test(c.lookTags))) e("lookTags는 영문 Danbooru 태그 글이어야 해요");
+  if (c.lookTags !== undefined && c.cast !== undefined) w("cast가 있으면 lookTags는 쓰이지 않아요 — cast[].tags에 적어 주세요");
+  if (c.lore !== undefined && (!Array.isArray(c.lore) || c.lore.some((x) => !isObj(x) || !Array.isArray(x.keys) || !x.keys.length || x.keys.some((k) => !str(k)) || !str(x.text) || (x.tags !== undefined && typeof x.tags !== "string"))))
+    e("lore(키워드북)는 [{ keys: [\"키워드\", …], text: \"설명\", tags?: \"영문 태그\" }, …]");
   if (!Array.isArray(c.openings) || !c.openings.length) e("openings(시작 상황)가 하나 이상 있어야 해요");
   else c.openings.forEach((o, i) => {
     if (!isObj(o) || !str(o.title) || !str(o.text)) return e(`openings[${i}]: title·text가 있어야 해요`);
@@ -347,9 +350,10 @@ function checkWork(mod, { aud, row, id, wrel, R, errors, warnings }) {
       const miss = Object.keys(o.status).filter((k) => !c.fields.includes(k));
       if (miss.length) w(`openings[${i}].status의 ${miss.join(", ")} 칸이 fields에 없어요`);
     }
-    for (const m of o.text.matchAll(/\[\[img:([^\]:]+):(\d+)\]\]/g)) {
+    for (const m of o.text.matchAll(/\[\[img:([^\]:]+):([\d,]+)\]\]/g)) {
       if (!codes.has(m[1])) e(`openings[${i}]: [[img:${m[1]}:${m[2]}]]의 인물 코드가 cast에 없어요`);
-      if (+m[2] >= R.SIT.length) e(`openings[${i}]: [[img:${m[1]}:${m[2]}]] — 기본 상황 번호는 0~${R.SIT.length - 1}`);
+      const bad = m[2].split(",").filter((n) => n !== "" && +n >= R.SIT.length && !R.DIMS[+n]);
+      if (bad.length) e(`openings[${i}]: [[img:${m[1]}:${m[2]}]] — ${bad.join(",")}은(는) 기본 상황 번호(0~${R.SIT.length - 1})도 내장 코드(1xx·4xx·5xx)도 아니에요`);
     }
   });
 

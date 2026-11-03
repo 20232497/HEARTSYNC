@@ -54,11 +54,11 @@ export default {
     { keys: ["사고", "교차로", "빗길"], text: "유저가 사고를 당한 비 오는 밤의 교차로. 유저는 그때 무언가를 들고 누군가에게 가던 길이었다. 그 이상은 아직 기억나지 않는다." }
   ],
   cast: [
-    { code: "sa", name: "차사현", look: "33세 남성, 호텔 지배인, 저승차사, 단정하게 넘긴 흑발, 창백한 피부, 검은 쓰리피스 정장, 은색 회중시계, 무표정" },
-    { code: "ig", name: "한이결", look: "29세 남성, 바텐더 도깨비, 반쯤 묶은 붉은 기가 도는 머리, 장난스러운 눈웃음, 소매를 걷은 흰 셔츠와 검은 조끼" },
-    { code: "mh", name: "강무혁", look: "27세 남성, 도어맨, 짧은 흑발, 곧은 자세, 남색 도어맨 제복과 모자, 흰 장갑" },
-    { code: "hj", name: "서하준", look: "32세 남성, 의사, 부드러운 갈색 머리, 지친 눈가, 흰 의사 가운, 목에 건 청진기" },
-    { code: "ru", name: "루", look: "25세 남성, 고양이 신령, 헝클어진 검은 머리, 노란 고양이 눈, 검은 고양이 귀, 헐렁한 검은 니트, 장난스러운 표정" }
+    { code: "sa", name: "차사현", look: "33세 남성, 호텔 지배인, 저승차사, 단정하게 넘긴 흑발, 창백한 피부, 검은 쓰리피스 정장, 은색 회중시계, 무표정", tags: "black hair, slicked back hair, pale skin, black three-piece suit, waistcoat, silver pocket watch, hotel manager" },
+    { code: "ig", name: "한이결", look: "29세 남성, 바텐더 도깨비, 반쯤 묶은 붉은 기가 도는 머리, 장난스러운 눈웃음, 소매를 걷은 흰 셔츠와 검은 조끼", tags: "dark red hair, half updo, white shirt, sleeves rolled up, black vest, bartender" },
+    { code: "mh", name: "강무혁", look: "27세 남성, 도어맨, 짧은 흑발, 곧은 자세, 남색 도어맨 제복과 모자, 흰 장갑", tags: "black hair, short hair, navy blue uniform, doorman, bellhop hat, white gloves, straight posture" },
+    { code: "hj", name: "서하준", look: "32세 남성, 의사, 부드러운 갈색 머리, 지친 눈가, 흰 의사 가운, 목에 건 청진기", tags: "brown hair, soft hair, tired eyes, white lab coat, doctor, stethoscope around neck" },
+    { code: "ru", name: "루", look: "25세 남성, 고양이 신령, 헝클어진 검은 머리, 노란 고양이 눈, 검은 고양이 귀, 헐렁한 검은 니트, 장난스러운 표정", tags: "black hair, messy hair, yellow eyes, slit pupils, black cat ears, animal ears, oversized black sweater" }
   ],
   openings: [
     { title: "🌧️ 비 오는 밤의 체크인", directive: "기본 시작. 유저가 호텔 레테에 처음 도착하는 밤. 강무혁이 문을 열고, 차사현이 프런트에서 유저가 산 사람이라는 것과 마흔아홉 밤의 기한, 사라진 기억 병을 알려 준다. 첫 장면에서 규칙과 기한을 분명히 하고, 첫 단서로 이어질 실마리를 남긴다.",

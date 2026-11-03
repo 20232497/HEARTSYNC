@@ -10,7 +10,7 @@ import { $, clamp } from "./core/util.js";
 import { WELCOME, ledger, refreshFree } from "./core/wallet.js";
 import { RATINGS } from "./images/rating.js";
 import { BAD_IMG_MODELS } from "./images/runware.js";
-import { CUSTOM_BASE } from "./images/situations.js";
+import { CODE_MAX, CUSTOM_BASE } from "./images/situations.js";
 import { IMG_MODELS, IMG_STYLES, OLD_STYLES, guessStyleModel, guessStylePrompt } from "./images/styles.js";
 import { TAGS, setTags } from "./images/tags.js";
 import { CLOUD } from "./services/cloud.js";
@@ -52,7 +52,7 @@ export async function boot() {
     if (!Array.isArray(S.settings.styleRefs)) S.settings.styleRefs = [];
     if (!Array.isArray(S.settings.styleSets)) S.settings.styleSets = [];
     S.settings.customSits = (Array.isArray(S.settings.customSits) ? S.settings.customSits : [])
-      .filter((d) => d && Number.isInteger(d.n) && d.n >= CUSTOM_BASE && d.n < 100 && d.name && d.prompt).map((d) => ({ ...d, rating: RATINGS[d.rating] ? d.rating : "safe" }));
+      .filter((d) => d && Number.isInteger(d.n) && d.n >= CUSTOM_BASE && d.n < CODE_MAX && d.name && d.prompt).map((d) => ({ ...d, rating: RATINGS[d.rating] ? d.rating : "safe" }));
     // Gemini → Runware: 다른 서비스의 키는 옮기지 않고 지우고, Runware 모델(AIR id)이 아니면 Pony로
     let moved = false;
     if ("geminiKey" in S.settings) { delete S.settings.geminiKey; moved = true; }

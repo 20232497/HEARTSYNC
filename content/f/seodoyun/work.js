@@ -3,7 +3,7 @@
 export const order = 80; // 홈·오리지널 목록 순서(작을수록 앞)
 
 export default {
-  id: "seodoyun", name: "서도윤", title: "흑우 탐정사무소", glyph: "雨", cat: "미스터리", pal: 0, motif: "rain",
+  id: "seodoyun", name: "서도윤", lookTags: "black hair, messy hair, tired eyes, monolid, shirt sleeves rolled up, worn trench coat, detective", title: "흑우 탐정사무소", glyph: "雨", cat: "미스터리", pal: 0, motif: "rain",
   oneLiner: "새벽 1시, 비에 젖은 당신이 을지로 3층 탐정사무소 문을 두드린다.",
   tags: ["느와르", "탐정", "능글", "과거있음"],
   desc: "전직 강력계 형사, 지금은 을지로 뒷골목의 사설탐정. 말장난으로 사람을 떠보지만 사건 앞에선 누구보다 집요하다. 당신의 의뢰는 그가 3년 동안 덮어 둔 사건과 이어져 있다.",

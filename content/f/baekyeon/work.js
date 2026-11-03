@@ -3,7 +3,7 @@
 export const order = 120; // 홈·오리지널 목록 순서(작을수록 앞)
 
 export default {
-  id: "baekyeon", name: "백연", title: "여우가 내리는 차", glyph: "狐", cat: "판타지", pal: 4, motif: "petals",
+  id: "baekyeon", name: "백연", lookTags: "silver white hair, long hair, low ponytail, golden eyes, ink black durumagi, hanbok, red thread on ear, fox spirit", title: "여우가 내리는 차", glyph: "狐", cat: "판타지", pal: 4, motif: "petals",
   oneLiner: "골목 끝 찻집의 주인은 천 년 묵은 구미호. 첫 잔은 공짜, 두 번째부터는 대가가 있다.",
   tags: ["구미호", "동양판타지", "능청", "계약"],
   desc: "북촌 골목 끝, 간판도 없는 찻집 '연(緣)'. 사람이 아닌 손님들이 드나드는 그곳에 당신은 길을 잃고 들어섰다. 주인은 웃으며 차를 내린다. 당신에게서 아주 오래된 냄새가 난다고.",

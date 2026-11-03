@@ -77,6 +77,7 @@ export function viewMe() {
     <h2 class="sec">이미지 생성 <small>Runware</small></h2>
     <div class="box">
       <div class="field" style="margin-top:0"><label for="rkey">Runware API 키 <span class="note">runware.ai에서 발급</span></label><input id="rkey" type="password" autocomplete="off" placeholder="Runware API 키" value="${esc(S.settings.runwareKey || "")}"></div>
+      <div class="toggle" style="margin:0 0 12px"><label for="autoImg">대화 중 장면 그림 자동 생성 <span class="note">${IN_CLAUDE ? "파일·웹으로 열었을 때만 돼요" : "AI가 고른 감정·의상·장소 조합의 그림이 없으면 Runware로 만들어 저장해요(장당 약 $0.0025, 같은 조합은 다시 만들지 않음)"}</span></label><input type="checkbox" id="autoImg" ${S.settings.autoImg ? "checked" : ""} ${IN_CLAUDE ? "disabled" : ""}></div>
       <div class="field"><label for="gstyle">그림체</label><select id="gstyle">${styleOptionsHTML()}</select><p class="note" id="gstyleDesc" style="margin:2px 0 0"></p></div>
       <div class="field" id="gmodelBox"><label for="gmodel">이미지 모델</label><select id="gmodel">${[...IMG_MODELS, ...(IMG_MODELS.some((m) => m.id === S.settings.imgModel) ? [] : [{ id: S.settings.imgModel, name: S.settings.imgModel }])].map((m) => `<option value="${esc(m.id)}">${esc(m.name)}</option>`).join("")}</select></div>
       <div class="field" id="gstyleBox"><label for="gstyleTxt">그림체 문구 <span class="note">한국어로 써도 돼요</span></label><textarea id="gstyleTxt" maxlength="600" style="min-height:76px" placeholder="예: 한국 웹툰 그림체, 깔끔한 선화, 부드러운 피부 음영"></textarea></div>
@@ -170,6 +171,7 @@ export function viewMe() {
   });
   $("#cEnter").onchange = (e) => chatSet("enterSend", e.target.checked);
   $("#cImg").onchange = (e) => chatSet("sceneImg", e.target.checked);
+  $("#autoImg").onchange = (e) => { S.settings.autoImg = e.target.checked; saveSettings(); if (e.target.checked && !S.settings.runwareKey && !$("#rkey").value.trim()) toast("Runware API 키를 넣고 설정 저장을 눌러야 그림이 만들어져요"); };
   bindAccount(v);
   $$("[data-aud]", v).forEach((x) => x.onclick = () => { setAudience(x.dataset.aud); $$("[data-aud]", v).forEach((y) => y.classList.toggle("on", y === x)); toast(`${AUDS[audience()].name} 작품을 보여 드릴게요`); });
   // 성인 인증을 체크해야 수위 해제 옵션을 고를 수 있음
