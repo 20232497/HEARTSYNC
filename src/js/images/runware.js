@@ -61,10 +61,10 @@ export async function runwareImage(prompt, { aspect = "4:5", rating = imgRating(
   const [width, height] = RW_SIZES[aspect] || RW_SIZES["4:5"], R = RATINGS[rating], M = imgModelInfo(st.model), A = ARCH[M.arch] || ARCH.pony;
   // 사람 없는 그림에는 수위의 adult·mature 태그를 빼야 사람이 끼어들지 않음
   const rpos = splitTags(M.arch === "illustrious" ? R.ill : R.pos).filter((t) => subj !== "none" || !/^(?:adult|mature|nsfw)$/.test(t)).join(", ");
-  // 내용(장면·인물) 다음에 그림체 — 그림체가 앞이면 표정·자세가 묻힘. "(태그:1.3)" 강조가 있으면 Runware 가중치 문법(sdEmbeds)을 켬
+  // 내용(장면·인물) 다음에 그림체 — 그림체가 앞이면 표정·자세가 묻힘. 내용이나 그림체에 "(태그:1.3)" 강조가 있으면 Runware 가중치 문법(sdEmbeds)을 켬
   const task = { taskType: "imageInference", taskUUID: uuid4(),
     positivePrompt: [A.pos, rpos, M.pos, tags, style].filter(Boolean).join(", ").slice(0, 2900),
-    ...(/\([^()]+:\d(?:\.\d+)?\)/.test(tags) ? { promptWeighting: "sdEmbeds" } : {}),
+    ...(/\([^()]+:\d(?:\.\d+)?\)/.test(tags + ", " + style) ? { promptWeighting: "sdEmbeds" } : {}),
     negativePrompt: [A.neg, M.neg, IMG_NEG, NEG_MINOR, R.neg, Sb.neg].filter(Boolean).join(", "),
     model: M.id, width, height, numberResults: 1, steps: 28, CFGScale: M.cfg || A.cfg, scheduler: "Euler a",
     outputFormat: "WEBP", outputType: "dataURI", ...(adult ? {} : { checkNSFW: true }) };
