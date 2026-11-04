@@ -43,19 +43,19 @@ const SEMI = "korean, semi-realistic, 2.5d, realistic proportions, glossy hair, 
 export const BUILTIN_SETS = [
   { id: "mdaily", name: "프롬1 남성향 일상", kind: "daily", aud: "m", match: /프롬\s*1.*남성향|남성향.*일상/, model: YABAL, samples: 3,
     desc: "참고 그림 프롬1(남성향 일상) 14장에서 뽑은 화풍 — 한국 반실사 2.5D, 윤기 있는 머리칼과 매끈한 피부, 크고 부드러운 눈, 자연스러운 비율. 남성향 작품(여성 인물)의 인물 그림 기본값",
-    prompt: SEMI.replace(SEMI_SKIN, "") + ", (semi-realistic:1.2), korean beauty, (large eyes:1.1), soft gaze, glossy lips, natural makeup, smooth glossy skin, airbrushed, soft bloom, soft focus, subsurface scattering, vivid natural colors" },
+    prompt: "korean, 2.5d, realistic proportions, glossy hair, detailed hair, soft skin shading, detailed eyes, cinematic lighting, depth of field, high detail, (illustration:1.3), anime-influenced face, (beautiful detailed eyes:1.3), large sparkling eyes, long eyelashes, pretty face, glossy lips, smooth skin, cel-painterly shading, soft bloom, vivid colors" },
   { id: "fdaily", name: "프롬1 여성향 일상", kind: "daily", aud: "f", match: /프롬\s*1.*여성향|여성향.*일상/, model: YABAL, samples: 3,
     desc: "프롬1(여성향 일상) 10장 — 같은 반실사 계열의 남성 인물: 창백하고 매끈한 피부, 섬세한 이목구비와 또렷한 턱선, 차분한 조명과 채도, 회화적 음영. 여성향 작품(남성 인물)의 인물 그림 기본값",
-    prompt: SEMI.replace(SEMI_SKIN, "") + ", handsome, (bishounen:1.2), pretty boy, youthful, delicate facial features, soft facial features, pale smooth skin, sharp jawline, soft painterly shading, gentle lighting, muted warm palette, manhwa style" },
+    prompt: SEMI.replace(SEMI_SKIN, "") + ", handsome, (bishounen:1.2), pretty boy, youthful, delicate facial features, soft facial features, pale smooth skin, sharp jawline, soft painterly shading, gentle lighting, rich deep palette, manhwa style, (vivid colors:1.2), (detailed hair strands:1.3), wind-blown hair, (muscular:1.2), toned chest, broad shoulders, open collar, sultry expression, alluring" },
   { id: "manime", name: "프롬2 남성향 애니", kind: "anime", aud: "m", match: /애니|anime/i, model: HASSAKU, samples: 3,
     desc: "프롬2(남성향 애니) 13장 — 애니 키 비주얼: 또렷한 선화와 회화적 하이라이트, 높은 대비와 선명한 색, 어두운 배경 위 빛 입자·먹 튀김 효과. 자동으로는 쓰지 않고 고르면 Hassaku 애니 모델로 그려요",
-    prompt: "(anime key visual:1.3), (intricate details:1.3), extremely detailed, detailed lineart, sketchy brushwork, ink splatter, painterly highlights, cel shading, high contrast, vivid colors, dramatic lighting, glowing particles, light streaks, dark background, shiny hair, beautiful detailed eyes" },
+    prompt: "(anime key visual:1.3), (intricate details:1.4), extremely detailed, detailed lineart, sketchy brushwork, ink splatter, painterly highlights, cel shading, (high contrast:1.3), vivid colors, dramatic lighting, glowing particles, light streaks, dark background, shiny hair, (detailed face:1.3), (beautiful detailed eyes:1.4), tsurime, long eyelashes, glossy lips, defined nose, dramatic face lighting" },
   { id: "fworld", name: "프롬2 여성향 세계관", kind: "world", aud: "f", match: /프롬\s*2.*여성향|여성향.*(?:세계관|표지)/, model: YABAL, samples: 3,
     desc: "프롬2(여성향 세계관 표지) 11장 — 어둡고 로맨틱한 저조도 조명(촛불·달빛), 차분하고 깊은 색, 반실사 남성 인물. 여성향 작품의 표지·세계관 일러스트 기본값",
-    prompt: SEMI.replace(SEMI_SKIN, "") + ", handsome, (bishounen:1.2), pretty boy, youthful, delicate facial features, pale smooth skin, sharp jawline, soft painterly shading, cinematic cover illustration, (low-key lighting:1.2), dim lighting, candlelight, moonlight, dark romantic atmosphere, rich muted palette" },
+    prompt: SEMI.replace(SEMI_SKIN, "") + ", handsome, (bishounen:1.2), pretty boy, youthful, delicate facial features, pale smooth skin, sharp jawline, soft painterly shading, cinematic cover illustration, (low-key lighting:1.2), dim lighting, candlelight, moonlight, dark romantic atmosphere, rich muted palette, (dramatic chiaroscuro:1.3), (high contrast:1.2), deep shadows, strong directional light, vignette, alluring, sultry gaze" },
   { id: "mworld", name: "프롬3 남성향 세계관", kind: "world", aud: "m", match: /프롬\s*3.*남성향|남성향.*(?:세계관|표지)/, model: YABAL, samples: 3,
     desc: "프롬3(남성향 세계관 표지) 11장 — 남성향 일상과 같은 인물 화풍에 네온·무대 조명의 림라이트, 선명한 채도와 윤기, 보케. 남성향 작품의 표지·세계관 일러스트 기본값",
-    prompt: SEMI.replace(SEMI_SKIN, "") + ", (semi-realistic:1.2), korean beauty, (large eyes:1.1), soft gaze, glossy lips, natural makeup, smooth glossy skin, airbrushed, cinematic cover illustration, (dramatic rim lighting:1.2), neon lights, stage lighting, vivid saturated colors, glossy finish, bokeh" }
+    prompt: SEMI.replace(SEMI_SKIN, "") + ", (semi-realistic:1.2), korean beauty, (large eyes:1.1), soft gaze, glossy lips, natural makeup, smooth glossy skin, airbrushed, cinematic cover illustration, (dramatic rim lighting:1.2), neon lights, stage lighting, vivid saturated colors, glossy finish, bokeh, (dramatic chiaroscuro:1.3), (high contrast:1.2), deep shadows, strong directional light, vignette, alluring, sultry gaze" }
 ];
 export const builtinSet = (id) => BUILTIN_SETS.find((b) => b.id === id) || null;
 /* 세트 이름이 내장 화풍 이름과 맞으면 그 id(ZIP 폴더 이름 프롬1_남성향_일상 …) */

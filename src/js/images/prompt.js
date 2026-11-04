@@ -15,9 +15,11 @@ export function coverPrompt(c) {
     const pick = cast.slice(0, 3); // SDXL은 3명이 넘으면 얼굴·몸이 뭉개져서 앞의 3명만
     const f = pick.filter((x) => /여성|여자|\bfemale\b|\bgirl/i.test(x.look || "")).length, m = pick.filter((x) => /남성|남자|\bmale\b|\bboy/i.test(x.look || "")).length;
     // 한쪽 성별만 있는 표지는 인원 태그에 가중치 + 성별 앵커 — 옷·머리 태그만 있으면 반실사 모델이 성별을 바꿔 그림(2026-11-04 비교 생성)
-    const who = [f ? (f > 1 ? (m ? `${f}girls` : `(${f}girls:1.2)`) : (m ? "1girl" : "(1girl:1.2)")) : "", m ? (m > 1 ? (f ? `${m}boys` : `(${m}boys:1.2)`) : (f ? "1boy" : "(1boy:1.2)")) : "",
+    // 여러 명이면 한 명만 크게 나오지 않게 인원 태그를 세게(1.4) + "N women side by side, all faces visible" (2026-11-04: 상반신 한 명 구도 → 허리 위 3인 구도 6장 중 4장 성공)
+    const N = ["", "one", "two", "three"], grp = pick.length > 1 ? [`(${N[pick.length]} ${m && !f ? "men" : f && !m ? "women" : "people"} side by side:1.3)`, "all faces visible"] : [];
+    const who = [f ? (f > 1 ? (m ? `${f}girls` : `(${f}girls:1.4), (multiple girls:1.2)`) : (m ? "1girl" : "(1girl:1.2)")) : "", m ? (m > 1 ? (f ? `${m}boys` : `(${m}boys:1.4), (multiple boys:1.2)`) : (f ? "1boy" : "(1boy:1.2)")) : "",
       m && !f ? "male focus, handsome men, masculine features" : f && !m ? "beautiful women, feminine" : ""].filter(Boolean).join(", ") || "multiple characters";
-    return [...base, who, "group portrait, looking at viewer", ...pick.map((x) => x.tags || x.look), c.oneLiner, "atmospheric background"].filter(Boolean).join(", ");
+    return ["poster composition", "waist up", who, ...grp, "group portrait, looking at viewer", ...pick.map((x) => x.tags || x.look), c.oneLiner, "atmospheric background"].filter(Boolean).join(", ");
   }
   const look = castLook(cast[0], c), who = lookIsMale(look) ? ["(1boy:1.2)", "male focus", "solo", "handsome man, masculine features"] : ["(1girl:1.2)", "solo", "beautiful woman"];
   return [...base, ...who, (cast[0] && cast[0].tags) || look, "looking at viewer", c.oneLiner, "atmospheric background"].filter(Boolean).join(", ");
