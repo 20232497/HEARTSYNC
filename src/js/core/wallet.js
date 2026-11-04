@@ -1,17 +1,18 @@
 /* 요금: 무료 턴·PLUS·하트 차감/환불, 가격 계산(listPrice·quote) */
 import { LEN, MODELS } from "../ai/models.js";
+import { FREE_DAILY, PLUS_MONTHLY, WELCOME } from "./constants.js";
+import { emit } from "./events.js";
 import { S } from "./state.js";
 import { KV } from "./storage.js";
 import { today } from "./util.js";
-import { renderWalletChips } from "../ui/shell.js";
 
-export const FREE_DAILY = 10, WELCOME = 30, PLUS_MONTHLY = 300;
+export { FREE_DAILY, PLUS_MONTHLY, WELCOME }; // 요금 상수는 core/constants.js에(ai/models.js와의 순환 import 때문) — 쓰던 곳은 그대로 wallet에서 가져감
 export const PLAN = { free: { memTurns: 20, memoMax: 3000, hist: 5, rooms: 3 }, pro: { memTurns: 40, memoMax: 10000, hist: 20, rooms: 99 } };
 export function isPro() { return !!(S.wallet.pro && S.wallet.pro.until > Date.now()); }
 export function plan() { return isPro() ? PLAN.pro : PLAN.free; }
 export function refreshFree() { if (S.wallet.freeDay !== today()) { S.wallet.freeDay = today(); S.wallet.freeUsed = 0; } }
 export function freeLeft() { refreshFree(); return Math.max(0, FREE_DAILY - S.wallet.freeUsed); }
-export function saveWallet() { KV.set("wallet", S.wallet); renderWalletChips(); }
+export function saveWallet() { KV.set("wallet", S.wallet); emit("wallet"); }
 export function ledger(d, label) { S.wallet.ledger.unshift({ at: Date.now(), d, label }); S.wallet.ledger = S.wallet.ledger.slice(0, 80); }
 /* 가격: 모델 기본가 × 출력량 + 기억력 가산. 무료 턴은 라이트 모델에만, PLUS는 라이트 무제한·나머지 50% */
 export function listPrice(model, len, mem) {

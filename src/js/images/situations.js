@@ -5,8 +5,8 @@ import { S } from "../core/state.js";
 import { KV } from "../core/storage.js";
 import { DIMS, RESET, dimOf, freeNum, maxRating, parseCodes, usedNums } from "./codes.js";
 import { sheetRating } from "./rating.js";
+import { publishCommunity } from "../services/community.js";
 import { IMG } from "../services/images.js";
-import { publishCommunity } from "../ui/studio.js";
 
 /* 직접 추가하는 칸(S.settings.customSits = [{n, name, prompt, rating}]): 모든 인물에 공통.
    번호는 종류별 빈 번호(감정/행동 15~, 의상 410~, 장소 510~) 또는 목록으로 가져올 때 적은 세 자리 번호(100~599 — 같은 번호의 내장 코드를 덮음).

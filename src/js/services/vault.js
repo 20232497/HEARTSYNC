@@ -1,8 +1,8 @@
 /* API 키 금고(VAULT): 비밀번호·암호로 만든 키로 AES-GCM 암호화해 계정에 저장 */
+import { emit, on } from "../core/events.js";
 import { S, hasClaudeKey } from "../core/state.js";
 import { CLOUD } from "./cloud.js";
 import { SB } from "./supabase.js";
-import { paintVault } from "../ui/login.js";
 
 /* API 키 금고(사용자 요청 2026-11 — 키가 계정 서버에 평문으로 남지 않게): Anthropic·Runware·OpenRouter 키는 "settings" 행에 넣지 않고,
    로그인 비밀번호로 이 기기에서 만든 잠금 키(PBKDF2-SHA256 60만 번, 소금은 사용자 id)로 AES-GCM 암호화해 "vault" 행에만 올림.
@@ -23,7 +23,7 @@ export const VAULT = {
   },
   store() { if (this.rec) try { localStorage.setItem("hv1_vault_" + this.rec.uid, JSON.stringify(this.rec)); } catch {} },
   forget() { this.rec = null; this.ck = null; this.fresh = false; this.state = ""; clearTimeout(this.timer); this.timer = null; try { Object.keys(localStorage).filter((k) => k.indexOf("hv1_vault_") === 0).forEach((k) => localStorage.removeItem(k)); } catch {} },
-  setState(s) { this.state = s; paintVault(); },
+  setState(s) { this.state = s; emit("vault"); },
   async derive(secret, uid) {
     const enc = new TextEncoder();
     const base = await crypto.subtle.importKey("raw", enc.encode(secret), { name: "PBKDF2" }, false, ["deriveBits"]);
@@ -110,6 +110,7 @@ export const VAULT = {
     if (CLOUD.on && !CLOUD.noTable) await CLOUD.check(await SB.req("/rest/v1/kv?key=eq.vault", { method: "DELETE" }));
   }
 };
+on("settings", () => VAULT.save()); // 설정을 저장할 때마다 키가 바뀌었는지 보고 올림(0.8초 모아서)
 function hashStr(s) { let h = 0x811c9dc5; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } return h.toString(36); }
 function b64(u8) { let s = ""; for (let i = 0; i < u8.length; i++) s += String.fromCharCode(u8[i]); return btoa(s); }
 function unb64(t) { const s = atob(t), u = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) u[i] = s.charCodeAt(i); return u; }

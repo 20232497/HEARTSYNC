@@ -5,13 +5,13 @@ import { KV } from "../core/storage.js";
 import { $, $$, esc, toast } from "../core/util.js";
 import { coverPrompt, lorePrompt } from "../images/prompt.js";
 import { ratingFieldHTML, setSheetRating, sheetRating } from "../images/rating.js";
+import { publishCommunity } from "../services/community.js";
 import { IMG } from "../services/images.js";
 import { viewDetail } from "./detail.js";
 import { audOf } from "../core/audience.js";
 import { genImageSheet } from "./gen-sheet.js";
 import { ICON } from "./icons.js";
 import { sheet } from "./sheet.js";
-import { publishCommunity } from "./studio.js";
 
 /* ---------------------------------------------------------------- 세계관 일러스트: 대표 일러스트(표지) + 키워드북 항목별 그림.
    내 작품은 작품(img·loreImages)에, 그 밖의 작품은 내 계정(coverpacks·lorepacks)에 저장 */

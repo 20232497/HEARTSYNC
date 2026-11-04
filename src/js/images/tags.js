@@ -5,6 +5,7 @@ import { OR_TAG_MODELS } from "../ai/models.js";
 import { openRouterStream } from "../ai/openrouter.js";
 import { S, hasOpenRouterKey } from "../core/state.js";
 import { KV } from "../core/storage.js";
+import { TAGS } from "./tags-cache.js";
 
 const hasHangul = (t) => /[가-힣]/.test(t);
 /* 프롬프트 → Pony용 영문 태그. 영문 태그 조각은 그대로 두고, 한글이 든 조각만(이어진 것끼리 묶어) koTags()로 번역 */
@@ -18,9 +19,7 @@ export async function ponyTags(text, adult = false) {
   return out.filter(Boolean).join(", ");
 }
 /* 한글 설명 → 영문 Danbooru 태그(TAGS에 캐시해 같은 글은 한 번만). Claude로 번역하고, Claude 연결이 없거나 실패하면 OpenRouter 키로 한 번 더,
-   그것도 안 되면 한글 낱말만 빼고 보냄. 성인 수위 그림(adult)은 처음부터 OpenRouter로(Claude에는 노출 태그 지시를 보내지 않음) */
-export let TAGS = {};
-export function setTags(v) { return (TAGS = v); }
+   그것도 안 되면 한글 낱말만 빼고 보냄. 성인 수위 그림(adult)은 처음부터 OpenRouter로(Claude에는 노출 태그 지시를 보내지 않음). 캐시 TAGS는 tags-cache.js */
 async function koTags(t, adult = false) {
   adult = adult && ageOK() && hasOpenRouterKey();
   const key = "4|" + (adult ? "A:" : "") + t; // 4|: 성인 번역을 DeepSeek로 바꾼 뒤(예전 라이트 모델 번역은 엉뚱한 머리색 등이 섞여 안 씀)

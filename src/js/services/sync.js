@@ -1,5 +1,5 @@
 /* 처음 로그인·다른 기기와 합치기(mergeGuest·fillIn·mergeSits), 다시 받기, 기기 지우기 */
-import { loadAll } from "../boot.js";
+import { emit } from "../core/events.js";
 import { roomKey } from "../core/rooms.js";
 import { applySettings, saveSettings } from "../core/settings.js";
 import { S, gen } from "../core/state.js";
@@ -8,8 +8,8 @@ import { dimOf, freeNum, keyOf, parseCodes, usedNums } from "../images/codes.js"
 import { CUSTOM_MAX } from "../images/situations.js";
 import { CLOUD } from "./cloud.js";
 import { validRef } from "./images.js";
+import { loadAll } from "./load.js";
 import { SB } from "./supabase.js";
-import { renderRailRecent, renderWalletChips, route } from "../ui/shell.js";
 
 // 예전 버전은 계정에서 그림 칸 연결(imgpacks)을 받지 않아 기기마다 따로 놀았음 → 기기·계정마다 한 번, 계정 것과 합쳐(이 기기 것이 우선) 다시 올림
 export async function fixImgpacks(fresh) {
@@ -98,9 +98,9 @@ export function mergeGuest(remote, local) {
 }
 // 계정에서 받은 것을 화면에 반영(입력 중이거나 응답을 받는 중이면 화면은 그대로)
 export async function reloadFromCloud() {
-  await loadAll(); applySettings(); renderRailRecent(); renderWalletChips();
+  await loadAll(); applySettings(); emit("rooms"); emit("wallet");
   const h = location.hash.slice(1) || "home", typing = document.activeElement && /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName);
-  if (!gen && !typing && !h.startsWith("r-") && !h.startsWith("studio")) route();
+  if (!gen && !typing && !h.startsWith("r-") && !h.startsWith("studio")) emit("route");
 }
 // 이 기기의 HEART SYNC 데이터 전부(설정·키·그림 포함)를 지움 — 같이 쓰는 기기에서 로그아웃할 때
 export async function wipeDevice() {

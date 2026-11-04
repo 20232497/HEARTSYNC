@@ -1,6 +1,6 @@
 /* AI 모델 등급(MODELS)·출력량(LEN)·OpenRouter 모델 선택(OR_TIER…). 모델 고도화는 여기와 ai/prompt/ */
+import { FREE_DAILY } from "../core/constants.js";
 import { S } from "../core/state.js";
-import { FREE_DAILY } from "../core/wallet.js";
 
 /* 성인 모드(OpenRouter) 등급별 모델: 라이트=quick, 스토리=default, 마스터=complex.
    마스터는 DeepSeek V3 — Magnum V4 72B(제공자 Mancer 하나)는 2026-11 시험에서 한국어가 깨지거나(3/3) 같은 줄을 되풀이하고 상태창을 안 쓰며 한 턴에 2분 걸려 뺌(직접 입력으로는 고를 수 있음) */

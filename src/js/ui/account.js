@@ -1,4 +1,5 @@
 /* MY → 계정 칸: 처음 로그인 합치기(firstSync), 동기화 상태·로그아웃·계정 삭제 */
+import { on } from "../core/events.js";
 import { saveSettings } from "../core/settings.js";
 import { S } from "../core/state.js";
 import { KV } from "../core/storage.js";
@@ -39,6 +40,7 @@ export async function firstSync() {
     ov.addEventListener("click", (e) => { if (e.target === ov) pick(true); }); // 그냥 닫으면 아무것도 잃지 않게 합침
   });
 }
+on("cloud", () => { const el = $("#cloudState"); if (el) el.textContent = cloudStateText(); }); // 계정 저장 상태가 바뀌면 제목 옆 글을 갱신
 export function accountBoxHTML() {
   if (!SB.on()) return "";
   if (!SB.s) return `<h2 class="sec">계정</h2><div class="box"><p>로그인하면 PC와 휴대폰에서 대화·작품·설정이 그대로 이어져요.</p><div class="cta-row" style="margin-top:12px"><button class="btn pri" data-go="login">로그인 · 회원가입</button></div></div>`;

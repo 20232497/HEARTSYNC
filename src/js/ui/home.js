@@ -2,6 +2,7 @@
 import { HOME_ROWS, ORIGINALS } from "../content/index.js";
 import { AUDS, audOK, audOf, audience } from "../core/audience.js";
 import { CATS } from "../core/constants.js";
+import { on } from "../core/events.js";
 import { saveSettings } from "../core/settings.js";
 import { S } from "../core/state.js";
 import { $, $$, ago, esc, toast } from "../core/util.js";
@@ -64,3 +65,4 @@ export function viewHome() {
   const q = $("#q"); q.oninput = () => { S.q = q.value; const pos = q.selectionStart; viewHome(); const n = $("#q"); n.focus(); n.setSelectionRange(pos, pos); };
   bindGo(v); IMG.hydrate(v);
 }
+on("community", () => { if ((location.hash.slice(1) || "home") === "home") viewHome(); }); // 커뮤니티 작품을 받으면 홈을 다시 그림

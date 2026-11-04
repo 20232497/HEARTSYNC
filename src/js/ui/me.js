@@ -13,6 +13,7 @@ import { genErr } from "../images/runware.js";
 import { lookIsMale } from "../images/prompt.js";
 import { BUILTIN_SETS, IMG_MODELS, IMG_STYLES, activeSet, claudeStyleTags, effectiveSet, groupStyleFiles, guessStyleModel, guessStylePrompt, imgModelInfo, matchBuiltin, overridingSet, styleOptionsHTML, unzipImages } from "../images/styles.js";
 import { CLOUD } from "../services/cloud.js";
+import { publishCommunity } from "../services/community.js";
 import { IMG, validRef } from "../services/images.js";
 import { accountBoxHTML, bindAccount } from "./account.js";
 import { renderLog } from "./chat/log.js";
@@ -22,7 +23,6 @@ import { audSegHTML, setAudience } from "./home.js";
 import { ICON } from "./icons.js";
 import { confirmSheet, sheet } from "./sheet.js";
 import { bindGo, topbar } from "./shell.js";
-import { publishCommunity } from "./studio.js";
 
 export function viewMe() {
   const v = $("#view"), cur = S.personas.find((p) => p.def) || S.personas[0];

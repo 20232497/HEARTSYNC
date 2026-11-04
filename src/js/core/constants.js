@@ -1,5 +1,7 @@
-/* 순수 상수: 응답 구분자(MARK), 상황 이름(SIT)·표지 색·무늬·장르 — 다른 모듈을 import하지 않음 */
+/* 순수 상수: 응답 구분자(MARK), 상황 이름(SIT)·표지 색·무늬·장르, 요금 상수 — 다른 모듈을 import하지 않음 */
 export const MARK = "===STATE===";
+/* 요금: 하루 무료 턴(라이트), 첫 방문 하트, PLUS 월 지급 하트 — 계산은 core/wallet.js, 모델 표(ai/models.js)도 이 값을 씀 */
+export const FREE_DAILY = 10, WELCOME = 30, PLUS_MONTHLY = 300;
 export const SIT = ["프로필", "기본", "웃음", "부끄러움", "슬픔", "놀람", "분노", "삐침", "공포", "부상", "회복", "휴식", "공격", "각성", "설렘"];
 export const SIT_TINT = ["#f5f0ff", "#9fb4ff", "#ffd166", "#ff8fab", "#7b96ff", "#ffe066", "#ff5d5d", "#c77dff", "#56cfe1", "#e63946", "#80ed99", "#a0c4ff", "#ff8c42", "#f9c74f", "#ff70a6"];
 export const PALETTES = [

@@ -1,4 +1,5 @@
-/* 라우팅(go·route)·레일·탭바·상단바·지갑 칩 */
+/* 라우팅(go·route)·레일·탭바·상단바·지갑 칩. 아래층의 "rooms"·"wallet"·"route" 이벤트를 받아 레일·칩·화면을 다시 그림 */
+import { on } from "../core/events.js";
 import { S, gen } from "../core/state.js";
 import { $, $$, esc, num } from "../core/util.js";
 import { freeLeft, isPro } from "../core/wallet.js";
@@ -62,3 +63,4 @@ export function topbar(extra = "") {
     <button class="wallet" data-go="store" aria-label="내 재화, 스토어로 이동">${walletHTML()}</button></div>`;
 }
 export function bindGo(root) { $$("[data-go]", root).forEach((b) => b.onclick = () => go(b.dataset.go)); }
+on("rooms", renderRailRecent); on("wallet", renderWalletChips); on("route", route);

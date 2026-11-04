@@ -1,9 +1,9 @@
 /* 대화방 저장·목록·이전(migrateRoom)·새 방 만들기, 메시지의 현재 버전 글(curText) */
 import { normalizeChar } from "./character.js";
+import { emit } from "./events.js";
 import { S } from "./state.js";
 import { KV } from "./storage.js";
 import { uid } from "./util.js";
-import { renderRailRecent } from "../ui/shell.js";
 
 export function curText(m) { return m.role === "ai" ? (m.alts[m.idx] || {}).text || "" : m.text; }
 export function roomKey(id) { return "room-" + id; }
@@ -12,7 +12,7 @@ function indexRoom(r) {
   const entry = { id: r.id, charId: c.id, name: c.name, title: c.title, glyph: c.glyph, pal: c.pal, motif: c.motif, img: c.img || "", at: r.at,
     last: (lastAi ? curText(lastAi) : "").replace(/\[\[img:[^\]]*\]\]/g, "").replace(/[*"\[\]]/g, "").replace(/\s+/g, " ").trim().slice(0, 70) };
   S.rooms = [entry, ...S.rooms.filter((x) => x.id !== r.id)].sort((a, b) => b.at - a.at);
-  KV.set("rooms", S.rooms); renderRailRecent();
+  KV.set("rooms", S.rooms); emit("rooms");
 }
 export function saveRoom(r) {
   if (deletedRooms.has(r.id)) return; // 지운 뒤 끝난 응답·요약이 방을 되살리지 않게

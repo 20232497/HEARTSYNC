@@ -58,6 +58,7 @@ import "./ui/store.js";
 import "./ui/login.js";
 import "./ui/account.js";
 import "./ui/me.js";
+import { migrateImageSettings } from "./admin/migrate.js";
 import { boot } from "./boot.js";
 
-boot();
+boot({ migrate: migrateImageSettings });
