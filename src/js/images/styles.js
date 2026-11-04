@@ -15,12 +15,15 @@ export const IMG_MODELS = [
   { id: "civitai:827184@1761560", name: "애니 일러스트 (WAI Illustrious v14)", arch: "illustrious" },
   // 기본 화풍의 반실사 모델(2026-11-03 비교 생성 — CyberRealistic·hPonyRealism·DTFMix·Zyntoon·CyberIllustrious·HoJ와 견줘 참고 그림의 윤기 있는 2.5D 마무리에 가장 가까움)
   { id: "civitai:1160480@1449034", name: "세미리얼 Illustrious (semILust v2)", arch: "illustrious" },
+  // 여성향(남성 인물) 기본 화풍 모델(2026-11-04 체크포인트 19종 추가 비교 — 참고 그림의 부드러운 꽃미남에 가장 가깝고, 남자를 여자로 그리지 않음)
+  { id: "civitai:959624@1074388", name: "2.5D 웹툰 SDXL (YabaL Mix)", arch: "sdxl" },
   // Pony Diffusion V6 XL(Civitai 257749·버전 290640)은 Runware 자체 호스팅 ID "imagerouter:"로만 불러짐
   { id: "imagerouter:257749@290640", name: "Pony Diffusion V6 XL", arch: "pony", pos: "source_anime" }
 ];
 export const ARCH = {
   pony: { pos: "score_9, score_8_up, score_7_up", neg: "score_4, score_5, score_6, source_pony, source_furry", cfg: 7 },
-  illustrious: { pos: "masterpiece, best quality, amazing quality, very aesthetic, absurdres, newest", neg: "bad quality, worst quality, worst detail, sketch, lowres, jpeg artifacts", cfg: 6 }
+  illustrious: { pos: "masterpiece, best quality, amazing quality, very aesthetic, absurdres, newest", neg: "bad quality, worst quality, worst detail, sketch, lowres, jpeg artifacts", cfg: 6 },
+  sdxl: { pos: "masterpiece, best quality, highly detailed", neg: "worst quality, low quality, lowres", cfg: 7 }
 };
 export const imgModelInfo = (id) => IMG_MODELS.find((m) => m.id === id) || { id, name: id, arch: "pony" };
 /* ---------------------------------------------------------------- 내장 기본 화풍(2026-11-03, 사용자가 준 참고 그림 59장 — 프롬1 남성향 일상 14·여성향 일상 10, 프롬2 남성향 애니 13·여성향 세계관 표지 11, 프롬3 남성향 세계관 표지 11)
@@ -30,20 +33,21 @@ export const imgModelInfo = (id) => IMG_MODELS.find((m) => m.id === id) || { id,
    samples: 저장소 styles/<id>-1.jpg … 에 둔 견본 수(설정 카드에 보여 줌 — 없는 파일을 가리키면 404가 나므로 수를 맞춰 적음) */
 /* 비교 생성(2026-11-03, 6라운드 66장)으로 정함: 반실사 네 묶음은 semILust v2(Illustrious) — Run七八造(예전 기본)는 붓 자국이 보이는 일러스트, 포토리얼 계열은 사진처럼 나와서 뺌.
    여성향 인물은 사진 같은 성인 남성으로 치우쳐 (bishounen:1.2)·pretty boy·pale smooth skin으로 참고 그림의 부드러운 꽃미남 쪽으로 당김(realistic skin texture는 뺌).
+   여성향(남성 인물) 두 묶음은 2026-11-04 체크포인트 19종을 더 비교해 YabaL Mix 2.5D XL(sdxl)로 — semILust·myzy Korean XL보다 참고 그림의 부드럽고 창백한 꽃미남에 가깝고 표지·의상 조합에서도 남자를 남자로 그림.
    표지는 장면 태그가 앞이라 조명 태그에 가중치. 여성향 표지에도 (bishounen:1.2)·pretty boy — semILust가 옷·머리 태그만 있는 남자(은발 기사·셰프)를 여자로 그려서(2026-11-04, coverPrompt의 (1boy:1.2)·masculine 앵커만으로는 부족, HoJ도 마찬가지). 애니는 WAI + (anime key visual:1.2)·glowing particles — Hassaku와 비슷했고 WAI가 참고 그림의 어두운 배경·강한 대비에 가까움 */
-const SEMI_L = "civitai:1160480@1449034", SEMI_SKIN = ", realistic skin texture";
+const SEMI_L = "civitai:1160480@1449034", YABAL = "civitai:959624@1074388", SEMI_SKIN = ", realistic skin texture";
 const SEMI = "korean, semi-realistic, 2.5d, realistic proportions, glossy hair, detailed hair, soft skin shading" + SEMI_SKIN + ", detailed eyes, cinematic lighting, depth of field, high detail";
 export const BUILTIN_SETS = [
   { id: "mdaily", name: "프롬1 남성향 일상", kind: "daily", aud: "m", match: /프롬\s*1.*남성향|남성향.*일상/, model: SEMI_L, samples: 3,
     desc: "참고 그림 프롬1(남성향 일상) 14장에서 뽑은 화풍 — 한국 반실사 2.5D, 윤기 있는 머리칼과 매끈한 피부, 자연스러운 비율, 영화 같은 조명. 남성향 작품(여성 인물)의 인물 그림 기본값",
     prompt: SEMI + ", korean beauty, glossy lips, natural makeup, soft bloom, clean skin, vivid natural colors" },
-  { id: "fdaily", name: "프롬1 여성향 일상", kind: "daily", aud: "f", match: /프롬\s*1.*여성향|여성향.*일상/, model: SEMI_L, samples: 3,
+  { id: "fdaily", name: "프롬1 여성향 일상", kind: "daily", aud: "f", match: /프롬\s*1.*여성향|여성향.*일상/, model: YABAL, samples: 3,
     desc: "프롬1(여성향 일상) 10장 — 같은 반실사 계열의 남성 인물: 창백하고 매끈한 피부, 섬세한 이목구비와 또렷한 턱선, 차분한 조명과 채도, 회화적 음영. 여성향 작품(남성 인물)의 인물 그림 기본값",
     prompt: SEMI.replace(SEMI_SKIN, "") + ", handsome, (bishounen:1.2), pretty boy, youthful, delicate facial features, soft facial features, pale smooth skin, sharp jawline, soft painterly shading, gentle lighting, muted warm palette, manhwa style" },
   { id: "manime", name: "프롬2 남성향 애니", kind: "anime", aud: "m", match: /애니|anime/i, model: IMG_MODELS[2].id, samples: 3,
     desc: "프롬2(남성향 애니) 13장 — 애니 키 비주얼: 또렷한 선화와 셀 채색, 높은 대비와 선명한 색, 빛 입자·섬광 효과. 자동으로는 쓰지 않고 고르면 애니 일러스트 모델로 그려요",
     prompt: "(anime key visual:1.2), highly detailed illustration, intricate details, detailed lineart, cel shading, high contrast, vivid colors, dramatic lighting, (glowing particles:1.1), light effects, shiny hair, beautiful detailed eyes" },
-  { id: "fworld", name: "프롬2 여성향 세계관", kind: "world", aud: "f", match: /프롬\s*2.*여성향|여성향.*(?:세계관|표지)/, model: SEMI_L, samples: 3,
+  { id: "fworld", name: "프롬2 여성향 세계관", kind: "world", aud: "f", match: /프롬\s*2.*여성향|여성향.*(?:세계관|표지)/, model: YABAL, samples: 3,
     desc: "프롬2(여성향 세계관 표지) 11장 — 어둡고 로맨틱한 저조도 조명(촛불·달빛), 차분하고 깊은 색, 반실사 남성 인물. 여성향 작품의 표지·세계관 일러스트 기본값",
     prompt: SEMI + ", cinematic cover illustration, (low-key lighting:1.2), dim lighting, candlelight, moonlight, dark romantic atmosphere, rich muted palette, intricate details, handsome, (bishounen:1.2), pretty boy, sharp jawline" },
   { id: "mworld", name: "프롬3 남성향 세계관", kind: "world", aud: "m", match: /프롬\s*3.*남성향|남성향.*(?:세계관|표지)/, model: SEMI_L, samples: 3,
