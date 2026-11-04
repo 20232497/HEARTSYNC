@@ -1,5 +1,5 @@
-// 개발 서버(npm run dev): src/·content/를 고치면 index.html을 다시 빌드하고 열린 브라우저를 새로 고침.
-// 저장소 루트를 http://localhost:5173 으로 띄움(파일 모드와 같은 BYOK 동작). 빌드가 실패하면 화면 아래에 오류를 보여 줌.
+// 개발 서버(npm run dev): src/·content/를 고치면 index.html·admin.html을 다시 빌드하고 열린 브라우저를 새로 고침.
+// 저장소 루트를 http://localhost:5173 으로 띄움(파일 모드와 같은 BYOK 동작) — 사용자 사이트 /, 관리자 도구 /admin.html. 빌드가 실패하면 화면 아래에 오류를 보여 줌.
 //   node tools/dev.mjs [--port 5173]
 import http from "node:http";
 import fs from "node:fs";
@@ -16,11 +16,11 @@ const TYPES = { ".html": "text/html; charset=utf-8", ".js": "text/javascript; ch
   ".md": "text/plain; charset=utf-8", ".txt": "text/plain; charset=utf-8", ".sql": "text/plain; charset=utf-8" };
 
 /* 브라우저 쪽: 빌드가 끝나면 새로 고침, 실패하면 오류 표시, 런타임 오류는 index.html 줄 번호를 원본 모듈 파일:줄로 바꿔 콘솔에 보여 줌
-   (.build/linemap.json). 오래된 브라우저에서도 돌게 ES5. 디스크의 index.html에는 넣지 않고 응답에만 붙임 */
+   (.build/linemap.json, 관리자 도구는 linemap-admin.json). 오래된 브라우저에서도 돌게 ES5. 디스크의 index.html·admin.html에는 넣지 않고 응답에만 붙임 */
 const CLIENT = `<script>(function(){var es=new EventSource("/__dev/events"),box,map=null;
 es.addEventListener("reload",function(){location.reload()});
 es.addEventListener("fail",function(e){if(!box){box=document.createElement("pre");box.style.cssText="position:fixed;left:8px;right:8px;bottom:8px;z-index:2147483647;max-height:45vh;overflow:auto;margin:0;padding:12px 14px;border-radius:10px;background:#2a0d14;color:#ffd7df;font:12px/1.6 ui-monospace,monospace;white-space:pre-wrap";document.body.appendChild(box)}box.textContent=JSON.parse(e.data)});
-fetch("/__dev/linemap").then(function(r){return r.json()}).then(function(m){map=m}).catch(function(){});
+fetch("/__dev/linemap"+(location.pathname.indexOf("admin.html")>=0?"?p=admin":"")).then(function(r){return r.json()}).then(function(m){map=m}).catch(function(){});
 function where(line){if(!map)return"";for(var i=0;i<map.length;i++){var x=map[i];if(line>=x.start&&line<=x.end)return x.from+":"+(x.fromLine+line-x.start)}return""}
 window.addEventListener("error",function(e){if(!e.lineno||String(e.filename||"").indexOf(location.pathname)<0)return;var w=where(e.lineno);if(w)console.error("[dev] 원본 위치 "+w+" — "+e.message)});
 })();</script>`;
@@ -77,7 +77,7 @@ http.createServer((req, res) => {
     return;
   }
   if (url.pathname === "/__dev/linemap") {
-    fs.readFile(path.join(ROOT, ".build", "linemap.json"), (err, buf) => {
+    fs.readFile(path.join(ROOT, ".build", url.searchParams.get("p") === "admin" ? "linemap-admin.json" : "linemap.json"), (err, buf) => {
       if (err) { res.writeHead(404).end("[]"); return; }
       res.writeHead(200, { "content-type": "application/json", "cache-control": "no-store" }).end(buf);
     });
@@ -90,10 +90,10 @@ http.createServer((req, res) => {
   fs.readFile(file, (err, buf) => {
     if (err) { res.writeHead(404, { "content-type": "text/plain; charset=utf-8" }).end("없는 파일: " + rel); return; }
     const type = TYPES[path.extname(file).toLowerCase()] || "application/octet-stream";
-    if (file === path.join(ROOT, "index.html")) buf = Buffer.from(buf.toString("utf8").replace(/<\/html>\s*$/, CLIENT + "\n</html>\n"));
+    if (file === path.join(ROOT, "index.html") || file === path.join(ROOT, "admin.html")) buf = Buffer.from(buf.toString("utf8").replace(/<\/html>\s*$/, CLIENT + "\n</html>\n"));
     res.writeHead(200, { "content-type": type, "cache-control": "no-store" }).end(buf);
   });
 }).listen(PORT, "127.0.0.1", () => {
-  console.log(`HEART SYNC 개발 서버: http://localhost:${PORT}/  (src/·content/를 고치면 다시 빌드하고 새로 고침, 끄려면 Ctrl+C)`);
+  console.log(`HEART SYNC 개발 서버: http://localhost:${PORT}/  관리자 도구 http://localhost:${PORT}/admin.html  (src/·content/를 고치면 다시 빌드하고 새로 고침, 끄려면 Ctrl+C)`);
   rebuild("시작");
 });

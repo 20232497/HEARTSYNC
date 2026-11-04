@@ -13,11 +13,11 @@ import { genErr, runwareImage } from "../images/runware.js";
 import { codeDefs, codeRating, keyName, knownCodes, sitDef, sitName, slotNums } from "../images/situations.js";
 import { styleFor } from "../images/styles.js";
 import { IMG, validRef } from "../services/images.js";
-import { copyText } from "./chat/log.js";
-import { artHTML } from "./cover.js";
+import { copyText } from "../ui/chat/log.js";
+import { artHTML } from "../ui/cover.js";
 import { genImageSheet } from "./gen-sheet.js";
-import { ICON } from "./icons.js";
-import { sheet } from "./sheet.js";
+import { ICON } from "../ui/icons.js";
+import { sheet } from "../ui/sheet.js";
 import { codeTableSheet, sitEditor, sitListSheet, sitPresetSheet } from "./sit-sheets.js";
 
 export function openImageSlots(c, code) {

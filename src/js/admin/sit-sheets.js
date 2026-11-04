@@ -8,8 +8,8 @@ import { $, $$, esc, toast } from "../core/util.js";
 import { DIMS, DIM_NAMES, dimOf } from "../images/codes.js";
 import { ratingFieldHTML } from "../images/rating.js";
 import { genErr } from "../images/runware.js";
-import { CODE_MAX, CUSTOM_MAX, codeDefs, dropSitImages, freeSitNum, sitDef } from "../images/situations.js";
-import { ICON } from "./icons.js";
+import { CODE_MAX, CUSTOM_MAX, allCustom, codeDefs, dropSitImages, freeSitNum, sitDef } from "../images/situations.js";
+import { ICON } from "../ui/icons.js";
 
 /* 추천 칸 꾸러미: 기본 15칸·내장 코드에 없는 자주 쓰는 상황을 골라 한 번에 추가(태그는 영문, 추가한 뒤 '고치기'로 바꿀 수 있음).
    전체이용가·세미 수위만 — 노골적인 칸은 미리 채우지 않고 사용자가 직접 씀(CLAUDE.md 수위 원칙) */
@@ -39,7 +39,7 @@ const SIT_PRESETS = [
     ["샤워 후", "after bath, wet hair, towel, steam, blush"], ["침대 위", "lying on bed, on side, looking at viewer, bedroom, soft lighting"]] }
 ];
 export function sitPresetSheet(after) {
-  const have = new Set([...(S.settings.customSits || []).map((d) => d.name), ...Object.values(DIMS).map((d) => d.name)]); // 같은 이름의 내장 코드가 있으면 이미 있는 것으로
+  const have = new Set([...allCustom().map((d) => d.name), ...Object.values(DIMS).map((d) => d.name)]); // 같은 이름의 내장 코드가 있으면 이미 있는 것으로
   const packs = SIT_PRESETS.filter((p) => !p.rating || ageOK());
   const ov = document.createElement("div"); ov.className = "overlay gen-ov";
   ov.innerHTML = `<div class="sheet" role="dialog" aria-modal="true"><div class="sheet-head"><h2>추천 칸</h2><button class="icon-btn" data-x aria-label="닫기">${ICON.close}</button></div>
@@ -66,7 +66,7 @@ export function sitPresetSheet(after) {
    세 자리 번호(100~599)는 그대로 쓰고(같은 번호의 내장 코드는 덮음, 이미 있는 번호면 '이미 있음'), 두 자리 이하 번호는 무시하고 빈 번호(15~)를 줌.
    프롬프트가 없으면 이름을 씀(만들 때 번역됨). 이름의 밑줄은 띄어쓰기로 */
 export function parseSitList(text) {
-  const base = new Set(SIT), list = S.settings.customSits || [], have = new Set(list.map((d) => d.name)), nums = new Set(list.map((d) => d.n)), seen = new Set(), out = [];
+  const base = new Set(SIT), list = allCustom(), have = new Set(list.map((d) => d.name)), nums = new Set(list.map((d) => d.n)), seen = new Set(), out = [];
   for (const raw of String(text || "").split(/\r?\n/)) {
     let n = null, name, prompt;
     const ts = raw.match(/^\s*(\d{1,3})\s*:\s*\{\s*title\s*:\s*["'`]([^"'`]*)["'`]\s*,\s*prompt\s*:\s*["'`]([^"'`]*)["'`]/);
@@ -117,7 +117,7 @@ export function sitListSheet(after) {
     const rating = $("#slr", ov).value || "safe", list = S.settings.customSits;
     const picked = $$("[data-sl]", ov).filter((b) => b.checked).map((b) => items[+b.dataset.sl]);
     const ok = picked.filter((d) => rating === "safe" || !minorHint(d.name + "\n" + d.prompt)), blocked = picked.length - ok.length;
-    let added = 0, full = 0; const used = new Set(list.map((d) => d.n));
+    let added = 0, full = 0; const used = new Set(allCustom().map((d) => d.n)); // 실린 코드(content/codes.json)의 번호도 피함
     for (const d of ok) {
       if (list.length >= CUSTOM_MAX) { full++; continue; }
       const n = d.n !== null && !used.has(d.n) ? d.n : freeSitNum(d.n !== null ? dimOf(d.n) : "act");
@@ -128,16 +128,16 @@ export function sitListSheet(after) {
     toast(`${added}칸을 추가했어요${full ? ` · 자리가 없어 ${full}칸은 빠졌어요(최대 ${CUSTOM_MAX}칸)` : ""}${blocked ? ` · 미성년으로 보이는 표현이 있는 ${blocked}칸은 뺐어요` : ""}`);
   };
 }
-/* 직접 추가하는 칸 만들기·고치기. 슬롯 시트 위에 겹쳐 뜸. 내장 코드(def.builtin)를 고치면 같은 번호의 내 칸을 만들어 덮음 */
+/* 직접 추가하는 칸 만들기·고치기. 슬롯 시트 위에 겹쳐 뜸. 내장 코드(def.builtin)와 작품 폴더에 실린 코드(def.shipped)를 고치면 같은 번호의 내 칸을 만들어 덮음 — 실린 코드는 '코드 표 내보내기'로 다시 실음 */
 export function sitEditor(def, after) {
   const ov = document.createElement("div"); ov.className = "overlay gen-ov";
-  ov.innerHTML = `<div class="sheet" role="dialog" aria-modal="true"><div class="sheet-head"><h2>${def ? (def.builtin ? "내장 코드 덮어쓰기" : "칸 고치기") : "이미지 칸 추가"}</h2><button class="icon-btn" data-x aria-label="닫기">${ICON.close}</button></div>
-    <p class="sub" style="margin-top:0">${def ? `번호 ${def.n} · ${DIM_NAMES[dimOf(def.n)]}${def.builtin ? " · 저장하면 이 번호의 내 칸이 생겨 내장 코드를 대신해요(지우면 되돌아와요)." : ""}` : "모든 인물에 같은 칸이 생기고, 대화 중 AI가 이 칸의 그림을 넣을 수 있어요."}</p>
+  ov.innerHTML = `<div class="sheet" role="dialog" aria-modal="true"><div class="sheet-head"><h2>${def ? (def.builtin ? "내장 코드 덮어쓰기" : def.shipped ? "실린 코드 고치기" : "칸 고치기") : "이미지 칸 추가"}</h2><button class="icon-btn" data-x aria-label="닫기">${ICON.close}</button></div>
+    <p class="sub" style="margin-top:0">${def ? `번호 ${def.n} · ${DIM_NAMES[dimOf(def.n)]}${def.builtin ? " · 저장하면 이 번호의 내 칸이 생겨 내장 코드를 대신해요(지우면 되돌아와요)." : def.shipped ? " · 작품 폴더(content/codes.json)에 실린 코드예요. 저장하면 이 번호의 내 칸이 생겨 덮고, 작품 화면의 '코드 표 내보내기'로 다시 실어요." : ""}` : "모든 인물에 같은 칸이 생기고, 대화 중 AI가 이 칸의 그림을 넣을 수 있어요."}</p>
     ${def ? "" : `<div class="field"><label for="sdm">종류</label><select id="sdm"><option value="act">감정/행동 — 표정·자세·행동(번호 15~)</option><option value="wear">의상 — 감정 번호 뒤에 붙여 쓰는 옷(410~)</option><option value="place">장소 — 배경(510~)</option></select></div>`}
     <div class="field"><label for="snm">칸 이름</label><input id="snm" maxlength="16" value="${esc(def?.name || "")}" placeholder="예: 수영복, 잠옷, 비 오는 날"></div>
     <div class="field"><label for="spr">프롬프트 <span class="note">한국어로 써도 돼요 · 인물 외모는 자동으로 붙어요</span></label><textarea id="spr" maxlength="600" style="min-height:90px" placeholder="예: 비에 젖은 머리, 투명 우산, 밤거리 네온">${esc(def?.prompt || "")}</textarea></div>
     ${ratingFieldHTML("srt", def?.rating || "safe")}${ageOK() ? `<p class="note" style="margin:-6px 0 0">성인 수위 칸은 성인 모드 대화방에서만 쓰여요. 미성년으로 보이는 표현은 막아요.</p>` : ""}
-    <div class="cta-row">${def && !def.builtin ? `<button class="btn danger" id="sdel">삭제</button>` : ""}<span class="spacer"></span><button class="btn ghost" data-x>취소</button><button class="btn pri" id="ssv">저장</button></div></div>`;
+    <div class="cta-row">${def && !def.builtin && !def.shipped ? `<button class="btn danger" id="sdel">삭제</button>` : ""}<span class="spacer"></span><button class="btn ghost" data-x>취소</button><button class="btn pri" id="ssv">저장</button></div></div>`;
   document.body.append(ov);
   const close = () => ov.remove();
   ov.addEventListener("click", (e) => { if (e.target === ov || e.target.closest("[data-x]")) close(); });
@@ -148,12 +148,12 @@ export function sitEditor(def, after) {
     if (!prompt) return $("#spr", ov).focus();
     if (rating !== "safe" && minorHint(name + "\n" + prompt)) { toast(genErr({ code: "minor_block" })); return; }
     const list = S.settings.customSits;
-    if (def && !def.builtin) Object.assign(def, { name, prompt, rating });
+    if (def && !def.builtin && !def.shipped) Object.assign(def, { name, prompt, rating });
     else {
       if (list.length >= CUSTOM_MAX) { toast(`칸은 ${CUSTOM_MAX}개까지 추가할 수 있어요.`); return; }
       const n = def ? def.n : freeSitNum($("#sdm", ov)?.value || "act");
       if (n < 0) { toast("이 종류의 빈 번호가 없어요. 쓰지 않는 칸을 지워 주세요."); return; }
-      list.push({ n, name, prompt, rating });
+      list.push({ n, name, prompt, rating, ...(def && def.keys ? { keys: def.keys } : {}) });
     }
     saveSettings(); close(); after && after(); toast(def ? "칸을 고쳤어요" : "칸을 추가했어요");
   };
@@ -171,7 +171,7 @@ export function codeTableSheet(after) {
     const row = (n, nameHTML, prompt, btn) => `<tr><td class="num">${n}</td><td><b>${nameHTML}</b></td><td class="note" style="white-space:normal">${esc(prompt)}</td><td>${btn}</td></tr>`;
     const rows = (dim) => [
       ...(dim === "act" ? SIT.map((s, i) => row(i, esc(s), "기본 칸", "")) : []),
-      ...defs.filter((d) => d.dim === dim).map((d) => row(d.n, esc(d.name) + (d.rating !== "safe" ? " 🔞" : "") + (d.builtin ? "" : ' <span class="pill">내 칸</span>'), d.prompt || "(설정대로)",
+      ...defs.filter((d) => d.dim === dim).map((d) => row(d.n, esc(d.name) + (d.rating !== "safe" ? " 🔞" : "") + (d.builtin ? "" : d.shipped ? ' <span class="pill">작품 폴더</span>' : ' <span class="pill">내 칸</span>'), d.prompt || "(설정대로)",
         d.builtin ? `<button class="btn sm ghost" data-ov="${d.n}">덮어쓰기</button>` : `<button class="btn sm" data-ed="${d.n}">고치기</button>`))
     ].join("");
     ov.innerHTML = `<div class="sheet wide" role="dialog" aria-modal="true"><div class="sheet-head"><h2>이미지 코드 표</h2><button class="icon-btn" data-x aria-label="닫기">${ICON.close}</button></div>

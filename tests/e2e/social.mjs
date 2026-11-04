@@ -110,7 +110,7 @@ const makeImgs = (pg, plan) => pg.evaluate(async (plan) => {
   KV.set("imgpacks", S.imgpacks);
   if (plan.cover) { S.coverpacks[plan.cover] = await pic("#123"); KV.set("coverpacks", S.coverpacks); out.cover = S.coverpacks[plan.cover]; }
   if (plan.sits) { S.settings.customSits = plan.sits; }
-  if (plan.set) { S.settings.styleSets = [{ id: plan.set, name: "시험 세트", refs: [await pic("#0a0"), await pic("#0b0")], prompt: "illustration", model: IMG_MODELS[0].id }]; out.setRefs = S.settings.styleSets[0].refs; }
+  if (plan.set) { S.settings.styleSets = [{ id: plan.set, name: "시험 세트", refs: [await pic("#0a0"), await pic("#0b0")], prompt: "illustration", model: "test-model" }]; out.setRefs = S.settings.styleSets[0].refs; }
   saveSettings();
   return out;
 }, plan);

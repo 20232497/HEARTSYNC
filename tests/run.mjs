@@ -1,5 +1,6 @@
 // 흐름 시험(npm run e2e): 저장소 루트를 정적 서버로 띄우고 tests/e2e/*.mjs를 차례로 돌린 뒤, 각 스크립트가 찍은 결과 JSON의
 // 오류 칸(fail·error·errors·errs·pageerror)이 비었는지로 통과를 판정한다(스크립트 자체는 늘 exit 0으로 끝남).
+// 시험마다 어느 빌드를 여는지(page) 정한다 — 기본은 사용자 사이트 index.html, 관리자 도구 시험(admin·images·styles)은 admin.html.
 // 브라우저가 없으면 먼저: npx playwright install webkit chromium
 //   node tests/run.mjs            전부
 //   node tests/run.mjs chatflow   하나만(이름 여러 개 가능)
@@ -9,7 +10,10 @@ import fs from "node:fs";
 import path from "node:path";
 import { serve, ROOT } from "./serve.mjs";
 
+const ADMIN = "admin.html"; // 관리자 도구 빌드(npm run build가 함께 만듦, git에 없음)
+const PAGE = { admin: ADMIN, images: ADMIN, styles: ADMIN };
 const SUITES = {
+  admin: "관리자 도구(admin.html): 여섯 화면·상세의 관리 버튼·드로어 이미지 슬롯·MY 이미지 설정·시트 4종 + 사용자 빌드에는 그 자리가 비어 있고 관리자 함수가 없음",
   social: "소셜 로그인·가입, 기기 그림 넘기기·합치기, 키 잠금 암호(Supabase를 page.route로 흉내)",
   vault: "API 키 금고: 가입·다른 기기 로그인·메일 링크 기기 잠김·비밀번호 재설정·로그아웃",
   cloud2: "계정 저장: 올리기·받기·서버 표 제약(kv_no_plain_keys·kv_vault_sealed)",
@@ -17,15 +21,16 @@ const SUITES = {
   chatflow: "대화방: 스트리밍 표시, 자동 스크롤 끔/켬, AI 추천 수동, 출력 설정, 설정 페이지",
   mobile: "휴대폰 셸: iPhone 13·SE(WebKit)·Galaxy(Chromium)에서 표준 모드·탭바·가로 넘침 없음",
   file: "파일(file://)로 열어도 부팅·홈(전체·여성향·남성향)·상세가 그려짐 — 단일 파일 배포(BYOK) 확인",
-  views: "스모크: 다섯 화면·오리지널 전부의 상세·각 작품의 대화방(오프닝·상태창·입력창)·드로어와 시트 9종이 오류 없이 그려짐",
-  images: "그림 조합 코드: [[img:코드:3,404,501]] 그리기, 의상·장소 이어 가기·되돌리기, 빠진 태그 자동 채움, 대화 중 자동 생성(가짜 Runware), 조합 갤러리·코드 표",
-  styles: "기본 화풍: 자동 고르기(성향·성별·표지), ZIP 이름 묶기·내장 화풍 맞추기, 세트로 덮어쓰기 → 되돌리기·다시 지정·지우기, 설정 카드, 생성 창의 화풍 이름"
+  views: "스모크(사용자 사이트): 네 화면·오리지널 전부의 상세·각 작품의 대화방(오프닝·상태창·입력창)·드로어와 시트 6종이 오류 없이 그려짐",
+  images: "(관리자) 그림 조합 코드: [[img:코드:3,404,501]] 그리기, 의상·장소 이어 가기·되돌리기, 빠진 태그 자동 채움, 대화 중 자동 생성(가짜 Runware), 조합 갤러리·코드 표",
+  styles: "(관리자) 기본 화풍: 자동 고르기(성향·성별·표지), ZIP 이름 묶기·내장 화풍 맞추기, 세트로 덮어쓰기 → 되돌리기·다시 지정·지우기, 설정 카드, 생성 창의 화풍 이름"
 };
 const BAD_KEYS = ["fail", "error", "errors", "errs", "pageerror"];
 const only = process.argv.slice(2).filter((a) => !a.startsWith("-"));
 const names = only.length ? only : Object.keys(SUITES);
 for (const n of names) if (!SUITES[n]) { console.error(`모르는 시험: ${n} (가능: ${Object.keys(SUITES).join(", ")})`); process.exit(2); }
 if (!fs.existsSync(path.join(ROOT, "index.html"))) { console.error("index.html이 없어요 — 먼저 npm run build"); process.exit(2); }
+if (names.some((n) => PAGE[n]) && !fs.existsSync(path.join(ROOT, ADMIN))) { console.error(`${ADMIN}이 없어요 — 먼저 npm run build`); process.exit(2); }
 const shots = path.join(ROOT, "tests", ".shots");
 fs.mkdirSync(shots, { recursive: true });
 
@@ -40,7 +45,7 @@ function problems(obj, at = "") { // 결과 객체를 훑어 오류 칸을 모�
   return out;
 }
 const run = (name, url) => new Promise((resolve) => {
-  const t0 = Date.now(), args = [path.join(ROOT, "tests", "e2e", `${name}.mjs`), url];
+  const t0 = Date.now(), args = [path.join(ROOT, "tests", "e2e", `${name}.mjs`), url + (PAGE[name] || "")];
   if (name !== "mobile") args.push(shots);
   const p = spawn(process.execPath, args, { cwd: ROOT, env: { ...process.env, SHOT_DIR: shots } });
   let out = "", err = "";

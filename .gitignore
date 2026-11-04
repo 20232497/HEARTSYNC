@@ -3,5 +3,7 @@ node_modules/
 tests/.shots/
 # 빌드가 content/ 폴더로 만드는 작품 데이터 모듈(소스는 content/**/work.js)
 src/js/content/generated.js
+# 관리자 도구 빌드 결과물(npm run build → 로컬에서 열기, 배포하지 않음. 소스는 src/admin.html + src/js/admin/)
+admin.html
 # Claude 앱 세션 설정(launch.json·워크트리)
 .claude/

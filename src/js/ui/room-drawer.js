@@ -1,4 +1,4 @@
-/* 대화방 관리 드로어(출력 설정·기억·갤러리·내보내기·삭제) */
+/* 대화방 관리 드로어(출력 설정·기억·갤러리·내보내기·삭제). 메뉴 끝은 관리자 빌드가 EXT.drawer로 채움(이미지 슬롯) */
 import { ageOK, unfilteredRoute } from "../ai/adult.js";
 import { engineName } from "../ai/llm.js";
 import { LEN, MODELS } from "../ai/models.js";
@@ -12,21 +12,21 @@ import { KV } from "../core/storage.js";
 import { $, $$, clamp, esc, num, toast } from "../core/util.js";
 import { FREE_DAILY, PLAN, freeLeft, isPro, plan, qShort, quote } from "../core/wallet.js";
 import { imgTags } from "../images/codes.js";
-import { imagesOf, pickImg } from "../images/pick.js";
+import { pickImg } from "../images/pick.js";
 import { keyName } from "../images/situations.js";
-import { IMG, validRef } from "../services/images.js";
+import { IMG } from "../services/images.js";
 import { stopGen } from "./chat/generate.js";
 import { copyText, renderLog } from "./chat/log.js";
 import { statusBlock } from "./chat/render.js";
 import { lastAi, updateComposer } from "./chat/view.js";
 import { artHTML, coverHTML, lightbox, pavHTML } from "./cover.js";
+import { runExt } from "./ext.js";
 import { ICON } from "./icons.js";
 import { personaSheet } from "./me.js";
 import { openModelSheet } from "./model-sheet.js";
 import { plusSheet } from "./pay.js";
 import { closeOverlays, confirmSheet } from "./sheet.js";
 import { go, renderRailRecent } from "./shell.js";
-import { openImageSlots } from "./slots.js";
 
 /* ---------------------------------------------------------------- 대화방 관리 드로어 */
 export function openRoomDrawer(view = "main") {
@@ -40,7 +40,6 @@ export function openRoomDrawer(view = "main") {
   const back = $("#dBack", ov); if (back) back.onclick = () => openRoomDrawer("main");
   const body = $("#dBody", ov), cfg = memCfg(), q = quote(r.set);
   if (view === "main") {
-    const imgs = imagesOf(c), filled = Object.values(imgs).reduce((a, m) => a + Object.values(m).filter(validRef).length, 0);
     body.innerHTML = `<div class="quick">
         <button id="qCopy">${ICON.copy}대화 복사</button><button id="qExport">${ICON.down}대화 내보내기</button><button id="qNew">${ICON.redo}처음부터</button></div>
       <div class="sheet-head"><h3 class="lbl" style="flex:1;margin:0">내 재화</h3><button class="btn sm pri" id="topup">충전</button></div>
@@ -63,7 +62,6 @@ export function openRoomDrawer(view = "main") {
         <button data-v="status">상태창</button>
         <button data-v="gallery">갤러리<span class="v">${galleryItems(r).length}장</span></button>
         <button data-v="bookmarks">북마크<span class="v">${(r.bookmarks || []).length}개</span></button>
-        <button id="mImg">이미지 슬롯<span class="v">${filled}장 등록</span></button>
       </div>
       <button class="btn ghost danger block" id="delRoom" style="margin-top:16px">이 대화방 삭제</button>
       <p class="note" style="margin-top:8px">AI 연결: ${engineName()}${unfilteredRoute(r) ? " · 🔞 성인 모드(OpenRouter)" : ""}</p>`;
@@ -71,13 +69,13 @@ export function openRoomDrawer(view = "main") {
     $("#topup", body).onclick = () => go("store");
     $("#compo", body).onclick = () => go("c-" + c.id);
     $("#mModel", body).onclick = () => openModelSheet();
-    $("#mImg", body).onclick = () => openImageSlots(getChar(c.id) || c);
     $("#qCopy", body).onclick = () => copyText(exportText(r), "대화 전체를 복사했어요");
     $("#qExport", body).onclick = () => exportRoom(r);
     $("#qNew", body).onclick = () => confirmSheet("처음부터 다시 시작할까요?", "같은 작품·씬으로 새 대화방을 만들어요. 지금 대화는 목록에 남아요.", "새로 시작", () => {
       const c0 = normalizeChar(getChar(c.id) || c); if (S.rooms.filter((x) => x.charId === c0.id).length >= plan().rooms) return plusSheet("rooms");
       setRoom(newRoom(c0, Math.max(0, c0.openings.findIndex((o) => o.title === r.opening)), r.persona)); go("r-" + room.id); });
     $("#delRoom", body).onclick = () => confirmSheet("이 대화방을 삭제할까요?", "메시지와 기억이 모두 지워지고 되돌릴 수 없어요.", "삭제", () => deleteRoom(r.id));
+    runExt("drawer", r, body);
   }
   else if (view === "persona") {
     const paint = () => {

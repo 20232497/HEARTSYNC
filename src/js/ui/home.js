@@ -55,7 +55,7 @@ export function viewHome() {
     ${originals.length ? `<div class="grid">${originals.map(cardHTML).join("")}</div>` : `<div class="empty">조건에 맞는 오리지널 작품이 없어요.${hidden ? `<br>지금은 ${AUDS[audience()].name} 작품만 보여요.<br><button class="btn sm" data-aud="all">전체 보기</button>` : ""}</div>`}
     <h2 class="sec">커뮤니티 신작 <small>${S.community.length ? "크리에이터가 공개한 캐릭터" : ""}</small></h2>
     ${comm.length ? `<div class="grid">${comm.map(cardHTML).join("")}</div>` :
-      `<div class="empty">아직 공개된 캐릭터가 없어요.<br>첫 크리에이터가 되어 보세요.<br><button class="btn sm pri" data-go="studio">캐릭터 만들기</button></div>`}
+      `<div class="empty">아직 공개된 캐릭터가 없어요.</div>`}
     ${mine.length ? `<h2 class="sec">내가 만든 캐릭터</h2><div class="grid">${mine.map(cardHTML).join("")}</div>` : ""}
   </div>`;
   $$("[data-char]", v).forEach((b) => b.onclick = () => go("c-" + b.dataset.char));

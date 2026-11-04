@@ -1,0 +1,58 @@
+/* 사용자 사이트의 모듈 묶음: 층 순서(core → content → services·images·ai → ui)로 모듈을 불러 모으고 화면 표(USER_VIEWS)·메뉴(USER_NAVS)를 내보낸다.
+   진입점 main.js(사용자, index.html)와 admin.js(관리자, admin.html)가 이걸 받아 화면을 등록하고 boot()한다. 빌드는 이 import 그래프를 따라 모듈을 이어 붙인다 */
+import "./core/config.js";
+import "./core/constants.js";
+import "./core/util.js";
+import "./core/storage.js";
+import "./core/state.js";
+import "./core/cast.js";
+import "./core/audience.js";
+import "./core/wallet.js";
+import "./core/character.js";
+import "./core/safety.js";
+import "./core/rooms.js";
+import "./core/settings.js";
+import "./content/index.js";
+import "./services/supabase.js";
+import "./services/cloud.js";
+import "./services/vault.js";
+import "./services/sync.js";
+import "./services/images.js";
+import "./images/codes.js";
+import "./images/rating.js";
+import "./images/pick.js";
+import "./images/situations.js";
+import "./ai/models.js";
+import "./ai/adult.js";
+import "./ai/openrouter.js";
+import "./ai/llm.js";
+import "./ai/parse.js";
+import "./ai/prompt/lore.js";
+import "./ai/prompt/rules.js";
+import "./ai/prompt/input.js";
+import "./ai/prompt/memory.js";
+import "./ui/icons.js";
+import "./ui/sheet.js";
+import "./ui/ext.js";
+import "./ui/shell.js";
+import "./ui/cover.js";
+import { viewHome } from "./ui/home.js";
+import { viewDetail } from "./ui/detail.js";
+import "./ui/chat/render.js";
+import "./ui/chat/log.js";
+import { viewChat } from "./ui/chat/view.js";
+import "./ui/chat/generate.js";
+import "./ui/chat/suggest.js";
+import "./ui/pay.js";
+import "./ui/model-sheet.js";
+import "./ui/room-drawer.js";
+import "./ui/worldart.js";
+import { viewChats } from "./ui/chats.js";
+import { viewStore } from "./ui/store.js";
+import { viewLogin } from "./ui/login.js";
+import "./ui/account.js";
+import { viewMe } from "./ui/me.js";
+
+/* 해시 앞부분 → 화면. 상세(c-<id>)·대화방(r-<id>)은 "-" 뒤를 인자로 받음 */
+export const USER_VIEWS = { home: viewHome, c: viewDetail, r: viewChat, chats: viewChats, store: viewStore, me: viewMe, login: viewLogin };
+export const USER_NAVS = [["home", "홈", "home"], ["chats", "대화", "chat"], ["store", "스토어", "heart"], ["me", "MY", "user"]];

@@ -1,30 +1,23 @@
-/* 한 턴 보내기 → 응답 생성(generate)·다시 쓰기·인물 그림 채우기(addCastImages)·대화 중 그림 자동 생성(autoImages) */
+/* 한 턴 보내기 → 응답 생성(generate)·다시 쓰기·빠진 인물 그림 태그 채우기(addCastImages). 응답이 끝나면 EXT.afterTurn(관리자 빌드의 그림 자동 생성)을 부름 */
 import { unfilteredRoute } from "../../ai/adult.js";
 import { errCopy, llm } from "../../ai/llm.js";
 import { LEN, MODELS } from "../../ai/models.js";
 import { dropEcho, parseState, splitReply } from "../../ai/parse.js";
 import { buildInput } from "../../ai/prompt/input.js";
 import { maybeSummarize } from "../../ai/prompt/memory.js";
-import { audOf } from "../../core/audience.js";
-import { castLook } from "../../core/cast.js";
-import { IN_CLAUDE } from "../../core/config.js";
 import { curText, saveRoom } from "../../core/rooms.js";
-import { S, gen, hasRunwareKey, room, setGen } from "../../core/state.js";
-import { $, $$, toast, uid } from "../../core/util.js";
+import { gen, room, setGen } from "../../core/state.js";
+import { $, uid } from "../../core/util.js";
 import { charge, qShort, quote, refund } from "../../core/wallet.js";
-import { applyDims, dimOf, imgTags, lastDims, parseCodes } from "../../images/codes.js";
-import { hasImg, imagesOf, putCastImage } from "../../images/pick.js";
-import { lookIsMale, partsTags, savedParts } from "../../images/prompt.js";
-import { imgRating } from "../../images/rating.js";
-import { genErr, runwareImage } from "../../images/runware.js";
-import { codeRating, dimPick, sitScores } from "../../images/situations.js";
-import { styleFor } from "../../images/styles.js";
+import { applyDims, dimOf, imgTags, lastDims } from "../../images/codes.js";
+import { imagesOf } from "../../images/pick.js";
+import { dimPick, sitScores } from "../../images/situations.js";
 import { IMG, validRef } from "../../services/images.js";
 import { autoScroll, followLog, renderLog, setStick, stick, syncJump } from "./log.js";
 import { liveFill } from "./render.js";
 import { hideSug } from "./suggest.js";
 import { lastAi, updateComposer, updateMeter } from "./view.js";
-import { figInner, figKey, lightbox } from "../cover.js";
+import { runExt } from "../ext.js";
 import { ensurePay } from "../pay.js";
 import { closeOverlays, sheet } from "../sheet.js";
 
@@ -91,36 +84,6 @@ function addCastImages(body, r, prev, said) {
   adds.slice(0, 5).sort((a, b) => b.at - a.at).forEach((a) => lines.splice(a.at, 0, a.tag, ""));
   return lines.join("\n");
 }
-/* 대화 중 그림 자동 생성(MY → 설정 → 이미지 생성 '대화 중 장면 그림 자동 생성'): 이번 응답의 태그 가운데 그 조합(감정·의상·장소)의 그림이 아직 없는 것을
-   Runware로 만들어 인물 그림(내 작품 images·그 밖은 imgpacks)에 저장하고, 화면에 보이는 그 자리(figure[data-code][data-key])를 바꿔 그림.
-   한 응답에 최대 AUTO_MAX장, 같은 조합은 한 번만 — 있는 조합은 다시 만들지 않으므로 같은 감정·의상·장소가 반복되면 요금이 들지 않음.
-   claude.ai 안(IN_CLAUDE)·Runware 키 없음·장면 이미지 끔이면 하지 않음. 수위는 번호들의 수위(codeRating → imgRating: 성인 확인 전엔 늘 전체이용가) */
-const AUTO_MAX = 4, autoBusy = new Set();
-export const autoImgOn = () => !!S.settings.autoImg && !IN_CLAUDE && hasRunwareKey() && S.settings.sceneImg !== false;
-const figsOf = (code, key) => $$(`#logInner figure.scene-img[data-code="${code}"][data-key="${key}"]`).filter((f) => !$("img", f));
-async function autoImages(r, body) {
-  if (!autoImgOn()) return;
-  const c = r.char, jobs = [];
-  for (const t of imgTags(body)) {
-    const cast = (c.cast || []).find((x) => x.code === t.code); if (!cast) continue;
-    const key = figKey(t.codes.join(",")), id = `${c.id}|${t.code}|${key}`;
-    if (autoBusy.has(id) || jobs.some((j) => j.id === id) || hasImg(c, t.code, key)) continue;
-    jobs.push({ id, cast, key, codes: parseCodes(key) });
-  }
-  let err = null;
-  await Promise.all(jobs.slice(0, AUTO_MAX).map(async (j) => {
-    autoBusy.add(j.id); figsOf(j.cast.code, j.key).forEach((f) => f.classList.add("gen"));
-    try {
-      const rt = imgRating(codeRating(j.codes, c)), adult = rt !== "safe";
-      const style = styleFor({ kind: "daily", aud: audOf(c), male: lookIsMale(castLook(j.cast, c)) }); // 기본 화풍(자동): 작품 성향 → 인물 성별
-      const ref = await IMG.put(await runwareImage(await partsTags(savedParts(c, j.cast, j.key), adult), { aspect: "4:5", rating: rt, style }));
-      putCastImage(c, j.cast.code, j.key, ref);
-      figsOf(j.cast.code, j.key).forEach((f) => { f.innerHTML = figInner(c, j.cast, j.key, ref); IMG.hydrate(f); $$("img", f).forEach((im) => im.onclick = () => lightbox(im.src)); });
-    } catch (e) { err = e; }
-    finally { autoBusy.delete(j.id); figsOf(j.cast.code, j.key).forEach((f) => f.classList.remove("gen")); }
-  }));
-  if (err && err.code !== "cancelled") toast("장면 그림을 만들지 못했어요 · " + genErr(err));
-}
 /* target 없으면 새 AI 메시지, 있으면 그 메시지에 새 버전(alt) 추가 */
 export async function generate(target, q, direction = "", isEdit = false) {
   const r = room, c = r.char, model = r.set.model;
@@ -174,7 +137,7 @@ export async function generate(target, q, direction = "", isEdit = false) {
       renderLog(stick && autoScroll()); syncJump(); updateComposer(); updateMeter(); $("#inp")?.focus({ preventScroll: true });
     }
     maybeSummarize(r);
-    if (done) autoImages(r, done).catch(() => {});
+    if (done) runExt("afterTurn", r, done);
   }
 }
 export function stopGen() { if (gen) gen.ctl.abort(); }

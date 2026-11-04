@@ -11,9 +11,9 @@ import { coverPrompt } from "../images/prompt.js";
 import { publishCommunity } from "../services/community.js";
 import { IMG } from "../services/images.js";
 import { genImageSheet } from "./gen-sheet.js";
-import { cardHTML } from "./home.js";
-import { confirmSheet } from "./sheet.js";
-import { go, topbar } from "./shell.js";
+import { cardHTML } from "../ui/home.js";
+import { confirmSheet } from "../ui/sheet.js";
+import { go, topbar } from "../ui/shell.js";
 import { openImageSlots } from "./slots.js";
 
 let draft = null;

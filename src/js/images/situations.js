@@ -1,5 +1,6 @@
-/* 상황 칸: 기본 0~14 + 직접 만든 칸(customSits) + 내장 코드(DIMS: 1xx 감정/행동·4xx 의상·5xx 장소), 조합 키 이름·수위, 유저 입력 → 번호 점수(sitHints·dimPick) */
+/* 상황 칸: 기본 0~14 + 직접 만든 칸(customSits — 내 칸과 작품 폴더에 실린 코드 표) + 내장 코드(DIMS: 1xx 감정/행동·4xx 의상·5xx 장소), 조합 키 이름·수위, 유저 입력 → 번호 점수(sitHints·dimPick) */
 import { ageOK } from "../ai/adult.js";
+import { CONTENT_CODES } from "../content/index.js";
 import { SIT } from "../core/constants.js";
 import { S } from "../core/state.js";
 import { KV } from "../core/storage.js";
@@ -10,9 +11,12 @@ import { IMG } from "../services/images.js";
 
 /* 직접 추가하는 칸(S.settings.customSits = [{n, name, prompt, rating}]): 모든 인물에 공통.
    번호는 종류별 빈 번호(감정/행동 15~, 의상 410~, 장소 510~) 또는 목록으로 가져올 때 적은 세 자리 번호(100~599 — 같은 번호의 내장 코드를 덮음).
-   성인 수위 칸은 성인 확인(ageOK) 때만 보이고, 대화에서는 성인 경로(unfilteredRoute)일 때만 AI에게 알려 줌 */
+   성인 수위 칸은 성인 확인(ageOK) 때만 보이고, 대화에서는 성인 경로(unfilteredRoute)일 때만 AI에게 알려 줌.
+   작품 폴더에 실린 코드 표(content/codes.json → CONTENT_CODES, shipped: true)는 모든 사용자에게 보이는 기본 칸이고, 같은 번호의 내 칸(customSits)이 있으면 그것이 덮는다 */
 export const CUSTOM_BASE = SIT.length, CUSTOM_MAX = 200, CODE_MAX = 600;
-const customList = () => S.settings.customSits || [];
+/* 직접 만든 칸 전부(내 칸 + 실린 코드 표, 번호가 겹치면 내 칸). 관리자 도구의 '코드 표 내보내기'가 이걸 codes.json으로 씀 */
+export function allCustom() { const own = S.settings.customSits || [], has = new Set(own.map((d) => d.n)); return [...own, ...CONTENT_CODES.filter((d) => !has.has(d.n))]; }
+const customList = allCustom;
 /* 칸 정의: 직접 만든 칸 → 내장 코드(DIMS). 기본 0~14는 null */
 export function sitDef(n) { return n >= CUSTOM_BASE ? customList().find((d) => d.n === n) || DIMS[n] || null : null; }
 export function sitName(n) { return SIT[n] || sitDef(n)?.name || "칸 " + n; }
