@@ -11,7 +11,7 @@ import { IMG, validRef } from "../services/images.js";
 import { coverHTML } from "../ui/cover.js";
 import { bindGo, go, topbar } from "../ui/shell.js";
 import { loreImg } from "../ui/worldart.js";
-import { CONTENT, canPickDir, exportCodes, exportWork, pickContentDir } from "./export.js";
+import { CONTENT, canPickDir, codesDropped, exportCodes, exportWork, pickContentDir } from "./export.js";
 import { openImageSlots } from "./slots.js";
 import { exportWorkToast } from "./tools.js";
 import { openWorldArt } from "./worldart.js";
@@ -30,12 +30,12 @@ export function viewWorks() {
     <h1 class="sec" style="margin-top:4px">작품 <small>관리자 도구</small></h1>
     <div class="box"><p class="note" style="margin:0 0 10px">여기서 만든 그림·코드 표는 이 브라우저(와 로그인한 계정)에만 있어요. <b>작품 폴더에 저장</b>으로 저장소의 <b>content/</b> 폴더에 쓰고 <b>npm run build</b>를 돌리면 사용자 사이트(index.html)에 실려요. 새 작품은 <a href="#studio">만들기</a>에서.</p>
       <div class="cta-row" style="margin:0">${canPickDir() ? `<button class="btn sm" id="pickDir">${CONTENT.dir ? "content 폴더: " + esc(CONTENT.dir.name) : "content 폴더 고르기"}</button>` : `<span class="note">이 브라우저는 폴더에 바로 쓸 수 없어 ZIP으로 내려받아요(Chrome·Edge는 바로 써요).</span>`}
-        <button class="btn sm" id="saveCodes">코드 표 내보내기 (codes.json)</button><button class="btn sm pri" id="saveAll">전부 저장</button></div></div>
+        <button class="btn sm" id="saveCodes">코드 표 내보내기 (codes.json)</button><button class="btn sm pri" id="saveAll">전부 저장</button><button class="btn sm ghost" data-go="codetest">코드 조합 테스트</button></div></div>
     <div class="wlist">${works.map(row).join("")}</div></div>`;
   bindGo(v); IMG.hydrate(v);
   const find = (id) => works.find((w) => w.c.id === id).c;
   const pd = $("#pickDir", v); if (pd) pd.onclick = async () => { try { if (await pickContentDir()) viewWorks(); } catch (e) { if (e.name !== "AbortError") toast("폴더를 열지 못했어요: " + (e.message || e)); } };
-  $("#saveCodes", v).onclick = async () => { try { await exportCodes(); toast(CONTENT.dir ? "content/codes.json에 썼어요" : "codes.json을 내려받았어요 — 저장소 content/ 폴더에 넣어요"); } catch (e) { toast("내보내지 못했어요: " + (e.message || e)); } };
+  $("#saveCodes", v).onclick = async () => { try { await exportCodes(); const d = codesDropped(); toast((CONTENT.dir ? "content/codes.json에 썼어요" : "codes.json을 내려받았어요 — 저장소 content/ 폴더에 넣어요") + (d ? ` · 성인 수위·관리자 전용 코드 ${d}개는 공개 저장소에 싣지 않아 뺐어요` : "")); } catch (e) { toast("내보내지 못했어요: " + (e.message || e)); } };
   $("#saveAll", v).onclick = async () => {
     let n = 0, w = 0;
     for (const { c } of works) { try { const k = await exportWork(c); if (k) { n += k; w++; } } catch (e) { toast(`${c.title}: ${e.message || e}`); return; } }

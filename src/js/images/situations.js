@@ -12,10 +12,18 @@ import { IMG } from "../services/images.js";
 /* 직접 추가하는 칸(S.settings.customSits = [{n, name, prompt, rating}]): 모든 인물에 공통.
    번호는 종류별 빈 번호(감정/행동 15~, 의상 410~, 장소 510~) 또는 목록으로 가져올 때 적은 세 자리 번호(100~599 — 같은 번호의 내장 코드를 덮음).
    성인 수위 칸은 성인 확인(ageOK) 때만 보이고, 대화에서는 성인 경로(unfilteredRoute)일 때만 AI에게 알려 줌.
-   작품 폴더에 실린 코드 표(content/codes.json → CONTENT_CODES, shipped: true)는 모든 사용자에게 보이는 기본 칸이고, 같은 번호의 내 칸(customSits)이 있으면 그것이 덮는다 */
+   작품 폴더에 실린 코드 표(content/codes.json → CONTENT_CODES, shipped: true)는 모든 사용자에게 보이는 기본 칸이고, 같은 번호의 내 칸(customSits)이 있으면 그것이 덮는다.
+   관리자 빌드는 여기에 관리자 전용 코드(EXTRA_CODES — admin/codes.js가 setExtraCodes로 꽂음, adminOnly: true)를 더 둔다. 우선순위: 내 칸 > 실린 표 > 관리자 전용 > 내장(DIMS) */
 export const CUSTOM_BASE = SIT.length, CUSTOM_MAX = 200, CODE_MAX = 600;
-/* 직접 만든 칸 전부(내 칸 + 실린 코드 표, 번호가 겹치면 내 칸). 관리자 도구의 '코드 표 내보내기'가 이걸 codes.json으로 씀 */
-export function allCustom() { const own = S.settings.customSits || [], has = new Set(own.map((d) => d.n)); return [...own, ...CONTENT_CODES.filter((d) => !has.has(d.n))]; }
+export let EXTRA_CODES = []; // 관리자 전용 코드(사용자 빌드에서는 늘 빔)
+export function setExtraCodes(v) { return (EXTRA_CODES = Array.isArray(v) ? v : []); }
+/* 직접 만든 칸 전부(내 칸 + 실린 코드 표 + 관리자 전용, 번호가 겹치면 앞의 것). 관리자 도구의 '코드 표 내보내기'는 이 중 전체이용가·관리자 전용이 아닌 것만 codes.json으로 씀 */
+export function allCustom() {
+  const out = [...(S.settings.customSits || [])], has = new Set(out.map((d) => d.n));
+  for (const d of [...CONTENT_CODES, ...EXTRA_CODES]) if (!has.has(d.n)) { out.push(d); has.add(d.n); }
+  for (const d of out) if (!d.dim) d.dim = dimOf(d.n); // 직접 만든 칸·실린 코드는 dim이 없어 코드 표·조합 선택(dim으로 거름)에서 빠지던 것
+  return out;
+}
 const customList = allCustom;
 /* 칸 정의: 직접 만든 칸 → 내장 코드(DIMS). 기본 0~14는 null */
 export function sitDef(n) { return n >= CUSTOM_BASE ? customList().find((d) => d.n === n) || DIMS[n] || null : null; }

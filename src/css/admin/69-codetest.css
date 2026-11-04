@@ -1,0 +1,22 @@
+/* ── 코드 조합 테스트(관리자 도구): 코드 칩 세 열 · 조합 줄 · 결과 격자 */
+.ct-grid { display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:12px; margin-top:12px; }
+@media (max-width:820px) { .ct-grid { grid-template-columns:1fr; } }
+.ct-col h3 { margin:0 0 8px; display:flex; align-items:baseline; gap:6px; }
+.ct-col h3 small { color:var(--muted); font-weight:400; font-size:11.5px; }
+.ct-chips { display:flex; flex-wrap:wrap; gap:6px; max-height:300px; overflow:auto; padding-right:2px; }
+.ct-chip { border:1px solid var(--line); background:var(--bg); border-radius:999px; padding:5px 11px; font-size:12.5px; color:var(--fg); cursor:pointer; }
+.ct-chip small { color:var(--muted); font-size:10.5px; margin-left:3px; }
+.ct-chip.adult { border-style:dashed; }
+.ct-chip.on { background:var(--accent-soft); border-color:var(--accent); color:var(--accent); font-weight:600; }
+.ct-combo { display:flex; flex-wrap:wrap; align-items:center; gap:8px; font-size:14px; }
+.ct-combo code { background:var(--surface2); border-radius:6px; padding:2px 6px; font-size:12.5px; }
+.ct-prompt { margin:10px 0 0; white-space:pre-wrap; font-size:12.5px; line-height:1.5; background:var(--surface2); border-radius:10px; padding:10px 12px; max-height:280px; overflow:auto; }
+.ct-results { display:grid; grid-template-columns:repeat(auto-fill, minmax(170px, 1fr)); gap:10px; }
+.ct-card { border:1px solid var(--line); border-radius:12px; overflow:hidden; background:var(--surface); display:grid; align-content:start; }
+.ct-card .pic { aspect-ratio:4/5; background:var(--surface2); position:relative; }
+.ct-card .pic img { width:100%; height:100%; object-fit:cover; display:block; cursor:zoom-in; }
+.ct-card.busy .pic::after { content:"생성 중…"; position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:var(--muted); font-weight:600; animation:genPulse 1.4s ease-in-out infinite; }
+.ct-card .cap { padding:8px 10px 4px; display:grid; gap:2px; font-size:12.5px; }
+.ct-card .cap span { color:var(--muted); font-size:11.5px; }
+.ct-card .bs { display:flex; gap:4px; padding:6px 10px 10px; flex-wrap:wrap; }
+.ct-card .bs button { border:1px solid var(--line); background:var(--bg); border-radius:7px; font-size:11.5px; padding:2px 7px; }

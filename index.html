@@ -1894,7 +1894,14 @@ function watchCommunity() {
 }
 /* ── src/js/images/situations.js — 상황 칸: 기본 0~14 + 직접 만든 칸(customSits — 내 칸과 작품 폴더에 실린 코드 표) + 내장 코드(DIMS: 1xx 감정/행동·4xx 의상·5xx 장소),… */
 const CUSTOM_BASE = SIT.length, CUSTOM_MAX = 200, CODE_MAX = 600;
-function allCustom() { const own = S.settings.customSits || [], has = new Set(own.map((d) => d.n)); return [...own, ...CONTENT_CODES.filter((d) => !has.has(d.n))]; }
+let EXTRA_CODES = [];
+function setExtraCodes(v) { return (EXTRA_CODES = Array.isArray(v) ? v : []); }
+function allCustom() {
+  const out = [...(S.settings.customSits || [])], has = new Set(out.map((d) => d.n));
+  for (const d of [...CONTENT_CODES, ...EXTRA_CODES]) if (!has.has(d.n)) { out.push(d); has.add(d.n); }
+  for (const d of out) if (!d.dim) d.dim = dimOf(d.n);
+  return out;
+}
 const customList = allCustom;
 function sitDef(n) { return n >= CUSTOM_BASE ? customList().find((d) => d.n === n) || DIMS[n] || null : null; }
 function sitName(n) { return SIT[n] || sitDef(n)?.name || "칸 " + n; }
