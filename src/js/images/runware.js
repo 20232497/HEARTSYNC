@@ -65,7 +65,8 @@ export async function runwareImage(prompt, { aspect = "4:5", rating = imgRating(
   const task = { taskType: "imageInference", taskUUID: uuid4(),
     positivePrompt: [A.pos, rpos, M.pos, tags, style].filter(Boolean).join(", ").slice(0, 2900),
     ...(/\([^()]+:\d(?:\.\d+)?\)/.test(tags + ", " + style) ? { promptWeighting: "sdEmbeds" } : {}),
-    negativePrompt: [A.neg, M.neg, IMG_NEG, NEG_MINOR, R.neg, Sb.neg].filter(Boolean).join(", "),
+    // 여러 명 태그(3girls·3boys…)가 있으면 네거티브에 solo·1girl·1boy — 표지에서 한 명만 크게 그리던 것(2026-11-04)
+    negativePrompt: [A.neg, M.neg, IMG_NEG, NEG_MINOR, R.neg, Sb.neg, /\b[2-9](?:girls|boys)\b/.test(tags) ? "solo, 1girl, 1boy" : ""].filter(Boolean).join(", "),
     model: M.id, width, height, numberResults: 1, steps: 28, CFGScale: M.cfg || A.cfg, scheduler: "Euler a",
     outputFormat: "WEBP", outputType: "dataURI", ...(adult ? {} : { checkNSFW: true }) };
   let j, res;
