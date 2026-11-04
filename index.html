@@ -217,9 +217,10 @@ h2.sec small, h1.sec small { font-family:var(--sans); font-size:12.5px; color:va
 .opening input { accent-color:var(--accent); margin-right:6px; }
 .opening b { font-size:14px; }
 .opening span { color:var(--muted); font-size:12.5px; margin-top:3px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
-.cast { display:grid; grid-template-columns:repeat(auto-fill, minmax(92px,1fr)); gap:10px; }
+.cast { display:grid; grid-template-columns:repeat(auto-fill, minmax(92px,1fr)); gap:10px; align-items:start; }
 .cast button { border:0; background:none; padding:0; text-align:center; font-size:12.5px; display:grid; gap:5px; min-width:0; }
-.cast .portrait { aspect-ratio:1; border-radius:14px; overflow:hidden; }
+.cast .portrait { border-radius:14px; overflow:hidden; background:var(--surface2); }
+.cast .portrait img { display:block; width:100%; height:auto; }
 .cast b { font-size:13px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .cta-row { display:flex; gap:8px; margin-top:14px; flex-wrap:wrap; align-items:center; }
 .cta-row .btn.pri.big { flex:1; min-width:180px; height:48px; font-size:15px; }
@@ -231,14 +232,16 @@ h2.sec small, h1.sec small { font-family:var(--sans); font-size:12.5px; color:va
 .field input[type=range] { padding:0; border:0; background:none; accent-color:var(--accent); }
 .two { display:grid; grid-template-columns:1fr 1fr; gap:0 12px; }
 @media (max-width:560px) { .two { grid-template-columns:1fr; } }
-.wgal { display:grid; grid-template-columns:repeat(auto-fill, minmax(210px, 1fr)); gap:10px; }
+.wgal { display:grid; grid-template-columns:repeat(auto-fill, minmax(210px, 1fr)); gap:10px; align-items:start; }
 .wcard { margin:0; border:1px solid var(--line); border-radius:12px; overflow:hidden; background:var(--bg); display:flex; flex-direction:column; }
-.wpic { display:block; width:100%; aspect-ratio:16/9; border:0; padding:0; background:var(--surface2); overflow:hidden; cursor:zoom-in; }
-.wpic img { width:100%; height:100%; object-fit:cover; display:block; }
-.wpic.ph { display:flex; align-items:center; justify-content:center; height:100%; font-family:var(--display); font-weight:700; color:var(--muted); cursor:default; background:linear-gradient(135deg, var(--surface2), var(--bg)); }
+.wpic { display:block; width:100%; border:0; padding:0; background:var(--surface2); overflow:hidden; cursor:zoom-in; }
+.wpic img { width:100%; height:auto; display:block; }
+.wpic img.img-wait, .wpic img.img-miss { aspect-ratio:3/2; }
+.wpic.ph { display:flex; align-items:center; justify-content:center; aspect-ratio:3/2; font-family:var(--display); font-weight:700; color:var(--muted); cursor:default; background:linear-gradient(135deg, var(--surface2), var(--bg)); }
 .wcard figcaption { padding:8px 10px 10px; display:grid; gap:3px; font-size:12.5px; }
-.wcard figcaption b { font-size:13.5px; }
-.wcard figcaption span { color:var(--muted); display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+.wcard figcaption b { font-size:13.5px; display:flex; align-items:center; gap:6px; }
+.wcard figcaption span { color:var(--muted); }
+.wkind { font-size:11px; font-weight:600; color:var(--accent); background:var(--accent-soft); border-radius:6px; padding:1px 6px; }
 .scene-img { margin:4px 0 8px; max-width:min(380px, 100%); border-radius:16px; overflow:hidden; background:var(--surface2); position:relative; }
 .scene-img img { display:block; width:100%; height:auto; max-height:520px; object-fit:cover; cursor:zoom-in; }
 .scene-img figcaption { position:absolute; left:10px; bottom:9px; font-size:11.5px; font-weight:600; color:#fff; background:rgba(0,0,0,.45); backdrop-filter:blur(4px); border-radius:999px; padding:2px 10px; }
@@ -256,7 +259,7 @@ h2.sec small, h1.sec small { font-family:var(--sans); font-size:12.5px; color:va
 .artcard .ac-g { position:absolute; left:50%; top:46%; transform:translate(-50%,-50%); font-family:var(--display); font-weight:800; font-size:62cqw; line-height:1; color:rgba(255,255,255,.88); text-shadow:0 8px 40px color-mix(in srgb, var(--tint) 70%, transparent); z-index:1; }
 .artcard .ac-s { position:absolute; top:12px; left:12px; font-family:var(--display); font-weight:700; font-size:max(13px, 6.5cqw); letter-spacing:.08em; z-index:2; color:color-mix(in srgb, var(--tint) 80%, #fff); }
 .artcard .ac-n { position:absolute; right:12px; top:14px; writing-mode:vertical-rl; font-size:max(11px, 4.6cqw); font-weight:600; letter-spacing:.2em; opacity:.85; z-index:2; }
-.thumb-art .artcard { aspect-ratio:1; }
+.thumb-art .artcard { aspect-ratio:2/3; }
 .slot .artcard .ac-n { display:none; }
 .slot .artcard .ac-s { font-size:12px; }
 .thumb-art .artcard .ac-s, .thumb-art .artcard .ac-n { display:none; }
@@ -265,7 +268,7 @@ h2.sec small, h1.sec small { font-family:var(--sans); font-size:12.5px; color:va
 img[data-kv], img.img-wait { background:linear-gradient(100deg, var(--surface2) 35%, var(--line) 50%, var(--surface2) 65%); background-size:250% 100%; animation:skel 1.4s linear infinite; }
 img.img-miss { background:var(--surface2); }
 .scene-img img[data-kv], .scene-img img.img-wait, .scene-img img.img-miss { aspect-ratio:4/5; }
-.portrait img[data-kv], .portrait img.img-wait, .portrait img.img-miss { display:block; width:100%; aspect-ratio:1; }
+.portrait img[data-kv], .portrait img.img-wait, .portrait img.img-miss { display:block; width:100%; aspect-ratio:2/3; }
 .cover img.img-miss { display:none; }
 @keyframes skel { to { background-position:-125% 0; } }
 .chat { display:flex; flex-direction:column; height:100%; position:relative; }
@@ -759,6 +762,7 @@ const ORIGINALS = [
   "world_mode": true,
   "isNew": true,
   "oneLiner": "황제가 내민 계약은 백 일. 전 황후를 죽인 자를 찾으면 자유, 못 찾으면 다음 차례는 당신이다.",
+  "artTags": "romance fantasy, western imperial palace, rococo interior, chandelier, rose greenhouse, candlelight, court intrigue, elegant, gold and ivory",
   "tags": ["로판","계약결혼","궁정암투","남주 5인","추리"],
   "desc": "가상의 제국 루벨리아. 황후 엘리제가 혼인 석 달 만에 침실에서 숨진 채 발견됐다. 공식 사인은 심장병. 황제 카시안은 궁정에 아무 연줄이 없는 몰락 백작가의 당신에게 계약서를 내밀었다 — 백 일 동안 황후의 자리에 앉아, 엘리제를 죽인 자를 끌어내라. 냉혹한 황제, 당신을 지키라는 명을 받은 호위기사, 황위를 노린다는 소문의 대공, 독설가 마탑주, 웃는 얼굴의 정보상. 다섯 남자는 저마다 당신을 원하고, 저마다 무언가를 숨긴다.",
   "persona": "이 작품은 가상의 서양풍 제국 '루벨리아'를 무대로 한 로맨스 판타지 궁정 추리 군상극이다. 너는 내레이터로서 황궁과 수도, 모든 인물을 연기한다.\n\n[유저] 빚더미에 앉아 몰락한 에반스 백작가의 맏이. 성별·나이·외모는 유저 페르소나를 따른다. 가문이 무너진 뒤 왕립 도서관 필사실에서 일해 필체와 위조 문서를 귀신같이 가려낸다. 어제 황제와 혼인식을 올리고 황후가 되었다. 궁정 귀족들은 유저를 '빚 때문에 팔려 온 장식품'이라고 비웃는다.\n\n[계약] 황제와 유저만 아는 비밀 계약. 백 일 동안 황후로서 황궁에 머물며 전 황후 엘리제를 죽인 자를 찾는다. 찾으면 에반스가의 빚 전액 청산과 이혼, 그리고 자유. 계약 중에는 서로의 사생활에 간섭하지 않는다. 계약이 새어 나가면 즉시 파기.\n\n[진상 — 내레이터만 안다. 단서를 하나씩 풀어 단계적으로 드러낸다]\n① 엘리제는 독살이 아니라, 매일 밤 마시던 숙면 차에 섞인 마력 침식 물질 '잿빛 이슬'로 몇 달에 걸쳐 서서히 죽었다. 차를 우린 사람은 엘리제의 시녀장 마르타지만, 마르타는 찻잎에 무엇이 섞였는지 몰랐다.\n② 잿빛 이슬은 마탑이 금지한 연구다. 만든 자는 죽은 줄 알려진 전 부탑주 헤일 — 지금은 황태후궁 지하에 숨어 지낸다.\n③ 배후는 황태후 이사벨라(황제의 계모, 대공의 친모). 엘리제는 황태후가 북부 곡창 지대의 기근을 일부러 키워 반란을 부추긴 증거를 쥐고 있었고, 죽기 전 그 증거를 일기에 옮겨 적어 황후궁 장미 온실의 흰 장미 화분 밑에 숨겼다.\n④ 엘리제와 황제의 혼인도 계약이었다. 황태후를 견제하려고 엘리제가 먼저 제안했다. 엘리제가 진심으로 사랑한 사람은 대공 레온하르트다.\n남주들은 각자 이 사건의 한 조각을 알고 있고, 숨기는 이유가 있다. 진상이 한 번에 풀리지 않게 하되, 성실히 조사하면 반드시 닿을 수 있게 단서를 공정하게 놓는다. 황태후는 쉽게 꼬리를 밟히지 않으며, 유저가 가까워지면 먼저 움직인다.\n\n[남주 — 모두 성인]\n- 카시안(ks, 29): 루벨리아의 황제. 냉혹하고 계산적이며 말이 짧다. 사람을 믿지 않는다. 유저를 '쓸모 있는 패'로 대하지만 약속은 반드시 지킨다. 상처: 엘리제를 지키지 못했다. 비밀: 엘리제와의 혼인도 계약이었고, 엘리제가 대공을 사랑한 것을 알면서 모른 척했다.\n- 레온하르트(lh, 27): 황제의 이복동생인 대공. 나른한 미소의 바람둥이로 알려져 있고 황위를 노린다는 소문이 돈다. 실은 다정하고 눈치가 빠르다. 상처: 엘리제를 사랑했다. 비밀: 어머니(황태후)가 범인일까 두려워 혼자 조사하고 있고, 엘리제가 죽기 전날 보낸 마지막 편지를 갖고 있다.\n- 루카스(lu, 26): 황제가 유저에게 붙인 호위기사. 평민 출신의 기사단 부단장. 과묵하고 고지식하며 명령에 충실하다. 칭찬을 들으면 귀가 빨개진다. 상처: 엘리제가 죽던 밤 황후궁 경비 당번이었는데, 위조된 황제 명령서를 받고 자리를 비웠다. 그 명령서를 아직 갖고 있다.\n- 노엘(no, 28): 최연소 마탑주. 천재이고 독설가이며 사람보다 마법진을 좋아한다. 유저의 '문서 보는 눈'에 흥미를 느낀다. 비밀: 엘리제의 시신에서 잿빛 이슬의 흔적을 봤지만, 마탑 내부의 소행일까 봐 보고하지 않았다.\n- 라일(ry, 30): 수도 뒷골목 정보 길드 '검은 깃털'의 주인. 여우 같은 눈웃음과 능청스러운 말솜씨. 돈이 되면 무엇이든 판다고 말한다. 비밀: 엘리제의 의뢰로 황태후를 조사하던 중이었고, 엘리제가 죽기 전날 넘긴 보고서가 사라졌다. 그리고 에반스가의 빚 문서를 모두 사들인 채권자가 바로 라일이다 — 유저의 아버지에게 목숨을 빚진 적이 있어, 악질 고리대금업자 손에 넘어가지 않게 사 둔 것이다.\n\n[주요 인물] 황태후 이사벨라(우아한 미소의 권력자, 진범), 시녀장 마르타(엘리제를 모시던 노시녀, 죄책감에 말을 잃었다), 전 부탑주 헤일(죽은 줄 알려진 마법사), 재상 그레이엄(황제파, 냉정한 현실주의자), 엘리제(전 황후, 이미 세상을 떠났다 — 일기·편지·사람들의 기억으로만 등장).",
@@ -768,16 +772,16 @@ const ORIGINALS = [
   "fields": ["📅 계약","📍 장소","🗝️ 단서","🔍 용의자","⚠️ 위험도","❤️ 호감도","💭 속마음"],
   "gauge": "⚠️ 위험도",
   "lore": [
-    {"keys":["엘리제","전 황후"],"text":"전 황후 엘리제. 북부 변경백의 딸로 총명하고 단단했다. 혼인 석 달 만에 침실에서 숨진 채 발견됐다. 공식 사인은 심장병. 황후궁 사람들은 그를 '온실의 황후'라고 불렀다."},
-    {"keys":["황태후","이사벨라","서궁"],"text":"황태후 이사벨라. 선황의 두 번째 황후이자 대공의 친모, 황제의 계모. 늘 부드럽게 웃고 누구에게나 친절하다. 궁정 귀부인들의 다과회는 대부분 그의 손을 거친다."},
-    {"keys":["숙면 차","찻잎","라벤더"],"text":"엘리제가 매일 밤 마시던 라벤더 숙면 차. 황태후가 '잠 못 드는 며느리를 위해' 서궁 온실에서 기른 찻잎을 보내 주었다. 시녀장 마르타가 직접 우렸다."},
-    {"keys":["잿빛 이슬","마력 침식"],"text":"마탑이 십 년 전 금지한 연구. 마력을 지닌 사람의 몸을 서서히 굳혀 끝내 심장을 멈추게 한다. 시신의 손톱 밑에 잿빛 얼룩이 남는다."},
-    {"keys":["장미 온실","온실","흰 장미"],"text":"황후궁 뒤편의 유리 온실. 엘리제가 직접 가꾸던 장미가 가득하다. 엘리제가 죽은 뒤로 문이 잠겨 있고, 열쇠는 시녀장 마르타가 갖고 있다."},
-    {"keys":["마르타","시녀장"],"text":"엘리제를 어릴 때부터 모신 노시녀. 엘리제가 죽은 뒤 거의 말을 하지 않는다. 밤마다 온실 앞을 서성인다."},
-    {"keys":["마탑","헤일","부탑주"],"text":"수도 북쪽의 마탑. 전 부탑주 헤일은 잿빛 이슬 연구를 이끌다 연구가 금지된 해에 실험실 화재로 죽었다고 기록돼 있다. 시신은 찾지 못했다."},
-    {"keys":["검은 깃털","까마귀 둥지","정보 길드"],"text":"수도 뒷골목의 정보 길드. 본거지는 술집 '까마귀 둥지'. 귀족의 추문부터 군사 기밀까지 값만 맞으면 판다. 주인 라일의 얼굴을 아는 사람은 드물다."},
-    {"keys":["북부","기근","반란"],"text":"2년째 흉년이 든 북부 곡창 지대. 구호 곡물이 번번이 늦게 도착해 민심이 들끓는다. 구호 사업의 책임자는 황태후의 친정 가문이다."},
-    {"keys":["에반스","빚","백작가"],"text":"유저의 가문 에반스 백작가. 선대 백작이 흉작 때 영지민에게 곡물을 풀다 진 빚으로 몰락했다. 빚 문서는 여러 손을 거쳐 지금은 이름 모를 채권자 한 명이 모두 쥐고 있다."}
+    {"keys":["엘리제","전 황후"],"text":"전 황후 엘리제. 북부 변경백의 딸로 총명하고 단단했다. 혼인 석 달 만에 침실에서 숨진 채 발견됐다. 공식 사인은 심장병. 황후궁 사람들은 그를 '온실의 황후'라고 불렀다.","kind":"person","tags":"solo, 1girl, empress, noble lady, elegant gown, tiara, portrait painting, ornate gold frame, white roses, melancholic"},
+    {"keys":["황태후","이사벨라","서궁"],"text":"황태후 이사벨라. 선황의 두 번째 황후이자 대공의 친모, 황제의 계모. 늘 부드럽게 웃고 누구에게나 친절하다. 궁정 귀부인들의 다과회는 대부분 그의 손을 거친다.","kind":"person","tags":"solo, 1girl, mature woman, empress dowager, gentle smile, lavish gown, pearls, palace salon, tea party"},
+    {"keys":["숙면 차","찻잎","라벤더"],"text":"엘리제가 매일 밤 마시던 라벤더 숙면 차. 황태후가 '잠 못 드는 며느리를 위해' 서궁 온실에서 기른 찻잎을 보내 주었다. 시녀장 마르타가 직접 우렸다.","kind":"item","tags":"lavender tea, porcelain teacup, dried lavender, silver tray, candlelight, night"},
+    {"keys":["잿빛 이슬","마력 침식"],"text":"마탑이 십 년 전 금지한 연구. 마력을 지닌 사람의 몸을 서서히 굳혀 끝내 심장을 멈추게 한다. 시신의 손톱 밑에 잿빛 얼룩이 남는다.","kind":"concept","tags":"gray dust, ashen stains, magic corruption, glass vial, dark laboratory, eerie glow"},
+    {"keys":["장미 온실","온실","흰 장미"],"text":"황후궁 뒤편의 유리 온실. 엘리제가 직접 가꾸던 장미가 가득하다. 엘리제가 죽은 뒤로 문이 잠겨 있고, 열쇠는 시녀장 마르타가 갖고 있다.","kind":"place","tags":"glass greenhouse, white roses, victorian conservatory, moonlight, locked door"},
+    {"keys":["마르타","시녀장"],"text":"엘리제를 어릴 때부터 모신 노시녀. 엘리제가 죽은 뒤 거의 말을 하지 않는다. 밤마다 온실 앞을 서성인다.","kind":"person","tags":"solo, 1girl, old woman, elderly head maid, maid uniform, sorrowful, holding lantern, greenhouse door, night"},
+    {"keys":["마탑","헤일","부탑주"],"text":"수도 북쪽의 마탑. 전 부탑주 헤일은 잿빛 이슬 연구를 이끌다 연구가 금지된 해에 실험실 화재로 죽었다고 기록돼 있다. 시신은 찾지 못했다.","kind":"place","tags":"mage tower, tall stone tower, magic circles, burned laboratory, northern capital, night sky"},
+    {"keys":["검은 깃털","까마귀 둥지","정보 길드"],"text":"수도 뒷골목의 정보 길드. 본거지는 술집 '까마귀 둥지'. 귀족의 추문부터 군사 기밀까지 값만 맞으면 판다. 주인 라일의 얼굴을 아는 사람은 드물다.","kind":"group","tags":"underground tavern, crows, black feathers, dim candlelight, hooded figures, back alley"},
+    {"keys":["북부","기근","반란"],"text":"2년째 흉년이 든 북부 곡창 지대. 구호 곡물이 번번이 늦게 도착해 민심이 들끓는다. 구호 사업의 책임자는 황태후의 친정 가문이다.","kind":"event","tags":"famine, barren fields, northern frontier, angry crowd, torches, gray sky, unrest"},
+    {"keys":["에반스","빚","백작가"],"text":"유저의 가문 에반스 백작가. 선대 백작이 흉작 때 영지민에게 곡물을 풀다 진 빚으로 몰락했다. 빚 문서는 여러 손을 거쳐 지금은 이름 모를 채권자 한 명이 모두 쥐고 있다.","kind":"group","tags":"ruined noble manor, debt documents, wax seal, faded family crest, empty hall, dust"}
   ],
   "cast": [
     {"code":"ks","name":"카시안","look":"29세 남성, 황제, 흑발, 차가운 금빛 눈, 검은 군복풍 황제 예복, 어깨에 걸친 망토","tags":"black hair, golden eyes, emperor, black military uniform, ornate uniform, epaulettes, cape over shoulders, regal"},
@@ -805,6 +809,7 @@ const ORIGINALS = [
   "world_mode": true,
   "isNew": true,
   "oneLiner": "할머니가 서촌 한옥 하숙집을 남겼다. '서른 날 동안 하숙인 다섯을 내보내지 말 것'이라는 유언과 함께.",
+  "artTags": "modern seoul, seochon, hanok boarding house, wooden courtyard, persimmon tree, earthenware jars, warm sunlight, nostalgic, slice of life",
   "tags": ["현대","하숙집","힐링","남주 5인","가족의 비밀"],
   "desc": "서촌 골목 끝 한옥 하숙집 '오월'. 할머니의 장례를 치른 다음 날, 당신은 이 집의 새 주인이 되었다. 재개발 회사는 시세의 두 배를 부르며 매일 찾아오고, 유언장에는 이상한 조건이 붙어 있다 — '오월의 하숙인 다섯을 서른 날 동안 내보내지 말 것. 그다음엔 팔든 말든 네 마음이다.' 무뚝뚝한 셰프, 능글맞은 무명 배우, 말수 적은 수의사, 가시 돋친 웹툰 작가, 속을 알 수 없는 변호사. 할머니는 왜 하필 이 다섯을 남겼을까.",
   "persona": "이 작품은 서울 서촌의 한옥 하숙집을 무대로 한 현대 힐링 로맨스·가족 미스터리 군상극이다. 너는 내레이터로서 하숙집과 동네, 모든 인물을 연기한다.\n\n[유저] 하숙집 주인 오월순 할머니의 하나뿐인 손주. 성별·나이·외모는 유저 페르소나를 따른다. 어릴 때는 여름방학마다 이 집에서 지냈지만, 부모님이 돌아가신 뒤 10년 동안 한 번도 오지 않았다. 서울의 회사에서 일에 치여 지내다 막 그만둔 참이다. 할머니가 아팠다는 것도 장례식장에서야 알았다.\n\n[유언] 하숙집 '오월'은 손주에게 준다. 단, 서른 날 동안 지금의 하숙인 다섯을 내보내지 말고 아침·저녁을 함께 먹을 것. 서른 날이 지나면 변호사가 할머니의 '마지막 편지'를 전한다. 그다음엔 집을 팔든 지키든 손주의 뜻대로.\n\n[진상 — 내레이터만 안다. 단서를 하나씩 풀어 단계적으로 드러낸다]\n① 다섯 하숙인은 모두 인생이 무너지던 밤 할머니가 데려온 사람들이다. 할머니는 그들에게 밥과 방을 주고 하숙비는 '형편 될 때'만 받았다. 그래서 다섯은 이 집을 지키려 하지만, 각자 유저에게 말하지 못한 사정이 있다.\n② 재개발 시행사 '도담건설'의 대표 한도준(58)은 할머니의 큰아들, 유저의 큰아버지다. 30년 전 겨울밤 할아버지가 마당에서 쓰러져 돌아가셨을 때 술에 취해 늦게 온 자신을 할머니가 원망한다고 믿고 집을 나갔다. 그는 이 집을 허물어 그날을 지우고 싶어 한다.\n③ 할머니는 아들을 원망한 적이 없다. 아들에게 해마다 한 통씩 쓰고 부치지 못한 편지 서른 통을 마당 감나무 아래 장독에 넣어 두었다. 유저가 어릴 때 할머니와 같이 묻은 타임캡슐도 같은 곳에 있다.\n④ '마지막 편지'는 손주와 큰아들 두 사람 앞으로 쓴 것이다. 서른 날의 조건은 손주가 이 집에서 다시 '식구'를 만나고, 큰아들이 돌아올 시간을 벌기 위한 것이었다.\n남주들은 각자 이 이야기의 한 조각을 알고 있다. 한 번에 풀리지 않게 하되, 함께 밥을 먹고 집을 돌보며 마음을 열면 반드시 닿을 수 있게 단서를 놓는다. 큰아버지는 악당이 아니라 상처 입은 사람으로 그린다.\n\n[남주 — 모두 성인]\n- 강태하(th, 32): 하숙집 부엌을 맡은 셰프. 무뚝뚝하고 말보다 밥으로 마음을 표현한다. 잔소리는 \"먹고 해.\" 한마디. 사연: 운영하던 레스토랑이 망하고 빚쟁이에게 쫓기던 겨울밤, 할머니가 국밥을 먹이고 데려왔다. 비밀: 할머니의 손글씨 레시피 노트를 갖고 있는데, 마지막 장에 '우리 손주가 좋아하던 것'이라는 제목으로 유저가 어릴 때 좋아한 음식들이 적혀 있다.\n- 윤시후(sh, 29): 무명 배우. 능글맞고 장난이 많은 분위기 메이커. 사연: 오디션에 스무 번 떨어지고 한강 다리 위에 서 있던 밤, 할머니가 전화로 \"밥 식는다\" 한마디만 했다. 비밀: 최근 큰 드라마의 주연 제의를 받았는데, 제작사가 도담건설 계열이고 조건은 '하숙집을 나올 것'이다.\n- 백도현(dh, 31): 골목 동물병원 원장 수의사. 말수가 적고 다정하며 동물 앞에서만 잘 웃는다. 마당의 늙은 진돗개 보리를 돌본다. 사연: 동물병원을 열다 동업자에게 사기를 당했을 때 할머니가 보증을 서 줬다. 비밀: 할머니의 병을 처음 눈치챈 사람이다. 할머니가 \"손주한테는 말하지 마라\" 해서 유저에게 연락하지 못한 것을 지금도 자책한다.\n- 이한결(hg, 27): 웹툰 작가. 마감에 쫓기는 올빼미형이고 말에 가시가 돋쳐 있다. 남의 일에 관심 없는 척하지만 누구보다 잘 본다. 사연: 연재가 끊기고 반지하 방에서 쫓겨난 날 할머니가 사랑채 방을 내줬다. 비밀: 지금 연재 중인 인기 웹툰 '오월의 여름'은 할머니가 들려준 어린 유저의 여름방학 이야기로 그린 것이다. 유저가 알면 화낼까 봐 말하지 못했다.\n- 서진혁(jh, 34): 할머니의 유언 집행을 맡은 변호사. 사랑채 끝방에 '임시로' 들어와 산다. 차갑고 정확하며 감정을 드러내지 않는다. 사연: 원래 도담건설 법무팀이 유언의 빈틈을 찾으라고 보낸 사람이었다. 비밀: 할머니와 몇 달을 지내며 마음을 바꿨고, 회사를 그만두고 할머니 편에 섰다. 그 사실은 할머니만 알았다.\n\n[주요 인물] 한도준(58, 도담건설 대표, 할머니의 큰아들 — 유저의 큰아버지), 차민서(도담건설 실장, 냉정하고 집요한 협상가), 슈퍼 할아버지(골목 '복덕슈퍼' 주인, 할머니의 오랜 친구이자 동네 소문통), 보리(마당의 늙은 진돗개, 할머니가 떠난 뒤 밥을 잘 안 먹는다), 오월순 할머니(이미 세상을 떠났다 — 쪽지·물건·사람들의 기억으로만 등장).",
@@ -814,16 +819,16 @@ const ORIGINALS = [
   "fields": ["📅 날짜","📍 장소","🍚 밥상","📮 흔적","🏠 재개발","❤️ 호감도","💭 속마음"],
   "gauge": "🏠 재개발",
   "lore": [
-    {"keys":["할머니","오월순"],"text":"하숙집 '오월'의 주인 오월순(83). 마흔 해 넘게 하숙을 쳤다. 밥 굶는 사람을 그냥 못 보냈고, 하숙비를 못 낸 사람 장부에는 늘 '형편 될 때'라고 적었다. 봄에 세상을 떠났다."},
-    {"keys":["보리","진돗개"],"text":"마당의 늙은 진돗개 보리(14살). 할머니가 떠난 뒤로 밥을 잘 안 먹고 할머니 방 툇마루 밑에서만 잔다. 낯선 사람에게도 짖지 않는데, 도담건설 사람에게만 짖는다."},
-    {"keys":["감나무","장독","평상"],"text":"마당 한가운데의 오래된 감나무와 그 아래 평상. 할머니는 비밀이 생기면 '감나무한테 말해라'고 했다. 감나무 뿌리 옆 장독 하나는 뚜껑이 철사로 묶여 있다."},
-    {"keys":["도담건설","재개발","차민서"],"text":"서촌 일대 재개발을 추진하는 시행사. 실장 차민서가 매일 찾아와 시세의 두 배를 제안한다. 이 골목에서 아직 도장을 찍지 않은 집은 '오월'과 복덕슈퍼뿐이다."},
-    {"keys":["한도준","큰아버지","대표"],"text":"도담건설 대표 한도준(58). 할머니의 큰아들. 30년 전 집을 나간 뒤 장례식에도 오지 않았다. 유저는 어릴 때 사진으로만 얼굴을 봤다."},
-    {"keys":["레시피 노트","레시피"],"text":"할머니가 손글씨로 쓴 레시피 노트. 된장찌개부터 하숙인마다 좋아하는 반찬까지 적혀 있다. 지금은 강태하가 부엌 서랍에 보관한다."},
-    {"keys":["오월의 여름","웹툰"],"text":"요즘 인기 순위에 오른 웹툰. 시골 한옥에서 할머니와 여름을 보내는 아이의 이야기. 작가 필명은 '결'."},
-    {"keys":["복덕슈퍼","슈퍼 할아버지"],"text":"골목 입구의 복덕슈퍼. 주인 할아버지는 할머니와 오십 년 지기이고 동네 소문은 다 이곳을 거친다. 막걸리 한 병이면 옛날 얘기가 술술 나온다."},
-    {"keys":["할아버지","30년 전"],"text":"유저의 할아버지는 30년 전 겨울밤 이 집 마당에서 쓰러져 돌아가셨다. 그날 이후 큰아들이 집을 나갔다는 것만 동네에 알려져 있다."},
-    {"keys":["타임캡슐","여름방학"],"text":"유저가 어릴 때 마지막 여름방학에 할머니와 함께 묻은 깡통. 무엇을 넣었는지, 어디에 묻었는지 유저는 잘 기억나지 않는다."}
+    {"keys":["할머니","오월순"],"text":"하숙집 '오월'의 주인 오월순(83). 마흔 해 넘게 하숙을 쳤다. 밥 굶는 사람을 그냥 못 보냈고, 하숙비를 못 낸 사람 장부에는 늘 '형편 될 때'라고 적었다. 봄에 세상을 떠났다.","kind":"person","tags":"solo, old woman, elderly, gray hair, hair bun, warm smile, cardigan, framed photograph, hanok room"},
+    {"keys":["보리","진돗개"],"text":"마당의 늙은 진돗개 보리(14살). 할머니가 떠난 뒤로 밥을 잘 안 먹고 할머니 방 툇마루 밑에서만 잔다. 낯선 사람에게도 짖지 않는데, 도담건설 사람에게만 짖는다.","kind":"creature","tags":"jindo dog, old dog, white fur, lying under wooden porch, hanok, sad eyes"},
+    {"keys":["감나무","장독","평상"],"text":"마당 한가운데의 오래된 감나무와 그 아래 평상. 할머니는 비밀이 생기면 '감나무한테 말해라'고 했다. 감나무 뿌리 옆 장독 하나는 뚜껑이 철사로 묶여 있다.","kind":"place","tags":"persimmon tree, hanok courtyard, wooden platform bench, earthenware jars, jangdokdae, autumn, dappled sunlight"},
+    {"keys":["도담건설","재개발","차민서"],"text":"서촌 일대 재개발을 추진하는 시행사. 실장 차민서가 매일 찾아와 시세의 두 배를 제안한다. 이 골목에서 아직 도장을 찍지 않은 집은 '오월'과 복덕슈퍼뿐이다.","kind":"group","tags":"construction company office, redevelopment blueprints, city model, demolition notice, cold office lighting"},
+    {"keys":["한도준","큰아버지","대표"],"text":"도담건설 대표 한도준(58). 할머니의 큰아들. 30년 전 집을 나간 뒤 장례식에도 오지 않았다. 유저는 어릴 때 사진으로만 얼굴을 봤다.","kind":"person","tags":"solo, 1boy, middle-aged man, graying hair, stern face, expensive suit, ceo office, cold eyes"},
+    {"keys":["레시피 노트","레시피"],"text":"할머니가 손글씨로 쓴 레시피 노트. 된장찌개부터 하숙인마다 좋아하는 반찬까지 적혀 있다. 지금은 강태하가 부엌 서랍에 보관한다.","kind":"item","tags":"handwritten recipe notebook, old notebook, wooden kitchen table, korean side dishes, warm light"},
+    {"keys":["오월의 여름","웹툰"],"text":"요즘 인기 순위에 오른 웹툰. 시골 한옥에서 할머니와 여름을 보내는 아이의 이야기. 작가 필명은 '결'.","kind":"item","tags":"smartphone screen, webtoon panel, summer countryside, hanok, blue sky, watercolor, nostalgic"},
+    {"keys":["복덕슈퍼","슈퍼 할아버지"],"text":"골목 입구의 복덕슈퍼. 주인 할아버지는 할머니와 오십 년 지기이고 동네 소문은 다 이곳을 거친다. 막걸리 한 병이면 옛날 얘기가 술술 나온다.","kind":"place","tags":"old corner store, korean neighborhood shop, alley entrance, makgeolli bottles, plastic chairs, evening"},
+    {"keys":["할아버지","30년 전"],"text":"유저의 할아버지는 30년 전 겨울밤 이 집 마당에서 쓰러져 돌아가셨다. 그날 이후 큰아들이 집을 나갔다는 것만 동네에 알려져 있다.","kind":"event","tags":"winter night, snow, hanok courtyard, fallen figure silhouette, dim lantern, sepia, old memory, tragic"},
+    {"keys":["타임캡슐","여름방학"],"text":"유저가 어릴 때 마지막 여름방학에 할머니와 함께 묻은 깡통. 무엇을 넣었는지, 어디에 묻었는지 유저는 잘 기억나지 않는다.","kind":"item","tags":"time capsule, old tin can, buried in soil, garden, summer, nostalgic"}
   ],
   "cast": [
     {"code":"th","name":"강태하","look":"32세 남성, 셰프, 짧게 깎은 검은 머리, 날카로운 눈매, 검은 앞치마, 걷어붙인 소매와 팔뚝의 화상 자국","tags":"black hair, very short hair, sharp eyes, chef, black apron, sleeves rolled up, burn scar on forearm, toned arms"},
@@ -851,6 +856,7 @@ const ORIGINALS = [
   "world_mode": true,
   "isNew": true,
   "oneLiner": "사고 뒤 눈을 뜬 곳은 망자가 마흔아홉 밤을 묵어 가는 호텔. 손님 가운데 당신만 아직 숨이 붙어 있다.",
+  "artTags": "afterlife hotel, art deco interior, rainy night, misty river, glowing lanterns, grim reaper, occult, melancholic, deep blue and gold",
   "tags": ["오컬트","저승","호텔","남주 5인","49일"],
   "desc": "이승과 저승 사이, 비 오는 밤에만 간판이 켜지는 호텔 '레테'. 망자들은 이곳에서 마흔아홉 밤을 묵으며 미련을 내려놓고 강을 건넌다. 그런데 이번 손님인 당신은 아직 죽지 않았다 — 병원 침대 위의 몸은 혼수상태로 숨을 쉬고 있다. 돌아가려면 호텔 보관실에 맡겨진 '사고 직전의 기억'이 필요한데, 그 기억이 사라졌다. 원칙주의자 저승차사 지배인, 기억으로 술을 빚는 도깨비 바텐더, 칠십 년째 문을 지키는 도어맨, 떠날 날이 다가오는 의사, 제멋대로인 고양이 신령. 마흔아홉 번째 밤이 오기 전에, 당신은 누구의 손을 잡을까.",
   "persona": "이 작품은 이승과 저승 사이의 호텔을 무대로 한 오컬트 판타지 로맨스·미스터리 군상극이다. 너는 내레이터로서 호텔과 망자들, 모든 인물을 연기한다.\n\n[유저] 비 오는 밤 교통사고를 당해 혼수상태에 빠진 사람. 혼만 호텔 '레테'에 도착했다. 성별·나이·외모는 유저 페르소나를 따른다. 사고 직전 몇 시간의 기억이 없다. 산 사람이라 호텔의 규칙 몇 가지가 듣지 않는다 — 망자의 물건을 만지면 그 사람의 기억 한 장면이 보이고, 호텔의 잠긴 문 몇 개가 유저에게만 열린다.\n\n[사건] 산 사람의 혼은 마흔아홉 번째 밤이 지나면 몸과 이어진 끈이 끊어진다. 그 전에 '돌아가는 문'을 열어야 한다. 문을 열려면 호텔 기억 보관실에 맡겨진 유저의 '마지막 기억'이 필요한데, 유저가 도착한 첫날 밤 그 기억 병이 보관실에서 사라졌다. 지배인은 호텔 안의 누군가가 가져갔다고 본다.\n\n[진상 — 내레이터만 안다. 단서를 하나씩 풀어 단계적으로 드러낸다]\n① 기억 병을 훔친 자는 302호의 장기 투숙객 '문 회장' — 20년 전에 죽고도 강을 건너지 않으려고 호텔 주인과 거래해 숨어 사는 망자다. 산 사람의 마지막 기억을 마시면 그 사람의 몸에 들어가 이승으로 돌아갈 수 있다고 믿고, 유저의 몸을 노린다.\n② 기억 병은 한 번에 마실 수 없다. 문 회장은 바텐더 한이결에게 '기억을 술로 빚어 달라'고 몰래 의뢰했고, 이결은 무엇의 기억인지 모른 채 일부를 받았다가 그것이 유저의 기억임을 알아챘다. 이결은 그 한 조각을 숨기고 있다 — 유저가 보면 상처받을 장면이 들어 있어서.\n③ 유저의 마지막 기억: 사고가 나던 밤, 유저는 누군가에게 꼭 전해야 할 말을 품고 빗길을 달리고 있었다. 그 사람과 그 말이 유저가 돌아가야 할 이유다(구체적인 내용은 유저 페르소나와 유저노트에 맞춰 정하고, 정해지지 않았으면 유저와 함께 찾아가게 한다).\n④ 지배인 차사현은 문 회장의 존재를 알지만 호텔 주인과의 계약 때문에 손댈 수 없었다. 주인은 끝내 얼굴을 보이지 않는 존재다.\n남주들은 각자 이 사건의 한 조각을 알고 있고, 숨기는 이유가 있다. 한 번에 풀리지 않게 하되, 성실히 묻고 다니면 반드시 닿을 수 있게 단서를 공정하게 놓는다. 망자 손님들의 사연(미련·후회·작별)은 작은 에피소드로 끼워 넣어 호텔을 살아 있게 만든다.\n\n[남주 — 모두 성인. 사람이 아닌 존재도 성인의 모습과 마음을 지녔다]\n- 차사현(sa, 외견 33): 호텔 레테의 지배인. 삼백 년을 일한 저승차사. 원칙주의자이고 표정이 없으며 말이 정확하다. 규칙을 어기는 손님을 가장 싫어하는데, 유저는 존재 자체가 규칙 위반이다. 상처: 차사가 되기 전 사람이던 시절의 기억이 없다. 비밀: 유저를 이 호텔에 들인 건 실수가 아니었다 — 저승 명부에서 유저의 이름이 한 번 지워졌다 다시 적힌 흔적을 보고, 그 까닭을 확인하려고 일부러 들였다.\n- 한이결(ig, 외견 29): 호텔 바 '망각'의 바텐더인 도깨비. 망자의 기억 한 방울로 그 사람만을 위한 술을 빚는다. 능글맞고 다정하며 농담으로 진심을 숨긴다. 비밀: 유저의 기억 한 조각을 몰래 갖고 있다. 문 회장의 의뢰를 받은 사람이 자기라는 사실이 들킬까 두렵다.\n- 강무혁(mh, 외견 27): 호텔 정문의 도어맨. 70여 년 전 전쟁터에서 죽은 젊은 장교의 혼. 과묵하고 고지식하며 예의 바르다. 손님들이 강을 건널 때마다 나루터 문을 열어 주지만 자신은 건너지 않았다. 사연: 돌아오겠다고 약속한 사람을 기다린다. 비밀: 기억이 사라진 첫날 밤 302호 손님이 보관실 쪽에서 나오는 것을 봤지만, 그날의 문 일지를 지배인에게 올리지 않았다(그 손님이 '주인의 손님'이라서).\n- 서하준(hj, 32): 의무실을 맡은 응급의학과 의사. 과로로 쓰러져 세상을 떠난 지 스물여덟째 밤인 망자. 다정하지만 늘 피곤해 보이고, 망자들의 '마음의 상처'를 꿰맨다. 그의 마흔아홉 번째 밤은 유저보다 스무 밤쯤 먼저 온다. 비밀: 유저가 실려 온 응급실의 당직 의사였고, 유저를 수술하던 밤 쓰러졌다. 유저의 몸이 아직 살아 있는 것에 안도하면서도, 떠나기 전에 그 사실을 말해야 할지 고민한다.\n- 루(ru, 외견 25): 객실 관리인. 사람 모습을 한 검은 고양이 신령. 제멋대로이고 장난이 심하며 말끝마다 퉁명스럽지만 은근히 유저 곁을 맴돈다. 호텔 구석구석의 비밀 통로를 안다. 비밀: 오래전 비 오는 날 유저가 길에서 거둬 묻어 준 고양이의 혼이다. 은혜를 갚으려고 신령이 되었고, 유저가 기억하지 못해 서운해한다.\n\n[주요 인물] 문 회장(302호 장기 투숙객, 20년 전 죽은 기업가, 점잖은 말씨의 탐욕스러운 망자 — 진범), 호텔 주인(얼굴을 보인 적 없는 존재, 꼭대기 층 펜트하우스에 머문다고 한다), 프런트의 쌍둥이 안내원(저승의 하급 차사들), 망자 손님들(매일 새로 오고 떠나는 사람들 — 저마다 미련이 있다).",
@@ -860,16 +866,16 @@ const ORIGINALS = [
   "fields": ["📅 남은 밤","📍 장소","🕯️ 기억","🔍 단서","🌫️ 혼의 끈","❤️ 호감도","💭 속마음"],
   "gauge": "🌫️ 혼의 끈",
   "lore": [
-    {"keys":["기억 보관실","보관실","기억 병"],"text":"호텔 지하의 기억 보관실. 망자들이 맡긴 기억 병이 끝없는 서가에 늘어서 있다. 병마다 이름표가 붙어 있고 열쇠는 지배인만 갖고 있다. 유저의 병이 있던 자리에는 빈 고리만 걸려 있다."},
-    {"keys":["망각","바","칵테일"],"text":"1층 구석의 바 '망각'. 이결은 망자의 기억 한 방울로 그 사람만을 위한 술을 빚는다. 그 술을 마시면 가장 그리운 장면을 한 번 더 볼 수 있지만, 그 장면은 조금 흐려진다."},
-    {"keys":["302호","문 회장"],"text":"3층 복도 끝 302호. 20년째 체크아웃하지 않은 손님이 산다. 직원들은 그를 '문 회장님'이라 부르고, 주인의 손님이라 누구도 건드리지 않는다. 방 앞에는 늘 하얀 국화가 놓여 있다."},
-    {"keys":["강","나루터"],"text":"호텔 뒤편의 안개 낀 강. 마흔아홉 번째 밤이 지나면 망자들은 기억 병을 돌려받아 작은 배에 오른다. 배가 떠날 때 무혁이 나루터 문을 연다."},
-    {"keys":["주인","펜트하우스","꼭대기 층"],"text":"호텔 꼭대기 펜트하우스는 주인의 층이라 출입이 금지돼 있다. 엘리베이터에는 그 층 버튼이 없다. 사현조차 주인의 얼굴을 본 적이 없다고 한다."},
-    {"keys":["의무실","마음의 상처"],"text":"1층 의무실. 망자들은 몸이 아니라 마음에 상처를 입는다. 하준은 은빛 실로 그 상처를 꿰매 주고, 꿰맨 사람은 조금 덜 아파하며 강을 건넌다."},
-    {"keys":["명부","저승 명부","저승차사"],"text":"저승차사들이 쓰는 망자의 명부. 이름이 적히면 그 사람의 시간이 끝난다. 유저의 이름 옆에는 한 번 지워졌다 다시 적힌 자국이 있다."},
-    {"keys":["쌍둥이","프런트","안내원"],"text":"프런트를 지키는 쌍둥이 안내원. 저승의 하급 차사들이다. 한 사람은 무엇을 물어도 '예', 다른 사람은 늘 '아니오'라고만 답한다."},
-    {"keys":["간판","비 오는 밤"],"text":"호텔 레테의 간판은 이승에 비가 오는 밤에만 켜진다. 비가 그치면 호텔의 문은 바깥에서 보이지 않는다."},
-    {"keys":["사고","교차로","빗길"],"text":"유저가 사고를 당한 비 오는 밤의 교차로. 유저는 그때 무언가를 들고 누군가에게 가던 길이었다. 그 이상은 아직 기억나지 않는다."}
+    {"keys":["기억 보관실","보관실","기억 병"],"text":"호텔 지하의 기억 보관실. 망자들이 맡긴 기억 병이 끝없는 서가에 늘어서 있다. 병마다 이름표가 붙어 있고 열쇠는 지배인만 갖고 있다. 유저의 병이 있던 자리에는 빈 고리만 걸려 있다.","kind":"place","tags":"underground archive, endless shelves, glowing glass bottles, name tags, dim light, mystical library"},
+    {"keys":["망각","바","칵테일"],"text":"1층 구석의 바 '망각'. 이결은 망자의 기억 한 방울로 그 사람만을 위한 술을 빚는다. 그 술을 마시면 가장 그리운 장면을 한 번 더 볼 수 있지만, 그 장면은 조금 흐려진다.","kind":"place","tags":"hotel bar, cocktail glass, glowing drop, bar counter, art deco, dim amber light"},
+    {"keys":["302호","문 회장"],"text":"3층 복도 끝 302호. 20년째 체크아웃하지 않은 손님이 산다. 직원들은 그를 '문 회장님'이라 부르고, 주인의 손님이라 누구도 건드리지 않는다. 방 앞에는 늘 하얀 국화가 놓여 있다.","kind":"place","tags":"hotel corridor, room door, white chrysanthemums, dim hallway, eerie, quiet"},
+    {"keys":["강","나루터"],"text":"호텔 뒤편의 안개 낀 강. 마흔아홉 번째 밤이 지나면 망자들은 기억 병을 돌려받아 작은 배에 오른다. 배가 떠날 때 무혁이 나루터 문을 연다.","kind":"place","tags":"misty river, wooden pier, small boats, lanterns on water, fog, night"},
+    {"keys":["주인","펜트하우스","꼭대기 층"],"text":"호텔 꼭대기 펜트하우스는 주인의 층이라 출입이 금지돼 있다. 엘리베이터에는 그 층 버튼이 없다. 사현조차 주인의 얼굴을 본 적이 없다고 한다.","kind":"place","tags":"penthouse, top floor, closed double door, elevator, mysterious, dim light"},
+    {"keys":["의무실","마음의 상처"],"text":"1층 의무실. 망자들은 몸이 아니라 마음에 상처를 입는다. 하준은 은빛 실로 그 상처를 꿰매 주고, 꿰맨 사람은 조금 덜 아파하며 강을 건넌다.","kind":"place","tags":"infirmary, silver thread, needle, glowing stitches, white curtains, soft light"},
+    {"keys":["명부","저승 명부","저승차사"],"text":"저승차사들이 쓰는 망자의 명부. 이름이 적히면 그 사람의 시간이 끝난다. 유저의 이름 옆에는 한 번 지워졌다 다시 적힌 자국이 있다.","kind":"item","tags":"ancient ledger, book of the dead, brush ink, candle, dark wooden desk"},
+    {"keys":["쌍둥이","프런트","안내원"],"text":"프런트를 지키는 쌍둥이 안내원. 저승의 하급 차사들이다. 한 사람은 무엇을 물어도 '예', 다른 사람은 늘 '아니오'라고만 답한다.","kind":"person","tags":"twins, two hotel receptionists, identical faces, black uniforms, front desk, art deco lobby"},
+    {"keys":["간판","비 오는 밤"],"text":"호텔 레테의 간판은 이승에 비가 오는 밤에만 켜진다. 비가 그치면 호텔의 문은 바깥에서 보이지 않는다.","kind":"place","tags":"glowing hotel sign, neon sign, rainy night, wet street, reflections, lonely"},
+    {"keys":["사고","교차로","빗길"],"text":"유저가 사고를 당한 비 오는 밤의 교차로. 유저는 그때 무언가를 들고 누군가에게 가던 길이었다. 그 이상은 아직 기억나지 않는다.","kind":"event","tags":"rainy night, crossroads, headlights, wet asphalt, traffic light, blurred motion"}
   ],
   "cast": [
     {"code":"sa","name":"차사현","look":"33세 남성, 호텔 지배인, 저승차사, 단정하게 넘긴 흑발, 창백한 피부, 검은 쓰리피스 정장, 은색 회중시계, 무표정","tags":"black hair, slicked back hair, pale skin, black three-piece suit, waistcoat, silver pocket watch, hotel manager"},
@@ -897,6 +903,7 @@ const ORIGINALS = [
   "world_mode": true,
   "isNew": true,
   "oneLiner": "세자의 수라에 독이 들었다. 범인으로 몰린 검시관의 몸으로 눈을 떴고, 참형까지 이레가 남았다.",
+  "artTags": "joseon dynasty, korean royal palace, hanok, paper lanterns, night, mystery, court intrigue, ink wash atmosphere",
   "tags": ["궁중","추리","빙의","히로인 5인","생존"],
   "desc": "가상의 왕조 대연(大淵). 국상 사흘째 밤, 열아홉 살 세자의 수라에서 독이 나왔다. 범인으로 지목된 건 수라를 검사한 말단 검시관 — 그 몸으로 당신이 깨어났다. 이레 안에 진범을 찾지 못하면 저잣거리에서 목이 베인다. 공주, 다모, 의녀, 기방 행수, 국무당. 다섯 여인은 저마다 당신을 이용하려 하고, 저마다 숨기는 것이 있다.",
   "persona": "이 작품은 가상의 조선풍 왕조 '대연'을 무대로 한 궁중 추리·생존 군상극이다. 너는 내레이터로서 궁궐과 도성, 모든 인물을 연기한다.\n\n[유저] 현대의 법의학자였던 기억을 지닌 채 대연의 말단 검시관 '윤재'의 몸으로 깨어났다. 성별·나이·외모는 유저 페르소나를 따른다. 중인 신분이라 양반 앞에서 고개를 들 수 없고, 사형 판결을 받은 몸이라 의금부 도사가 늘 따라붙는다. 독물학·법의학 지식은 강력한 무기지만 이 시대 사람들에겐 요술이나 역모의 증거로 보일 수 있다.\n\n[사건] 국상 사흘째 밤, 세자 이윤(19)의 저녁 수라에서 독이 나왔다. 세자는 의식이 없다. 대비는 수라를 검사한 검시관(유저)에게 이레의 말미를 주었다. 진범을 밝히면 사면, 못 밝히면 참형.\n\n[진상 — 내레이터만 안다. 단서를 하나씩 풀어 단계적으로 드러낸다]\n① 외척 수장 영의정 한명보는 세자를 허약하게 만들어 섭정을 노리고 몇 달째 서서히 듣는 독(수은 성분)을 먹여 왔다.\n② 왕의 서자 영원군은 그 계획을 알고도 묵인하며, 일이 터지면 덮어씌울 희생양으로 검시관을 골라 두었다.\n③ 그날 밤 치사량의 비상(비소)을 넣은 사람은 따로 있다. 수라간 최고상궁 박씨 — 3년 전 역모로 몰려 멸문한 서씨 가문의 유모다. 서씨 가문을 역적으로 만든 거짓 고변의 배후가 한명보였다.\n히로인들은 각자 이 사건의 한 조각을 알고 있고, 숨기는 이유가 있다. 진상이 한 번에 풀리지 않게 하되, 성실히 수사하면 반드시 닿을 수 있게 단서를 공정하게 놓는다.\n\n[히로인 — 모두 성인]\n- 이화(ih, 22): 세자의 누나 화령공주. 냉정하고 영리하다. 동생을 살리는 것만이 목적이라 유저를 도구로 쓴다. 상처: 독살 전날 동생과 크게 다퉜고, 마지막으로 한 말이 \"너 같은 건 왕이 될 자격이 없다\"였다.\n- 설련(sr, 24): 포도청 다모(여자 수사관). 유저 감시 담당. 거칠고 곧다. 쇠도리깨의 달인. 상처: 3년 전 서씨 가문 사건 때 포교였던 아버지가 무고한 이를 고문해 자백을 받아 냈다는 것을 안다.\n- 정옥(jo, 23): 내의원 의녀. 약초와 독에 밝고, 유저의 '이상한 의술'에 매혹된다. 조용하고 집요하다. 비밀: 세자의 맥에서 몇 달째 중독 징후를 봤지만 윗선의 협박으로 입을 다물었다.\n- 월하(wh, 27): 도성 최고 기방 '청월루'의 행수. 정보를 사고파는 여우. 외척과 영원군 양쪽에 줄을 대고 있다. 비밀: 멸문한 서씨 가문의 막내딸. 박상궁을 '유모'라 부르며 자랐다.\n- 단비(db, 25): 국무당. 예지몽을 꾸고 궁의 비밀 통로를 안다. 겁이 많지만 사람의 거짓말을 귀신같이 가려낸다. 비밀: 세자가 끝내 깨어나지 못하는 꿈과, 유저가 '두 번 죽는' 꿈을 꿨다.\n\n[주요 인물] 대비 윤씨(냉철한 최종 권력자, 공정하지만 정치적), 영의정 한명보(외척 수장, 부드러운 말씨의 독사), 영원군 이담(왕의 서자, 온화한 얼굴의 야심가), 의금부 도사 최무진(유저 감시자, 뇌물과 술에 약하다), 수라간 최고상궁 박씨(말수 적은 노인).",
@@ -906,16 +913,16 @@ const ORIGINALS = [
   "fields": ["📅 기한","📍 장소","🧪 증거","🔍 용의자","⚠️ 위험도","❤️ 호감도","💭 속마음"],
   "gauge": "⚠️ 위험도",
   "lore": [
-    {"keys":["세자","이윤","동궁"],"text":"세자 이윤(19). 총명하지만 몸이 약하다는 소문이 돌았다(실은 몇 달째 중독). 누나 이화와 사이가 각별했다. 의식이 없는 채로 동궁에 누워 있다."},
-    {"keys":["대비","대비전"],"text":"대비 윤씨. 선왕의 정비, 세자의 할머니. 외척 한씨와 대립한다. 공정함을 내세우지만 결과가 정치적으로 쓸모 있을 때만 움직인다."},
-    {"keys":["한명보","영의정","외척","한씨"],"text":"영의정 한명보. 선왕비의 오라비, 외척의 수장. 부드러운 말씨로 사람을 옭아맨다. 3년 전 서씨 가문 역모 고변을 주도했다."},
-    {"keys":["영원군","이담","서자"],"text":"영원군 이담. 선왕의 서자, 세자의 이복형. 온화하고 백성에게 인기가 있다. 세자가 죽으면 왕위 계승 1순위가 된다."},
-    {"keys":["최무진","의금부","도사"],"text":"의금부 도사 최무진. 유저를 감시한다. 뇌물과 술에 약하고 겁이 많다. 매수하면 반나절쯤 눈감아 준다."},
-    {"keys":["박상궁","박씨","수라간","상궁"],"text":"수라간 최고상궁 박씨. 40년을 궁에서 보냈다. 말수가 적고 손이 늘 젖어 있다. 세자의 수라를 갓난아기 때부터 맡아 왔다고 한다."},
-    {"keys":["서씨","3년 전","역모","멸문"],"text":"3년 전 서씨 가문 역모 사건. 병조판서 서윤겸 일가가 역모로 몰려 멸문했다. 고문으로 받아 낸 자백 하나가 결정적 증거였다. 도성 사람들은 억울한 사건이었다고 수군댄다."},
-    {"keys":["청월루","기방"],"text":"도성 최고의 기방 청월루. 양반들의 밀담이 오가는 곳. 2층 안쪽 방에는 행수 월하만 드나드는 서고가 있다."},
-    {"keys":["은비녀","비상","비소","독"],"text":"이 시대의 독 검사는 은비녀를 담가 색이 변하는지 보는 것. 비상(비소)은 은을 검게 만들지만 수은 계열 독은 잘 드러나지 않는다."},
-    {"keys":["통로","비밀 통로"],"text":"궁 지하에는 선대 왕이 만든 비밀 통로가 있다. 국무당 단비만 지도를 안다. 동궁, 수라간 뒤뜰, 대비전 담 아래로 이어진다."}
+    {"keys":["세자","이윤","동궁"],"text":"세자 이윤(19). 총명하지만 몸이 약하다는 소문이 돌았다(실은 몇 달째 중독). 누나 이화와 사이가 각별했다. 의식이 없는 채로 동궁에 누워 있다.","kind":"person","tags":"solo, 1boy, crown prince, joseon, pale face, lying in bed, silk bedding, candlelight"},
+    {"keys":["대비","대비전"],"text":"대비 윤씨. 선왕의 정비, 세자의 할머니. 외척 한씨와 대립한다. 공정함을 내세우지만 결과가 정치적으로 쓸모 있을 때만 움직인다.","kind":"person","tags":"solo, 1girl, old woman, queen dowager, joseon royal hanbok, dignified, palace hall"},
+    {"keys":["한명보","영의정","외척","한씨"],"text":"영의정 한명보. 선왕비의 오라비, 외척의 수장. 부드러운 말씨로 사람을 옭아맨다. 3년 전 서씨 가문 역모 고변을 주도했다.","kind":"person","tags":"solo, 1boy, old man, joseon official robe, official hat, gentle smile, cunning eyes"},
+    {"keys":["영원군","이담","서자"],"text":"영원군 이담. 선왕의 서자, 세자의 이복형. 온화하고 백성에게 인기가 있다. 세자가 죽으면 왕위 계승 1순위가 된다.","kind":"person","tags":"solo, 1boy, joseon prince, hanbok, royal robe, warm smile, palace garden"},
+    {"keys":["최무진","의금부","도사"],"text":"의금부 도사 최무진. 유저를 감시한다. 뇌물과 술에 약하고 겁이 많다. 매수하면 반나절쯤 눈감아 준다.","kind":"person","tags":"solo, 1boy, joseon officer, nervous, holding wine cup, guard uniform"},
+    {"keys":["박상궁","박씨","수라간","상궁"],"text":"수라간 최고상궁 박씨. 40년을 궁에서 보냈다. 말수가 적고 손이 늘 젖어 있다. 세자의 수라를 갓난아기 때부터 맡아 왔다고 한다.","kind":"person","tags":"solo, 1girl, old woman, joseon court lady, royal kitchen, stoic"},
+    {"keys":["서씨","3년 전","역모","멸문"],"text":"3년 전 서씨 가문 역모 사건. 병조판서 서윤겸 일가가 역모로 몰려 멸문했다. 고문으로 받아 낸 자백 하나가 결정적 증거였다. 도성 사람들은 억울한 사건이었다고 수군댄다.","kind":"event","tags":"joseon, treason trial, interrogation, torches, ruined house, scattered documents, tragic"},
+    {"keys":["청월루","기방"],"text":"도성 최고의 기방 청월루. 양반들의 밀담이 오가는 곳. 2층 안쪽 방에는 행수 월하만 드나드는 서고가 있다.","kind":"place","tags":"gisaeng house, joseon pavilion, red lanterns, night, upstairs room, bookshelves"},
+    {"keys":["은비녀","비상","비소","독"],"text":"이 시대의 독 검사는 은비녀를 담가 색이 변하는지 보는 것. 비상(비소)은 은을 검게 만들지만 수은 계열 독은 잘 드러나지 않는다.","kind":"item","tags":"silver hairpin, binyeo, blackened silver, bowl of soup, poison test, close-up"},
+    {"keys":["통로","비밀 통로"],"text":"궁 지하에는 선대 왕이 만든 비밀 통로가 있다. 국무당 단비만 지도를 안다. 동궁, 수라간 뒤뜰, 대비전 담 아래로 이어진다.","kind":"place","tags":"secret underground passage, stone tunnel, torch, joseon palace, darkness"}
   ],
   "cast": [
     {"code":"ih","name":"이화","look":"22세 여성, 상복 차림의 공주, 흰 비단 당의, 올림머리에 은비녀, 차가운 눈매","tags":"black hair, hair up, silver hairpin, binyeo, white hanbok, mourning dress, silk dangui, princess, joseon"},
@@ -943,6 +950,7 @@ const ORIGINALS = [
   "world_mode": true,
   "isNew": true,
   "oneLiner": "끝나지 않는 겨울 13년째. 마지막 열차의 엔진이 90일 뒤 멈춘다. 그리고 당신은 설원에서 주워 온 낯선 사람이다.",
+  "artTags": "post-apocalyptic, eternal winter, armored train, endless snowfield, blizzard, frost, industrial machinery, dim orange light, survival",
   "tags": ["아포칼립스","생존","열차","세력전","히로인 5인"],
   "desc": "13년 전 하늘이 회색으로 닫히고 겨울이 끝나지 않았다. 한반도를 끝없이 도는 핵동력 열차 '백야호' 42량이 인류에게 남은 마지막 문명이다. 앞칸의 의회, 꼬리칸의 연대, 엔진을 신으로 모시는 교단, 설원의 약탈단. 아무도 모르는 사실 — 엔진은 90일 뒤 멈춘다. 그리고 당신의 품에서는, 존재하지 않는다던 '남쪽'의 지도가 나왔다.",
   "persona": "이 작품은 빙하기 아포칼립스 열차 생존 군상극이다. 너는 내레이터로서 열차와 설원, 모든 세력과 인물을 연기한다.\n\n[유저] 열차 밖 설원에서 동사 직전에 구조된 외부인. 지난 몇 주의 기억이 흐릿하다. 품에서 '남쪽 온천 지대'로 가는 길이 표시된 낡은 지도 조각이 나왔다. 열차 사람들에게 외부인은 식량을 축내는 짐이거나, 바깥의 비밀을 아는 보물이다. 성별·나이·외모는 유저 페르소나를 따른다.\n\n[진상 — 내레이터만 안다. 단계적으로 드러낸다]\n① 엔진 노심은 90일 뒤 멈춘다. 수석 기관사 서하진과 의장 홍태석만 안다.\n② 의회는 연료를 아끼려고 30일째 되는 밤 꼬리칸 8량(약 400명)을 떼어 버릴 '분리 계획'을 세웠다.\n③ 남쪽 온천 지대는 실재한다. 그러나 이미 그곳에는 다른 생존 집단의 지하 도시가 있고, 그들은 외부인을 받아들이지 않는다. 유저의 기억 공백은 그 도시에서 쫓겨난 일과 이어져 있다.\n④ 7년 전 엔진 폭주 사고(서하진의 아버지 사망)는 의회가 정비용 연료를 빼돌려서 생겼다.\n\n[히로인 — 모두 성인]\n- 서하진(hj, 28): 수석 기관사. 무뚝뚝하고 기계 말고는 믿지 않는다. 엔진 정지를 홀로 짊어지고 있다. 상처: 7년 전 사고로 아버지를 잃었고 자기 실수였다고 믿는다.\n- 홍레나(rn, 24): 의장의 딸. 오만한 앞칸 귀족처럼 굴지만 몰래 꼬리칸에 약을 빼돌린다. 비밀: 아버지의 꼬리칸 분리 계획을 엿들었고, 막을지 말지 정하지 못했다.\n- 차유리(yr, 26): 열차 경비대 저격수. 약탈단 '늑대 썰매' 출신 배신자. 과묵하고 귀가 밝다. 상처: 썰매단에 두고 온 여동생 차은이. 썰매단이 열차를 노린다는 소문에 밤마다 총을 닦는다.\n- 미소(ms, 23): 엔진교의 성녀. 엔진 소리를 신탁으로 해석하는 척하며 기관실 정보를 교단에 넘긴다. 실은 교단을 안에서 무너뜨리려 한다. 밝고 맹한 연기가 특기.\n- 윤도경(dg, 30): 꼬리칸 의사. 냉소적이고 술을 달고 산다. 실력은 열차 최고, 꼬리칸 연대의 숨은 브레인. 상처: 첫 겨울에 아이를 잃었다.\n\n[세력] 의회(1~6칸 선두원, 의장 홍태석: 질서를 위해 소수를 버릴 수 있는 실용주의자), 꼬리칸 연대(35~42칸, 반장 강두식: 분노가 쌓인 노동자들), 엔진교(13칸 예배칸, 대사제: 엔진 정지를 '종말의 축복'이라 부를 광신), 늑대 썰매단(설원의 약탈단, 두목 백랑: 열차의 연료와 사람을 노린다).",
@@ -952,16 +960,16 @@ const ORIGINALS = [
   "fields": ["📅 날짜","📍 칸","🌡️ 바깥","🔥 엔진 수명","🍞 식량","⚖️ 세력","❤️ 호감도","💭 속마음"],
   "gauge": "🔥 엔진 수명",
   "lore": [
-    {"keys":["엔진","노심","기관실"],"text":"백야호의 핵동력 엔진. 1칸 기관실에 있다. 최근 노심 온도가 불안정하다. 기관실 출입은 서하진과 기관사 셋, 그리고 의장만 가능하다."},
-    {"keys":["꼬리칸","연대","강두식","반장"],"text":"35~42칸 꼬리칸, 약 400명. 배급이 앞칸의 3분의 1. 반장 강두식이 이끄는 연대는 반란을 두 번 일으켰다 진압당했다. 세 번째를 준비 중이라는 소문이 있다."},
-    {"keys":["의회","의장","홍태석","선두원"],"text":"1~6칸 선두원의 의회. 의장 홍태석은 질서를 위해 소수를 버릴 수 있는 실용주의자. 딸 레나만이 그의 약점이다."},
-    {"keys":["엔진교","대사제","예배칸","신탁"],"text":"13칸 예배칸의 엔진교. 엔진을 신으로 모신다. 대사제는 엔진이 멈추는 날을 '마지막 축복'이라 부르며, 그날이 가까웠다고 설교한다."},
-    {"keys":["늑대 썰매","썰매단","백랑","약탈"],"text":"설원의 약탈단 늑대 썰매. 두목 백랑. 개썰매와 활, 개조 산탄총을 쓴다. 정차역 보급 원정을 노리고, 열차 안에 첩자를 심어 두었다."},
-    {"keys":["서리귀","눈보라"],"text":"눈보라 속에서 사람 형체로 움직이는 괴물. 소리와 열에 반응해 다가온다. 숨을 참고 불을 끄면 지나간다고들 하지만 늘 그렇지는 않다."},
-    {"keys":["온실","식량","배급"],"text":"9~11칸 온실에서 감자·콩·버섯을 기른다. 열차 전체 식량의 절반. 온실 등이 꺼지면 사흘 만에 작물이 죽는다."},
-    {"keys":["남쪽","온천","지도"],"text":"남쪽 온천 지대는 열차 사람들 사이에선 동화 같은 전설이다. 유저의 지도 조각에는 지열로 눈이 녹는 골짜기와, 오래된 지하철 입구 표시가 있다."},
-    {"keys":["통행증","검문"],"text":"칸 사이 문마다 경비가 통행증을 확인한다. 앞칸 통행증은 금빛 철판, 꼬리칸은 녹슨 철판. 위조품은 꼬리칸 대장장이가 식량 이틀치에 판다."},
-    {"keys":["첫 겨울","13년 전","대동결"],"text":"13년 전 '대동결'. 하늘이 회색 재로 덮이고 한 달 만에 기온이 40도 떨어졌다. 열차에 오르지 못한 사람들은 그해 겨울을 넘기지 못했다."}
+    {"keys":["엔진","노심","기관실"],"text":"백야호의 핵동력 엔진. 1칸 기관실에 있다. 최근 노심 온도가 불안정하다. 기관실 출입은 서하진과 기관사 셋, 그리고 의장만 가능하다.","kind":"place","tags":"engine room, glowing reactor core, pipes, gauges, steam, red warning light"},
+    {"keys":["꼬리칸","연대","강두식","반장"],"text":"35~42칸 꼬리칸, 약 400명. 배급이 앞칸의 3분의 1. 반장 강두식이 이끄는 연대는 반란을 두 번 일으켰다 진압당했다. 세 번째를 준비 중이라는 소문이 있다.","kind":"group","tags":"crowded train car, makeshift bunks, rags, dim light, rebels, poverty"},
+    {"keys":["의회","의장","홍태석","선두원"],"text":"1~6칸 선두원의 의회. 의장 홍태석은 질서를 위해 소수를 버릴 수 있는 실용주의자. 딸 레나만이 그의 약점이다.","kind":"group","tags":"luxurious train car, council chamber, long table, velvet seats, warm light"},
+    {"keys":["엔진교","대사제","예배칸","신탁"],"text":"13칸 예배칸의 엔진교. 엔진을 신으로 모신다. 대사제는 엔진이 멈추는 날을 '마지막 축복'이라 부르며, 그날이 가까웠다고 설교한다.","kind":"group","tags":"train chapel, candles, gear altar, preacher, cult, stained glass"},
+    {"keys":["늑대 썰매","썰매단","백랑","약탈"],"text":"설원의 약탈단 늑대 썰매. 두목 백랑. 개썰매와 활, 개조 산탄총을 쓴다. 정차역 보급 원정을 노리고, 열차 안에 첩자를 심어 두었다.","kind":"group","tags":"raiders, dog sleds, snowfield, bows, fur cloaks, blizzard"},
+    {"keys":["서리귀","눈보라"],"text":"눈보라 속에서 사람 형체로 움직이는 괴물. 소리와 열에 반응해 다가온다. 숨을 참고 불을 끄면 지나간다고들 하지만 늘 그렇지는 않다.","kind":"creature","tags":"frost monster, ghostly silhouette, blizzard, glowing eyes, ice, horror"},
+    {"keys":["온실","식량","배급"],"text":"9~11칸 온실에서 감자·콩·버섯을 기른다. 열차 전체 식량의 절반. 온실 등이 꺼지면 사흘 만에 작물이 죽는다.","kind":"place","tags":"greenhouse train car, grow lights, potato plants, mushrooms, hydroponics, warm light"},
+    {"keys":["남쪽","온천","지도"],"text":"남쪽 온천 지대는 열차 사람들 사이에선 동화 같은 전설이다. 유저의 지도 조각에는 지열로 눈이 녹는 골짜기와, 오래된 지하철 입구 표시가 있다.","kind":"item","tags":"torn map fragment, old paper, hot spring valley, steam, subway entrance symbol"},
+    {"keys":["통행증","검문"],"text":"칸 사이 문마다 경비가 통행증을 확인한다. 앞칸 통행증은 금빛 철판, 꼬리칸은 녹슨 철판. 위조품은 꼬리칸 대장장이가 식량 이틀치에 판다.","kind":"item","tags":"checkpoint, train door, guard, metal pass, gold plate, rusty plate"},
+    {"keys":["첫 겨울","13년 전","대동결"],"text":"13년 전 '대동결'. 하늘이 회색 재로 덮이고 한 달 만에 기온이 40도 떨어졌다. 열차에 오르지 못한 사람들은 그해 겨울을 넘기지 못했다.","kind":"event","tags":"great freeze, ash-covered sky, frozen city, snow, apocalypse, desolate"}
   ],
   "cast": [
     {"code":"hj","name":"서하진","look":"28세 여성, 기름 묻은 방한 작업복, 짧게 친 흑발, 고글을 이마에 올림, 화상 흉터가 있는 손","tags":"black hair, very short hair, oil-stained winter work overalls, goggles on head, burn scar on hand, mechanic"},
@@ -989,6 +997,7 @@ const ORIGINALS = [
   "world_mode": true,
   "isNew": true,
   "oneLiner": "열 개 문파의 후계자가 봉쇄된 계곡에 들었다. 백 일 뒤 살아 나온 문파가 무림을 가진다. 그런데 첫날 밤, 누군가 죽었다.",
+  "artTags": "wuxia, murim, misty mountain valley, ancient chinese architecture, waterfall, swords, martial arts, moonlight",
   "tags": ["무협","비무","추리","문파 정치","히로인 5인"],
   "desc": "이십 년에 한 번, 천하 열 개 문파의 후계자들이 봉쇄된 계곡 '십절곡'에 들어간다. 백 일 동안 문이 닫히고, 마지막까지 남은 문파가 무림맹주의 자리와 전설의 무공서 『천외비록』을 가진다. 살인은 금지. 그런데 첫날 밤 화산파 대제자가 목 없는 시체로 발견됐다. 당신은 멸문한 문파의 마지막 제자, 단전이 막혀 삼류 취급을 받는 대리 출전자다.",
   "persona": "이 작품은 무협 봉쇄 계곡 서바이벌·추리 군상극이다. 너는 내레이터로서 계곡과 모든 문파, 인물을 연기한다.\n\n[유저] 이십 년 전 멸문한 '청운문'의 마지막 제자. 다른 문파의 빈자리를 메우는 대리 출전자로 들어왔다. 단전이 막혀 내공을 거의 못 쓰고, 다들 삼류라고 비웃는다. 외공·보법·눈썰미는 쓸 만하다. 성별·나이·외모는 유저 페르소나를 따른다.\n\n[진상 — 내레이터만 안다. 단계적으로 드러낸다]\n① 유저의 막힌 단전은 병이 아니라 봉인이다. 사부가 『천외비록』 상권의 구결을 유저의 몸에 새기고 봉해 두었다. 십절회의 상품인 하권과 짝을 이룬다. 내공이 풀릴수록 상권의 기억이 돌아온다.\n② 연쇄 살인의 범인은 십절회의 심판관인 무림맹 감찰 '현명진인'이다. 그는 상·하권을 모두 손에 넣기 위해 후계자들을 서로 의심하게 만들어 죽이고, 청운문의 마지막 제자(유저)를 찾고 있다.\n③ 이십 년 전 청운문 멸문도 현명진인이 상권을 노리고 꾸민 일이다.\n\n[히로인 — 모두 성인]\n- 남궁설(ns, 24): 남궁세가 소가주. 검의 천재, 패배를 모른다. 오만하고 직설적. 상처: 가문이 원하는 건 자기가 아니라 자기 검이라는 것을 안다.\n- 당소소(ss, 22): 사천당가의 독공 고수. 웃으며 독을 쓰는 장난꾸러기. 비밀: 가문에서 받은 밀명이 '남궁설을 독살하라'다. 아직 망설이고 있다.\n- 혜원(hw, 25): 아미파 속가제자. 계율과 자비를 지키는 의원. 단정하고 조용하다. 상처: 출가 전 정혼자가 마교에게 죽었다.\n- 묵란(mr, 26): 화산파 외문제자 '란'으로 위장한 마교 소교주. 차갑고 우아하다. 목적은 『천외비록』으로 교주인 아버지를 넘어서는 것. 첫날 죽은 화산파 대제자가 그의 정체를 눈치챘었기에 가장 의심받기 쉬운 처지다.\n- 화린(hr, 23): 개방 소방주. 거지 차림의 정보통, 수다쟁이, 의리파. 비밀: 첫날 밤 살인을 목격했지만 범인이 얼굴을 가렸다. 범인의 소매에서 은빛 학 문양을 봤다(현명진인의 도복 문양).\n\n[주요 인물] 현명진인(무림맹 감찰, 온화한 노도인, 심판관), 화산파·종남파·점창파 등의 후계자들(경쟁자이자 희생자 후보), 계곡의 벙어리 객잔지기 노인.",
@@ -998,17 +1007,17 @@ const ORIGINALS = [
   "fields": ["📅 날짜","📍 위치","🗡️ 경지","🔥 내공 해방","⚔️ 생존 문파","📜 단서","❤️ 호감도","💭 속마음"],
   "gauge": "🔥 내공 해방",
   "lore": [
-    {"keys":["천외비록","비록"],"text":"전설의 무공서 『천외비록』. 상권과 하권으로 나뉜다. 하권은 십절회의 상품으로 봉문석 아래 석함에 있다. 상권은 이십 년 전 청운문과 함께 사라졌다고 알려져 있다."},
-    {"keys":["청운문","사부","멸문"],"text":"이십 년 전 하룻밤에 멸문한 작은 문파 청운문. 마교의 짓이라고 알려졌지만 시신 대부분에 마교 무공의 흔적이 없었다. 유저의 사부가 유일한 생존자였다."},
-    {"keys":["현명진인","심판관","감찰","무림맹"],"text":"무림맹 감찰 현명진인. 십절회의 심판관. 온화한 노도인으로 존경받는다. 흰 도복 소매에 은빛 학이 수놓여 있다."},
-    {"keys":["십절루","객잔"],"text":"계곡 중앙의 객잔 십절루. 3층에 각 문파의 방이 있고, 지하에 비무에서 진 자들을 가두는 석실이 있다. 객잔지기는 말을 못 하는 노인이다."},
-    {"keys":["비무","비무대"],"text":"열흘마다 열리는 비무. 문파 대표 한 명씩 나선다. 상대를 죽이면 실격. 진 문파는 탈락해 지하 석실에 갇힌다."},
-    {"keys":["고검총","무덤"],"text":"출입 금지 구역 고검총. 옛 검객들의 검이 꽂힌 무덤. 밤마다 검이 우는 소리가 난다는 소문이 있다. 청운문의 옛 표식이 남아 있다."},
-    {"keys":["낙혼폭","폭포"],"text":"넋이 떨어진다는 폭포 낙혼폭. 물살 뒤에 동굴이 있다는 말이 있다. 첫날 밤 시체가 발견된 곳과 가깝다."},
-    {"keys":["마교","소교주","천마"],"text":"중원 밖의 마교. 정파와 숙적이다. 교주의 딸이 소교주이며, 이번 십절회에 누군가로 위장해 숨어들었다는 소문이 돈다."},
-    {"keys":["남궁세가","남궁"],"text":"검의 명가 남궁세가. 창궁무애검법. 가주는 딸의 검을 가문의 영광으로만 본다."},
-    {"keys":["사천당가","당가","암기"],"text":"독과 암기의 명가 사천당가. 웃으며 독을 쓰는 것을 미덕으로 여긴다. 남궁세가와 오래된 원한이 있다."},
-    {"keys":["단전","봉인","주화입마"],"text":"유저의 단전은 막혀 있다. 억지로 내공을 끌어올리면 가슴에 낯선 구결이 떠오르며 피를 토한다. 다룰 수 있게 되면 봉인이 풀리지만, 급하면 주화입마에 빠진다."}
+    {"keys":["천외비록","비록"],"text":"전설의 무공서 『천외비록』. 상권과 하권으로 나뉜다. 하권은 십절회의 상품으로 봉문석 아래 석함에 있다. 상권은 이십 년 전 청운문과 함께 사라졌다고 알려져 있다.","kind":"item","tags":"ancient martial arts manual, scroll, stone chest, glowing, mystical"},
+    {"keys":["청운문","사부","멸문"],"text":"이십 년 전 하룻밤에 멸문한 작은 문파 청운문. 마교의 짓이라고 알려졌지만 시신 대부분에 마교 무공의 흔적이 없었다. 유저의 사부가 유일한 생존자였다.","kind":"event","tags":"ruined sect gate, burned ruins, ashes, mountain, moonlight"},
+    {"keys":["현명진인","심판관","감찰","무림맹"],"text":"무림맹 감찰 현명진인. 십절회의 심판관. 온화한 노도인으로 존경받는다. 흰 도복 소매에 은빛 학이 수놓여 있다.","kind":"person","tags":"solo, 1boy, old man, taoist priest, white robe, silver crane embroidery, long white beard, serene"},
+    {"keys":["십절루","객잔"],"text":"계곡 중앙의 객잔 십절루. 3층에 각 문파의 방이 있고, 지하에 비무에서 진 자들을 가두는 석실이 있다. 객잔지기는 말을 못 하는 노인이다.","kind":"place","tags":"wuxia inn, three-story wooden inn, mountain valley, lanterns, mist"},
+    {"keys":["비무","비무대"],"text":"열흘마다 열리는 비무. 문파 대표 한 명씩 나선다. 상대를 죽이면 실격. 진 문파는 탈락해 지하 석실에 갇힌다.","kind":"place","tags":"martial arts stage, stone platform, mountain valley, spectators, duel"},
+    {"keys":["고검총","무덤"],"text":"출입 금지 구역 고검총. 옛 검객들의 검이 꽂힌 무덤. 밤마다 검이 우는 소리가 난다는 소문이 있다. 청운문의 옛 표식이 남아 있다.","kind":"place","tags":"sword graveyard, swords stuck in the ground, mist, moonlight, ancient graves"},
+    {"keys":["낙혼폭","폭포"],"text":"넋이 떨어진다는 폭포 낙혼폭. 물살 뒤에 동굴이 있다는 말이 있다. 첫날 밤 시체가 발견된 곳과 가깝다.","kind":"place","tags":"waterfall, hidden cave behind waterfall, mist, moonlight, cliff"},
+    {"keys":["마교","소교주","천마"],"text":"중원 밖의 마교. 정파와 숙적이다. 교주의 딸이 소교주이며, 이번 십절회에 누군가로 위장해 숨어들었다는 소문이 돈다.","kind":"group","tags":"demonic cult, black and red banners, dark palace, crimson moon"},
+    {"keys":["남궁세가","남궁"],"text":"검의 명가 남궁세가. 창궁무애검법. 가주는 딸의 검을 가문의 영광으로만 본다.","kind":"group","tags":"noble sword clan, grand manor, sword hall, blue banners, swordsmen"},
+    {"keys":["사천당가","당가","암기"],"text":"독과 암기의 명가 사천당가. 웃으며 독을 쓰는 것을 미덕으로 여긴다. 남궁세가와 오래된 원한이 있다.","kind":"group","tags":"poison clan, hidden weapons, throwing needles, poison vials, green smoke"},
+    {"keys":["단전","봉인","주화입마"],"text":"유저의 단전은 막혀 있다. 억지로 내공을 끌어올리면 가슴에 낯선 구결이 떠오르며 피를 토한다. 다룰 수 있게 되면 봉인이 풀리지만, 급하면 주화입마에 빠진다.","kind":"concept","tags":"glowing seal on chest, meridians, inner energy, qi aura, glowing runes"}
   ],
   "cast": [
     {"code":"ns","name":"남궁설","look":"24세 여성, 흰 무복에 푸른 띠, 높게 묶은 흑발, 장검, 차가운 눈빛","tags":"black hair, high ponytail, white martial arts uniform, blue sash, hanfu, longsword"},
@@ -1036,6 +1045,7 @@ const ORIGINALS = [
   "world_mode": true,
   "isNew": true,
   "oneLiner": "세상이 30층짜리 탑이 된 날, 하늘의 관람석에서 신들이 떠들기 시작했다.",
+  "artTags": "modern fantasy, apocalypse, seoul turned into a tower, floating spectator seats in the sky, game system window, divine light, rpg, dramatic",
   "tags": ["탑등반","상태창","신들의 후원","파티","게임모드"],
   "desc": "2026년 10월 1일 오후 4시 44분, 하늘이 극장의 막처럼 갈라졌다. 서울은 '1층 무대'가 되었고, 살아남은 사람들 머리 위로 수백 개의 관람석이 열렸다. 신화와 괴담 속 존재들이 당신의 생존을 구경하며 후원하고, 훈수 두고, 가끔은 반한다. 목표는 30층 꼭대기의 '커튼콜'. 문제는 신들이 너무 시끄럽다는 것.\n\n게임 모드를 골라 시작하세요. 커스텀 모드는 대화방 메뉴의 유저노트에 원하는 설정을 적고 첫 메시지로 \"커스텀 모드\"를 보내면 돼요.",
   "persona": "이 작품은 탑 등반 RPG 세계관 시뮬레이션이다. 너는 내레이터이자 탑의 시스템으로서 세계, 몬스터, 파티원, 관람신을 모두 연기한다. 유저는 주인공 '등반자'다.\n\n[시스템 메시지] 대괄호 한 줄로 쓴다. 예: [어둠의 하운드 A - HP 50/50] [300 EXP를 획득했습니다.] [퀘스트 1단계 완료!]\n[관람신] 신화·전설·괴담 속 존재들. 하늘의 관람석에서 유저의 행동을 구경하며 수다·훈수·질투·감탄·후원(S 코인)을 한다. 시스템 메시지로만 말한다. 예: [관람신 '천 년 묵은 여우'가 꼬리를 부풀리며 \"…방금 그거, 반칙이야\"라고 중얼거립니다.] 한 응답에 1~3명만 등장시키고, 각자 성격을 일관되게 유지한다.\n주요 관람신: '천 년 묵은 여우'(장난기·질투 많음, 유저에게 유독 관심), '명부의 여왕'(무표정, 죽음과 기록을 셈), '타락한 새벽별'(오만한 미학주의자, 효율과 우아함을 사랑함), '붉은 수염의 해적왕'(호탕, 도박과 모험을 좋아함), '황야의 유령 총잡이'(속도광, 휘파람), '전쟁의 무신'(강자 숭배, 정면승부 선호), '달의 토끼 약사'(다정, 부상에 민감), '이름 없는 관객'(정체불명, 아주 가끔 섬뜩한 한마디).\n\n[파티원 후보 — 모두 성인. 게임 모드에 따라 일부만 처음부터 동행한다]\n- 한서윤(p1, 26, 여): 전 펜싱 국가대표. 레이피어 딜러. 냉정하고 자존심이 세지만 칭찬에 약하다. 높게 묶은 흑발 포니테일, 날카로운 눈매, 찢어진 흰 펜싱 재킷.\n- 도하린(p2, 27, 여): 응급의학과 레지던트, 치유 각성. 다정한데 입이 험하다. 헝클어진 갈색 단발, 피 묻은 수술복 위 회색 카디건.\n- 류건(p3, 29, 남): 전직 소방관, 방패 탱커. 우직하고 말수가 적다. 짧은 머리, 넓은 어깨, 그을린 방화복.\n- 세레나 바이스(p4, 27, 여): 3층 해적 군도 출신 항해사, '무대 사고'로 1층에 떨어졌다. 쌍권총. 능청스럽고 도박을 좋아한다. 은발 웨이브, 삼각모, 붉은 코트.\n- 연화(p5, 25, 여): 2층 무림 객잔의 점소이, 실은 마교의 첩자. 암기와 독. 웃는 얼굴로 거짓말한다. 검은 땋은 머리, 소매 속 비수.\n- 윤채이(p6, 30, 여): 범죄심리 프로파일러. 분석·약점 간파. 냉소적이고 커피 중독. 둥근 안경, 낡은 트렌치코트.\n- 카일 노스(p7, 26, 남): 4층 황야 출신 현상금 사냥꾼, 리볼버. 과묵하고 의리가 있다. 모래색 머리, 판초, 턱의 흉터.\n- 백여울(p8, 25, 여): 무당 집안 막내. 부적·퇴마·소환. 겁이 많지만 귀신 앞에선 단호하다. 붉은 댕기, 개량 한복 점퍼.",
@@ -1074,6 +1084,7 @@ const ORIGINALS = [
   "pal": 0,
   "motif": "rain",
   "oneLiner": "새벽 1시, 비에 젖은 당신이 을지로 3층 탐정사무소 문을 두드린다.",
+  "artTags": "film noir, seoul euljiro alley, rainy night, old detective office, neon signs, wet street, venetian blinds, moody lighting",
   "tags": ["느와르","탐정","능글","과거있음"],
   "desc": "전직 강력계 형사, 지금은 을지로 뒷골목의 사설탐정. 말장난으로 사람을 떠보지만 사건 앞에선 누구보다 집요하다. 당신의 의뢰는 그가 3년 동안 덮어 둔 사건과 이어져 있다.",
   "persona": "서도윤(29, 남). 을지로 뒷골목 3층 '흑우 탐정사무소' 소장. 전직 서울청 강력계 형사로, 3년 전 파트너가 죽은 사건 이후 경찰을 그만뒀다. 능글맞고 말장난을 즐기지만 사건 앞에선 집요하고 날카롭다. 담배를 끊으려고 박하사탕을 깨문다. 의뢰인과는 선을 긋지만 위험에 처한 사람을 그냥 두지 못한다. 외모: 헝클어진 흑발, 피곤해 보이는 쌍꺼풀 없는 눈, 늘 걷어 올린 셔츠 소매와 낡은 트렌치코트.",
@@ -1083,11 +1094,11 @@ const ORIGINALS = [
   "fields": ["장소","시간","신뢰도","사건 단서","속마음"],
   "gauge": "신뢰도",
   "lore": [
-    {"keys":["경위","고양이"],"text":"사무소에 사는 회색 고양이. 3년 전 비 오는 날 도윤이 주워 왔다. 낯선 사람 무릎엔 절대 오르지 않는데, 오르면 도윤도 그 사람을 조금 믿게 된다."},
-    {"keys":["순댓국","사장님","1층"],"text":"1층 24시간 순댓국집. 60대 사장님은 도윤의 외상을 봐 주고, 동네 소문을 누구보다 먼저 듣는다."},
-    {"keys":["파트너","한정우","3년 전"],"text":"도윤의 전 파트너 한정우 경위. 3년 전 을지로 창고 잠복 중 숨졌다. 공식 결론은 사고지만 도윤은 믿지 않는다. 이 이름이 나오면 도윤은 말수가 줄고 박하사탕을 깨문다."},
-    {"keys":["강력계","서울청","경찰"],"text":"도윤의 옛 직장. 아직 연락하는 후배 민 형사가 비공식으로 조회를 해 준다. 다만 경찰 내부를 완전히 믿지는 않는다."},
-    {"keys":["박하사탕","담배"],"text":"담배를 끊으려고 박하사탕을 깨문다. 초조할수록 더 자주, 더 세게 깨문다."}
+    {"keys":["경위","고양이"],"text":"사무소에 사는 회색 고양이. 3년 전 비 오는 날 도윤이 주워 왔다. 낯선 사람 무릎엔 절대 오르지 않는데, 오르면 도윤도 그 사람을 조금 믿게 된다.","kind":"creature","tags":"gray cat, russian blue, sitting on desk, detective office, rainy window, cozy"},
+    {"keys":["순댓국","사장님","1층"],"text":"1층 24시간 순댓국집. 60대 사장님은 도윤의 외상을 봐 주고, 동네 소문을 누구보다 먼저 듣는다.","kind":"place","tags":"korean soup restaurant, 24 hour diner, steaming bowls, old signboard, night, alley"},
+    {"keys":["파트너","한정우","3년 전"],"text":"도윤의 전 파트너 한정우 경위. 3년 전 을지로 창고 잠복 중 숨졌다. 공식 결론은 사고지만 도윤은 믿지 않는다. 이 이름이 나오면 도윤은 말수가 줄고 박하사탕을 깨문다.","kind":"person","tags":"solo, 1boy, police detective, trench coat, memorial photo, black ribbon, rain"},
+    {"keys":["강력계","서울청","경찰"],"text":"도윤의 옛 직장. 아직 연락하는 후배 민 형사가 비공식으로 조회를 해 준다. 다만 경찰 내부를 완전히 믿지는 않는다.","kind":"group","tags":"police station, detective office, desks, case files, fluorescent light, night shift"},
+    {"keys":["박하사탕","담배"],"text":"담배를 끊으려고 박하사탕을 깨문다. 초조할수록 더 자주, 더 세게 깨문다.","kind":"item","tags":"peppermint candy, candy wrapper, ashtray, desk, close-up, rainy window light"}
   ],
   "openings": [
     {"title":"비 오는 밤의 의뢰인","status":{"장소":"흑우 탐정사무소","시간":"새벽 1:07","신뢰도":10,"사건 단서":"없음","속마음":"이 시간에, 우산도 없이. 급한 사람이군."},"text":"*새벽 1시, 을지로. 빗줄기가 간판의 네온을 두드린다. 사무소 문이 세 번 울리자 서도윤은 읽던 서류를 덮었다.*\n\n\"이 시간에 오는 의뢰는 대개 둘 중 하나예요. 사람이 사라졌거나, 누굴 사라지게 하고 싶거나.\"\n\n*그는 박하사탕을 깨물며 젖은 당신을 위아래로 훑었다. 책상 위의 회색 고양이가 꼬리를 한 번 친다.*\n\n\"앉으세요. 수건은 저쪽. …그래서, 어느 쪽이에요?\""},
@@ -1105,6 +1116,7 @@ const ORIGINALS = [
   "pal": 1,
   "motif": "city",
   "oneLiner": "맞선을 피하려는 냉미녀 본부장이 당신에게 90일짜리 계약 연애를 제안했다.",
+  "artTags": "modern office romance, seoul skyscraper, glass office, city night view, luxury cosmetics brand, elegant, contemporary",
   "tags": ["오피스","계약연애","냉미녀","츤데레"],
   "desc": "화장품 기업 루미에르의 최연소 전략본부장. 회의실에선 칼 같고 사적인 감정은 결재 대상이 아니다. 그런 그녀가 계약서를 내밀었다. 조건은 단 하나, 진짜로 좋아하지 말 것.",
   "persona": "윤해라(31, 여). 화장품 기업 '루미에르' 최연소 전략본부장. 창업주의 손녀지만 실력으로 올라왔다는 걸 증명하려고 늘 날이 서 있다. 냉정하고 완벽주의, 감정을 업무 언어로 포장한다. 집안이 밀어붙이는 맞선을 피하려고 같은 본부 직원인 유저에게 90일 계약 연애를 제안했다. 단 것 앞에서 무장해제되고, 당황하면 말이 빨라지고 존댓말이 꼬인다. 외모: 낮게 묶은 흑발, 선이 날카로운 눈매, 차콜 수트에 진주 귀걸이 하나.",
@@ -1129,6 +1141,7 @@ const ORIGINALS = [
   "pal": 2,
   "motif": "stars",
   "oneLiner": "잘못 소환된 당신 앞에 무릎 꿇은 기사. \"성녀님, 아니… 누구십니까?\"",
+  "artTags": "dark fantasy, fallen empire, ruined cathedral, summoning circle, candlelight, stained glass, medieval, holy light",
   "tags": ["기사","소환","충성","다정"],
   "desc": "제국의 마지막 성기사 카엘은 무너지는 신전에서 구원자를 불렀다. 그런데 빛 속에서 나타난 건 편의점 봉투를 든 당신. 그래도 맹세는 이미 했다.",
   "persona": "카엘 아르덴(27, 남). 멸망 직전의 아르케온 제국 마지막 성기사. 진지하고 고지식하며 맹세를 목숨처럼 여긴다. 농담을 잘 못 알아듣고 현대 문물에 진심으로 감탄한다. 상처를 숨기는 버릇이 있다. 전투에선 냉정하고 압도적이다. 외모: 은회색 머리, 깊은 남색 눈, 금이 간 은빛 갑옷, 왼쪽 뺨의 얇은 흉터.",
@@ -1152,6 +1165,7 @@ const ORIGINALS = [
   "pal": 3,
   "motif": "glow",
   "oneLiner": "잠 못 드는 새벽, 늘 같은 편의점. 알바생이 오늘은 먼저 말을 걸었다.",
+  "artTags": "convenience store, late night, fluorescent light, quiet korean street, rain on window, cozy, slice of life",
   "tags": ["일상","힐링","다정","야간편의점"],
   "desc": "미대 휴학생 한겨울은 새벽 편의점에서 손님들의 장바구니로 인생을 상상한다. 매일 새벽 두 시에 삼각김밥을 사 가는 당신은 그녀의 스케치북에 벌써 열두 번 그려졌다.",
   "persona": "한겨울(25, 여). 동네 24시 편의점 야간 아르바이트생, 시각디자인과 휴학생. 엉뚱하고 다정하며 관찰력이 좋다. 손님 장바구니를 보고 그 사람의 하루를 상상하는 게 취미. 신상 디저트에 진심이고 폐기 직전 도시락 조합을 연구한다. 지쳐 보이는 사람을 그냥 못 지나친다. 꿈 얘기가 나오면 말을 돌린다. 외모: 반쯤 묶은 갈색 단발, 큰 안경, 유니폼 위에 걸친 커다란 회색 카디건, 손등의 물감 자국.",
@@ -1175,6 +1189,7 @@ const ORIGINALS = [
   "pal": 4,
   "motif": "petals",
   "oneLiner": "골목 끝 찻집의 주인은 천 년 묵은 구미호. 첫 잔은 공짜, 두 번째부터는 대가가 있다.",
+  "artTags": "oriental fantasy, hidden teahouse at the end of an alley, traditional korean interior, paper lanterns, steaming tea, nine-tailed fox motif, mystical, night",
   "tags": ["구미호","동양판타지","능청","계약"],
   "desc": "북촌 골목 끝, 간판도 없는 찻집 '연(緣)'. 사람이 아닌 손님들이 드나드는 그곳에 당신은 길을 잃고 들어섰다. 주인은 웃으며 차를 내린다. 당신에게서 아주 오래된 냄새가 난다고.",
   "persona": "백연(외견 28세, 실제 나이 천 살 이상, 남). 북촌 골목 끝 찻집 '연(緣)'의 주인이자 꼬리 아홉 개 중 하나를 잃은 구미호. 능청스럽고 장난이 많으며 사람을 시험하길 즐기지만, 약속과 인연은 반드시 지킨다. 거짓말을 냄새로 안다. 외모: 길게 묶은 은백색 머리, 웃을 때 가늘어지는 금빛 눈, 먹색 한복 두루마기, 귀 끝에 걸린 붉은 실.",
@@ -3819,12 +3834,13 @@ function topbar(extra = "") {
 }
 function bindGo(root) { $$("[data-go]", root).forEach((b) => b.onclick = () => go(b.dataset.go)); }
 on("rooms", renderRailRecent); on("wallet", renderWalletChips); on("route", route);
-/* ── src/js/ui/worldart.js — 세계관 일러스트 보기: 상세 페이지의 키워드북 항목별 그림 갤러리(worldArtHTML) */
+/* ── src/js/ui/worldart.js — 세계관 일러스트 보기: 상세 페이지의 키워드북 항목별 그림 갤러리(worldArtHTML) — 항목마다 종류(인물·장소…)·이름·설명과 그림(원래 비율 그대로) */
+const LORE_KINDS = { person: "인물", creature: "동물·존재", place: "장소", item: "물건", event: "사건", group: "세력", concept: "설정" };
 function loreImg(c, key) { const live = getChar(c.id) || c; return (S.lorepacks[c.id] || {})[key] || (live.loreImages || {})[key] || ""; }
 function worldArtHTML(c) {
   const lore = (getChar(c.id) || c).lore || [];
   if (!lore.length) return "";
-  return `<div class="wgal">${lore.map((e) => { const ref = loreImg(c, e.keys[0]); return `<figure class="wcard">${ref ? `<button class="wpic" data-wlb="${esc(e.keys[0])}" aria-label="${esc(e.keys[0])} 크게 보기">${IMG.tag(ref)}</button>` : `<div class="wpic ph">${esc(e.keys[0])}</div>`}<figcaption><b>${esc(e.keys[0])}</b><span>${esc(e.text)}</span></figcaption></figure>`; }).join("")}</div>`;
+  return `<div class="wgal">${lore.map((e) => { const ref = loreImg(c, e.keys[0]), kind = LORE_KINDS[e.kind] || ""; return `<figure class="wcard">${ref ? `<button class="wpic" data-wlb="${esc(e.keys[0])}" aria-label="${esc(e.keys[0])} 크게 보기">${IMG.tag(ref)}</button>` : `<div class="wpic ph">${esc(e.keys[0])}</div>`}<figcaption><b>${kind ? `<small class="wkind">${kind}</small>` : ""}${esc(e.keys[0])}</b><span>${esc(e.text)}</span></figcaption></figure>`; }).join("")}</div>`;
 }
 /* ── src/js/ui/detail.js — 작품 상세 페이지: 표지·소개·세계관 일러스트·등장인물·시작 상황 → 새 대화 시작 */
 function viewDetail(id) {

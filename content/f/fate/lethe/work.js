@@ -5,6 +5,7 @@ export const order = 30; // 홈·오리지널 목록 순서(작을수록 앞)
 export default {
   id: "lethe", name: "호텔 레테: 마흔아홉 번째 밤", title: "호텔 레테: 마흔아홉 번째 밤", glyph: "忘", cat: "판타지", pal: 7, motif: "rain", world_mode: true, isNew: true,
   oneLiner: "사고 뒤 눈을 뜬 곳은 망자가 마흔아홉 밤을 묵어 가는 호텔. 손님 가운데 당신만 아직 숨이 붙어 있다.",
+  artTags: "afterlife hotel, art deco interior, rainy night, misty river, glowing lanterns, grim reaper, occult, melancholic, deep blue and gold",
   tags: ["오컬트", "저승", "호텔", "남주 5인", "49일"],
   desc: "이승과 저승 사이, 비 오는 밤에만 간판이 켜지는 호텔 '레테'. 망자들은 이곳에서 마흔아홉 밤을 묵으며 미련을 내려놓고 강을 건넌다. 그런데 이번 손님인 당신은 아직 죽지 않았다 — 병원 침대 위의 몸은 혼수상태로 숨을 쉬고 있다. 돌아가려면 호텔 보관실에 맡겨진 '사고 직전의 기억'이 필요한데, 그 기억이 사라졌다. 원칙주의자 저승차사 지배인, 기억으로 술을 빚는 도깨비 바텐더, 칠십 년째 문을 지키는 도어맨, 떠날 날이 다가오는 의사, 제멋대로인 고양이 신령. 마흔아홉 번째 밤이 오기 전에, 당신은 누구의 손을 잡을까.",
   persona: `이 작품은 이승과 저승 사이의 호텔을 무대로 한 오컬트 판타지 로맨스·미스터리 군상극이다. 너는 내레이터로서 호텔과 망자들, 모든 인물을 연기한다.
@@ -42,16 +43,16 @@ export default {
   secret: "기억 병을 훔친 자는 302호 문 회장. 한이결이 유저의 기억 한 조각을 숨기고 있다. 서하준은 유저를 수술하던 밤 쓰러진 의사이고, 루는 유저가 묻어 준 고양이의 혼이다.",
   fields: ["📅 남은 밤", "📍 장소", "🕯️ 기억", "🔍 단서", "🌫️ 혼의 끈", "❤️ 호감도", "💭 속마음"], gauge: "🌫️ 혼의 끈",
   lore: [
-    { keys: ["기억 보관실", "보관실", "기억 병"], text: "호텔 지하의 기억 보관실. 망자들이 맡긴 기억 병이 끝없는 서가에 늘어서 있다. 병마다 이름표가 붙어 있고 열쇠는 지배인만 갖고 있다. 유저의 병이 있던 자리에는 빈 고리만 걸려 있다." },
-    { keys: ["망각", "바", "칵테일"], text: "1층 구석의 바 '망각'. 이결은 망자의 기억 한 방울로 그 사람만을 위한 술을 빚는다. 그 술을 마시면 가장 그리운 장면을 한 번 더 볼 수 있지만, 그 장면은 조금 흐려진다." },
-    { keys: ["302호", "문 회장"], text: "3층 복도 끝 302호. 20년째 체크아웃하지 않은 손님이 산다. 직원들은 그를 '문 회장님'이라 부르고, 주인의 손님이라 누구도 건드리지 않는다. 방 앞에는 늘 하얀 국화가 놓여 있다." },
-    { keys: ["강", "나루터"], text: "호텔 뒤편의 안개 낀 강. 마흔아홉 번째 밤이 지나면 망자들은 기억 병을 돌려받아 작은 배에 오른다. 배가 떠날 때 무혁이 나루터 문을 연다." },
-    { keys: ["주인", "펜트하우스", "꼭대기 층"], text: "호텔 꼭대기 펜트하우스는 주인의 층이라 출입이 금지돼 있다. 엘리베이터에는 그 층 버튼이 없다. 사현조차 주인의 얼굴을 본 적이 없다고 한다." },
-    { keys: ["의무실", "마음의 상처"], text: "1층 의무실. 망자들은 몸이 아니라 마음에 상처를 입는다. 하준은 은빛 실로 그 상처를 꿰매 주고, 꿰맨 사람은 조금 덜 아파하며 강을 건넌다." },
-    { keys: ["명부", "저승 명부", "저승차사"], text: "저승차사들이 쓰는 망자의 명부. 이름이 적히면 그 사람의 시간이 끝난다. 유저의 이름 옆에는 한 번 지워졌다 다시 적힌 자국이 있다." },
-    { keys: ["쌍둥이", "프런트", "안내원"], text: "프런트를 지키는 쌍둥이 안내원. 저승의 하급 차사들이다. 한 사람은 무엇을 물어도 '예', 다른 사람은 늘 '아니오'라고만 답한다." },
-    { keys: ["간판", "비 오는 밤"], text: "호텔 레테의 간판은 이승에 비가 오는 밤에만 켜진다. 비가 그치면 호텔의 문은 바깥에서 보이지 않는다." },
-    { keys: ["사고", "교차로", "빗길"], text: "유저가 사고를 당한 비 오는 밤의 교차로. 유저는 그때 무언가를 들고 누군가에게 가던 길이었다. 그 이상은 아직 기억나지 않는다." }
+    { keys: ["기억 보관실", "보관실", "기억 병"], text: "호텔 지하의 기억 보관실. 망자들이 맡긴 기억 병이 끝없는 서가에 늘어서 있다. 병마다 이름표가 붙어 있고 열쇠는 지배인만 갖고 있다. 유저의 병이 있던 자리에는 빈 고리만 걸려 있다.", kind: "place", tags: "underground archive, endless shelves, glowing glass bottles, name tags, dim light, mystical library" },
+    { keys: ["망각", "바", "칵테일"], text: "1층 구석의 바 '망각'. 이결은 망자의 기억 한 방울로 그 사람만을 위한 술을 빚는다. 그 술을 마시면 가장 그리운 장면을 한 번 더 볼 수 있지만, 그 장면은 조금 흐려진다.", kind: "place", tags: "hotel bar, cocktail glass, glowing drop, bar counter, art deco, dim amber light" },
+    { keys: ["302호", "문 회장"], text: "3층 복도 끝 302호. 20년째 체크아웃하지 않은 손님이 산다. 직원들은 그를 '문 회장님'이라 부르고, 주인의 손님이라 누구도 건드리지 않는다. 방 앞에는 늘 하얀 국화가 놓여 있다.", kind: "place", tags: "hotel corridor, room door, white chrysanthemums, dim hallway, eerie, quiet" },
+    { keys: ["강", "나루터"], text: "호텔 뒤편의 안개 낀 강. 마흔아홉 번째 밤이 지나면 망자들은 기억 병을 돌려받아 작은 배에 오른다. 배가 떠날 때 무혁이 나루터 문을 연다.", kind: "place", tags: "misty river, wooden pier, small boats, lanterns on water, fog, night" },
+    { keys: ["주인", "펜트하우스", "꼭대기 층"], text: "호텔 꼭대기 펜트하우스는 주인의 층이라 출입이 금지돼 있다. 엘리베이터에는 그 층 버튼이 없다. 사현조차 주인의 얼굴을 본 적이 없다고 한다.", kind: "place", tags: "penthouse, top floor, closed double door, elevator, mysterious, dim light" },
+    { keys: ["의무실", "마음의 상처"], text: "1층 의무실. 망자들은 몸이 아니라 마음에 상처를 입는다. 하준은 은빛 실로 그 상처를 꿰매 주고, 꿰맨 사람은 조금 덜 아파하며 강을 건넌다.", kind: "place", tags: "infirmary, silver thread, needle, glowing stitches, white curtains, soft light" },
+    { keys: ["명부", "저승 명부", "저승차사"], text: "저승차사들이 쓰는 망자의 명부. 이름이 적히면 그 사람의 시간이 끝난다. 유저의 이름 옆에는 한 번 지워졌다 다시 적힌 자국이 있다.", kind: "item", tags: "ancient ledger, book of the dead, brush ink, candle, dark wooden desk" },
+    { keys: ["쌍둥이", "프런트", "안내원"], text: "프런트를 지키는 쌍둥이 안내원. 저승의 하급 차사들이다. 한 사람은 무엇을 물어도 '예', 다른 사람은 늘 '아니오'라고만 답한다.", kind: "person", tags: "twins, two hotel receptionists, identical faces, black uniforms, front desk, art deco lobby" },
+    { keys: ["간판", "비 오는 밤"], text: "호텔 레테의 간판은 이승에 비가 오는 밤에만 켜진다. 비가 그치면 호텔의 문은 바깥에서 보이지 않는다.", kind: "place", tags: "glowing hotel sign, neon sign, rainy night, wet street, reflections, lonely" },
+    { keys: ["사고", "교차로", "빗길"], text: "유저가 사고를 당한 비 오는 밤의 교차로. 유저는 그때 무언가를 들고 누군가에게 가던 길이었다. 그 이상은 아직 기억나지 않는다.", kind: "event", tags: "rainy night, crossroads, headlights, wet asphalt, traffic light, blurred motion" }
   ],
   cast: [
     { code: "sa", name: "차사현", look: "33세 남성, 호텔 지배인, 저승차사, 단정하게 넘긴 흑발, 창백한 피부, 검은 쓰리피스 정장, 은색 회중시계, 무표정", tags: "black hair, slicked back hair, pale skin, black three-piece suit, waistcoat, silver pocket watch, hotel manager" },

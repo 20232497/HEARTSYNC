@@ -1,4 +1,4 @@
-/* 상황 칸 편집: 추천 칸·목록으로 추가(표 붙여 넣기)·칸 고치기·코드 표 */
+/* 상황 칸(이미지 코드) 편집: 추천 칸·목록으로 추가(표 붙여 넣기)·칸 고치기 — 이미지 스튜디오(admin/image-studio.js)의 코드 목록 위에 겹쳐 뜸 */
 import { ageOK } from "../ai/adult.js";
 import { SIT } from "../core/constants.js";
 import { minorHint } from "../core/safety.js";
@@ -8,7 +8,7 @@ import { $, $$, esc, toast } from "../core/util.js";
 import { DIMS, DIM_NAMES, dimOf } from "../images/codes.js";
 import { ratingFieldHTML } from "../images/rating.js";
 import { genErr } from "../images/runware.js";
-import { CODE_MAX, CUSTOM_MAX, allCustom, codeDefs, dropSitImages, freeSitNum, sitDef } from "../images/situations.js";
+import { CODE_MAX, CUSTOM_MAX, allCustom, dropSitImages, freeSitNum } from "../images/situations.js";
 import { ICON } from "../ui/icons.js";
 
 /* 추천 칸 꾸러미: 기본 15칸·내장 코드에 없는 자주 쓰는 상황을 골라 한 번에 추가(태그는 영문, 추가한 뒤 '고치기'로 바꿀 수 있음).
@@ -162,26 +162,4 @@ export function sitEditor(def, after) {
     if (!del.dataset.sure) { del.dataset.sure = "1"; del.textContent = "모든 인물의 이 칸 그림도 지워져요. 한 번 더 누르면 삭제"; return; }
     S.settings.customSits = S.settings.customSits.filter((d) => d !== def); dropSitImages(def.n); saveSettings(); close(); after && after(); toast("칸을 지웠어요");
   };
-}
-/* 코드 표: 대화·슬롯에 쓰는 번호 전부(기본 0~14 · 직접 만든 칸 · 내장 코드)를 종류별로. 직접 만든 칸은 고치기, 내장 코드는 내 칸으로 덮어쓰기 */
-export function codeTableSheet(after) {
-  const ov = document.createElement("div"); ov.className = "overlay gen-ov";
-  const paint = () => {
-    const defs = codeDefs(), done = () => { paint(); after && after(); };
-    const row = (n, nameHTML, prompt, btn) => `<tr><td class="num">${n}</td><td><b>${nameHTML}</b></td><td class="note" style="white-space:normal">${esc(prompt)}</td><td>${btn}</td></tr>`;
-    const rows = (dim) => [
-      ...(dim === "act" ? SIT.map((s, i) => row(i, esc(s), "기본 칸", "")) : []),
-      ...defs.filter((d) => d.dim === dim).map((d) => row(d.n, esc(d.name) + (d.rating !== "safe" ? " 🔞" : "") + (d.builtin ? "" : d.adminOnly ? ' <span class="pill">관리자 전용</span>' : d.shipped ? ' <span class="pill">작품 폴더</span>' : ' <span class="pill">내 칸</span>'), d.prompt || "(설정대로)",
-        d.builtin ? `<button class="btn sm ghost" data-ov="${d.n}">덮어쓰기</button>` : `<button class="btn sm" data-ed="${d.n}">고치기</button>`))
-    ].join("");
-    ov.innerHTML = `<div class="sheet wide" role="dialog" aria-modal="true"><div class="sheet-head"><h2>이미지 코드 표</h2><button class="icon-btn" data-x aria-label="닫기">${ICON.close}</button></div>
-      <p class="sub" style="margin-top:0">대화 중 AI가 [[img:인물코드:번호]]에 쓰는 번호예요. 감정/행동 번호 뒤에 의상·장소 번호를 쉼표로 붙이면 조합(예: 3,404,501)이고, 400·500은 설정대로 되돌리기예요. 세미·성인 수위 코드는 성인 모드 대화방에서만 AI에게 알려 줘요.</p>
-      ${["act", "wear", "place"].map((dim) => `<h3 class="lbl" style="margin:12px 0 6px">${DIM_NAMES[dim]}</h3><table class="tbl code-tbl"><tbody>${rows(dim)}</tbody></table>`).join("")}
-      <div class="cta-row"><button class="btn sm" id="ctAdd">+ 칸 추가</button><span class="spacer"></span><button class="btn ghost" data-x>닫기</button></div></div>`;
-    $$("[data-ed]", ov).forEach((b) => b.onclick = () => sitEditor(sitDef(+b.dataset.ed), done));
-    $$("[data-ov]", ov).forEach((b) => b.onclick = () => sitEditor(DIMS[+b.dataset.ov], done));
-    $("#ctAdd", ov).onclick = () => sitEditor(null, done);
-  };
-  paint(); document.body.append(ov);
-  ov.addEventListener("click", (e) => { if (e.target === ov || e.target.closest("[data-x]")) ov.remove(); });
 }

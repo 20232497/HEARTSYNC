@@ -32,7 +32,7 @@ export const TARGETS = {
 /* 폴더 이름이 곧 작품의 aud(관심있는 대화) 값 */
 export const AUD_DIRS = { f: "여성향(남성 캐릭터와의 대화)", m: "남성향(여성 캐릭터와의 대화)", all: "전체(남녀가 섞임)" };
 /* 빌드 검사에 쓰는 앱 규칙 — src/js에서 같은 코드를 꺼내 쓴다(규칙이 두 군데로 갈라지지 않게) */
-const APP_RULES = ["SIT", "PALETTES", "MOTIFS", "CATS", "guessAud", "personaWho", "personaLook", "castLook", "minorFlags", "minorHint", "dimOf", "dimDef", "DIMS", "RESET", "MAX_ACT", "isReset", "parseCodes", "splitDims", "keyOf"];
+const APP_RULES = ["SIT", "PALETTES", "MOTIFS", "CATS", "guessAud", "personaWho", "personaLook", "castLook", "minorFlags", "minorHint", "dimOf", "dimDef", "DIMS", "RESET", "MAX_ACT", "isReset", "parseCodes", "splitDims", "keyOf", "LORE_KINDS"];
 /* 오래된 iOS(13 이하)·인앱 브라우저에서 문법 오류가 나는 것들 */
 const OLD_IOS = [[/\|\|=|&&=|\?\?=/, "논리 할당(||= &&= ??=)"], [/\.at\(/, "Array.at()"], [/\(\?<[=!]/, "정규식 lookbehind"],
   [/\bstructuredClone\b/, "structuredClone"], [/\.findLast(?:Index)?\(/, "findLast()"], [/\bObject\.hasOwn\(/, "Object.hasOwn()"]];
@@ -479,7 +479,14 @@ function checkWork(mod, { aud, row, id, wrel, R, errors, warnings }) {
   if (c.lookTags !== undefined && (typeof c.lookTags !== "string" || /[가-힣]/.test(c.lookTags))) e("lookTags는 영문 Danbooru 태그 글이어야 해요");
   if (c.lookTags !== undefined && c.cast !== undefined) w("cast가 있으면 lookTags는 쓰이지 않아요 — cast[].tags에 적어 주세요");
   if (c.lore !== undefined && (!Array.isArray(c.lore) || c.lore.some((x) => !isObj(x) || !Array.isArray(x.keys) || !x.keys.length || x.keys.some((k) => !str(k)) || !str(x.text) || (x.tags !== undefined && typeof x.tags !== "string"))))
-    e("lore(키워드북)는 [{ keys: [\"키워드\", …], text: \"설명\", tags?: \"영문 태그\" }, …]");
+    e("lore(키워드북)는 [{ keys: [\"키워드\", …], text: \"설명\", kind?: \"종류\", tags?: \"영문 태그\" }, …]");
+  else (c.lore || []).forEach((x, i) => {
+    // 세계관 일러스트: 종류(kind)는 상세 카드 머리표·AI 구도를 정하고, tags는 번역 없이 그대로 프롬프트에 들어가므로 영문만
+    if (x.kind !== undefined && !R.LORE_KINDS[x.kind]) e(`lore[${i}](${x.keys[0]}).kind("${x.kind}")는 ${Object.keys(R.LORE_KINDS).join("·")} 중 하나`);
+    if (typeof x.tags === "string" && /[가-힣]/.test(x.tags)) e(`lore[${i}](${x.keys[0]}).tags는 영문 태그 글이어야 해요(한국어 설명은 text에)`);
+    if (x.tags === undefined || x.kind === undefined) w(`lore[${i}](${x.keys[0]})에 kind·tags가 없어요 — 세계관 일러스트를 AI로 그릴 때 설명 글을 번역해 써요`);
+  });
+  if (c.artTags !== undefined && (typeof c.artTags !== "string" || /[가-힣]/.test(c.artTags))) e("artTags(세계관 태그)는 영문 태그 글이어야 해요 — 시대·장소·분위기 낱말");
   if (!Array.isArray(c.openings) || !c.openings.length) e("openings(시작 상황)가 하나 이상 있어야 해요");
   else c.openings.forEach((o, i) => {
     if (!isObj(o) || !str(o.title) || !str(o.text)) return e(`openings[${i}]: title·text가 있어야 해요`);

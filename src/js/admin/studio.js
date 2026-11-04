@@ -14,7 +14,7 @@ import { genImageSheet } from "./gen-sheet.js";
 import { cardHTML } from "../ui/home.js";
 import { confirmSheet } from "../ui/sheet.js";
 import { go, topbar } from "../ui/shell.js";
-import { openImageSlots } from "./slots.js";
+import { openImages } from "./image-studio.js";
 
 let draft = null;
 function blankDraft() {
@@ -79,7 +79,7 @@ export function viewStudio(id) {
         <h3>이미지 출연진</h3>
         <p class="note">대화 중 [[img:코드:번호]]로 불러올 인물이에요. 한 줄에 하나씩 <b>코드|이름|외모|영문 태그(선택)</b>. 영문 태그를 적으면 그림을 만들 때 외모 대신 그대로 써서 같은 생김새로 그려요. 비워 두면 캐릭터 이름 하나(c)로 만들어요.</p>
         <div class="field"><label for="f-cast" class="sr">이미지 출연진</label><textarea id="f-cast" maxlength="1200" placeholder="c|${esc(d.name || "캐릭터 이름")}|긴 흑발, 날카로운 눈매, 검은 코트">${esc(castText)}</textarea></div>
-        ${editing ? `<button class="btn sm" id="slots" style="margin-top:8px">이미지 슬롯 열기</button>` : `<p class="note" style="margin-top:6px">저장한 뒤 이미지 슬롯에서 상황별 이미지를 올릴 수 있어요.</p>`}
+        ${editing ? `<button class="btn sm" id="slots" style="margin-top:8px">이미지 스튜디오 열기</button>` : `<p class="note" style="margin-top:6px">저장한 뒤 이미지 스튜디오에서 감정·의상·장소별 그림을 만들 수 있어요.</p>`}
       </div>
       <div class="box">
         <h3>상태창</h3>
@@ -117,7 +117,7 @@ export function viewStudio(id) {
     genImageSheet({ title: "AI로 표지 만들기", aspect: "3:4", prompt: coverPrompt(d), ctx: { kind: "world", aud: audOf(d) },
       onUse: async (blob) => { collect(); d.img = await IMG.put(blob); viewStudio(id); toast("표지 이미지를 넣었어요"); } });
   };
-  const sl = $("#slots"); if (sl) sl.onclick = () => { const m = S.mine.find((x) => x.id === d.id); if (m) openImageSlots(m); };
+  const sl = $("#slots"); if (sl) sl.onclick = () => { const m = S.mine.find((x) => x.id === d.id); if (m) openImages(m); };
   $("#f-img").onchange = async (e) => { const f = e.target.files[0]; if (!f) return; collect(); toast("올리는 중…"); try { d.img = await IMG.put(f); viewStudio(id); } catch { toast("이미지를 읽지 못했어요. PNG·JPG로 다시 올려 주세요."); } };
   $("#aiGen").onclick = () => aiDraft(id);
   $("#saveChar").onclick = () => saveChar();

@@ -5,6 +5,7 @@ export const order = 60; // 홈·오리지널 목록 순서(작을수록 앞)
 export default {
   id: "sipjeol", name: "십절곡: 백 일의 봉문", title: "십절곡: 백 일의 봉문", glyph: "劍", cat: "판타지", pal: 4, motif: "petals", world_mode: true, isNew: true,
   oneLiner: "열 개 문파의 후계자가 봉쇄된 계곡에 들었다. 백 일 뒤 살아 나온 문파가 무림을 가진다. 그런데 첫날 밤, 누군가 죽었다.",
+  artTags: "wuxia, murim, misty mountain valley, ancient chinese architecture, waterfall, swords, martial arts, moonlight",
   tags: ["무협", "비무", "추리", "문파 정치", "히로인 5인"],
   desc: "이십 년에 한 번, 천하 열 개 문파의 후계자들이 봉쇄된 계곡 '십절곡'에 들어간다. 백 일 동안 문이 닫히고, 마지막까지 남은 문파가 무림맹주의 자리와 전설의 무공서 『천외비록』을 가진다. 살인은 금지. 그런데 첫날 밤 화산파 대제자가 목 없는 시체로 발견됐다. 당신은 멸문한 문파의 마지막 제자, 단전이 막혀 삼류 취급을 받는 대리 출전자다.",
   persona: `이 작품은 무협 봉쇄 계곡 서바이벌·추리 군상극이다. 너는 내레이터로서 계곡과 모든 문파, 인물을 연기한다.
@@ -39,17 +40,17 @@ export default {
   secret: "유저의 단전은 『천외비록』 상권의 봉인이다. 연쇄 살인과 청운문 멸문의 배후는 심판관 현명진인이다. 묵란은 마교 소교주다.",
   fields: ["📅 날짜", "📍 위치", "🗡️ 경지", "🔥 내공 해방", "⚔️ 생존 문파", "📜 단서", "❤️ 호감도", "💭 속마음"], gauge: "🔥 내공 해방",
   lore: [
-    { keys: ["천외비록", "비록"], text: "전설의 무공서 『천외비록』. 상권과 하권으로 나뉜다. 하권은 십절회의 상품으로 봉문석 아래 석함에 있다. 상권은 이십 년 전 청운문과 함께 사라졌다고 알려져 있다." },
-    { keys: ["청운문", "사부", "멸문"], text: "이십 년 전 하룻밤에 멸문한 작은 문파 청운문. 마교의 짓이라고 알려졌지만 시신 대부분에 마교 무공의 흔적이 없었다. 유저의 사부가 유일한 생존자였다." },
-    { keys: ["현명진인", "심판관", "감찰", "무림맹"], text: "무림맹 감찰 현명진인. 십절회의 심판관. 온화한 노도인으로 존경받는다. 흰 도복 소매에 은빛 학이 수놓여 있다." },
-    { keys: ["십절루", "객잔"], text: "계곡 중앙의 객잔 십절루. 3층에 각 문파의 방이 있고, 지하에 비무에서 진 자들을 가두는 석실이 있다. 객잔지기는 말을 못 하는 노인이다." },
-    { keys: ["비무", "비무대"], text: "열흘마다 열리는 비무. 문파 대표 한 명씩 나선다. 상대를 죽이면 실격. 진 문파는 탈락해 지하 석실에 갇힌다." },
-    { keys: ["고검총", "무덤"], text: "출입 금지 구역 고검총. 옛 검객들의 검이 꽂힌 무덤. 밤마다 검이 우는 소리가 난다는 소문이 있다. 청운문의 옛 표식이 남아 있다." },
-    { keys: ["낙혼폭", "폭포"], text: "넋이 떨어진다는 폭포 낙혼폭. 물살 뒤에 동굴이 있다는 말이 있다. 첫날 밤 시체가 발견된 곳과 가깝다." },
-    { keys: ["마교", "소교주", "천마"], text: "중원 밖의 마교. 정파와 숙적이다. 교주의 딸이 소교주이며, 이번 십절회에 누군가로 위장해 숨어들었다는 소문이 돈다." },
-    { keys: ["남궁세가", "남궁"], text: "검의 명가 남궁세가. 창궁무애검법. 가주는 딸의 검을 가문의 영광으로만 본다." },
-    { keys: ["사천당가", "당가", "암기"], text: "독과 암기의 명가 사천당가. 웃으며 독을 쓰는 것을 미덕으로 여긴다. 남궁세가와 오래된 원한이 있다." },
-    { keys: ["단전", "봉인", "주화입마"], text: "유저의 단전은 막혀 있다. 억지로 내공을 끌어올리면 가슴에 낯선 구결이 떠오르며 피를 토한다. 다룰 수 있게 되면 봉인이 풀리지만, 급하면 주화입마에 빠진다." }
+    { keys: ["천외비록", "비록"], text: "전설의 무공서 『천외비록』. 상권과 하권으로 나뉜다. 하권은 십절회의 상품으로 봉문석 아래 석함에 있다. 상권은 이십 년 전 청운문과 함께 사라졌다고 알려져 있다.", kind: "item", tags: "ancient martial arts manual, scroll, stone chest, glowing, mystical" },
+    { keys: ["청운문", "사부", "멸문"], text: "이십 년 전 하룻밤에 멸문한 작은 문파 청운문. 마교의 짓이라고 알려졌지만 시신 대부분에 마교 무공의 흔적이 없었다. 유저의 사부가 유일한 생존자였다.", kind: "event", tags: "ruined sect gate, burned ruins, ashes, mountain, moonlight" },
+    { keys: ["현명진인", "심판관", "감찰", "무림맹"], text: "무림맹 감찰 현명진인. 십절회의 심판관. 온화한 노도인으로 존경받는다. 흰 도복 소매에 은빛 학이 수놓여 있다.", kind: "person", tags: "solo, 1boy, old man, taoist priest, white robe, silver crane embroidery, long white beard, serene" },
+    { keys: ["십절루", "객잔"], text: "계곡 중앙의 객잔 십절루. 3층에 각 문파의 방이 있고, 지하에 비무에서 진 자들을 가두는 석실이 있다. 객잔지기는 말을 못 하는 노인이다.", kind: "place", tags: "wuxia inn, three-story wooden inn, mountain valley, lanterns, mist" },
+    { keys: ["비무", "비무대"], text: "열흘마다 열리는 비무. 문파 대표 한 명씩 나선다. 상대를 죽이면 실격. 진 문파는 탈락해 지하 석실에 갇힌다.", kind: "place", tags: "martial arts stage, stone platform, mountain valley, spectators, duel" },
+    { keys: ["고검총", "무덤"], text: "출입 금지 구역 고검총. 옛 검객들의 검이 꽂힌 무덤. 밤마다 검이 우는 소리가 난다는 소문이 있다. 청운문의 옛 표식이 남아 있다.", kind: "place", tags: "sword graveyard, swords stuck in the ground, mist, moonlight, ancient graves" },
+    { keys: ["낙혼폭", "폭포"], text: "넋이 떨어진다는 폭포 낙혼폭. 물살 뒤에 동굴이 있다는 말이 있다. 첫날 밤 시체가 발견된 곳과 가깝다.", kind: "place", tags: "waterfall, hidden cave behind waterfall, mist, moonlight, cliff" },
+    { keys: ["마교", "소교주", "천마"], text: "중원 밖의 마교. 정파와 숙적이다. 교주의 딸이 소교주이며, 이번 십절회에 누군가로 위장해 숨어들었다는 소문이 돈다.", kind: "group", tags: "demonic cult, black and red banners, dark palace, crimson moon" },
+    { keys: ["남궁세가", "남궁"], text: "검의 명가 남궁세가. 창궁무애검법. 가주는 딸의 검을 가문의 영광으로만 본다.", kind: "group", tags: "noble sword clan, grand manor, sword hall, blue banners, swordsmen" },
+    { keys: ["사천당가", "당가", "암기"], text: "독과 암기의 명가 사천당가. 웃으며 독을 쓰는 것을 미덕으로 여긴다. 남궁세가와 오래된 원한이 있다.", kind: "group", tags: "poison clan, hidden weapons, throwing needles, poison vials, green smoke" },
+    { keys: ["단전", "봉인", "주화입마"], text: "유저의 단전은 막혀 있다. 억지로 내공을 끌어올리면 가슴에 낯선 구결이 떠오르며 피를 토한다. 다룰 수 있게 되면 봉인이 풀리지만, 급하면 주화입마에 빠진다.", kind: "concept", tags: "glowing seal on chest, meridians, inner energy, qi aura, glowing runes" }
   ],
   cast: [
     { code: "ns", name: "남궁설", look: "24세 여성, 흰 무복에 푸른 띠, 높게 묶은 흑발, 장검, 차가운 눈빛", tags: "black hair, high ponytail, white martial arts uniform, blue sash, hanfu, longsword" },

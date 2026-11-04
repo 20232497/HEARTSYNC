@@ -1,5 +1,5 @@
 // 그림 조합 코드: [[img:코드:3,404,501]] 태그 그리기(figure[data-key]), 의상·장소 이어 가기·되돌리기(400·500), AI가 태그를 빠뜨린 인물의 자동 태그(지문의 장소 낱말),
-// 대화 중 자동 생성(가짜 runwareImage → 캔버스 PNG, 같은 조합은 다시 만들지 않음), 조합 갤러리·조합 만들기·코드 표·드로어 갤러리
+// 대화 중 자동 생성(가짜 runwareImage → 캔버스 PNG, 같은 조합은 다시 만들지 않음), 이미지 스튜디오(그 인물의 갤러리 → 조합 고르기·파일 이름 → 조합 키)·드로어 갤러리
 import { webkit, chromium, devices } from "playwright";
 const url = process.argv[2], out = process.argv[3];
 const targets = [["Desktop Chrome", chromium], ["iPhone 13", webkit]];
@@ -54,14 +54,15 @@ for (const [dev, engine] of targets) {
     const t6 = await turn(`[[img:${code}:7,404]]\n\n${name}: "여섯 번째 대사예요."`);
     await p.waitForTimeout(600);
     res.t6 = { rw: await p.evaluate(() => window.__rw), imgNow: t6.figs.filter((f) => f.key === "7,404").every((f) => f.img), fallback: await p.evaluate((code) => pickImg(room.char, code, "7,404,503") === (imagesOf(room.char)[code] || {})["7,404"] ? "same-act-only" : "other", code) };
-    // 7) 이미지 슬롯: 조합 카드·코드 표·조합 만들기
-    await p.evaluate(() => openImageSlots(room.char)); await p.waitForTimeout(500);
-    res.slots = await p.evaluate(() => ({ combo: !!document.querySelector('[data-combo="7,404"]'), codes: !!document.querySelector("#codes"), grid: $$(".slot-grid .slot").length }));
-    await p.evaluate(() => $("#codes").click()); await p.waitForTimeout(300);
-    res.codeTable = await p.evaluate(() => ({ tables: $$(".code-tbl").length, rows: $$(".code-tbl tr").length, ov: $$(".btn[data-ov]").length }));
-    await p.evaluate(() => { $$(".gen-ov").forEach((o) => o.remove()); $("#addCombo").click(); }); await p.waitForTimeout(300);
-    res.combo = await p.evaluate(() => { $("#cbW").value = "404"; $("#cbW").onchange(); return { sel: !!document.querySelector("#cbA"), key: $("#cbKey").textContent }; });
+    // 7) 이미지 스튜디오: 자동 생성한 조합 그림(7,404)이 그 인물의 갤러리에 있고, 누르면 그 조합이 골라져 지금 그림에 보임. 파일 이름 → 조합 키
+    await p.evaluate((code) => openImages(room.char, code), code); await p.waitForTimeout(600);
+    res.studio = await p.evaluate(async () => {
+      const card = document.querySelector('[data-load="7,404"]'); if (!card) return { card: false };
+      card.click(); await new Promise((z) => setTimeout(z, 300));
+      return { card: true, combo: $(".ct-combo code").textContent, now: !!$(".is-now .pic img"), sels: $$(".is-sel").length, cnt: $('.is-code[data-row="7"] .cnt')?.textContent || "", keys: [nameKey("ks_3.png"), nameKey("3-404-501.webp"), nameKey("photo.png")] };
+    });
     await p.screenshot({ path: `${out}/${dev.replace(/\W+/g, "_")}_images.png` });
+    await p.evaluate(() => { location.hash = "r-" + room.id; }); await p.waitForTimeout(500);
     await p.evaluate(() => { closeOverlays(); openRoomDrawer("gallery"); }); await p.waitForTimeout(400);
     res.gallery = await p.evaluate(() => $$(".gallery button").length);
     await p.evaluate(() => closeOverlays());
@@ -73,9 +74,7 @@ for (const [dev, engine] of targets) {
   if (res.t4 && !res.t4.tag) bad.push("t4 " + JSON.stringify(res.t4));
   if (res.t5 && !(res.t5.tagKey && res.t5.swapped && res.t5.rw === 1 && res.t5.stored)) bad.push("t5 " + JSON.stringify(res.t5));
   if (res.t6 && !(res.t6.rw === 1 && res.t6.imgNow)) bad.push("t6 " + JSON.stringify(res.t6));
-  if (res.slots && !(res.slots.combo && res.slots.codes)) bad.push("slots " + JSON.stringify(res.slots));
-  if (res.codeTable && !(res.codeTable.tables === 3 && res.codeTable.rows > 60 && res.codeTable.ov > 0)) bad.push("codeTable " + JSON.stringify(res.codeTable));
-  if (res.combo && !(res.combo.sel && res.combo.key.includes("1,404"))) bad.push("combo " + JSON.stringify(res.combo));
+  if (res.studio && !(res.studio.card && /:7,404]]/.test(res.studio.combo) && res.studio.now && res.studio.sels === 2 && res.studio.cnt === "1장" && res.studio.keys.join("|") === "3|3,404,501|")) bad.push("studio " + JSON.stringify(res.studio));
   if (res.gallery !== undefined && res.gallery < 1) bad.push("gallery " + res.gallery);
   res.errs = errs.concat(bad); console.log(JSON.stringify(res)); await b.close();
 }

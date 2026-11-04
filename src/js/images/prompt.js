@@ -7,7 +7,7 @@ import { keyOf, parseCodes, splitDims } from "./codes.js";
 import { sitDef } from "./situations.js";
 import { ponyTags } from "./tags.js";
 
-/* 표지 프롬프트: 세계관 작품은 주요 인물들이 모인 단체 표지, 1인 작품은 주인공 중심 */
+/* 표지 프롬프트: 세계관 작품은 주요 인물들이 모인 단체 표지, 1인 작품은 주인공 중심. 배경 분위기는 작품의 세계관 태그(artTags), 없으면 한 줄 소개 */
 export function coverPrompt(c) {
   // 참고 표지(2026-11-04 사용자 ZIP)의 구조: 인물 상반신을 크게, 정면·시선, 배경은 분위기만 — "cover art"는 제목 글자를 그려 넣어서 뺌
   const cast = (c.cast || []).filter((x) => x.name), base = ["poster composition", "upper body"];
@@ -19,10 +19,10 @@ export function coverPrompt(c) {
     const N = ["", "one", "two", "three"], grp = pick.length > 1 ? [`(${N[pick.length]} ${m && !f ? "men" : f && !m ? "women" : "people"} side by side:1.3)`, "all faces visible"] : [];
     const who = [f ? (f > 1 ? (m ? `${f}girls` : `(${f}girls:1.4), (multiple girls:1.2)`) : (m ? "1girl" : "(1girl:1.2)")) : "", m ? (m > 1 ? (f ? `${m}boys` : `(${m}boys:1.4), (multiple boys:1.2)`) : (f ? "1boy" : "(1boy:1.2)")) : "",
       m && !f ? "male focus, handsome men, masculine features" : f && !m ? "beautiful women, feminine" : ""].filter(Boolean).join(", ") || "multiple characters";
-    return ["poster composition", "waist up", who, ...grp, "group portrait, looking at viewer", ...pick.map((x) => x.tags || x.look), c.oneLiner, "atmospheric background"].filter(Boolean).join(", ");
+    return ["poster composition", "waist up", who, ...grp, "group portrait, looking at viewer", ...pick.map((x) => x.tags || x.look), c.artTags || c.oneLiner, "atmospheric background"].filter(Boolean).join(", ");
   }
   const look = castLook(cast[0], c), who = lookIsMale(look) ? ["(1boy:1.2)", "male focus", "solo", "handsome man, masculine features"] : ["(1girl:1.2)", "solo", "beautiful woman"];
-  return [...base, ...who, (cast[0] && cast[0].tags) || look, "looking at viewer", c.oneLiner, "atmospheric background"].filter(Boolean).join(", ");
+  return [...base, ...who, (cast[0] && cast[0].tags) || look, "looking at viewer", c.artTags || c.oneLiner, "atmospheric background"].filter(Boolean).join(", ");
 }
 /* 상황 번호(SIT 0~14) → 표정·자세 태그(Danbooru). 프롬프트 맨 앞(장면 자리)에 들어가야 모델이 따름 */
 const SIT_PONY_TAGS = [
@@ -134,5 +134,19 @@ export async function partsTags(parts, adult) {
   if (adult && minorHint(parts.flatMap((g) => g.tags.map((x) => asTag(x).t)).join(", "))) throw { code: "minor_block" };
   return groupsPrompt(parts, adult);
 }
-/* 세계관 일러스트: 키워드북 항목에 영문 tags가 있으면 설명 대신 그대로 */
-export function lorePrompt(c, e) { return ["scenery, wide shot, detailed background, atmospheric lighting, no text", e.tags || e.text].filter(Boolean).join(", "); }
+/* 세계관 일러스트 구도: 키워드북 항목의 종류(kind — ui/worldart.js LORE_KINDS)마다. 인물은 상반신 초상, 동물·괴물은 그 존재, 장소는 사람 없는 풍경, 물건은 정물 클로즈업, 사건·세력·설정은 장면 */
+const LORE_SHOT = {
+  person: "upper body, portrait, detailed background",
+  creature: "no humans, animal focus, solo, detailed background",
+  place: "scenery, no humans, wide shot, detailed background",
+  item: "still life, close-up, object focus, no humans, detailed",
+  event: "dramatic scene, cinematic composition, wide shot",
+  group: "cinematic composition, wide shot, detailed background",
+  concept: "symbolic, cinematic composition, atmospheric"
+};
+/* 세계관 일러스트(키워드북 항목, 16:9): 구도 → 항목 영문 태그 → 작품의 세계관 태그(artTags — 시대·장소·분위기 낱말). 단어 꼴이라 번역 없이 그대로 감.
+   태그가 없는 항목(내 작품 키워드북)은 예전처럼 풍경 구도 + 설명 글(생성 창에서 한국어 → 영문 태그로 번역) */
+export function lorePrompt(c, e) {
+  const shot = LORE_SHOT[e.kind] || "scenery, wide shot, detailed background";
+  return [shot, e.tags || e.text, c.artTags, "atmospheric lighting, no text"].filter(Boolean).join(", ");
+}

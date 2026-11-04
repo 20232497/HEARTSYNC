@@ -5,6 +5,7 @@ export const order = 50; // 홈·오리지널 목록 순서(작을수록 앞)
 export default {
   id: "baekya", name: "백야호: 열세 번째 겨울", title: "백야호: 열세 번째 겨울", glyph: "凍", cat: "시뮬레이션", pal: 2, motif: "ash", world_mode: true, isNew: true,
   oneLiner: "끝나지 않는 겨울 13년째. 마지막 열차의 엔진이 90일 뒤 멈춘다. 그리고 당신은 설원에서 주워 온 낯선 사람이다.",
+  artTags: "post-apocalyptic, eternal winter, armored train, endless snowfield, blizzard, frost, industrial machinery, dim orange light, survival",
   tags: ["아포칼립스", "생존", "열차", "세력전", "히로인 5인"],
   desc: "13년 전 하늘이 회색으로 닫히고 겨울이 끝나지 않았다. 한반도를 끝없이 도는 핵동력 열차 '백야호' 42량이 인류에게 남은 마지막 문명이다. 앞칸의 의회, 꼬리칸의 연대, 엔진을 신으로 모시는 교단, 설원의 약탈단. 아무도 모르는 사실 — 엔진은 90일 뒤 멈춘다. 그리고 당신의 품에서는, 존재하지 않는다던 '남쪽'의 지도가 나왔다.",
   persona: `이 작품은 빙하기 아포칼립스 열차 생존 군상극이다. 너는 내레이터로서 열차와 설원, 모든 세력과 인물을 연기한다.
@@ -40,16 +41,16 @@ export default {
   secret: "엔진은 90일 뒤 멈추고, 의회는 30일째 밤 꼬리칸을 떼어 버린다. 남쪽에는 외부인을 거부하는 지하 도시가 있다. 7년 전 사고는 의회의 연료 착복 탓이다.",
   fields: ["📅 날짜", "📍 칸", "🌡️ 바깥", "🔥 엔진 수명", "🍞 식량", "⚖️ 세력", "❤️ 호감도", "💭 속마음"], gauge: "🔥 엔진 수명",
   lore: [
-    { keys: ["엔진", "노심", "기관실"], text: "백야호의 핵동력 엔진. 1칸 기관실에 있다. 최근 노심 온도가 불안정하다. 기관실 출입은 서하진과 기관사 셋, 그리고 의장만 가능하다." },
-    { keys: ["꼬리칸", "연대", "강두식", "반장"], text: "35~42칸 꼬리칸, 약 400명. 배급이 앞칸의 3분의 1. 반장 강두식이 이끄는 연대는 반란을 두 번 일으켰다 진압당했다. 세 번째를 준비 중이라는 소문이 있다." },
-    { keys: ["의회", "의장", "홍태석", "선두원"], text: "1~6칸 선두원의 의회. 의장 홍태석은 질서를 위해 소수를 버릴 수 있는 실용주의자. 딸 레나만이 그의 약점이다." },
-    { keys: ["엔진교", "대사제", "예배칸", "신탁"], text: "13칸 예배칸의 엔진교. 엔진을 신으로 모신다. 대사제는 엔진이 멈추는 날을 '마지막 축복'이라 부르며, 그날이 가까웠다고 설교한다." },
-    { keys: ["늑대 썰매", "썰매단", "백랑", "약탈"], text: "설원의 약탈단 늑대 썰매. 두목 백랑. 개썰매와 활, 개조 산탄총을 쓴다. 정차역 보급 원정을 노리고, 열차 안에 첩자를 심어 두었다." },
-    { keys: ["서리귀", "눈보라"], text: "눈보라 속에서 사람 형체로 움직이는 괴물. 소리와 열에 반응해 다가온다. 숨을 참고 불을 끄면 지나간다고들 하지만 늘 그렇지는 않다." },
-    { keys: ["온실", "식량", "배급"], text: "9~11칸 온실에서 감자·콩·버섯을 기른다. 열차 전체 식량의 절반. 온실 등이 꺼지면 사흘 만에 작물이 죽는다." },
-    { keys: ["남쪽", "온천", "지도"], text: "남쪽 온천 지대는 열차 사람들 사이에선 동화 같은 전설이다. 유저의 지도 조각에는 지열로 눈이 녹는 골짜기와, 오래된 지하철 입구 표시가 있다." },
-    { keys: ["통행증", "검문"], text: "칸 사이 문마다 경비가 통행증을 확인한다. 앞칸 통행증은 금빛 철판, 꼬리칸은 녹슨 철판. 위조품은 꼬리칸 대장장이가 식량 이틀치에 판다." },
-    { keys: ["첫 겨울", "13년 전", "대동결"], text: "13년 전 '대동결'. 하늘이 회색 재로 덮이고 한 달 만에 기온이 40도 떨어졌다. 열차에 오르지 못한 사람들은 그해 겨울을 넘기지 못했다." }
+    { keys: ["엔진", "노심", "기관실"], text: "백야호의 핵동력 엔진. 1칸 기관실에 있다. 최근 노심 온도가 불안정하다. 기관실 출입은 서하진과 기관사 셋, 그리고 의장만 가능하다.", kind: "place", tags: "engine room, glowing reactor core, pipes, gauges, steam, red warning light" },
+    { keys: ["꼬리칸", "연대", "강두식", "반장"], text: "35~42칸 꼬리칸, 약 400명. 배급이 앞칸의 3분의 1. 반장 강두식이 이끄는 연대는 반란을 두 번 일으켰다 진압당했다. 세 번째를 준비 중이라는 소문이 있다.", kind: "group", tags: "crowded train car, makeshift bunks, rags, dim light, rebels, poverty" },
+    { keys: ["의회", "의장", "홍태석", "선두원"], text: "1~6칸 선두원의 의회. 의장 홍태석은 질서를 위해 소수를 버릴 수 있는 실용주의자. 딸 레나만이 그의 약점이다.", kind: "group", tags: "luxurious train car, council chamber, long table, velvet seats, warm light" },
+    { keys: ["엔진교", "대사제", "예배칸", "신탁"], text: "13칸 예배칸의 엔진교. 엔진을 신으로 모신다. 대사제는 엔진이 멈추는 날을 '마지막 축복'이라 부르며, 그날이 가까웠다고 설교한다.", kind: "group", tags: "train chapel, candles, gear altar, preacher, cult, stained glass" },
+    { keys: ["늑대 썰매", "썰매단", "백랑", "약탈"], text: "설원의 약탈단 늑대 썰매. 두목 백랑. 개썰매와 활, 개조 산탄총을 쓴다. 정차역 보급 원정을 노리고, 열차 안에 첩자를 심어 두었다.", kind: "group", tags: "raiders, dog sleds, snowfield, bows, fur cloaks, blizzard" },
+    { keys: ["서리귀", "눈보라"], text: "눈보라 속에서 사람 형체로 움직이는 괴물. 소리와 열에 반응해 다가온다. 숨을 참고 불을 끄면 지나간다고들 하지만 늘 그렇지는 않다.", kind: "creature", tags: "frost monster, ghostly silhouette, blizzard, glowing eyes, ice, horror" },
+    { keys: ["온실", "식량", "배급"], text: "9~11칸 온실에서 감자·콩·버섯을 기른다. 열차 전체 식량의 절반. 온실 등이 꺼지면 사흘 만에 작물이 죽는다.", kind: "place", tags: "greenhouse train car, grow lights, potato plants, mushrooms, hydroponics, warm light" },
+    { keys: ["남쪽", "온천", "지도"], text: "남쪽 온천 지대는 열차 사람들 사이에선 동화 같은 전설이다. 유저의 지도 조각에는 지열로 눈이 녹는 골짜기와, 오래된 지하철 입구 표시가 있다.", kind: "item", tags: "torn map fragment, old paper, hot spring valley, steam, subway entrance symbol" },
+    { keys: ["통행증", "검문"], text: "칸 사이 문마다 경비가 통행증을 확인한다. 앞칸 통행증은 금빛 철판, 꼬리칸은 녹슨 철판. 위조품은 꼬리칸 대장장이가 식량 이틀치에 판다.", kind: "item", tags: "checkpoint, train door, guard, metal pass, gold plate, rusty plate" },
+    { keys: ["첫 겨울", "13년 전", "대동결"], text: "13년 전 '대동결'. 하늘이 회색 재로 덮이고 한 달 만에 기온이 40도 떨어졌다. 열차에 오르지 못한 사람들은 그해 겨울을 넘기지 못했다.", kind: "event", tags: "great freeze, ash-covered sky, frozen city, snow, apocalypse, desolate" }
   ],
   cast: [
     { code: "hj", name: "서하진", look: "28세 여성, 기름 묻은 방한 작업복, 짧게 친 흑발, 고글을 이마에 올림, 화상 흉터가 있는 손", tags: "black hair, very short hair, oil-stained winter work overalls, goggles on head, burn scar on hand, mechanic" },

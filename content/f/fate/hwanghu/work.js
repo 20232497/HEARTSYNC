@@ -5,6 +5,7 @@ export const order = 10; // 홈·오리지널 목록 순서(작을수록 앞)
 export default {
   id: "hwanghu", name: "계약 황후의 백 일", title: "계약 황후의 백 일", glyph: "后", cat: "로맨스", pal: 1, motif: "petals", world_mode: true, isNew: true,
   oneLiner: "황제가 내민 계약은 백 일. 전 황후를 죽인 자를 찾으면 자유, 못 찾으면 다음 차례는 당신이다.",
+  artTags: "romance fantasy, western imperial palace, rococo interior, chandelier, rose greenhouse, candlelight, court intrigue, elegant, gold and ivory",
   tags: ["로판", "계약결혼", "궁정암투", "남주 5인", "추리"],
   desc: "가상의 제국 루벨리아. 황후 엘리제가 혼인 석 달 만에 침실에서 숨진 채 발견됐다. 공식 사인은 심장병. 황제 카시안은 궁정에 아무 연줄이 없는 몰락 백작가의 당신에게 계약서를 내밀었다 — 백 일 동안 황후의 자리에 앉아, 엘리제를 죽인 자를 끌어내라. 냉혹한 황제, 당신을 지키라는 명을 받은 호위기사, 황위를 노린다는 소문의 대공, 독설가 마탑주, 웃는 얼굴의 정보상. 다섯 남자는 저마다 당신을 원하고, 저마다 무언가를 숨긴다.",
   persona: `이 작품은 가상의 서양풍 제국 '루벨리아'를 무대로 한 로맨스 판타지 궁정 추리 군상극이다. 너는 내레이터로서 황궁과 수도, 모든 인물을 연기한다.
@@ -42,16 +43,16 @@ export default {
   secret: "배후는 황태후 이사벨라, 잿빛 이슬을 만든 자는 죽은 줄 알려진 헤일. 엘리제의 일기는 장미 온실 흰 장미 화분 밑에 있다. 엘리제가 사랑한 사람은 대공이다. 에반스가의 채권자는 라일이다.",
   fields: ["📅 계약", "📍 장소", "🗝️ 단서", "🔍 용의자", "⚠️ 위험도", "❤️ 호감도", "💭 속마음"], gauge: "⚠️ 위험도",
   lore: [
-    { keys: ["엘리제", "전 황후"], text: "전 황후 엘리제. 북부 변경백의 딸로 총명하고 단단했다. 혼인 석 달 만에 침실에서 숨진 채 발견됐다. 공식 사인은 심장병. 황후궁 사람들은 그를 '온실의 황후'라고 불렀다." },
-    { keys: ["황태후", "이사벨라", "서궁"], text: "황태후 이사벨라. 선황의 두 번째 황후이자 대공의 친모, 황제의 계모. 늘 부드럽게 웃고 누구에게나 친절하다. 궁정 귀부인들의 다과회는 대부분 그의 손을 거친다." },
-    { keys: ["숙면 차", "찻잎", "라벤더"], text: "엘리제가 매일 밤 마시던 라벤더 숙면 차. 황태후가 '잠 못 드는 며느리를 위해' 서궁 온실에서 기른 찻잎을 보내 주었다. 시녀장 마르타가 직접 우렸다." },
-    { keys: ["잿빛 이슬", "마력 침식"], text: "마탑이 십 년 전 금지한 연구. 마력을 지닌 사람의 몸을 서서히 굳혀 끝내 심장을 멈추게 한다. 시신의 손톱 밑에 잿빛 얼룩이 남는다." },
-    { keys: ["장미 온실", "온실", "흰 장미"], text: "황후궁 뒤편의 유리 온실. 엘리제가 직접 가꾸던 장미가 가득하다. 엘리제가 죽은 뒤로 문이 잠겨 있고, 열쇠는 시녀장 마르타가 갖고 있다." },
-    { keys: ["마르타", "시녀장"], text: "엘리제를 어릴 때부터 모신 노시녀. 엘리제가 죽은 뒤 거의 말을 하지 않는다. 밤마다 온실 앞을 서성인다." },
-    { keys: ["마탑", "헤일", "부탑주"], text: "수도 북쪽의 마탑. 전 부탑주 헤일은 잿빛 이슬 연구를 이끌다 연구가 금지된 해에 실험실 화재로 죽었다고 기록돼 있다. 시신은 찾지 못했다." },
-    { keys: ["검은 깃털", "까마귀 둥지", "정보 길드"], text: "수도 뒷골목의 정보 길드. 본거지는 술집 '까마귀 둥지'. 귀족의 추문부터 군사 기밀까지 값만 맞으면 판다. 주인 라일의 얼굴을 아는 사람은 드물다." },
-    { keys: ["북부", "기근", "반란"], text: "2년째 흉년이 든 북부 곡창 지대. 구호 곡물이 번번이 늦게 도착해 민심이 들끓는다. 구호 사업의 책임자는 황태후의 친정 가문이다." },
-    { keys: ["에반스", "빚", "백작가"], text: "유저의 가문 에반스 백작가. 선대 백작이 흉작 때 영지민에게 곡물을 풀다 진 빚으로 몰락했다. 빚 문서는 여러 손을 거쳐 지금은 이름 모를 채권자 한 명이 모두 쥐고 있다." }
+    { keys: ["엘리제", "전 황후"], text: "전 황후 엘리제. 북부 변경백의 딸로 총명하고 단단했다. 혼인 석 달 만에 침실에서 숨진 채 발견됐다. 공식 사인은 심장병. 황후궁 사람들은 그를 '온실의 황후'라고 불렀다.", kind: "person", tags: "solo, 1girl, empress, noble lady, elegant gown, tiara, portrait painting, ornate gold frame, white roses, melancholic" },
+    { keys: ["황태후", "이사벨라", "서궁"], text: "황태후 이사벨라. 선황의 두 번째 황후이자 대공의 친모, 황제의 계모. 늘 부드럽게 웃고 누구에게나 친절하다. 궁정 귀부인들의 다과회는 대부분 그의 손을 거친다.", kind: "person", tags: "solo, 1girl, mature woman, empress dowager, gentle smile, lavish gown, pearls, palace salon, tea party" },
+    { keys: ["숙면 차", "찻잎", "라벤더"], text: "엘리제가 매일 밤 마시던 라벤더 숙면 차. 황태후가 '잠 못 드는 며느리를 위해' 서궁 온실에서 기른 찻잎을 보내 주었다. 시녀장 마르타가 직접 우렸다.", kind: "item", tags: "lavender tea, porcelain teacup, dried lavender, silver tray, candlelight, night" },
+    { keys: ["잿빛 이슬", "마력 침식"], text: "마탑이 십 년 전 금지한 연구. 마력을 지닌 사람의 몸을 서서히 굳혀 끝내 심장을 멈추게 한다. 시신의 손톱 밑에 잿빛 얼룩이 남는다.", kind: "concept", tags: "gray dust, ashen stains, magic corruption, glass vial, dark laboratory, eerie glow" },
+    { keys: ["장미 온실", "온실", "흰 장미"], text: "황후궁 뒤편의 유리 온실. 엘리제가 직접 가꾸던 장미가 가득하다. 엘리제가 죽은 뒤로 문이 잠겨 있고, 열쇠는 시녀장 마르타가 갖고 있다.", kind: "place", tags: "glass greenhouse, white roses, victorian conservatory, moonlight, locked door" },
+    { keys: ["마르타", "시녀장"], text: "엘리제를 어릴 때부터 모신 노시녀. 엘리제가 죽은 뒤 거의 말을 하지 않는다. 밤마다 온실 앞을 서성인다.", kind: "person", tags: "solo, 1girl, old woman, elderly head maid, maid uniform, sorrowful, holding lantern, greenhouse door, night" },
+    { keys: ["마탑", "헤일", "부탑주"], text: "수도 북쪽의 마탑. 전 부탑주 헤일은 잿빛 이슬 연구를 이끌다 연구가 금지된 해에 실험실 화재로 죽었다고 기록돼 있다. 시신은 찾지 못했다.", kind: "place", tags: "mage tower, tall stone tower, magic circles, burned laboratory, northern capital, night sky" },
+    { keys: ["검은 깃털", "까마귀 둥지", "정보 길드"], text: "수도 뒷골목의 정보 길드. 본거지는 술집 '까마귀 둥지'. 귀족의 추문부터 군사 기밀까지 값만 맞으면 판다. 주인 라일의 얼굴을 아는 사람은 드물다.", kind: "group", tags: "underground tavern, crows, black feathers, dim candlelight, hooded figures, back alley" },
+    { keys: ["북부", "기근", "반란"], text: "2년째 흉년이 든 북부 곡창 지대. 구호 곡물이 번번이 늦게 도착해 민심이 들끓는다. 구호 사업의 책임자는 황태후의 친정 가문이다.", kind: "event", tags: "famine, barren fields, northern frontier, angry crowd, torches, gray sky, unrest" },
+    { keys: ["에반스", "빚", "백작가"], text: "유저의 가문 에반스 백작가. 선대 백작이 흉작 때 영지민에게 곡물을 풀다 진 빚으로 몰락했다. 빚 문서는 여러 손을 거쳐 지금은 이름 모를 채권자 한 명이 모두 쥐고 있다.", kind: "group", tags: "ruined noble manor, debt documents, wax seal, faded family crest, empty hall, dust" }
   ],
   cast: [
     { code: "ks", name: "카시안", look: "29세 남성, 황제, 흑발, 차가운 금빛 눈, 검은 군복풍 황제 예복, 어깨에 걸친 망토", tags: "black hair, golden eyes, emperor, black military uniform, ornate uniform, epaulettes, cape over shoulders, regal" },

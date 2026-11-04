@@ -5,6 +5,7 @@ export const order = 20; // 홈·오리지널 목록 순서(작을수록 앞)
 export default {
   id: "hasuk", name: "서촌 오월 하숙집", title: "서촌 오월 하숙집", glyph: "家", cat: "일상", pal: 3, motif: "glow", world_mode: true, isNew: true,
   oneLiner: "할머니가 서촌 한옥 하숙집을 남겼다. '서른 날 동안 하숙인 다섯을 내보내지 말 것'이라는 유언과 함께.",
+  artTags: "modern seoul, seochon, hanok boarding house, wooden courtyard, persimmon tree, earthenware jars, warm sunlight, nostalgic, slice of life",
   tags: ["현대", "하숙집", "힐링", "남주 5인", "가족의 비밀"],
   desc: "서촌 골목 끝 한옥 하숙집 '오월'. 할머니의 장례를 치른 다음 날, 당신은 이 집의 새 주인이 되었다. 재개발 회사는 시세의 두 배를 부르며 매일 찾아오고, 유언장에는 이상한 조건이 붙어 있다 — '오월의 하숙인 다섯을 서른 날 동안 내보내지 말 것. 그다음엔 팔든 말든 네 마음이다.' 무뚝뚝한 셰프, 능글맞은 무명 배우, 말수 적은 수의사, 가시 돋친 웹툰 작가, 속을 알 수 없는 변호사. 할머니는 왜 하필 이 다섯을 남겼을까.",
   persona: `이 작품은 서울 서촌의 한옥 하숙집을 무대로 한 현대 힐링 로맨스·가족 미스터리 군상극이다. 너는 내레이터로서 하숙집과 동네, 모든 인물을 연기한다.
@@ -42,16 +43,16 @@ export default {
   secret: "도담건설 대표 한도준은 유저의 큰아버지. 할머니가 부치지 못한 편지 서른 통과 타임캡슐이 감나무 아래 장독에 있다. 서진혁은 원래 도담건설이 보낸 사람이었다.",
   fields: ["📅 날짜", "📍 장소", "🍚 밥상", "📮 흔적", "🏠 재개발", "❤️ 호감도", "💭 속마음"], gauge: "🏠 재개발",
   lore: [
-    { keys: ["할머니", "오월순"], text: "하숙집 '오월'의 주인 오월순(83). 마흔 해 넘게 하숙을 쳤다. 밥 굶는 사람을 그냥 못 보냈고, 하숙비를 못 낸 사람 장부에는 늘 '형편 될 때'라고 적었다. 봄에 세상을 떠났다." },
-    { keys: ["보리", "진돗개"], text: "마당의 늙은 진돗개 보리(14살). 할머니가 떠난 뒤로 밥을 잘 안 먹고 할머니 방 툇마루 밑에서만 잔다. 낯선 사람에게도 짖지 않는데, 도담건설 사람에게만 짖는다." },
-    { keys: ["감나무", "장독", "평상"], text: "마당 한가운데의 오래된 감나무와 그 아래 평상. 할머니는 비밀이 생기면 '감나무한테 말해라'고 했다. 감나무 뿌리 옆 장독 하나는 뚜껑이 철사로 묶여 있다." },
-    { keys: ["도담건설", "재개발", "차민서"], text: "서촌 일대 재개발을 추진하는 시행사. 실장 차민서가 매일 찾아와 시세의 두 배를 제안한다. 이 골목에서 아직 도장을 찍지 않은 집은 '오월'과 복덕슈퍼뿐이다." },
-    { keys: ["한도준", "큰아버지", "대표"], text: "도담건설 대표 한도준(58). 할머니의 큰아들. 30년 전 집을 나간 뒤 장례식에도 오지 않았다. 유저는 어릴 때 사진으로만 얼굴을 봤다." },
-    { keys: ["레시피 노트", "레시피"], text: "할머니가 손글씨로 쓴 레시피 노트. 된장찌개부터 하숙인마다 좋아하는 반찬까지 적혀 있다. 지금은 강태하가 부엌 서랍에 보관한다." },
-    { keys: ["오월의 여름", "웹툰"], text: "요즘 인기 순위에 오른 웹툰. 시골 한옥에서 할머니와 여름을 보내는 아이의 이야기. 작가 필명은 '결'." },
-    { keys: ["복덕슈퍼", "슈퍼 할아버지"], text: "골목 입구의 복덕슈퍼. 주인 할아버지는 할머니와 오십 년 지기이고 동네 소문은 다 이곳을 거친다. 막걸리 한 병이면 옛날 얘기가 술술 나온다." },
-    { keys: ["할아버지", "30년 전"], text: "유저의 할아버지는 30년 전 겨울밤 이 집 마당에서 쓰러져 돌아가셨다. 그날 이후 큰아들이 집을 나갔다는 것만 동네에 알려져 있다." },
-    { keys: ["타임캡슐", "여름방학"], text: "유저가 어릴 때 마지막 여름방학에 할머니와 함께 묻은 깡통. 무엇을 넣었는지, 어디에 묻었는지 유저는 잘 기억나지 않는다." }
+    { keys: ["할머니", "오월순"], text: "하숙집 '오월'의 주인 오월순(83). 마흔 해 넘게 하숙을 쳤다. 밥 굶는 사람을 그냥 못 보냈고, 하숙비를 못 낸 사람 장부에는 늘 '형편 될 때'라고 적었다. 봄에 세상을 떠났다.", kind: "person", tags: "solo, old woman, elderly, gray hair, hair bun, warm smile, cardigan, framed photograph, hanok room" },
+    { keys: ["보리", "진돗개"], text: "마당의 늙은 진돗개 보리(14살). 할머니가 떠난 뒤로 밥을 잘 안 먹고 할머니 방 툇마루 밑에서만 잔다. 낯선 사람에게도 짖지 않는데, 도담건설 사람에게만 짖는다.", kind: "creature", tags: "jindo dog, old dog, white fur, lying under wooden porch, hanok, sad eyes" },
+    { keys: ["감나무", "장독", "평상"], text: "마당 한가운데의 오래된 감나무와 그 아래 평상. 할머니는 비밀이 생기면 '감나무한테 말해라'고 했다. 감나무 뿌리 옆 장독 하나는 뚜껑이 철사로 묶여 있다.", kind: "place", tags: "persimmon tree, hanok courtyard, wooden platform bench, earthenware jars, jangdokdae, autumn, dappled sunlight" },
+    { keys: ["도담건설", "재개발", "차민서"], text: "서촌 일대 재개발을 추진하는 시행사. 실장 차민서가 매일 찾아와 시세의 두 배를 제안한다. 이 골목에서 아직 도장을 찍지 않은 집은 '오월'과 복덕슈퍼뿐이다.", kind: "group", tags: "construction company office, redevelopment blueprints, city model, demolition notice, cold office lighting" },
+    { keys: ["한도준", "큰아버지", "대표"], text: "도담건설 대표 한도준(58). 할머니의 큰아들. 30년 전 집을 나간 뒤 장례식에도 오지 않았다. 유저는 어릴 때 사진으로만 얼굴을 봤다.", kind: "person", tags: "solo, 1boy, middle-aged man, graying hair, stern face, expensive suit, ceo office, cold eyes" },
+    { keys: ["레시피 노트", "레시피"], text: "할머니가 손글씨로 쓴 레시피 노트. 된장찌개부터 하숙인마다 좋아하는 반찬까지 적혀 있다. 지금은 강태하가 부엌 서랍에 보관한다.", kind: "item", tags: "handwritten recipe notebook, old notebook, wooden kitchen table, korean side dishes, warm light" },
+    { keys: ["오월의 여름", "웹툰"], text: "요즘 인기 순위에 오른 웹툰. 시골 한옥에서 할머니와 여름을 보내는 아이의 이야기. 작가 필명은 '결'.", kind: "item", tags: "smartphone screen, webtoon panel, summer countryside, hanok, blue sky, watercolor, nostalgic" },
+    { keys: ["복덕슈퍼", "슈퍼 할아버지"], text: "골목 입구의 복덕슈퍼. 주인 할아버지는 할머니와 오십 년 지기이고 동네 소문은 다 이곳을 거친다. 막걸리 한 병이면 옛날 얘기가 술술 나온다.", kind: "place", tags: "old corner store, korean neighborhood shop, alley entrance, makgeolli bottles, plastic chairs, evening" },
+    { keys: ["할아버지", "30년 전"], text: "유저의 할아버지는 30년 전 겨울밤 이 집 마당에서 쓰러져 돌아가셨다. 그날 이후 큰아들이 집을 나갔다는 것만 동네에 알려져 있다.", kind: "event", tags: "winter night, snow, hanok courtyard, fallen figure silhouette, dim lantern, sepia, old memory, tragic" },
+    { keys: ["타임캡슐", "여름방학"], text: "유저가 어릴 때 마지막 여름방학에 할머니와 함께 묻은 깡통. 무엇을 넣었는지, 어디에 묻었는지 유저는 잘 기억나지 않는다.", kind: "item", tags: "time capsule, old tin can, buried in soil, garden, summer, nostalgic" }
   ],
   cast: [
     { code: "th", name: "강태하", look: "32세 남성, 셰프, 짧게 깎은 검은 머리, 날카로운 눈매, 검은 앞치마, 걷어붙인 소매와 팔뚝의 화상 자국", tags: "black hair, very short hair, sharp eyes, chef, black apron, sleeves rolled up, burn scar on forearm, toned arms" },

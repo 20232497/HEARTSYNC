@@ -25,6 +25,7 @@
  * @typedef {Object} LoreEntry
  * @property {string[]} keys 첫 키워드가 세계관 일러스트(loreImages)의 키
  * @property {string} text
+ * @property {string} [kind] 항목 종류(ui/worldart.js LORE_KINDS: person·creature·place·item·event·group·concept) — 세계관 일러스트의 구도(images/prompt.js LORE_SHOT)
  * @property {string} [tags] 세계관 일러스트를 그릴 때 text 대신 쓰는 영문 태그
  */
 /**
@@ -60,6 +61,7 @@
  * @property {LoreEntry[]} [lore]
  * @property {CastMember[]} [cast] 없으면 content/index.js·normalizeChar가 한 명(code "c")을 만듦
  * @property {string} [lookTags] cast가 없는 1:1 작품의 영문 외모 태그
+ * @property {string} [artTags] 그 세계관의 영문 낱말(시대·장소·분위기) — 표지·세계관 일러스트 프롬프트에 붙음
  * @property {Opening[]} openings
  * @property {Aud} [aud] 오리지널은 폴더가 정함, 없으면 guessAud
  * @property {string} [row] 홈 가로 줄(폴더 이름)

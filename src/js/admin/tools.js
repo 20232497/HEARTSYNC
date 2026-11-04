@@ -1,6 +1,6 @@
 /* 관리자 고리(EXT에 꽂음): 사용자 화면 모듈이 비워 둔 자리를 채운다. 사용자 빌드에는 이 모듈이 없어 그 자리들이 비어 있다.
-   상세(EXT.detail): '일러스트 관리'·'이미지 슬롯 관리'·'작품 폴더에 저장', 내 작품이면 '수정', 인물 초상을 누르면 그 인물의 이미지 슬롯
-   드로어(EXT.drawer): 메뉴 끝에 '이미지 슬롯(n장 등록)' / MY(EXT.me): 크리에이터 프로필(커뮤니티 공개 이름)과 관리자 안내 / 페르소나 시트(EXT.persona): 'AI로 만들기' */
+   상세(EXT.detail): '일러스트 관리'·'이미지 관리'·'작품 폴더에 저장', 내 작품이면 '수정', 인물 초상을 누르면 그 인물로 이미지 스튜디오(#images)
+   드로어(EXT.drawer): 메뉴 끝에 '이미지(n장 등록)' → 이미지 스튜디오 / MY(EXT.me): 크리에이터 프로필(커뮤니티 공개 이름)과 관리자 안내 / 페르소나 시트(EXT.persona): 'AI로 만들기' */
 import { getChar } from "../core/character.js";
 import { S } from "../core/state.js";
 import { KV } from "../core/storage.js";
@@ -14,7 +14,7 @@ import { go } from "../ui/shell.js";
 import { CONTENT, exportWork } from "./export.js";
 import { genImageSheet } from "./gen-sheet.js";
 import { gateNeeded, lockAdmin } from "./gate.js";
-import { openImageSlots } from "./slots.js";
+import { openImages } from "./image-studio.js";
 import { openWorldArt } from "./worldart.js";
 
 EXT.detail.push((c, v) => {
@@ -22,18 +22,18 @@ EXT.detail.push((c, v) => {
   if (wb) { wb.style.display = ""; if (!$(".wgal", wb)) wb.insertAdjacentHTML("beforeend", `<p class="note">대표 일러스트(표지)를 AI로 만들거나 올릴 수 있어요. 키워드북이 있는 작품은 항목마다 세계관 일러스트도 넣을 수 있어요.</p>`); }
   if (wt) { wt.innerHTML = `<button class="btn sm ghost" id="wArt">일러스트 관리</button>`; $("#wArt", wt).onclick = () => openWorldArt(c); }
   if (ct) {
-    ct.innerHTML = `<button class="btn sm ghost" id="imgSlots">이미지 슬롯 관리</button> <button class="btn sm ghost" id="wExport" title="이 작품의 그림을 저장소 content/ 폴더에 써요">작품 폴더에 저장</button>`;
-    $("#imgSlots", ct).onclick = () => openImageSlots(c);
+    ct.innerHTML = `<button class="btn sm ghost" id="imgSlots">이미지 관리</button> <button class="btn sm ghost" id="wExport" title="이 작품의 그림을 저장소 content/ 폴더에 써요">작품 폴더에 저장</button>`;
+    $("#imgSlots", ct).onclick = () => openImages(c);
     $("#wExport", ct).onclick = () => exportWorkToast(c);
   }
   if (cta && S.mine.some((m) => m.id === c.id)) { cta.innerHTML = `<button class="btn" id="wEdit">수정</button>`; $("#wEdit", cta).onclick = () => go("studio-" + c.id); }
-  $$("[data-cast]", v).forEach((b) => b.onclick = () => openImageSlots(c, b.dataset.cast));
+  $$("[data-cast]", v).forEach((b) => b.onclick = () => openImages(c, b.dataset.cast));
 });
 EXT.drawer.push((r, body) => {
   const list = $(".menu-list", body); if (!list) return;
   const c = getChar(r.char.id) || r.char, filled = Object.values(imagesOf(c)).reduce((a, m) => a + Object.values(m).filter(validRef).length, 0);
-  list.insertAdjacentHTML("beforeend", `<button id="mImg">이미지 슬롯<span class="v">${filled}장 등록</span></button>`);
-  $("#mImg", list).onclick = () => openImageSlots(c);
+  list.insertAdjacentHTML("beforeend", `<button id="mImg">이미지<span class="v">${filled}장 등록</span></button>`);
+  $("#mImg", list).onclick = () => openImages(c);
 });
 EXT.me.push((v) => {
   const box = $("#meExt", v); if (!box) return;
