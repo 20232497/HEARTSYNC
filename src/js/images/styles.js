@@ -34,6 +34,7 @@ export const imgModelInfo = (id) => IMG_MODELS.find((m) => m.id === id) || { id,
    사용자가 같은 이름(match)의 세트를 ZIP으로 올리면 그 세트가 덮고(overrides), 세트를 지우면 다시 내장으로 돌아옴(effectiveSet). 태그는 그림체만(인물·구도·배경 금지).
    samples: 저장소 styles/<id>-1.jpg … 에 둔 견본 수(설정 카드에 보여 줌 — 없는 파일을 가리키면 404가 나므로 수를 맞춰 적음) */
 /* 비교 생성(2026-11-03, 6라운드 66장)으로 정함: 반실사 네 묶음은 semILust v2(Illustrious) — Run七八造(예전 기본)는 붓 자국이 보이는 일러스트, 포토리얼 계열은 사진처럼 나와서 뺌.
+   남성향 일상은 2026-11-04 재조정 — realistic skin texture를 빼고 (semi-realistic:1.2)·(large eyes:1.1)·smooth glossy skin·airbrushed로 참고 그림의 매끈하고 큰 눈 쪽으로('idol-like'는 무대 조명·관객 배경을 끌어와서 뺌).
    여성향 인물은 사진 같은 성인 남성으로 치우쳐 (bishounen:1.2)·pretty boy·pale smooth skin으로 참고 그림의 부드러운 꽃미남 쪽으로 당김(realistic skin texture는 뺌).
    여성향(남성 인물) 두 묶음은 2026-11-04 체크포인트 19종을 더 비교해 YabaL Mix 2.5D XL(sdxl)로 — semILust·myzy Korean XL보다 참고 그림의 부드럽고 창백한 꽃미남에 가깝고 표지·의상 조합에서도 남자를 남자로 그림.
    표지는 장면 태그가 앞이라 조명 태그에 가중치. 여성향 표지에도 (bishounen:1.2)·pretty boy — semILust가 옷·머리 태그만 있는 남자(은발 기사·셰프)를 여자로 그려서(2026-11-04, coverPrompt의 (1boy:1.2)·masculine 앵커만으로는 부족, HoJ도 마찬가지). 애니는 2026-11-04 세밀 태그로 재비교(WAI·Nova Anime 12.5/5·Nova Orange·Illustrious 2.0·Mistoon·Hassaku) → Hassaku XL v2.1 + (intricate details:1.3)·sketchy brushwork·ink splatter·dark background. 'lightning' 태그는 모든 그림을 번개로 덮어서 뺌 */
@@ -42,7 +43,7 @@ const SEMI = "korean, semi-realistic, 2.5d, realistic proportions, glossy hair, 
 export const BUILTIN_SETS = [
   { id: "mdaily", name: "프롬1 남성향 일상", kind: "daily", aud: "m", match: /프롬\s*1.*남성향|남성향.*일상/, model: SEMI_L, samples: 3,
     desc: "참고 그림 프롬1(남성향 일상) 14장에서 뽑은 화풍 — 한국 반실사 2.5D, 윤기 있는 머리칼과 매끈한 피부, 자연스러운 비율, 영화 같은 조명. 남성향 작품(여성 인물)의 인물 그림 기본값",
-    prompt: SEMI + ", korean beauty, glossy lips, natural makeup, soft bloom, clean skin, vivid natural colors" },
+    prompt: SEMI.replace(SEMI_SKIN, "") + ", (semi-realistic:1.2), korean beauty, (large eyes:1.1), soft gaze, glossy lips, natural makeup, smooth glossy skin, airbrushed, soft bloom, vivid natural colors" },
   { id: "fdaily", name: "프롬1 여성향 일상", kind: "daily", aud: "f", match: /프롬\s*1.*여성향|여성향.*일상/, model: YABAL, samples: 3,
     desc: "프롬1(여성향 일상) 10장 — 같은 반실사 계열의 남성 인물: 창백하고 매끈한 피부, 섬세한 이목구비와 또렷한 턱선, 차분한 조명과 채도, 회화적 음영. 여성향 작품(남성 인물)의 인물 그림 기본값",
     prompt: SEMI.replace(SEMI_SKIN, "") + ", handsome, (bishounen:1.2), pretty boy, youthful, delicate facial features, soft facial features, pale smooth skin, sharp jawline, soft painterly shading, gentle lighting, muted warm palette, manhwa style" },
