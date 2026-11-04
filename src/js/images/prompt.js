@@ -13,11 +13,12 @@ export function coverPrompt(c) {
   if (c.world_mode && cast.length > 1) {
     const pick = cast.slice(0, 3); // SDXL은 3명이 넘으면 얼굴·몸이 뭉개져서 앞의 3명만
     const f = pick.filter((x) => /여성|여자|\bfemale\b|\bgirl/i.test(x.look || "")).length, m = pick.filter((x) => /남성|남자|\bmale\b|\bboy/i.test(x.look || "")).length;
-    const who = [f ? (f > 1 ? `${f}girls` : "1girl") : "", m ? (m > 1 ? `${m}boys` : "1boy") : "", m && !f ? "male focus" : ""].filter(Boolean).join(", ") || "multiple characters";
+    // 남자만 있는 표지는 인원 태그에 가중치 + 남성 앵커 — 반실사 모델(semILust)이 남자를 여자처럼 그리는 일이 잦음(2026-11-04 비교 생성)
+    const who = [f ? (f > 1 ? `${f}girls` : "1girl") : "", m ? (m > 1 ? (f ? `${m}boys` : `(${m}boys:1.2)`) : (f ? "1boy" : "(1boy:1.2)")) : "", m && !f ? "male focus, handsome men, masculine features" : ""].filter(Boolean).join(", ") || "multiple characters";
     return [...base, who, "group shot", ...pick.map((x) => x.tags || x.look), c.oneLiner, "detailed background"].filter(Boolean).join(", ");
   }
-  const look = castLook(cast[0], c);
-  return [...base, ...whoTags(look), (cast[0] && cast[0].tags) || look, "upper body, looking at viewer", c.oneLiner, "detailed background"].filter(Boolean).join(", ");
+  const look = castLook(cast[0], c), who = lookIsMale(look) ? ["(1boy:1.2)", "male focus", "solo", "handsome man, masculine features"] : whoTags(look);
+  return [...base, ...who, (cast[0] && cast[0].tags) || look, "upper body, looking at viewer", c.oneLiner, "detailed background"].filter(Boolean).join(", ");
 }
 /* 상황 번호(SIT 0~14) → 표정·자세 태그(Danbooru). 프롬프트 맨 앞(장면 자리)에 들어가야 모델이 따름 */
 const SIT_PONY_TAGS = [

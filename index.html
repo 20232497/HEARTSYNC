@@ -1733,7 +1733,8 @@ function baseName(n) { return SIT[n] || (DIMS[n] && DIMS[n].name) || ""; }
 /* ── src/js/core/cast.js */
 /* 인물 외모 문구: 설정의 "이름(나이, 성별)"·"외모:"와 출연진 look을 합쳐 castLook — S에 의존하지 않아 Node에서도 쓸 수 있음 */
 /* 출연진 외모가 비었을 때: 캐릭터 설정의 "이름(나이, 성별)"과 "외모:" 부분으로 대신(성별이 틀린 1girl 기본값 방지) */
-function personaWho(c) { const w = String(c?.persona || "").match(/\((\d{1,2})\s*,\s*([남여])\)/); return w ? `${w[1]}세 ${w[2] === "남" ? "남성" : "여성"}` : ""; }
+/* 설정 첫 괄호 "(27, 남)"·"(외견 28세, 실제 나이 천 살 이상, 남)" → "27세 남성"(성별이 괄호 끝에 있을 때만) */
+function personaWho(c) { const w = String(c?.persona || "").match(/\(([^()]{1,60})\)/); if (!w) return ""; const age = w[1].match(/(\d{1,2})\s*(?:세|살)?\s*[,，]/), g = w[1].match(/(?:^|[,，]\s*)([남여])\s*$/); return g ? `${age ? age[1] + "세 " : ""}${g[1] === "남" ? "남성" : "여성"}` : ""; }
 function personaLook(c) {
   const look = (String(c?.persona || "").match(/외모\s*[:：]\s*([^\n]+)/) || [])[1] || "";
   return [personaWho(c), look.trim().replace(/[.。]\s*$/, "")].filter(Boolean).join(", ");
@@ -1912,7 +1913,7 @@ const imgModelInfo = (id) => IMG_MODELS.find((m) => m.id === id) || { id, name: 
    samples: 저장소 styles/<id>-1.jpg … 에 둔 견본 수(설정 카드에 보여 줌 — 없는 파일을 가리키면 404가 나므로 수를 맞춰 적음) */
 /* 비교 생성(2026-11-03, 6라운드 66장)으로 정함: 반실사 네 묶음은 semILust v2(Illustrious) — Run七八造(예전 기본)는 붓 자국이 보이는 일러스트, 포토리얼 계열은 사진처럼 나와서 뺌.
    여성향 인물은 사진 같은 성인 남성으로 치우쳐 (bishounen:1.2)·pretty boy·pale smooth skin으로 참고 그림의 부드러운 꽃미남 쪽으로 당김(realistic skin texture는 뺌).
-   표지는 장면 태그가 앞이라 조명 태그에 가중치. 애니는 WAI + (anime key visual:1.2)·glowing particles — Hassaku와 비슷했고 WAI가 참고 그림의 어두운 배경·강한 대비에 가까움 */
+   표지는 장면 태그가 앞이라 조명 태그에 가중치. 여성향 표지에도 (bishounen:1.2)·pretty boy — semILust가 옷·머리 태그만 있는 남자(은발 기사·셰프)를 여자로 그려서(2026-11-04, coverPrompt의 (1boy:1.2)·masculine 앵커만으로는 부족, HoJ도 마찬가지). 애니는 WAI + (anime key visual:1.2)·glowing particles — Hassaku와 비슷했고 WAI가 참고 그림의 어두운 배경·강한 대비에 가까움 */
 const SEMI_L = "civitai:1160480@1449034", SEMI_SKIN = ", realistic skin texture";
 const SEMI = "korean, semi-realistic, 2.5d, realistic proportions, glossy hair, detailed hair, soft skin shading" + SEMI_SKIN + ", detailed eyes, cinematic lighting, depth of field, high detail";
 const BUILTIN_SETS = [
@@ -1927,7 +1928,7 @@ const BUILTIN_SETS = [
     prompt: "(anime key visual:1.2), highly detailed illustration, intricate details, detailed lineart, cel shading, high contrast, vivid colors, dramatic lighting, (glowing particles:1.1), light effects, shiny hair, beautiful detailed eyes" },
   { id: "fworld", name: "프롬2 여성향 세계관", kind: "world", aud: "f", match: /프롬\s*2.*여성향|여성향.*(?:세계관|표지)/, model: SEMI_L, samples: 3,
     desc: "프롬2(여성향 세계관 표지) 11장 — 어둡고 로맨틱한 저조도 조명(촛불·달빛), 차분하고 깊은 색, 반실사 남성 인물. 여성향 작품의 표지·세계관 일러스트 기본값",
-    prompt: SEMI + ", cinematic cover illustration, (low-key lighting:1.2), dim lighting, candlelight, moonlight, dark romantic atmosphere, rich muted palette, intricate details" },
+    prompt: SEMI + ", cinematic cover illustration, (low-key lighting:1.2), dim lighting, candlelight, moonlight, dark romantic atmosphere, rich muted palette, intricate details, handsome, (bishounen:1.2), pretty boy, sharp jawline" },
   { id: "mworld", name: "프롬3 남성향 세계관", kind: "world", aud: "m", match: /프롬\s*3.*남성향|남성향.*(?:세계관|표지)/, model: SEMI_L, samples: 3,
     desc: "프롬3(남성향 세계관 표지) 11장 — 네온·무대 조명의 강한 림라이트, 선명한 채도와 윤기, 보케. 남성향 작품의 표지·세계관 일러스트 기본값",
     prompt: SEMI + ", cinematic cover illustration, (dramatic rim lighting:1.2), neon lights, stage lighting, vivid saturated colors, glossy finish, bokeh, intricate details" }
@@ -4648,11 +4649,12 @@ function coverPrompt(c) {
   if (c.world_mode && cast.length > 1) {
     const pick = cast.slice(0, 3); // SDXL은 3명이 넘으면 얼굴·몸이 뭉개져서 앞의 3명만
     const f = pick.filter((x) => /여성|여자|\bfemale\b|\bgirl/i.test(x.look || "")).length, m = pick.filter((x) => /남성|남자|\bmale\b|\bboy/i.test(x.look || "")).length;
-    const who = [f ? (f > 1 ? `${f}girls` : "1girl") : "", m ? (m > 1 ? `${m}boys` : "1boy") : "", m && !f ? "male focus" : ""].filter(Boolean).join(", ") || "multiple characters";
+    // 남자만 있는 표지는 인원 태그에 가중치 + 남성 앵커 — 반실사 모델(semILust)이 남자를 여자처럼 그리는 일이 잦음(2026-11-04 비교 생성)
+    const who = [f ? (f > 1 ? `${f}girls` : "1girl") : "", m ? (m > 1 ? (f ? `${m}boys` : `(${m}boys:1.2)`) : (f ? "1boy" : "(1boy:1.2)")) : "", m && !f ? "male focus, handsome men, masculine features" : ""].filter(Boolean).join(", ") || "multiple characters";
     return [...base, who, "group shot", ...pick.map((x) => x.tags || x.look), c.oneLiner, "detailed background"].filter(Boolean).join(", ");
   }
-  const look = castLook(cast[0], c);
-  return [...base, ...whoTags(look), (cast[0] && cast[0].tags) || look, "upper body, looking at viewer", c.oneLiner, "detailed background"].filter(Boolean).join(", ");
+  const look = castLook(cast[0], c), who = lookIsMale(look) ? ["(1boy:1.2)", "male focus", "solo", "handsome man, masculine features"] : whoTags(look);
+  return [...base, ...who, (cast[0] && cast[0].tags) || look, "upper body, looking at viewer", c.oneLiner, "detailed background"].filter(Boolean).join(", ");
 }
 /* 상황 번호(SIT 0~14) → 표정·자세 태그(Danbooru). 프롬프트 맨 앞(장면 자리)에 들어가야 모델이 따름 */
 const SIT_PONY_TAGS = [

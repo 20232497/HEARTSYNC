@@ -30,7 +30,7 @@ export const imgModelInfo = (id) => IMG_MODELS.find((m) => m.id === id) || { id,
    samples: 저장소 styles/<id>-1.jpg … 에 둔 견본 수(설정 카드에 보여 줌 — 없는 파일을 가리키면 404가 나므로 수를 맞춰 적음) */
 /* 비교 생성(2026-11-03, 6라운드 66장)으로 정함: 반실사 네 묶음은 semILust v2(Illustrious) — Run七八造(예전 기본)는 붓 자국이 보이는 일러스트, 포토리얼 계열은 사진처럼 나와서 뺌.
    여성향 인물은 사진 같은 성인 남성으로 치우쳐 (bishounen:1.2)·pretty boy·pale smooth skin으로 참고 그림의 부드러운 꽃미남 쪽으로 당김(realistic skin texture는 뺌).
-   표지는 장면 태그가 앞이라 조명 태그에 가중치. 애니는 WAI + (anime key visual:1.2)·glowing particles — Hassaku와 비슷했고 WAI가 참고 그림의 어두운 배경·강한 대비에 가까움 */
+   표지는 장면 태그가 앞이라 조명 태그에 가중치. 여성향 표지에도 (bishounen:1.2)·pretty boy — semILust가 옷·머리 태그만 있는 남자(은발 기사·셰프)를 여자로 그려서(2026-11-04, coverPrompt의 (1boy:1.2)·masculine 앵커만으로는 부족, HoJ도 마찬가지). 애니는 WAI + (anime key visual:1.2)·glowing particles — Hassaku와 비슷했고 WAI가 참고 그림의 어두운 배경·강한 대비에 가까움 */
 const SEMI_L = "civitai:1160480@1449034", SEMI_SKIN = ", realistic skin texture";
 const SEMI = "korean, semi-realistic, 2.5d, realistic proportions, glossy hair, detailed hair, soft skin shading" + SEMI_SKIN + ", detailed eyes, cinematic lighting, depth of field, high detail";
 export const BUILTIN_SETS = [
@@ -45,7 +45,7 @@ export const BUILTIN_SETS = [
     prompt: "(anime key visual:1.2), highly detailed illustration, intricate details, detailed lineart, cel shading, high contrast, vivid colors, dramatic lighting, (glowing particles:1.1), light effects, shiny hair, beautiful detailed eyes" },
   { id: "fworld", name: "프롬2 여성향 세계관", kind: "world", aud: "f", match: /프롬\s*2.*여성향|여성향.*(?:세계관|표지)/, model: SEMI_L, samples: 3,
     desc: "프롬2(여성향 세계관 표지) 11장 — 어둡고 로맨틱한 저조도 조명(촛불·달빛), 차분하고 깊은 색, 반실사 남성 인물. 여성향 작품의 표지·세계관 일러스트 기본값",
-    prompt: SEMI + ", cinematic cover illustration, (low-key lighting:1.2), dim lighting, candlelight, moonlight, dark romantic atmosphere, rich muted palette, intricate details" },
+    prompt: SEMI + ", cinematic cover illustration, (low-key lighting:1.2), dim lighting, candlelight, moonlight, dark romantic atmosphere, rich muted palette, intricate details, handsome, (bishounen:1.2), pretty boy, sharp jawline" },
   { id: "mworld", name: "프롬3 남성향 세계관", kind: "world", aud: "m", match: /프롬\s*3.*남성향|남성향.*(?:세계관|표지)/, model: SEMI_L, samples: 3,
     desc: "프롬3(남성향 세계관 표지) 11장 — 네온·무대 조명의 강한 림라이트, 선명한 채도와 윤기, 보케. 남성향 작품의 표지·세계관 일러스트 기본값",
     prompt: SEMI + ", cinematic cover illustration, (dramatic rim lighting:1.2), neon lights, stage lighting, vivid saturated colors, glossy finish, bokeh, intricate details" }
