@@ -56,7 +56,7 @@
 .is-auto input { accent-color:var(--accent); }
 .is-auto .note { margin:0; }
 .is-busy { margin:8px 0 0; animation:genPulse 1.4s ease-in-out infinite; }
-.is-gal { display:grid; grid-template-columns:repeat(auto-fill, minmax(118px, 1fr)); gap:10px; align-items:start; }
+.is-gal { display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:10px; align-items:start; }
 .is-gi { border:1px solid var(--line); border-radius:12px; padding:6px; display:grid; gap:5px; text-align:center; font-size:12px; background:var(--surface); }
 .is-gi.on { border-color:var(--accent); box-shadow:0 0 0 1px var(--accent) inset; }
 .is-gi .pic { display:block; width:100%; border:0; padding:0; border-radius:9px; overflow:hidden; background:var(--surface2); cursor:pointer; }
@@ -64,7 +64,7 @@
 .is-gi .lb { display:grid; font-weight:600; line-height:1.3; }
 .is-gi .lb small { color:var(--muted); font-weight:400; font-size:11px; }
 .is-gi .bs { display:flex; gap:4px; justify-content:center; }
-.is-gi .bs button { border:1px solid var(--line); background:var(--bg); border-radius:7px; font-size:11.5px; padding:2px 7px; }
+.is-gi .bs button { border:1px solid var(--line); background:var(--bg); border-radius:7px; font-size:11.5px; padding:2px 6px; }
 /* 조합 줄·프롬프트·결과 카드(그림은 원래 비율 그대로) */
 .ct-combo { display:flex; flex-wrap:wrap; align-items:center; gap:8px; font-size:14px; }
 .ct-combo code { background:var(--surface2); border-radius:6px; padding:2px 6px; font-size:12.5px; }
@@ -77,3 +77,31 @@
 .ct-card .cap span { color:var(--muted); font-size:11.5px; }
 .ct-card .bs { display:flex; gap:4px; padding:6px 10px 10px; flex-wrap:wrap; }
 .ct-card .bs button { border:1px solid var(--line); background:var(--bg); border-radius:7px; font-size:11.5px; padding:2px 7px; }
+/* 선택 삭제 모드: 지울 수 있는 코드(내 칸)에만 체크 칸, 못 지우는 코드는 흐리게, 목록 아래 막대에 고른 수·지울 그림 수 */
+.is-chk { flex:0 0 auto; width:16px; height:16px; margin:0 0 0 6px; accent-color:var(--err); }
+.is-codes.deleting .is-code.locked { opacity:.45; }
+.is-codes.deleting .is-code.locked .is-pick { cursor:default; }
+.is-code.chk .is-pick { border-color:var(--err); }
+.is-code.chk .num { color:var(--err); }
+.is-delbar { display:grid; gap:8px; margin-top:10px; border:1px solid var(--err); border-radius:10px; padding:10px 12px; }
+.is-delbar .x { display:grid; gap:2px; font-size:13px; }
+.is-delbar .note { margin:0; }
+.is-delbar .cta-row { margin:0; justify-content:flex-end; }
+.is-clr { margin-left:auto; }
+/* 움짤: 사진 위에 영상을 겹침(.mo-wrap), 꼭지 표시·만드는 중 표시·사진 ↔ 움짤 바꾸기(⟳) 단추 */
+.is-now .pic, .is-gi .pic { position:relative; }
+.mo-badge { position:absolute; left:5px; top:5px; background:rgba(0,0,0,.6); color:#fff; font-size:10.5px; font-weight:600; border-radius:5px; padding:0 5px; pointer-events:none; }
+.mo-on .mo-badge, .is-now .mo-wrap + .mo-badge { background:var(--accent); color:var(--accent-ink); }
+.mo-busy { position:absolute; inset:auto 0 0; background:rgba(0,0,0,.66); color:#fff; font-size:11px; padding:3px 4px; text-align:center; animation:genPulse 1.4s ease-in-out infinite; pointer-events:none; }
+.mo-flip { display:inline-flex; align-items:center; justify-content:center; width:28px; height:26px; padding:0 !important; border:1px solid var(--line); background:var(--bg); border-radius:7px; color:var(--muted); }
+.mo-flip svg { width:16px; height:16px; transition:transform .25s; }
+.mo-flip.on { border-color:var(--accent); background:var(--accent-soft); color:var(--accent); }
+.mo-flip.on svg { transform:rotate(180deg); }
+.is-now .mo-flip { width:34px; height:30px; }
+.is-gi .bs { flex-wrap:wrap; }
+/* 움짤 만들기 창 */
+.mo-prev { display:flex; gap:10px; margin:4px 0 10px; }
+.mo-prev figure { margin:0; flex:0 1 150px; display:grid; gap:4px; font-size:11.5px; color:var(--muted); text-align:center; }
+.mo-prev .pic { display:block; border-radius:10px; overflow:hidden; background:var(--surface2); }
+.mo-prev img, .mo-prev video { width:100%; height:auto; display:block; }
+.mo-sheet textarea { width:100%; }

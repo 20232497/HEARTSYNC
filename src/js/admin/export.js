@@ -3,19 +3,21 @@
      content/<f|m|all>/[<줄>/]<id>/images/<인물코드>-<조합키>.jpg   그림 칸 — 조합 키의 쉼표는 파일 이름에서 -(3-404-501)
      content/…/<id>/images/cover.jpg                                  대표 일러스트(표지)
      content/…/<id>/images/lore-<n>.jpg                               키워드북 n번째 항목의 세계관 일러스트(1부터)
+     content/…/<id>/images/<인물코드>-<조합키>.mp4                    그 칸의 움짤(켜 둔 것만 — 꺼 둔 움짤은 사진만 보이므로 싣지 않음)
      content/codes.json                                                이미지 코드 표([{n, name, prompt, rating, keys?}] — 실린 코드 + 이 브라우저에서 만든 칸 가운데 전체이용가만. 성인 수위·관리자 전용(codes.admin.json) 코드는 공개 저장소에 싣지 않음)
      content/<aud>/<id>/work.js                                        스튜디오에서 만든 내 작품을 오리지널로 올릴 때(이미 있으면 덮어씀)
    쓰는 방법: Chrome·Edge는 폴더 고르기(File System Access API)로 저장소의 content 폴더에 바로 씀. 그 밖의 브라우저는 같은 구조의 ZIP을 내려받아 풀어 넣는다.
-   빌드(tools/build.mjs)가 이 파일들을 찾아 ORIGINALS의 images·img·loreImages와 CONTENT_CODES로 넣는다(content/README.md) */
+   빌드(tools/build.mjs)가 이 파일들을 찾아 ORIGINALS의 images·img·loreImages·motions와 CONTENT_CODES로 넣는다(content/README.md) */
 import { audOf } from "../core/audience.js";
 import { ORIGINALS } from "../content/index.js";
 import { S } from "../core/state.js";
 import { toast } from "../core/util.js";
 import { parseCodes } from "../images/codes.js";
+import { motionsOf } from "../images/motion.js";
 import { imagesOf } from "../images/pick.js";
 import { refDataURL } from "../images/runware.js";
 import { allCustom, sitDef } from "../images/situations.js";
-import { validRef } from "../services/images.js";
+import { IMG, validMotion, validRef } from "../services/images.js";
 
 export const CONTENT = { dir: null }; // 고른 content 폴더 핸들(이 세션 동안)
 export const canPickDir = () => typeof window.showDirectoryPicker === "function";
@@ -41,14 +43,29 @@ export async function workFiles(c) {
   // 성인 수위·관리자 전용 코드가 든 조합 그림은 사용자 사이트에 싣지 않음(그 코드는 codes.json에도 안 실려 빌드가 번호를 모름)
   const imgs = imagesOf(c), skipKey = (key) => parseCodes(String(key)).some((n) => { const d = sitDef(n); return !!d && (d.adminOnly || d.rating !== "safe"); });
   for (const code of Object.keys(imgs)) for (const key of Object.keys(imgs[code])) if (!skipKey(key)) await add(`${code}-${fileKey(key)}`, imgs[code][key]);
+  // 켜 둔 움짤은 같은 이름의 .mp4로(사진이 함께 있어야 보임 — 빌드가 경고)
+  const mos = motionsOf(c);
+  for (const code of Object.keys(mos)) for (const key of Object.keys(mos[code])) {
+    const m = mos[code][key]; if (!m.on || skipKey(key) || !validMotion(m.ref) || /^(content\/|\/_blob\/)/.test(m.ref)) continue;
+    const d = await motionData(m.ref); if (d) out.push({ path: `images/${code}-${fileKey(key)}.${/^data:video\/webm/.test(d) ? "webm" : "mp4"}`, data: d });
+  }
   await add("cover", mine ? mine.img : S.coverpacks[c.id]);
   const lore = c.lore || [], lp = mine ? (mine.loreImages || {}) : (S.lorepacks[c.id] || {});
   for (let i = 0; i < lore.length; i++) await add(`lore-${i + 1}`, lp[lore[i].keys[0]]);
   return out;
 }
+/* 움짤 본문 → data:video/… (kv:는 이 기기·계정에서, Runware 임시 주소는 내려받기 — 브라우저가 막거나 사라졌으면 null) */
+async function motionData(ref) {
+  try {
+    if (ref.startsWith("kv:")) return await IMG.load(ref.slice(3));
+    if (ref.startsWith("data:")) return ref;
+    const b = await (await fetch(ref)).blob(); if (!/^video\//.test(b.type)) return null;
+    return await new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.onerror = rej; fr.readAsDataURL(b); });
+  } catch { return null; }
+}
 /* 내 작품을 work.js로(오리지널로 올릴 때). 그림·공개 여부 같은 기기 데이터는 빼고 작품 내용만 */
 export function workSource(c) {
-  const o = { ...c }; ["images", "img", "loreImages", "publish", "creator", "updated", "aud", "row"].forEach((k) => delete o[k]);
+  const o = { ...c }; ["images", "img", "loreImages", "motions", "publish", "creator", "updated", "aud", "row"].forEach((k) => delete o[k]);
   return `/* ${c.title} — 스튜디오에서 내보냄(${new Date().toISOString().slice(0, 10)}). 폴더 이름이 id, 맨 위 폴더가 aud(content/README.md) */\nexport default ${JSON.stringify(o, null, 2)};\n`;
 }
 /* 사용자 사이트에 실을 코드 표 → codes.json 글: 전체이용가이고 관리자 전용이 아닌 것만(성인 수위 코드는 공개 저장소·사용자 빌드에 넣지 않음 — 빠진 수는 codesDropped). 빌드가 CONTENT_CODES로 다시 싣는다 */

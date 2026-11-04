@@ -9,6 +9,7 @@
 /** @typedef {"short"|"mid"|"long"} LenKey 출력량(ai/models.js LEN) */
 /** @typedef {"rooms"|"wallet"|"settings"|"vault"|"cloud"|"community"|"route"} EventName core/events.js의 이벤트 이름 */
 /** @typedef {string} ImageRef 그림 참조 — "/_blob/<id>"(claude.ai assets) · "kv:img…"(IndexedDB·계정) · "data:image/…" · "content/…/images/x.webp"(빌드가 실은 그림). 검사는 services/images.js validRef */
+/** @typedef {{ ref: string, on: boolean, local?: boolean }} Motion 그림 칸의 움짤(짧은 반복 영상) — ref는 /_blob/ · kv:img…(본문 data:video/…) · content/….mp4 · Runware 임시 주소(services/images.js validMotion), on이면 사진 대신 보임, local이면 커서 계정에 안 올리고 이 기기에만(images/motion.js) */
 /** @typedef {string} ComboKey 그림 조합 키 — "3"(번호 하나) 또는 "3,404,501"(감정 오름차순 → 의상 → 장소, images/codes.js keyOf) */
 /** @typedef {Record<string, string|number>} StatusMap 상태창 { "칸 이름": 값 } — 게이지 칸은 0~100 숫자, 다인원 칸은 "이름 n · 이름 n" 문자열 */
 
@@ -68,6 +69,7 @@
  * @property {ImagesMap} [images] 작품에 붙은 그림(오리지널은 content/…/images/, 내 작품은 만든 것)
  * @property {ImageRef} [img] 대표 일러스트(표지)
  * @property {Record<string, ImageRef>} [loreImages] 키워드북 첫 키워드 → 세계관 일러스트
+ * @property {Record<string, Record<ComboKey, string>>} [motions] 오리지널: 작품 폴더 images/의 움짤(인물 코드 → 조합 키 → content/….mp4, 켜진 것으로 봄)
  * @property {boolean} [publish] 내 작품: 커뮤니티 공개 여부
  * @property {string} [creator] 커뮤니티 작품의 크리에이터 이름
  * @property {number} [updated]
@@ -236,6 +238,7 @@
  * @property {Record<string, ImageRef>} coverpacks 작품 id → 표지
  * @property {Record<string, Record<string, ImageRef>>} lorepacks 작품 id → 키워드 → 세계관 일러스트
  * @property {Record<string, Record<string, object>>} tagpacks 작품 id → 인물 코드 → 저장한 태그 차이
+ * @property {Record<string, Record<string, Record<ComboKey, Motion|null>>>} motionpacks 작품 id → 인물 코드 → 조합 키 → 움짤(null은 실린 움짤을 가림)
  * @property {Settings} settings
  * @property {"pending"|"sample"|"byok"|"none"} engine AI 연결 상태
  * @property {string} cat

@@ -95,7 +95,7 @@ export function mergeGuest(remote, local) {
   const gp = guestPacks(remote, local);
   const sets = list(S.settings.styleSets), add = list(local.styleSets).filter((x) => x && !sets.some((y) => y && y.id === x.id));
   if (gp.sits.length !== list(S.settings.customSits).length || add.length) { S.settings.customSits = gp.sits; S.settings.styleSets = sets.concat(add); saveSettings(); }
-  const packs = { imgpacks: gp.imgpacks, coverpacks: local.coverpacks, lorepacks: local.lorepacks, tagpacks: gp.tagpacks, ponytags: local.ponytags };
+  const packs = { imgpacks: gp.imgpacks, motionpacks: local.motionpacks, coverpacks: local.coverpacks, lorepacks: local.lorepacks, tagpacks: gp.tagpacks, ponytags: local.ponytags };
   // 계정 값은 그대로 두고 빈 자리만 이 기기 값으로(같은 인물의 다른 칸 그림도 살림)
   Object.keys(packs).forEach((k) => { if (packs[k] && Object.keys(packs[k]).length) KV.set(k, fillIn(remote[k], packs[k])); });
 }

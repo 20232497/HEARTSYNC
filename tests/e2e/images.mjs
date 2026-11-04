@@ -1,5 +1,5 @@
 // 그림 조합 코드: [[img:코드:3,404,501]] 태그 그리기(figure[data-key]), 의상·장소 이어 가기·되돌리기(400·500), AI가 태그를 빠뜨린 인물의 자동 태그(지문의 장소 낱말),
-// 대화 중 자동 생성(가짜 runwareImage → 캔버스 PNG, 같은 조합은 다시 만들지 않음), 이미지 스튜디오(그 인물의 갤러리 → 조합 고르기·파일 이름 → 조합 키)·드로어 갤러리
+// 대화 중 자동 생성(가짜 runwareImage → 캔버스 PNG, 같은 조합은 다시 만들지 않음), 이미지 스튜디오(그 인물의 갤러리 → 조합 고르기·파일 이름 → 조합 키)·드로어 갤러리, 움짤(사진 위에 겹침·⟳ 끄기·사진을 바꾸면 지움)
 import { webkit, chromium, devices } from "playwright";
 const url = process.argv[2], out = process.argv[3];
 const targets = [["Desktop Chrome", chromium], ["iPhone 13", webkit]];
@@ -62,6 +62,20 @@ for (const [dev, engine] of targets) {
       return { card: true, combo: $(".ct-combo code").textContent, now: !!$(".is-now .pic img"), sels: $$(".is-sel").length, cnt: $('.is-code[data-row="7"] .cnt')?.textContent || "", keys: [nameKey("ks_3.png"), nameKey("3-404-501.webp"), nameKey("photo.png")] };
     });
     await p.screenshot({ path: `${out}/${dev.replace(/\W+/g, "_")}_images.png` });
+    // 8) 움짤: 그 칸에 움짤(가짜 영상 본문 — kv:)을 켜 두면 대화 그림이 사진 위에 영상을 겹치고(blob 주소), ⟳로 끄면 사진만. 사진을 바꾸면 움짤은 지워짐
+    res.motion = await p.evaluate(async (code) => {
+      const w = (ms) => new Promise((z) => setTimeout(z, ms)), c = room.char;
+      const k = uid("img"); IMG.cache[k] = "data:video/mp4;base64,AAAAIGZ0eXBpc29t"; await IDB.set(k, IMG.cache[k]);
+      putMotion(c, code, "7,404", "kv:" + k);
+      location.hash = "r-" + room.id; await w(700);
+      const fig = () => document.querySelector(`#logInner figure.scene-img[data-code="${code}"][data-key="7,404"]`);
+      const v = fig() && fig().querySelector(".mo-wrap video.mo"), on = { video: !!v, blob: !!(v && /^blob:/.test(v.src)), img: !!(fig() && fig().querySelector(".mo-wrap img")) };
+      const flipped = flipMotion(c, code, "7,404"); renderLog(); await w(300);
+      const off = { flipped, video: !!(fig() && fig().querySelector("video")), img: !!(fig() && fig().querySelector("img")), still: !!motionOf(c, code, "7,404") };
+      flipMotion(c, code, "7,404");
+      putCastImage(c, code, "7,404", "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=");
+      return { on, off, gone: !motionOf(c, code, "7,404"), body: !IMG.cache[k] };
+    }, code);
     await p.evaluate(() => { location.hash = "r-" + room.id; }); await p.waitForTimeout(500);
     await p.evaluate(() => { closeOverlays(); openRoomDrawer("gallery"); }); await p.waitForTimeout(400);
     res.gallery = await p.evaluate(() => $$(".gallery button").length);
@@ -75,6 +89,7 @@ for (const [dev, engine] of targets) {
   if (res.t5 && !(res.t5.tagKey && res.t5.swapped && res.t5.rw === 1 && res.t5.stored)) bad.push("t5 " + JSON.stringify(res.t5));
   if (res.t6 && !(res.t6.rw === 1 && res.t6.imgNow)) bad.push("t6 " + JSON.stringify(res.t6));
   if (res.studio && !(res.studio.card && /:7,404]]/.test(res.studio.combo) && res.studio.now && res.studio.sels === 2 && res.studio.cnt === "1장" && res.studio.keys.join("|") === "3|3,404,501|")) bad.push("studio " + JSON.stringify(res.studio));
+  if (res.motion && !(res.motion.on.video && res.motion.on.blob && res.motion.on.img && res.motion.off.flipped === false && !res.motion.off.video && res.motion.off.img && res.motion.off.still && res.motion.gone && res.motion.body)) bad.push("motion " + JSON.stringify(res.motion));
   if (res.gallery !== undefined && res.gallery < 1) bad.push("gallery " + res.gallery);
   res.errs = errs.concat(bad); console.log(JSON.stringify(res)); await b.close();
 }

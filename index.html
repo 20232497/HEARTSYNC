@@ -264,7 +264,10 @@ h2.sec small, h1.sec small { font-family:var(--sans); font-size:12.5px; color:va
 .slot .artcard .ac-s { font-size:12px; }
 .thumb-art .artcard .ac-s, .thumb-art .artcard .ac-n { display:none; }
 .lightbox { position:fixed; inset:0; z-index:70; background:rgba(0,0,0,.85); display:flex; align-items:center; justify-content:center; padding:max(16px, env(safe-area-inset-top,0px)) 16px; cursor:zoom-out; animation:fade .18s; }
-.lightbox img { max-width:100%; max-height:100%; border-radius:12px; }
+.lightbox img, .lightbox video { max-width:100%; max-height:100%; border-radius:12px; }
+.mo-wrap { position:relative; display:block; }
+.mo-wrap > video.mo { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; cursor:zoom-in; }
+.mo-wrap > video.mo.img-miss { display:none; }
 img[data-kv], img.img-wait { background:linear-gradient(100deg, var(--surface2) 35%, var(--line) 50%, var(--surface2) 65%); background-size:250% 100%; animation:skel 1.4s linear infinite; }
 img.img-miss { background:var(--surface2); }
 .scene-img img[data-kv], .scene-img img.img-wait, .scene-img img.img-miss { aspect-ratio:4/5; }
@@ -660,7 +663,7 @@ const hasOpenRouterKey = () => !!S.settings.openRouterKey || !!CFG.serverKeys;
 const S = {
   wallet: { hearts: 0, freeDay: today(), freeUsed: 0, pro: null, history: [], ledger: [], ack: {} },
   personas: [{ id: "p1", name: "유저", memo: "", desc: "", img: "", def: true }],
-  profile: { nick: "" }, mine: [], rooms: [], community: [], imgpacks: {}, coverpacks: {}, lorepacks: {}, tagpacks: {},
+  profile: { nick: "" }, mine: [], rooms: [], community: [], imgpacks: {}, motionpacks: {}, coverpacks: {}, lorepacks: {}, tagpacks: {},
   settings: { fs: 15.5, chatLh: 1.8, narrFont: "serif", enterSend: true, sceneImg: true, autoImg: false, apiKey: "", runwareKey: "", customSits: [], imgModel: "", imgStyle: "auto", imgStyleCustom: "", styleRefs: [], styleSets: [], styleV2: true, styleV3: true, memCfg: { auto: true, every: 5, limit: 3000, guide: "auto", custom: "" },
     isAgeVerified: false, contentFilter: true, autoFallback: true, openRouterKey: "", customUnfilteredModel: "" },
   engine: "pending", cat: "전체", q: ""
@@ -1315,8 +1318,15 @@ function validRef(ref) {
   return typeof ref === "string" && (/^\/_blob\/[A-Za-z0-9_-]{8,80}$/.test(ref) || /^kv:img[a-z0-9]{6,30}$/.test(ref) || /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(ref)
     || /^content\/(?!.*\.\.)[A-Za-z0-9_./-]+\.(webp|png|jpe?g)$/.test(ref));
 }
+const VIDEO_DATA = /^data:video\/(mp4|webm|quicktime);base64,[A-Za-z0-9+/=]+$/;
+function validMotion(ref) {
+  return typeof ref === "string" && (/^\/_blob\/[A-Za-z0-9_-]{8,80}$/.test(ref) || /^kv:img[a-z0-9]{6,30}$/.test(ref) || VIDEO_DATA.test(ref)
+    || /^content\/(?!.*\.\.)[A-Za-z0-9_./-]+\.(mp4|webm)$/.test(ref) || /^https:\/\/vm\.runware\.ai\/[A-Za-z0-9_./-]+\.(mp4|webm|mov)$/.test(ref));
+}
+const bodyOK = (v) => typeof v === "string" && (validRef(v) || VIDEO_DATA.test(v));
+const CLOUD_VIDEO_MAX = 1400000;
 const IMG = {
-  assets: null, cache: {},
+  assets: null, cache: {}, vurl: {},
   async put(file) {
     if (this.assets) {
       try { const blob = await shrink(file, 960, 0.86, true); const r = await this.assets.upload(blob); if (r && r.id) return "/_blob/" + r.id; } catch {}
@@ -1328,21 +1338,28 @@ const IMG = {
     KV.set(key, data, { local: !saved });
     return "kv:" + key;
   },
+  async putVideo(blob) {
+    if (this.assets) { try { const r = await this.assets.upload(blob); if (r && r.id) return { ref: "/_blob/" + r.id, local: false }; } catch {} }
+    const data = await blobURL(blob), key = uid("img"); this.cache[key] = data;
+    const saved = !!(await IDB.open()) && await IDB.set(key, data), small = data.length <= CLOUD_VIDEO_MAX;
+    if (small) KV.set(key, data, { local: !saved }); else if (!saved) throw { code: "too_big" };
+    return { ref: "kv:" + key, local: !small };
+  },
   async local(k) {
     if (this.cache[k]) return this.cache[k];
     let v = await IDB.get(k);
     if (typeof v !== "string") v = await KV.get(k);
-    if (typeof v === "string" && validRef(v)) this.cache[k] = v;
+    if (bodyOK(v)) this.cache[k] = v;
     return this.cache[k];
   },
-  keep(k, v) { if (typeof v === "string" && validRef(v)) { this.cache[k] = v; IDB.set(k, v); } },
+  keep(k, v) { if (bodyOK(v)) { this.cache[k] = v; IDB.set(k, v); } },
   async load(k) {
     const v = await this.local(k);
     if (v || !CLOUD.on) return v;
     this.keep(k, await CLOUD.getOne(k));
     return this.cache[k];
   },
-  drop(ref) { if (typeof ref === "string" && ref.startsWith("kv:")) { const k = ref.slice(3); KV.set(k, undefined); IDB.set(k, undefined); delete this.cache[k]; } },
+  drop(ref) { if (typeof ref === "string" && ref.startsWith("kv:")) { const k = ref.slice(3); KV.set(k, undefined); IDB.set(k, undefined); delete this.cache[k]; if (this.vurl[k]) { URL.revokeObjectURL(this.vurl[k]); delete this.vurl[k]; } } },
   async migrate() {
     if (!(await IDB.open())) return 0;
     let n = 0;
@@ -1360,6 +1377,20 @@ const IMG = {
     if (ref.startsWith("kv:")) { const k = ref.slice(3); return this.cache[k] ? `<img src="${this.cache[k]}" alt="">` : `<img data-kv="${k}" alt="">`; }
     return `<img src="${ref}" alt="" loading="lazy">`;
   },
+  vtag(ref) {
+    if (!validMotion(ref)) return "";
+    const a = 'class="mo" muted loop autoplay playsinline preload="auto" disablepictureinpicture';
+    if (ref.startsWith("kv:")) { const k = ref.slice(3); return this.vurl[k] ? `<video ${a} src="${this.vurl[k]}"></video>` : `<video ${a} data-vkv="${k}"></video>`; }
+    if (ref.startsWith("data:")) return `<video ${a} src="${ref}"></video>`;
+    return `<video ${a} src="${ref}"></video>`;
+  },
+  async videoURL(k) {
+    if (this.vurl[k]) return this.vurl[k];
+    const v = await this.load(k);
+    if (typeof v !== "string" || !VIDEO_DATA.test(v)) return null;
+    try { this.vurl[k] = URL.createObjectURL(await (await fetch(v)).blob()); } catch { return null; }
+    return this.vurl[k];
+  },
   async hydrate(root = document) {
     const els = $$("img[data-kv]", root).map((el) => { const k = el.dataset.kv; el.removeAttribute("data-kv"); el.classList.add("img-wait"); return [el, k]; }), miss = [];
     for (const [el, k] of els) { const v = await this.local(k); if (v) { el.src = v; el.classList.remove("img-wait"); } else if (miss.indexOf(k) < 0) miss.push(k); }
@@ -1369,8 +1400,14 @@ const IMG = {
       el.classList.remove("img-wait");
       if (!el.src) { el.classList.add("img-miss"); const cv = el.closest(".cover"); if (cv) cv.classList.remove("has-img"); }
     });
+    for (const el of $$("video[data-vkv]", root)) {
+      const k = el.dataset.vkv; el.removeAttribute("data-vkv");
+      const u = await this.videoURL(k);
+      if (u) { el.src = u; el.play && el.play().catch(() => {}); } else el.classList.add("img-miss");
+    }
   }
 };
+function blobURL(blob) { return new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.onerror = rej; fr.readAsDataURL(blob); }); }
 function shrink(file, max, q, asBlob) {
   return new Promise((res, rej) => {
     const fr = new FileReader();
@@ -1859,6 +1896,48 @@ function canFallback(messages, category = null) {
   const recent = messages.length > 1 ? messages.slice(1).slice(-3) : messages;
   return !minorHint(recent.map((m) => m.content).join("\n"));
 }
+/* ── src/js/images/motion.js — 움짤(그림 칸의 짧은 반복 영상): 칸마다 사진과 움짤을 함께 두고 어느 쪽을 보여 줄지(on)를 정한다 — 대화·스튜디오·상세가 같은 규칙으로 고름 */
+const norm = (v) => typeof v === "string" ? { ref: v, on: true } : v && typeof v === "object" ? v : null;
+function motionsOf(c) {
+  const live = getChar(c.id) || c, base = live.motions || c.motions || {}, over = S.motionpacks[c.id] || {}, out = {};
+  for (const x of c.cast || []) {
+    const m = {};
+    for (const [k, v] of Object.entries(base[x.code] || {})) { const e = norm(v); if (e) m[k] = e; }
+    for (const [k, v] of Object.entries(over[x.code] || {})) { const e = norm(v); if (e) m[k] = e; else delete m[k]; }
+    out[x.code] = m;
+  }
+  return out;
+}
+function motionOf(c, code, key) { const m = (motionsOf(c)[code] || {})[keyOf(String(key))]; return m && validMotion(m.ref) ? m : null; }
+function liveMotion(c, code, key) { const m = motionOf(c, code, key); return m && m.on ? m.ref : null; }
+function setPack(c, code, k, v) {
+  const p = S.motionpacks[c.id] = S.motionpacks[c.id] || {}, m = p[code] = p[code] || {};
+  const shipped = ((getChar(c.id) || c).motions || {})[code] || {};
+  if (v) m[k] = v; else if (shipped[k]) m[k] = null; else delete m[k];
+  if (!Object.keys(m).length) delete p[code];
+  if (!Object.keys(p).length) delete S.motionpacks[c.id];
+  KV.set("motionpacks", S.motionpacks);
+}
+function putMotion(c, code, key, ref, { on = true, local = false } = {}) {
+  const k = keyOf(String(key)); if (!k) return;
+  const old = motionOf(c, code, k);
+  if (old && old.ref !== ref && !String(old.ref).startsWith("content/")) IMG.drop(old.ref);
+  setPack(c, code, k, ref ? { ref, on, ...(local ? { local: true } : {}) } : null);
+}
+function flipMotion(c, code, key) {
+  const k = keyOf(String(key)), m = motionOf(c, code, k); if (!m) return false;
+  setPack(c, code, k, { ...m, on: !m.on });
+  return !m.on;
+}
+function dropMotionCodes(ns) {
+  let changed = false;
+  for (const p of Object.values(S.motionpacks)) for (const m of Object.values(p || {})) for (const k of Object.keys(m || {})) {
+    if (!parseCodes(k).some((n) => ns.indexOf(n) >= 0)) continue;
+    if (m[k] && m[k].ref) IMG.drop(m[k].ref);
+    delete m[k]; changed = true;
+  }
+  if (changed) KV.set("motionpacks", S.motionpacks);
+}
 /* ── src/js/images/rating.js — 그림 수위: 등급 태그, 시트별 수위, 수위 선택 칸 HTML */
 const RATINGS = {
   safe: { name: "전체이용가", pos: "rating_safe", ill: "general", neg: "nsfw, nude, explicit, questionable, rating_explicit, rating_questionable" },
@@ -1966,17 +2045,25 @@ function sitHints(text, adult) {
   return out;
 }
 function dropSitImages(n) {
-  const clean = (images) => Object.values(images || {}).forEach((m) => { if (!m) return; Object.keys(m).forEach((k) => { if (parseCodes(k).indexOf(n) >= 0) { IMG.drop(m[k]); delete m[k]; } }); });
+  const ns = [].concat(n), hit = (k) => parseCodes(k).some((x) => ns.indexOf(x) >= 0);
+  const clean = (images) => Object.values(images || {}).forEach((m) => { if (!m) return; Object.keys(m).forEach((k) => { if (hit(k)) { IMG.drop(m[k]); delete m[k]; } }); });
   Object.values(S.imgpacks).forEach(clean); KV.set("imgpacks", S.imgpacks);
   S.mine.forEach((c) => clean(c.images)); KV.set("mine", S.mine);
   if (S.mine.some((c) => c.publish)) publishCommunity();
+  dropMotionCodes(ns);
+}
+function countSitImages(ns) {
+  let n = 0;
+  const walk = (images) => Object.values(images || {}).forEach((m) => Object.keys(m || {}).forEach((k) => { if (parseCodes(k).some((x) => ns.indexOf(x) >= 0)) n++; }));
+  Object.values(S.imgpacks).forEach(walk); S.mine.forEach((c) => walk(c.images));
+  return n;
 }
 /* ── src/js/images/tags-cache.js — 한글 → 영문 태그 번역 캐시(TAGS, KV "ponytags") */
 let TAGS = {};
 function setTags(v) { return (TAGS = v); }
-/* ── src/js/services/load.js — 저장된 데이터를 S에 읽어 들임(loadAll): 지갑·페르소나·프로필·내 작품·대화방 목록·그림 칸·요약 설정·표지·세계관·저장 태그 */
+/* ── src/js/services/load.js — 저장된 데이터를 S에 읽어 들임(loadAll): 지갑·페르소나·프로필·내 작품·대화방 목록·그림 칸·움짤·요약 설정·표지·세계관·저장 태그 */
 async function loadAll() {
-  const [w, p, pr, mine, rooms, packs, mc, cps, lps, tps] = await Promise.all(["wallet", "personas", "profile", "mine", "rooms", "imgpacks", "memcfg", "coverpacks", "lorepacks", "tagpacks"].map((k) => KV.get(k)));
+  const [w, p, pr, mine, rooms, packs, mc, cps, lps, tps, mps] = await Promise.all(["wallet", "personas", "profile", "mine", "rooms", "imgpacks", "memcfg", "coverpacks", "lorepacks", "tagpacks", "motionpacks"].map((k) => KV.get(k)));
   if (cps && typeof cps === "object") S.coverpacks = cps;
   if (tps && typeof tps === "object") S.tagpacks = tps;
   if (lps && typeof lps === "object") S.lorepacks = lps;
@@ -1987,6 +2074,7 @@ async function loadAll() {
   if (Array.isArray(mine)) S.mine = mine.map(normalizeChar);
   if (Array.isArray(rooms)) S.rooms = rooms;
   if (packs && typeof packs === "object") S.imgpacks = packs;
+  if (mps && typeof mps === "object") S.motionpacks = mps;
   IMG.migrate().catch(() => {});
   KV.get("ponytags").then((t) => { if (t && typeof t === "object") setTags({ ...t, ...TAGS }); }).catch(() => {});
   if (mc && typeof mc === "object") S.settings.memCfg = { ...S.settings.memCfg, ...mc };
@@ -2064,7 +2152,7 @@ function mergeGuest(remote, local) {
   const gp = guestPacks(remote, local);
   const sets = list(S.settings.styleSets), add = list(local.styleSets).filter((x) => x && !sets.some((y) => y && y.id === x.id));
   if (gp.sits.length !== list(S.settings.customSits).length || add.length) { S.settings.customSits = gp.sits; S.settings.styleSets = sets.concat(add); saveSettings(); }
-  const packs = { imgpacks: gp.imgpacks, coverpacks: local.coverpacks, lorepacks: local.lorepacks, tagpacks: gp.tagpacks, ponytags: local.ponytags };
+  const packs = { imgpacks: gp.imgpacks, motionpacks: local.motionpacks, coverpacks: local.coverpacks, lorepacks: local.lorepacks, tagpacks: gp.tagpacks, ponytags: local.ponytags };
   Object.keys(packs).forEach((k) => { if (packs[k] && Object.keys(packs[k]).length) KV.set(k, fillIn(remote[k], packs[k])); });
 }
 async function reloadFromCloud() {
@@ -2076,16 +2164,17 @@ async function wipeDevice() {
   await IDB.clear();
   try { Object.keys(localStorage).filter((k) => k.indexOf("hv1_") === 0).forEach((k) => localStorage.removeItem(k)); } catch {}
 }
-/* ── src/js/images/pick.js — 인물·칸별 그림 찾기(imagesOf·pickImg — 조합 키 폴백)·그림 넣기(putCastImage) */
+/* ── src/js/images/pick.js — 인물·칸별 그림 찾기(imagesOf·pickImg·pickKey — 조합 키 폴백)·그림 넣기(putCastImage — 사진을 바꾸면 그 칸의 움짤은 지움) */
 function imagesOf(c) {
   const live = getChar(c.id) || c, base = live.images || c.images || {}, over = S.imgpacks[c.id] || {};
   const out = {};
   for (const x of c.cast || []) out[x.code] = { ...(base[x.code] || {}), ...(over[x.code] || {}) };
   return out;
 }
-function pickImg(c, code, key) {
+function pickImg(c, code, key) { const k = pickKey(c, code, key); return k === null ? null : imagesOf(c)[code][k]; }
+function pickKey(c, code, key) {
   const m = imagesOf(c)[code] || {};
-  for (const k of fallbackKeys(key)) if (validRef(m[k])) return m[k];
+  for (const k of fallbackKeys(key)) if (validRef(m[k])) return k;
   return null;
 }
 function hasImg(c, code, key) { const m = imagesOf(c)[code] || {}; return validRef(m[keyOf(String(key))]); }
@@ -2094,7 +2183,7 @@ function putCastImage(c, code, key, ref) {
   if (!k) return;
   const store = mine ? (mine.images = mine.images || {}) : (S.imgpacks[c.id] = S.imgpacks[c.id] || {});
   const m = store[code] || {};
-  if (m[k] && m[k] !== ref) IMG.drop(m[k]);
+  if (m[k] && m[k] !== ref) { IMG.drop(m[k]); if (motionOf(c, code, k)) putMotion(c, code, k, null); }
   if (ref) m[k] = ref; else delete m[k];
   store[code] = m;
   if (mine) { KV.set("mine", S.mine); if (mine.publish) publishCommunity(); } else KV.set("imgpacks", S.imgpacks);
@@ -2593,7 +2682,7 @@ ${recent}` }], { tier: "quick", json: true, room: r });
   };
   fetchSug(false);
 }
-/* ── src/js/ui/cover.js — 표지·인물 그림 HTML(coverHTML·figHTML·portraitHTML), 라이트박스 */
+/* ── src/js/ui/cover.js — 표지·인물 그림 HTML(coverHTML·figHTML·portraitHTML — 움짤이 켜진 칸은 사진 위에 영상을 겹침), 라이트박스(그림·영상) */
 function coverHTML(c, cls = "", opts = {}) {
   const pal = PALETTES[c.pal] || PALETTES[0], img = IMG.tag(S.coverpacks[c.charId || c.id] || c.img);
   const motif = MOTIFS[c.motif] ? c.motif : "glow";
@@ -2606,19 +2695,29 @@ function artHTML(c, cast, key) {
   return `<div class="artcard" style="--c1:${pal[0]};--c2:${pal[1]};--c3:${pal[2]};--tint:${SIT_TINT[sit] || "#c9b8ff"}"><span class="ac-g">${esc((cast.name || "?").slice(0, 1))}</span><span class="ac-s">${esc(sitName(sit))}${codes.length > 1 ? ` +${codes.length - 1}` : ""}</span><span class="ac-n">${esc(cast.name)}</span></div>`;
 }
 function figKey(spec) { const codes = knownCodes(parseCodes(String(spec))); return keyOf(codes.length ? codes : [1]) || "1"; }
-function figInner(c, cast, key, ref) { return ref ? `${IMG.tag(ref)}<figcaption>${esc(cast.name)} · ${esc(keyName(key))}</figcaption>` : artHTML(c, cast, key); }
+function picHTML(ref, mo) { return mo ? `<span class="mo-wrap">${IMG.tag(ref)}${IMG.vtag(mo)}</span>` : IMG.tag(ref); }
+function showOf(c, code, key) {
+  const k = pickKey(c, code, key); if (k === null) return { ref: null, mo: null };
+  return { ref: imagesOf(c)[code][k], mo: liveMotion(c, code, k) };
+}
+function figInner(c, cast, key, ref, mo) { return ref ? `${picHTML(ref, mo)}<figcaption>${esc(cast.name)} · ${esc(keyName(key))}</figcaption>` : artHTML(c, cast, key); }
 function figHTML(c, code, spec) {
   const cast = (c.cast || []).find((x) => x.code === code); if (!cast) return "";
-  const key = figKey(spec), a = splitDims(parseCodes(key)).act;
-  return `<figure class="scene-img" data-code="${code}" data-key="${key}" data-sit="${a.length ? a[0] : 1}">${figInner(c, cast, key, pickImg(c, code, key))}</figure>`;
+  const key = figKey(spec), a = splitDims(parseCodes(key)).act, s = showOf(c, code, key);
+  return `<figure class="scene-img" data-code="${code}" data-key="${key}" data-sit="${a.length ? a[0] : 1}">${figInner(c, cast, key, s.ref, s.mo)}</figure>`;
 }
 function portraitHTML(c, cast) {
-  const ref = pickImg(c, cast.code, 0);
-  return `<div class="portrait thumb-art">${ref ? IMG.tag(ref) : artHTML(c, cast, 0)}</div>`;
+  const s = showOf(c, cast.code, 0);
+  return `<div class="portrait thumb-art">${s.ref ? picHTML(s.ref, s.mo) : artHTML(c, cast, 0)}</div>`;
 }
-function lightbox(src) {
-  const lb = document.createElement("div"); lb.className = "lightbox"; lb.innerHTML = `<img src="${esc(src)}" alt="확대 이미지">`;
+function lightbox(src, video) {
+  const lb = document.createElement("div"); lb.className = "lightbox";
+  lb.innerHTML = video ? `<video src="${esc(src)}" muted loop autoplay playsinline></video>` : `<img src="${esc(src)}" alt="확대 이미지">`;
   lb.onclick = () => lb.remove(); document.body.append(lb);
+}
+function zoomPic(box) {
+  const v = box.querySelector("video.mo"); if (v && v.currentSrc && !v.classList.contains("img-miss")) return lightbox(v.currentSrc, true);
+  const i = box.querySelector("img"); if (i && i.src) lightbox(i.src);
 }
 function pavHTML(p) { const img = IMG.tag(p.img); return `<div class="pav">${img || esc((p.name || "?").slice(0, 1))}</div>`; }
 /* ── src/js/ui/home.js — 홈: 대표 작품·가로 줄·둘러보기, 관심있는 대화 고르기 */
@@ -2844,7 +2943,7 @@ async function firstSync() {
   const rows = await CLOUD.rows("");
   const remote = {}; rows.forEach((x) => { remote[x.key] = x.value; });
   if (!rows.some((x) => x.key !== "settings" && x.key !== "vault")) { await CLOUD.pushAll(); await VAULT.take(remote.vault || null, true); toast("이 기기의 데이터를 계정에 저장했어요"); return; }
-  const local = { rooms: S.rooms, mine: S.mine, personas: S.personas, imgpacks: S.imgpacks, coverpacks: S.coverpacks, lorepacks: S.lorepacks, tagpacks: S.tagpacks, ponytags: KV.getLocal("ponytags"),
+  const local = { rooms: S.rooms, mine: S.mine, personas: S.personas, imgpacks: S.imgpacks, motionpacks: S.motionpacks, coverpacks: S.coverpacks, lorepacks: S.lorepacks, tagpacks: S.tagpacks, ponytags: KV.getLocal("ponytags"),
     customSits: S.settings.customSits, styleSets: S.settings.styleSets };
   const has = (list, id) => (Array.isArray(list) ? list : []).some((x) => x && x.id === id);
   const onlyRooms = local.rooms.filter((r) => !has(remote.rooms, r.id)), onlyMine = local.mine.filter((c) => !has(remote.mine, c.id)), pics = guestPics(remote, local);
@@ -2997,7 +3096,7 @@ function viewMe() {
   };
   $("#reset").onclick = () => confirmSheet("모든 데이터를 지울까요?", "대화방, 만든 캐릭터, 하트, 페르소나, 이미지 연결이 모두 지워져요." + (CLOUD.on ? " 로그인되어 있어서 계정에 저장된 데이터도 지워져요." : "") + " 되돌릴 수 없어요.", "전부 삭제", () => {
     S.rooms.forEach((r) => KV.set(roomKey(r.id), undefined));
-    ["rooms", "mine", "wallet", "personas", "profile", "imgpacks", "coverpacks", "lorepacks", "tagpacks", "ponytags"].forEach((k) => KV.set(k, undefined));
+    ["rooms", "mine", "wallet", "personas", "profile", "imgpacks", "motionpacks", "coverpacks", "lorepacks", "tagpacks", "ponytags"].forEach((k) => KV.set(k, undefined));
     IDB.clear(); try { Object.keys(localStorage).filter((k) => /^hv1_img[a-z0-9]{10,30}$/.test(k)).forEach((k) => localStorage.removeItem(k)); } catch {}
     S.mine = []; publishCommunity();
     (CLOUD.on ? CLOUD.wipe().catch(() => {}) : Promise.resolve()).then(() => setTimeout(() => location.reload(), 400));
@@ -3639,7 +3738,7 @@ function editBox(text, i) {
 }
 function bindLog(box) {
   $$(".status .inner:not(.open)", box).forEach((el) => { const open = () => el.classList.add("open"); el.onclick = open; el.onkeydown = (e) => { if (e.key === "Enter") open(); }; });
-  $$(".scene-img img", box).forEach((im) => im.onclick = () => lightbox(im.src));
+  $$(".scene-img", box).forEach((f) => { if (f.querySelector("img")) f.onclick = (e) => { if (e.target.closest("img, video")) zoomPic(f); }; });
   const retry = $("#retry"); if (retry) retry.onclick = async () => {
     room.lastErr = ""; const i = room.msgs.length - 1;
     if (room.msgs[i]?.role === "ai") return regen(i);
@@ -3877,7 +3976,7 @@ function viewDetail(id) {
   bindGo(v); IMG.hydrate(v);
   $$("[data-room]", v).forEach((b) => b.onclick = () => go("r-" + b.dataset.room));
   $$("[data-wlb]", v).forEach((b) => b.onclick = () => { const i = b.querySelector("img"); if (i?.src) lightbox(i.src); });
-  $$("[data-cast]", v).forEach((b) => b.onclick = () => { const i = b.querySelector("img"); if (i?.src) lightbox(i.src); });
+  $$("[data-cast]", v).forEach((b) => b.onclick = () => zoomPic(b));
   $("#start").onclick = () => {
     if (rooms.length >= plan().rooms) return plusSheet("rooms");
     const opIdx = +(v.querySelector("input[name=op]:checked")?.value || 0);
@@ -3963,7 +4062,7 @@ async function boot(opts = {}) {
           setDB(db); KV.db = db; KV.uid = id; KV.dbOk = true;
           const remoteRooms = await KV.get("rooms");
           if (remoteRooms === undefined || remoteRooms === null) {
-            ["wallet", "personas", "profile", "mine", "rooms", "imgpacks", "memcfg", "coverpacks", "lorepacks", "tagpacks"].forEach((k) => { const v = KV.getLocal(k); if (v !== undefined) KV.set(k, v); });
+            ["wallet", "personas", "profile", "mine", "rooms", "imgpacks", "motionpacks", "memcfg", "coverpacks", "lorepacks", "tagpacks"].forEach((k) => { const v = KV.getLocal(k); if (v !== undefined) KV.set(k, v); });
             S.rooms.forEach((r) => { const v = KV.getLocal(roomKey(r.id)); if (v) KV.set(roomKey(r.id), v); });
           } else { await loadAll(); renderRailRecent(); renderWalletChips(); if (!location.hash.startsWith("#r-")) route(); }
           watchCommunity();

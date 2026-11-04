@@ -6,7 +6,7 @@ import { S, room, setRoom } from "../core/state.js";
 import { $, $$, ago, esc } from "../core/util.js";
 import { FREE_DAILY, plan } from "../core/wallet.js";
 import { IMG } from "../services/images.js";
-import { coverHTML, lightbox, portraitHTML } from "./cover.js";
+import { coverHTML, lightbox, portraitHTML, zoomPic } from "./cover.js";
 import { runExt } from "./ext.js";
 import { ICON } from "./icons.js";
 import { plusSheet } from "./pay.js";
@@ -47,7 +47,7 @@ export function viewDetail(id) {
   bindGo(v); IMG.hydrate(v);
   $$("[data-room]", v).forEach((b) => b.onclick = () => go("r-" + b.dataset.room));
   $$("[data-wlb]", v).forEach((b) => b.onclick = () => { const i = b.querySelector("img"); if (i?.src) lightbox(i.src); });
-  $$("[data-cast]", v).forEach((b) => b.onclick = () => { const i = b.querySelector("img"); if (i?.src) lightbox(i.src); });
+  $$("[data-cast]", v).forEach((b) => b.onclick = () => zoomPic(b));
   $("#start").onclick = () => {
     if (rooms.length >= plan().rooms) return plusSheet("rooms");
     const opIdx = +(v.querySelector("input[name=op]:checked")?.value || 0);

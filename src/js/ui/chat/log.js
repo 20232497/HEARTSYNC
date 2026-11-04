@@ -8,7 +8,7 @@ import { IMG } from "../../services/images.js";
 import { generate, regen, regenAsk, sendTurn } from "./generate.js";
 import { fmt, liveFill, statusBlock } from "./render.js";
 import { flashHint, lastAi, updateMeter } from "./view.js";
-import { coverHTML, lightbox, pavHTML } from "../cover.js";
+import { coverHTML, pavHTML, zoomPic } from "../cover.js";
 import { ensurePay } from "../pay.js";
 import { confirmSheet } from "../sheet.js";
 
@@ -83,7 +83,7 @@ function editBox(text, i) {
 }
 function bindLog(box) {
   $$(".status .inner:not(.open)", box).forEach((el) => { const open = () => el.classList.add("open"); el.onclick = open; el.onkeydown = (e) => { if (e.key === "Enter") open(); }; });
-  $$(".scene-img img", box).forEach((im) => im.onclick = () => lightbox(im.src));
+  $$(".scene-img", box).forEach((f) => { if (f.querySelector("img")) f.onclick = (e) => { if (e.target.closest("img, video")) zoomPic(f); }; });
   const retry = $("#retry"); if (retry) retry.onclick = async () => {
     room.lastErr = ""; const i = room.msgs.length - 1;
     if (room.msgs[i]?.role === "ai") return regen(i);

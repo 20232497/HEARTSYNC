@@ -18,7 +18,7 @@ export async function firstSync() {
   const remote = {}; rows.forEach((x) => { remote[x.key] = x.value; });
   // 계정이 비었으면 이 기기 데이터가 계정의 첫 데이터(API 키는 잠가서 따로 — VAULT)
   if (!rows.some((x) => x.key !== "settings" && x.key !== "vault")) { await CLOUD.pushAll(); await VAULT.take(remote.vault || null, true); toast("이 기기의 데이터를 계정에 저장했어요"); return; }
-  const local = { rooms: S.rooms, mine: S.mine, personas: S.personas, imgpacks: S.imgpacks, coverpacks: S.coverpacks, lorepacks: S.lorepacks, tagpacks: S.tagpacks, ponytags: KV.getLocal("ponytags"),
+  const local = { rooms: S.rooms, mine: S.mine, personas: S.personas, imgpacks: S.imgpacks, motionpacks: S.motionpacks, coverpacks: S.coverpacks, lorepacks: S.lorepacks, tagpacks: S.tagpacks, ponytags: KV.getLocal("ponytags"),
     customSits: S.settings.customSits, styleSets: S.settings.styleSets };
   const has = (list, id) => (Array.isArray(list) ? list : []).some((x) => x && x.id === id);
   const onlyRooms = local.rooms.filter((r) => !has(remote.rooms, r.id)), onlyMine = local.mine.filter((c) => !has(remote.mine, c.id)), pics = guestPics(remote, local);

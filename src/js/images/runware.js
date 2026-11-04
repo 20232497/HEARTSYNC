@@ -15,8 +15,8 @@ export const BAD_IMG_MODELS = ["civitai:257259@290640", "civitai:257749@290640"]
 const RW_SIZES = { "4:5": [832, 1216], "3:4": [832, 1216], "1:1": [1024, 1024], "16:9": [1216, 832] };
 const IMG_NEG = "text, watermark, signature, logo, deformed, bad anatomy, bad hands, missing fingers, extra digits, blurry, low quality";
 // 미성년 태그는 수위와 상관없이 늘 네거티브에(CLAUDE.md 수위 원칙)
-const NEG_MINOR = "child, loli, shota, underage, toddler, aged down";
-function uuid4() {
+export const NEG_MINOR = "child, loli, shota, underage, toddler, aged down";
+export function uuid4() {
   if (crypto.randomUUID) return crypto.randomUUID();
   const b = crypto.getRandomValues(new Uint8Array(16)); b[6] = (b[6] & 15) | 64; b[8] = (b[8] & 63) | 128;
   const h = [...b].map((x) => x.toString(16).padStart(2, "0")).join("");
