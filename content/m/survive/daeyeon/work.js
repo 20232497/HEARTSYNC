@@ -5,6 +5,7 @@ export const order = 40; // 홈·오리지널 목록 순서(작을수록 앞)
 export default {
   id: "daeyeon", name: "대연궁 검시록", title: "대연궁 검시록", glyph: "檢", cat: "미스터리", pal: 0, motif: "stars", world_mode: true, isNew: true,
   oneLiner: "세자의 수라에 독이 들었다. 범인으로 몰린 검시관의 몸으로 눈을 떴고, 참형까지 이레가 남았다.",
+  artTags: "joseon dynasty, korean royal palace, hanok, paper lanterns, night, mystery, court intrigue, ink wash atmosphere",
   tags: ["궁중", "추리", "빙의", "히로인 5인", "생존"],
   desc: "가상의 왕조 대연(大淵). 국상 사흘째 밤, 열아홉 살 세자의 수라에서 독이 나왔다. 범인으로 지목된 건 수라를 검사한 말단 검시관 — 그 몸으로 당신이 깨어났다. 이레 안에 진범을 찾지 못하면 저잣거리에서 목이 베인다. 공주, 다모, 의녀, 기방 행수, 국무당. 다섯 여인은 저마다 당신을 이용하려 하고, 저마다 숨기는 것이 있다.",
   persona: `이 작품은 가상의 조선풍 왕조 '대연'을 무대로 한 궁중 추리·생존 군상극이다. 너는 내레이터로서 궁궐과 도성, 모든 인물을 연기한다.
@@ -41,16 +42,16 @@ export default {
   secret: "진범은 수라간 박상궁이고 그는 서씨 가문의 유모다. 월하가 서씨 가문의 막내딸이다. 서씨 멸문의 배후는 한명보다.",
   fields: ["📅 기한", "📍 장소", "🧪 증거", "🔍 용의자", "⚠️ 위험도", "❤️ 호감도", "💭 속마음"], gauge: "⚠️ 위험도",
   lore: [
-    { keys: ["세자", "이윤", "동궁"], text: "세자 이윤(19). 총명하지만 몸이 약하다는 소문이 돌았다(실은 몇 달째 중독). 누나 이화와 사이가 각별했다. 의식이 없는 채로 동궁에 누워 있다." },
-    { keys: ["대비", "대비전"], text: "대비 윤씨. 선왕의 정비, 세자의 할머니. 외척 한씨와 대립한다. 공정함을 내세우지만 결과가 정치적으로 쓸모 있을 때만 움직인다." },
-    { keys: ["한명보", "영의정", "외척", "한씨"], text: "영의정 한명보. 선왕비의 오라비, 외척의 수장. 부드러운 말씨로 사람을 옭아맨다. 3년 전 서씨 가문 역모 고변을 주도했다." },
-    { keys: ["영원군", "이담", "서자"], text: "영원군 이담. 선왕의 서자, 세자의 이복형. 온화하고 백성에게 인기가 있다. 세자가 죽으면 왕위 계승 1순위가 된다." },
-    { keys: ["최무진", "의금부", "도사"], text: "의금부 도사 최무진. 유저를 감시한다. 뇌물과 술에 약하고 겁이 많다. 매수하면 반나절쯤 눈감아 준다." },
-    { keys: ["박상궁", "박씨", "수라간", "상궁"], text: "수라간 최고상궁 박씨. 40년을 궁에서 보냈다. 말수가 적고 손이 늘 젖어 있다. 세자의 수라를 갓난아기 때부터 맡아 왔다고 한다." },
-    { keys: ["서씨", "3년 전", "역모", "멸문"], text: "3년 전 서씨 가문 역모 사건. 병조판서 서윤겸 일가가 역모로 몰려 멸문했다. 고문으로 받아 낸 자백 하나가 결정적 증거였다. 도성 사람들은 억울한 사건이었다고 수군댄다." },
-    { keys: ["청월루", "기방"], text: "도성 최고의 기방 청월루. 양반들의 밀담이 오가는 곳. 2층 안쪽 방에는 행수 월하만 드나드는 서고가 있다." },
-    { keys: ["은비녀", "비상", "비소", "독"], text: "이 시대의 독 검사는 은비녀를 담가 색이 변하는지 보는 것. 비상(비소)은 은을 검게 만들지만 수은 계열 독은 잘 드러나지 않는다." },
-    { keys: ["통로", "비밀 통로"], text: "궁 지하에는 선대 왕이 만든 비밀 통로가 있다. 국무당 단비만 지도를 안다. 동궁, 수라간 뒤뜰, 대비전 담 아래로 이어진다." }
+    { keys: ["세자", "이윤", "동궁"], text: "세자 이윤(19). 총명하지만 몸이 약하다는 소문이 돌았다(실은 몇 달째 중독). 누나 이화와 사이가 각별했다. 의식이 없는 채로 동궁에 누워 있다.", kind: "person", tags: "solo, 1boy, crown prince, joseon, pale face, lying in bed, silk bedding, candlelight" },
+    { keys: ["대비", "대비전"], text: "대비 윤씨. 선왕의 정비, 세자의 할머니. 외척 한씨와 대립한다. 공정함을 내세우지만 결과가 정치적으로 쓸모 있을 때만 움직인다.", kind: "person", tags: "solo, 1girl, old woman, queen dowager, joseon royal hanbok, dignified, palace hall" },
+    { keys: ["한명보", "영의정", "외척", "한씨"], text: "영의정 한명보. 선왕비의 오라비, 외척의 수장. 부드러운 말씨로 사람을 옭아맨다. 3년 전 서씨 가문 역모 고변을 주도했다.", kind: "person", tags: "solo, 1boy, old man, joseon official robe, official hat, gentle smile, cunning eyes" },
+    { keys: ["영원군", "이담", "서자"], text: "영원군 이담. 선왕의 서자, 세자의 이복형. 온화하고 백성에게 인기가 있다. 세자가 죽으면 왕위 계승 1순위가 된다.", kind: "person", tags: "solo, 1boy, joseon prince, hanbok, royal robe, warm smile, palace garden" },
+    { keys: ["최무진", "의금부", "도사"], text: "의금부 도사 최무진. 유저를 감시한다. 뇌물과 술에 약하고 겁이 많다. 매수하면 반나절쯤 눈감아 준다.", kind: "person", tags: "solo, 1boy, joseon officer, nervous, holding wine cup, guard uniform" },
+    { keys: ["박상궁", "박씨", "수라간", "상궁"], text: "수라간 최고상궁 박씨. 40년을 궁에서 보냈다. 말수가 적고 손이 늘 젖어 있다. 세자의 수라를 갓난아기 때부터 맡아 왔다고 한다.", kind: "person", tags: "solo, 1girl, old woman, joseon court lady, royal kitchen, stoic" },
+    { keys: ["서씨", "3년 전", "역모", "멸문"], text: "3년 전 서씨 가문 역모 사건. 병조판서 서윤겸 일가가 역모로 몰려 멸문했다. 고문으로 받아 낸 자백 하나가 결정적 증거였다. 도성 사람들은 억울한 사건이었다고 수군댄다.", kind: "event", tags: "joseon, treason trial, interrogation, torches, ruined house, scattered documents, tragic" },
+    { keys: ["청월루", "기방"], text: "도성 최고의 기방 청월루. 양반들의 밀담이 오가는 곳. 2층 안쪽 방에는 행수 월하만 드나드는 서고가 있다.", kind: "place", tags: "gisaeng house, joseon pavilion, red lanterns, night, upstairs room, bookshelves" },
+    { keys: ["은비녀", "비상", "비소", "독"], text: "이 시대의 독 검사는 은비녀를 담가 색이 변하는지 보는 것. 비상(비소)은 은을 검게 만들지만 수은 계열 독은 잘 드러나지 않는다.", kind: "item", tags: "silver hairpin, binyeo, blackened silver, bowl of soup, poison test, close-up" },
+    { keys: ["통로", "비밀 통로"], text: "궁 지하에는 선대 왕이 만든 비밀 통로가 있다. 국무당 단비만 지도를 안다. 동궁, 수라간 뒤뜰, 대비전 담 아래로 이어진다.", kind: "place", tags: "secret underground passage, stone tunnel, torch, joseon palace, darkness" }
   ],
   cast: [
     { code: "ih", name: "이화", look: "22세 여성, 상복 차림의 공주, 흰 비단 당의, 올림머리에 은비녀, 차가운 눈매", tags: "black hair, hair up, silver hairpin, binyeo, white hanbok, mourning dress, silk dangui, princess, joseon" },

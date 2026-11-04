@@ -1,19 +1,11 @@
-/* ── 이미지 슬롯 */
-.slot-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(104px,1fr)); gap:10px; }
+/* ── 그림 칸(세계관 일러스트 시트의 .slot)·AI 생성 창(.gen-ov 태그 칩)·그림체 세트 카드 */
 .slot { border:1px solid var(--line); border-radius:12px; padding:6px; display:grid; gap:5px; text-align:center; font-size:12px; }
 .slot .pic { aspect-ratio:4/5; border-radius:9px; overflow:hidden; background:var(--surface2); position:relative; }
 .slot .pic img { width:100%; height:100%; object-fit:cover; display:block; }
 .slot .pic .artcard { aspect-ratio:auto; height:100%; opacity:.55; }
 .slot .lb { font-weight:600; }
 .slot .lb small { color:var(--muted); font-weight:400; }
-.slot[data-combo] .lb { display:grid; line-height:1.3; }
-.slot[data-combo] .lb small { font-size:11px; }
-.slot.combo-add { border-style:dashed; align-content:center; justify-items:center; min-height:120px; }
-.code-tbl td { vertical-align:top; padding:6px 8px; }
-.code-tbl td.num { font-weight:700; width:3.5em; }
 .slot .bs { display:flex; gap:4px; justify-content:center; flex-wrap:wrap; }
-.slot .bs button[data-ai] { color:var(--accent); border-color:var(--accent); }
-.slot .pic.busy::after { content:"생성 중…"; position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:var(--scrim); color:#fff; font-weight:600; }
 .gen-ov { z-index:45; }
 .gen-pv { margin-top:12px; min-height:120px; border:1px dashed var(--line); border-radius:12px; display:flex; align-items:center; justify-content:center; padding:10px; text-align:center; }
 .gen-pv img { max-width:100%; max-height:52vh; border-radius:10px; display:block; }
@@ -37,10 +29,17 @@
 .tchip.pick { padding:5px 11px; gap:5px; cursor:pointer; }
 .tchip.pick input { accent-color:var(--accent); margin:0; }
 .slot .bs button { border:1px solid var(--line); background:var(--bg); border-radius:7px; font-size:11.5px; padding:2px 7px; }
-.casttabs { display:flex; gap:6px; overflow-x:auto; padding-bottom:4px; margin-bottom:10px; }
-.warts { display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:10px; align-items:start; }
-.warts .pic.land { aspect-ratio:16/9; }
-.warts .pic.cover-pic { aspect-ratio:3/4; }
+/* 세계관 일러스트 시트: 설명 상자, 종류별 묶음 제목, 항목 칸(그림은 원래 비율 그대로·설명 세 줄) */
+.wexp { background:var(--surface2); border-radius:10px; padding:10px 12px; font-size:12.5px; display:grid; gap:6px; margin:0 0 12px; }
+.wexp p { margin:0; }
+.wgh { margin:14px 0 6px; }
+.wgh small { font-weight:400; }
+.warts { display:grid; grid-template-columns:repeat(auto-fill, minmax(170px, 1fr)); gap:10px; align-items:start; }
+.warts .pic.cover-pic { aspect-ratio:3/4; max-width:170px; }
+.wslot .pic { aspect-ratio:auto; }
+.wslot .pic img { height:auto; }
+.wslot .pic .wpic.ph { aspect-ratio:3/2; }
+.wslot .wtx { font-size:11.5px; color:var(--muted); text-align:left; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
 .ssets { display:grid; grid-template-columns:repeat(auto-fill, minmax(230px, 1fr)); gap:10px; }
 .sset { border:1px solid var(--line); border-radius:12px; padding:10px; display:grid; gap:6px; background:var(--bg); }
 .sset.on { border-color:var(--accent); box-shadow:0 0 0 1px var(--accent) inset; }

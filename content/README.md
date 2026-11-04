@@ -62,6 +62,7 @@ export const order = 40; // 홈·오리지널 목록 순서(작을수록 앞)
 export default {
   id: "newworld", name: "작품 이름", title: "작품 제목", glyph: "字", cat: "로맨스", pal: 1, motif: "petals", world_mode: true, isNew: true,
   oneLiner: "카드에 보이는 한 줄 소개",
+  artTags: "dark fantasy, ruined cathedral, candlelight, …",   // 세계관 영문 낱말(그림용)
   tags: ["태그", "…"],
   desc: "상세 페이지 소개",
   persona: `AI에게 주는 인물·진상 설정 …`,
@@ -69,7 +70,7 @@ export default {
   speech: `문체·말투 예시 …`,
   secret: "숨은 설정",
   fields: ["📅 날짜", "📍 장소", "❤️ 호감도"], gauge: "❤️ 호감도",
-  lore: [ { keys: ["키워드", "별칭"], text: "대화에 키워드가 나오면 AI에 전달할 설명" } ],
+  lore: [ { keys: ["키워드", "별칭"], text: "대화에 키워드가 나오면 AI에 전달할 설명", kind: "place", tags: "ruined cathedral, stained glass, moonlight" } ],
   cast: [ { code: "ks", name: "카시안", look: "29세 남성, 흑발, …", tags: "black hair, golden eyes, black military uniform, …" } ],
   openings: [ { title: "시작 상황 이름", directive: "AI에게만 주는 지시", status: { "📅 날짜": "1일차" }, text: "첫 장면 …\n\n[[img:ks:0]]\n\n카시안: \"…\"" } ]
 };
@@ -82,7 +83,8 @@ export default {
 | `world_mode` | 여러 인물이 나오는 군상극(세계관). 1:1 캐릭터면 빼요 |
 | `fields`·`gauge` | 상태창 칸 이름(3글자 안팎)과 관계 게이지 칸. 시작 상황 `status`의 칸은 `fields`에 있어야 해요 |
 | `cast` | 출연진. `code`는 그림 태그 `[[img:코드:번호]]`에 써요(번호는 0~14 기본 감정, 또는 내장 코드 1xx 감정·4xx 의상·5xx 장소를 쉼표로 조합 — 앱의 '코드 표'). `tags`(선택)는 그 인물의 외모를 영문 Danbooru 태그로 적은 글 — 있으면 그림 프롬프트의 인물 묶음에 번역 없이 그대로 들어가 같은 인물이 매번 같은 생김새로 그려져요(성별·인원 태그는 `look`에서 자동, 한국어는 넣지 않기). 1:1 캐릭터는 `cast`를 빼면 앱이 설정의 `외모:` 줄로 한 명(`c`)을 만들어요 — 그때는 맨 위 `lookTags`가 같은 역할 |
-| `lore` | 키워드북 `[{ keys, text, tags? }]`. `tags`(선택)는 그 항목의 세계관 일러스트를 그릴 때 `text` 대신 쓰는 영문 태그 |
+| `lore` | 키워드북 `[{ keys, text, kind, tags }]`. `kind`는 항목 종류 — `person` 인물 · `creature` 동물·존재 · `place` 장소 · `item` 물건 · `event` 사건 · `group` 세력 · `concept` 설정(앱의 `LORE_KINDS`). 세계관 일러스트의 구도가 이것으로 정해져요(인물은 초상, 동물은 `no humans`, 장소는 풍경, 물건은 정물…). `tags`는 그 항목을 그릴 영문 낱말(없으면 `text`를 번역해서 씀). 둘 다 빠지면 빌드 경고 |
+| `artTags` | 그 세계관의 영문 낱말(시대·장소·조명·분위기, 예: `joseon dynasty, korean royal palace, paper lanterns, night`). 표지와 모든 세계관 일러스트 프롬프트에 붙어 작품마다 분위기가 나게 해요(없으면 `oneLiner`) |
 | `openings` | 시작 상황(게임 모드). 군상극은 인물 첫 등장마다 `[[img:코드:0]]` |
 
 `work.js` 안에서는 `const`로 같이 쓸 값을 만들거나(`m/godseats/work.js`의 상태창), 다른 파일을 `import`해도 돼요(예: 키워드북이 길면 `lore.js`로 빼서 `import lore from "./lore.js"`). 빌드가 Node에서 실행한 **결과 값**만 `index.html`에 넣어요 — 그래서 함수 같은 건 넣을 수 없고 글·숫자·참거짓·배열·객체만 돼요.
@@ -115,4 +117,5 @@ content/codes.json                   이미지 코드 표 [{ "n": 15, "name": "�
 - **미성년 인물**: 출연진 외모·설정 첫머리에 19세 미만 나이나 학생 신분이 있으면 실패(앱의 `minorFlags`와 같은 코드)
 - 필수 칸(`name`·`title`·`oneLiner`·`desc`·`persona`·`openings`), `cat`·`pal`·`motif` 값, 시작 상황의 `[[img:코드:번호]]`가 `cast`에 있는 코드이고 번호가 0~14 또는 내장 코드(1xx·4xx·5xx, `src/js/images/codes.js`의 DIMS)인지
 - `images/`: 인물 코드가 `cast`에 있는지, 번호가 기본·내장·`codes.json` 코드인지, 같은 그림이 둘인지, `lore-<n>`이 키워드북 범위 안인지 / `codes.json`: 모양·번호 범위·중복·수위·미성년 표현
-- 경고만: `gauge`가 `fields`에 없음, 시작 상황 `status`의 칸이 `fields`에 없음, 작품이 없는 줄, `images/`의 모르는 파일 이름, 조합 키 순서가 다른 파일 이름
+- 키워드북 `kind`가 `LORE_KINDS`에 없거나, `tags`·`artTags`에 한글이 있으면 실패
+- 경고만: 키워드북 항목에 `kind`·`tags`가 없음, `gauge`가 `fields`에 없음, 시작 상황 `status`의 칸이 `fields`에 없음, 작품이 없는 줄, `images/`의 모르는 파일 이름, 조합 키 순서가 다른 파일 이름

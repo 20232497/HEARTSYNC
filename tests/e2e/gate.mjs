@@ -26,7 +26,7 @@ try {
     await p.fill("#gatePw", process.env.HS_ADMIN_PW); await p.press("#gatePw", "Enter"); await wait(1500);
     if (await p.$("#lguest")) { await p.click("#lguest"); await wait(400); }
     res.right = await p.evaluate(() => ({ gated: document.body.classList.contains("gated"), navs: $$("#rail .nav").length, remembered: localStorage.getItem("hv1_admin") === HASH }));
-    if (res.right.gated || res.right.navs !== 6 || !res.right.remembered) errs.push("맞는 비밀번호: " + JSON.stringify(res.right));
+    if (res.right.gated || res.right.navs !== 7 || !res.right.remembered) errs.push("맞는 비밀번호: " + JSON.stringify(res.right));
   } else {
     await p.evaluate(() => localStorage.setItem("hv1_admin", HASH));
     res.right = "HS_ADMIN_PW 없음 — 기억만 심어 확인";
@@ -35,7 +35,7 @@ try {
   await p.goto(HOST + "/admin.html", { waitUntil: "load" }); await wait(1200);
   if (await p.$("#lguest")) { await p.click("#lguest"); await wait(400); }
   res.again = await p.evaluate(() => ({ gated: document.body.classList.contains("gated"), navs: $$("#rail .nav").length }));
-  if (res.again.gated || res.again.navs !== 6) errs.push("기억 뒤 부팅: " + JSON.stringify(res.again));
+  if (res.again.gated || res.again.navs !== 7) errs.push("기억 뒤 부팅: " + JSON.stringify(res.again));
   // 사용자 사이트에는 관문이 없음
   await p.goto(HOST + "/", { waitUntil: "load" }); await wait(1200);
   res.user = await p.evaluate(() => ({ gate: typeof gate, gated: document.body.classList.contains("gated"), view: $("#view").innerHTML.length }));

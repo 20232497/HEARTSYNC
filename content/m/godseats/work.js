@@ -11,6 +11,7 @@ const RPG_HEAD = "*2026년 10월 1일 오후 4시 44분. 하늘이 극장의 막
 export default {
   id: "godseats", name: "신님들, 관전 매너 좀", title: "신님들, 관전 매너 좀", glyph: "幕", cat: "RPG", pal: 6, motif: "curtain", world_mode: true, isNew: true,
   oneLiner: "세상이 30층짜리 탑이 된 날, 하늘의 관람석에서 신들이 떠들기 시작했다.",
+  artTags: "modern fantasy, apocalypse, seoul turned into a tower, floating spectator seats in the sky, game system window, divine light, rpg, dramatic",
   tags: ["탑등반", "상태창", "신들의 후원", "파티", "게임모드"],
   desc: "2026년 10월 1일 오후 4시 44분, 하늘이 극장의 막처럼 갈라졌다. 서울은 '1층 무대'가 되었고, 살아남은 사람들 머리 위로 수백 개의 관람석이 열렸다. 신화와 괴담 속 존재들이 당신의 생존을 구경하며 후원하고, 훈수 두고, 가끔은 반한다. 목표는 30층 꼭대기의 '커튼콜'. 문제는 신들이 너무 시끄럽다는 것.\n\n게임 모드를 골라 시작하세요. 커스텀 모드는 대화방 메뉴의 유저노트에 원하는 설정을 적고 첫 메시지로 \"커스텀 모드\"를 보내면 돼요.",
   persona: `이 작품은 탑 등반 RPG 세계관 시뮬레이션이다. 너는 내레이터이자 탑의 시스템으로서 세계, 몬스터, 파티원, 관람신을 모두 연기한다. 유저는 주인공 '등반자'다.

@@ -1,6 +1,7 @@
-// 관리자 도구(admin.html) 스모크 + 사용자 빌드(index.html)와 갈라졌는지: 여섯 화면(홈·대화·작품·만들기·스토어·MY), 상세의 관리 버튼(일러스트 관리·이미지 슬롯 관리·
-// 작품 폴더에 저장), 드로어의 이미지 슬롯, MY의 이미지 생성 설정(#rkey·#gstyle·기본 화풍 카드)·크리에이터 프로필, 페르소나 시트의 'AI로 만들기', 시트 4종(이미지 슬롯·
-// 세계관 일러스트·추천 칸·생성 창), 스튜디오의 관심있는 대화 칸. 그리고 사용자 빌드에는 그 자리들이 비어 있고 관리자 함수(viewStudio·openImageSlots)가 없어야 함.
+// 관리자 도구(admin.html) 스모크 + 사용자 빌드(index.html)와 갈라졌는지: 일곱 화면(홈·대화·작품·이미지·만들기·스토어·MY), 상세의 관리 버튼(일러스트 관리·이미지 관리·
+// 작품 폴더에 저장), 드로어의 이미지 버튼, MY의 이미지 생성 설정(#rkey·#gstyle·기본 화풍 카드)·크리에이터 프로필, 페르소나 시트의 'AI로 만들기', 시트 5종(코드 편집기·
+// 세계관 일러스트·추천 코드·생성 창·페르소나), 만들기의 관심있는 대화 칸, 이미지 스튜디오(코드 목록·조합 키·프롬프트·찾기·접기). 그리고 사용자 빌드에는 그 자리들이 비어 있고
+// 관리자 함수(viewStudio·viewImages·openImages)가 없어야 함.
 import { chromium, webkit, devices } from "playwright";
 const [, , url, out] = process.argv; // url = admin.html 주소(run.mjs가 붙임). 사용자 빌드는 admin.html을 뗀 주소
 const userUrl = url.replace(/admin\.html$/, "");
@@ -14,8 +15,8 @@ for (const [dev, engine, opts] of [["Desktop Chrome", chromium, {}], ["iPhone 13
   try {
     await open(url);
     res.navs = await p.evaluate(() => [...document.querySelectorAll("#rail [data-nav]")].map((b) => b.dataset.nav));
-    if (res.navs.join() !== "home,chats,works,studio,store,me") errs.push("관리자 메뉴가 다름: " + res.navs.join());
-    for (const v of ["home", "chats", "works", "studio", "store", "me"]) {
+    if (res.navs.join() !== "home,chats,works,images,studio,store,me") errs.push("관리자 메뉴가 다름: " + res.navs.join());
+    for (const v of ["home", "chats", "works", "images", "studio", "store", "me"]) {
       await p.evaluate((v) => { location.hash = v; }, v); await wait(500);
       res.views[v] = await p.evaluate(() => $("#view").innerHTML.length);
       if (res.views[v] < 200) errs.push(`${v} 화면이 비어 있음`);
@@ -34,7 +35,7 @@ for (const [dev, engine, opts] of [["Desktop Chrome", chromium, {}], ["iPhone 13
     res.drawer = await p.evaluate(async () => { openRoomDrawer("main"); await new Promise((z) => setTimeout(z, 250)); const ok = !!$("#mImg"); closeOverlays(); return ok; });
     if (!res.drawer) errs.push("드로어에 이미지 슬롯이 없음");
     const sheets = {
-      slots: () => { const c = normalizeChar(getChar("hwanghu")); openImageSlots(c, c.cast[0].code); },
+      sitEditor: () => sitEditor(null, () => {}),
       worldArt: () => openWorldArt(normalizeChar(getChar("hwanghu"))),
       sitPresets: () => sitPresetSheet(() => {}),
       gen: () => genImageSheet({ title: "시험", prompt: "1girl, smile", ctx: { kind: "daily", aud: "m" } }),
@@ -49,25 +50,34 @@ for (const [dev, engine, opts] of [["Desktop Chrome", chromium, {}], ["iPhone 13
     // 비밀번호 관문: 로컬 주소에서는 세우지 않음(웹 주소에서만) — 함수가 있고, 이 서버(127.0.0.1)에서는 gateNeeded가 거짓
     res.gate = await p.evaluate(() => ({ fn: typeof gate, needed: gateNeeded(), gated: document.body.classList.contains("gated") }));
     if (res.gate.fn !== "function" || res.gate.needed || res.gate.gated) errs.push("관문: " + JSON.stringify(res.gate));
-    // 코드 조합 테스트: 칩이 그려지고, 의상·장소 칩을 누르면 조합 키가 바뀌고, 프롬프트 보기가 묶음을 보여 줌(그리기는 Runware 키가 필요해 누르지 않음)
-    await p.evaluate(() => { location.hash = "codetest"; }); await wait(500);
-    res.codetest = await p.evaluate(async () => {
-      const n0 = $$("#ctA .ct-chip").length, w0 = $$("#ctWe .ct-chip").length, p0 = $$("#ctP .ct-chip").length;
-      $$("#ctWe .ct-chip")[0].click(); await new Promise((z) => setTimeout(z, 150)); $$("#ctP .ct-chip")[0].click(); await new Promise((z) => setTimeout(z, 150));
-      const combo = $(".ct-combo code").textContent; $("#ctPrompt").click(); await new Promise((z) => setTimeout(z, 150));
-      // 성인 확인을 켜면 세미·성인 코드가 더 보이고, 이 PC에 관리자 전용 코드(ADMIN_CODES — content/codes.admin.json, git에 없음)가 있으면 그것도 칩으로
-      S.settings.isAgeVerified = true; saveSettings(); viewCodeTest(); await new Promise((z) => setTimeout(z, 200));
-      const adultN = $$(".ct-chip.adult").length, adminN = $$(".ct-chip small").filter((x) => x.textContent === "관리자").length, adminCodes = EXTRA_CODES.length; // 이 PC의 content/codes.admin.json(git에 없음)을 런타임에 읽은 수 — 없으면 0
-      S.settings.isAgeVerified = false; saveSettings();
-      return { acts: n0, wears: w0, places: p0, combo, prompt: ($("#ctPre")?.textContent || "").length, hidden: $("#ctPre")?.hidden, go: !!$("#ctGo"), adultN, adminN, adminCodes };
+    // 이미지 스튜디오: 인물 칩·코드 목록이 그려지고, 의상·장소를 고르면 조합 키가 바뀌고, 프롬프트 보기·찾기·묶음 접기가 됨(그리기는 Runware 키가 필요해 누르지 않음)
+    await p.evaluate(() => { location.hash = "images-hwanghu"; }); await wait(500);
+    res.studio = await p.evaluate(async () => {
+      const w = (ms) => new Promise((z) => setTimeout(z, ms));
+      const who = $$(".is-who").length, acts = $$(".is-code").length, groups = $$(".is-group").length;
+      $('[data-tab="wear"]').click(); await w(150); const wears = $$(".is-code").length; $(".is-code [data-pick]").click(); await w(150);
+      $('[data-tab="place"]').click(); await w(150); const places = $$(".is-code").length; $(".is-code [data-pick]").click(); await w(150);
+      const combo = $(".ct-combo code").textContent; $("#isPrompt").click(); await w(150);
+      const prompt = ($(".ct-prompt")?.textContent || "").length;
+      $('[data-tab="act"]').click(); await w(150);
+      const q = $("#isQ"); q.value = "웃음"; q.dispatchEvent(new Event("input")); await w(100);
+      const found = $$(".is-code").filter((e) => !e.hidden).length; q.value = ""; q.dispatchEvent(new Event("input"));
+      $('[data-fold="act0"]').click(); await w(150); const folded = $('[data-group="act0"]').classList.contains("closed"); $('[data-fold="act0"]').click(); await w(150);
+      // 성인 확인을 켜면 세미·성인 코드가 더 보이고, 이 PC에 관리자 전용 코드(content/codes.admin.json, git에 없음 — 런타임에 읽은 수, 없으면 0)가 있으면 그것도 '관리자' 표시로
+      S.settings.isAgeVerified = true; saveSettings(); viewImages("hwanghu"); await w(200);
+      const all = ["act", "wear", "place"].flatMap((d) => codeGroups(d).flatMap((g) => g.items));
+      const adultN = all.filter((d) => d.rating !== "safe").length, adminN = all.filter((d) => d.src === "관리자").length, adminCodes = EXTRA_CODES.length, adultRows = $$(".is-code.adult").length;
+      S.settings.isAgeVerified = false; saveSettings(); viewImages("hwanghu"); await w(200);
+      return { who, acts, groups, wears, places, combo, prompt, found, folded, go: !!$("#isGo"), adultN, adultRows, adminN, adminCodes };
     });
-    if (res.codetest.acts < 50 || res.codetest.wears < 2 || res.codetest.places < 5 || !/\[\[img:[a-z0-9]+:\d+,4\d\d,5\d\d\]\]/.test(res.codetest.combo) || res.codetest.prompt < 40 || res.codetest.hidden || res.codetest.adultN < 6 || res.codetest.adminN !== res.codetest.adminCodes) errs.push("코드 조합 테스트: " + JSON.stringify(res.codetest));
+    const st = res.studio;
+    if (st.who < 5 || st.acts < 50 || st.groups < 2 || st.wears < 2 || st.places < 5 || !/\[\[img:[a-z0-9]+:\d+,4\d\d,5\d\d\]\]/.test(st.combo) || st.prompt < 40 || !st.found || st.found >= st.acts || !st.folded || !st.go || st.adultN < 6 || !st.adultRows || st.adminN !== st.adminCodes) errs.push("이미지 스튜디오: " + JSON.stringify(st));
     if (out) await p.screenshot({ path: `${out}/${tag}_admin_me.png`, fullPage: false });
 
     // 사용자 빌드: 관리 자리가 비어 있고 관리자 함수가 없음
     await open(userUrl);
     const u = { navs: await p.evaluate(() => [...document.querySelectorAll("#rail [data-nav]")].map((b) => b.dataset.nav)) };
-    u.fns = await p.evaluate(() => ({ studio: typeof viewStudio, slots: typeof openImageSlots, gen: typeof genImageSheet, works: typeof viewWorks, runware: typeof runwareImage, codetest: typeof viewCodeTest, gate: typeof gate, loadAdminCodes: typeof loadAdminCodes }));
+    u.fns = await p.evaluate(() => ({ studio: typeof viewStudio, images: typeof viewImages, openImages: typeof openImages, codeGroups: typeof codeGroups, gen: typeof genImageSheet, works: typeof viewWorks, runware: typeof runwareImage, gate: typeof gate, loadAdminCodes: typeof loadAdminCodes }));
     u.extra = await p.evaluate(() => EXTRA_CODES.length);
     await p.evaluate(() => { location.hash = "c-hwanghu"; }); await wait(500);
     u.detail = await p.evaluate(() => ({ wArt: !!$("#wArt"), imgSlots: !!$("#imgSlots"), start: !!$("#start"), cast: $$("[data-cast]").length }));
