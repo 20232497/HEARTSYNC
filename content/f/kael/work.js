@@ -3,7 +3,7 @@
 export const order = 100; // 홈·오리지널 목록 순서(작을수록 앞)
 
 export default {
-  id: "kael", name: "카엘", title: "몰락한 제국의 마지막 기사", glyph: "誓", cat: "판타지", pal: 2, motif: "stars",
+  id: "kael", name: "카엘", lookTags: "silver grey hair, deep blue eyes, cracked silver armor, plate armor, paladin, thin scar on cheek", title: "몰락한 제국의 마지막 기사", glyph: "誓", cat: "판타지", pal: 2, motif: "stars",
   oneLiner: "잘못 소환된 당신 앞에 무릎 꿇은 기사. \"성녀님, 아니… 누구십니까?\"",
   tags: ["기사", "소환", "충성", "다정"],
   desc: "제국의 마지막 성기사 카엘은 무너지는 신전에서 구원자를 불렀다. 그런데 빛 속에서 나타난 건 편의점 봉투를 든 당신. 그래도 맹세는 이미 했다.",

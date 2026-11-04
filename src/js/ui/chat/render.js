@@ -1,6 +1,6 @@
 /* 본문 서식(fmt·fmtLine)·상태창(statusBlock)·스트리밍 표시(liveFill) */
 import { clamp, esc, num } from "../../core/util.js";
-import { imgTags } from "../../images/pick.js";
+import { imgTags } from "../../images/codes.js";
 import { gaugeView } from "./view.js";
 import { figHTML } from "../cover.js";
 
@@ -52,9 +52,9 @@ export function fmt(text, c, persona) {
   for (const raw of String(text).split(/\n+/)) {
     const line = raw.trim(); if (!line) continue;
     let buf = "";
-    for (const part of line.split(/(\[\[img:[a-z0-9]+:\d{1,2}\]\])/i)) {
-      const m = part.match(/^\[\[img:([a-z0-9]+):(\d{1,2})\]\]$/i);
-      if (m) { if (buf.trim()) { flush(); out.push(fmtLine(buf.trim(), names)); buf = ""; } const f = figHTML(c, m[1].toLowerCase(), +m[2]); if (f) row.push(f); }
+    for (const part of line.split(/(\[\[img:[a-z0-9]+:[\d,]+\]\])/i)) {
+      const m = part.match(/^\[\[img:([a-z0-9]+):([\d,]+)\]\]$/i);
+      if (m) { if (buf.trim()) { flush(); out.push(fmtLine(buf.trim(), names)); buf = ""; } const f = figHTML(c, m[1].toLowerCase(), m[2]); if (f) row.push(f); }
       else buf += part;
     }
     if (buf.trim()) { flush(); out.push(fmtLine(buf.trim(), names)); }

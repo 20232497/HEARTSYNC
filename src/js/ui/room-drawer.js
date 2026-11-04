@@ -11,8 +11,9 @@ import { DOWNLOADS, S, gen, hasOpenRouterKey, room, setRoom } from "../core/stat
 import { KV } from "../core/storage.js";
 import { $, $$, clamp, esc, num, toast } from "../core/util.js";
 import { FREE_DAILY, PLAN, freeLeft, isPro, plan, qShort, quote } from "../core/wallet.js";
-import { imagesOf, imgTags, pickImg } from "../images/pick.js";
-import { sitName } from "../images/situations.js";
+import { imgTags } from "../images/codes.js";
+import { imagesOf, pickImg } from "../images/pick.js";
+import { keyName } from "../images/situations.js";
 import { IMG, validRef } from "../services/images.js";
 import { stopGen } from "./chat/generate.js";
 import { copyText, renderLog } from "./chat/log.js";
@@ -183,8 +184,8 @@ export function openRoomDrawer(view = "main") {
   else if (view === "gallery") {
     const items = galleryItems(r);
     body.innerHTML = items.length ? `<p class="note" style="margin-bottom:10px">이 대화에 나온 장면 이미지 ${items.length}장. 누르면 크게 보거나 그 장면으로 가요.</p><div class="gallery">${items.map((it, k) => {
-      const cast = c.cast.find((x) => x.code === it.code), ref = pickImg(c, it.code, it.sit);
-      return `<button data-g="${k}" title="${esc(cast?.name || "")} · ${esc(sitName(it.sit))}">${ref ? IMG.tag(ref) : artHTML(c, cast || { name: "?" }, it.sit)}</button>`; }).join("")}</div>`
+      const cast = c.cast.find((x) => x.code === it.code), ref = pickImg(c, it.code, it.key);
+      return `<button data-g="${k}" title="${esc(cast?.name || "")} · ${esc(keyName(it.key))}">${ref ? IMG.tag(ref) : artHTML(c, cast || { name: "?" }, it.key)}</button>`; }).join("")}</div>`
       : `<div class="empty">아직 장면 이미지가 없어요. 대화 중에 인물이 등장하거나 감정이 크게 바뀌면 이미지가 나와요.</div>`;
     IMG.hydrate(body);
     $$("[data-g]", body).forEach((b) => b.onclick = () => { const it = items[+b.dataset.g], im = $("img", b); if (im && im.src) lightbox(im.src); else { ov.remove(); jumpTo(it.id); } });
@@ -198,13 +199,13 @@ export function openRoomDrawer(view = "main") {
 }
 function galleryItems(r) {
   const out = [], seen = new Set();
-  r.msgs.forEach((m) => imgTags(curText(m)).forEach((t) => { const k = t.code + ":" + t.sit; if (!seen.has(k) && (r.char.cast || []).some((x) => x.code === t.code)) { seen.add(k); out.push({ ...t, id: m.id }); } }));
+  r.msgs.forEach((m) => imgTags(curText(m)).forEach((t) => { const k = t.code + ":" + t.key; if (!seen.has(k) && (r.char.cast || []).some((x) => x.code === t.code)) { seen.add(k); out.push({ ...t, id: m.id }); } }));
   return out;
 }
 function jumpTo(id) { const el = $(`.msg[data-id="${id}"]`); if (!el) return; el.scrollIntoView({ block: "center" }); el.classList.add("flash"); setTimeout(() => el.classList.remove("flash"), 1400); }
 function exportText(r) {
   const head = `${r.char.title} — ${r.opening || ""}\n${r.persona.name}(으)로 플레이 · ${new Date().toLocaleString("ko-KR")}\n\n`;
-  return head + r.msgs.filter((m) => curText(m) && !m.sys).map((m) => `${m.role === "ai" ? speakerName(r) : r.persona.name}: ${curText(m).replace(/\[\[img:([a-z0-9]+):(\d+)\]\]/gi, (_, a, b) => `[이미지: ${(r.char.cast.find((x) => x.code === a.toLowerCase()) || {}).name || a} · ${sitName(+b)}]`)}`).join("\n\n");
+  return head + r.msgs.filter((m) => curText(m) && !m.sys).map((m) => `${m.role === "ai" ? speakerName(r) : r.persona.name}: ${curText(m).replace(/\[\[img:([a-z0-9]+):([\d,]+)\]\]/gi, (_, a, b) => `[이미지: ${(r.char.cast.find((x) => x.code === a.toLowerCase()) || {}).name || a} · ${keyName(b)}]`)}`).join("\n\n");
 }
 async function exportRoom(r) {
   const data = exportText(r), filename = `HEART_SYNC_${r.char.title.replace(/[^\w가-힣]+/g, "_")}_${new Date().toISOString().slice(0, 10)}.txt`;

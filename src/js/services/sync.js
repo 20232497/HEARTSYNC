@@ -4,7 +4,8 @@ import { roomKey } from "../core/rooms.js";
 import { applySettings, saveSettings } from "../core/settings.js";
 import { S, gen } from "../core/state.js";
 import { IDB, KV } from "../core/storage.js";
-import { CUSTOM_BASE, CUSTOM_MAX } from "../images/situations.js";
+import { dimOf, freeNum, keyOf, parseCodes, usedNums } from "../images/codes.js";
+import { CUSTOM_MAX } from "../images/situations.js";
 import { CLOUD } from "./cloud.js";
 import { validRef } from "./images.js";
 import { SB } from "./supabase.js";
@@ -42,7 +43,7 @@ export function guestPics(remote, local) {
   (local.styleSets || []).forEach((x) => { if (x && !rs.some((y) => y && y.id === x.id)) n += (x.refs || []).filter(validRef).length; });
   return n;
 }
-// 직접 만든 이미지 칸(15번~): 계정 칸에 이 기기에만 있는 칸을 더함. 같은 이름이면 계정 번호로, 번호만 겹치면 빈 번호로 옮김
+// 직접 만든 이미지 칸(15번~, 의상 4xx·장소 5xx): 계정 칸에 이 기기에만 있는 칸을 더함. 같은 이름이면 계정 번호로, 번호만 겹치면 같은 종류의 빈 번호(내장 코드 번호는 피함)로 옮김
 // → { sits, move: {이 기기 번호: 계정 번호(자리가 없으면 -1)} }
 function mergeSits(remote, local) {
   const sits = (Array.isArray(remote) ? remote : []).slice(), move = {}, num = {};
@@ -51,18 +52,22 @@ function mergeSits(remote, local) {
     if (!d || !Number.isInteger(d.n)) return;
     if (d.name in num) { if (num[d.name] !== d.n) move[d.n] = num[d.name]; return; }
     let n = d.n;
-    if (sits.some((x) => x.n === n)) { n = CUSTOM_BASE; while (sits.some((x) => x.n === n)) n++; }
-    if (sits.length >= CUSTOM_MAX || n >= 100) { move[d.n] = -1; return; }
+    if (sits.some((x) => x.n === n)) n = freeNum(usedNums(sits), dimOf(d.n));
+    if (sits.length >= CUSTOM_MAX || n < 0) { move[d.n] = -1; return; }
     sits.push(Object.assign({}, d, { n })); num[d.name] = n;
     if (n !== d.n) move[d.n] = n;
   });
   return { sits, move };
 }
-// 칸 번호로 된 객체({번호: 값})의 번호를 옮김(-1은 뺌)
+// 칸 번호로 된 객체({번호 또는 조합 키 "3,404,501": 값})의 번호를 옮김(-1이 든 키는 뺌)
 function moveSits(o, move) {
   if (!isObj(o)) return o;
   const out = {};
-  Object.keys(o).forEach((k) => { const to = k in move ? move[k] : k; if (to !== -1 && !(to in out && out[to])) out[to] = o[k]; });
+  Object.keys(o).forEach((k) => {
+    const codes = parseCodes(k).map((n) => n in move ? move[n] : n);
+    if (!codes.length || codes.indexOf(-1) >= 0) return;
+    const to = keyOf(codes); if (to && !(to in out && out[to])) out[to] = o[k];
+  });
   return out;
 }
 // 이 기기의 그림 칸(imgpacks[작품][인물][칸])·저장 태그를 계정의 칸 번호에 맞춤 → { sits(합친 칸 정의), imgpacks, tagpacks }

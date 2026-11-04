@@ -52,11 +52,11 @@ export default {
     { keys: ["단전", "봉인", "주화입마"], text: "유저의 단전은 막혀 있다. 억지로 내공을 끌어올리면 가슴에 낯선 구결이 떠오르며 피를 토한다. 다룰 수 있게 되면 봉인이 풀리지만, 급하면 주화입마에 빠진다." }
   ],
   cast: [
-    { code: "ns", name: "남궁설", look: "24세 여성, 흰 무복에 푸른 띠, 높게 묶은 흑발, 장검, 차가운 눈빛" },
-    { code: "ss", name: "당소소", look: "22세 여성, 보라색 무복, 손목의 암기 팔찌, 짧은 단발, 장난스러운 미소" },
-    { code: "hw", name: "혜원", look: "25세 여성, 회색 아미파 무복, 반쯤 묶은 긴 머리, 약상자, 단정한 얼굴" },
-    { code: "mr", name: "묵란", look: "26세 여성, 검은 무복 위 화산파 외문제자 외투, 길게 늘어뜨린 흑발, 붉은 입술, 냉소" },
-    { code: "hr", name: "화린", look: "23세 여성, 기운 누더기 옷, 대나무 타구봉, 헝클어진 갈색 머리, 크게 웃는 얼굴" }
+    { code: "ns", name: "남궁설", look: "24세 여성, 흰 무복에 푸른 띠, 높게 묶은 흑발, 장검, 차가운 눈빛", tags: "black hair, high ponytail, white martial arts uniform, blue sash, hanfu, longsword" },
+    { code: "ss", name: "당소소", look: "22세 여성, 보라색 무복, 손목의 암기 팔찌, 짧은 단발, 장난스러운 미소", tags: "black hair, short bob cut, purple martial arts uniform, hanfu, bracelet, hidden weapons" },
+    { code: "hw", name: "혜원", look: "25세 여성, 회색 아미파 무복, 반쯤 묶은 긴 머리, 약상자, 단정한 얼굴", tags: "black hair, long hair, half updo, grey martial arts robe, hanfu, medicine box" },
+    { code: "mr", name: "묵란", look: "26세 여성, 검은 무복 위 화산파 외문제자 외투, 길게 늘어뜨린 흑발, 붉은 입술, 냉소", tags: "black hair, very long hair, black martial arts uniform, red-trimmed outer robe, hanfu, red lips" },
+    { code: "hr", name: "화린", look: "23세 여성, 기운 누더기 옷, 대나무 타구봉, 헝클어진 갈색 머리, 크게 웃는 얼굴", tags: "brown hair, messy hair, patched ragged clothes, bamboo staff, beggar sect" }
   ],
   openings: [
     { title: "🍂 첫날 밤의 시체", directive: "기본 시작. 첫날 새벽 낙혼폭 근처에서 화산파 대제자의 시체가 발견되고, 유저가 가장 먼저 발견한 사람으로 의심받는다. 남궁설과 화린이 현장에 있다.",

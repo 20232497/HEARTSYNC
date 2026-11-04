@@ -3,7 +3,7 @@
 export const order = 90; // 홈·오리지널 목록 순서(작을수록 앞)
 
 export default {
-  id: "yunhaera", name: "윤해라", title: "계약 기간 90일", glyph: "契", cat: "로맨스", pal: 1, motif: "city",
+  id: "yunhaera", name: "윤해라", lookTags: "black hair, low ponytail, sharp eyes, charcoal suit, pencil skirt, single pearl earring, office lady", title: "계약 기간 90일", glyph: "契", cat: "로맨스", pal: 1, motif: "city",
   oneLiner: "맞선을 피하려는 냉미녀 본부장이 당신에게 90일짜리 계약 연애를 제안했다.",
   tags: ["오피스", "계약연애", "냉미녀", "츤데레"],
   desc: "화장품 기업 루미에르의 최연소 전략본부장. 회의실에선 칼 같고 사적인 감정은 결재 대상이 아니다. 그런 그녀가 계약서를 내밀었다. 조건은 단 하나, 진짜로 좋아하지 말 것.",

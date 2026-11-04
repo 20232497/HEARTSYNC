@@ -4,7 +4,7 @@ import { minorHint } from "../core/safety.js";
 import { S, hasRunwareKey } from "../core/state.js";
 import { splitTags } from "./prompt.js";
 import { RATINGS, imgRating } from "./rating.js";
-import { ARCH, imgModelId, imgModelInfo, imgStyleText } from "./styles.js";
+import { ARCH, imgModelInfo, styleFor } from "./styles.js";
 import { ponyTags } from "./tags.js";
 import { IMG, validRef } from "../services/images.js";
 
@@ -47,23 +47,24 @@ function fixSubject(tags, subj) {
   if (subj === "male" && !out.some((t) => bare(t) === "male focus")) out.splice(out.findIndex((t) => /\b\d*boys?\b/.test(bare(t))) + 1, 0, "male focus");
   return out.join(", ");
 }
-/* Runware 이미지 생성 → Blob (IMG.put에 그대로 넣을 수 있음). 그림은 dataURI로 받아 두 번째 요청·CORS 문제를 피하고, URL로 오면 내려받음 */
-export async function runwareImage(prompt, { aspect = "4:5", rating = imgRating(), signal } = {}) {
+/* Runware 이미지 생성 → Blob (IMG.put에 그대로 넣을 수 있음). 그림은 dataURI로 받아 두 번째 요청·CORS 문제를 피하고, URL로 오면 내려받음.
+   style은 styleFor(ctx)가 고른 {prompt, model} — 없으면 설정의 그림체 그대로(styleFor()) */
+export async function runwareImage(prompt, { aspect = "4:5", rating = imgRating(), signal, style: styleOpt } = {}) {
   if (!hasRunwareKey()) throw { code: "no_key" };
   rating = imgRating(rating);
-  const adult = rating !== "safe";
+  const adult = rating !== "safe", st = styleOpt || styleFor();
   if (adult && minorHint(prompt)) throw { code: "minor_block" };
-  const rawTags = await ponyTags(prompt, adult), rawStyle = await ponyTags(imgStyleText(), adult);
+  const rawTags = await ponyTags(prompt, adult), rawStyle = await ponyTags(st.prompt || "", adult);
   if (adult && minorHint(rawTags + ", " + rawStyle)) throw { code: "minor_block" };
   const subj = imgSubject(rawTags), Sb = SUBJ[subj] || {};
   const tags = fixSubject(rawTags, subj), style = splitTags(rawStyle).filter((t) => !(Sb.strip && Sb.strip.test(t))).join(", ");
-  const [width, height] = RW_SIZES[aspect] || RW_SIZES["4:5"], R = RATINGS[rating], M = imgModelInfo(imgModelId()), A = ARCH[M.arch] || ARCH.pony;
+  const [width, height] = RW_SIZES[aspect] || RW_SIZES["4:5"], R = RATINGS[rating], M = imgModelInfo(st.model), A = ARCH[M.arch] || ARCH.pony;
   // 사람 없는 그림에는 수위의 adult·mature 태그를 빼야 사람이 끼어들지 않음
   const rpos = splitTags(M.arch === "illustrious" ? R.ill : R.pos).filter((t) => subj !== "none" || !/^(?:adult|mature|nsfw)$/.test(t)).join(", ");
-  // 내용(장면·인물) 다음에 그림체 — 그림체가 앞이면 표정·자세가 묻힘. "(태그:1.3)" 강조가 있으면 Runware 가중치 문법(sdEmbeds)을 켬
+  // 내용(장면·인물) 다음에 그림체 — 그림체가 앞이면 표정·자세가 묻힘. 내용이나 그림체에 "(태그:1.3)" 강조가 있으면 Runware 가중치 문법(sdEmbeds)을 켬
   const task = { taskType: "imageInference", taskUUID: uuid4(),
     positivePrompt: [A.pos, rpos, M.pos, tags, style].filter(Boolean).join(", ").slice(0, 2900),
-    ...(/\([^()]+:\d(?:\.\d+)?\)/.test(tags) ? { promptWeighting: "sdEmbeds" } : {}),
+    ...(/\([^()]+:\d(?:\.\d+)?\)/.test(tags + ", " + style) ? { promptWeighting: "sdEmbeds" } : {}),
     negativePrompt: [A.neg, M.neg, IMG_NEG, NEG_MINOR, R.neg, Sb.neg].filter(Boolean).join(", "),
     model: M.id, width, height, numberResults: 1, steps: 28, CFGScale: M.cfg || A.cfg, scheduler: "Euler a",
     outputFormat: "WEBP", outputType: "dataURI", ...(adult ? {} : { checkNSFW: true }) };

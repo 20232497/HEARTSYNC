@@ -7,6 +7,7 @@ import { coverPrompt, lorePrompt } from "../images/prompt.js";
 import { ratingFieldHTML, setSheetRating, sheetRating } from "../images/rating.js";
 import { IMG } from "../services/images.js";
 import { viewDetail } from "./detail.js";
+import { audOf } from "../core/audience.js";
 import { genImageSheet } from "./gen-sheet.js";
 import { ICON } from "./icons.js";
 import { sheet } from "./sheet.js";
@@ -57,7 +58,7 @@ export function openWorldArt(c) {
     const rs = $("#worldRt", ov); if (rs) rs.onchange = () => setSheetRating("w:" + c.id, rs.value);
     $$("[data-wai]", ov).forEach((b) => b.onclick = () => {
       const key = b.dataset.wai, e = lore.find((x) => x.keys[0] === key), cover = key === "__cover";
-      genImageSheet({ title: `${c.title} · ${cover ? "대표 일러스트" : key}`, aspect: cover ? "3:4" : "16:9", prompt: cover ? coverPrompt(c) : lorePrompt(c, e), rating: sheetRating("w:" + c.id),
+      genImageSheet({ title: `${c.title} · ${cover ? "대표 일러스트" : key}`, aspect: cover ? "3:4" : "16:9", prompt: cover ? coverPrompt(c) : lorePrompt(c, e), rating: sheetRating("w:" + c.id), ctx: { kind: "world", aud: audOf(c) },
         onUse: async (blob) => { setRef(key, await IMG.put(blob)); if (live?.isConnected) paint(); toast(cover ? "대표 일러스트를 넣었어요" : "세계관 일러스트를 넣었어요"); } });
     });
   };

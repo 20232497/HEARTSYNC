@@ -54,11 +54,11 @@ export default {
     { keys: ["타임캡슐", "여름방학"], text: "유저가 어릴 때 마지막 여름방학에 할머니와 함께 묻은 깡통. 무엇을 넣었는지, 어디에 묻었는지 유저는 잘 기억나지 않는다." }
   ],
   cast: [
-    { code: "th", name: "강태하", look: "32세 남성, 셰프, 짧게 깎은 검은 머리, 날카로운 눈매, 검은 앞치마, 걷어붙인 소매와 팔뚝의 화상 자국" },
-    { code: "sh", name: "윤시후", look: "29세 남성, 무명 배우, 갈색 펌 머리, 장난스러운 웃음, 헐렁한 후드티, 귀의 작은 피어싱" },
-    { code: "dh", name: "백도현", look: "31세 남성, 수의사, 단정한 검은 머리, 둥근 안경, 흰 가운 위 회색 니트, 다정한 눈" },
-    { code: "hg", name: "이한결", look: "27세 남성, 웹툰 작가, 눈을 덮는 부스스한 흑발, 다크서클, 늘어진 검은 티셔츠, 목에 건 헤드폰" },
-    { code: "jh", name: "서진혁", look: "34세 남성, 변호사, 깔끔하게 넘긴 머리, 무테안경, 남색 정장, 차가운 표정" }
+    { code: "th", name: "강태하", look: "32세 남성, 셰프, 짧게 깎은 검은 머리, 날카로운 눈매, 검은 앞치마, 걷어붙인 소매와 팔뚝의 화상 자국", tags: "black hair, very short hair, sharp eyes, chef, black apron, sleeves rolled up, burn scar on forearm, toned arms" },
+    { code: "sh", name: "윤시후", look: "29세 남성, 무명 배우, 갈색 펌 머리, 장난스러운 웃음, 헐렁한 후드티, 귀의 작은 피어싱", tags: "brown hair, wavy hair, permed hair, oversized hoodie, ear piercing, small earrings" },
+    { code: "dh", name: "백도현", look: "31세 남성, 수의사, 단정한 검은 머리, 둥근 안경, 흰 가운 위 회색 니트, 다정한 눈", tags: "black hair, neat hair, round eyewear, glasses, grey sweater, white coat, veterinarian, gentle eyes" },
+    { code: "hg", name: "이한결", look: "27세 남성, 웹툰 작가, 눈을 덮는 부스스한 흑발, 다크서클, 늘어진 검은 티셔츠, 목에 건 헤드폰", tags: "black hair, messy hair, hair over eyes, bags under eyes, baggy black t-shirt, headphones around neck" },
+    { code: "jh", name: "서진혁", look: "34세 남성, 변호사, 깔끔하게 넘긴 머리, 무테안경, 남색 정장, 차가운 표정", tags: "black hair, slicked back hair, rimless eyewear, navy blue suit, necktie, lawyer" }
   ],
   openings: [
     { title: "🍚 장례 다음 날 · 일곱 개의 밥그릇", directive: "기본 시작. 장례 다음 날 아침, 처음으로 하숙인 다섯과 한 밥상에 앉는 장면. 다섯의 첫인상과 성격을 짧게 보여 주고, 서른 날의 조건과 첫 할머니의 흔적으로 이어질 실마리를 남긴다.",

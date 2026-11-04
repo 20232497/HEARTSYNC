@@ -8,6 +8,10 @@
 .scene-row { display:flex; gap:8px; margin:4px 0 8px; }
 .scene-row .scene-img { flex:1 1 0; min-width:0; max-width:200px; margin:0; }
 .scene-row .scene-img figcaption { left:6px; bottom:6px; font-size:10.5px; padding:2px 7px; }
+/* 대화 중 자동 생성 중인 자리: 아트 카드 위에 표시(끝나면 generate.js가 figure 속을 그림으로 바꿈) */
+.scene-img.gen .artcard { opacity:.7; }
+.scene-img.gen::after { content:"AI 그리는 중…"; position:absolute; left:10px; bottom:9px; font-size:11.5px; font-weight:600; color:#fff; background:rgba(0,0,0,.55); border-radius:999px; padding:2px 10px; animation:genPulse 1.4s ease-in-out infinite; }
+@keyframes genPulse { 50% { opacity:.45; } }
 .artcard { position:relative; aspect-ratio:4/5; width:100%; overflow:hidden; isolation:isolate; container-type:inline-size; color:#fff;
   background:radial-gradient(80% 60% at 70% 20%, color-mix(in srgb, var(--tint) 55%, transparent), transparent 70%), radial-gradient(60% 50% at 20% 90%, color-mix(in srgb, var(--c3) 40%, transparent), transparent 70%), linear-gradient(160deg, var(--c1), var(--c2)); }
 .artcard::before { content:""; position:absolute; inset:0; background:repeating-linear-gradient(135deg, rgba(255,255,255,.05) 0 2px, transparent 2px 10px); z-index:0; }

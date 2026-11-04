@@ -1,7 +1,7 @@
 /* 크리에이터 스튜디오: 작품 쓰기·AI 초안·저장·공개용 정리(cleanChar)·커뮤니티 공개 */
 import { errCopy, llm } from "../ai/llm.js";
 import { loreText, parseLore } from "../ai/prompt/lore.js";
-import { AUDS, guessAud } from "../core/audience.js";
+import { AUDS, audOf, guessAud } from "../core/audience.js";
 import { CATS, MOTIFS, PALETTES } from "../core/constants.js";
 import { minorFlags } from "../core/safety.js";
 import { DB, S } from "../core/state.js";
@@ -27,7 +27,7 @@ export function viewStudio(id) {
     draft = ex ? JSON.parse(JSON.stringify(ex)) : blankDraft();
   }
   const d = draft, editing = S.mine.some((m) => m.id === d.id);
-  const castText = (d.cast || []).map((x) => `${x.code}|${x.name}|${x.look || ""}`).join("\n");
+  const castText = (d.cast || []).map((x) => `${x.code}|${x.name}|${x.look || ""}${x.tags ? "|" + x.tags : ""}`).join("\n");
   v.innerHTML = `<div class="page">${topbar()}
     <h1 class="sec" style="margin-top:4px">${editing ? "캐릭터 수정" : "캐릭터 만들기"} <small>크리에이터 스튜디오</small></h1>
     <div class="studio"><div>
@@ -76,7 +76,7 @@ export function viewStudio(id) {
       </div>
       <div class="box">
         <h3>이미지 출연진</h3>
-        <p class="note">대화 중 [[img:코드:번호]]로 불러올 인물이에요. 한 줄에 하나씩 <b>코드|이름|외모</b>. 비워 두면 캐릭터 이름 하나(c)로 만들어요.</p>
+        <p class="note">대화 중 [[img:코드:번호]]로 불러올 인물이에요. 한 줄에 하나씩 <b>코드|이름|외모|영문 태그(선택)</b>. 영문 태그를 적으면 그림을 만들 때 외모 대신 그대로 써서 같은 생김새로 그려요. 비워 두면 캐릭터 이름 하나(c)로 만들어요.</p>
         <div class="field"><label for="f-cast" class="sr">이미지 출연진</label><textarea id="f-cast" maxlength="1200" placeholder="c|${esc(d.name || "캐릭터 이름")}|긴 흑발, 날카로운 눈매, 검은 코트">${esc(castText)}</textarea></div>
         ${editing ? `<button class="btn sm" id="slots" style="margin-top:8px">이미지 슬롯 열기</button>` : `<p class="note" style="margin-top:6px">저장한 뒤 이미지 슬롯에서 상황별 이미지를 올릴 수 있어요.</p>`}
       </div>
@@ -113,7 +113,7 @@ export function viewStudio(id) {
   const imgDel = $("#imgDel"); if (imgDel) imgDel.onclick = () => { collect(); d.img = ""; viewStudio(id); };
   $("#imgAi").onclick = () => {
     collect();
-    genImageSheet({ title: "AI로 표지 만들기", aspect: "3:4", prompt: coverPrompt(d),
+    genImageSheet({ title: "AI로 표지 만들기", aspect: "3:4", prompt: coverPrompt(d), ctx: { kind: "world", aud: audOf(d) },
       onUse: async (blob) => { collect(); d.img = await IMG.put(blob); viewStudio(id); toast("표지 이미지를 넣었어요"); } });
   };
   const sl = $("#slots"); if (sl) sl.onclick = () => { const m = S.mine.find((x) => x.id === d.id); if (m) openImageSlots(m); };
@@ -128,9 +128,9 @@ export function viewStudio(id) {
 function parseCast(text, name) {
   const out = [], used = new Set();
   String(text).split("\n").map((l) => l.trim()).filter(Boolean).slice(0, 12).forEach((l) => {
-    const [code, nm, look] = l.split("|").map((x) => (x || "").trim());
+    const [code, nm, look, tags] = l.split("|").map((x) => (x || "").trim());
     const cd = (code || "").toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 8);
-    if (!cd || !nm || used.has(cd)) return; used.add(cd); out.push({ code: cd, name: nm.slice(0, 16), look: (look || "").slice(0, 200) });
+    if (!cd || !nm || used.has(cd)) return; used.add(cd); out.push({ code: cd, name: nm.slice(0, 16), look: (look || "").slice(0, 200), ...(tags ? { tags: tags.slice(0, 300) } : {}) });
   });
   return out.length ? out : [{ code: "c", name: name || "캐릭터", look: "" }];
 }
@@ -202,7 +202,7 @@ function cleanChar(c) {
   if (!/^u[a-z0-9]+$/.test(s(c.id, 40)) || !c.name || !Array.isArray(c.openings) || !c.openings.length) return null;
   const fields = Array.isArray(c.fields) ? c.fields.map((f) => s(f, 12)).filter(Boolean).slice(0, 16) : ["호감도"];
   const gauge = s(c.gauge, 12) || fields[0];
-  const cast = Array.isArray(c.cast) ? c.cast.slice(0, 12).map((x) => ({ code: s(x?.code, 8).toLowerCase().replace(/[^a-z0-9]/g, ""), name: s(x?.name, 16), look: s(x?.look, 200) })).filter((x) => x.code && x.name) : [];
+  const cast = Array.isArray(c.cast) ? c.cast.slice(0, 12).map((x) => ({ code: s(x?.code, 8).toLowerCase().replace(/[^a-z0-9]/g, ""), name: s(x?.name, 16), look: s(x?.look, 200), ...(x?.tags ? { tags: s(x.tags, 300) } : {}) })).filter((x) => x.code && x.name) : [];
   const cleanStatus = (st) => Object.fromEntries(Object.entries(st && typeof st === "object" ? st : {}).slice(0, 20)
     .filter(([, v]) => (typeof v === "number" && Number.isFinite(v)) || typeof v === "string").map(([k, v]) => [s(k, 12), typeof v === "string" ? v.slice(0, 200) : v]));
   const out = { id: c.id, name: s(c.name, 16), title: s(c.title, 24), oneLiner: s(c.oneLiner, 70), cat: CATS.includes(c.cat) ? c.cat : "일상", aud: AUDS[c.aud] ? c.aud : "",

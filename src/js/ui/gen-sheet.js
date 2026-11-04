@@ -5,14 +5,15 @@ import { $, $$, esc, toast } from "../core/util.js";
 import { asTag, clearCastTags, groupsPrompt, hasSavedTags, saveCastTags, savedParts, splitTags } from "../images/prompt.js";
 import { imgRating, ratingFieldHTML } from "../images/rating.js";
 import { genErr, runwareImage } from "../images/runware.js";
-import { imgModelId, imgModelInfo, styleLabel } from "../images/styles.js";
+import { imgModelInfo, styleFor } from "../images/styles.js";
 import { ICON } from "./icons.js";
 
 /* 다른 시트 위에 겹쳐 뜨는 생성 창. 프롬프트는 묶음별 태그 칩(누르면 ★강조, ×로 빼기, 칸에 한국어·영어로 더하기).
    그림체·품질·수위·금지 태그는 숨겨 두고 runwareImage가 붙임. parts가 없으면 prompt 문자열을 한 묶음으로. onUse(blob)가 끝나면 닫혀요 */
-/* save: {c, cast, i}를 주면(이미지 슬롯) 고친 태그를 그 인물에 저장·기본값으로 되돌리는 줄을 보여 줌 */
-export function genImageSheet({ title = "AI로 이미지 만들기", prompt = "", parts, aspect = "4:5", rating, onUse, save }) {
-  const model = imgModelInfo(imgModelId()).name;
+/* save: {c, cast, i}를 주면(이미지 슬롯) 고친 태그를 그 인물에 저장·기본값으로 되돌리는 줄을 보여 줌.
+   ctx({kind: "daily"|"world", aud, male})는 설정이 '기본 화풍(자동)'일 때 어느 내장 화풍으로 그릴지 정함(styleFor) */
+export function genImageSheet({ title = "AI로 이미지 만들기", prompt = "", parts, aspect = "4:5", rating, onUse, save, ctx }) {
+  const st = styleFor(ctx || {}), model = imgModelInfo(st.model).name, styleName = st.name;
   const toGroups = (ps) => { const gs = ps.map((g) => ({ ...g, tags: g.tags.map((t) => ({ ...asTag(t) })) })); if (!gs.some((g) => g.key === "extra")) gs.splice(1, 0, { key: "extra", label: "추가", tags: [] }); return gs; }; // 직접 더한 태그는 장면 바로 다음(앞쪽일수록 잘 반영됨)
   const groups = toGroups(parts || [{ key: "main", label: "프롬프트", tags: splitTags(prompt) }]);
   const ov = document.createElement("div"); ov.className = "overlay gen-ov";
@@ -20,9 +21,9 @@ export function genImageSheet({ title = "AI로 이미지 만들기", prompt = ""
     <div id="gtags"></div>
     ${save ? `<div class="gen-save"><button type="button" class="btn sm pri" id="gsave">이 인물에 태그 저장</button><button type="button" class="btn sm ghost" id="greset">기본값으로</button><span class="note" id="gsaved"></span></div>` : ""}
     <p class="note" style="margin:8px 0 0">태그를 누르면 ★강조, ×는 빼기. ${S.engine === "none" && !hasOpenRouterKey() ? "AI 연결이 없어 한글은 빼고 보내요." : "한국어로 써도 영문 태그로 바꿔 보내요."}</p>
-    <details class="gen-auto"><summary>자동으로 붙는 태그</summary><p class="note">그림체(${esc(styleLabel())}) · 품질 · 수위 · 금지(저품질·글자·미성년) 태그 · 모델 ${esc(model)}</p></details>
+    <details class="gen-auto"><summary>자동으로 붙는 태그</summary><p class="note">그림체(${esc(styleName)}) · 품질 · 수위 · 금지(저품질·글자·미성년) 태그 · 모델 ${esc(model)}</p></details>
     ${ratingFieldHTML("grt", rating)}
-    <div class="gen-pv" id="gpv"><span class="note">${hasRunwareKey() ? `비율 ${esc(aspect)} · 그림체 ${esc(styleLabel())}` : "설정에서 Runware API 키를 먼저 넣어 주세요."}</span></div>
+    <div class="gen-pv" id="gpv"><span class="note">${hasRunwareKey() ? `비율 ${esc(aspect)} · 그림체 ${esc(styleName)}` : "설정에서 Runware API 키를 먼저 넣어 주세요."}</span></div>
     <div class="cta-row"><button class="btn ghost" data-x>닫기</button><span class="spacer"></span><button class="btn" id="gmk">생성</button><button class="btn pri" id="guse" disabled>이 이미지 쓰기</button></div></div>`;
   document.body.append(ov);
   const paintTags = (focusGroup) => {
@@ -41,7 +42,7 @@ export function genImageSheet({ title = "AI로 이미지 만들기", prompt = ""
   if (save) {
     const { c, cast, i } = save, note = $("#gsaved", ov);
     const paintSaved = () => { note.textContent = hasSavedTags(c, cast.code, i) ? "저장한 태그를 쓰는 중이에요" : "기본 태그예요"; };
-    $("#gsave", ov).onclick = () => { saveCastTags(c, cast, i, groups); paintSaved(); toast(`${cast.name}에 저장했어요. 인물 태그는 모든 칸에, 장면·추가·배경 태그는 이 칸에 써요`); };
+    $("#gsave", ov).onclick = () => { saveCastTags(c, cast, i, groups); paintSaved(); toast(`${cast.name}에 저장했어요. 인물 태그는 모든 칸에, 장면·추가·배경 태그는 이 감정 칸에 써요(의상 태그는 코드 표에서 고쳐요)`); };
     $("#greset", ov).onclick = () => { clearCastTags(c, cast, i); groups.splice(0, groups.length, ...toGroups(savedParts(c, cast, i))); paintTags(); paintSaved(); toast("기본 태그로 되돌렸어요"); };
     paintSaved();
   }
@@ -55,7 +56,7 @@ export function genImageSheet({ title = "AI로 이미지 만들기", prompt = ""
     mk.disabled = use.disabled = true; pv.innerHTML = `<span class="note">만드는 중… 10~30초쯤 걸려요</span>`; ctl = new AbortController();
     try {
       if (adult && minorHint(groups.flatMap((g) => g.tags.map((x) => x.t)).join(", "))) throw { code: "minor_block" };
-      blob = await runwareImage(await buildPrompt(adult), { aspect, rating: rt, signal: ctl.signal });
+      blob = await runwareImage(await buildPrompt(adult), { aspect, rating: rt, signal: ctl.signal, style: st });
       url && URL.revokeObjectURL(url); url = URL.createObjectURL(blob);
       pv.innerHTML = `<img src="${url}" alt="생성된 이미지">`; use.disabled = false; mk.textContent = "다시 생성";
     } catch (e) { if (!ov.isConnected) return; blob = null; pv.innerHTML = `<span class="note">${esc(genErr(e))}</span>`; }

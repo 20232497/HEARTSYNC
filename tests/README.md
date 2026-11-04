@@ -2,7 +2,7 @@
 
 | 명령 | 무엇 | 걸리는 시간 |
 |---|---|---|
-| `npm test` | **단위 테스트** `tests/unit/*.test.mjs` — Node가 `src/js/` 모듈을 바로 import(브라우저 없음). 응답 파싱·키워드북·미성년 인물 막기 | 1초 |
+| `npm test` | **단위 테스트** `tests/unit/*.test.mjs` — Node가 `src/js/` 모듈을 바로 import(브라우저 없음). 응답 파싱·키워드북·미성년 인물 막기·그림 조합 코드 | 1초 |
 | `npm run e2e` | **흐름 시험** `tests/e2e/*.mjs` — Playwright(WebKit iPhone 13·SE, Chromium Galaxy)로 빌드된 `index.html`을 정적 서버에 띄워 실제 화면 흐름을 돈다. 처음 한 번 `npx playwright install webkit chromium` | 3~5분 |
 | `npm run e2e chatflow` | 흐름 시험 하나만(이름 여러 개 가능) | |
 | `npm run serve` | 저장소 루트를 정적 서버로만 띄움(휴대폰에서 같은 Wi-Fi로 열어 볼 때 등) | |
@@ -23,7 +23,9 @@
 | `chatflow.mjs` | 대화방 스트리밍(가짜 llm), 자동 스크롤 끔/켬, ✦ AI 추천 수동, 출력 설정 카드, 설정 페이지 |
 | `mobile.mjs` | 휴대폰 셸: 표준 모드 문서, bootMsg 사라짐, 탭바, 가로 넘침 0 |
 | `file.mjs` | 파일(file://)로 열어도 부팅·홈(전체·여성향·남성향 대표 작품 4개씩, 가로 줄)·상세가 그려짐 — 단일 파일 배포(BYOK 모드)가 깨지지 않았는지 |
+| `images.mjs` | 그림 조합 코드(Desktop Chrome·iPhone 13): 가짜 llm이 `[[img:코드:3,404,501]]`을 쓰면 figure에 조합 키가 붙고, 다음 턴에 감정만 쓰면 의상·장소가 이어지고(시스템 프롬프트의 '지금 이어지는 의상·장소'), 400으로 되돌리고, 태그를 빠뜨린 인물은 지문의 장소 낱말(소파 → 503)로 자동 태그. 자동 생성을 켜고 가짜 `runwareImage`(캔버스 PNG)로 없는 조합만 한 번 만들어 그 자리가 그림으로 바뀌는지, 같은 조합은 다시 만들지 않는지, 이미지 슬롯의 조합 카드·코드 표·조합 만들기·드로어 갤러리 |
+| `styles.mjs` | 기본 화풍(Desktop Chrome·iPhone 13): 설정 기본값 '자동'이 남성향·여성향·전체(인물 성별)·표지에 맞는 내장 화풍(`sys:mdaily` …)을 고르는지, ZIP 파일 이름을 세트로 묶고 이름으로 내장 화풍을 맞추는지(`groupStyleFiles`·`matchBuiltin`), 같은 이름의 세트가 덮으면 그 문구·모델을 쓰고 '내장으로 되돌리기'·'덮어쓸 기본 화풍' 바꾸기·세트 삭제로 내장에 돌아오는지, 설정의 기본 화풍 카드 5개, 생성 창이 ctx에 맞는 화풍 이름을 보여 주는지 |
 | `views.mjs` | 스모크(Desktop Chrome·iPhone 13): 홈·대화·만들기·스토어·MY, 오리지널 작품 전부의 상세, 각 작품의 첫 시작 상황으로 연 대화방(오프닝 본문·상태창·입력창), 드로어(기본·출력 설정)·모델·이미지 슬롯·세계관 일러스트·페르소나·관심있는 대화·추천 칸·PLUS·확인 시트가 오류 없이 열림. 모듈 분리 뒤 어느 화면에서든 ReferenceError가 나면 여기서 잡힘 |
 
 ## 단위 테스트(unit)
-`node:test`. 모듈이 `window`·`document`를 맨 윗단에서 건드리지 않아야 Node에서 import된다 — 순수 모듈(`core/constants`·`core/cast`·`core/safety`·`ai/parse`·`ai/prompt/lore`)이 그렇다. 새 테스트는 `tests/unit/<모듈>.test.mjs`.
+`node:test`. 모듈이 `window`·`document`를 맨 윗단에서 건드리지 않아야 Node에서 import된다 — 순수 모듈(`core/constants`·`core/cast`·`core/safety`·`ai/parse`·`ai/prompt/lore`·`images/codes`)이 그렇다. 새 테스트는 `tests/unit/<모듈>.test.mjs`.
