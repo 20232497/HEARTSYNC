@@ -262,6 +262,12 @@ h2.sec small, h1.sec small { font-family:var(--sans); font-size:12.5px; color:va
 .thumb-art .artcard .ac-s, .thumb-art .artcard .ac-n { display:none; }
 .lightbox { position:fixed; inset:0; z-index:70; background:rgba(0,0,0,.85); display:flex; align-items:center; justify-content:center; padding:max(16px, env(safe-area-inset-top,0px)) 16px; cursor:zoom-out; animation:fade .18s; }
 .lightbox img { max-width:100%; max-height:100%; border-radius:12px; }
+img[data-kv], img.img-wait { background:linear-gradient(100deg, var(--surface2) 35%, var(--line) 50%, var(--surface2) 65%); background-size:250% 100%; animation:skel 1.4s linear infinite; }
+img.img-miss { background:var(--surface2); }
+.scene-img img[data-kv], .scene-img img.img-wait, .scene-img img.img-miss { aspect-ratio:4/5; }
+.portrait img[data-kv], .portrait img.img-wait, .portrait img.img-miss { display:block; width:100%; aspect-ratio:1; }
+.cover img.img-miss { display:none; }
+@keyframes skel { to { background-position:-125% 0; } }
 .chat { display:flex; flex-direction:column; height:100%; position:relative; }
 .chat-bg { position:absolute; inset:0; z-index:0; opacity:.16; filter:blur(28px) saturate(1.2); pointer-events:none; overflow:hidden; }
 .chat-bg .cover { position:absolute; inset:0; }
@@ -528,6 +534,7 @@ const IN_CLAUDE = !!(window.claude && typeof window.claude.use === "function");
 /* ── src/js/core/constants.js — 순수 상수: 응답 구분자(MARK), 상황 이름(SIT)·표지 색·무늬·장르, 요금 상수 — 다른 모듈을 import하지 않음 */
 const MARK = "===STATE===";
 const FREE_DAILY = 10, WELCOME = 30, PLUS_MONTHLY = 300;
+const TIMEOUT = { connect: 45000, stall: 60000, image: 120000, api: 20000 };
 const SIT = ["프로필", "기본", "웃음", "부끄러움", "슬픔", "놀람", "분노", "삐침", "공포", "부상", "회복", "휴식", "공격", "각성", "설렘"];
 const SIT_TINT = ["#f5f0ff", "#9fb4ff", "#ffd166", "#ff8fab", "#7b96ff", "#ffe066", "#ff5d5d", "#c77dff", "#56cfe1", "#e63946", "#80ed99", "#a0c4ff", "#ff8c42", "#f9c74f", "#ff70a6"];
 const PALETTES = [
@@ -550,6 +557,14 @@ function ago(t) {
   if (s < 60) return "방금"; if (s < 3600) return Math.floor(s / 60) + "분 전"; if (s < 86400) return Math.floor(s / 3600) + "시간 전";
   return Math.floor(s / 86400) + "일 전";
 }
+function timeoutSignal(ms, outer) {
+  const ctl = new AbortController(), fire = () => { t.timedOut = true; ctl.abort(); };
+  let timer = setTimeout(fire, ms);
+  const t = { signal: ctl.signal, timedOut: false, clear() { clearTimeout(timer); }, tick(next = ms) { clearTimeout(timer); timer = setTimeout(fire, next); } };
+  if (outer) { if (outer.aborted) { clearTimeout(timer); ctl.abort(); } else outer.addEventListener("abort", () => { clearTimeout(timer); ctl.abort(); }, { once: true }); }
+  return t;
+}
+function abortCode(e, t, fallback) { return e && e.name === "AbortError" ? (t && t.timedOut ? "timeout" : "cancelled") : fallback; }
 function toast(msg) {
   $$(".toast").forEach((t) => t.remove());
   const t = document.createElement("div"); t.className = "toast"; t.setAttribute("role", "status"); t.textContent = msg; document.body.append(t);
@@ -1331,12 +1346,14 @@ const IMG = {
     return `<img src="${ref}" alt="" loading="lazy">`;
   },
   async hydrate(root = document) {
-    const els = $$("img[data-kv]", root).map((el) => { const k = el.dataset.kv; el.removeAttribute("data-kv"); return [el, k]; }), miss = [];
-    for (const [el, k] of els) { const v = await this.local(k); if (v) el.src = v; else if (miss.indexOf(k) < 0) miss.push(k); }
-    if (!miss.length || !CLOUD.on) return;
-    const got = await CLOUD.getMany(miss);
-    Object.keys(got).forEach((k) => this.keep(k, got[k]));
-    els.forEach(([el, k]) => { if (miss.indexOf(k) >= 0 && this.cache[k]) el.src = this.cache[k]; });
+    const els = $$("img[data-kv]", root).map((el) => { const k = el.dataset.kv; el.removeAttribute("data-kv"); el.classList.add("img-wait"); return [el, k]; }), miss = [];
+    for (const [el, k] of els) { const v = await this.local(k); if (v) { el.src = v; el.classList.remove("img-wait"); } else if (miss.indexOf(k) < 0) miss.push(k); }
+    if (miss.length && CLOUD.on) { try { const got = await CLOUD.getMany(miss); Object.keys(got).forEach((k) => this.keep(k, got[k])); } catch {} }
+    els.forEach(([el, k]) => {
+      if (!el.src && this.cache[k]) el.src = this.cache[k];
+      el.classList.remove("img-wait");
+      if (!el.src) { el.classList.add("img-miss"); const cv = el.closest(".cover"); if (cv) cv.classList.remove("has-img"); }
+    });
   }
 };
 function shrink(file, max, q, asBlob) {
@@ -1602,7 +1619,8 @@ const SB = {
   async req(path, opt = {}, retried = false) {
     const h = Object.assign({ apikey: this.key, "Content-Type": "application/json" }, opt.headers || {});
     if (this.s) { await this.fresh(); if (this.s) h.Authorization = "Bearer " + this.s.access_token; }
-    const r = await fetch(this.url + path, Object.assign({}, opt, { headers: h }));
+    const T = timeoutSignal(TIMEOUT.api, opt.signal); let r;
+    try { r = await fetch(this.url + path, Object.assign({}, opt, { headers: h, signal: T.signal })); } finally { T.clear(); }
     if (r.status === 401 && this.s && !retried) { this.s.expires_at = 0; return this.req(path, opt, true); }
     return r;
   },
@@ -1610,7 +1628,8 @@ const SB = {
     if (!this.s || this.s.expires_at - 60000 > Date.now()) return;
     if (!this.refreshing) this.refreshing = (async () => {
       try {
-        const r = await fetch(this.url + "/auth/v1/token?grant_type=refresh_token", { method: "POST", headers: { apikey: this.key, "Content-Type": "application/json" }, body: JSON.stringify({ refresh_token: this.s.refresh_token }) });
+        const T = timeoutSignal(TIMEOUT.api), r = await fetch(this.url + "/auth/v1/token?grant_type=refresh_token", { method: "POST", signal: T.signal, headers: { apikey: this.key, "Content-Type": "application/json" }, body: JSON.stringify({ refresh_token: this.s.refresh_token }) });
+        T.clear();
         if (r.ok) this.keep(this.session(await r.json()));
         else if (r.status === 400 || r.status === 401) { this.keep(null); CLOUD.stop(); toast("로그인이 풀렸어요. MY에서 다시 로그인해 주세요."); }
       } catch {}
@@ -1640,7 +1659,7 @@ const SB = {
   async oauth(provider) {
     const u = this.url + "/auth/v1/authorize?provider=" + encodeURIComponent(provider) + "&redirect_to=" + encodeURIComponent(this.site());
     try {
-      const r = await fetch(u, { redirect: "manual" });
+      const T = timeoutSignal(TIMEOUT.api), r = await fetch(u, { redirect: "manual", signal: T.signal }); T.clear();
       if (r.status === 400) { const j = await r.json().catch(() => ({})); if (/not enabled|not found|unsupported provider/i.test(String(j.msg || j.error_description || ""))) return false; }
     } catch {}
     location.href = u;
@@ -2166,17 +2185,19 @@ async function openRouterStream(messages, { tier, onText, signal, json, maxToken
   if (!rest.length || rest[0].role !== "user") rest.unshift({ role: "user", content: "(시작)" });
   const chat = !json && messages[0].content.includes(MARK), shape = chat ? (/^\{"status".*$/m.exec(messages[0].content) || [])[0] : "";
   if (shape && rest[rest.length - 1].role === "user") rest[rest.length - 1].content += `\n\n[출력 형식 — 반드시 지킨다]\n1) 한국어 장면 본문\n2) 한 줄에 ${MARK}\n3) JSON 한 개: ${shape}`;
-  let model = pinned || orModel(tier), res;
+  let model = pinned || orModel(tier), res, T;
   for (let tries = 0; tries < 2; tries++) {
+    T = timeoutSignal(TIMEOUT.connect, signal);
     try {
       res = await fetch(CFG.openRouterUrl, {
-        method: "POST", signal,
+        method: "POST", signal: T.signal,
         headers: { "content-type": "application/json", ...(S.settings.openRouterKey ? { authorization: "Bearer " + S.settings.openRouterKey } : {}),
           "HTTP-Referer": location.origin !== "null" ? location.origin : "https://20232497.github.io/HEARTSYNC/", "X-Title": "HEART SYNC" },
         body: JSON.stringify({ model, max_tokens: maxTokens, stream: true, ...sampling, messages: [{ role: "system", content: messages[0].content }, ...rest] })
       });
-    } catch (e) { if (e.name === "AbortError") throw { code: "cancelled" }; throw { code: "or_network" }; }
+    } catch (e) { T.clear(); throw { code: abortCode(e, T, "or_network") }; }
     if (res.ok) break;
+    T.clear();
     const j = await res.json().catch(() => ({})), msg = String(j.error?.message || "");
     const code = res.status === 401 || res.status === 403 ? "or_bad_key" : res.status === 402 ? "or_no_funds" : res.status === 429 ? "rate_limited"
       : /context length|maximum context|too many tokens/i.test(msg) ? "prompt_too_large" : res.status === 404 || /model|endpoint/i.test(msg) ? "or_bad_model" : "upstream_error";
@@ -2185,9 +2206,11 @@ async function openRouterStream(messages, { tier, onText, signal, json, maxToken
     throw { code, msg };
   }
   const reader = res.body.getReader(), dec = new TextDecoder(); let buf = "", text = "", fin = false, err = null, bad = false, checked = 0;
+  T.tick(TIMEOUT.stall);
   try {
     while (!fin) {
       const { value, done } = await reader.read(); if (done) break;
+      T.tick(TIMEOUT.stall);
       buf += dec.decode(value, { stream: true });
       let i;
       while ((i = buf.indexOf("\n")) >= 0) {
@@ -2207,7 +2230,8 @@ async function openRouterStream(messages, { tier, onText, signal, json, maxToken
         }
       }
     }
-  } catch (e) { throw { code: e.name === "AbortError" ? "cancelled" : "upstream_error", text }; }
+  } catch (e) { throw { code: abortCode(e, T, "upstream_error"), text }; }
+  finally { T.clear(); }
   if (!bad && chat && text.length >= 40 && garbled(splitReply(text).body)) bad = true;
   if (bad) {
     try { reader.cancel(); } catch {}
@@ -2257,23 +2281,26 @@ async function byok(messages, { tier, onText, signal, json, maxTokens }) {
   }
   if (!rest.length || rest[0].role !== "user") rest.unshift({ role: "user", content: "(시작)" });
   const model = { quick: "claude-haiku-5-5", default: "claude-sonnet-5-5", complex: "claude-opus-5-5" }[tier] || "claude-sonnet-5-5";
-  let srvFb = tier !== "quick" && CFG.anthropicUrl === ANTHROPIC_URL, res;
+  let srvFb = tier !== "quick" && CFG.anthropicUrl === ANTHROPIC_URL, res, T;
   for (let tries = 0; tries < 2; tries++) {
+    T = timeoutSignal(TIMEOUT.connect, signal);
     try {
       res = await fetch(CFG.anthropicUrl, {
-        method: "POST", signal,
+        method: "POST", signal: T.signal,
         headers: { "content-type": "application/json", "anthropic-version": "2023-06-01", ...(srvFb ? { "anthropic-beta": "server-side-fallback-2026-07-01" } : {}), ...(S.settings.apiKey ? { "x-api-key": S.settings.apiKey, "anthropic-dangerous-direct-browser-access": "true" } : {}) },
         body: JSON.stringify({ model, max_tokens: maxTokens, stream: true, system: sys, messages: rest, ...(srvFb ? { fallbacks: "default" } : {}) })
       });
-    } catch (e) { if (e.name === "AbortError") throw { code: "cancelled" }; throw { code: "upstream_error" }; }
-    if (res.status === 400 && srvFb && /fallback|beta/i.test(await res.clone().text().catch(() => ""))) { srvFb = false; continue; }
+    } catch (e) { T.clear(); throw { code: abortCode(e, T, "upstream_error") }; }
+    if (res.status === 400 && srvFb && /fallback|beta/i.test(await res.clone().text().catch(() => ""))) { T.clear(); srvFb = false; continue; }
     break;
   }
-  if (!res.ok) throw { code: res.status === 429 ? "rate_limited" : res.status === 401 ? "bad_key" : "upstream_error" };
+  if (!res.ok) { T.clear(); throw { code: res.status === 429 ? "rate_limited" : res.status === 401 ? "bad_key" : "upstream_error" }; }
   const reader = res.body.getReader(), dec = new TextDecoder(); let buf = "", text = "", stop = "", category = null;
+  T.tick(TIMEOUT.stall);
   try {
     for (;;) {
       const { value, done } = await reader.read(); if (done) break;
+      T.tick(TIMEOUT.stall);
       buf += dec.decode(value, { stream: true });
       let i;
       while ((i = buf.indexOf("\n")) >= 0) {
@@ -2286,7 +2313,8 @@ async function byok(messages, { tier, onText, signal, json, maxTokens }) {
         } catch {}
       }
     }
-  } catch (e) { throw { code: e.name === "AbortError" ? "cancelled" : "upstream_error", text }; }
+  } catch (e) { throw { code: abortCode(e, T, "upstream_error"), text }; }
+  finally { T.clear(); }
   if (stop === "refusal") throw { code: "refused", text, category };
   if (json) { const v = looseJSON(text); if (v === undefined) throw { code: "invalid_json", text }; return v; }
   return text;
@@ -2306,6 +2334,7 @@ function errCopy(e) {
     case "or_bad_model": return "OpenRouter 모델을 찾을 수 없어요. MY → 설정에서 무검열 모델을 확인해 주세요.";
     case "garbled": return "모델 응답이 깨져서(다른 언어·코드 조각이 섞임) 쓰지 않았어요. 다시 보내거나 AI 모델에서 다른 등급을 골라 주세요.";
     case "or_network": return "OpenRouter에 연결하지 못했어요. 인터넷 연결을 확인해 주세요.";
+    case "timeout": return "응답이 너무 오래 걸려 멈췄어요. 네트워크를 확인하고 다시 시도해 주세요. 하트는 돌려드렸어요.";
     case "session_expired": return "로그인이 만료됐어요. 페이지를 새로고침해 주세요.";
     case "sampling_disabled": case "capability_disabled": return "이 계정에서는 AI 호출이 꺼져 있어요.";
     default: return "응답을 받지 못했어요. 다시 시도해 주세요. 하트는 돌려드렸어요.";
@@ -3718,8 +3747,10 @@ async function generate(target, q, direction = "", isEdit = false) {
     if (msg.alts[altIdx].text) done = bodyText;
   } catch (e) {
     const keep = e && e.text ? splitReply(e.text).body.trim() : "";
-    if (keep && e.code === "cancelled") Object.assign(msg.alts[altIdx], { text: keep, status: msg.statusBefore, cost: qShort(q) });
-    else {
+    if (keep && (e.code === "cancelled" || e.code === "timeout")) {
+      Object.assign(msg.alts[altIdx], { text: keep, status: msg.statusBefore, cost: qShort(q) });
+      if (e.code === "timeout") r.lastErr = "응답이 오는 중에 끊겨 여기까지만 남겼어요. '다시 시도'를 누르면 다시 써요.";
+    } else {
       msg.alts.splice(altIdx, 1);
       if (!msg.alts.length) r.msgs.splice(r.msgs.indexOf(msg), 1); else msg.idx = msg.alts.length - 1;
       refund(q, label);

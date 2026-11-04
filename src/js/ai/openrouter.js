@@ -2,8 +2,9 @@
 import { OR_BACKUP, OR_SAMPLING, orModel } from "./models.js";
 import { looseJSON, splitReply } from "./parse.js";
 import { CFG } from "../core/config.js";
-import { MARK } from "../core/constants.js";
+import { MARK, TIMEOUT } from "../core/constants.js";
 import { S, hasOpenRouterKey } from "../core/state.js";
+import { abortCode, timeoutSignal } from "../core/util.js";
 
 /* 깨진 응답 알아보기: 일본어 가나·한자가 많이 섞이거나 한글이 거의 없거나, 이상한 조각이 2개 이상
    (camelCase·파일 이름·밑줄 낱말, 한글에 바로 붙은 소문자 영어·한자, 숫자 섞인 영문 덩어리 — 2026-11 실제로 나온 깨진 응답들로 맞춤) */
@@ -41,17 +42,19 @@ export async function openRouterStream(messages, { tier, onText, signal, json, m
   // 롤플레이 모델은 긴 시스템 지시의 출력 형식을 잊음 → 대화 요청이면 마지막 유저 메시지 끝에 형식을 한 번 더(2026-11 시험: 없으면 상태창을 안 씀)
   const chat = !json && messages[0].content.includes(MARK), shape = chat ? (/^\{"status".*$/m.exec(messages[0].content) || [])[0] : "";
   if (shape && rest[rest.length - 1].role === "user") rest[rest.length - 1].content += `\n\n[출력 형식 — 반드시 지킨다]\n1) 한국어 장면 본문\n2) 한 줄에 ${MARK}\n3) JSON 한 개: ${shape}`;
-  let model = pinned || orModel(tier), res;
+  let model = pinned || orModel(tier), res, T;
   for (let tries = 0; tries < 2; tries++) {
+    T = timeoutSignal(TIMEOUT.connect, signal); // 응답 머리까지 connect, 스트림 조각 사이 stall
     try {
       res = await fetch(CFG.openRouterUrl, {
-        method: "POST", signal,
+        method: "POST", signal: T.signal,
         headers: { "content-type": "application/json", ...(S.settings.openRouterKey ? { authorization: "Bearer " + S.settings.openRouterKey } : {}),
           "HTTP-Referer": location.origin !== "null" ? location.origin : "https://20232497.github.io/HEARTSYNC/", "X-Title": "HEART SYNC" },
         body: JSON.stringify({ model, max_tokens: maxTokens, stream: true, ...sampling, messages: [{ role: "system", content: messages[0].content }, ...rest] })
       });
-    } catch (e) { if (e.name === "AbortError") throw { code: "cancelled" }; throw { code: "or_network" }; }
+    } catch (e) { T.clear(); throw { code: abortCode(e, T, "or_network") }; }
     if (res.ok) break;
+    T.clear();
     const j = await res.json().catch(() => ({})), msg = String(j.error?.message || "");
     const code = res.status === 401 || res.status === 403 ? "or_bad_key" : res.status === 402 ? "or_no_funds" : res.status === 429 ? "rate_limited"
       : /context length|maximum context|too many tokens/i.test(msg) ? "prompt_too_large" : res.status === 404 || /model|endpoint/i.test(msg) ? "or_bad_model" : "upstream_error";
@@ -61,9 +64,11 @@ export async function openRouterStream(messages, { tier, onText, signal, json, m
     throw { code, msg };
   }
   const reader = res.body.getReader(), dec = new TextDecoder(); let buf = "", text = "", fin = false, err = null, bad = false, checked = 0;
+  T.tick(TIMEOUT.stall);
   try {
     while (!fin) {
       const { value, done } = await reader.read(); if (done) break;
+      T.tick(TIMEOUT.stall);
       buf += dec.decode(value, { stream: true });
       let i;
       while ((i = buf.indexOf("\n")) >= 0) {
@@ -84,7 +89,8 @@ export async function openRouterStream(messages, { tier, onText, signal, json, m
         }
       }
     }
-  } catch (e) { throw { code: e.name === "AbortError" ? "cancelled" : "upstream_error", text }; }
+  } catch (e) { throw { code: abortCode(e, T, "upstream_error"), text }; }
+  finally { T.clear(); }
   if (!bad && chat && text.length >= 40 && garbled(splitReply(text).body)) bad = true;
   if (bad) {
     try { reader.cancel(); } catch {}

@@ -57,14 +57,16 @@ export const IMG = {
     if (ref.startsWith("kv:")) { const k = ref.slice(3); return this.cache[k] ? `<img src="${this.cache[k]}" alt="">` : `<img data-kv="${k}" alt="">`; }
     return `<img src="${ref}" alt="" loading="lazy">`;
   },
-  // 이 기기에 있는 그림은 바로, 없는 그림(다른 기기에서 만든 것)은 계정에서 한 번에 받아 채움
+  // 이 기기에 있는 그림은 바로, 없는 그림(다른 기기에서 만든 것)은 계정에서 한 번에 받아 채움. 받는 동안 img-wait(반짝이는 자리), 끝내 못 받으면 img-miss(표지는 글자 표지로 되돌림)
   async hydrate(root = document) {
-    const els = $$("img[data-kv]", root).map((el) => { const k = el.dataset.kv; el.removeAttribute("data-kv"); return [el, k]; }), miss = [];
-    for (const [el, k] of els) { const v = await this.local(k); if (v) el.src = v; else if (miss.indexOf(k) < 0) miss.push(k); }
-    if (!miss.length || !CLOUD.on) return;
-    const got = await CLOUD.getMany(miss);
-    Object.keys(got).forEach((k) => this.keep(k, got[k]));
-    els.forEach(([el, k]) => { if (miss.indexOf(k) >= 0 && this.cache[k]) el.src = this.cache[k]; });
+    const els = $$("img[data-kv]", root).map((el) => { const k = el.dataset.kv; el.removeAttribute("data-kv"); el.classList.add("img-wait"); return [el, k]; }), miss = [];
+    for (const [el, k] of els) { const v = await this.local(k); if (v) { el.src = v; el.classList.remove("img-wait"); } else if (miss.indexOf(k) < 0) miss.push(k); }
+    if (miss.length && CLOUD.on) { try { const got = await CLOUD.getMany(miss); Object.keys(got).forEach((k) => this.keep(k, got[k])); } catch {} }
+    els.forEach(([el, k]) => {
+      if (!el.src && this.cache[k]) el.src = this.cache[k];
+      el.classList.remove("img-wait");
+      if (!el.src) { el.classList.add("img-miss"); const cv = el.closest(".cover"); if (cv) cv.classList.remove("has-img"); }
+    });
   }
 };
 function shrink(file, max, q, asBlob) {

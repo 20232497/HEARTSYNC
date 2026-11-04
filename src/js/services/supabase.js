@@ -1,6 +1,7 @@
 /* Supabase 인증 REST(SB): 로그인·가입·소셜·세션 갱신, 안내 문구 */
 import { CFG, IN_CLAUDE } from "../core/config.js";
-import { toast } from "../core/util.js";
+import { TIMEOUT } from "../core/constants.js";
+import { timeoutSignal, toast } from "../core/util.js";
 import { CLOUD } from "./cloud.js";
 import { VAULT } from "./vault.js";
 
@@ -22,7 +23,8 @@ export const SB = {
   async req(path, opt = {}, retried = false) {
     const h = Object.assign({ apikey: this.key, "Content-Type": "application/json" }, opt.headers || {});
     if (this.s) { await this.fresh(); if (this.s) h.Authorization = "Bearer " + this.s.access_token; }
-    const r = await fetch(this.url + path, Object.assign({}, opt, { headers: h }));
+    const T = timeoutSignal(TIMEOUT.api, opt.signal); let r; // 요청 하나의 시간 제한 — 넘으면 AbortError(부르는 쪽이 연결 실패로 처리)
+    try { r = await fetch(this.url + path, Object.assign({}, opt, { headers: h, signal: T.signal })); } finally { T.clear(); }
     if (r.status === 401 && this.s && !retried) { this.s.expires_at = 0; return this.req(path, opt, true); }
     return r;
   },
@@ -31,7 +33,8 @@ export const SB = {
     if (!this.s || this.s.expires_at - 60000 > Date.now()) return;
     if (!this.refreshing) this.refreshing = (async () => {
       try {
-        const r = await fetch(this.url + "/auth/v1/token?grant_type=refresh_token", { method: "POST", headers: { apikey: this.key, "Content-Type": "application/json" }, body: JSON.stringify({ refresh_token: this.s.refresh_token }) });
+        const T = timeoutSignal(TIMEOUT.api), r = await fetch(this.url + "/auth/v1/token?grant_type=refresh_token", { method: "POST", signal: T.signal, headers: { apikey: this.key, "Content-Type": "application/json" }, body: JSON.stringify({ refresh_token: this.s.refresh_token }) });
+        T.clear();
         if (r.ok) this.keep(this.session(await r.json()));
         else if (r.status === 400 || r.status === 401) { this.keep(null); CLOUD.stop(); toast("로그인이 풀렸어요. MY에서 다시 로그인해 주세요."); }
       } catch {} // 오프라인이면 다음 요청 때 다시
@@ -64,7 +67,7 @@ export const SB = {
   async oauth(provider) {
     const u = this.url + "/auth/v1/authorize?provider=" + encodeURIComponent(provider) + "&redirect_to=" + encodeURIComponent(this.site());
     try {
-      const r = await fetch(u, { redirect: "manual" });
+      const T = timeoutSignal(TIMEOUT.api), r = await fetch(u, { redirect: "manual", signal: T.signal }); T.clear();
       if (r.status === 400) { const j = await r.json().catch(() => ({})); if (/not enabled|not found|unsupported provider/i.test(String(j.msg || j.error_description || ""))) return false; }
     } catch {} // 확인하지 못하면 그냥 넘어감(꺼져 있으면 Supabase가 오류를 보여 줌)
     location.href = u;
