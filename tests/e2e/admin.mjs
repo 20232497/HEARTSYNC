@@ -46,6 +46,9 @@ for (const [dev, engine, opts] of [["Desktop Chrome", chromium, {}], ["iPhone 13
     await p.evaluate(() => { location.hash = "me"; }); await wait(500);
     res.me = await p.evaluate(() => ({ rkey: !!$("#rkey"), gstyle: !!$("#gstyle"), bsets: $$("#bsets .bset").length, nick: !!$("#nick"), save: !!$("#setSave") }));
     if (!res.me.rkey || !res.me.gstyle || !res.me.bsets || !res.me.nick || !res.me.save) errs.push("MY 이미지 설정: " + JSON.stringify(res.me));
+    // 비밀번호 관문: 로컬 주소에서는 세우지 않음(웹 주소에서만) — 함수가 있고, 이 서버(127.0.0.1)에서는 gateNeeded가 거짓
+    res.gate = await p.evaluate(() => ({ fn: typeof gate, needed: gateNeeded(), gated: document.body.classList.contains("gated") }));
+    if (res.gate.fn !== "function" || res.gate.needed || res.gate.gated) errs.push("관문: " + JSON.stringify(res.gate));
     // 코드 조합 테스트: 칩이 그려지고, 의상·장소 칩을 누르면 조합 키가 바뀌고, 프롬프트 보기가 묶음을 보여 줌(그리기는 Runware 키가 필요해 누르지 않음)
     await p.evaluate(() => { location.hash = "codetest"; }); await wait(500);
     res.codetest = await p.evaluate(async () => {
@@ -54,7 +57,7 @@ for (const [dev, engine, opts] of [["Desktop Chrome", chromium, {}], ["iPhone 13
       const combo = $(".ct-combo code").textContent; $("#ctPrompt").click(); await new Promise((z) => setTimeout(z, 150));
       // 성인 확인을 켜면 세미·성인 코드가 더 보이고, 이 PC에 관리자 전용 코드(ADMIN_CODES — content/codes.admin.json, git에 없음)가 있으면 그것도 칩으로
       S.settings.isAgeVerified = true; saveSettings(); viewCodeTest(); await new Promise((z) => setTimeout(z, 200));
-      const adultN = $$(".ct-chip.adult").length, adminN = $$(".ct-chip small").filter((x) => x.textContent === "관리자").length, adminCodes = typeof ADMIN_CODES === "undefined" ? 0 : ADMIN_CODES.length;
+      const adultN = $$(".ct-chip.adult").length, adminN = $$(".ct-chip small").filter((x) => x.textContent === "관리자").length, adminCodes = EXTRA_CODES.length; // 이 PC의 content/codes.admin.json(git에 없음)을 런타임에 읽은 수 — 없으면 0
       S.settings.isAgeVerified = false; saveSettings();
       return { acts: n0, wears: w0, places: p0, combo, prompt: ($("#ctPre")?.textContent || "").length, hidden: $("#ctPre")?.hidden, go: !!$("#ctGo"), adultN, adminN, adminCodes };
     });
@@ -64,7 +67,8 @@ for (const [dev, engine, opts] of [["Desktop Chrome", chromium, {}], ["iPhone 13
     // 사용자 빌드: 관리 자리가 비어 있고 관리자 함수가 없음
     await open(userUrl);
     const u = { navs: await p.evaluate(() => [...document.querySelectorAll("#rail [data-nav]")].map((b) => b.dataset.nav)) };
-    u.fns = await p.evaluate(() => ({ studio: typeof viewStudio, slots: typeof openImageSlots, gen: typeof genImageSheet, works: typeof viewWorks, runware: typeof runwareImage, codetest: typeof viewCodeTest, adminCodes: typeof ADMIN_CODES }));
+    u.fns = await p.evaluate(() => ({ studio: typeof viewStudio, slots: typeof openImageSlots, gen: typeof genImageSheet, works: typeof viewWorks, runware: typeof runwareImage, codetest: typeof viewCodeTest, gate: typeof gate, loadAdminCodes: typeof loadAdminCodes }));
+    u.extra = await p.evaluate(() => EXTRA_CODES.length);
     await p.evaluate(() => { location.hash = "c-hwanghu"; }); await wait(500);
     u.detail = await p.evaluate(() => ({ wArt: !!$("#wArt"), imgSlots: !!$("#imgSlots"), start: !!$("#start"), cast: $$("[data-cast]").length }));
     await p.evaluate(() => { const r = newRoom(normalizeChar(getChar("hwanghu")), 0, S.personas[0]); location.hash = "r-" + r.id; }); await wait(600);
@@ -74,7 +78,7 @@ for (const [dev, engine, opts] of [["Desktop Chrome", chromium, {}], ["iPhone 13
     u.studioRoute = await p.evaluate(async () => { location.hash = "studio"; await new Promise((z) => setTimeout(z, 400)); return $("#view").textContent.includes("둘러보기") || !!$(".hero, .home, [data-aud]"); });
     res.user = u;
     if (u.navs.join() !== "home,chats,store,me") errs.push("사용자 메뉴가 다름: " + u.navs.join());
-    if (Object.values(u.fns).some((t) => t !== "undefined")) errs.push("사용자 빌드에 관리자 함수가 있음: " + JSON.stringify(u.fns));
+    if (Object.values(u.fns).some((t) => t !== "undefined") || u.extra !== 0) errs.push("사용자 빌드에 관리자 함수·코드가 있음: " + JSON.stringify(u.fns) + " extra=" + u.extra);
     if (u.detail.wArt || u.detail.imgSlots || !u.detail.start || !u.detail.cast) errs.push("사용자 상세: " + JSON.stringify(u.detail));
     if (u.drawer.mImg || !u.drawer.gallery) errs.push("사용자 드로어: " + JSON.stringify(u.drawer));
     if (u.me.rkey || u.me.gstyle || u.me.nick || !u.me.save || !u.me.key) errs.push("사용자 MY: " + JSON.stringify(u.me));

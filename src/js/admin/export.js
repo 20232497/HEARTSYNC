@@ -38,8 +38,9 @@ const fileKey = (key) => parseCodes(String(key)).join("-");
 export async function workFiles(c) {
   const out = [], mine = S.mine.find((m) => m.id === c.id);
   const add = async (name, ref) => { if (!validRef(ref) || String(ref).startsWith("/_blob/") || String(ref).startsWith("content/")) return; const d = await refDataURL(ref); if (typeof d === "string" && d.startsWith("data:image/")) out.push({ path: `images/${name}.${extOf(d)}`, data: d }); };
-  const imgs = imagesOf(c), adminKey = (key) => parseCodes(String(key)).some((n) => !!(sitDef(n) || {}).adminOnly); // 관리자 전용 코드가 든 조합 그림은 사용자 사이트에 싣지 않음
-  for (const code of Object.keys(imgs)) for (const key of Object.keys(imgs[code])) if (!adminKey(key)) await add(`${code}-${fileKey(key)}`, imgs[code][key]);
+  // 성인 수위·관리자 전용 코드가 든 조합 그림은 사용자 사이트에 싣지 않음(그 코드는 codes.json에도 안 실려 빌드가 번호를 모름)
+  const imgs = imagesOf(c), skipKey = (key) => parseCodes(String(key)).some((n) => { const d = sitDef(n); return !!d && (d.adminOnly || d.rating !== "safe"); });
+  for (const code of Object.keys(imgs)) for (const key of Object.keys(imgs[code])) if (!skipKey(key)) await add(`${code}-${fileKey(key)}`, imgs[code][key]);
   await add("cover", mine ? mine.img : S.coverpacks[c.id]);
   const lore = c.lore || [], lp = mine ? (mine.loreImages || {}) : (S.lorepacks[c.id] || {});
   for (let i = 0; i < lore.length; i++) await add(`lore-${i + 1}`, lp[lore[i].keys[0]]);

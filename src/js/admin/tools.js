@@ -13,6 +13,7 @@ import { EXT } from "../ui/ext.js";
 import { go } from "../ui/shell.js";
 import { CONTENT, exportWork } from "./export.js";
 import { genImageSheet } from "./gen-sheet.js";
+import { gateNeeded, lockAdmin } from "./gate.js";
 import { openImageSlots } from "./slots.js";
 import { openWorldArt } from "./worldart.js";
 
@@ -39,7 +40,9 @@ EXT.me.push((v) => {
   box.insertAdjacentHTML("beforeend", `<h2 class="sec">크리에이터 프로필 <small>관리자 도구</small></h2>
     <div class="box"><div class="field" style="margin:0"><label for="nick">크리에이터 이름 (커뮤니티 공개 캐릭터에 표시)</label><input id="nick" maxlength="20" value="${esc(S.profile.nick)}" placeholder="예: 새벽작가"></div>
       <button class="btn sm" id="nickSave" style="margin-top:10px">저장</button>
-      <p class="note" style="margin:10px 0 0">작품·그림·코드 표는 <a href="#works">작품</a> 화면에서 만들고 '작품 폴더에 저장'으로 저장소 content/ 폴더에 써요. npm run build 뒤 사용자 사이트(index.html)에 실려요.</p></div>`);
+      <p class="note" style="margin:10px 0 0">작품·그림·코드 표는 <a href="#works">작품</a> 화면에서 만들고 '작품 폴더에 저장'으로 저장소 content/ 폴더에 써요. npm run build 뒤 사용자 사이트(index.html)에 실려요.</p>
+      ${gateNeeded() ? `<button class="btn sm ghost" id="adminLock" style="margin-top:10px">이 브라우저에서 관리자 잠그기</button>` : ""}</div>`);
+  const lock = $("#adminLock", box); if (lock) lock.onclick = () => lockAdmin();
   $("#nickSave", box).onclick = () => { S.profile.nick = $("#nick", box).value.trim(); KV.set("profile", S.profile); publishCommunity(); toast("저장했어요"); };
 });
 EXT.persona.push((ov, setImg) => {

@@ -73,7 +73,8 @@ boot.js → app.js(USER_VIEWS · USER_NAVS) → main.js | admin.js
 - 사용자 계정의 imgpacks(예전에 만든 그림)는 실린 그림을 덮는다(`imagesOf`: 작품 images 위에 imgpacks).
 - 쓰는 방법: Chrome·Edge는 `showDirectoryPicker`로 저장소 `content` 폴더를 골라 바로 쓴다(폴더 안에 f·m·all이 있어야 함). 그 밖의 브라우저는 같은 구조의 ZIP(저장 없는 stored zip, `admin/export.js`의 makeZip)을 내려받아 풀어 넣는다. 이미 `content/`에 실린 그림은 다시 쓰지 않는다.
 - 스튜디오에서 만든 내 작품은 `work.js`도 함께 써서 오리지널로 올릴 수 있다(기기 데이터인 images·publish·creator는 뺌).
-- **관리자 전용 코드**(2026-11-05): 성인 수위 행동 코드 표는 `content/codes.admin.json`(git에 없음) → `generated-admin.js` → `admin/codes.js`가 `setExtraCodes`로 꽂는다. 사용자 빌드에는 모듈도 글자도 들어가지 않고, 내보내기(codes.json·작품 폴더)와 빌드의 images/ 검사가 그 코드를 걸러 사용자 사이트로 흘러가지 않게 한다. 관리자는 `#codetest`(코드 조합 테스트)에서 작품·인물·코드 조합을 골라 프롬프트를 보고 그려 본 뒤 마음에 드는 것만 슬롯에 저장한다.
+- **관리자 전용 코드**(2026-11-05): 성인 수위 행동 코드 표는 `content/codes.admin.json`(git에 없음)을 `admin/codes.js`가 런타임에 fetch해(개발 서버에서만) `setExtraCodes`로 꽂거나, 웹 관리자 도구에서는 '목록으로 추가'로 계정(customSits)에 들여온다. admin.html이 배포되므로 빌드 결과물에는 넣지 않는다. 내보내기(codes.json·작품 폴더)가 성인 수위·관리자 전용 코드를 걸러 사용자 사이트로 흘러가지 않게 한다.
+- **관리자 웹 주소와 관문**(2026-11-05): admin.html도 커밋·배포(https://…/HEARTSYNC/admin.html). 웹 주소에서는 `admin/gate.js`가 비밀번호(SHA-256 해시 비교)를 묻고 localhost·file://은 묻지 않는다. 정적 페이지의 클라이언트 관문이라 소스를 읽는 사람은 우회할 수 있다 — 무심코 들어오는 것만 막고, 실제 데이터는 관리자의 브라우저·계정에만 있다. 관리자는 `#codetest`(코드 조합 테스트)에서 작품·인물·코드 조합을 골라 프롬프트를 보고 그려 본 뒤 마음에 드는 것만 슬롯에 저장한다.
 
 ## 5. 주석 정책
 

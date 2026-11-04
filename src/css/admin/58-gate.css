@@ -1,0 +1,3 @@
+/* ── 관리자 비밀번호 관문(관리자 도구): 관문이 보이는 동안 레일·탭바를 숨기고 카드만 가운데 */
+body.gated .rail, body.gated .tabbar { display:none; }
+body.gated .app { grid-template-columns:1fr; }
