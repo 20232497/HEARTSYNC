@@ -6,7 +6,7 @@ src/js/content/generated.js
 # 관리자 전용 이미지 코드 표(성인 수위 — 공개 저장소에 두지 않음)와 그걸로 만든 모듈. 모양은 content/codes.admin.example.json
 content/codes.admin.json
 src/js/content/generated-admin.js
-# 관리자 도구 빌드 결과물(npm run build → 로컬에서 열기, 배포하지 않음. 소스는 src/admin.html + src/js/admin/)
-admin.html
+# 관리자 도구 빌드 결과물(저장소 루트의 admin.html만 — src/admin.html은 뼈대 소스라 git에 둠). npm run build → 로컬에서 열기, 배포하지 않음
+/admin.html
 # Claude 앱 세션 설정(launch.json·워크트리)
 .claude/
