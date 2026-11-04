@@ -1935,10 +1935,10 @@ const BUILTIN_SETS = [
     prompt: "(anime key visual:1.3), (intricate details:1.3), extremely detailed, detailed lineart, sketchy brushwork, ink splatter, painterly highlights, cel shading, high contrast, vivid colors, dramatic lighting, glowing particles, light streaks, dark background, shiny hair, beautiful detailed eyes" },
   { id: "fworld", name: "프롬2 여성향 세계관", kind: "world", aud: "f", match: /프롬\s*2.*여성향|여성향.*(?:세계관|표지)/, model: YABAL, samples: 3,
     desc: "프롬2(여성향 세계관 표지) 11장 — 어둡고 로맨틱한 저조도 조명(촛불·달빛), 차분하고 깊은 색, 반실사 남성 인물. 여성향 작품의 표지·세계관 일러스트 기본값",
-    prompt: SEMI + ", cinematic cover illustration, (low-key lighting:1.2), dim lighting, candlelight, moonlight, dark romantic atmosphere, rich muted palette, intricate details, handsome, (bishounen:1.2), pretty boy, sharp jawline" },
-  { id: "mworld", name: "프롬3 남성향 세계관", kind: "world", aud: "m", match: /프롬\s*3.*남성향|남성향.*(?:세계관|표지)/, model: SEMI_L, samples: 3,
-    desc: "프롬3(남성향 세계관 표지) 11장 — 네온·무대 조명의 강한 림라이트, 선명한 채도와 윤기, 보케. 남성향 작품의 표지·세계관 일러스트 기본값",
-    prompt: SEMI + ", cinematic cover illustration, (dramatic rim lighting:1.2), neon lights, stage lighting, vivid saturated colors, glossy finish, bokeh, intricate details" }
+    prompt: SEMI.replace(SEMI_SKIN, "") + ", handsome, (bishounen:1.2), pretty boy, youthful, delicate facial features, pale smooth skin, sharp jawline, soft painterly shading, cinematic cover illustration, (low-key lighting:1.2), dim lighting, candlelight, moonlight, dark romantic atmosphere, rich muted palette" },
+  { id: "mworld", name: "프롬3 남성향 세계관", kind: "world", aud: "m", match: /프롬\s*3.*남성향|남성향.*(?:세계관|표지)/, model: YABAL, samples: 3,
+    desc: "프롬3(남성향 세계관 표지) 11장 — 남성향 일상과 같은 인물 화풍에 네온·무대 조명의 림라이트, 선명한 채도와 윤기, 보케. 남성향 작품의 표지·세계관 일러스트 기본값",
+    prompt: SEMI.replace(SEMI_SKIN, "") + ", (semi-realistic:1.2), korean beauty, (large eyes:1.1), soft gaze, glossy lips, natural makeup, smooth glossy skin, airbrushed, cinematic cover illustration, (dramatic rim lighting:1.2), neon lights, stage lighting, vivid saturated colors, glossy finish, bokeh" }
 ];
 const builtinSet = (id) => BUILTIN_SETS.find((b) => b.id === id) || null;
 /* 세트 이름이 내장 화풍 이름과 맞으면 그 id(ZIP 폴더 이름 프롬1_남성향_일상 …) */
@@ -4652,16 +4652,18 @@ function dropSitImages(n) {
 
 /* 표지 프롬프트: 세계관 작품은 주요 인물들이 모인 단체 표지, 1인 작품은 주인공 중심 */
 function coverPrompt(c) {
-  const cast = (c.cast || []).filter((x) => x.name), base = ["cinematic composition"]; // "cover art"는 제목 글자를 그려 넣어서 뺌
+  // 참고 표지(2026-11-04 사용자 ZIP)의 구조: 인물 상반신을 크게, 정면·시선, 배경은 분위기만 — "cover art"는 제목 글자를 그려 넣어서 뺌
+  const cast = (c.cast || []).filter((x) => x.name), base = ["poster composition", "upper body"];
   if (c.world_mode && cast.length > 1) {
     const pick = cast.slice(0, 3); // SDXL은 3명이 넘으면 얼굴·몸이 뭉개져서 앞의 3명만
     const f = pick.filter((x) => /여성|여자|\bfemale\b|\bgirl/i.test(x.look || "")).length, m = pick.filter((x) => /남성|남자|\bmale\b|\bboy/i.test(x.look || "")).length;
-    // 남자만 있는 표지는 인원 태그에 가중치 + 남성 앵커 — 반실사 모델(semILust)이 남자를 여자처럼 그리는 일이 잦음(2026-11-04 비교 생성)
-    const who = [f ? (f > 1 ? `${f}girls` : "1girl") : "", m ? (m > 1 ? (f ? `${m}boys` : `(${m}boys:1.2)`) : (f ? "1boy" : "(1boy:1.2)")) : "", m && !f ? "male focus, handsome men, masculine features" : ""].filter(Boolean).join(", ") || "multiple characters";
-    return [...base, who, "group shot", ...pick.map((x) => x.tags || x.look), c.oneLiner, "detailed background"].filter(Boolean).join(", ");
+    // 한쪽 성별만 있는 표지는 인원 태그에 가중치 + 성별 앵커 — 옷·머리 태그만 있으면 반실사 모델이 성별을 바꿔 그림(2026-11-04 비교 생성)
+    const who = [f ? (f > 1 ? (m ? `${f}girls` : `(${f}girls:1.2)`) : (m ? "1girl" : "(1girl:1.2)")) : "", m ? (m > 1 ? (f ? `${m}boys` : `(${m}boys:1.2)`) : (f ? "1boy" : "(1boy:1.2)")) : "",
+      m && !f ? "male focus, handsome men, masculine features" : f && !m ? "beautiful women, feminine" : ""].filter(Boolean).join(", ") || "multiple characters";
+    return [...base, who, "group portrait, looking at viewer", ...pick.map((x) => x.tags || x.look), c.oneLiner, "atmospheric background"].filter(Boolean).join(", ");
   }
-  const look = castLook(cast[0], c), who = lookIsMale(look) ? ["(1boy:1.2)", "male focus", "solo", "handsome man, masculine features"] : whoTags(look);
-  return [...base, ...who, (cast[0] && cast[0].tags) || look, "upper body, looking at viewer", c.oneLiner, "detailed background"].filter(Boolean).join(", ");
+  const look = castLook(cast[0], c), who = lookIsMale(look) ? ["(1boy:1.2)", "male focus", "solo", "handsome man, masculine features"] : ["(1girl:1.2)", "solo", "beautiful woman"];
+  return [...base, ...who, (cast[0] && cast[0].tags) || look, "looking at viewer", c.oneLiner, "atmospheric background"].filter(Boolean).join(", ");
 }
 /* 상황 번호(SIT 0~14) → 표정·자세 태그(Danbooru). 프롬프트 맨 앞(장면 자리)에 들어가야 모델이 따름 */
 const SIT_PONY_TAGS = [

@@ -52,10 +52,10 @@ export const BUILTIN_SETS = [
     prompt: "(anime key visual:1.3), (intricate details:1.3), extremely detailed, detailed lineart, sketchy brushwork, ink splatter, painterly highlights, cel shading, high contrast, vivid colors, dramatic lighting, glowing particles, light streaks, dark background, shiny hair, beautiful detailed eyes" },
   { id: "fworld", name: "프롬2 여성향 세계관", kind: "world", aud: "f", match: /프롬\s*2.*여성향|여성향.*(?:세계관|표지)/, model: YABAL, samples: 3,
     desc: "프롬2(여성향 세계관 표지) 11장 — 어둡고 로맨틱한 저조도 조명(촛불·달빛), 차분하고 깊은 색, 반실사 남성 인물. 여성향 작품의 표지·세계관 일러스트 기본값",
-    prompt: SEMI + ", cinematic cover illustration, (low-key lighting:1.2), dim lighting, candlelight, moonlight, dark romantic atmosphere, rich muted palette, intricate details, handsome, (bishounen:1.2), pretty boy, sharp jawline" },
-  { id: "mworld", name: "프롬3 남성향 세계관", kind: "world", aud: "m", match: /프롬\s*3.*남성향|남성향.*(?:세계관|표지)/, model: SEMI_L, samples: 3,
-    desc: "프롬3(남성향 세계관 표지) 11장 — 네온·무대 조명의 강한 림라이트, 선명한 채도와 윤기, 보케. 남성향 작품의 표지·세계관 일러스트 기본값",
-    prompt: SEMI + ", cinematic cover illustration, (dramatic rim lighting:1.2), neon lights, stage lighting, vivid saturated colors, glossy finish, bokeh, intricate details" }
+    prompt: SEMI.replace(SEMI_SKIN, "") + ", handsome, (bishounen:1.2), pretty boy, youthful, delicate facial features, pale smooth skin, sharp jawline, soft painterly shading, cinematic cover illustration, (low-key lighting:1.2), dim lighting, candlelight, moonlight, dark romantic atmosphere, rich muted palette" },
+  { id: "mworld", name: "프롬3 남성향 세계관", kind: "world", aud: "m", match: /프롬\s*3.*남성향|남성향.*(?:세계관|표지)/, model: YABAL, samples: 3,
+    desc: "프롬3(남성향 세계관 표지) 11장 — 남성향 일상과 같은 인물 화풍에 네온·무대 조명의 림라이트, 선명한 채도와 윤기, 보케. 남성향 작품의 표지·세계관 일러스트 기본값",
+    prompt: SEMI.replace(SEMI_SKIN, "") + ", (semi-realistic:1.2), korean beauty, (large eyes:1.1), soft gaze, glossy lips, natural makeup, smooth glossy skin, airbrushed, cinematic cover illustration, (dramatic rim lighting:1.2), neon lights, stage lighting, vivid saturated colors, glossy finish, bokeh" }
 ];
 export const builtinSet = (id) => BUILTIN_SETS.find((b) => b.id === id) || null;
 /* 세트 이름이 내장 화풍 이름과 맞으면 그 id(ZIP 폴더 이름 프롬1_남성향_일상 …) */
