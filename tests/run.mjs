@@ -18,6 +18,7 @@ const SUITES = {
   social: "소셜 로그인·가입, 기기 그림 넘기기·합치기, 키 잠금 암호(Supabase를 page.route로 흉내)",
   vault: "API 키 금고: 가입·다른 기기 로그인·메일 링크 기기 잠김·비밀번호 재설정·로그아웃",
   cloud2: "계정 저장: 올리기·받기·서버 표 제약(kv_no_plain_keys·kv_vault_sealed)",
+  help: "고객센터: MY의 고객센터·약관 칸, 공지(공개만·고정 먼저·새 공지 표시), FAQ 찾기, 문의 남기기·하루 5건·지우기, 관리자 도구의 공지 쓰기·받은 문의 답변(Supabase를 page.route로 흉내)",
   audience: "관심있는 대화(전체·남성향·여성향) 첫 시작 창 → 홈 필터 → 설정 → 신작 대화방",
   chatflow: "대화방: 스트리밍 표시, 자동 스크롤 끔/켬, AI 추천 수동, 출력 설정, 설정 페이지",
   mobile: "휴대폰 셸: iPhone 13·SE(WebKit)·Galaxy(Chromium)에서 표준 모드·탭바·가로 넘침 없음",

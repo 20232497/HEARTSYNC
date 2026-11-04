@@ -266,5 +266,31 @@
  * @property {string|null} [category] 거절 분류(cyber·bio… 면 우회하지 않음)
  */
 /** @typedef {{ signal: AbortSignal, timedOut: boolean, clear(): void, tick(ms?: number): void }} TimeoutSignal core/util.js timeoutSignal이 돌려주는 것 */
+/**
+ * 공지사항(Supabase public.notices — docs/supabase.sql). 관리자만 쓰고, 로그인 없이도 published인 것을 읽음.
+ * @typedef {Object} Notice
+ * @property {number} id
+ * @property {string} title 120자까지
+ * @property {string} body 8000자까지(주소는 링크로 보임)
+ * @property {boolean} pinned 맨 위에 고정
+ * @property {boolean} published false면 관리자에게만 보임
+ * @property {string} created_at ISO 시각
+ * @property {string} updated_at
+ */
+/**
+ * 문의(Supabase public.inquiries). 로그인한 본인이 쓰고 읽고 지움, 관리자가 답함(answer·status만 고칠 수 있음 — 열 권한).
+ * @typedef {Object} Inquiry
+ * @property {number} id
+ * @property {string} user_id 쓴 계정(서버가 auth.uid()로 채움)
+ * @property {string} category services/support.js ASK_CATS
+ * @property {string} title 100자까지
+ * @property {string} body 4000자까지
+ * @property {string|null} reply_to 답변 받을 이메일(선택)
+ * @property {{ ua?: string, screen?: string, engine?: string, app?: string, host?: string }|null} meta '앱·브라우저 정보 함께 보내기'를 켰을 때
+ * @property {"open"|"answered"|"closed"} status 답을 쓰면 서버가 answered로
+ * @property {string|null} answer 운영자 답변
+ * @property {string|null} answered_at
+ * @property {string} created_at
+ */
 
 export {};

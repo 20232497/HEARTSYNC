@@ -1,11 +1,12 @@
 // 파일(file://)로 열어도 돈다: 저장소 루트의 index.html을 Chromium·WebKit에서 file:// 로 열어 부팅(bootMsg 사라짐)·홈(전체·여성향·남성향의 대표 작품·가로 줄)·상세 페이지를 확인.
 // 배포물이 단일 파일이어야 하는 이유가 이 모드(BYOK) — 모듈 파일로 나뉘면 CORS로 막혀 여기서 깨진다. 인자 URL은 받지만 쓰지 않음(runner 규약).
 import { chromium, webkit } from "playwright";
+import { noSupabase } from "./_offline.mjs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 const file = pathToFileURL(path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "index.html")).href;
 for (const [dev, engine] of [["Chromium file://", chromium], ["WebKit file://", webkit]]) {
-  const b = await engine.launch(); const p = await b.newPage();
+  const b = await engine.launch(); const p = await b.newPage(); await noSupabase(p);
   const errs = []; p.on("pageerror", (e) => errs.push("pageerror: " + e.message)); p.on("console", (m) => { if (m.type() === "error") errs.push("console: " + m.text().slice(0, 160)); });
   const res = { dev };
   try {

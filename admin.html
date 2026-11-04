@@ -537,6 +537,43 @@ table.tbl .plus { color:var(--gold); font-weight:700; }
 .toast { position:fixed; left:50%; bottom:calc(80px + env(safe-area-inset-bottom,0px)); transform:translateX(-50%); background:var(--fg); color:var(--bg); padding:9px 16px; border-radius:12px; font-size:13.5px; z-index:80; animation:up .2s; max-width:calc(100% - 32px); }
 .engine-warn { background:var(--accent-soft); border-radius:12px; padding:12px 14px; font-size:13px; margin-bottom:12px; }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation:none !important; transition:none !important; scroll-behavior:auto !important; } }
+
+/* ── 고객센터(#help — 공지사항·자주 묻는 질문·문의하기)와 MY의 고객센터·약관 및 정책 칸 */
+.help-head { display:flex; align-items:center; gap:2px; margin:4px 0 4px -8px; }
+.help-head h1.sec { margin:0; }
+.help-msg { margin:0 0 10px; }
+.help-page a:not(.btn) { color:var(--accent); text-underline-offset:2px; }
+.nlist { display:grid; gap:8px; }
+details.notice, details.ask, details.faq { background:var(--surface); border:1px solid var(--line); border-radius:14px; }
+details.notice > summary, details.ask > summary, details.faq > summary { cursor:pointer; list-style:none; padding:13px 16px; display:flex; align-items:center; gap:10px; }
+details.notice > summary::-webkit-details-marker, details.ask > summary::-webkit-details-marker, details.faq > summary::-webkit-details-marker { display:none; }
+details.notice > summary::after, details.ask > summary::after, details.faq > summary::after { content:"▾"; color:var(--muted); margin-left:auto; flex:none; }
+details.notice[open] > summary::after, details.ask[open] > summary::after, details.faq[open] > summary::after { content:"▴"; }
+details > summary .t { display:flex; align-items:center; gap:6px; flex:1; min-width:0; flex-wrap:wrap; }
+details > summary .t b { overflow-wrap:anywhere; }
+details > summary .d, .answer .d { color:var(--muted); font-size:12.5px; white-space:nowrap; }
+.nbody { padding:0 16px 14px; white-space:pre-wrap; font-size:14px; line-height:1.7; overflow-wrap:anywhere; }
+.answer { margin:0 16px 14px; padding:12px 14px; border-radius:12px; background:var(--accent-soft); font-size:14px; }
+.answer .d { margin-left:8px; }
+.answer > div { white-space:pre-wrap; margin-top:6px; overflow-wrap:anywhere; line-height:1.7; }
+details.ask > .cta-row, details.notice > .cta-row { padding:0 16px 12px; margin-top:0; }
+/* 자주 묻는 질문 */
+.faq-find { margin:2px 0 4px; }
+.faq-grp { display:grid; gap:8px; }
+.faq-grp h3 { font-size:13px; color:var(--muted); font-weight:600; margin:16px 0 0; letter-spacing:.04em; }
+details.faq > summary { font-weight:600; font-size:14.5px; }
+details.faq .a { padding:0 16px 14px; font-size:14px; line-height:1.75; }
+/* 문의하기 */
+.ask-form .field:first-of-type { margin-top:8px; }
+.ask-form .cta-row .note { flex:1 1 220px; margin:0; }
+.ask-form .toggle { margin-top:14px; }
+/* MY: 고객센터·약관 칸(.menu-list는 드로어와 같은 줄 모양 — 링크도 같게) */
+.box > .menu-list { margin:-8px 0; }
+.box > .menu-list > :last-child { border-bottom:0; }
+.menu-list a { display:flex; align-items:center; gap:10px; padding:13px 2px; border-bottom:1px solid var(--line); color:var(--fg); text-decoration:none; font-size:14.5px; }
+.menu-list a:hover { color:var(--accent); }
+.menu-list a::after { content:"↗"; margin-left:auto; color:var(--muted); font-size:13px; }
+#noticeNew:not(:empty) { color:var(--accent); font-weight:700; }
 /* ── 그림 칸(세계관 일러스트 시트의 .slot)·AI 생성 창(.gen-ov 태그 칩)·그림체 세트 카드 */
 .slot { border:1px solid var(--line); border-radius:12px; padding:6px; display:grid; gap:5px; text-align:center; font-size:12px; }
 .slot .pic { aspect-ratio:4/5; border-radius:9px; overflow:hidden; background:var(--surface2); position:relative; }
@@ -699,6 +736,16 @@ body.gated .app { grid-template-columns:1fr; }
 .ct-card .cap span { color:var(--muted); font-size:11.5px; }
 .ct-card .bs { display:flex; gap:4px; padding:6px 10px 10px; flex-wrap:wrap; }
 .ct-card .bs button { border:1px solid var(--line); background:var(--bg); border-radius:7px; font-size:11.5px; padding:2px 7px; }
+
+/* ── 고객센터 관리(관리자 도구): 관리자 안내·공지 고치기 줄·받은 문의의 답변 칸 */
+.adm-note { margin:0 0 10px; font-size:13.5px; }
+.adm-note pre { white-space:pre-wrap; overflow-wrap:anywhere; user-select:all; -webkit-user-select:all; font-size:12.5px; background:var(--bg); border:1px solid var(--line); padding:8px 10px; border-radius:8px; margin:8px 0 0; }
+.adm-bar { margin:0 0 10px; }
+.adm-ask { padding:12px 16px 14px; border-top:1px dashed var(--line); }
+.adm-ask .note { margin:0 0 4px; overflow-wrap:anywhere; }
+.adm-ask .ua { font-size:12px; }
+.adm-ask .field { margin-top:8px; }
+.adm-ask select.inp { width:auto; }
 </style>
 
 <div class="app">
@@ -725,7 +772,7 @@ window.addEventListener("error", function (e) {
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/core/config.js
    내보냄: ANTHROPIC_URL, CFG, IN_CLAUDE
-   쓰는 곳: src/js/core/state.js, src/js/services/supabase.js, src/js/ai/adult.js, src/js/images/rating.js, src/js/ai/openrouter.js, src/js/ai/llm.js, src/js/ui/login.js, src/js/ui/me.js, src/js/app.js, src/js/images/styles.js, src/js/images/runware.js, src/js/admin/image-settings.js, src/js/admin/auto-images.js
+   쓰는 곳: src/js/core/state.js, src/js/services/supabase.js, src/js/ai/adult.js, src/js/images/rating.js, src/js/ai/openrouter.js, src/js/ai/llm.js, src/js/ui/help.js, src/js/ui/login.js, src/js/ui/me.js, src/js/app.js, src/js/images/styles.js, src/js/images/runware.js, src/js/admin/image-settings.js, src/js/admin/auto-images.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 환경·연결: 서버 프록시 설정 CFG(window.HEARTVERSE_CONFIG), claude.ai 안인지(IN_CLAUDE) — 아무것도 import하지 않는 잎 모듈(다른 모듈이 맨 윗단에서 CFG를 써도 안전) */
 /** @typedef {import("./types.js").Config} Config */
@@ -763,7 +810,7 @@ const CATS = ["로맨스", "판타지", "RPG", "미스터리", "일상", "시뮬
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/core/util.js
    내보냄: $, $$, esc, uid, clamp, today, won, num, ago, timeoutSignal, abortCode, toast
-   쓰는 곳: src/js/core/storage.js, src/js/core/state.js, src/js/core/wallet.js, src/js/core/rooms.js, src/js/services/images.js, src/js/services/cloud.js, src/js/services/supabase.js, src/js/images/rating.js, src/js/services/community.js, src/js/ai/parse.js, src/js/ai/openrouter.js, src/js/ai/llm.js, src/js/ai/prompt/memory.js, src/js/ui/sheet.js, src/js/ui/chat/suggest.js, src/js/ui/cover.js, src/js/ui/home.js, src/js/ui/login.js, src/js/ui/account.js, src/js/ui/me.js, src/js/ui/store.js, src/js/ui/pay.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/chat/render.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/ui/shell.js, src/js/ui/worldart.js, src/js/ui/detail.js, src/js/ui/chats.js, src/js/app.js, src/js/images/styles.js, src/js/images/runware.js, src/js/admin/export.js, src/js/admin/gen-sheet.js, src/js/admin/gate.js, src/js/admin/image-codes.js, src/js/admin/image-run.js, src/js/admin/sit-sheets.js, src/js/admin/image-studio.js, src/js/admin/worldart.js, src/js/admin/tools.js, src/js/admin/image-settings.js, src/js/admin/auto-images.js, src/js/admin/studio.js, src/js/admin/works.js, src/js/core/migrate.js, src/js/boot.js
+   쓰는 곳: src/js/core/storage.js, src/js/core/state.js, src/js/core/wallet.js, src/js/core/rooms.js, src/js/services/images.js, src/js/services/cloud.js, src/js/services/supabase.js, src/js/images/rating.js, src/js/services/community.js, src/js/ai/parse.js, src/js/ai/openrouter.js, src/js/ai/llm.js, src/js/ai/prompt/memory.js, src/js/ui/sheet.js, src/js/ui/chat/suggest.js, src/js/ui/cover.js, src/js/ui/store.js, src/js/ui/faq.js, src/js/ui/help.js, src/js/ui/home.js, src/js/ui/login.js, src/js/ui/account.js, src/js/ui/me.js, src/js/ui/pay.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/chat/render.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/ui/shell.js, src/js/ui/worldart.js, src/js/ui/detail.js, src/js/ui/chats.js, src/js/app.js, src/js/images/styles.js, src/js/images/runware.js, src/js/admin/export.js, src/js/admin/gen-sheet.js, src/js/admin/gate.js, src/js/admin/image-codes.js, src/js/admin/image-run.js, src/js/admin/sit-sheets.js, src/js/admin/image-studio.js, src/js/admin/worldart.js, src/js/admin/tools.js, src/js/admin/image-settings.js, src/js/admin/auto-images.js, src/js/admin/support.js, src/js/admin/studio.js, src/js/admin/works.js, src/js/core/migrate.js, src/js/boot.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* DOM·문자열·숫자 유틸, toast, 예상 못 한 오류 기록(reportError) */
 /** @typedef {import("./types.js").TimeoutSignal} TimeoutSignal */
@@ -919,7 +966,7 @@ const KV = {
    가져옴: src/js/core/config.js { CFG }
            src/js/core/util.js { today }
    내보냄: hasClaudeKey, hasRunwareKey, hasOpenRouterKey, S, SAMPLE, samplePromise, DB, DOWNLOADS, setDB, setDownloads, setSample, setSamplePromise, room, gen, setGen, setRoom
-   쓰는 곳: src/js/core/audience.js, src/js/ai/models.js, src/js/core/wallet.js, src/js/core/character.js, src/js/core/rooms.js, src/js/core/settings.js, src/js/services/vault.js, src/js/services/cloud.js, src/js/ai/adult.js, src/js/images/rating.js, src/js/services/community.js, src/js/images/situations.js, src/js/services/load.js, src/js/services/sync.js, src/js/images/pick.js, src/js/ai/openrouter.js, src/js/ai/llm.js, src/js/ai/prompt/memory.js, src/js/ui/chat/suggest.js, src/js/ui/cover.js, src/js/ui/home.js, src/js/ui/login.js, src/js/ui/account.js, src/js/ui/me.js, src/js/ui/store.js, src/js/ui/pay.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/ui/shell.js, src/js/ui/worldart.js, src/js/ui/detail.js, src/js/ui/chats.js, src/js/app.js, src/js/images/tags.js, src/js/images/prompt.js, src/js/images/styles.js, src/js/images/runware.js, src/js/admin/export.js, src/js/admin/gen-sheet.js, src/js/admin/image-run.js, src/js/admin/sit-sheets.js, src/js/admin/image-studio.js, src/js/admin/worldart.js, src/js/admin/tools.js, src/js/admin/image-settings.js, src/js/admin/auto-images.js, src/js/admin/migrate.js, src/js/admin/studio.js, src/js/admin/works.js, src/js/core/migrate.js, src/js/boot.js
+   쓰는 곳: src/js/core/audience.js, src/js/ai/models.js, src/js/core/wallet.js, src/js/core/character.js, src/js/core/rooms.js, src/js/core/settings.js, src/js/services/vault.js, src/js/services/cloud.js, src/js/ai/adult.js, src/js/images/rating.js, src/js/services/community.js, src/js/images/situations.js, src/js/services/load.js, src/js/services/sync.js, src/js/images/pick.js, src/js/ai/openrouter.js, src/js/ai/llm.js, src/js/ai/prompt/memory.js, src/js/ui/chat/suggest.js, src/js/ui/cover.js, src/js/ui/store.js, src/js/ui/help.js, src/js/ui/home.js, src/js/ui/login.js, src/js/ui/account.js, src/js/ui/me.js, src/js/ui/pay.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/ui/shell.js, src/js/ui/worldart.js, src/js/ui/detail.js, src/js/ui/chats.js, src/js/app.js, src/js/images/tags.js, src/js/images/prompt.js, src/js/images/styles.js, src/js/images/runware.js, src/js/admin/export.js, src/js/admin/gen-sheet.js, src/js/admin/image-run.js, src/js/admin/sit-sheets.js, src/js/admin/image-studio.js, src/js/admin/worldart.js, src/js/admin/tools.js, src/js/admin/image-settings.js, src/js/admin/auto-images.js, src/js/admin/migrate.js, src/js/admin/studio.js, src/js/admin/works.js, src/js/core/migrate.js, src/js/boot.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 전역 상태 S(지갑·페르소나·대화방·설정), claude.ai capability, 현재 대화방·진행 중 생성(다른 모듈은 set…()로만 바꿈), API 키 유무(hasClaudeKey… — S와 CFG.serverKeys를 함께 봄).
    core 잎에 가깝게 — 이미지 모델·OpenRouter 모델의 기본값은 여기 두지 않고 쓰는 쪽(images/styles.js의 styleFor, ai/models.js의 orModel)이 비었을 때 채움 */
@@ -1074,7 +1121,7 @@ function emit(name, v) { (handlers[name] || []).forEach((fn) => { try { fn(v); }
            src/js/core/storage.js { KV }
            src/js/core/util.js { today }
    내보냄: FREE_DAILY, PLUS_MONTHLY, WELCOME, PLAN, isPro, plan, refreshFree, freeLeft, saveWallet, ledger, listPrice, quote, qShort, charge, refund
-   쓰는 곳: src/js/services/load.js, src/js/ai/prompt/memory.js, src/js/ui/me.js, src/js/ui/store.js, src/js/ui/pay.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/chat/generate.js, src/js/ui/shell.js, src/js/ui/detail.js, src/js/app.js
+   쓰는 곳: src/js/services/load.js, src/js/ai/prompt/memory.js, src/js/ui/store.js, src/js/ui/faq.js, src/js/ui/me.js, src/js/ui/pay.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/chat/generate.js, src/js/ui/shell.js, src/js/ui/detail.js, src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 요금: 무료 턴·PLUS·하트 차감/환불, 가격 계산(listPrice·quote) */
 
@@ -2201,7 +2248,7 @@ function cloudStateText() {
            src/js/services/cloud.js { CLOUD }
            src/js/services/vault.js { VAULT }
    내보냄: SB, PROVIDERS, OAUTH_ICONS, provName, acctName
-   쓰는 곳: src/js/services/vault.js, src/js/services/cloud.js, src/js/services/sync.js, src/js/ui/login.js, src/js/ui/account.js, src/js/app.js, src/js/boot.js
+   쓰는 곳: src/js/services/vault.js, src/js/services/cloud.js, src/js/services/sync.js, src/js/services/support.js, src/js/ui/help.js, src/js/ui/login.js, src/js/ui/account.js, src/js/app.js, src/js/admin/support.js, src/js/boot.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* Supabase 인증 REST(SB): 로그인·가입·소셜·세션 갱신, 안내 문구 */
 
@@ -2894,6 +2941,123 @@ async function wipeDevice() {
   try { Object.keys(localStorage).filter((k) => k.indexOf("hv1_") === 0).forEach((k) => localStorage.removeItem(k)); } catch {}
 }
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
+   src/js/services/support.js
+   가져옴: src/js/services/supabase.js { SB }
+   내보냄: ASK_CATS, ASK_STATUS, SUPPORT_MAIL, ASK_DAILY, supportErr, SUPPORT
+   쓰는 곳: src/js/ui/faq.js, src/js/ui/help.js, src/js/app.js, src/js/admin/support.js
+   ════════════════════════════════════════════════════════════════════════════════════════════════════ */
+/* 고객센터 서버(SUPPORT): 공지사항 읽기·쓰기, 문의 남기기·내 문의·받은 문의·답변 — Supabase REST(표 notices·inquiries·admins, docs/supabase.sql).
+   공지는 로그인 없이도 읽음(anon은 published만), 문의는 로그인한 본인 것만 쓰고 읽음(RLS). 관리자(admins 표에 있는 계정)만 공지를 쓰고 모든 문의를 보고 답한다.
+   관리자 여부는 서버가 정한다(RLS의 is_admin()) — 관리자 도구 화면은 버튼을 보여 줄 뿐, admins 표에 없는 계정이 쓰면 서버가 거부한다(denied).
+   공지는 마지막으로 받은 목록을 이 기기(hv1_notices)에 두어, 서버에 닿지 않아도(오프라인·claude.ai 안) 본 적 있는 공지는 보여 줌 */
+
+/** @typedef {import("../core/types.js").Notice} Notice */
+/** @typedef {import("../core/types.js").Inquiry} Inquiry */
+
+/** 문의 분류 [값, 이름] — docs/supabase.sql inquiries.category 제약과 같은 목록 */
+const ASK_CATS = [["account", "계정·로그인"], ["pay", "요금·하트"], ["chat", "대화·AI"], ["image", "그림"], ["adult", "성인 모드"], ["bug", "오류 신고"], ["suggest", "제안"], ["etc", "기타"]];
+/** 문의 상태 이름 */
+const ASK_STATUS = { open: "답변 대기", answered: "답변 완료", closed: "종료" };
+/** 앱 밖 문의(로그인하지 않았거나 서버가 없을 때) — privacy.html의 개인정보 보호책임자 이메일과 같음 */
+const SUPPORT_MAIL = "heartsyncchat@gmail.com";
+const ASK_DAILY = 5; // 하루 문의 수(서버 트리거 inquiries_guard와 같은 값 — 서버가 진짜로 막고 화면은 안내만)
+const NOTICE_COLS = "id,title,body,pinned,published,created_at,updated_at";
+const ASK_COLS = "id,user_id,category,title,body,reply_to,meta,status,answer,answered_at,created_at";
+const CACHE = "hv1_notices";
+
+// 서버 오류 → { code }: notable(표가 없음 — docs/supabase.sql을 아직 안 돌림) · denied(권한 — 관리자가 아니거나 로그인이 풀림) · limit(하루 문의 수) · server
+async function fail(r) {
+  const j = await r.json().catch(() => ({})), c = String(j.code || ""), m = String(j.message || j.msg || "");
+  if (c === "PGRST205" || c === "42P01" || r.status === 404) return { code: "notable" };
+  if (/too_many_inquiries/.test(m)) return { code: "limit" };
+  if (c === "42501" || r.status === 401 || r.status === 403 || /row-level security|permission denied/i.test(m)) return { code: "denied" };
+  return { code: "server", msg: m.slice(0, 120) || "HTTP " + r.status };
+}
+// 요청 하나: 서버가 없으면 off, 연결 실패는 net
+async function call(path, opt) {
+  if (!SB.on()) throw { code: "off" };
+  let r; try { r = await SB.req(path, opt); } catch { throw { code: "net" }; }
+  if (!r.ok) throw await fail(r);
+  return r.status === 204 ? null : r.json().catch(() => null);
+}
+const uidOf = () => (SB.s && SB.s.user && SB.s.user.id) || "";
+const rep = { Prefer: "return=representation" };
+
+/** 오류 code → 안내 문구. @param {{code?: string, msg?: string}} e @returns {string} */
+function supportErr(e) {
+  const c = e && e.code;
+  if (c === "off") return "계정 서버에 연결되지 않은 곳이에요(claude.ai 안·서버 설정 없음).";
+  if (c === "net") return "서버에 연결하지 못했어요. 인터넷 연결을 확인해 주세요.";
+  if (c === "notable") return "고객센터 표가 아직 없어요(운영자가 docs/supabase.sql을 실행해야 해요).";
+  if (c === "limit") return `문의는 하루 ${ASK_DAILY}건까지 남길 수 있어요. 내일 다시 해 주세요.`;
+  if (c === "denied") return "권한이 없어요. 로그인 상태를 확인해 주세요.";
+  return "처리하지 못했어요" + (e && e.msg ? ": " + e.msg : ".");
+}
+
+/**
+ * 고객센터 REST. notices() 공지 목록(고정 먼저·최신순) · saveNotice/dropNotice(관리자) · ask() 문의 남기기 · mine() 내 문의 · inbox()/answer()/dropAsk() 받은 문의(관리자) · amAdmin()
+ */
+const SUPPORT = {
+  admin: null, // amAdmin() 결과(계정마다) { uid, yes }
+  /** 마지막으로 받은 공지(이 기기). @returns {Notice[]} */
+  cached() { try { const a = JSON.parse(localStorage.getItem(CACHE) || "[]"); return Array.isArray(a) ? a : []; } catch { return []; } },
+  /** 공지 목록 — 고정 공지 먼저, 최신순 50개. 관리자에게는 비공개 공지도 옴(RLS). @returns {Promise<Notice[]>} @throws {{code: string}} */
+  async notices() {
+    const list = (await call(`/rest/v1/notices?select=${NOTICE_COLS}&order=pinned.desc,created_at.desc&limit=50`)) || [];
+    try { localStorage.setItem(CACHE, JSON.stringify(list.filter((n) => n.published !== false).slice(0, 20))); } catch {}
+    return list;
+  },
+  /** 공지 쓰기·고치기(관리자). id가 있으면 고침. @param {Partial<Notice>} n @returns {Promise<Notice>} @throws {{code: string}} */
+  async saveNotice(n) {
+    const body = { title: n.title, body: n.body || "", pinned: !!n.pinned, published: n.published !== false };
+    const j = n.id ? await call(`/rest/v1/notices?id=eq.${+n.id}&select=${NOTICE_COLS}`, { method: "PATCH", headers: rep, body: JSON.stringify(body) })
+      : await call(`/rest/v1/notices?select=${NOTICE_COLS}`, { method: "POST", headers: rep, body: JSON.stringify(body) });
+    if (!Array.isArray(j) || !j.length) throw { code: "denied" }; // RLS에 걸린 PATCH는 오류 없이 0행
+    return j[0];
+  },
+  /** 공지 지우기(관리자). @param {number} id @returns {Promise<void>} */
+  async dropNotice(id) {
+    const j = await call(`/rest/v1/notices?id=eq.${+id}&select=id`, { method: "DELETE", headers: rep });
+    if (!Array.isArray(j) || !j.length) throw { code: "denied" };
+  },
+  /** 문의 남기기(로그인 필요). @param {{category: string, title: string, body: string, reply_to?: string, meta?: object|null}} a @returns {Promise<Inquiry>} @throws {{code: string}} */
+  async ask(a) {
+    if (!uidOf()) throw { code: "denied" };
+    const body = { category: a.category, title: a.title, body: a.body, reply_to: a.reply_to || null, meta: a.meta || null };
+    const j = await call(`/rest/v1/inquiries?select=${ASK_COLS}`, { method: "POST", headers: rep, body: JSON.stringify(body) });
+    return Array.isArray(j) ? j[0] : j;
+  },
+  /** 내 문의(최신순 50개) — 관리자도 자기 것만(받은 문의는 inbox). @returns {Promise<Inquiry[]>} */
+  async mine() {
+    const u = uidOf(); if (!u) return [];
+    return (await call(`/rest/v1/inquiries?select=${ASK_COLS}&user_id=eq.${encodeURIComponent(u)}&order=created_at.desc&limit=50`)) || [];
+  },
+  /** 내 문의 지우기. @param {number} id @returns {Promise<void>} */
+  async dropAsk(id) {
+    const j = await call(`/rest/v1/inquiries?id=eq.${+id}&select=id`, { method: "DELETE", headers: rep });
+    if (!Array.isArray(j) || !j.length) throw { code: "denied" };
+  },
+  /** 받은 문의(관리자) — status를 주면 그 상태만, 최신순 100개. @param {string} [status] @returns {Promise<Inquiry[]>} */
+  async inbox(status) {
+    return (await call(`/rest/v1/inquiries?select=${ASK_COLS}${status ? "&status=eq." + encodeURIComponent(status) : ""}&order=created_at.desc&limit=100`)) || [];
+  },
+  /** 답변·상태 저장(관리자). 답을 쓰면 서버가 answered_at을 채우고 답변 대기를 답변 완료로 바꿈. @param {number} id @param {{answer?: string|null, status?: string}} p @returns {Promise<Inquiry>} */
+  async answer(id, p) {
+    const body = {}; if ("answer" in p) body.answer = p.answer || null; if (p.status) body.status = p.status;
+    const j = await call(`/rest/v1/inquiries?id=eq.${+id}&select=${ASK_COLS}`, { method: "PATCH", headers: rep, body: JSON.stringify(body) });
+    if (!Array.isArray(j) || !j.length) throw { code: "denied" };
+    return j[0];
+  },
+  /** 이 계정이 고객센터 관리자인지(admins 표에 자기 행이 보이는지 — 계정마다 한 번). @returns {Promise<boolean>} */
+  async amAdmin() {
+    const u = uidOf(); if (!u) return false;
+    if (this.admin && this.admin.uid === u) return this.admin.yes;
+    try { const j = await call(`/rest/v1/admins?select=user_id&user_id=eq.${encodeURIComponent(u)}`); this.admin = { uid: u, yes: Array.isArray(j) && j.length > 0 }; }
+    catch { return false; } // 표가 없거나 연결 실패 — 기억하지 않고 다음에 다시 물음
+    return this.admin.yes;
+  }
+};
+/* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/images/pick.js
    가져옴: src/js/core/character.js { getChar }
            src/js/core/state.js { S }
@@ -3584,7 +3748,7 @@ function flagMemo(on, txt) {
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/ui/icons.js
    내보냄: ICON
-   쓰는 곳: src/js/ui/chat/suggest.js, src/js/ui/home.js, src/js/ui/me.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/shell.js, src/js/ui/detail.js, src/js/app.js, src/js/admin/gen-sheet.js, src/js/admin/sit-sheets.js, src/js/admin/image-studio.js, src/js/admin/worldart.js
+   쓰는 곳: src/js/ui/chat/suggest.js, src/js/ui/help.js, src/js/ui/home.js, src/js/ui/me.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/shell.js, src/js/ui/detail.js, src/js/app.js, src/js/admin/gen-sheet.js, src/js/admin/sit-sheets.js, src/js/admin/image-studio.js, src/js/admin/worldart.js, src/js/admin/support.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 인라인 SVG 아이콘 */
 const ICON = {
@@ -3607,7 +3771,7 @@ const ICON = {
    src/js/ui/sheet.js
    가져옴: src/js/core/util.js { $, $$, esc }
    내보냄: sheet, closeOverlays, confirmSheet
-   쓰는 곳: src/js/ui/home.js, src/js/ui/login.js, src/js/ui/account.js, src/js/ui/me.js, src/js/ui/store.js, src/js/ui/pay.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/ui/shell.js, src/js/app.js, src/js/admin/worldart.js, src/js/admin/studio.js, src/js/boot.js
+   쓰는 곳: src/js/ui/store.js, src/js/ui/help.js, src/js/ui/home.js, src/js/ui/login.js, src/js/ui/account.js, src/js/ui/me.js, src/js/ui/pay.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/ui/shell.js, src/js/app.js, src/js/admin/worldart.js, src/js/admin/support.js, src/js/admin/studio.js, src/js/boot.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 바닥 시트·확인 창(sheet·confirmSheet), 오버레이 닫기 */
 
@@ -3628,16 +3792,17 @@ function confirmSheet(title, sub, okLabel, onOk) {
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/ui/ext.js
    내보냄: EXT, runExt
-   쓰는 곳: src/js/ui/me.js, src/js/ui/room-drawer.js, src/js/ui/chat/generate.js, src/js/ui/detail.js, src/js/app.js, src/js/admin/tools.js, src/js/admin/image-settings.js, src/js/admin/auto-images.js
+   쓰는 곳: src/js/ui/help.js, src/js/ui/me.js, src/js/ui/room-drawer.js, src/js/ui/chat/generate.js, src/js/ui/detail.js, src/js/app.js, src/js/admin/tools.js, src/js/admin/image-settings.js, src/js/admin/auto-images.js, src/js/admin/support.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 빌드 확장 고리(EXT): 사용자 화면 모듈이 비워 둔 자리를 관리자 모듈(src/js/admin/)이 채운다. 사용자 빌드(index.html)에는 꽂는 모듈이 없어 runExt가 아무 일도 안 한다.
-   detail(c, v) 작품 상세 · drawer(r, body) 대화방 드로어 메뉴 · afterTurn(r, body) 응답이 끝난 뒤 · me(v) MY의 #meExt 자리 · meSave(v) MY '설정 저장' · persona(ov, setImg) 페르소나 시트 */
-const EXT = { detail: [], drawer: [], afterTurn: [], me: [], meSave: [], persona: [] };
+   detail(c, v) 작품 상세 · drawer(r, body) 대화방 드로어 메뉴 · afterTurn(r, body) 응답이 끝난 뒤 · me(v) MY의 #meExt 자리 · meSave(v) MY '설정 저장' · persona(ov, setImg) 페르소나 시트
+   help(tab, box, list) 고객센터 탭을 그린 뒤(tab "notice"·"ask", list는 그 탭의 공지·내 문의 — 같은 box에 여러 번 불릴 수 있으니 꽂는 쪽은 이미 넣었는지 보고 넣기) */
+const EXT = { detail: [], drawer: [], afterTurn: [], me: [], meSave: [], persona: [], help: [] };
 function runExt(name, ...args) { (EXT[name] || []).forEach((fn) => { try { fn(...args); } catch (e) { console.error("[ext " + name + "]", e); } }); }
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/core/target.js
    내보냄: TARGET, setTarget, isAdmin
-   쓰는 곳: src/js/ui/shell.js, src/js/admin.js
+   쓰는 곳: src/js/ui/help.js, src/js/ui/shell.js, src/js/admin.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 빌드 대상: "user"(index.html — 사용자 사이트) 또는 "admin"(admin.html — 관리자 도구). 진입점(main.js·admin.js)이 setTarget으로 정한다.
    모듈은 되도록 이 값으로 갈라지지 말고 EXT 고리·화면 등록(ui/shell.js의 registerViews)으로 나뉜다 — 여기는 문구·로고 배지처럼 작은 차이에만 */
@@ -3751,6 +3916,338 @@ function lightbox(src) {
 }
 function pavHTML(p) { const img = IMG.tag(p.img); return `<div class="pav">${img || esc((p.name || "?").slice(0, 1))}</div>`; }
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
+   src/js/ui/store.js
+   가져옴: src/js/core/state.js { S }
+           src/js/core/util.js { $, $$, esc, num, won }
+           src/js/core/wallet.js { FREE_DAILY, PLAN, PLUS_MONTHLY, WELCOME, freeLeft, isPro, ledger, listPrice, saveWallet }
+           src/js/ui/sheet.js { sheet }
+           src/js/ui/shell.js { bindGo, route, topbar }
+   내보냄: PACKS, PLUS, buyPack, viewStore, checkout
+   쓰는 곳: src/js/ui/faq.js, src/js/ui/pay.js, src/js/app.js
+   ════════════════════════════════════════════════════════════════════════════════════════════════════ */
+/* 스토어: 하트 패키지·PLUS(데모 결제) */
+
+
+
+
+
+
+const PACKS = [
+  { id: "h100", n: 100, bonus: 0, price: 1900 },
+  { id: "h300", n: 300, bonus: 30, price: 4900 },
+  { id: "h1000", n: 1000, bonus: 150, price: 14900, best: true },
+  { id: "h3000", n: 3000, bonus: 600, price: 39000 }
+];
+const PLUS = { id: "plus", name: "HEART SYNC+ 1개월", price: 9900 };
+function buyPack(id, after) { const p = PACKS.find((x) => x.id === id); checkout({ id: p.id, name: "하트 " + num(p.n + p.bonus) + "개", price: p.price, hearts: p.n + p.bonus }, after); }
+function viewStore() {
+  const v = $("#view"), pro = isPro(), story = listPrice("story", "mid", 10);
+  const cell = (k, len) => { const l = listPrice(k, len, 10); return k === "lite" ? (len === "long" ? "♥" + l : "♥" + l) : "♥" + l; };
+  v.innerHTML = `<div class="page">${topbar()}
+    <h1 class="sec" style="margin-top:4px">스토어</h1>
+    <div class="statline">
+      <div class="box"><h3>오늘 무료 턴</h3><b>${pro ? "무제한" : freeLeft() + " / " + FREE_DAILY}</b><span class="note">라이트 모델 · 매일 자정에 다시 채워져요</span></div>
+      <div class="box"><h3>보유 하트</h3><b>♥ ${num(S.wallet.hearts)}</b><span class="note">스토리 모델 약 ${Math.floor(S.wallet.hearts / (pro ? Math.ceil(story / 2) : story))}턴</span></div>
+      <div class="box"><h3>요금제</h3><b>${pro ? "PLUS" : "무료"}</b><span class="note">${pro ? new Date(S.wallet.pro.until).toLocaleDateString("ko-KR") + "까지" : "기본 요금제"}</span></div>
+    </div>
+
+    <h2 class="sec">한 턴에 얼마나 드나요? <small>기억력 10턴 기준 · 10턴 늘 때마다 스토리 +♥1, 마스터 +♥2</small></h2>
+    <div class="tbl-wrap"><table class="tbl"><thead><tr><th>모델</th><th class="num">적게</th><th class="num">보통</th><th class="num">많게</th><th class="num plus">PLUS</th></tr></thead><tbody>
+      <tr><td><b>라이트</b> <span class="pill ok">매일 ${FREE_DAILY}턴 무료</span><div class="note">빠르고 가벼운 일상 대화</div></td><td class="num">${cell("lite", "short")}</td><td class="num">${cell("lite", "mid")}</td><td class="num">${cell("lite", "long")}</td><td class="num plus">무제한</td></tr>
+      <tr><td><b>스토리</b> <span class="pill">추천</span><div class="note">풍부한 묘사, 안정적인 캐릭터 연기</div></td><td class="num">${cell("story", "short")}</td><td class="num">${cell("story", "mid")}</td><td class="num">${cell("story", "long")}</td><td class="num plus">50% 할인</td></tr>
+      <tr><td><b>마스터</b><div class="note">소설 같은 몰입감, 복잡한 RPG 계산</div></td><td class="num">${cell("master", "short")}</td><td class="num">${cell("master", "mid")}</td><td class="num">${cell("master", "long")}</td><td class="num plus">50% 할인</td></tr>
+    </tbody></table></div>
+    <p class="note" style="margin-top:8px">보내기 버튼에 이번 턴 비용이 항상 표시돼요. 응답이 실패하면 자동으로 환불되고, 장기기억 요약·AI 추천·캐릭터 초안은 무료예요.</p>
+
+    <h2 class="sec">멤버십</h2>
+    <div class="member">
+      <h2>HEART SYNC<em>+</em></h2>
+      <ul>
+        <li>라이트 모델 무제한</li><li>스토리·마스터 모델 50% 할인</li><li>매달 하트 ${PLUS_MONTHLY}개 지급</li>
+        <li>장기기억 ${num(PLAN.free.memoMax)}자 → ${num(PLAN.pro.memoMax)}자</li><li>기억력 최대 ${PLAN.free.memTurns}턴 → ${PLAN.pro.memTurns}턴</li><li>대화방 무제한 · 기억 히스토리 ${PLAN.pro.hist}개</li>
+      </ul>
+      <div class="row"><span class="price">${won(PLUS.price)} <small>/ 월 · 언제든 해지</small></span><span class="spacer"></span>
+      ${pro ? `<span style="color:#e9dfcf">이용 중 · ${new Date(S.wallet.pro.until).toLocaleDateString("ko-KR")}까지</span>` : `<button class="btn gold" id="buyPlus">PLUS 시작하기</button>`}</div>
+    </div>
+    <div class="tbl-wrap" style="margin-top:12px"><table class="tbl"><thead><tr><th></th><th>무료</th><th class="plus">PLUS</th></tr></thead><tbody>
+      <tr><td>라이트 모델</td><td>하루 ${FREE_DAILY}턴, 이후 턴당 ♥1~2</td><td class="plus">무제한</td></tr>
+      <tr><td>스토리 · 마스터</td><td>턴당 ♥${listPrice("story", "mid", 10)} · ♥${listPrice("master", "mid", 10)}</td><td class="plus">턴당 ♥${Math.ceil(listPrice("story", "mid", 10) / 2)} · ♥${Math.ceil(listPrice("master", "mid", 10) / 2)}</td></tr>
+      <tr><td>매달 하트</td><td>없음 (첫 방문 ♥${WELCOME})</td><td class="plus">♥${PLUS_MONTHLY}</td></tr>
+      <tr><td>장기기억 · 기억력</td><td>${num(PLAN.free.memoMax)}자 · ${PLAN.free.memTurns}턴</td><td class="plus">${num(PLAN.pro.memoMax)}자 · ${PLAN.pro.memTurns}턴</td></tr>
+      <tr><td>캐릭터당 대화방</td><td>${PLAN.free.rooms}개</td><td class="plus">무제한</td></tr>
+    </tbody></table></div>
+
+    <h2 class="sec">하트 충전</h2>
+    <div class="packs">${PACKS.map((p) => `<button class="pack" data-pack="${p.id}">${p.best ? `<span class="best">인기</span>` : ""}
+      <span class="n"><em>♥</em> ${num(p.n)}</span><span class="bonus">${p.bonus ? "+ 보너스 " + num(p.bonus) : ""}</span>
+      <span class="per">스토리 약 ${Math.floor((p.n + p.bonus) / story)}턴 · 라이트 ${num(p.n + p.bonus)}턴</span>
+      <span class="p">${won(p.price)}</span></button>`).join("")}</div>
+    <p class="demo-note">이 스토어는 결제 흐름을 보여 주는 데모예요. 결제 버튼을 눌러도 실제로 청구되지 않고, 하트와 멤버십은 체험용으로만 지급돼요.</p>
+
+    <h2 class="sec">하트 사용 내역</h2>
+    ${S.wallet.ledger.length ? `<div class="tbl-wrap"><table class="tbl"><thead><tr><th>일시</th><th>내용</th><th class="num">하트</th></tr></thead><tbody>
+      ${S.wallet.ledger.slice(0, 25).map((h) => `<tr><td>${new Date(h.at).toLocaleString("ko-KR", { dateStyle: "short", timeStyle: "short" })}</td><td style="white-space:normal">${esc(h.label)}</td><td class="num ${h.d < 0 ? "minus" : h.d > 0 ? "plusv" : ""}">${h.d > 0 ? "+" : ""}${h.d ? num(h.d) : "0"}</td></tr>`).join("")}</tbody></table></div>`
+      : `<p class="note">아직 내역이 없어요.</p>`}
+    <h2 class="sec">결제 내역</h2>
+    ${S.wallet.history.length ? `<div class="tbl-wrap"><table class="tbl"><thead><tr><th>일시</th><th>상품</th><th class="num">금액</th></tr></thead><tbody>
+      ${S.wallet.history.slice(0, 20).map((h) => `<tr><td>${new Date(h.at).toLocaleString("ko-KR", { dateStyle: "short", timeStyle: "short" })}</td><td>${esc(h.name)}</td><td class="num">${won(h.price)} <span class="note">(데모)</span></td></tr>`).join("")}</tbody></table></div>`
+      : `<p class="note">아직 결제 내역이 없어요.</p>`}
+  </div>`;
+  bindGo(v);
+  const bp = $("#buyPlus"); if (bp) bp.onclick = () => checkout(PLUS);
+  $$("[data-pack]", v).forEach((b) => b.onclick = () => buyPack(b.dataset.pack));
+}
+function checkout(item, after) {
+  const vat = Math.round(item.price / 11);
+  const ov = sheet(`<h2>결제하기</h2><p class="sub">${esc(item.name)}${item.id === "plus" ? ` · 하트 ${PLUS_MONTHLY}개 포함` : ""}</p>
+    <div class="sumrow"><span>상품 금액</span><span>${won(item.price - vat)}</span></div>
+    <div class="sumrow"><span>부가세</span><span>${won(vat)}</span></div>
+    <div class="sumrow total"><span>최종 결제 금액</span><span>${won(item.price)}</span></div>
+    <div class="payopt" role="radiogroup" aria-label="결제 수단">
+      <label><input type="radio" name="pm" checked> 신용·체크카드</label><label><input type="radio" name="pm"> 간편결제</label><label><input type="radio" name="pm"> 휴대폰 결제</label>
+    </div>
+    <p class="demo-note">데모 결제예요. 결제 정보를 받지 않고, 실제로 청구되지 않아요.</p>
+    <div class="cta-row"><span class="spacer"></span><button class="btn ghost" data-x>취소</button><button class="btn pri" id="pay">${won(item.price)} 결제하기</button></div>`);
+  $("#pay", ov).onclick = () => {
+    const b = $("#pay", ov); b.disabled = true; b.textContent = "결제 승인 중…";
+    setTimeout(() => {
+      if (item.id === "plus") { const base = isPro() ? S.wallet.pro.until : Date.now(); S.wallet.pro = { until: base + 30 * 86400000 }; S.wallet.hearts += PLUS_MONTHLY; ledger(PLUS_MONTHLY, "PLUS 월간 하트"); }
+      else { S.wallet.hearts += item.hearts; ledger(item.hearts, item.name + " 충전"); }
+      S.wallet.history.unshift({ at: Date.now(), name: item.name, price: item.price }); S.wallet.history = S.wallet.history.slice(0, 50);
+      saveWallet();
+      $(".sheet", ov).innerHTML = `<div class="ok-mark">♥</div><h2 style="text-align:center">결제 완료</h2>
+        <p class="sub" style="text-align:center">${item.id === "plus" ? `HEART SYNC+가 시작됐어요. 라이트 무제한, 하트 ${PLUS_MONTHLY}개가 지급됐어요.` : `하트 ${num(item.hearts)}개가 지급됐어요. 지금 ♥ ${num(S.wallet.hearts)}`}</p>
+        <button class="btn pri block" id="done">${after ? "대화로 돌아가기" : "확인"}</button>`;
+      $("#done", ov).onclick = () => { ov.remove(); if (after) after(); else route(); };
+    }, 1000);
+  };
+}
+/* ════════════════════════════════════════════════════════════════════════════════════════════════════
+   src/js/ui/faq.js
+   가져옴: src/js/core/wallet.js { PLAN, FREE_DAILY, PLUS_MONTHLY, WELCOME }
+           src/js/core/util.js { num, won }
+           src/js/services/support.js { SUPPORT_MAIL }
+           src/js/ui/store.js { PLUS }
+   내보냄: faqGroups
+   쓰는 곳: src/js/ui/help.js
+   ════════════════════════════════════════════════════════════════════════════════════════════════════ */
+/* 자주 묻는 질문: 고객센터(#help-faq)의 묶음별 질문·답(고정 글). 요금·턴 수는 상수에서 읽어 앱과 어긋나지 않게 한다.
+   답은 앱의 실제 동작(CLAUDE.md)을 근거로 쓴다 — 무료 턴·하트·PLUS·계정 저장·API 키 금고·성인 모드가 바뀌면 여기도 같이 고치기.
+   답 글은 운영자가 쓴 고정 HTML이라 esc()를 거치지 않음(사용자 데이터를 넣지 않기) */
+
+
+
+
+
+/** 묶음 [이름, [[질문, 답 HTML], …]] — 함수라서 부를 때의 상수 값으로 그림 @returns {Array<[string, Array<[string, string]>]>} */
+function faqGroups() {
+  const plus = won(PLUS.price);
+  return [
+    ["시작하기", [
+      ["HEART SYNC는 어떤 서비스인가요?", "캐릭터와 대화하며 이야기를 만들어 가는 대화형 에피소드 앱이에요. 홈에서 작품을 고르고 시작 상황을 정하면 대화방이 열리고, AI가 캐릭터를 연기해요. 대화가 이어질수록 상태창(호감도 등)이 바뀌고 장면마다 캐릭터 그림이 붙어요."],
+      ["'AI 연결이 아직 없어요'라고 나와요.", "웹 주소에서 쓸 때는 <b>MY → AI 연결</b>에 Anthropic API 키를 넣어야 대화할 수 있어요. 키는 Anthropic 콘솔에서 발급받고, AI 사용 요금은 그 키로 Anthropic이 직접 청구해요. claude.ai 안에서 열면 claude.ai 계정으로 바로 대화할 수 있어요."],
+      ["남성향·여성향은 뭔가요?", "<b>남성향</b>은 여성 캐릭터와의 대화, <b>여성향</b>은 남성 캐릭터와의 대화 작품만 홈에 보여 줘요. <b>전체</b>는 모두 보여 줘요. <a href=\"#me\">MY</a> → 관심있는 대화에서 언제든 바꿀 수 있고, 내가 만든 작품은 늘 보여요."],
+      ["휴대폰에서도 쓸 수 있나요?", "네. 휴대폰에서는 내려받은 파일이 아니라 웹 주소(20232497.github.io/HEARTSYNC)로 열어 주세요. 로그인하면 PC에서 하던 대화·작품·설정이 휴대폰에서 그대로 이어져요."]
+    ]],
+    ["요금·하트", [
+      ["무료로 얼마나 쓸 수 있나요?", `라이트 모델은 <b>매일 ${FREE_DAILY}턴 무료</b>예요. 자정에 다시 채워져요. 처음 방문하면 하트 ${WELCOME}개를 드려요.`],
+      ["하트는 어디에 쓰나요?", "무료 턴을 다 쓴 뒤의 라이트 모델과, 스토리·마스터 모델 대화에 써요. 보내기 버튼에 이번 턴 비용이 항상 표시되고, 응답이 실패하면 자동으로 환불돼요. 장기기억 요약·AI 추천 답변은 무료예요."],
+      ["PLUS는 무엇인가요?", `월 ${plus} 멤버십이에요. 라이트 모델 무제한, 스토리·마스터 50% 할인, 매달 하트 ${num(PLUS_MONTHLY)}개, 장기기억 ${num(PLAN.free.memoMax)}자 → ${num(PLAN.pro.memoMax)}자, 기억력 ${PLAN.free.memTurns}턴 → ${PLAN.pro.memTurns}턴으로 늘어나요.`],
+      ["결제하면 실제로 돈이 나가나요?", "지금 스토어는 결제 흐름을 보여 주는 <b>시연(데모)</b>이라 실제로 청구되지 않고, 하트와 멤버십은 체험용으로만 지급돼요. 다만 내 API 키로 쓰는 AI 대화·그림 요금은 그 키를 발급한 회사(Anthropic·OpenRouter 등)가 따로 청구해요."]
+    ]],
+    ["대화", [
+      ["답이 너무 짧아요(길어요).", "대화방 오른쪽 위 메뉴(☰) → <b>출력 설정</b>에서 출력량(적게·보통·많게)을 바꿀 수 있어요. 모델을 스토리·마스터로 올리면 묘사가 더 풍부해져요."],
+      ["캐릭터가 예전 일을 잊어요.", "출력 설정의 <b>기억력</b>은 AI가 그대로 다시 읽는 최근 턴 수예요. 그보다 오래된 일은 몇 턴마다 자동으로 만드는 <b>장기기억</b> 요약으로 기억해요. 메뉴의 장기기억에서 요약을 보고 직접 고칠 수 있어요."],
+      ["대화를 저장하거나 옮길 수 있나요?", "대화방 메뉴의 <b>대화 내보내기</b>로 파일로 받거나 <b>대화 복사</b>로 복사할 수 있어요. 로그인하면 대화가 계정에 저장돼 다른 기기에서 이어져요."],
+      ["대화 속 그림을 끄고 싶어요.", "<a href=\"#me\">MY</a> → 채팅 설정의 <b>대화 속 장면 이미지 보기</b>를 끄면 돼요. 글자 크기·줄 간격·지문 글꼴도 거기서 바꿔요."],
+      ["응답이 중간에 끊겼어요.", "연결이 끊기거나 시간이 너무 오래 걸리면 받은 데까지 남기고 멈춰요. 그 메시지의 <b>다시 시도</b>를 누르면 다시 써요."]
+    ]],
+    ["계정·데이터", [
+      ["로그인하지 않아도 되나요?", "네, <b>로그인 없이 둘러보기</b>로 쓸 수 있어요. 다만 이때 데이터는 이 브라우저에만 저장돼, 브라우저 데이터를 지우면 사라지고 다른 기기와 이어지지 않아요."],
+      ["로그인하면 무엇이 저장되나요?", "대화·작품·페르소나·설정·그림이 계정에 저장돼 PC와 휴대폰에서 이어져요. 처음 로그인할 때 이 기기에만 있던 데이터를 계정에 합칠 수 있어요. 이메일이 없어도 카카오·네이버·Google 계정으로 가입할 수 있어요."],
+      ["API 키도 계정에 저장되나요? 안전한가요?", "<b>API 키도 계정에 저장</b>(MY → 계정)을 켜 두면, 로그인 비밀번호(소셜 로그인은 따로 정하는 <b>키 잠금 암호</b>)로 이 기기에서 암호화한 뒤 암호문만 올려요. 운영자와 서버도 키를 볼 수 없어요. 그래서 키 잠금 암호를 잊으면 찾아 드릴 수 없고, 키를 다시 넣어 새 암호로 잠그면 돼요."],
+      ["다른 기기에서 'API 키가 잠겨 있어요'라고 나와요.", "메일 링크로 로그인했거나 다른 기기에서 비밀번호를 바꾼 경우예요. <a href=\"#me\">MY</a> → 계정의 <b>비밀번호 입력</b>(소셜 로그인은 <b>암호 입력</b>)으로 한 번만 풀면 돼요."],
+      ["비밀번호를 잊었어요.", "로그인 화면의 <b>비밀번호를 잊었어요</b>로 재설정 메일을 받아요. 새 비밀번호를 정하면 이 기기의 API 키를 새 비밀번호로 다시 잠가요."],
+      ["계정을 삭제하려면요?", "<a href=\"#me\">MY</a> → 계정의 <b>계정 삭제</b>를 누르면 계정과 계정에 저장된 데이터, 남긴 문의가 바로 지워져요. 이 기기에 남은 데이터는 MY의 <b>모든 데이터 초기화</b>로 지울 수 있어요."]
+    ]],
+    ["성인 모드", [
+      ["성인 모드는 어떻게 켜나요?", "<a href=\"#me\">MY</a> → AI 연결의 <b>성인 인증 · 수위</b>에서 만 19세 이상임을 확인하고 OpenRouter API 키를 넣어야 해요. 성인 수위 대화는 Claude가 아니라 OpenRouter 모델로만 보내요. claude.ai 안에서는 쓸 수 없어요."],
+      ["미성년 캐릭터는 어떻게 되나요?", "어떤 설정에서도 미성년자(또는 미성년자로 보이는 인물)의 성적 묘사와 그림은 막아요. 대화나 설정에 19세 미만·학생·교복 같은 암시가 있으면 성인 모드가 꺼진 것처럼 동작해요."]
+    ]],
+    ["문제 해결", [
+      ["화면이 하얗게 나오거나 멈췄어요.", "새로 고침해 보세요. 카카오톡 등 앱 안의 브라우저나 오래된 브라우저에서는 최신 Chrome·Safari로 열어 주세요. 계속되면 <a href=\"#help-ask\">문의하기</a>에서 <b>오류 신고</b>로 알려 주세요. '앱·브라우저 정보 함께 보내기'를 켜 두면 원인을 찾는 데 도움이 돼요."],
+      ["로그인 없이 문의할 수 있나요?", `<a href="mailto:${SUPPORT_MAIL}">${SUPPORT_MAIL}</a>로 메일을 보내 주세요. 로그인하면 앱 안에서 문의를 남기고 답변도 바로 확인할 수 있어요.`]
+    ]]
+  ];
+}
+/* ════════════════════════════════════════════════════════════════════════════════════════════════════
+   src/js/ui/help.js
+   가져옴: src/js/core/config.js { IN_CLAUDE }
+           src/js/core/state.js { S }
+           src/js/core/target.js { TARGET }
+           src/js/core/util.js { $, $$, ago, esc, toast }
+           src/js/services/supabase.js { SB, acctName }
+           src/js/services/support.js { ASK_CATS, ASK_DAILY, ASK_STATUS, SUPPORT, SUPPORT_MAIL, supportErr }
+           src/js/ui/ext.js { runExt }
+           src/js/ui/faq.js { faqGroups }
+           src/js/ui/icons.js { ICON }
+           src/js/ui/sheet.js { confirmSheet }
+           src/js/ui/shell.js { bindGo, go, topbar }
+   내보냄: docUrl, hasNewNotice, checkNotices, viewHelp, askHTML
+   쓰는 곳: src/js/ui/login.js, src/js/ui/me.js, src/js/app.js, src/js/admin/support.js
+   ════════════════════════════════════════════════════════════════════════════════════════════════════ */
+/* 고객센터 화면(#help): 공지사항 · 자주 묻는 질문 · 문의하기 탭(#help-notice·#help-faq·#help-ask로 바로). MY의 고객센터 칸에서 들어옴.
+   공지·문의는 Supabase(services/support.js), FAQ는 ui/faq.js의 고정 글. 관리자 빌드는 탭을 그린 뒤 EXT.help(tab, box, list)로 공지 쓰기·받은 문의를 더함(admin/support.js).
+   claude.ai 안·서버 설정이 없으면(SB.on() 거짓) 공지는 마지막으로 받은 것만, 문의는 이메일 안내만 */
+
+
+
+
+
+
+
+
+
+
+
+/** @typedef {import("../core/types.js").Notice} Notice */
+/** @typedef {import("../core/types.js").Inquiry} Inquiry */
+
+const TABS = [["notice", "공지사항"], ["faq", "자주 묻는 질문"], ["ask", "문의하기"]];
+const SITE = "https://20232497.github.io/HEARTSYNC/";
+const SEEN = "hv1_notice_seen"; // 마지막으로 본 공지 id(가장 큰 것) — MY의 '새 공지' 표시
+/** 정적 문서(terms.html·privacy.html) 주소 — 파일로 열었거나 claude.ai 안이면 같은 폴더에 문서가 없으니 웹 주소로. @param {string} f @returns {string} */
+function docUrl(f) { return location.protocol === "file:" || IN_CLAUDE ? SITE + f : f; }
+const day = (t) => { const d = new Date(t); return isNaN(d) ? "" : d.toLocaleDateString("ko-KR"); };
+// 공지·답변 본문: esc 뒤 주소만 링크로(따옴표·꺾쇠는 이미 이스케이프돼 속성을 깨지 못함)
+const rich = (s) => esc(s).replace(/https?:\/\/[^\s<]+/g, (u) => `<a href="${u}" target="_blank" rel="noopener">${u}</a>`);
+const seenId = () => { try { return +localStorage.getItem(SEEN) || 0; } catch { return 0; } };
+/** 이 기기에서 아직 안 본 공지가 있는지(마지막으로 받은 목록 기준). @returns {boolean} */
+function hasNewNotice() { const s = seenId(); return SUPPORT.cached().some((n) => +n.id > s); }
+let checkedAt = 0;
+/** MY를 열 때 공지를 가끔(이 페이지에서 30분에 한 번) 받아 '새 공지'(#noticeNew)를 맞춤 — 실패는 조용히 넘김. @returns {void} */
+function checkNotices() {
+  if (!SB.on() || Date.now() - checkedAt < 1800000) return;
+  checkedAt = Date.now();
+  SUPPORT.notices().then(() => { const el = $("#noticeNew"); if (el) el.textContent = hasNewNotice() ? "새 공지" : ""; }).catch(() => {});
+}
+
+function viewHelp(arg) {
+  const tab = TABS.some((t) => t[0] === arg) ? arg : "notice", v = $("#view");
+  v.innerHTML = `<div class="page help-page">${topbar()}
+    <div class="help-head"><button class="icon-btn" data-go="me" aria-label="MY로 돌아가기">${ICON.back}</button><h1 class="sec">고객센터</h1></div>
+    <div class="tabs" role="tablist">${TABS.map(([k, l]) => `<button type="button" role="tab" data-htab="${k}" aria-selected="${k === tab}" class="${k === tab ? "on" : ""}">${l}</button>`).join("")}</div>
+    <div id="helpBody"></div></div>`;
+  bindGo(v);
+  $$("[data-htab]", v).forEach((b) => b.onclick = () => go("help-" + b.dataset.htab));
+  const box = $("#helpBody", v);
+  if (tab === "faq") faqTab(box); else if (tab === "ask") askTab(box); else noticeTab(box);
+}
+
+/* ---------------------------------------------------------------- 공지사항 */
+/** 공지 한 개(접힘). @param {Notice} n @param {boolean} open @returns {string} */
+function noticeHTML(n, open) {
+  return `<details class="notice" data-nid="${+n.id}" ${open ? "open" : ""}><summary><span class="t">${n.pinned ? `<span class="pill">고정</span>` : ""}${n.published === false ? `<span class="pill gold">비공개</span>` : ""}<b>${esc(n.title)}</b></span><span class="d">${day(n.created_at)}</span></summary>
+    <div class="nbody">${rich(n.body)}</div></details>`;
+}
+async function noticeTab(box) {
+  const seen = seenId();
+  const paint = (list, msg) => {
+    box.innerHTML = (msg ? `<p class="note help-msg">${esc(msg)}</p>` : "") +
+      (list.length ? `<div class="nlist">${list.map((n, i) => noticeHTML(n, (i === 0 && +n.id > seen) || (n.pinned && +n.id > seen))).join("")}</div>` : `<div class="empty">아직 공지가 없어요.</div>`);
+    const top = list.reduce((a, n) => Math.max(a, +n.id || 0), 0);
+    if (top > seen) { try { localStorage.setItem(SEEN, String(top)); } catch {} }
+    runExt("help", "notice", box, list);
+  };
+  const cached = SUPPORT.cached();
+  if (!SB.on()) return paint(cached, `공지사항은 웹 주소(${SITE.replace("https://", "")})에서 최신으로 볼 수 있어요.`);
+  box.innerHTML = cached.length ? "" : `<p class="note">불러오는 중…</p>`;
+  if (cached.length) paint(cached);
+  try { paint(await SUPPORT.notices()); }
+  catch (e) { paint(cached, supportErr(e) + (cached.length ? " 마지막으로 받은 공지를 보여 드려요." : "")); }
+}
+
+/* ---------------------------------------------------------------- 자주 묻는 질문(찾기 + 묶음별 접기) */
+function faqTab(box) {
+  box.innerHTML = `<div class="field faq-find"><label for="faqQ" class="sr">질문 찾기</label><input id="faqQ" type="search" placeholder="궁금한 것을 찾아보세요 (예: 하트, 비밀번호, 성인)" autocomplete="off"></div>
+    <div id="faqList">${faqGroups().map(([g, items]) => `<section class="faq-grp"><h3>${esc(g)}</h3>${items.map(([q, a]) => `<details class="faq"><summary>${esc(q)}</summary><div class="a">${a}</div></details>`).join("")}</section>`).join("")}</div>
+    <p class="empty" id="faqNone" hidden>찾는 질문이 없어요. <a href="#help-ask">문의하기</a>로 물어봐 주세요.</p>
+    <p class="note" style="margin-top:14px">찾는 답이 없으면 <a href="#help-ask">문의하기</a>로 알려 주세요.</p>`;
+  const q = $("#faqQ", box);
+  q.oninput = () => {
+    const t = q.value.trim().toLowerCase(); let any = false;
+    $$(".faq-grp", box).forEach((g) => {
+      let hit = 0;
+      $$("details", g).forEach((d) => { const ok = !t || d.textContent.toLowerCase().indexOf(t) >= 0; d.hidden = !ok; d.open = !!t && ok; if (ok) hit++; });
+      g.hidden = !hit; if (hit) any = true;
+    });
+    $("#faqNone", box).hidden = any;
+  };
+}
+
+/* ---------------------------------------------------------------- 문의하기(로그인한 사람만 — 본인 문의만 보임, RLS) */
+/** 내 문의 한 개. @param {Inquiry} a @returns {string} */
+function askHTML(a, extra = "") {
+  const cat = (ASK_CATS.find((c) => c[0] === a.category) || ["", "기타"])[1];
+  return `<details class="ask" data-aid="${+a.id}"><summary><span class="t"><span class="pill ${a.status === "open" ? "" : "ok"}">${ASK_STATUS[a.status] || esc(a.status)}</span><b>${esc(a.title)}</b></span><span class="d">${esc(cat)} · ${day(a.created_at)}</span></summary>
+    <div class="nbody">${rich(a.body)}</div>
+    ${a.answer ? `<div class="answer"><b>운영자 답변</b><span class="d">${day(a.answered_at)}</span><div>${rich(a.answer)}</div></div>` : ""}${extra}</details>`;
+}
+function askTab(box) {
+  const mail = `<a href="mailto:${SUPPORT_MAIL}">${SUPPORT_MAIL}</a>`;
+  if (!SB.on()) {
+    box.innerHTML = `<div class="box"><p>${IN_CLAUDE ? "claude.ai 안에서는 문의를 남길 수 없어요." : "계정 서버가 연결되지 않았어요."} 이메일 ${mail}로 보내 주시거나, 웹 주소(<a href="${SITE}" target="_blank" rel="noopener">${SITE.replace("https://", "")}</a>)에서 로그인한 뒤 문의해 주세요.</p></div>`;
+    runExt("help", "ask", box, []); return;
+  }
+  if (!SB.s) {
+    box.innerHTML = `<div class="box"><p>로그인하면 문의를 남기고 답변도 여기서 확인할 수 있어요.</p><div class="cta-row" style="margin-top:12px"><button class="btn pri" data-go="login">로그인 · 회원가입</button></div>
+      <p class="note" style="margin:12px 0 0">로그인하지 않고 문의하려면 ${mail}로 메일을 보내 주세요.</p></div>`;
+    bindGo(box); runExt("help", "ask", box, []); return;
+  }
+  box.innerHTML = `<form class="box ask-form" id="askForm" novalidate>
+      <p class="note" style="margin:0 0 4px"><b>${esc(acctName())}</b> 계정으로 남겨요. 답변은 아래 '내 문의'에서 확인할 수 있어요.</p>
+      <div class="two"><div class="field"><label for="aCat">분류</label><select id="aCat">${ASK_CATS.map(([k, l]) => `<option value="${k}">${l}</option>`).join("")}</select></div>
+        <div class="field"><label for="aMail">답변 받을 이메일 <span class="note">선택</span></label><input id="aMail" type="email" inputmode="email" autocomplete="email" maxlength="120" placeholder="이메일로도 답을 받으려면"></div></div>
+      <div class="field"><label for="aTitle">제목</label><input id="aTitle" maxlength="100" autocomplete="off"></div>
+      <div class="field"><label for="aBody" style="display:flex">내용<span class="spacer"></span><output id="aCnt" class="note">0 / 4000</output></label><textarea id="aBody" maxlength="4000" style="min-height:150px" placeholder="무엇을 하다가 어떤 일이 있었는지 적어 주시면 빨리 도와드릴 수 있어요. 비밀번호·API 키는 적지 마세요."></textarea></div>
+      <div class="toggle"><label for="aMeta">앱·브라우저 정보 함께 보내기 <span class="note">브라우저 종류·화면 크기·AI 연결 방식(오류 원인을 찾는 데 써요)</span></label><input type="checkbox" id="aMeta"></div>
+      <p class="lerr" id="aErr" role="alert"></p>
+      <div class="cta-row" style="margin-top:6px"><span class="note">문의 내용은 답변을 위해 계정을 삭제할 때까지 보관해요 · <a href="${docUrl("privacy.html")}#items" target="_blank" rel="noopener">개인정보처리방침</a></span><span class="spacer"></span><button class="btn pri" type="submit" id="aSend">보내기</button></div>
+    </form>
+    <h2 class="sec">내 문의 <small>하루 ${ASK_DAILY}건까지</small></h2><div id="askList"><p class="note">불러오는 중…</p></div>`;
+  const err = $("#aErr", box), body = $("#aBody", box);
+  // 선택 수집 항목이라 미리 켜 두지 않음 — 오류 신고를 고르면 켜 보라고 한 줄 안내
+  $("#aCat", box).onchange = (e) => { if (e.target.value === "bug" && !$("#aMeta", box).checked) err.textContent = "오류 신고는 '앱·브라우저 정보 함께 보내기'를 켜 주시면 원인을 찾기 쉬워요."; else if (err.textContent.indexOf("앱·브라우저") >= 0) err.textContent = ""; };
+  body.oninput = () => { $("#aCnt", box).textContent = body.value.length + " / 4000"; };
+  $("#askForm", box).onsubmit = async (e) => {
+    e.preventDefault();
+    const title = $("#aTitle", box).value.trim(), text = body.value.trim(), mail = $("#aMail", box).value.trim();
+    if (!title) { err.textContent = "제목을 적어 주세요."; return $("#aTitle", box).focus(); }
+    if (text.length < 5) { err.textContent = "내용을 5자 이상 적어 주세요."; return body.focus(); }
+    if (mail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail)) { err.textContent = "이메일 주소를 확인해 주세요."; return $("#aMail", box).focus(); }
+    const meta = $("#aMeta", box).checked ? { ua: String(navigator.userAgent || "").slice(0, 200), screen: innerWidth + "x" + innerHeight, engine: S.engine, app: TARGET, host: location.host || location.protocol } : null;
+    const btn = $("#aSend", box); btn.disabled = true; err.textContent = "";
+    try {
+      await SUPPORT.ask({ category: $("#aCat", box).value, title, body: text, reply_to: mail, meta });
+      toast("문의를 남겼어요. 답변이 오면 '내 문의'에서 볼 수 있어요");
+      $("#aTitle", box).value = ""; body.value = ""; body.oninput(); loadMine(box);
+    } catch (x) { err.textContent = supportErr(x); }
+    btn.disabled = false;
+  };
+  loadMine(box);
+}
+async function loadMine(box) {
+  const el = $("#askList", box); if (!el) return;
+  let list = [];
+  try { list = await SUPPORT.mine(); } catch (e) { el.innerHTML = `<p class="note help-msg">${esc(supportErr(e))}</p>`; runExt("help", "ask", box, []); return; }
+  el.innerHTML = list.length ? `<div class="nlist">${list.map((a) => askHTML(a, `<div class="cta-row" style="margin:8px 0 0"><span class="note">${ago(Date.parse(a.created_at))}</span><span class="spacer"></span><button type="button" class="btn sm ghost" data-adel="${+a.id}">지우기</button></div>`)).join("")}</div>`
+    : `<div class="empty">아직 남긴 문의가 없어요.</div>`;
+  $$("[data-adel]", el).forEach((b) => b.onclick = () => confirmSheet("이 문의를 지울까요?", "문의와 답변이 모두 지워지고 되돌릴 수 없어요.", "지우기", async () => {
+    try { await SUPPORT.dropAsk(+b.dataset.adel); toast("문의를 지웠어요"); loadMine(box); } catch (e) { toast(supportErr(e)); }
+  }));
+  runExt("help", "ask", box, list);
+}
+/* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/ui/home.js
    가져옴: src/js/content/index.js { HOME_ROWS, ORIGINALS }
            src/js/core/audience.js { AUDS, audOK, audOf, audience }
@@ -3847,6 +4344,7 @@ on("community", () => { if ((location.hash.slice(1) || "home") === "home") viewH
            src/js/services/sync.js { fixImgpacks, reloadFromCloud }
            src/js/services/vault.js { VAULT, VAULT_FIELDS }
            src/js/ui/account.js { firstSync }
+           src/js/ui/help.js { docUrl }
            src/js/ui/home.js { audSheet }
            src/js/ui/me.js { viewMe }
            src/js/ui/sheet.js { sheet }
@@ -3855,6 +4353,7 @@ on("community", () => { if ((location.hash.slice(1) || "home") === "home") viewH
    쓰는 곳: src/js/ui/account.js, src/js/app.js, src/js/boot.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 로그인·가입·비밀번호 찾기·소셜 로그인 화면, 키 잠금(금고) 시트 */
+
 
 
 
@@ -3898,7 +4397,7 @@ function viewLogin() {
     <p class="note lnote">이메일이 없어도 카카오·네이버·Google 계정으로 바로 가입돼요.</p>
     <button type="button" class="btn ghost block" id="lguest">로그인 없이 둘러보기</button>
     <p class="note">처음 로그인할 때 이 기기에 있던 대화·작품·그림을 계정으로 옮길 수 있어요. API 키는 로그인 비밀번호(소셜 로그인은 따로 정하는 키 잠금 암호)로 이 기기에서 암호화한 뒤 저장해서 서버에서도 볼 수 없어요(MY → 계정에서 끌 수 있어요).</p>
-    <p class="note lpriv"><a href="privacy.html">개인정보처리방침</a></p>
+    <p class="note lpriv"><a href="${esc(docUrl("terms.html"))}">이용약관</a> · <a href="${esc(docUrl("privacy.html"))}">개인정보처리방침</a></p>
   </div></div></div>`;
   const err = $("#lerr"), go2 = $("#lgo"), say = (t, ok) => { err.textContent = t; err.classList.toggle("ok", !!ok); };
   $$("#lmode button").forEach((b) => b.onclick = () => {
@@ -4166,6 +4665,7 @@ function bindAccount(v) {
            src/js/ui/chat/log.js { renderLog }
            src/js/ui/cover.js { pavHTML }
            src/js/ui/ext.js { runExt }
+           src/js/ui/help.js { checkNotices, docUrl, hasNewNotice }
            src/js/ui/home.js { audSegHTML, setAudience }
            src/js/ui/icons.js { ICON }
            src/js/ui/sheet.js { confirmSheet, sheet }
@@ -4173,7 +4673,8 @@ function bindAccount(v) {
    내보냄: viewMe, personaSheet
    쓰는 곳: src/js/ui/login.js, src/js/ui/account.js, src/js/ui/room-drawer.js, src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
-/* MY: 프로필·페르소나·관심있는 대화·채팅 설정·AI 연결·계정. #meExt 자리는 관리자 빌드가 EXT.me로 채움(크리에이터 프로필·이미지 생성 설정), '설정 저장'은 EXT.meSave도 부름 */
+/* MY: 프로필·페르소나·관심있는 대화·채팅 설정·AI 연결·계정·고객센터·약관 및 정책. #meExt 자리는 관리자 빌드가 EXT.me로 채움(크리에이터 프로필·이미지 생성 설정), '설정 저장'은 EXT.meSave도 부름 */
+
 
 
 
@@ -4246,8 +4747,18 @@ function viewMe() {
     <div id="meExt"></div>
     <div class="cta-row" style="margin-top:14px"><button class="btn pri" id="setSave">설정 저장</button><span class="spacer"></span><button class="btn sm danger" id="reset">모든 데이터 초기화</button></div>
     <p class="note">키와 데이터는 ${KV.dbOk ? "내 claude.ai 계정" : "이 브라우저"}에만 저장돼요 · 이미지: ${IMG.assets ? "아티팩트 저장소" : "압축 후 내 저장 공간"}</p>
+    <h2 class="sec">고객센터</h2>
+    <div class="box"><div class="menu-list" id="helpMenu">
+      <button data-go="help-notice">공지사항<span class="v" id="noticeNew">${hasNewNotice() ? "새 공지" : ""}</span></button>
+      <button data-go="help-faq">자주 묻는 질문</button>
+      <button data-go="help-ask">문의하기</button></div></div>
+    <h2 class="sec">약관 및 정책</h2>
+    <div class="box"><div class="menu-list">
+      <a href="${esc(docUrl("terms.html"))}" target="_blank" rel="noopener">이용약관</a>
+      <a href="${esc(docUrl("privacy.html"))}" target="_blank" rel="noopener">개인정보처리방침</a></div></div>
   </div>`;
   bindGo(v); IMG.hydrate(v);
+  checkNotices();
   runExt("me", v);
   $$("[data-def]", v).forEach((b) => b.onclick = () => { S.personas.forEach((p) => p.def = p.id === b.dataset.def); KV.set("personas", S.personas); viewMe(); });
   $$("[data-pedit]", v).forEach((b) => b.onclick = () => personaSheet(S.personas.find((p) => p.id === b.dataset.pedit), viewMe));
@@ -4316,113 +4827,6 @@ function personaSheet(p, after) {
     ov.remove(); after && after();
   };
   const del = $("#pdel", ov); if (del) del.onclick = () => { S.personas = S.personas.filter((x) => x !== p); if (!S.personas.some((x) => x.def)) S.personas[0].def = true; KV.set("personas", S.personas); ov.remove(); after && after(); };
-}
-/* ════════════════════════════════════════════════════════════════════════════════════════════════════
-   src/js/ui/store.js
-   가져옴: src/js/core/state.js { S }
-           src/js/core/util.js { $, $$, esc, num, won }
-           src/js/core/wallet.js { FREE_DAILY, PLAN, PLUS_MONTHLY, WELCOME, freeLeft, isPro, ledger, listPrice, saveWallet }
-           src/js/ui/sheet.js { sheet }
-           src/js/ui/shell.js { bindGo, route, topbar }
-   내보냄: PACKS, PLUS, buyPack, viewStore, checkout
-   쓰는 곳: src/js/ui/pay.js, src/js/app.js
-   ════════════════════════════════════════════════════════════════════════════════════════════════════ */
-/* 스토어: 하트 패키지·PLUS(데모 결제) */
-
-
-
-
-
-
-const PACKS = [
-  { id: "h100", n: 100, bonus: 0, price: 1900 },
-  { id: "h300", n: 300, bonus: 30, price: 4900 },
-  { id: "h1000", n: 1000, bonus: 150, price: 14900, best: true },
-  { id: "h3000", n: 3000, bonus: 600, price: 39000 }
-];
-const PLUS = { id: "plus", name: "HEART SYNC+ 1개월", price: 9900 };
-function buyPack(id, after) { const p = PACKS.find((x) => x.id === id); checkout({ id: p.id, name: "하트 " + num(p.n + p.bonus) + "개", price: p.price, hearts: p.n + p.bonus }, after); }
-function viewStore() {
-  const v = $("#view"), pro = isPro(), story = listPrice("story", "mid", 10);
-  const cell = (k, len) => { const l = listPrice(k, len, 10); return k === "lite" ? (len === "long" ? "♥" + l : "♥" + l) : "♥" + l; };
-  v.innerHTML = `<div class="page">${topbar()}
-    <h1 class="sec" style="margin-top:4px">스토어</h1>
-    <div class="statline">
-      <div class="box"><h3>오늘 무료 턴</h3><b>${pro ? "무제한" : freeLeft() + " / " + FREE_DAILY}</b><span class="note">라이트 모델 · 매일 자정에 다시 채워져요</span></div>
-      <div class="box"><h3>보유 하트</h3><b>♥ ${num(S.wallet.hearts)}</b><span class="note">스토리 모델 약 ${Math.floor(S.wallet.hearts / (pro ? Math.ceil(story / 2) : story))}턴</span></div>
-      <div class="box"><h3>요금제</h3><b>${pro ? "PLUS" : "무료"}</b><span class="note">${pro ? new Date(S.wallet.pro.until).toLocaleDateString("ko-KR") + "까지" : "기본 요금제"}</span></div>
-    </div>
-
-    <h2 class="sec">한 턴에 얼마나 드나요? <small>기억력 10턴 기준 · 10턴 늘 때마다 스토리 +♥1, 마스터 +♥2</small></h2>
-    <div class="tbl-wrap"><table class="tbl"><thead><tr><th>모델</th><th class="num">적게</th><th class="num">보통</th><th class="num">많게</th><th class="num plus">PLUS</th></tr></thead><tbody>
-      <tr><td><b>라이트</b> <span class="pill ok">매일 ${FREE_DAILY}턴 무료</span><div class="note">빠르고 가벼운 일상 대화</div></td><td class="num">${cell("lite", "short")}</td><td class="num">${cell("lite", "mid")}</td><td class="num">${cell("lite", "long")}</td><td class="num plus">무제한</td></tr>
-      <tr><td><b>스토리</b> <span class="pill">추천</span><div class="note">풍부한 묘사, 안정적인 캐릭터 연기</div></td><td class="num">${cell("story", "short")}</td><td class="num">${cell("story", "mid")}</td><td class="num">${cell("story", "long")}</td><td class="num plus">50% 할인</td></tr>
-      <tr><td><b>마스터</b><div class="note">소설 같은 몰입감, 복잡한 RPG 계산</div></td><td class="num">${cell("master", "short")}</td><td class="num">${cell("master", "mid")}</td><td class="num">${cell("master", "long")}</td><td class="num plus">50% 할인</td></tr>
-    </tbody></table></div>
-    <p class="note" style="margin-top:8px">보내기 버튼에 이번 턴 비용이 항상 표시돼요. 응답이 실패하면 자동으로 환불되고, 장기기억 요약·AI 추천·캐릭터 초안은 무료예요.</p>
-
-    <h2 class="sec">멤버십</h2>
-    <div class="member">
-      <h2>HEART SYNC<em>+</em></h2>
-      <ul>
-        <li>라이트 모델 무제한</li><li>스토리·마스터 모델 50% 할인</li><li>매달 하트 ${PLUS_MONTHLY}개 지급</li>
-        <li>장기기억 ${num(PLAN.free.memoMax)}자 → ${num(PLAN.pro.memoMax)}자</li><li>기억력 최대 ${PLAN.free.memTurns}턴 → ${PLAN.pro.memTurns}턴</li><li>대화방 무제한 · 기억 히스토리 ${PLAN.pro.hist}개</li>
-      </ul>
-      <div class="row"><span class="price">${won(PLUS.price)} <small>/ 월 · 언제든 해지</small></span><span class="spacer"></span>
-      ${pro ? `<span style="color:#e9dfcf">이용 중 · ${new Date(S.wallet.pro.until).toLocaleDateString("ko-KR")}까지</span>` : `<button class="btn gold" id="buyPlus">PLUS 시작하기</button>`}</div>
-    </div>
-    <div class="tbl-wrap" style="margin-top:12px"><table class="tbl"><thead><tr><th></th><th>무료</th><th class="plus">PLUS</th></tr></thead><tbody>
-      <tr><td>라이트 모델</td><td>하루 ${FREE_DAILY}턴, 이후 턴당 ♥1~2</td><td class="plus">무제한</td></tr>
-      <tr><td>스토리 · 마스터</td><td>턴당 ♥${listPrice("story", "mid", 10)} · ♥${listPrice("master", "mid", 10)}</td><td class="plus">턴당 ♥${Math.ceil(listPrice("story", "mid", 10) / 2)} · ♥${Math.ceil(listPrice("master", "mid", 10) / 2)}</td></tr>
-      <tr><td>매달 하트</td><td>없음 (첫 방문 ♥${WELCOME})</td><td class="plus">♥${PLUS_MONTHLY}</td></tr>
-      <tr><td>장기기억 · 기억력</td><td>${num(PLAN.free.memoMax)}자 · ${PLAN.free.memTurns}턴</td><td class="plus">${num(PLAN.pro.memoMax)}자 · ${PLAN.pro.memTurns}턴</td></tr>
-      <tr><td>캐릭터당 대화방</td><td>${PLAN.free.rooms}개</td><td class="plus">무제한</td></tr>
-    </tbody></table></div>
-
-    <h2 class="sec">하트 충전</h2>
-    <div class="packs">${PACKS.map((p) => `<button class="pack" data-pack="${p.id}">${p.best ? `<span class="best">인기</span>` : ""}
-      <span class="n"><em>♥</em> ${num(p.n)}</span><span class="bonus">${p.bonus ? "+ 보너스 " + num(p.bonus) : ""}</span>
-      <span class="per">스토리 약 ${Math.floor((p.n + p.bonus) / story)}턴 · 라이트 ${num(p.n + p.bonus)}턴</span>
-      <span class="p">${won(p.price)}</span></button>`).join("")}</div>
-    <p class="demo-note">이 스토어는 결제 흐름을 보여 주는 데모예요. 결제 버튼을 눌러도 실제로 청구되지 않고, 하트와 멤버십은 체험용으로만 지급돼요.</p>
-
-    <h2 class="sec">하트 사용 내역</h2>
-    ${S.wallet.ledger.length ? `<div class="tbl-wrap"><table class="tbl"><thead><tr><th>일시</th><th>내용</th><th class="num">하트</th></tr></thead><tbody>
-      ${S.wallet.ledger.slice(0, 25).map((h) => `<tr><td>${new Date(h.at).toLocaleString("ko-KR", { dateStyle: "short", timeStyle: "short" })}</td><td style="white-space:normal">${esc(h.label)}</td><td class="num ${h.d < 0 ? "minus" : h.d > 0 ? "plusv" : ""}">${h.d > 0 ? "+" : ""}${h.d ? num(h.d) : "0"}</td></tr>`).join("")}</tbody></table></div>`
-      : `<p class="note">아직 내역이 없어요.</p>`}
-    <h2 class="sec">결제 내역</h2>
-    ${S.wallet.history.length ? `<div class="tbl-wrap"><table class="tbl"><thead><tr><th>일시</th><th>상품</th><th class="num">금액</th></tr></thead><tbody>
-      ${S.wallet.history.slice(0, 20).map((h) => `<tr><td>${new Date(h.at).toLocaleString("ko-KR", { dateStyle: "short", timeStyle: "short" })}</td><td>${esc(h.name)}</td><td class="num">${won(h.price)} <span class="note">(데모)</span></td></tr>`).join("")}</tbody></table></div>`
-      : `<p class="note">아직 결제 내역이 없어요.</p>`}
-  </div>`;
-  bindGo(v);
-  const bp = $("#buyPlus"); if (bp) bp.onclick = () => checkout(PLUS);
-  $$("[data-pack]", v).forEach((b) => b.onclick = () => buyPack(b.dataset.pack));
-}
-function checkout(item, after) {
-  const vat = Math.round(item.price / 11);
-  const ov = sheet(`<h2>결제하기</h2><p class="sub">${esc(item.name)}${item.id === "plus" ? ` · 하트 ${PLUS_MONTHLY}개 포함` : ""}</p>
-    <div class="sumrow"><span>상품 금액</span><span>${won(item.price - vat)}</span></div>
-    <div class="sumrow"><span>부가세</span><span>${won(vat)}</span></div>
-    <div class="sumrow total"><span>최종 결제 금액</span><span>${won(item.price)}</span></div>
-    <div class="payopt" role="radiogroup" aria-label="결제 수단">
-      <label><input type="radio" name="pm" checked> 신용·체크카드</label><label><input type="radio" name="pm"> 간편결제</label><label><input type="radio" name="pm"> 휴대폰 결제</label>
-    </div>
-    <p class="demo-note">데모 결제예요. 결제 정보를 받지 않고, 실제로 청구되지 않아요.</p>
-    <div class="cta-row"><span class="spacer"></span><button class="btn ghost" data-x>취소</button><button class="btn pri" id="pay">${won(item.price)} 결제하기</button></div>`);
-  $("#pay", ov).onclick = () => {
-    const b = $("#pay", ov); b.disabled = true; b.textContent = "결제 승인 중…";
-    setTimeout(() => {
-      if (item.id === "plus") { const base = isPro() ? S.wallet.pro.until : Date.now(); S.wallet.pro = { until: base + 30 * 86400000 }; S.wallet.hearts += PLUS_MONTHLY; ledger(PLUS_MONTHLY, "PLUS 월간 하트"); }
-      else { S.wallet.hearts += item.hearts; ledger(item.hearts, item.name + " 충전"); }
-      S.wallet.history.unshift({ at: Date.now(), name: item.name, price: item.price }); S.wallet.history = S.wallet.history.slice(0, 50);
-      saveWallet();
-      $(".sheet", ov).innerHTML = `<div class="ok-mark">♥</div><h2 style="text-align:center">결제 완료</h2>
-        <p class="sub" style="text-align:center">${item.id === "plus" ? `HEART SYNC+가 시작됐어요. 라이트 무제한, 하트 ${PLUS_MONTHLY}개가 지급됐어요.` : `하트 ${num(item.hearts)}개가 지급됐어요. 지금 ♥ ${num(S.wallet.hearts)}`}</p>
-        <button class="btn pri block" id="done">${after ? "대화로 돌아가기" : "확인"}</button>`;
-      $("#done", ov).onclick = () => { ov.remove(); if (after) after(); else route(); };
-    }, 1000);
-  };
 }
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/ui/pay.js
@@ -5371,7 +5775,7 @@ function stopGen() { if (gen) gen.ctl.abort(); }
            src/js/ui/icons.js { ICON }
            src/js/ui/sheet.js { closeOverlays }
    내보냄: registerViews, setNavs, go, route, LOGO, renderShell, renderRailRecent, renderWalletChips, topbar, bindGo
-   쓰는 곳: src/js/ui/home.js, src/js/ui/login.js, src/js/ui/me.js, src/js/ui/store.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/detail.js, src/js/ui/chats.js, src/js/app.js, src/js/admin/gate.js, src/js/admin/image-studio.js, src/js/admin/tools.js, src/js/admin/studio.js, src/js/admin/works.js, src/js/boot.js, src/js/admin.js
+   쓰는 곳: src/js/ui/store.js, src/js/ui/help.js, src/js/ui/home.js, src/js/ui/login.js, src/js/ui/me.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/detail.js, src/js/ui/chats.js, src/js/app.js, src/js/admin/gate.js, src/js/admin/image-studio.js, src/js/admin/tools.js, src/js/admin/support.js, src/js/admin/studio.js, src/js/admin/works.js, src/js/boot.js, src/js/admin.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 라우팅(go·route)·레일·탭바·상단바·지갑 칩. 화면은 진입점(main.js·admin.js)이 registerViews·setNavs로 등록한다 — 셸은 어떤 화면이 있는지 모른다.
    아래층의 "rooms"·"wallet"·"route" 이벤트를 받아 레일·칩·화면을 다시 그림 */
@@ -5399,7 +5803,7 @@ function route() {
   document.body.classList.toggle("in-chat", h.startsWith("r-"));
   const [base, ...rest] = h.split("-"); const arg = rest.join("-");
   const view = VIEWS[base] || VIEWS.home;
-  setNav(base === "c" ? "home" : base === "r" ? "chats" : base === "login" ? "me" : VIEWS[base] ? base : "home");
+  setNav(base === "c" ? "home" : base === "r" ? "chats" : base === "login" || base === "help" ? "me" : VIEWS[base] ? base : "home");
   return view ? view(arg) : undefined;
 }
 const LOGO = `<div class="logo"><span class="mark" aria-hidden="true"></span><span>HEART <i>SYNC</i></span></div>`;
@@ -5566,6 +5970,7 @@ function viewChats() {
            src/js/ui/store.js { viewStore }
            src/js/ui/login.js { viewLogin }
            src/js/ui/me.js { viewMe }
+           src/js/ui/help.js { viewHelp }
    내보냄: USER_VIEWS, USER_NAVS
    쓰는 곳: src/js/admin.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
@@ -5624,8 +6029,10 @@ function viewChats() {
 
 
 
-/* 해시 앞부분 → 화면. 상세(c-<id>)·대화방(r-<id>)은 "-" 뒤를 인자로 받음 */
-const USER_VIEWS = { home: viewHome, c: viewDetail, r: viewChat, chats: viewChats, store: viewStore, me: viewMe, login: viewLogin };
+
+
+/* 해시 앞부분 → 화면. 상세(c-<id>)·대화방(r-<id>)·고객센터(help-<탭>)는 "-" 뒤를 인자로 받음 */
+const USER_VIEWS = { home: viewHome, c: viewDetail, r: viewChat, chats: viewChats, store: viewStore, me: viewMe, login: viewLogin, help: viewHelp };
 const USER_NAVS = [["home", "홈", "home"], ["chats", "대화", "chat"], ["store", "스토어", "heart"], ["me", "MY", "user"]];
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/admin/codes.js
@@ -7365,6 +7772,136 @@ async function autoImages(r, body) {
 }
 EXT.afterTurn.push((r, body) => { autoImages(r, body).catch(() => {}); });
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
+   src/js/admin/support.js
+   가져옴: src/js/core/util.js { $, $$, esc, toast }
+           src/js/services/supabase.js { SB }
+           src/js/services/support.js { ASK_STATUS, SUPPORT, supportErr }
+           src/js/ui/ext.js { EXT }
+           src/js/ui/help.js { askHTML, viewHelp }
+           src/js/ui/icons.js { ICON }
+           src/js/ui/sheet.js { confirmSheet, sheet }
+           src/js/ui/shell.js { go }
+   쓰는 곳: src/js/admin.js
+   ════════════════════════════════════════════════════════════════════════════════════════════════════ */
+/* 고객센터 관리(관리자 빌드만 — EXT.help·EXT.me에 꽂음): 공지사항 탭에 '새 공지'와 공지마다 고치기·삭제, 문의하기 탭 아래에 받은 문의(상태별 — 답변·상태·삭제), MY에 답변 대기 수.
+   쓰기 권한은 서버가 정한다 — Supabase admins 표에 이 계정 id가 있어야 하고(docs/supabase.sql 맨 아래), 아니면 그 방법과 내 계정 id를 보여 줌.
+   사용자 화면(ui/help.js)이 탭을 그릴 때마다 불리므로(공지는 기기 사본 → 서버 목록으로 두 번) 이미 넣었으면 다시 넣지 않고, 기다리는 사이 화면이 바뀌었으면 그만둔다 */
+
+
+
+
+
+
+
+
+/** @typedef {import("../core/types.js").Notice} Notice */
+/** @typedef {import("../core/types.js").Inquiry} Inquiry */
+
+const INBOX = [["open", "답변 대기"], ["answered", "답변 완료"], ["closed", "종료"], ["", "전체"]];
+let inboxStatus = "open"; // 받은 문의 거르기(세션 동안 남음)
+
+// 이 계정이 관리자인지 — 아니면 이유를 box 맨 위에 한 번 적음. stale()이 참이면(기다리는 사이 화면이 바뀜) 아무것도 안 함
+async function adminOK(box, what, stale) {
+  if (!SB.on()) return false;
+  if (!SB.s) { if (!stale()) note(box, `${what} 관리자 계정으로 로그인해 주세요.`); return false; }
+  const yes = await SUPPORT.amAdmin();
+  if (stale()) return false;
+  if (!yes) note(box, `이 계정은 고객센터 관리자가 아니에요. Supabase 대시보드 → SQL Editor에서 아래 한 줄을 실행하면 관리자가 돼요(docs/supabase.sql을 먼저 실행).<pre>insert into public.admins (user_id) values ('${esc(SB.s.user.id)}');</pre>`);
+  return yes;
+}
+function note(box, html) { if (!$(".adm-note", box)) box.insertAdjacentHTML("afterbegin", `<div class="box adm-note"><span class="pill">관리자</span> ${html}</div>`); }
+// 기다리기 전의 첫 자식을 기억해 화면이 다시 그려졌는지 봄
+const watch = (box) => { const first = box.firstElementChild; return () => !box.isConnected || box.firstElementChild !== first; };
+
+EXT.help.push(async (tab, box, list) => {
+  const stale = watch(box);
+  if (tab === "notice") {
+    if (!(await adminOK(box, "공지를 쓰려면", stale))) return;
+    if (!$("#nNew", box)) {
+      box.insertAdjacentHTML("afterbegin", `<div class="cta-row adm-bar"><span class="pill">관리자</span><span class="note">비공개 공지도 보여요</span><span class="spacer"></span><button class="btn sm pri" id="nNew">+ 새 공지</button></div>`);
+      $("#nNew", box).onclick = () => noticeSheet(null);
+    }
+    $$("details.notice", box).forEach((d) => {
+      const n = list.find((x) => +x.id === +d.dataset.nid); if (!n || $(".nadm", d)) return;
+      d.insertAdjacentHTML("beforeend", `<div class="cta-row nadm"><span class="spacer"></span><button type="button" class="btn sm danger" data-ndel>삭제</button><button type="button" class="btn sm" data-ned>고치기</button></div>`);
+      $("[data-ned]", d).onclick = () => noticeSheet(n);
+      $("[data-ndel]", d).onclick = () => confirmSheet("이 공지를 지울까요?", `‘${n.title}’ 공지가 모든 사용자에게서 사라져요. 되돌릴 수 없어요.`, "삭제", async () => {
+        try { await SUPPORT.dropNotice(n.id); toast("공지를 지웠어요"); viewHelp("notice"); } catch (e) { toast(supportErr(e)); }
+      });
+    });
+  }
+  if (tab === "ask") {
+    if (!(await adminOK(box, "받은 문의를 보려면", stale)) || $("#inbox", box)) return;
+    box.insertAdjacentHTML("beforeend", `<h2 class="sec">받은 문의 <small>관리자 — 모든 사용자의 문의</small></h2>
+      <div class="seg" id="inSeg">${INBOX.map(([k, l]) => `<button type="button" data-in="${k}" class="${k === inboxStatus ? "on" : ""}">${l}</button>`).join("")}</div><div id="inbox" class="nlist" style="margin-top:10px"></div>`);
+    $$("[data-in]", box).forEach((b) => b.onclick = () => { inboxStatus = b.dataset.in; $$("[data-in]", box).forEach((x) => x.classList.toggle("on", x === b)); loadInbox(box); });
+    loadInbox(box);
+  }
+});
+
+/* 받은 문의: 문의마다 계정·답변 이메일·앱 정보, 답변 칸·상태·저장·삭제 */
+async function loadInbox(box) {
+  const el = $("#inbox", box); if (!el) return;
+  el.innerHTML = `<p class="note">불러오는 중…</p>`;
+  let list;
+  try { list = await SUPPORT.inbox(inboxStatus); } catch (e) { el.innerHTML = `<p class="note">${esc(supportErr(e))}</p>`; return; }
+  if (!list.length) { el.innerHTML = `<div class="empty">${inboxStatus ? esc(ASK_STATUS[inboxStatus]) + " 문의가 없어요." : "받은 문의가 없어요."}</div>`; return; }
+  el.innerHTML = list.map((a) => askHTML(a, inboxExtra(a))).join("");
+  $$("details.ask", el).forEach((d) => {
+    const a = list.find((x) => +x.id === +d.dataset.aid); if (!a) return;
+    $("[data-save]", d).onclick = async (e) => {
+      e.target.disabled = true;
+      try { await SUPPORT.answer(a.id, { answer: $("[data-ans]", d).value.trim(), status: $("[data-st]", d).value }); toast("답변을 저장했어요"); loadInbox(box); }
+      catch (x) { toast(supportErr(x)); e.target.disabled = false; }
+    };
+    $("[data-del]", d).onclick = () => confirmSheet("이 문의를 지울까요?", "쓴 사람의 '내 문의'에서도 사라져요. 되돌릴 수 없어요.", "삭제", async () => {
+      try { await SUPPORT.dropAsk(a.id); toast("문의를 지웠어요"); loadInbox(box); } catch (x) { toast(supportErr(x)); }
+    });
+  });
+}
+/** @param {Inquiry} a @returns {string} */
+function inboxExtra(a) {
+  const m = a.meta || {}, info = [m.engine && "AI " + m.engine, m.screen, m.host, m.app].filter(Boolean).join(" · ");
+  return `<div class="adm-ask">
+    <p class="note">계정 ${esc(String(a.user_id || "").slice(0, 8))}…${a.reply_to ? ` · 답변 이메일 <a href="mailto:${esc(a.reply_to)}">${esc(a.reply_to)}</a>` : ""}${info ? " · " + esc(info) : ""}</p>
+    ${m.ua ? `<p class="note ua">${esc(m.ua)}</p>` : ""}
+    <div class="field"><label for="ans${+a.id}">답변 <span class="note">쓰면 '답변 완료'로 바뀌어요</span></label><textarea id="ans${+a.id}" data-ans maxlength="4000">${esc(a.answer || "")}</textarea></div>
+    <div class="cta-row"><select data-st class="inp" aria-label="상태">${Object.keys(ASK_STATUS).map((k) => `<option value="${k}" ${k === a.status ? "selected" : ""}>${ASK_STATUS[k]}</option>`).join("")}</select><span class="spacer"></span>
+      <button type="button" class="btn sm danger" data-del>삭제</button><button type="button" class="btn sm pri" data-save>저장</button></div></div>`;
+}
+
+/** 공지 쓰기·고치기 시트. @param {Notice|null} n */
+function noticeSheet(n) {
+  const ov = sheet(`<div class="sheet-head"><h2>${n ? "공지 고치기" : "새 공지"}</h2><button class="icon-btn" data-x aria-label="닫기">${ICON.close}</button></div>
+    <div class="field"><label for="ntT">제목</label><input id="ntT" maxlength="120" value="${esc(n ? n.title : "")}"></div>
+    <div class="field"><label for="ntB">내용 <span class="note">줄바꿈 그대로, 주소는 링크로 보여요</span></label><textarea id="ntB" maxlength="8000" style="min-height:200px">${esc(n ? n.body : "")}</textarea></div>
+    <div class="toggle" style="margin-top:12px"><label for="ntP">맨 위에 고정</label><input type="checkbox" id="ntP" ${n && n.pinned ? "checked" : ""}></div>
+    <div class="toggle" style="margin-top:8px"><label for="ntV">공개 <span class="note">끄면 관리자에게만 보여요</span></label><input type="checkbox" id="ntV" ${n && n.published === false ? "" : "checked"}></div>
+    <p class="lerr" id="ntE" role="alert"></p>
+    <div class="cta-row" style="margin-top:4px"><span class="spacer"></span><button class="btn ghost" data-x>취소</button><button class="btn pri" id="ntS">${n ? "저장" : "올리기"}</button></div>`);
+  $("#ntT", ov).focus();
+  $("#ntS", ov).onclick = async (e) => {
+    const title = $("#ntT", ov).value.trim();
+    if (!title) { $("#ntE", ov).textContent = "제목을 적어 주세요."; return $("#ntT", ov).focus(); }
+    e.target.disabled = true;
+    try {
+      await SUPPORT.saveNotice({ id: n ? n.id : undefined, title, body: $("#ntB", ov).value.trim(), pinned: $("#ntP", ov).checked, published: $("#ntV", ov).checked });
+      ov.remove(); toast(n ? "공지를 고쳤어요" : "공지를 올렸어요"); viewHelp("notice");
+    } catch (x) { $("#ntE", ov).textContent = supportErr(x); e.target.disabled = false; }
+  };
+}
+
+/* MY(관리자 도구): 고객센터 관리 칸 — 답변 대기 수 */
+EXT.me.push((v) => {
+  const box = $("#meExt", v); if (!box || !SB.on() || !SB.s) return;
+  box.insertAdjacentHTML("beforeend", `<h2 class="sec">고객센터 관리 <small>관리자 도구</small></h2>
+    <div class="box"><div class="menu-list"><button data-hgo="help-ask">받은 문의<span class="v" id="inOpen">확인 중…</span></button><button data-hgo="help-notice">공지 쓰기·고치기</button></div></div>`);
+  $$("[data-hgo]", box).forEach((b) => b.onclick = () => go(b.dataset.hgo));
+  const out = (t) => { const el = $("#inOpen", box); if (el) el.textContent = t; };
+  SUPPORT.amAdmin().then((yes) => yes ? SUPPORT.inbox("open").then((l) => out(l.length ? `답변 대기 ${l.length}건` : "대기 없음")) : out("관리자 계정 아님"))
+    .catch((e) => out(supportErr(e).slice(0, 24)));
+});
+/* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/admin/migrate.js
    가져옴: src/js/core/settings.js { saveSettings }
            src/js/core/state.js { S }
@@ -7846,9 +8383,10 @@ async function boot(opts = {}) {
    쓰는 곳: (진입점 — 아무도 import하지 않음)
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 관리자 도구(admin.html) 진입점: 사용자 사이트의 모든 모듈(app.js) 위에 관리자 모듈(src/js/admin/)을 더해 부팅한다.
-   더해지는 것 — 화면: 작품(#works)·만들기(#studio)·이미지 스튜디오(#images — 예전 #codetest 주소도 여기로) / 관리자 전용 코드(admin/codes.js) / EXT 고리: 상세·드로어·MY·페르소나 시트의 이미지 관리 버튼, 대화 중 그림 자동 생성 / 설정 이전: 그림체·이미지 모델.
+   더해지는 것 — 화면: 작품(#works)·만들기(#studio)·이미지 스튜디오(#images — 예전 #codetest 주소도 여기로) / 관리자 전용 코드(admin/codes.js) / EXT 고리: 상세·드로어·MY·페르소나 시트의 이미지 관리 버튼, 대화 중 그림 자동 생성, 고객센터의 공지 쓰기·받은 문의(admin/support.js) / 설정 이전: 그림체·이미지 모델.
    사용자 빌드와 같은 저장소(이 브라우저·계정)를 쓰므로, 여기서 만든 그림·코드 표는 '작품 폴더에 저장'으로 content/에 써야 사용자 사이트에 실린다(admin/export.js).
    admin.html은 커밋·배포되며(https://…/HEARTSYNC/admin.html) 웹 주소로 열면 비밀번호 관문(admin/gate.js)을 지나야 부팅한다 — 로컬(localhost·file://)은 묻지 않음 */
+
 
 
 

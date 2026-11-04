@@ -9,6 +9,7 @@ import { OAUTH_ICONS, PROVIDERS, SB, acctName, provName } from "../services/supa
 import { fixImgpacks, reloadFromCloud } from "../services/sync.js";
 import { VAULT, VAULT_FIELDS } from "../services/vault.js";
 import { firstSync } from "./account.js";
+import { docUrl } from "./help.js";
 import { audSheet } from "./home.js";
 import { viewMe } from "./me.js";
 import { sheet } from "./sheet.js";
@@ -42,7 +43,7 @@ export function viewLogin() {
     <p class="note lnote">이메일이 없어도 카카오·네이버·Google 계정으로 바로 가입돼요.</p>
     <button type="button" class="btn ghost block" id="lguest">로그인 없이 둘러보기</button>
     <p class="note">처음 로그인할 때 이 기기에 있던 대화·작품·그림을 계정으로 옮길 수 있어요. API 키는 로그인 비밀번호(소셜 로그인은 따로 정하는 키 잠금 암호)로 이 기기에서 암호화한 뒤 저장해서 서버에서도 볼 수 없어요(MY → 계정에서 끌 수 있어요).</p>
-    <p class="note lpriv"><a href="privacy.html">개인정보처리방침</a></p>
+    <p class="note lpriv"><a href="${esc(docUrl("terms.html"))}">이용약관</a> · <a href="${esc(docUrl("privacy.html"))}">개인정보처리방침</a></p>
   </div></div></div>`;
   const err = $("#lerr"), go2 = $("#lgo"), say = (t, ok) => { err.textContent = t; err.classList.toggle("ok", !!ok); };
   $$("#lmode button").forEach((b) => b.onclick = () => {

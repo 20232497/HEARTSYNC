@@ -2,9 +2,10 @@
 // 각 작품의 첫 시작 상황으로 연 대화방(오프닝 본문·상태창·입력창), 대화방 드로어·모델 시트·페르소나·관심있는 대화·PLUS·확인 시트.
 // 관리자 도구의 화면·시트(만들기·이미지 슬롯·세계관 일러스트·추천 칸)는 admin.mjs. pageerror와 console error를 모아 errs에 담는다 — 모듈 분리 뒤 어떤 화면에서든 ReferenceError가 나면 여기서 잡힘.
 import { chromium, webkit, devices } from "playwright";
+import { noSupabase } from "./_offline.mjs";
 const [, , url, out] = process.argv;
 for (const [dev, engine, opts] of [["Desktop Chrome", chromium, {}], ["iPhone 13", webkit, devices["iPhone 13"]]]) {
-  const b = await engine.launch(); const ctx = await b.newContext({ ...opts }); const p = await ctx.newPage();
+  const b = await engine.launch(); const ctx = await b.newContext({ ...opts }); await noSupabase(ctx); const p = await ctx.newPage();
   const errs = []; p.on("pageerror", (e) => errs.push("pageerror: " + e.message)); p.on("console", (m) => { if (m.type() === "error") errs.push("console: " + m.text().slice(0, 160)); });
   const res = { dev, views: {}, works: 0, rooms: 0, sheets: {} };
   const wait = (ms) => p.waitForTimeout(ms);
