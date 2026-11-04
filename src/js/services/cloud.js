@@ -1,8 +1,9 @@
 /* 계정 저장(CLOUD): KV를 계정 kv 표에 모아 올리고 받기, 기기별 설정 분리 */
+import { emit, on } from "../core/events.js";
 import { roomKey } from "../core/rooms.js";
 import { S, room } from "../core/state.js";
 import { IDB, KV } from "../core/storage.js";
-import { $, ago } from "../core/util.js";
+import { ago } from "../core/util.js";
 import { validRef } from "./images.js";
 import { SB } from "./supabase.js";
 import { VAULT, VAULT_FIELDS } from "./vault.js";
@@ -16,7 +17,7 @@ export const CLOUD = {
   lastKey() { return "hv1_cloudlast_" + this.uid; },
   start() { this.on = SB.on() && !!(SB.s && SB.s.user && SB.s.user.id); this.uid = this.on ? SB.s.user.id : null; this.noTable = false; if (this.on) VAULT.load(this.uid); },
   stop() { this.on = false; this.uid = null; this.pending = {}; clearTimeout(this.timer); clearTimeout(VAULT.timer); VAULT.timer = null; this.setState(""); },
-  setState(s) { this.state = s; if (s === "ok") this.at = Date.now(); const el = $("#cloudState"); if (el) el.textContent = cloudStateText(); },
+  setState(s) { this.state = s; if (s === "ok") this.at = Date.now(); emit("cloud"); },
   put(k, v) {
     if (!this.on || this.noTable) return;
     this.pending[k] = v === undefined ? null : { v };
@@ -128,6 +129,9 @@ function chunkBy(items, max) {
   if (cur.length) out.push(cur);
   return out;
 }
+// core가 services를 모르게 고리로 꽂음: KV.set → 계정에도, 설정 저장 → "settings" 행
+KV.remote = (k, v) => CLOUD.put(k, v);
+on("settings", () => CLOUD.put("settings", cloudSettings()));
 // 이 기기 KV 키(그림·설정·세션·키 잠금 제외 — 그림은 IndexedDB, 설정은 "settings" 키로 따로)
 function localKVKeys() {
   try { return Object.keys(localStorage).filter((k) => k.indexOf("hv1_") === 0).map((k) => k.slice(4)).filter((k) => !/^(settings|auth|guest|cloudlast_.*|cloudfix_.*|vault_.*|img[a-z0-9]{6,30})$/.test(k)); } catch { return []; }

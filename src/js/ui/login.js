@@ -1,6 +1,7 @@
 /* 로그인·가입·비밀번호 찾기·소셜 로그인 화면, 키 잠금(금고) 시트 */
 import { AUDS } from "../core/audience.js";
 import { IN_CLAUDE } from "../core/config.js";
+import { on } from "../core/events.js";
 import { S } from "../core/state.js";
 import { $, $$, esc, toast } from "../core/util.js";
 import { CLOUD } from "../services/cloud.js";
@@ -130,6 +131,7 @@ export function vaultHTML() {
   return `<p class="note">🔐 API 키는 ${ph ? "키 잠금 암호" : "로그인 비밀번호"}로 이 기기에서 암호화한 뒤 올려요. 서버와 관리자도 키를 볼 수 없어요.</p>`;
 }
 export function paintVault() { const el = $("#vaultBox"); if (!el) return; el.innerHTML = vaultHTML(); const b = $("#vUnlock", el); if (b) b.onclick = () => { if (VAULT.phrase()) phraseSheet(); else vaultSheet(); }; }
+on("vault", paintVault); // 금고 상태가 바뀌면(services/vault) MY → 계정 칸을 다시 그림
 // 비밀번호 없는 계정의 키 잠금 암호: 계정에 잠긴 키가 없으면 정하고, 있으면 넣어서 풂(reset: 잊어서 새로 정함 — 계정의 잠긴 키는 이 기기 키로 바뀜)
 export async function phraseSheet(reset) {
   if (!SB.s) return;

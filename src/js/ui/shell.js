@@ -1,21 +1,21 @@
-/* 라우팅(go·route)·레일·탭바·상단바·지갑 칩 */
+/* 라우팅(go·route)·레일·탭바·상단바·지갑 칩. 화면은 진입점(main.js·admin.js)이 registerViews·setNavs로 등록한다 — 셸은 어떤 화면이 있는지 모른다.
+   아래층의 "rooms"·"wallet"·"route" 이벤트를 받아 레일·칩·화면을 다시 그림 */
+import { on } from "../core/events.js";
 import { S, gen } from "../core/state.js";
+import { isAdmin } from "../core/target.js";
 import { $, $$, esc, num } from "../core/util.js";
 import { freeLeft, isPro } from "../core/wallet.js";
 import { IMG } from "../services/images.js";
 import { stopGen } from "./chat/generate.js";
-import { updateComposer, viewChat } from "./chat/view.js";
-import { viewChats } from "./chats.js";
+import { updateComposer } from "./chat/view.js";
 import { coverHTML } from "./cover.js";
-import { viewDetail } from "./detail.js";
-import { viewHome } from "./home.js";
 import { ICON } from "./icons.js";
-import { viewLogin } from "./login.js";
-import { viewMe } from "./me.js";
 import { closeOverlays } from "./sheet.js";
-import { viewStore } from "./store.js";
-import { viewStudio } from "./studio.js";
 
+const VIEWS = {}; // 해시 앞부분 → 화면 함수. "c-<id>"·"r-<id>"처럼 "-" 뒤는 인자로 넘김
+let NAVS = [];    // 레일·탭바 메뉴 [해시, 이름, ICON 키]
+export function registerViews(map) { Object.assign(VIEWS, map); }
+export function setNavs(list) { NAVS = list; }
 export function go(hash) { if (location.hash === "#" + hash) route(); else location.hash = hash; }
 export function route() {
   const h = location.hash.slice(1) || "home";
@@ -23,20 +23,13 @@ export function route() {
   if (gen && !h.startsWith("r-")) stopGen();
   document.body.classList.toggle("in-chat", h.startsWith("r-"));
   const [base, ...rest] = h.split("-"); const arg = rest.join("-");
-  setNav(base === "c" ? "home" : base === "r" ? "chats" : base === "login" ? "me" : base);
-  if (base === "c") return viewDetail(arg);
-  if (base === "r") return viewChat(arg);
-  if (base === "chats") return viewChats();
-  if (base === "studio") return viewStudio(arg);
-  if (base === "store") return viewStore();
-  if (base === "me") return viewMe();
-  if (base === "login") return viewLogin();
-  return viewHome();
+  const view = VIEWS[base] || VIEWS.home;
+  setNav(base === "c" ? "home" : base === "r" ? "chats" : base === "login" ? "me" : VIEWS[base] ? base : "home");
+  return view ? view(arg) : undefined;
 }
 export const LOGO = `<div class="logo"><span class="mark" aria-hidden="true"></span><span>HEART <i>SYNC</i></span></div>`;
-const NAVS = [["home", "홈", "home"], ["chats", "대화", "chat"], ["studio", "만들기", "plus"], ["store", "스토어", "heart"], ["me", "MY", "user"]];
 export function renderShell() {
-  $("#rail").innerHTML = LOGO +
+  $("#rail").innerHTML = LOGO + (isAdmin() ? `<span class="pill" style="margin:-8px 0 8px 14px;justify-self:start">관리자 도구</span>` : "") +
     NAVS.map(([k, l, i]) => `<button class="nav" data-nav="${k}">${ICON[i]}<span>${l}</span></button>`).join("") +
     `<h4>최근 대화</h4><div id="railRecent"></div><div class="rail-foot"><button class="wallet" id="railWallet" aria-label="내 재화, 스토어로 이동"></button></div>`;
   $("#tabbar").innerHTML = NAVS.map(([k, l, i]) => `<button data-nav="${k}">${ICON[i]}<span>${l}</span></button>`).join("");
@@ -62,3 +55,4 @@ export function topbar(extra = "") {
     <button class="wallet" data-go="store" aria-label="내 재화, 스토어로 이동">${walletHTML()}</button></div>`;
 }
 export function bindGo(root) { $$("[data-go]", root).forEach((b) => b.onclick = () => go(b.dataset.go)); }
+on("rooms", renderRailRecent); on("wallet", renderWalletChips); on("route", route);

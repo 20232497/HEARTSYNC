@@ -2,7 +2,7 @@
 <html lang="ko">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<!-- index.html은 빌드 결과물(npm run build)이에요. 고칠 땐 src/·content/를 고치세요 — README "소스 구조" -->
+<!--! index.html은 빌드 결과물(npm run build)이에요. 고칠 땐 src/·content/를 고치세요 — README "소스 구조". 주석은 빌드가 벗겼어요(소스에 있어요) -->
 <title>HEART SYNC</title>
 <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
@@ -31,10 +31,10 @@ window.addEventListener("error", function (e) {
 </script>
 <script>
 "use strict";
-/* ================================================================
-   HEART SYNC — 캐릭터 대화형 에피소드 플랫폼 (단일 파일 프로토타입 v2)
-   - LLM: claude.ai 아티팩트에서는 sample capability(뷰어 계정), 로컬 파일에서는 Anthropic API 키(BYOK)
-   - 저장: db capability(뷰어 비공개 공간) 우선, 없으면 localStorage / 이미지: assets → 없으면 압축 data URL
+/*! ================================================================
+   HEART SYNC — 캐릭터 대화형 에피소드 플랫폼. 사용자 사이트(단일 파일, 빌드 결과물 — 소스는 src/js. 아래 스크립트는 모듈마다 "── 파일 — 설명" 머리로 시작)
+   - LLM: claude.ai 아티팩트에서는 sample capability(뷰어 계정), 로컬 파일·웹에서는 Anthropic API 키(BYOK) 또는 서버 프록시(window.HEARTVERSE_CONFIG)
+   - 저장: db capability(뷰어 비공개 공간) 우선, 없으면 localStorage(+ 로그인하면 Supabase 계정) / 이미지: assets → 없으면 IndexedDB
    - 결제: 하트·멤버십 경제 시스템은 데모(실제 청구 없음)
    ================================================================ */
 <!-- @script js/main.js -->

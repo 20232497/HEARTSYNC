@@ -1,11 +1,17 @@
-// HEART SYNC 빌드: src/(뼈대·CSS·ES 모듈)와 content/(작품 폴더)를 합쳐 저장소 루트에 index.html 한 파일을 만든다.
-// 배포물은 늘 이 한 파일(클래식 스크립트 하나) — GitHub Pages·로컬 파일(file://)·claude.ai artifact가 그대로 띄운다.
-//   node tools/build.mjs           index.html 만들기 (npm run build)
-//   node tools/build.mjs --check   index.html이 지금 소스로 만든 결과와 같은지만 확인 (npm run check, GitHub Actions)
+// HEART SYNC 빌드: src/(뼈대·CSS·ES 모듈)와 content/(작품 폴더)를 합쳐 저장소 루트에 한 파일씩 만든다 — 대상(TARGETS) 둘:
+//   user  → index.html  사용자 사이트. GitHub Pages·로컬 파일(file://)·claude.ai artifact가 그대로 띄우는 배포물. 주석을 벗기고 빈 줄을 지워 작게(아래 '주석 정책')
+//   admin → admin.html  관리자 도구(git에 안 넣음, 로컬에서 열기). 같은 소스 + src/js/admin/ 모듈. 주석을 모두 남기고 모듈마다 설명 머리(가져옴·내보냄·쓰는 곳)를 붙임
+//   node tools/build.mjs                 둘 다 만들기 (npm run build)
+//   node tools/build.mjs --only user     하나만 (Vercel은 사용자 사이트만)
+//   node tools/build.mjs --check         index.html이 지금 소스로 만든 결과와 같은지만 확인(admin.html은 만들어지는지만) (npm run check, GitHub Actions)
 //
-// 모듈 번들: src/js/main.js에서 import를 따라가며 모듈을 읽고, 의존 모듈이 먼저 오도록 순서를 정한 뒤 import/export 줄만 벗겨
-// 이어 붙인다(모듈 안의 줄 번호는 그대로). 그 전에 검사한다 — 선언도 import도 안 된 이름, export 안 된 이름 import, 같은 이름 두 번 선언,
-// import한 바인딩에 대입, 맨 윗단(함수 밖)에서 뒤에 오는 모듈의 const/class 사용(순환 의존), 인라인 스크립트 문법, 오래된 iOS 문법.
+// 모듈 번들: 진입점(src/js/main.js 또는 admin.js)에서 import를 따라가며 모듈을 읽고, 의존 모듈이 먼저 오도록 순서를 정한 뒤 import/export 줄만 벗겨
+// 이어 붙인다(모듈 안의 줄 번호는 그대로 — 사용자 빌드는 빈 줄을 지우므로 .build/linemap.json으로 원본 줄을 찾는다). 그 전에 검사한다 —
+// 선언도 import도 안 된 이름, export 안 된 이름 import, 같은 이름 두 번 선언, import한 바인딩에 대입, 맨 윗단(함수 밖)에서 뒤에 오는 모듈의 const/class 사용(순환 의존),
+// 인라인 스크립트 문법, 오래된 iOS 문법.
+//
+// 주석 정책(사용자 요청 2026-11): 소스(src/)에는 설명을 자세히 쓴다. 사용자 빌드는 JS·CSS·HTML 주석을 모두 벗기되 `//!`·`/*!`·`<!--!`로 시작하는 것만 남기고,
+// 모듈마다 `/* ── 파일 — 첫 줄 설명의 첫 문장 */` 한 줄을 붙인다. 관리자 빌드는 주석을 모두 남긴다. 결과 파일은 둘 다 고치지 않는다(src/를 고치고 다시 빌드).
 import fs from "node:fs";
 import path from "node:path";
 import vm from "node:vm";
@@ -15,13 +21,18 @@ import * as scope from "eslint-scope";
 import { BROWSER_GLOBALS } from "./globals.mjs";
 
 export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const SRC = path.join(ROOT, "src"), JS = path.join(SRC, "js"), CONTENT = path.join(ROOT, "content"), OUT = path.join(ROOT, "index.html");
-const PAGE = path.join(SRC, "page.html"), GEN_FILE = path.join(JS, "content", "generated.js"), BUILD_DIR = path.join(ROOT, ".build");
+const SRC = path.join(ROOT, "src"), JS = path.join(SRC, "js"), CONTENT = path.join(ROOT, "content");
+const GEN_FILE = path.join(JS, "content", "generated.js"), BUILD_DIR = path.join(ROOT, ".build");
 
+/* 빌드 대상: page(뼈대, src/ 아래) → out(저장소 루트). strip이면 주석·빈 줄을 벗기고, doc이면 모듈마다 설명 머리를 붙임 */
+export const TARGETS = {
+  user: { page: "page.html", out: "index.html", strip: true, doc: false, linemap: "linemap.json", label: "사용자 사이트" },
+  admin: { page: "admin.html", out: "admin.html", strip: false, doc: true, linemap: "linemap-admin.json", label: "관리자 도구" }
+};
 /* 폴더 이름이 곧 작품의 aud(관심있는 대화) 값 */
 export const AUD_DIRS = { f: "여성향(남성 캐릭터와의 대화)", m: "남성향(여성 캐릭터와의 대화)", all: "전체(남녀가 섞임)" };
 /* 빌드 검사에 쓰는 앱 규칙 — src/js에서 같은 코드를 꺼내 쓴다(규칙이 두 군데로 갈라지지 않게) */
-const APP_RULES = ["SIT", "PALETTES", "MOTIFS", "CATS", "guessAud", "personaWho", "personaLook", "castLook", "minorFlags", "dimOf", "dimDef", "DIMS"];
+const APP_RULES = ["SIT", "PALETTES", "MOTIFS", "CATS", "guessAud", "personaWho", "personaLook", "castLook", "minorFlags", "minorHint", "dimOf", "dimDef", "DIMS", "RESET", "MAX_ACT", "isReset", "parseCodes", "splitDims", "keyOf"];
 /* 오래된 iOS(13 이하)·인앱 브라우저에서 문법 오류가 나는 것들 */
 const OLD_IOS = [[/\|\|=|&&=|\?\?=/, "논리 할당(||= &&= ??=)"], [/\.at\(/, "Array.at()"], [/\(\?<[=!]/, "정규식 lookbehind"],
   [/\bstructuredClone\b/, "structuredClone"], [/\.findLast(?:Index)?\(/, "findLast()"], [/\bObject\.hasOwn\(/, "Object.hasOwn()"]];
@@ -34,48 +45,74 @@ const visible = (name) => !name.startsWith(".") && !name.startsWith("_");
 const subdirs = (dir) => fs.readdirSync(dir, { withFileTypes: true }).filter((d) => d.isDirectory() && visible(d.name)).map((d) => d.name).sort();
 const writeIfChanged = (p, text) => { if (!fs.existsSync(p) || readText(p) !== text) { fs.mkdirSync(path.dirname(p), { recursive: true }); fs.writeFileSync(p, text); return true; } return false; };
 
-/* ---------------------------------------------------------------- 뼈대(src/page.html) 펼치기 */
+/* ---------------------------------------------------------------- 주석 벗기기(사용자 빌드) */
+const KEEP_CSS = /\/\*(?!!)[\s\S]*?\*\//g;          // 지울 CSS 주석(/*! 는 남김)
+const KEEP_HTML = /<!--(?!!)(?![\s@]*@)[\s\S]*?-->/g; // 지울 HTML 주석(<!--! 와 @include·@script 자리는 남김)
+/* 글을 줄로 나눠 빈 줄을 버리고, 남긴 줄마다 원본 줄 번호를 돌려줌 */
+function compact(text) {
+  const lines = text.split("\n"), kept = [], src = [];
+  lines.forEach((l, i) => { const t = l.replace(/\s+$/, ""); if (t.trim()) { kept.push(t); src.push(i + 1); } });
+  return { text: kept.join("\n") + (kept.length ? "\n" : ""), src };
+}
+
+/* ---------------------------------------------------------------- 뼈대(src/page.html·admin.html) 펼치기 */
 const INCLUDE = /^\s*<!--\s*@include\s+(\S+)\s*-->\s*$/, SCRIPT = /^\s*<!--\s*@script\s+(\S+)\s*-->\s*$/;
 
-function includeFiles(pattern) {
+function includeFiles(pattern, page) {
   const m = pattern.match(/^([\w-]+(?:\/[\w-]+)*)\/\*(\.\w+)$/);
-  if (!m) throw new BuildError([`src/page.html: @include ${pattern} — "폴더/*.확장자" 모양만 쓸 수 있어요`]);
+  if (!m) throw new BuildError([`${page}: @include ${pattern} — "폴더/*.확장자" 모양만 쓸 수 있어요`]);
   const dir = path.join(SRC, m[1]);
-  if (!fs.existsSync(dir)) throw new BuildError([`src/page.html: @include ${pattern} — src/${m[1]} 폴더가 없어요`]);
-  // 파일 이름 순서가 곧 들어가는 순서(앞의 두 자리 번호). _로 시작하면 뺌
+  if (!fs.existsSync(dir)) throw new BuildError([`${page}: @include ${pattern} — src/${m[1]} 폴더가 없어요`]);
+  // 파일 이름 순서가 곧 들어가는 순서(앞의 두 자리 번호). _로 시작하면 뺌. 하위 폴더는 따로 @include
   return fs.readdirSync(dir).filter((f) => f.endsWith(m[2]) && visible(f)).sort().map((f) => path.join(dir, f));
 }
 /* 조각은 앞뒤 빈 줄 없이 두고, 조각 사이에 빈 줄 하나를 넣어 잇는다 */
 const tidy = (text) => text.replace(/^\n+/, "").replace(/\n*$/, "\n");
 
-async function assemble() {
-  const out = [], map = []; // map: 결과 줄 → 원본 파일(오류 위치 안내용)
+async function assemble(t) {
+  const page = `src/${t.page}`, PAGE = path.join(SRC, t.page);
+  const out = [], map = []; // map: 결과 줄 → 원본 파일:줄(오류 위치 안내용). 같은 파일에서 이어지는 줄은 한 구간으로
   let line = 1, css = 0, bundle = null;
   const push = (text, from, fromLine = 1) => {
     const n = text.split("\n").length - 1;
-    map.push({ start: line, end: line + n - 1, from, fromLine });
+    if (n > 0) map.push({ start: line, end: line + n - 1, from, fromLine });
     out.push(text); line += n;
+  };
+  const pushMapped = (text, src, from) => { // src[i] = 결과 i번째 줄의 원본 줄 번호(빈 줄을 지운 뒤라 띄엄띄엄)
+    if (!src) return push(text, from, 1);
+    let s = 0;
+    for (let i = 1; i <= src.length; i++) if (i === src.length || src[i] !== src[i - 1] + 1) { map.push({ start: line + s, end: line + i - 1, from, fromLine: src[s] }); s = i; }
+    out.push(text); line += src.length;
   };
   const tpl = readText(PAGE).split("\n");
   if (tpl[tpl.length - 1] === "") tpl.pop();
   for (let i = 0; i < tpl.length; i++) {
     const inc = tpl[i].match(INCLUDE), scr = tpl[i].match(SCRIPT);
     if (inc) {
-      const files = includeFiles(inc[1]).map((f) => ({ f, text: readText(f) })).filter((x) => x.text.trim());
-      files.forEach(({ f, text }, k) => { if (k) push("\n", "(빈 줄)"); push(tidy(text), rel(f), text.match(/^\n*/)[0].length + 1); css++; });
+      const files = includeFiles(inc[1], page).map((f) => ({ f, text: readText(f) })).filter((x) => x.text.trim());
+      files.forEach(({ f, text }, k) => {
+        if (k && !t.strip) push("\n", "(빈 줄)");
+        if (t.strip) { const c = compact(text.replace(KEEP_CSS, "")); if (c.src.length) pushMapped(c.text, c.src, rel(f)); }
+        else push(tidy(text), rel(f), text.match(/^\n*/)[0].length + 1);
+        css++;
+      });
     } else if (scr) {
-      if (bundle) throw new BuildError(["src/page.html: @script는 한 번만"]);
-      bundle = bundleModules(path.join(SRC, scr[1]));
-      bundle.pieces.forEach((p) => { push(p.header, "(모듈 머리)"); push(p.text, p.rel, 1); });
-    } else push(tpl[i] + "\n", "src/page.html", i + 1);
+      if (bundle) throw new BuildError([`${page}: @script는 한 번만`]);
+      bundle = bundleModules(path.join(SRC, scr[1]), t, page);
+      bundle.pieces.forEach((p) => { push(p.header, "(모듈 머리)"); pushMapped(p.text, p.src, p.rel); });
+    } else {
+      let l = tpl[i];
+      if (t.strip) { const had = KEEP_HTML.test(l); KEEP_HTML.lastIndex = 0; l = l.replace(KEEP_HTML, ""); if (had && !l.trim()) continue; }
+      push(l + "\n", page, i + 1);
+    }
   }
-  if (!bundle) throw new BuildError(["src/page.html에 <!-- @script js/main.js --> 자리가 없어요"]);
+  if (!bundle) throw new BuildError([`${page}에 <!-- @script js/… --> 자리가 없어요`]);
   return { html: out.join(""), map, css, bundle };
 }
 
 /* ---------------------------------------------------------------- 모듈 번들러 */
 const parseModule = (code, file) => {
-  try { return espree.parse(code, { ecmaVersion: 2022, sourceType: "module", range: true, loc: true }); }
+  try { return espree.parse(code, { ecmaVersion: 2022, sourceType: "module", range: true, loc: true, comment: true }); }
   catch (e) { throw new BuildError([`${rel(file)}:${e.lineNumber || "?"}: 문법 오류 — ${e.message.replace(/\s*\(\d+:\d+\)$/, "")}`]); }
 };
 const patNames = (p) => p.type === "Identifier" ? [p.name] : p.type === "ObjectPattern" ? p.properties.flatMap((x) => x.type === "RestElement" ? patNames(x.argument) : patNames(x.value))
@@ -87,7 +124,7 @@ function loadModule(file, mods, errors, chain) {
   if (mods.has(file)) return mods.get(file);
   if (!fs.existsSync(file)) { errors.push(`${chain}: ${rel(file)} 파일이 없어요`); return null; }
   const code = readText(file), ast = parseModule(code, file), r = rel(file);
-  const info = { file, rel: r, code, ast, imports: [], importOrder: [], declared: new Map(), exports: new Map(), bindings: new Map(), cuts: [] };
+  const info = { file, rel: r, code, ast, comments: ast.comments || [], imports: [], importOrder: [], declared: new Map(), exports: new Map(), bindings: new Map(), cuts: [] };
   mods.set(file, info);
   for (const st of ast.body) {
     if (st.type === "ImportDeclaration") {
@@ -141,16 +178,37 @@ function loadModule(file, mods, errors, chain) {
   return info;
 }
 
-function bundleModules(entry) {
+/* 모듈 첫 줄 주석의 첫 문장 — 사용자 빌드의 모듈 머리에 씀 */
+function summaryOf(m) {
+  const c = m.comments.find((x) => x.loc.start.line === 1); if (!c) return "";
+  let t = c.value.replace(/^!/, "").replace(/\s+/g, " ").trim();
+  const i = t.search(/\.(\s|$)/); if (i > 0) t = t.slice(0, i);
+  if (t.length > 100) t = t.slice(0, 98).replace(/\s+\S*$/, "") + "…";
+  return t;
+}
+/* 관리자 빌드의 모듈 머리: 파일, 가져오는 것(모듈별 이름), 내보내는 것, 이 모듈을 쓰는 모듈 */
+function docHeader(m, order) {
+  const bar = "═".repeat(100), pad = "   ";
+  const imps = m.imports.filter((i) => i.names.length).map((i) => `${rel(i.target)} { ${i.names.join(", ")} }`);
+  const exps = [...m.exports.keys()], by = order.filter((o) => o !== m && o.importOrder.includes(m.file)).map((o) => o.rel);
+  const lines = [`/* ${bar}`, `${pad}${m.rel}`];
+  if (imps.length) lines.push(`${pad}가져옴: ${imps[0]}`, ...imps.slice(1).map((x) => `${pad}        ${x}`));
+  if (exps.length) lines.push(`${pad}내보냄: ${exps.join(", ")}`);
+  lines.push(`${pad}쓰는 곳: ${by.length ? by.join(", ") : "(진입점 — 아무도 import하지 않음)"}`);
+  lines.push(`${pad}${bar} */`);
+  return lines.join("\n") + "\n";
+}
+
+function bundleModules(entry, t, page) {
   const errors = [], warnings = [], mods = new Map();
   if (!fs.existsSync(entry)) throw new BuildError([`진입 모듈 ${rel(entry)}이 없어요`]);
-  loadModule(entry, mods, errors, "src/page.html");
+  loadModule(entry, mods, errors, page);
   if (errors.length) throw new BuildError(errors);
   // 순서: 진입점에서 import 순서대로 깊이 우선, 의존 모듈이 먼저(진입점이 맨 뒤)
   const order = [], state = new Map();
   const visit = (file) => {
     if (state.get(file)) return; state.set(file, 1);
-    for (const t of mods.get(file).importOrder) visit(t);
+    for (const x of mods.get(file).importOrder) visit(x);
     state.set(file, 2); order.push(mods.get(file));
   };
   visit(entry);
@@ -163,26 +221,33 @@ function bundleModules(entry) {
   const pos = new Map(order.map((m, i) => [m.file, i]));
   for (const m of order) {
     for (const imp of m.imports) {
-      const t = mods.get(imp.target); if (!t) continue;
-      for (const n of imp.names) if (!t.exports.has(n)) errors.push(`${m.rel}:${imp.line}: ${t.rel}은 "${n}"을 내보내지 않아요${t.declared.has(n) ? ` — ${t.rel}:${t.declared.get(n).line}의 선언 앞에 export를 붙이세요` : ""}`);
+      const x = mods.get(imp.target); if (!x) continue;
+      for (const n of imp.names) if (!x.exports.has(n)) errors.push(`${m.rel}:${imp.line}: ${x.rel}은 "${n}"을 내보내지 않아요${x.declared.has(n) ? ` — ${x.rel}:${x.declared.get(n).line}의 선언 앞에 export를 붙이세요` : ""}`);
     }
     for (const ref of m.evalRefs) {
-      const b = m.bindings.get(ref.name), t = b && mods.get(b.from); if (!t) continue;
-      const kind = t.exports.get(ref.name);
-      if (kind !== "function" && pos.get(t.file) > pos.get(m.file)) errors.push(`${m.rel}:${ref.line}: 맨 윗단에서 "${ref.name}"을 쓰는데 그걸 내보내는 ${t.rel}이 순환 의존 때문에 뒤에 와요(초기화 전 접근) — 함수 안으로 옮기거나 import 고리를 끊으세요`);
+      const b = m.bindings.get(ref.name), x = b && mods.get(b.from); if (!x) continue;
+      const kind = x.exports.get(ref.name);
+      if (kind !== "function" && pos.get(x.file) > pos.get(m.file)) errors.push(`${m.rel}:${ref.line}: 맨 윗단에서 "${ref.name}"을 쓰는데 그걸 내보내는 ${x.rel}이 순환 의존 때문에 뒤에 와요(초기화 전 접근) — 함수 안으로 옮기거나 import 고리를 끊으세요`);
     }
     if (m.unused) warnings.push(`${m.rel}: 쓰지 않는 import ${m.unused.join(", ")}`);
   }
   if (errors.length) throw new BuildError([...new Set(errors)]);
-  // 출력: import/export 벗기기(줄 수 유지)
+  // 출력: import/export(와 사용자 빌드는 주석)를 벗기되 줄 수는 유지 → 사용자 빌드는 빈 줄을 지우고 원본 줄 번호를 남김
   const pieces = order.map((m) => {
+    const cuts = [...m.cuts];
+    if (t.strip) for (const c of m.comments) {
+      if (c.value.startsWith("!")) continue; // //! 와 /*! 는 남김
+      if (cuts.some((k) => c.range[0] < k.range[1] && k.range[0] < c.range[1])) continue; // import/export 문 안의 주석은 그 문과 함께 사라짐
+      cuts.push({ range: c.range, blank: true });
+    }
     let text = m.code;
-    for (const c of [...m.cuts].sort((a, b) => b.range[0] - a.range[0])) {
+    for (const c of cuts.sort((a, b) => b.range[0] - a.range[0])) {
       const orig = text.slice(c.range[0], c.range[1]);
       text = text.slice(0, c.range[0]) + (c.blank ? "\n".repeat((orig.match(/\n/g) || []).length) : "") + text.slice(c.range[1]);
     }
     text = text.replace(/\n*$/, "\n");
-    return { rel: m.rel, header: `/* ── ${m.rel} */\n`, text };
+    if (t.strip) { const c = compact(text), s = summaryOf(m); return { rel: m.rel, header: `/* ── ${m.rel}${s ? " — " + s : ""} */\n`, text: c.text, src: c.src }; }
+    return { rel: m.rel, header: t.doc ? docHeader(m, order) : `/* ── ${m.rel} */\n`, text, src: null };
   });
   return { pieces, warnings, count: order.length };
 }
@@ -198,7 +263,7 @@ function appRules() {
     if (i < 0) throw new BuildError([`src/js에서 ${name}을(를) 찾지 못했어요 — 이름을 바꿨다면 tools/build.mjs의 APP_RULES도 고쳐 주세요`]);
     let j = i;
     if (fn.test(lines[i])) { if (!/}\s*$/.test(lines[i])) while (j < lines.length && lines[j] !== "}") j++; }
-    else while (j < lines.length && !/;\s*$/.test(lines[j])) j++;
+    else while (j < lines.length && !/;\s*(\/\/.*)?$/.test(lines[j])) j++; // 줄 끝 주석은 허용
     parts.push(lines.slice(i, j + 1).join("\n").replace(/^export /, ""));
   }
   const ctx = vm.createContext({});
@@ -269,15 +334,21 @@ async function buildContent(R) {
   }
   rows.filter((r) => !r.n).forEach((r) => warnings.push(`${r.rel}: 줄에 작품이 없어 홈에 안 보여요`));
   if (!errors.length && !works.length) errors.push("content/에 작품이 하나도 없어요");
+  // content/codes.json(이미지 코드 표)과 작품 폴더의 images/(관리자 도구가 내보낸 그림) — content/README.md
+  const codes = readCodes(R, errors, warnings);
+  for (const w of works) scanImages(w, R, codes, errors, warnings);
   if (errors.length) throw new BuildError(errors);
 
   const byOrder = (a, b) => (a.order ?? Infinity) - (b.order ?? Infinity) || (a.rel < b.rel ? -1 : a.rel > b.rel ? 1 : 0);
   works.sort(byOrder);
   rows.sort(byOrder);
-  const objs = works.map(({ c, aud, row, rel }) => {
-    const o = { ...c };
+  const objs = works.map((w) => {
+    const { c, aud, row, rel } = w, o = { ...c };
     if (row && o.row === undefined) o.row = row.key;
     if (o.aud === undefined) o.aud = aud;
+    if (w.images) o.images = w.images; // 작품 폴더 images/의 그림(content/… 상대 경로) — 사용자는 이 그림을 봄
+    if (w.img) o.img = w.img;
+    if (w.loreImages) o.loreImages = w.loreImages;
     return `/* ${rel.slice("content/".length)} */ ${ser(o, "")}`;
   });
   const code = `/* 빌드가 content/ 폴더로 만든 작품 데이터 — 직접 고치지 말고 content/<f|m|all>/…/work.js를 고치세요(content/README.md). git에 넣지 않음 */
@@ -288,10 +359,76 @@ ${objs.join(",\n")}
 export const HOME_ROWS = [
 ${rows.map((r) => "  " + JSON.stringify({ key: r.key, title: r.title, sub: r.sub })).join(",\n")}
 ];
+// 이미지 코드 표(content/codes.json) — 관리자 도구가 내보낸 직접 만든 칸. 번호가 같은 내 칸(customSits)이 있으면 그것이 덮음
+export const CONTENT_CODES = [
+${codes.map((d) => "  " + JSON.stringify(d)).join(",\n")}
+];
 `;
   writeIfChanged(GEN_FILE, jsSafe(code));
-  const count = (a) => works.filter((w) => w.aud === a).length;
-  return { warnings, stats: { works: works.length, f: count("f"), m: count("m"), all: count("all"), rows: rows.length } };
+  const count = (a) => works.filter((w) => w.aud === a).length, pics = works.reduce((a, w) => a + Object.values(w.images || {}).reduce((b, m) => b + Object.keys(m).length, 0) + (w.img ? 1 : 0) + Object.keys(w.loreImages || {}).length, 0);
+  return { warnings, stats: { works: works.length, f: count("f"), m: count("m"), all: count("all"), rows: rows.length, codes: codes.length, pics } };
+}
+
+/* content/codes.json → CONTENT_CODES: 관리자 도구의 '코드 표 내보내기'가 쓴 [{ n, name, prompt, rating, keys? }]. 번호는 15~599(400·500 제외), 성인 수위 코드는 미성년 표현 금지 */
+function readCodes(R, errors, warnings) {
+  const file = path.join(CONTENT, "codes.json");
+  if (!fs.existsSync(file)) return [];
+  let list;
+  try { list = JSON.parse(readText(file)); } catch (e) { errors.push(`content/codes.json: JSON 형식이 아니에요 — ${e.message}`); return []; }
+  if (!Array.isArray(list)) { errors.push("content/codes.json: [{ n, name, prompt, rating }, …] 배열이어야 해요"); return []; }
+  const out = [], seen = new Set();
+  list.forEach((d, i) => {
+    const at = `content/codes.json[${i}]`;
+    if (!isObj(d) || !Number.isInteger(d.n) || !str(d.name) || typeof d.prompt !== "string") return errors.push(`${at}: { n: 번호, name: 이름, prompt: 프롬프트, rating?: safe|questionable|explicit, keys?: "낱말|낱말" } 모양이어야 해요`);
+    if (d.n < R.SIT.length || d.n >= 600 || d.n === R.RESET.wear || d.n === R.RESET.place) return errors.push(`${at}: 번호 ${d.n} — 직접 만든 코드는 ${R.SIT.length}~599(400·500 제외)`);
+    if (seen.has(d.n)) return errors.push(`${at}: 번호 ${d.n}이 겹쳐요`);
+    seen.add(d.n);
+    const rating = d.rating || "safe";
+    if (!["safe", "questionable", "explicit"].includes(rating)) return errors.push(`${at}: rating은 safe·questionable·explicit 중 하나`);
+    if (d.keys !== undefined && typeof d.keys !== "string") return errors.push(`${at}: keys는 "낱말|낱말" 글`);
+    if (rating !== "safe" && R.minorHint(d.name + "\n" + d.prompt)) return errors.push(`${at}: 성인 수위 코드의 이름·프롬프트에 미성년으로 보이는 표현이 있어요(minorHint)`);
+    const extra = Object.keys(d).filter((k) => !["n", "name", "prompt", "rating", "keys"].includes(k));
+    if (extra.length) warnings.push(`${at}: 쓰지 않는 칸 ${extra.join(", ")}`);
+    out.push({ n: d.n, name: d.name.trim(), prompt: d.prompt.trim(), rating, ...(d.keys ? { keys: d.keys } : {}), shipped: true });
+  });
+  return out.sort((a, b) => a.n - b.n);
+}
+/* 작품 폴더의 images/ → 작품의 images(인물 코드 → 조합 키 → content/… 경로)·img(cover.*)·loreImages(lore-<n>.* → n번째 키워드북 항목).
+   파일 이름: <인물코드>-<번호[-번호…]>.webp|png|jpg (조합 키의 쉼표는 -), cover.*, lore-<n>.*. 관리자 도구의 '작품 폴더에 저장'이 이 이름으로 쓴다 */
+const IMG_EXT = /\.(webp|png|jpe?g)$/i;
+function scanImages(w, R, codes, errors, warnings) {
+  const dir = path.join(ROOT, w.rel, "images");
+  if (!fs.existsSync(dir)) return;
+  const c = w.c, castCodes = new Set((c.cast || [{ code: "c" }]).map((x) => x.code)), lore = c.lore || [];
+  const known = (n) => n < R.SIT.length || !!R.DIMS[n] || codes.some((d) => d.n === n);
+  const images = {}, loreImages = {}; let img = "";
+  for (const f of fs.readdirSync(dir).filter(visible).sort()) {
+    const at = `${w.rel}/images/${f}`;
+    if (!IMG_EXT.test(f)) { warnings.push(`${at}: 그림 파일(webp·png·jpg)이 아니라 지나쳐요`); continue; }
+    const base = f.replace(IMG_EXT, "");
+    let m;
+    if (base === "cover") { if (img) errors.push(`${at}: 표지가 둘이에요(${img})`); img = at; }
+    else if ((m = base.match(/^lore-(\d+)$/))) {
+      const i = +m[1];
+      if (i < 1 || i > lore.length) { errors.push(`${at}: 키워드북 항목은 1~${lore.length}번이에요`); continue; }
+      const k = lore[i - 1].keys[0];
+      if (loreImages[k]) errors.push(`${at}: 키워드북 ${i}번 항목의 그림이 둘이에요`);
+      loreImages[k] = at;
+    } else if ((m = base.match(/^([a-z0-9]+)-(\d+(?:-\d+)*)$/))) {
+      const code = m[1], nums = m[2].split("-").map(Number);
+      if (!castCodes.has(code)) { errors.push(`${at}: 인물 코드 "${code}"가 cast에 없어요`); continue; }
+      const unknown = nums.filter((n) => !known(n));
+      if (unknown.length) { errors.push(`${at}: ${unknown.join(",")}은(는) 기본 번호(0~${R.SIT.length - 1})·내장 코드(1xx·4xx·5xx)·codes.json의 코드가 아니에요`); continue; }
+      const key = R.keyOf(nums) || "1";
+      if (key !== nums.join(",")) warnings.push(`${at}: 조합 키 ${key}로 등록해요(파일 이름은 ${code}-${key.replace(/,/g, "-")} 가 정확해요)`);
+      images[code] = images[code] || {};
+      if (images[code][key]) errors.push(`${at}: ${code}의 ${key} 그림이 둘이에요(${images[code][key]})`);
+      images[code][key] = at;
+    } else warnings.push(`${at}: 이름을 알 수 없어 지나쳐요 — <인물코드>-<번호[-번호…]>.webp · cover.webp · lore-<n>.webp`);
+  }
+  if (Object.keys(images).length) w.images = images;
+  if (img) w.img = img;
+  if (Object.keys(loreImages).length) w.loreImages = loreImages;
 }
 
 function checkWork(mod, { aud, row, id, wrel, R, errors, warnings }) {
@@ -389,11 +526,11 @@ const LS = String.fromCharCode(0x2028), PS = String.fromCharCode(0x2029);
 const jsSafe = (s) => s.replace(/<\//g, "<\\/").split(LS).join("\\u2028").split(PS).join("\\u2029");
 
 /* ---------------------------------------------------------------- 결과 검사: 인라인 스크립트 문법, 오래된 iOS 문법 */
-function where(map, line) {
+function where(map, line, out) {
   const m = map.find((x) => line >= x.start && line <= x.end);
-  return m ? `${m.from}:${m.fromLine + line - m.start}` : `index.html:${line}`;
+  return m ? `${m.from}:${m.fromLine + line - m.start}` : `${out}:${line}`;
 }
-function checkScripts(html, map) {
+function checkScripts(html, map, out) {
   const errors = [], re = /<script>([\s\S]*?)<\/script>/g;
   let m, k = 0;
   while ((m = re.exec(html))) {
@@ -402,47 +539,59 @@ function checkScripts(html, map) {
     try { new vm.Script(m[1], { filename: `script${k}`, lineOffset: startLine - 1 }); }
     catch (e) {
       const ln = +(String(e.stack).match(new RegExp(`script${k}:(\\d+)`)) || [])[1];
-      errors.push(`${ln ? where(map, ln) : `<script> ${k}번째`}: 문법 오류 — ${e.message}`);
+      errors.push(`${ln ? where(map, ln, out) : `<script> ${k}번째`}: 문법 오류 — ${e.message}`);
     }
     m[1].split("\n").forEach((text, i) => {
-      for (const [re2, name] of OLD_IOS) if (re2.test(text)) errors.push(`${where(map, startLine + i)}: 오래된 iOS에서 안 도는 문법(${name}) — CLAUDE.md '모바일'`);
+      for (const [re2, name] of OLD_IOS) if (re2.test(text)) errors.push(`${where(map, startLine + i, out)}: 오래된 iOS에서 안 도는 문법(${name}) — CLAUDE.md '모바일'`);
     });
   }
-  if (!k) errors.push("index.html에 인라인 <script>가 없어요");
+  if (!k) errors.push(`${out}에 인라인 <script>가 없어요`);
   return errors;
 }
 
-export async function build() {
-  if (!fs.existsSync(PAGE)) throw new BuildError(["src/page.html이 없어요"]);
-  const content = await buildContent(appRules());
-  const { html: raw, map, css, bundle } = await assemble();
+/* 대상 하나를 만든다(content/는 buildAll이 먼저). 결과 HTML과 줄 지도를 돌려주고 지도는 .build/에도 남김 */
+export async function build(name = "user") {
+  const t = TARGETS[name];
+  if (!t) throw new BuildError([`모르는 빌드 대상 ${name} (가능: ${Object.keys(TARGETS).join(", ")})`]);
+  if (!fs.existsSync(path.join(SRC, t.page))) throw new BuildError([`src/${t.page}이 없어요`]);
+  const { html: raw, map, css, bundle } = await assemble(t);
   const html = raw.replace(/<\/script(?![\s>])/gi, "<\\/script").split(LS).join("\\u2028").split(PS).join("\\u2029");
-  const errors = checkScripts(html, map);
+  const errors = checkScripts(html, map, t.out);
   if (errors.length) throw new BuildError(errors);
   fs.mkdirSync(BUILD_DIR, { recursive: true });
-  fs.writeFileSync(path.join(BUILD_DIR, "linemap.json"), JSON.stringify(map));
-  return { html, stats: content.stats, warnings: [...content.warnings, ...bundle.warnings], css, modules: bundle.count };
+  fs.writeFileSync(path.join(BUILD_DIR, t.linemap), JSON.stringify(map));
+  return { name, out: path.join(ROOT, t.out), file: t.out, html, map, css, modules: bundle.count, warnings: bundle.warnings };
+}
+/* content/ 검사·생성 한 번 + 대상들 */
+export async function buildAll(names = Object.keys(TARGETS)) {
+  const content = await buildContent(appRules());
+  const outs = [];
+  for (const n of names) outs.push(await build(n));
+  return { content, outs };
 }
 
 /* ---------------------------------------------------------------- 명령줄 */
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const check = process.argv.includes("--check");
+  const argv = process.argv.slice(2), check = argv.includes("--check"), oi = argv.indexOf("--only");
+  const names = oi >= 0 ? [argv[oi + 1]] : Object.keys(TARGETS);
   try {
-    const { html, stats, warnings, css, modules } = await build();
-    warnings.forEach((x) => console.warn("⚠ " + x));
-    const cur = fs.existsSync(OUT) ? readText(OUT) : null;
-    const kb = (Buffer.byteLength(html) / 1024).toFixed(0) + "KB";
-    const summary = ` · CSS ${css}개 · 모듈 ${modules}개 · 작품 ${stats.works}개(여성향 ${stats.f} · 남성향 ${stats.m} · 전체 ${stats.all}), 홈 줄 ${stats.rows}개`;
-    if (check) {
-      if (cur !== html) {
-        console.error("✗ index.html이 src/·content/로 만든 결과와 달라요. index.html을 직접 고쳤거나 빌드를 안 했어요 → npm run build 후 index.html도 같이 커밋하세요.");
-        process.exit(1);
+    const { content, outs } = await buildAll(names);
+    [...new Set([...content.warnings, ...outs.flatMap((o) => o.warnings)])].forEach((x) => console.warn("⚠ " + x));
+    const s = content.stats;
+    console.log(`작품 ${s.works}개(여성향 ${s.f} · 남성향 ${s.m} · 전체 ${s.all}), 홈 줄 ${s.rows}개, 실린 그림 ${s.pics}장, 코드 표 ${s.codes}개`);
+    let fail = false;
+    for (const o of outs) {
+      const cur = fs.existsSync(o.out) ? readText(o.out) : null, same = cur === o.html;
+      const info = `${(Buffer.byteLength(o.html) / 1024).toFixed(0)}KB · CSS ${o.css}개 · 모듈 ${o.modules}개`;
+      if (check) {
+        if (o.name === "user" && !same) { fail = true; console.error(`✗ ${o.file}이 src/·content/로 만든 결과와 달라요. ${o.file}을 직접 고쳤거나 빌드를 안 했어요 → npm run build 후 ${o.file}도 같이 커밋하세요.`); }
+        else console.log(`✓ ${o.file} ${o.name === "user" ? "이 소스와 같아요" : "만들어져요"} (${info})`);
+      } else {
+        if (!same) fs.writeFileSync(o.out, o.html);
+        console.log(`${same ? "= " + o.file + " 그대로" : "✓ " + o.file + " 만듦"} (${info} · ${TARGETS[o.name].label})`);
       }
-      console.log(`✓ index.html이 소스와 같아요 (${kb}${summary})`);
-    } else {
-      if (cur !== html) fs.writeFileSync(OUT, html);
-      console.log(`${cur === html ? "= index.html 그대로" : "✓ index.html 만듦"} (${kb}${summary})`);
     }
+    if (fail) process.exit(1);
   } catch (e) {
     if (!(e instanceof BuildError)) throw e;
     console.error("✗ 빌드 실패\n" + e.list.map((x) => "  - " + x).join("\n"));

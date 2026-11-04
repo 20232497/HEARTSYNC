@@ -1,8 +1,7 @@
-/* 설정 저장·적용(글자 크기·줄 간격 등 CSS 변수), API 키 붙여넣기 실수 고치기 */
+/* 설정 저장·적용(글자 크기·줄 간격 등 CSS 변수), API 키 붙여넣기 실수 고치기. 저장하면 "settings" 이벤트 — 계정 저장(cloud)·키 금고(vault)가 받음 */
+import { emit } from "./events.js";
 import { S } from "./state.js";
 import { KV } from "./storage.js";
-import { CLOUD, cloudSettings } from "../services/cloud.js";
-import { VAULT } from "../services/vault.js";
 
 /* 키 붙여넣기 실수 잡기: OpenRouter 키 앞의 "sk-or-"가 빠졌으면 붙이고, 형식이 다른 키는 알려 줌 */
 export function cleanKeys() {
@@ -12,7 +11,7 @@ export function cleanKeys() {
   if (s.apiKey && !/^sk-ant-/.test(s.apiKey)) warn.push("Anthropic 키는 sk-ant-로 시작해요");
   return warn;
 }
-export function saveSettings() { try { localStorage.setItem("hv1_settings", JSON.stringify(S.settings)); } catch {} KV.set("memcfg", S.settings.memCfg); CLOUD.put("settings", cloudSettings()); VAULT.save(); }
+export function saveSettings() { try { localStorage.setItem("hv1_settings", JSON.stringify(S.settings)); } catch {} KV.set("memcfg", S.settings.memCfg); emit("settings"); }
 /* 채팅 설정을 화면에 반영(테마는 기기 설정을 따름) */
 export function applySettings() {
   const s = S.settings, root = document.documentElement;

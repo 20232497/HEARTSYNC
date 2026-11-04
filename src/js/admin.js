@@ -1,0 +1,18 @@
+/* 관리자 도구(admin.html) 진입점: 사용자 사이트의 모든 모듈(app.js) 위에 관리자 모듈(src/js/admin/)을 더해 부팅한다.
+   더해지는 것 — 화면: 작품(#works)·만들기(#studio) / EXT 고리: 상세·드로어·MY·페르소나 시트의 이미지 관리 버튼, 대화 중 그림 자동 생성 / 설정 이전: 그림체·이미지 모델.
+   사용자 빌드와 같은 저장소(이 브라우저·계정)를 쓰므로, 여기서 만든 그림·코드 표는 '작품 폴더에 저장'으로 content/에 써야 사용자 사이트에 실린다(admin/export.js) */
+import { USER_NAVS, USER_VIEWS } from "./app.js";
+import { setTarget } from "./core/target.js";
+import { registerViews, setNavs } from "./ui/shell.js";
+import "./admin/tools.js";
+import "./admin/image-settings.js";
+import "./admin/auto-images.js";
+import { migrateImageSettings } from "./admin/migrate.js";
+import { viewStudio } from "./admin/studio.js";
+import { viewWorks } from "./admin/works.js";
+import { boot } from "./boot.js";
+
+setTarget("admin");
+registerViews({ ...USER_VIEWS, works: viewWorks, studio: viewStudio });
+setNavs([USER_NAVS[0], USER_NAVS[1], ["works", "작품", "book"], ["studio", "만들기", "plus"], USER_NAVS[2], USER_NAVS[3]]);
+boot({ migrate: migrateImageSettings });

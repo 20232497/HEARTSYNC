@@ -1,10 +1,12 @@
-/* 그림 저장(IMG): assets → IndexedDB → data URL, 축소(shrink), 공개용 참조만 남기기 */
+/* 그림 저장(IMG): assets → IndexedDB → data URL, 축소(shrink), 공개용 참조만 남기기. 참조 모양은 validRef — 작품 폴더에 실린 그림(content/… 상대 경로)도 참조로 씀 */
 import { IDB, KV } from "../core/storage.js";
 import { $$, uid } from "../core/util.js";
 import { CLOUD } from "./cloud.js";
 
+/* 그림 참조: /_blob/<id>(claude.ai assets) · kv:img…(IndexedDB·계정) · data:image/… · content/…/images/x.webp(빌드가 작품 폴더에서 실은 그림, index.html 기준 상대 경로) */
 export function validRef(ref) {
-  return typeof ref === "string" && (/^\/_blob\/[A-Za-z0-9_-]{8,80}$/.test(ref) || /^kv:img[a-z0-9]{6,30}$/.test(ref) || /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(ref));
+  return typeof ref === "string" && (/^\/_blob\/[A-Za-z0-9_-]{8,80}$/.test(ref) || /^kv:img[a-z0-9]{6,30}$/.test(ref) || /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(ref)
+    || /^content\/(?!.*\.\.)[A-Za-z0-9_./-]+\.(webp|png|jpe?g)$/.test(ref));
 }
 export const IMG = {
   assets: null, cache: {},

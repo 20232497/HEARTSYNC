@@ -3,8 +3,8 @@ import { getChar } from "../core/character.js";
 import { S } from "../core/state.js";
 import { KV } from "../core/storage.js";
 import { fallbackKeys, keyOf } from "./codes.js";
+import { publishCommunity } from "../services/community.js";
 import { IMG, validRef } from "../services/images.js";
-import { publishCommunity } from "../ui/studio.js";
 
 /* 인물 코드 → { 키: 그림 참조 }. 키는 번호("3") 또는 조합 키("3,404,501"). 작품의 images 위에 내 계정의 imgpacks를 덮음 */
 export function imagesOf(c) {

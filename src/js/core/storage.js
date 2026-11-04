@@ -1,6 +1,5 @@
-/* 저장소: IndexedDB(IDB)와 KV(localStorage → db → 계정) */
+/* 저장소: IndexedDB(IDB)와 KV(localStorage → claude.ai db → 계정). 계정 저장은 KV.remote 고리로 — services/cloud.js가 꽂음(core는 services를 모름) */
 import { toast } from "./util.js";
-import { CLOUD } from "../services/cloud.js";
 
 /* 브라우저 저장 공간이 가득 찼을 때 한 번만 알림(조용히 저장이 실패해 데이터가 사라지는 것을 막기 위해) */
 let fullWarned = false;
@@ -40,6 +39,7 @@ export const IDB = {
 };
 export const KV = {
   db: null, uid: null, dbOk: false, queues: {},
+  remote: null, // (k, v) => … 계정 저장(services/cloud.js가 꽂음). 없으면 이 기기·claude.ai db에만
   lkey: (k) => "hv1_" + k,
   getLocal(k) { try { const v = localStorage.getItem(this.lkey(k)); return v ? JSON.parse(v) : undefined; } catch { return undefined; } },
   setLocal(k, v) {
@@ -55,7 +55,7 @@ export const KV = {
   },
   set(k, v, { local = true } = {}) {
     if (local) this.setLocal(k, v);
-    CLOUD.put(k, v);
+    if (this.remote) this.remote(k, v);
     if (!this.dbOk) return;
     const q = this.queues[k] || (this.queues[k] = { busy: false, next: undefined, has: false });
     q.next = v; q.has = true;

@@ -6,7 +6,7 @@ import { asTag, clearCastTags, groupsPrompt, hasSavedTags, saveCastTags, savedPa
 import { imgRating, ratingFieldHTML } from "../images/rating.js";
 import { genErr, runwareImage } from "../images/runware.js";
 import { imgModelInfo, styleFor } from "../images/styles.js";
-import { ICON } from "./icons.js";
+import { ICON } from "../ui/icons.js";
 
 /* 다른 시트 위에 겹쳐 뜨는 생성 창. 프롬프트는 묶음별 태그 칩(누르면 ★강조, ×로 빼기, 칸에 한국어·영어로 더하기).
    그림체·품질·수위·금지 태그는 숨겨 두고 runwareImage가 붙임. parts가 없으면 prompt 문자열을 한 묶음으로. onUse(blob)가 끝나면 닫혀요 */

@@ -54,9 +54,6 @@ for (const [dev, engine] of targets) {
     if (out) await page.screenshot({ path: `${out}/${tag}_chat.png` });
     // 시드니 seoulzero는 없어야
     res.seoulzero = await page.evaluate(() => !!getChar("seoulzero"));
-    // 스튜디오: 관심있는 대화 칸
-    await page.evaluate(() => { location.hash = "studio"; }); await page.waitForTimeout(600);
-    res.studio = await page.evaluate(() => { const s = document.querySelector("#f-aud"); return s ? [...s.options].map((o) => o.textContent) : "no #f-aud (maybe list view)"; });
   } catch (e) { res.fail = String(e).slice(0, 300); }
   res.errors = errors;
   console.log(JSON.stringify(res));

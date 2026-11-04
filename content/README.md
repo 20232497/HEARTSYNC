@@ -1,6 +1,6 @@
 # content/ — 작품(세계관·캐릭터) 폴더
 
-HEART SYNC 오리지널 작품은 **작품 하나 = 폴더 하나**예요. 빌드(`npm run build`)가 이 폴더를 모두 찾아 검사한 뒤 `index.html`의 `ORIGINALS`·`HOME_ROWS`로 넣어요. 목록 파일은 없어요 — 폴더를 더하면 그대로 나란히 등록돼요.
+HEART SYNC 오리지널 작품은 **작품 하나 = 폴더 하나**예요. 빌드(`npm run build`)가 이 폴더를 모두 찾아 검사한 뒤 `index.html`의 `ORIGINALS`·`HOME_ROWS`로 넣어요. 목록 파일은 없어요 — 폴더를 더하면 그대로 나란히 등록돼요. 작품 폴더의 `images/`와 `content/codes.json`은 관리자 도구(admin.html)가 내보낸 그림·이미지 코드 표고, 빌드가 함께 실어요(아래 '그림과 코드 표 싣기').
 
 ## 맨 위 폴더 = 관심있는 대화(aud)
 
@@ -19,7 +19,9 @@ content/
 ├─ f/                         여성향
 │  ├─ fate/                   홈 가로 줄 「다섯 남자, 하나의 비밀」 (_row.json이 있으면 줄 폴더)
 │  │  ├─ _row.json            줄 제목·부제·순서
-│  │  ├─ hwanghu/work.js      계약 황후의 백 일
+│  │  ├─ hwanghu/             계약 황후의 백 일
+│  │  │  ├─ work.js
+│  │  │  └─ images/           관리자 도구가 내보낸 그림(선택): <인물코드>-<번호>.webp · cover.webp · lore-1.webp …
 │  │  ├─ hasuk/work.js        서촌 오월 하숙집
 │  │  └─ lethe/work.js        호텔 레테: 마흔아홉 번째 밤
 │  ├─ seodoyun/work.js        흑우 탐정사무소 (줄 없는 단독 작품)
@@ -85,6 +87,24 @@ export default {
 
 `work.js` 안에서는 `const`로 같이 쓸 값을 만들거나(`m/godseats/work.js`의 상태창), 다른 파일을 `import`해도 돼요(예: 키워드북이 길면 `lore.js`로 빼서 `import lore from "./lore.js"`). 빌드가 Node에서 실행한 **결과 값**만 `index.html`에 넣어요 — 그래서 함수 같은 건 넣을 수 없고 글·숫자·참거짓·배열·객체만 돼요.
 
+## 그림과 코드 표 싣기 — `images/`·`codes.json` (2026-11-04)
+
+사용자는 그림을 만들지 않아요. 관리자 도구(`admin.html` — `npm run build`가 함께 만듦, git에 없음)에서 Runware로 만들거나 올린 그림을 **작품 폴더에 저장**(상세·작품 화면)으로 저장소의 `content/`에 쓰고, 다시 `npm run build`하면 사용자 사이트에 실려요. Chrome·Edge는 `content` 폴더를 고르면 바로 쓰고, 그 밖의 브라우저는 같은 구조의 ZIP을 내려받아 풀어 넣어요.
+
+```
+content/<f|m|all>/[<줄>/]<id>/images/
+  <인물코드>-<번호>.webp            그 인물의 감정 번호 그림 (예: ks-0.webp 프로필, ks-3.webp 부끄러움)
+  <인물코드>-<번호>-<의상>-<장소>.webp 조합 그림 — 조합 키 "3,404,501"의 쉼표를 -로 (예: ks-3-404-501.webp)
+  cover.webp                         대표 일러스트(표지, 3:4)
+  lore-<n>.webp                      키워드북 n번째 항목의 세계관 일러스트(16:9, 1부터)
+content/codes.json                   이미지 코드 표 [{ "n": 15, "name": "식사", "prompt": "eating, …", "rating": "safe", "keys": "식사|밥" }, …]
+```
+
+- 확장자는 webp·png·jpg. 파일 이름의 번호는 기본 감정(0~14)·내장 코드(1xx·4xx·5xx)·`codes.json`의 코드만 — 다른 번호면 빌드 실패. 조합 키 순서(감정 오름차순 → 의상 → 장소)와 다르게 적으면 바른 키로 등록하고 경고
+- 빌드가 `ORIGINALS`의 `images`(인물 코드 → 조합 키 → `content/…` 상대 경로)·`img`·`loreImages`에 넣고, 앱은 그 경로를 `<img src>`로 그대로 써요(GitHub Pages·file:// 모두 같은 폴더 구조). claude.ai에 올릴 땐 `content/**/images/`도 함께 올려야 해요
+- 사용자가 로그인한 계정의 그림(imgpacks — 예전에 만든 것)이 있으면 그것이 실린 그림을 덮어요
+- `codes.json`은 관리자 도구의 **코드 표 내보내기**가 써요(실린 코드 + 그 브라우저에서 만든 칸). 번호는 15~599(400·500 제외), `rating`은 safe·questionable·explicit, 성인 수위 코드의 이름·프롬프트에 미성년으로 보이는 표현이 있으면 실패. 앱에서는 `CONTENT_CODES`로 들어가 모든 사용자의 코드 표(대화 규칙의 번호 목록·조합 이름)에 쓰이고, 같은 번호의 내 칸이 있으면 내 칸이 덮어요
+
 ## 빌드가 검사하는 것
 
 - 폴더: `f`·`m`·`all` 말고 다른 맨 위 폴더, `work.js`도 `_row.json`도 없는 폴더, 줄 안의 줄
@@ -93,4 +113,5 @@ export default {
 - **출연진 성별과 폴더**: 출연진 외모가 모두 여성인데 `f/`에, 모두 남성인데 `m/`에 있으면 실패(남녀가 섞인 작품은 그대로 둠 — 앱의 `guessAud`와 같은 규칙)
 - **미성년 인물**: 출연진 외모·설정 첫머리에 19세 미만 나이나 학생 신분이 있으면 실패(앱의 `minorFlags`와 같은 코드)
 - 필수 칸(`name`·`title`·`oneLiner`·`desc`·`persona`·`openings`), `cat`·`pal`·`motif` 값, 시작 상황의 `[[img:코드:번호]]`가 `cast`에 있는 코드이고 번호가 0~14 또는 내장 코드(1xx·4xx·5xx, `src/js/images/codes.js`의 DIMS)인지
-- 경고만: `gauge`가 `fields`에 없음, 시작 상황 `status`의 칸이 `fields`에 없음, 작품이 없는 줄
+- `images/`: 인물 코드가 `cast`에 있는지, 번호가 기본·내장·`codes.json` 코드인지, 같은 그림이 둘인지, `lore-<n>`이 키워드북 범위 안인지 / `codes.json`: 모양·번호 범위·중복·수위·미성년 표현
+- 경고만: `gauge`가 `fields`에 없음, 시작 상황 `status`의 칸이 `fields`에 없음, 작품이 없는 줄, `images/`의 모르는 파일 이름, 조합 키 순서가 다른 파일 이름
