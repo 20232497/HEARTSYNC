@@ -1,100 +1,54 @@
 # HEART SYNC
 
-버블챗 스타일의 캐릭터 대화형 에피소드 플랫폼 프로토타입.
+버블챗 스타일의 캐릭터 대화형 에피소드 플랫폼. 작품(세계관·캐릭터)을 고르고 내 페르소나로 대화하면 AI가 장면·상태창·장면 그림과 함께 이야기를 이어 갑니다.
 
-- 웹 주소(GitHub Pages): https://20232497.github.io/HEARTSYNC/ — `main`의 `index.html`을 그대로 띄움. API 키는 MY → 설정에 넣으면 각자 브라우저에만 저장. **휴대폰에서는 이 주소로 열기** — 내려받은 html 파일이나 GitHub 코드 화면은 휴대폰에서 앱이 실행되지 않음
-- 데모: https://claude.ai/artifact/3sfDYFeJ13dHrkWwBFj1YG (비공개, 공유 시 열람 가능)
-- 배포물은 `index.html` 하나로 동작. 브라우저에서 직접 열면 MY → 설정에 Anthropic API 키를 넣어 사용
-- 소스는 `src/`(CSS 조각 + 기능별 ES 모듈 77개)와 `content/`(작품 폴더)로 나뉘어 있고, `npm run build`가 합쳐 **`index.html`(사용자 사이트)과 `admin.html`(관리자 도구, git에 없음)** 두 파일을 만듦 — 아래 '소스 구조와 빌드'. 작품 그림(인물·표지·세계관 일러스트)과 이미지 코드 표는 관리자 도구에서 만들어 `content/`에 싣고, 사용자는 보기만 해요
+## 주소
+| | 주소 | 비고 |
+|---|---|---|
+| **사용자 사이트** | https://20232497.github.io/HEARTSYNC/ | 휴대폰도 이 주소로(내려받은 파일·GitHub 코드 화면에서는 안 돌아요) |
+| **관리자 도구** | https://20232497.github.io/HEARTSYNC/admin.html | 비밀번호 필요. 작품 그림·이미지 코드 표를 만들어 `content/`에 싣는 곳 |
+| 데모(claude.ai) | https://claude.ai/artifact/3sfDYFeJ13dHrkWwBFj1YG | 비공개 아티팩트 |
 
-## 소스 구조와 빌드
-`index.html`은 빌드 결과물이라 직접 고치지 않아요. 고칠 곳은 `src/`와 `content/`, 합치는 건 `tools/build.mjs`(Node 18+). 처음 한 번 `npm install`(빌드 검사용 파서와 Playwright — 개발 의존성만, 앱 런타임은 여전히 라이브러리 0).
+API 키(Anthropic·Runware·OpenRouter)는 MY → 설정에 넣으면 각자 브라우저(또는 로그인한 계정의 암호화 금고)에만 저장돼요.
 
-```
-src/page.html        사용자 사이트 뼈대: <head>·메타·마크업, 조각 자리(@include css/*.css · @script js/main.js)
-src/admin.html       관리자 도구 뼈대(+ @include css/admin/*.css · @script js/admin.js)
-src/css/NN-이름.css   화면별 CSS 11조각(번호 순), css/admin/ 관리자 전용 3조각(이미지 슬롯·스튜디오·작품 화면)
-src/js/              ES 모듈 77개(사용자 빌드 62개) — 파일 하나 = 책임 하나, 첫 줄 주석이 설명
-  core/              설정·상수·유틸·이벤트·저장소·전역 상태·빌드 대상·인물 외모·관심있는 대화·요금·작품 찾기·안전·대화방·설정·설정 이전
-  content/           작품 목록(빌드가 content/ 폴더로 만든 generated.js를 읽어 내보냄 — 작품·홈 줄·실린 그림·코드 표)
-  services/          Supabase 인증·계정 저장·API 키 금고·동기화·저장 데이터 읽기·커뮤니티 공개·그림 저장
-  images/            그림 코드·수위·그림 찾기·상황 칸·태그 캐시 (관리자만: 그림체·이미지 프롬프트·태그 번역·Runware 호출)
-  ai/                모델 등급·llm()·성인 경로·OpenRouter·응답 파싱, prompt/(규칙·입력·키워드북·장기기억)  ← 모델 고도화는 여기만
-  ui/                화면: 아이콘·시트·확장 고리(ext)·셸(화면 등록)·표지·홈·상세·대화방(chat/)·결제·드로어·세계관 일러스트 보기·대화 목록·스토어·로그인·계정·MY
-  admin/             관리자 도구: 스튜디오·이미지 슬롯·코드 표·생성 창·세계관 일러스트 관리·이미지 설정·작품 화면·코드 조합 테스트·관리자 전용 코드·대화 중 자동 생성·작품 폴더로 내보내기·그림체 설정 이전
-  boot.js, app.js    부팅 / 사용자 모듈 묶음(화면 표·메뉴)
-  main.js, admin.js  진입점 둘: 화면을 등록하고 boot()
-  core/types.js      데이터 모양(JSDoc @typedef — 편집기·AI용 문서, 번들에 안 들어감), 공개 함수의 @param·@returns는 각 모듈에
-content/f|m|all/…    작품 폴더(여성향·남성향·전체), 작품 폴더의 images/와 content/codes.json은 관리자 도구가 내보낸 그림·코드 표, codes.admin.json은 관리자 전용 코드(git에 없음) — content/README.md
-tools/build.mjs      합치기 + 검사(두 빌드),  tools/dev.mjs 개발 서버,  tests/ 시험 — tests/README.md
-docs/ARCHITECTURE.md 층 규칙·두 빌드·그림 흐름·주석 정책·점검 결과
-```
+## 무엇을 하나
+- **작품과 대화**: 오리지널 세계관 12편(남성향·여성향 군상극, 1:1 캐릭터), 시작 상황 선택, 지문/대사 서식, 상태창, 다시 쓰기·버전·수정·북마크, AI 추천 답변, 장기기억 자동 요약, 키워드북
+- **장면 그림**: 매 응답 인물마다 상황에 맞는 그림 한 장 — `[[img:인물코드:번호]]` 코드(기본 감정 15종 + 세부 감정·일상 40종 + 의상·장소)를 조합해 미리 만들어 둔 그림을 보여 줘요. 그림은 관리자가 만들어 싣고 사용자는 보기만 해요
+- **로그인·계정 저장**: 이메일 또는 카카오·네이버·Google(Supabase). 대화·작품·설정·그림이 PC와 휴대폰에서 이어지고, API 키는 비밀번호로 잠근 금고로만 올라가요
+- **관심있는 대화**: 전체·남성향·여성향을 고르면 홈에 그쪽 작품만
+- **요금(데모)**: 라이트 모델 하루 10턴 무료, 하트·PLUS는 데모 결제
+- **성인 모드**(로컬·시험용): 성인 확인 + OpenRouter 키일 때만 무검열 서사·성인 수위 그림. 미성년 인물·암시는 어떤 설정에서도 차단
+- **관리자 도구**: 스튜디오(작품 만들기), 이미지 슬롯·세계관 일러스트·표지 AI 생성(Runware), 그림체 세트, 코드 표, 코드 조합 테스트, '작품 폴더에 저장'으로 `content/`에 싣기
+
+## 개발
+처음 한 번 `npm install`(빌드 검사용 파서와 Playwright — 앱 런타임 의존성은 0).
 
 | 명령 | 하는 일 |
 |---|---|
-| `npm run build` | `index.html`·`admin.html` 만들기(검사 포함). `npm run build -- --only user`면 사용자 사이트만(Vercel) |
-| `npm run dev` | http://localhost:5173 으로 띄우고, `src/`·`content/`를 저장할 때마다 다시 빌드해 브라우저를 새로 고침. 빌드 오류는 화면 아래에, 런타임 오류는 원본 모듈 파일:줄로 콘솔에 |
-| `npm run check` | `index.html`이 지금 소스로 만든 결과와 같은지만 확인(GitHub Actions '빌드 확인'이 PR·main마다 실행) |
-| `npm test` | 단위 테스트(1초) — Node가 `src/js` 모듈을 바로 import |
-| `npm run e2e` | Playwright 흐름 시험 11종 — 사용자 사이트 8 + 관리자 도구 3(5~8분, 처음엔 `npx playwright install webkit chromium`) |
+| `npm run build` | `src/`·`content/`를 합쳐 `index.html`(사용자)·`admin.html`(관리자)을 만듦(모듈·문법·작품 폴더 검사 포함) |
+| `npm run dev` | http://localhost:5173 (관리자는 /admin.html) — 저장할 때마다 다시 빌드하고 새로 고침 |
+| `npm run check` | 두 결과 파일이 지금 소스와 같은지(GitHub Actions '빌드 확인'이 PR·main마다 실행) |
+| `npm test` | 단위 테스트(1초) |
+| `npm run e2e` | Playwright 흐름 시험 11종(5~8분, 처음엔 `npx playwright install webkit chromium`) |
 
-- **모듈은 표준 ES 모듈**(`import { 이름 } from "./…/파일.js"`, `export`)이지만 **배포물은 클래식 스크립트 하나**예요. 빌드가 import 그래프 순서(의존 모듈이 먼저)로 이어 붙이면서 import/export만 벗기니, file://·GitHub Pages·claude.ai에서 그대로 돌고 전역(`S`·`room`…)도 예전과 같아요. 규칙: 상대 경로의 이름 있는 import만(이름 바꾸기·default·`export *` 없음), 다른 모듈의 `let`은 그 모듈의 `set…()`로만 바꾸기, 전체에서 같은 이름 두 번 선언하지 않기.
-- **빌드가 잡는 실수**: 선언도 import도 안 된 이름, export 안 된 이름 import, 같은 이름 두 번, import에 대입, 순환 의존에서 맨 윗단이 뒤 모듈의 const를 쓰는 초기화 순서 위반, 결과 스크립트 문법, 오래된 iOS에서 안 도는 문법(`||=`·`Array.at`·lookbehind·`structuredClone`…), 작품 폴더 규칙(폴더와 aud·row, id 중복, 출연진 성별과 폴더, 미성년 인물). 오류는 `src/js/ui/chat/generate.js:42`처럼 원본 위치로 알려 줘요.
-- **작품**은 `content/<f|m|all>/[<홈 줄>/]<id>/work.js`. 맨 위 폴더가 여성향·남성향을 정하고, 새 세계관은 비슷한 작품 폴더를 복사하면 같은 줄에 나란히 들어가요. 방법·칸 설명은 [content/README.md](content/README.md).
-- 결과는 늘 한 파일: GitHub Pages가 `main` 루트의 `index.html`을 그대로 띄우고, 파일(file://)로 열어도 돌아가고(모듈 파일로 나누면 CORS로 막힘), claude.ai artifact로도 그대로 올라감
-- 커밋할 때는 고친 소스와 `npm run build`로 바뀐 `index.html`을 같이 커밋
-- **관리자 도구 `admin.html`**은 같은 빌드가 함께 만들지만 git·배포에 넣지 않아요(.gitignore, Vercel은 `--only user`). 로컬에서 열어(또는 `npm run dev` → /admin.html) 작품·그림·이미지 코드 표를 만들고 **작품 폴더에 저장**으로 저장소 `content/`에 쓴 뒤(Chrome·Edge는 폴더에 바로, 그 밖은 ZIP) 다시 빌드하면 사용자 사이트에 실려요. 사용자는 그림을 만들지 않고 보기만 해요
-- **주석**: 소스에는 자세히 쓰고, 사용자 빌드는 빌드가 주석과 빈 줄을 벗겨요(`//!`·`/*!`·`<!--!`로 시작하는 것만 남고, 모듈마다 `/* ── 파일 — 첫 줄 설명 */` 한 줄). 관리자 빌드는 주석 전부 + 모듈마다 가져옴·내보냄·쓰는 곳 머리 — 설계와 점검 결과는 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). 데이터 모양은 `src/js/core/types.js`의 JSDoc @typedef이고 `jsconfig.json`이 편집기에서 모듈 사이 타입을 이어 줘요(검사는 안 함)
-- `vercel.json`은 저장소에 붙어 있는 Vercel 미리보기 배포용(PR마다 `Vercel` 체크) — 빌드 뒤 저장소 루트를 그대로 서빙하게 해 GitHub Pages와 같은 모양으로 맞춤. 기준 배포 주소는 위 GitHub Pages
+규칙 세 가지:
+1. **`index.html`·`admin.html`은 빌드 결과물** — 직접 고치지 말고 `src/`·`content/`를 고친 뒤 빌드해서 같이 커밋
+2. **배포물은 파일 하나** — 모듈 파일로 나누지 않아요(file://·GitHub Pages·claude.ai에서 그대로 돌아야 함). 소스는 ES 모듈 80개, 빌드가 import 순서로 이어 붙여요
+3. **주석**: 소스에는 자세히. 사용자 빌드는 주석을 벗기고 모듈마다 한 줄 설명만, 관리자 빌드는 전부 남겨요
 
-## 주요 기능
-- 로그인·계정 저장(Supabase): 이메일 또는 카카오·네이버·Google 계정으로 가입·로그인하면(소셜 계정은 이메일이 없어도 됨) 대화·작품·설정·그림·API 키가 계정에 저장돼 PC와 휴대폰에서 이어짐. 처음 로그인할 때 이 기기 데이터(그림 칸·표지·세계관 일러스트·그림체 세트 포함)를 계정으로 옮기거나 합침, 로그아웃·계정 삭제. API 키는 로그인 비밀번호(소셜 계정은 따로 정하는 키 잠금 암호)로 기기에서 암호화한 뒤 올려서 서버·관리자도 볼 수 없음(다른 기기는 같은 비밀번호·암호를 한 번 넣으면 받음, 'API 키도 계정에 저장'은 MY → 계정에서 끌 수 있음). 로그인 없이 둘러보기도 됨. 설정 방법은 아래 '계정 서버 설정'
-- 관심있는 대화: 처음 시작할 때와 MY → 설정·홈에서 전체·남성향(여성 캐릭터와의 대화)·여성향(남성 캐릭터와의 대화)을 고르면 홈에 그쪽 작품만 보임. 작품마다 남성향·여성향 분류(직접 만든 작품은 스튜디오에서 고르거나 출연진 성별로 자동)
-- 캐릭터·세계관 탐색, 상세 페이지, 게임 모드(시작 상황) 선택
-- 세계관 군상극 신작 3편(「살아남는 자가 역사를 쓴다」, 남성향): 대연궁 검시록, 백야호: 열세 번째 겨울, 십절곡: 백 일의 봉문 — 각 히로인 5인·시작 상황 3개·키워드북
-- 여성향 세계관 군상극 3편(「다섯 남자, 하나의 비밀」): 계약 황후의 백 일(로판 궁정 추리), 서촌 오월 하숙집(현대 힐링·가족 미스터리), 호텔 레테: 마흔아홉 번째 밤(저승 호텔 오컬트) — 각 남주 5인·시작 상황 3개·키워드북
-- 서사 엔진: 인과·연속성·감정의 축적·떡밥 회수를 지키는 서사 원칙, 호감도 단계에 맞는 태도, 원인과 감정 변화를 남기는 장기기억 요약
-- 대화방: 지문/대사 서식, 상태창, 다시 쓰기·버전 넘기기, 수정·삭제, 북마크, AI 추천 답변
-- 장면 이미지: 매 응답, 장면에 나온 인물마다 상황에 맞는 그림을 한 장씩(웃으면 웃음, 짓궂게 놀리면 부끄러움 등 — 유저 입력 낱말도 반영, AI가 빠뜨린 인물은 자동으로 채움, 여러 장이면 작게 표시). `[[img:인물코드:번호]]` 태그 — 감정/행동 번호(기본 15종 + 내장 세부 감정·일상 40종 + 직접 추가하는 칸 최대 200개) 뒤에 의상(4xx)·장소(5xx) 번호를 쉼표로 붙인 조합(`[[img:ks:3,404,501]]`)이면 그 조합의 그림을, 없으면 가까운 그림(감정만 → 기본 → 프로필)을 보여 줌. 의상·장소는 바뀔 때만 쓰고 다음 응답에도 이어짐(400·500은 설정대로 되돌리기). 이미지 슬롯: 칸 격자 + 조합 그림 갤러리·'조합 만들기'·'코드 표'(이름·프롬프트·수위를 직접 정함, 모든 인물에 공통. '추천 칸'에서 일상·장소·데이트·로맨스·의상 칸을 골라 한 번에 추가, '목록으로 추가'에서 칸 이름 목록이나 코드 표(`101: { title: "…", prompt: "…" }`, 세 자리 번호 유지)를 붙여 넣어 한 수위로 한 번에 추가). MY → 설정에서 '대화 중 장면 그림 자동 생성'을 켜면 아직 없는 조합을 Runware로 그때그때 만들어 저장(같은 조합은 다시 만들지 않음, claude.ai 안에서는 꺼짐)
-- 이미지 프롬프트 편집: 장면·인물·배경 묶음별 태그 칩(누르면 ★강조, ×빼기, 한국어로 더하기). 그림체·품질·금지 태그는 숨겨서 자동으로 붙음. 이미지 슬롯의 생성 창에서 '이 인물에 태그 저장'을 누르면 고친 태그가 그 인물에 남음(인물 태그는 그 인물의 모든 칸에, 장면·추가·배경은 그 칸에만, 빈 칸 채우기에도 적용, '기본값으로'로 되돌리기)
-- 그림 수위: AI 자동 생성은 기본 전체이용가. 세미·성인 수위로 직접 만든 칸만 그 칸의 수위로 자동 생성되고, 기본 칸·세계관 일러스트는 시트의 수위 칸이나 생성 창에서 바꿀 때만 올라감. 성인 확인 전에는 전체이용가로 잠기고 이유를 보여 줌
-- 남자·동물·풍경 그림: 남자 인물은 1boy·male focus를 붙이고 그림체의 화장·입술 태그를 빼며, 사람이 없는 그림(동물·식물·풍경)은 no humans를 붙이고 사람 쪽 태그를 빼서 여자 인물이 끼어들지 않음
-- AI 이미지 생성(Runware API · SDXL 모델, 그림체마다 모델 자동 선택 — 한국 웹툰 세미리얼·성인 웹툰·웹툰 선화·애니 일러스트·동양 판타지): 이미지 슬롯·표지·세계관 일러스트·페르소나를 Danbooru 영문 태그로 생성, 빈 슬롯 한 번에 채우기. 상황(0~14)별 표정·자세 태그, 비율별 SDXL 해상도, 품질·안전 태그 자동. 한글 설명은 Claude(없으면 OpenRouter)가 영문 태그로 바꿔 보냄. 그림체 직접 입력은 한국어로 써도 됨
-- 기본 화풍: 참고 그림에서 뽑아 내장한 그림체 5종(남성향 일상·여성향 일상·남성향 애니·여성향 세계관 표지·남성향 세계관 표지 — 인물 그림(남성향·여성향 일상)은 YabaL Mix 2.5D XL, 남성향 표지는 semILust v2, 애니는 Hassaku XL, 비교 생성 150여 장으로 문구·가중치를 맞춤, 견본은 설정 카드에). 설정 기본값 '자동'은 작품 성향(전체면 인물 성별)과 표지 여부에 맞춰 골라 주고, 설정에서 하나를 고정할 수도 있음
-- 그림체 세트: 그림 여러 장이나 ZIP을 가져오면 파일 이름 앞부분별(예: 프롬1_남성향_일상1, 프롬1_남성향_일상2 …)로 한 세트씩 묶고, Claude가 세트마다 공통 그림체를 읽어 그림체 태그를 자동으로 작성. 세트마다 모델도 고를 수 있고, 세트를 고르면 그 태그·모델이 적용. 이름이 기본 화풍과 같은 세트(프롬1_남성향_일상 …)는 그 기본 화풍을 덮어써서 '자동'일 때도 내 그림체로 그리고, 세트를 지우거나 '내장으로 되돌리기'를 누르면 내장 화풍으로 돌아옴
-- 세계관 일러스트: 작품마다 대표 일러스트(표지)와 키워드북 항목별 장면 일러스트를 AI로 만들거나 올려서 작품 소개에 표시
-- 장기기억: N턴마다 자동 요약, 한도 초과 시 압축·히스토리 보관
-- 키워드북: 대화에 키워드가 나올 때만 해당 설정을 AI에 전달, 반영된 키워드는 말풍선 아래 📖로 표시
-- 추천 답변: 입력창 위 '✦ AI 추천'을 누르면 응답과 함께 온 행동·대사 3개를 펼침(추가 비용 없음, 자동으로 열리지 않음)
-- 출력 설정(기억력·출력량·리롤 지침·자동 스크롤), AI 모델 선택(라이트·스토리·마스터). 출력량은 적게 500~800자·보통 1000~1500자·많게 1800~2600자이고, 대사를 자주 주고받고 매 턴 새 전개를 넣으며 직전 응답의 문장·묘사를 되풀이하지 않게 지시. 자동 스크롤은 기본 꺼짐(보낼 때 한 번만 내려가고 답은 읽는 자리에서 자라남)
-- 채팅 설정(MY → 설정): 글자 크기·줄 간격·지문 글꼴·Enter로 보내기·장면 이미지 보기, 바꾸면 바로 적용
-- 성인 모드(로컬 파일 전용·시험용): MY → 설정에서 성인 확인 후 OpenRouter 키를 넣으면 대화방별(또는 전체) 무검열 서사(라이트 Rocinante·스토리 Hermes 3·마스터 DeepSeek V3, 깨진 응답은 자동으로 한 번 다시 씀), Claude 거절 시 OpenRouter 자동 우회, 성인 수위 이미지 칸. 미성년 인물·암시는 항상 차단. 체크박스는 본인인증이 아니므로 정식 출시 전 실제 연령 확인과 법률 검토 필요(docs/ROADMAP.md)
-- 하트·PLUS 요금제(데모 결제), 하트 사용 내역
-- 크리에이터 스튜디오, 커뮤니티 공개, 페르소나
+```
+src/page.html · src/admin.html   뼈대(사용자 · 관리자)
+src/css/                          화면별 CSS, css/admin/ 관리자 전용
+src/js/core → content → services · images · ai → ui → admin → boot   층 순서(아래층은 윗층을 모름)
+src/js/main.js · admin.js         진입점 둘
+content/<f|m|all>/…/work.js       작품 폴더(이미지는 images/, 코드 표는 codes.json)
+tools/build.mjs · dev.mjs         빌드 · 개발 서버      tests/   단위·흐름 시험
+```
 
-## 안정성
-- 그림은 IndexedDB에 저장(브라우저 localStorage 5MB 한도 문제 해결, 예전 그림 자동 이전), 저장 공간이 가득 차면 알림
-- AI 응답 형식이 흐트러지거나 중간에 끊겨도 상태창·추천 답변을 최대한 살리고, 여러 인물 호감도에서 빠진 인물은 직전 값 유지
-- 등장인물은 모두 성인(만 19세 이상)만 저장·공개 가능
-- 서버 프록시 연결 지점(`window.HEARTVERSE_CONFIG`)과 남은 과제는 [docs/ROADMAP.md](docs/ROADMAP.md)
-
-## 계정 서버 설정(Supabase, 한 번만 — 2026-11-02 완료)
-1. Supabase 대시보드 → 프로젝트 → **SQL Editor**에 [docs/supabase.sql](docs/supabase.sql)을 붙여 넣고 실행(계정 저장 표 `kv`, 본인 행만 보이게 하는 RLS, 계정 삭제 함수)
-2. **Authentication → URL Configuration**: Site URL을 `https://20232497.github.io/HEARTSYNC/`로, Redirect URLs에 `https://20232497.github.io/HEARTSYNC/**` 추가(인증 메일·비밀번호 재설정 링크가 돌아올 곳)
-3. **Authentication → Sign In / Providers → Email**: Minimum password length 8(앱의 가입 규칙과 같게 — 비밀번호가 API 키 잠금에도 쓰임)
-4. 소셜 로그인은 아래 '소셜 로그인 켜기'(2026-11-03 세 곳 모두 켬) — 공급자를 끄면 그 버튼은 '준비 중' 안내가 나옴
-- 앱에 들어 있는 publishable 키는 브라우저용 공개 키라 저장소에 있어도 괜찮음(데이터는 RLS로 본인만 읽음). secret 키는 절대 넣지 않기
-- 무료 요금제는 일주일 넘게 안 쓰면 프로젝트가 잠들 수 있음(대시보드에서 다시 깨움)
-
-### 소셜 로그인 켜기(카카오·네이버·Google)
-세 곳 모두 '돌아올 주소(Callback·Redirect URI)'는 `https://mblvphojbmxiuqnlxisi.supabase.co/auth/v1/callback`. 발급받은 Client Secret은 Supabase 대시보드에만 넣고 저장소·앱에는 넣지 않기.
-1. **카카오** — [카카오 디벨로퍼스](https://developers.kakao.com) → 앱 생성(앱 대표 도메인 `https://20232497.github.io`) → **앱 → 플랫폼 키 → REST API 키**에서 카카오 로그인 리다이렉트 URI 등록(클라이언트 시크릿은 키를 만들 때 이미 켜져 있음) → **카카오 로그인 → 일반**에서 사용 설정 ON → **동의항목**: 닉네임 필수, 프로필 사진 선택, **카카오계정(이메일) 선택**. Supabase 카카오 공급자는 이메일(`account_email`)을 늘 함께 요청해서, 이메일 동의항목이 없으면 카카오가 KOE205(설정하지 않은 동의 항목)를 냄 → 이메일 항목은 비즈 앱만 켤 수 있으니 **앱 → 일반 → 비즈니스 정보 → 개인 개발자 비즈 앱 전환**(앱 아이콘 등록 → 본인인증·카카오비즈니스 통합 서비스 약관 동의 → 전환, 사업자 번호 없어도 됨). Supabase **Authentication → Sign In / Providers → Kakao**: REST API 키·클라이언트 시크릿을 넣고 켜기, **Allow users without an email** 켜기(이메일 동의를 거부해도 가입되게)
-2. **Google** — [Google Cloud 콘솔](https://console.cloud.google.com) → API 및 서비스 → OAuth 동의 화면(외부) → 사용자 인증 정보 → OAuth 클라이언트 ID(웹 애플리케이션): 승인된 JavaScript 원본 `https://20232497.github.io`, 승인된 리디렉션 URI는 위 주소. Supabase **Providers → Google**에 Client ID·Secret. **브랜딩**: 애플리케이션 홈페이지 `https://20232497.github.io/HEARTSYNC/`, 개인정보처리방침 `https://20232497.github.io/HEARTSYNC/privacy.html`, 승인된 도메인 `20232497.github.io`·`mblvphojbmxiuqnlxisi.supabase.co` → **대상 → 앱 게시**(2026-11-03 프로덕션으로 게시함 — 테스트 사용자가 아니어도 어느 Google 계정이든 로그인됨). 요청 범위가 이메일·프로필뿐이라 심사는 없음. 브랜드 인증은 안 해서 Google 로그인 화면에는 앱 이름 대신 Supabase 주소가 보임(로고를 올리면 심사 대상이 되니 올리지 않기)
-3. **네이버** — [네이버 개발자 센터](https://developers.naver.com) → Application → 애플리케이션 등록 → 사용 API '네이버 로그인'(제공 정보는 별명 정도만, 이메일은 안 받아도 됨) → 환경 PC 웹: 서비스 URL `https://20232497.github.io/HEARTSYNC/`, Callback URL은 위 주소. 검수 전에는 '멤버 관리'에 등록한 아이디만 로그인됨. Supabase **Providers → Custom Providers → New Provider**: 식별자 `naver`(앱은 `custom:naver`로 부름), 이름 네이버, Auto-discovery, Issuer URL `https://nid.naver.com`(Discovery URL은 비움), Client ID·Secret, Scopes `openid`, **Allow users without email** 켜기. 네이버는 Supabase 기본 공급자가 아니라 OIDC로 붙이므로 켠 뒤 실제 계정으로 한 번 시험해 볼 것
-- 같은 이메일로 이메일 가입과 소셜 로그인을 하면 Supabase가 한 계정으로 이어 줌(그때는 API 키도 로그인 비밀번호로 잠금)
-
-## 폴더
-- `index.html` 현재 버전(v2) — 빌드 결과물(위 '소스 구조와 빌드')
-- `src/`(뼈대·CSS·ES 모듈)·`content/`(작품 폴더)·`tools/`(빌드·개발 서버)·`tests/`(단위·흐름 시험), `.github/workflows/build.yml` 빌드 확인
-- `privacy.html` 개인정보처리방침(정적 페이지, 로그인 화면과 Google OAuth 브랜딩에서 연결)
-- `archive/heartverse_v1.html` 최초 시험 버전
+## 문서
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — 층 규칙, 두 빌드, 그림이 사용자에게 가는 흐름, 주석 정책, 점검 기록
+- [docs/SETUP.md](docs/SETUP.md) — 배포 주소, 관리자 비밀번호, Supabase 계정 서버·소셜 로그인 설정, Vercel
+- [content/README.md](content/README.md) — 작품 폴더 만드는 법, 그림·코드 표 싣기
+- [tests/README.md](tests/README.md) — 시험 목록
+- [docs/ROADMAP.md](docs/ROADMAP.md) · [docs/COMMERCIALIZATION.md](docs/COMMERCIALIZATION.md) — 남은 과제, 상용화 단계
+- [privacy.html](privacy.html) — 개인정보처리방침
