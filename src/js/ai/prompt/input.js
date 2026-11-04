@@ -6,8 +6,13 @@ import { rulesPrompt } from "./rules.js";
 import { getChar } from "../../core/character.js";
 import { curText } from "../../core/rooms.js";
 import { sitHints } from "../../images/situations.js";
+/** @typedef {import("../../core/types.js").LLMMessage} LLMMessage */
+/** @typedef {import("../../core/types.js").Message} Message */
+/** @typedef {import("../../core/types.js").Room} Room */
+/** @typedef {import("../../core/types.js").StatusMap} StatusMap */
 
 /* 최근 AI 응답 2개의 단락 첫머리(앞 24자): 모델이 같은 시작·묘사를 되풀이하지 않게 rulesPrompt에 보여 줌. 시스템 메시지([…])는 형식이라 뺌 */
+/** 직전 AI 응답 2개의 단락 첫머리(최대 12개) — [이미 쓴 문장]으로 반복을 막음. @param {Message[]} hist @returns {string[]} */
 export function usedOpeners(hist) {
   const out = [];
   for (const m of hist.filter((x) => x.role === "ai" && curText(x)).slice(-2))
@@ -19,6 +24,11 @@ export function usedOpeners(hist) {
     }
   return [...new Set(out)].slice(-12);
 }
+/**
+ * 한 턴의 AI 요청 메시지 묶음(시스템 규칙 + 기억력만큼의 대화 + [이번 응답] 지시).
+ * @param {Room} r @param {number} uptoIdx 이 번호 앞의 메시지까지 @param {StatusMap} statusBefore @param {string} [direction] 다시 쓰기 방향
+ * @returns {LLMMessage[] & { lore?: string[] }} lore는 반영된 키워드(말풍선 아래 📖)
+ */
 export function buildInput(r, uptoIdx, statusBefore, direction) {
   const hist = r.msgs.slice(0, uptoIdx).filter((m) => curText(m));
   const recent = hist.slice(-(r.set.mem * 2 + 1));

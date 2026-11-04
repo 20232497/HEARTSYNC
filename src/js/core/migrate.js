@@ -5,8 +5,10 @@ import { CODE_MAX, CUSTOM_BASE } from "../images/situations.js";
 import { cleanKeys, saveSettings } from "./settings.js";
 import { S } from "./state.js";
 import { clamp } from "./util.js";
+/** @typedef {import("./types.js").Settings} Settings */
 
 /* 저장된 설정을 읽어 S.settings에 얹고 정리한다. 돌려주는 값: 읽은 원본(없으면 null) — 뒤이은 이전(관리자)이 참고 */
+/** @returns {Partial<Settings>|null} localStorage에서 읽은 원본(없으면 null) — boot(opts.migrate)가 관리자 이전에 넘김 */
 export function migrateSettings() {
   let s = null;
   try { s = JSON.parse(localStorage.getItem("hv1_settings") || "null"); } catch {}

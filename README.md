@@ -24,6 +24,7 @@ src/js/              ES 모듈 77개(사용자 빌드 62개) — 파일 하나 =
   admin/             관리자 도구: 스튜디오·이미지 슬롯·코드 표·생성 창·세계관 일러스트 관리·이미지 설정·작품 화면·대화 중 자동 생성·작품 폴더로 내보내기·그림체 설정 이전
   boot.js, app.js    부팅 / 사용자 모듈 묶음(화면 표·메뉴)
   main.js, admin.js  진입점 둘: 화면을 등록하고 boot()
+  core/types.js      데이터 모양(JSDoc @typedef — 편집기·AI용 문서, 번들에 안 들어감), 공개 함수의 @param·@returns는 각 모듈에
 content/f|m|all/…    작품 폴더(여성향·남성향·전체), 작품 폴더의 images/와 content/codes.json은 관리자 도구가 내보낸 그림·코드 표 — content/README.md
 tools/build.mjs      합치기 + 검사(두 빌드),  tools/dev.mjs 개발 서버,  tests/ 시험 — tests/README.md
 docs/ARCHITECTURE.md 층 규칙·두 빌드·그림 흐름·주석 정책·점검 결과
@@ -43,7 +44,7 @@ docs/ARCHITECTURE.md 층 규칙·두 빌드·그림 흐름·주석 정책·점�
 - 결과는 늘 한 파일: GitHub Pages가 `main` 루트의 `index.html`을 그대로 띄우고, 파일(file://)로 열어도 돌아가고(모듈 파일로 나누면 CORS로 막힘), claude.ai artifact로도 그대로 올라감
 - 커밋할 때는 고친 소스와 `npm run build`로 바뀐 `index.html`을 같이 커밋
 - **관리자 도구 `admin.html`**은 같은 빌드가 함께 만들지만 git·배포에 넣지 않아요(.gitignore, Vercel은 `--only user`). 로컬에서 열어(또는 `npm run dev` → /admin.html) 작품·그림·이미지 코드 표를 만들고 **작품 폴더에 저장**으로 저장소 `content/`에 쓴 뒤(Chrome·Edge는 폴더에 바로, 그 밖은 ZIP) 다시 빌드하면 사용자 사이트에 실려요. 사용자는 그림을 만들지 않고 보기만 해요
-- **주석**: 소스에는 자세히 쓰고, 사용자 빌드는 빌드가 주석과 빈 줄을 벗겨요(`//!`·`/*!`·`<!--!`로 시작하는 것만 남고, 모듈마다 `/* ── 파일 — 첫 줄 설명 */` 한 줄). 관리자 빌드는 주석 전부 + 모듈마다 가져옴·내보냄·쓰는 곳 머리 — 설계와 점검 결과는 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+- **주석**: 소스에는 자세히 쓰고, 사용자 빌드는 빌드가 주석과 빈 줄을 벗겨요(`//!`·`/*!`·`<!--!`로 시작하는 것만 남고, 모듈마다 `/* ── 파일 — 첫 줄 설명 */` 한 줄). 관리자 빌드는 주석 전부 + 모듈마다 가져옴·내보냄·쓰는 곳 머리 — 설계와 점검 결과는 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). 데이터 모양은 `src/js/core/types.js`의 JSDoc @typedef이고 `jsconfig.json`이 편집기에서 모듈 사이 타입을 이어 줘요(검사는 안 함)
 - `vercel.json`은 저장소에 붙어 있는 Vercel 미리보기 배포용(PR마다 `Vercel` 체크) — 빌드 뒤 저장소 루트를 그대로 서빙하게 해 GitHub Pages와 같은 모양으로 맞춤. 기준 배포 주소는 위 GitHub Pages
 
 ## 주요 기능

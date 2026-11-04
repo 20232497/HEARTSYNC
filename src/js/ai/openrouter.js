@@ -5,6 +5,9 @@ import { CFG } from "../core/config.js";
 import { MARK, TIMEOUT } from "../core/constants.js";
 import { S, hasOpenRouterKey } from "../core/state.js";
 import { abortCode, timeoutSignal } from "../core/util.js";
+/** @typedef {import("../core/types.js").LLMError} LLMError */
+/** @typedef {import("../core/types.js").LLMMessage} LLMMessage */
+/** @typedef {import("../core/types.js").LLMOptions} LLMOptions */
 
 /* 깨진 응답 알아보기: 일본어 가나·한자가 많이 섞이거나 한글이 거의 없거나, 이상한 조각이 2개 이상
    (camelCase·파일 이름·밑줄 낱말, 한글에 바로 붙은 소문자 영어·한자, 숫자 섞인 영문 덩어리 — 2026-11 실제로 나온 깨진 응답들로 맞춤) */
@@ -31,6 +34,12 @@ function loopAt(body) {
 }
 /* OpenRouter(OpenAI 호환 SSE). 메시지 모양(첫 메시지 = 시스템, 같은 역할 이어 붙이기)과 json 처리는 byok와 같음.
    model을 주면 등급 대신 그 모델, sampling은 샘플링 값. 대화 요청(시스템에 MARK)의 본문이 깨지면 멈추고 temperature를 낮춰 한 번 다시 씀 */
+/**
+ * @param {LLMMessage[]} messages 첫 메시지 = 시스템
+ * @param {LLMOptions & { model?: string, sampling?: object, retry?: boolean }} o model은 등급 대신 그 모델, retry는 깨진 응답을 한 번 다시 쓸지
+ * @returns {Promise<string|unknown>}
+ * @throws {LLMError} no_or_key · or_bad_key · or_no_funds · or_bad_model · or_network · garbled · timeout …
+ */
 export async function openRouterStream(messages, { tier, onText, signal, json, maxTokens, model: pinned = "", sampling = OR_SAMPLING, retry = true }) {
   if (!hasOpenRouterKey()) throw { code: "no_or_key" };
   const rest = [];

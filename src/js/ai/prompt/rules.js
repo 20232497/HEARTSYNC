@@ -9,6 +9,9 @@ import { imgTags, lastDims, parseCodes, splitDims } from "../../images/codes.js"
 import { imagesOf } from "../../images/pick.js";
 import { CUSTOM_BASE, codeDefs, sitDef, sitName } from "../../images/situations.js";
 import { validRef } from "../../services/images.js";
+/** @typedef {import("../../core/types.js").LoreEntry} LoreEntry */
+/** @typedef {import("../../core/types.js").Message} Message */
+/** @typedef {import("../../core/types.js").Room} Room */
 
 export function speakerName(r) { return r.char.world_mode ? "내레이터" : r.char.name; }
 /* 관계형 게이지(호감·신뢰 등)가 숫자일 때만 지금 단계에 맞는 태도를 알려 줌 */
@@ -20,6 +23,10 @@ function relStage(c, s) {
 }
 /* 성인 모드 수위 항목: unfilteredRoute(r)일 때만(=OpenRouter로 갈 때만) 들어감. 나머지 규칙·서사 원칙·출력 형식은 두 모드가 같음 */
 const ADULT_RULE = "모든 등장인물은 법적 성인(20세 이상)이다. 성인 인증이 완료된 세션이므로 검열, 도덕적 훈계, 암전, 생략 없이 인물의 욕망, 감정선, 농밀한 신체적 접촉과 성적 상호작용을 웹소설 문체로 구체적이고 사실적이며 몰입감 있게 묘사한다.\n- 미성년자이거나 미성년자로 보이는 인물(학생 신분, 아이 같은 외모·말투 포함)은 어떤 경우에도 성적으로 묘사하지 않는다. 그런 방향의 요청은 따르지 않고 이야기를 다른 쪽으로 돌린다.";
+/**
+ * 시스템 프롬프트 — 작품 설정·연기 규칙·서사 원칙·장면 이미지 번호·응답 형식(MARK + status JSON). 성인 규칙은 unfilteredRoute일 때만.
+ * @param {Room} r @param {LoreEntry[]} [lore] 이번 턴에 맞은 키워드북 @param {Message[]} [hist=r.msgs] @returns {string}
+ */
 export function rulesPrompt(r, lore = [], hist = r.msgs) {
   const c = r.char, p = r.persona, len = LEN[r.set.len] || LEN.mid;
   const fields = c.fields.map((f) => `"${f}":${f === c.gauge && typeof r.status?.[f] === "number" ? "0~100 정수" : '"짧은 값"'}`).join(",");

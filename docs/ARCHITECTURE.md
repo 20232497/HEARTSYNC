@@ -101,5 +101,5 @@ boot.js → app.js(USER_VIEWS · USER_NAVS) → main.js | admin.js
 | 2단계 Proxy 반응형 저장소, 데이터 주도 렌더링 | **보류** | S를 Proxy로 바꾸면 62개 모듈 전부에 닿고, 스트리밍 중 수백 번 바뀌는 상태를 자동 재렌더하면 스크롤·포커스 흐름이 깨짐. 층 사이 결합은 §2의 이벤트 버스(core/events.js)·EXT 고리로 이미 풀었고, 화면은 명시적 render 함수가 가장 읽기 쉬움 |
 | 3단계 content/와 Supabase를 한 데이터 층으로, 캐시 우선 fetch | **보류** | 작품은 관리자가 큐레이션해 빌드에 싣는 정적 데이터(12작품), Supabase는 사용자별 데이터만. 서버에서 작품을 받으면 file://·오프라인 부팅이 깨지고 표·RLS·공개 파이프라인이 늘어남. 작품이 수십 개를 넘으면 그때 다시 봄 |
 | 4단계 낙관적 UI·스켈레톤·타임아웃/재시도 | **부분 적용** | 낙관적 UI(유저 말풍선 즉시, thinking 점, 타이핑 커서)와 오류 줄 + 다시 시도는 이미 있었음. 없던 것: **네트워크 시간 제한**(연결·스트림 멈춤·그림 생성·Supabase 요청 — TIMEOUT·timeoutSignal), 끊긴 응답의 본문 보존, 그림 자리 스켈레톤(img-wait/img-miss) |
-| 5단계 JSDoc 타입·@typedef 스키마 | **적용(다음 차례)** | 유지보수·AI 보조에 도움, 사용자 빌드는 주석을 벗기므로 크기 비용 0. 핵심 데이터 모양(작품·대화방·메시지·설정)과 공개 함수에만 — 모든 함수에 기계적으로 달지는 않음 |
+| 5단계 JSDoc 타입·@typedef 스키마 | **적용** | `src/js/core/types.js`에 데이터 모양 @typedef 30여 종(작품·출연진·키워드북·대화방·메시지·설정·지갑·견적·코드·그림체·AI 요청/오류…), core·ai·services의 공개 함수·객체 88곳에 @param·@returns·@throws, `jsconfig.json`(checkJs false — 검사가 아니라 편집기·AI용 문서). 사용자 빌드는 주석을 벗기므로 크기 비용 0. ui/·images/·admin/은 첫 줄 주석으로 충분해 달지 않음 |
 

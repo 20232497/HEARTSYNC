@@ -1,0 +1,13 @@
+{
+  "_comment": "편집기(VS Code 등)가 src/js의 JSDoc 타입(core/types.js의 @typedef)을 모듈 사이에서 따라가게 하는 설정. 검사(checkJs)는 끔 — 빌드·앱 동작과 무관, 의존성 없음",
+  "compilerOptions": {
+    "target": "es2020",
+    "module": "esnext",
+    "moduleResolution": "node",
+    "checkJs": false,
+    "allowJs": true,
+    "noEmit": true,
+    "lib": ["es2020", "dom", "dom.iterable"]
+  },
+  "include": ["src/js/**/*.js", "tools/**/*.mjs", "tests/**/*.mjs"]
+}

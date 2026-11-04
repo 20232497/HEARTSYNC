@@ -7,11 +7,16 @@ import { ago } from "../core/util.js";
 import { validRef } from "./images.js";
 import { SB } from "./supabase.js";
 import { VAULT, VAULT_FIELDS } from "./vault.js";
+/** @typedef {import("../core/types.js").Settings} Settings */
 
 /* KV ↔ 계정 동기화. 쓰기는 KV.set → put()이 키마다 0.8초 모아 upsert(지우기는 DELETE).
    읽기는 그림(img…)을 뺀 키를 받아 이 기기에 씀 — 처음 로그인하면 전부, 그 뒤엔 updated_at이 바뀐 것만. 그림은 IMG.load가 필요할 때 한 장씩.
    이 기기에서 아직 못 올린 키(pending)는 받은 값으로 덮지 않음. 설정은 "settings" 키(글자 크기·Enter로 보내기는 기기마다 따로) */
 const DEVICE_SETTINGS = ["fs", "enterSend"];
+/**
+ * 계정 저장(Supabase kv 표). start()/stop() 로그인·로그아웃 때 · put(k, v) 0.8초 모아 upsert(KV.remote 고리) · flush() 바로 올림 · pull() → Promise<number> 바뀐 행 받아 적용
+ * getOne(k)/getMany(keys) 그림 본문 받기 · pushAll(keys) 처음 로그인에 기기 데이터 올리기 · wipe() 계정 행 전부 삭제 · state: ""|"syncing"|"ok"|"err"("cloud" 이벤트)
+ */
 export const CLOUD = {
   on: false, uid: null, pending: {}, timer: null, state: "", at: 0, pulledAt: 0, noTable: false,
   lastKey() { return "hv1_cloudlast_" + this.uid; },
@@ -137,6 +142,7 @@ function localKVKeys() {
   try { return Object.keys(localStorage).filter((k) => k.indexOf("hv1_") === 0).map((k) => k.slice(4)).filter((k) => !/^(settings|auth|guest|cloudlast_.*|cloudfix_.*|vault_.*|img[a-z0-9]{6,30})$/.test(k)); } catch { return []; }
 }
 // 계정에 올리는 설정: 기기별 설정과 API 키는 뺌(키는 비밀번호로 잠가 "vault" 행에만 — VAULT. 서버의 표도 settings에 키 칸이 있으면 거부)
+/** 계정에 올릴 설정 — 기기별 칸(fs·enterSend)과 API 키 칸은 뺌(서버 제약 kv_no_plain_keys). @returns {Partial<Settings>} */
 export function cloudSettings() {
   const s = Object.assign({}, S.settings);
   DEVICE_SETTINGS.concat(VAULT_FIELDS).forEach((k) => delete s[k]);
@@ -151,6 +157,7 @@ function mergeCloudSettings(v) {
   S.settings = next;
   try { localStorage.setItem("hv1_settings", JSON.stringify(S.settings)); } catch {}
 }
+/** MY → 계정에 보이는 동기화 상태 글. @returns {string} */
 export function cloudStateText() {
   if (!CLOUD.on) return "";
   if (CLOUD.state === "notable") return "⚠️ 계정 저장 표가 아직 없어요 (docs/supabase.sql을 실행해 주세요)";

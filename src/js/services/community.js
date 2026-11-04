@@ -7,8 +7,10 @@ import { DB, S } from "../core/state.js";
 import { KV } from "../core/storage.js";
 import { toast } from "../core/util.js";
 import { pubImages, pubLore, validRef } from "./images.js";
+/** @typedef {import("../core/types.js").Work} Work */
 
 /* 커뮤니티: pub/<내 id> 문서 하나에 내 공개 캐릭터를 모아 둔다 (모두 읽기, 본인만 쓰기) */
+/** 내 공개 작품을 claude.ai db의 pub/<내 id> 문서 하나로(없으면 문서 삭제). claude.ai 밖에서는 아무 일도 안 함. @returns {Promise<void>} */
 export async function publishCommunity() {
   if (!DB || !KV.uid) return;
   const pubs = S.mine.filter((m) => m.publish).map((m) => ({ ...m, img: typeof m.img === "string" && m.img.startsWith("kv:") ? "" : m.img, images: pubImages(m.images), loreImages: pubLore(m.loreImages), creator: S.profile.nick || "익명 크리에이터" }));
@@ -16,6 +18,7 @@ export async function publishCommunity() {
   catch { if (pubs.length) toast("커뮤니티 공개는 이 페이지에 참여 권한이 있는 사람만 할 수 있어요. 캐릭터는 내 보관함에 저장됐어요."); }
 }
 /* 다른 사람이 올린 작품을 믿지 않고 정리: 길이 제한, 허용 값만, kv: 그림(남의 기기에만 있음)은 버림, 미성년 인물이면 통째로 버림 */
+/** @param {unknown} c 다른 사람이 올린 작품 @returns {Work|null} 정리한 작품, 믿을 수 없거나 미성년 인물이면 null */
 export function cleanChar(c) {
   if (!c || typeof c !== "object") return null;
   const s = (x, n) => typeof x === "string" ? x.slice(0, n) : "";
@@ -34,6 +37,7 @@ export function cleanChar(c) {
     openings: c.openings.slice(0, 6).map((o) => ({ title: s(o?.title, 30), text: s(o?.text, 3000), directive: s(o?.directive, 300), status: cleanStatus(o?.status) })).filter((o) => o.text) };
   return out.openings.length && !minorFlags(out).length ? out : null;
 }
+/** pub/ 컬렉션을 구독해 S.community를 채우고 "community" 이벤트. @returns {void} */
 export function watchCommunity() {
   if (!DB) return;
   DB.collection("pub").limit(200).onSnapshot((snap) => {

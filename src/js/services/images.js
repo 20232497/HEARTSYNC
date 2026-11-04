@@ -2,12 +2,19 @@
 import { IDB, KV } from "../core/storage.js";
 import { $$, uid } from "../core/util.js";
 import { CLOUD } from "./cloud.js";
+/** @typedef {import("../core/types.js").ImageRef} ImageRef */
+/** @typedef {import("../core/types.js").ImagesMap} ImagesMap */
 
 /* 그림 참조: /_blob/<id>(claude.ai assets) · kv:img…(IndexedDB·계정) · data:image/… · content/…/images/x.webp(빌드가 작품 폴더에서 실은 그림, index.html 기준 상대 경로) */
+/** @param {unknown} ref @returns {boolean} ImageRef 모양인지 */
 export function validRef(ref) {
   return typeof ref === "string" && (/^\/_blob\/[A-Za-z0-9_-]{8,80}$/.test(ref) || /^kv:img[a-z0-9]{6,30}$/.test(ref) || /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(ref)
     || /^content\/(?!.*\.\.)[A-Za-z0-9_./-]+\.(webp|png|jpe?g)$/.test(ref));
 }
+/**
+ * 그림 저장소. put(file|Blob) → Promise<ImageRef>(assets면 /_blob/, 아니면 축소해 IndexedDB·kv:) · load(k)/local(k) kv 그림 본문(data URL) · tag(ref) → <img> HTML(kv:는 data-kv로 두고 hydrate가 채움)
+ * hydrate(root) data-kv 그림 채우기(없으면 계정에서 받음, 받기 전 img-wait·못 받으면 img-miss) · drop(ref) 지우기 · keep(k, v) 계정에서 받은 그림을 IDB에 · migrate() 예전 localStorage 그림 옮기기
+ */
 export const IMG = {
   assets: null, cache: {},
   async put(file) {
@@ -81,8 +88,10 @@ function shrink(file, max, q, asBlob) {
     fr.onerror = rej; fr.readAsDataURL(file);
   });
 }
+/** 공개용 세계관 일러스트 — /_blob/ 참조만 남김(kv:는 남의 기기에 없음). @param {Record<string, ImageRef>} m @returns {Record<string, ImageRef>} */
 export function pubLore(m) { const out = {}; for (const [k, ref] of Object.entries(m || {}).slice(0, 40)) if (typeof ref === "string" && ref.startsWith("/_blob/") && validRef(ref)) out[String(k).slice(0, 20)] = ref; return out; }
 /* 커뮤니티: pub/<내 id> 문서 하나에 내 공개 캐릭터를 모아 둔다 (모두 읽기, 본인만 쓰기) */
+/** 공개용 인물 그림 — /_blob/ 참조만. @param {ImagesMap} images @returns {ImagesMap} */
 export function pubImages(images) {
   const out = {};
   for (const [code, m] of Object.entries(images || {})) for (const [k, ref] of Object.entries(m || {})) if (typeof ref === "string" && ref.startsWith("/_blob/") && validRef(ref)) (out[code] = out[code] || {})[k] = ref;

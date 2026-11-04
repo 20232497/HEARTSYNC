@@ -7,6 +7,9 @@
      cloud      계정 저장 상태가 바뀜(services/cloud)      → ui/account가 상태 글을 다시 그림
      community  커뮤니티 작품 목록을 받음(services/community) → ui/home이 홈에 있으면 다시 그림
      route      화면을 다시 그려야 함(services/sync)       → ui/shell이 route() */
+/** @typedef {import("./types.js").EventName} EventName */
 const handlers = {};
+/** 이벤트 구독. @param {EventName} name @param {(v?: unknown) => void} fn @returns {Function} 넘긴 fn 그대로 */
 export function on(name, fn) { (handlers[name] = handlers[name] || []).push(fn); return fn; }
+/** 이벤트 알림 — 구독자 하나가 던져도 나머지는 돈다(콘솔에 기록). @param {EventName} name @param {unknown} [v] @returns {void} */
 export function emit(name, v) { (handlers[name] || []).forEach((fn) => { try { fn(v); } catch (e) { console.error("[event " + name + "]", e); } }); }

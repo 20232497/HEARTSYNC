@@ -11,6 +11,10 @@ import { SB } from "./supabase.js";
    비밀번호가 없는 계정(카카오·네이버·구글로만 가입)은 '키 잠금 암호'를 따로 정함 — 서버가 확인해 줄 수 없으니 계정의 잠금(kid)과 맞을 때만 받아들임(phraseSheet).
    비밀번호를 재설정하면 새 잠금(kid)으로 다시 올림. 예전 잠금을 가진 기기는 같은 kid일 때만 고치는 PATCH라 덮어쓰지 못하고 '비밀번호 입력'을 띄움 */
 export const VAULT_FIELDS = ["apiKey", "runwareKey", "openRouterKey"];
+/**
+ * API 키 금고 — 키를 로그인 비밀번호(또는 키 잠금 암호)로 기기에서 만든 잠금 키로 AES-GCM 암호화해 계정 "vault" 행에만 올림(서버는 못 봄).
+ * fromPassword(pw, uid)/fromPhrase(phrase, uid, box) 잠금 키 만들기 · save() 바뀐 키 올리기(같은 kid일 때만) · take(box, merge) 계정 값을 기기에 · drop() 행 삭제 · state: ""|"ok"|"locked"|"stale"("vault" 이벤트)
+ */
 export const VAULT = {
   rec: null, ck: null, state: "", timer: null, fresh: false, // rec { uid, k(잠금 키 base64), kid, seen(마지막으로 계정과 맞춘 키 묶음의 해시) }
   ok() { return !!(window.crypto && crypto.subtle && window.TextEncoder); },

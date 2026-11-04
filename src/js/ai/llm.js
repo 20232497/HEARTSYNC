@@ -6,9 +6,20 @@ import { ANTHROPIC_URL, CFG } from "../core/config.js";
 import { TIMEOUT } from "../core/constants.js";
 import { S, SAMPLE, hasClaudeKey, hasOpenRouterKey, samplePromise } from "../core/state.js";
 import { abortCode, timeoutSignal, toast } from "../core/util.js";
+/** @typedef {import("../core/types.js").LLMError} LLMError */
+/** @typedef {import("../core/types.js").LLMMessage} LLMMessage */
+/** @typedef {import("../core/types.js").LLMOptions} LLMOptions */
 
 export async function waitEngine() { if (S.engine === "pending") await samplePromise; }
+/** 설정 화면에 보이는 AI 연결 이름. @returns {string} */
 export function engineName() { return S.engine === "sample" ? "claude.ai 계정" : S.engine === "byok" ? (S.settings.apiKey ? "API 키" : "HEART SYNC 서버") : "연결 안 됨"; }
+/**
+ * AI 호출 하나. 경로: 성인 경로면 OpenRouter → claude.ai sample → BYOK(api.anthropic.com 스트리밍). Claude가 거절하면 canFallback일 때 OpenRouter로 다시.
+ * @param {LLMMessage[]} messages 첫 메시지 = 시스템
+ * @param {LLMOptions} [o]
+ * @returns {Promise<string|unknown>} json이면 파싱한 값, 아니면 본문 글(상태 JSON 포함 — ai/parse.js로 나눔)
+ * @throws {LLMError}
+ */
 export async function llm(messages, { tier = "quick", onText, signal, json = false, maxTokens = 2000, room: rr = null, adult = false } = {}) {
   await waitEngine();
   const o = { tier, onText, signal, json, maxTokens };
@@ -87,6 +98,7 @@ async function byok(messages, { tier, onText, signal, json, maxTokens }) {
   if (json) { const v = looseJSON(text); if (v === undefined) throw { code: "invalid_json", text }; return v; }
   return text;
 }
+/** 오류 → 사용자 안내 문구. 취소(cancelled)는 빈 문자열. @param {LLMError|unknown} e @returns {string} */
 export function errCopy(e) {
   switch (e && e.code) {
     case "cancelled": return "";
