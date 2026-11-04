@@ -3,7 +3,7 @@
      content/<f|m|all>/[<줄>/]<id>/images/<인물코드>-<조합키>.jpg   그림 칸 — 조합 키의 쉼표는 파일 이름에서 -(3-404-501)
      content/…/<id>/images/cover.jpg                                  대표 일러스트(표지)
      content/…/<id>/images/lore-<n>.jpg                               키워드북 n번째 항목의 세계관 일러스트(1부터)
-     content/codes.json                                                이미지 코드 표([{n, name, prompt, rating, keys?}] — 실린 코드 + 이 브라우저에서 만든 칸, 같은 번호는 내 칸)
+     content/codes.json                                                이미지 코드 표([{n, name, prompt, rating, keys?}] — 실린 코드 + 이 브라우저에서 만든 칸 가운데 전체이용가만. 성인 수위·관리자 전용(codes.admin.json) 코드는 공개 저장소에 싣지 않음)
      content/<aud>/<id>/work.js                                        스튜디오에서 만든 내 작품을 오리지널로 올릴 때(이미 있으면 덮어씀)
    쓰는 방법: Chrome·Edge는 폴더 고르기(File System Access API)로 저장소의 content 폴더에 바로 씀. 그 밖의 브라우저는 같은 구조의 ZIP을 내려받아 풀어 넣는다.
    빌드(tools/build.mjs)가 이 파일들을 찾아 ORIGINALS의 images·img·loreImages와 CONTENT_CODES로 넣는다(content/README.md) */
@@ -14,7 +14,7 @@ import { toast } from "../core/util.js";
 import { parseCodes } from "../images/codes.js";
 import { imagesOf } from "../images/pick.js";
 import { refDataURL } from "../images/runware.js";
-import { allCustom } from "../images/situations.js";
+import { allCustom, sitDef } from "../images/situations.js";
 import { validRef } from "../services/images.js";
 
 export const CONTENT = { dir: null }; // 고른 content 폴더 핸들(이 세션 동안)
@@ -38,8 +38,8 @@ const fileKey = (key) => parseCodes(String(key)).join("-");
 export async function workFiles(c) {
   const out = [], mine = S.mine.find((m) => m.id === c.id);
   const add = async (name, ref) => { if (!validRef(ref) || String(ref).startsWith("/_blob/") || String(ref).startsWith("content/")) return; const d = await refDataURL(ref); if (typeof d === "string" && d.startsWith("data:image/")) out.push({ path: `images/${name}.${extOf(d)}`, data: d }); };
-  const imgs = imagesOf(c);
-  for (const code of Object.keys(imgs)) for (const key of Object.keys(imgs[code])) await add(`${code}-${fileKey(key)}`, imgs[code][key]);
+  const imgs = imagesOf(c), adminKey = (key) => parseCodes(String(key)).some((n) => !!(sitDef(n) || {}).adminOnly); // 관리자 전용 코드가 든 조합 그림은 사용자 사이트에 싣지 않음
+  for (const code of Object.keys(imgs)) for (const key of Object.keys(imgs[code])) if (!adminKey(key)) await add(`${code}-${fileKey(key)}`, imgs[code][key]);
   await add("cover", mine ? mine.img : S.coverpacks[c.id]);
   const lore = c.lore || [], lp = mine ? (mine.loreImages || {}) : (S.lorepacks[c.id] || {});
   for (let i = 0; i < lore.length; i++) await add(`lore-${i + 1}`, lp[lore[i].keys[0]]);
@@ -50,9 +50,10 @@ export function workSource(c) {
   const o = { ...c }; ["images", "img", "loreImages", "publish", "creator", "updated", "aud", "row"].forEach((k) => delete o[k]);
   return `/* ${c.title} — 스튜디오에서 내보냄(${new Date().toISOString().slice(0, 10)}). 폴더 이름이 id, 맨 위 폴더가 aud(content/README.md) */\nexport default ${JSON.stringify(o, null, 2)};\n`;
 }
-/* 이미지 코드 표(실린 코드 + 내 칸, 번호 순) → codes.json 글. 빌드가 CONTENT_CODES로 다시 싣는다 */
+/* 사용자 사이트에 실을 코드 표 → codes.json 글: 전체이용가이고 관리자 전용이 아닌 것만(성인 수위 코드는 공개 저장소·사용자 빌드에 넣지 않음 — 빠진 수는 codesDropped). 빌드가 CONTENT_CODES로 다시 싣는다 */
+export const codesDropped = () => allCustom().filter((d) => d.rating !== "safe" || d.adminOnly).length;
 export function codesSource() {
-  const list = allCustom().slice().sort((a, b) => a.n - b.n).map((d) => ({ n: d.n, name: d.name, prompt: d.prompt || "", ...(d.keys ? { keys: d.keys } : {}), rating: d.rating || "safe" }));
+  const list = allCustom().filter((d) => d.rating === "safe" && !d.adminOnly).sort((a, b) => a.n - b.n).map((d) => ({ n: d.n, name: d.name, prompt: d.prompt || "", ...(d.keys ? { keys: d.keys } : {}), rating: "safe" }));
   return JSON.stringify(list, null, 2) + "\n";
 }
 const dataBytes = (d) => Uint8Array.from(atob(d.slice(d.indexOf(",") + 1)), (ch) => ch.charCodeAt(0));

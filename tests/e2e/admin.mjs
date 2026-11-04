@@ -46,12 +46,25 @@ for (const [dev, engine, opts] of [["Desktop Chrome", chromium, {}], ["iPhone 13
     await p.evaluate(() => { location.hash = "me"; }); await wait(500);
     res.me = await p.evaluate(() => ({ rkey: !!$("#rkey"), gstyle: !!$("#gstyle"), bsets: $$("#bsets .bset").length, nick: !!$("#nick"), save: !!$("#setSave") }));
     if (!res.me.rkey || !res.me.gstyle || !res.me.bsets || !res.me.nick || !res.me.save) errs.push("MY 이미지 설정: " + JSON.stringify(res.me));
+    // 코드 조합 테스트: 칩이 그려지고, 의상·장소 칩을 누르면 조합 키가 바뀌고, 프롬프트 보기가 묶음을 보여 줌(그리기는 Runware 키가 필요해 누르지 않음)
+    await p.evaluate(() => { location.hash = "codetest"; }); await wait(500);
+    res.codetest = await p.evaluate(async () => {
+      const n0 = $$("#ctA .ct-chip").length, w0 = $$("#ctWe .ct-chip").length, p0 = $$("#ctP .ct-chip").length;
+      $$("#ctWe .ct-chip")[0].click(); await new Promise((z) => setTimeout(z, 150)); $$("#ctP .ct-chip")[0].click(); await new Promise((z) => setTimeout(z, 150));
+      const combo = $(".ct-combo code").textContent; $("#ctPrompt").click(); await new Promise((z) => setTimeout(z, 150));
+      // 성인 확인을 켜면 세미·성인 코드가 더 보이고, 이 PC에 관리자 전용 코드(ADMIN_CODES — content/codes.admin.json, git에 없음)가 있으면 그것도 칩으로
+      S.settings.isAgeVerified = true; saveSettings(); viewCodeTest(); await new Promise((z) => setTimeout(z, 200));
+      const adultN = $$(".ct-chip.adult").length, adminN = $$(".ct-chip small").filter((x) => x.textContent === "관리자").length, adminCodes = typeof ADMIN_CODES === "undefined" ? 0 : ADMIN_CODES.length;
+      S.settings.isAgeVerified = false; saveSettings();
+      return { acts: n0, wears: w0, places: p0, combo, prompt: ($("#ctPre")?.textContent || "").length, hidden: $("#ctPre")?.hidden, go: !!$("#ctGo"), adultN, adminN, adminCodes };
+    });
+    if (res.codetest.acts < 50 || res.codetest.wears < 2 || res.codetest.places < 5 || !/\[\[img:[a-z0-9]+:\d+,4\d\d,5\d\d\]\]/.test(res.codetest.combo) || res.codetest.prompt < 40 || res.codetest.hidden || res.codetest.adultN < 6 || res.codetest.adminN !== res.codetest.adminCodes) errs.push("코드 조합 테스트: " + JSON.stringify(res.codetest));
     if (out) await p.screenshot({ path: `${out}/${tag}_admin_me.png`, fullPage: false });
 
     // 사용자 빌드: 관리 자리가 비어 있고 관리자 함수가 없음
     await open(userUrl);
     const u = { navs: await p.evaluate(() => [...document.querySelectorAll("#rail [data-nav]")].map((b) => b.dataset.nav)) };
-    u.fns = await p.evaluate(() => ({ studio: typeof viewStudio, slots: typeof openImageSlots, gen: typeof genImageSheet, works: typeof viewWorks, runware: typeof runwareImage }));
+    u.fns = await p.evaluate(() => ({ studio: typeof viewStudio, slots: typeof openImageSlots, gen: typeof genImageSheet, works: typeof viewWorks, runware: typeof runwareImage, codetest: typeof viewCodeTest, adminCodes: typeof ADMIN_CODES }));
     await p.evaluate(() => { location.hash = "c-hwanghu"; }); await wait(500);
     u.detail = await p.evaluate(() => ({ wArt: !!$("#wArt"), imgSlots: !!$("#imgSlots"), start: !!$("#start"), cast: $$("[data-cast]").length }));
     await p.evaluate(() => { const r = newRoom(normalizeChar(getChar("hwanghu")), 0, S.personas[0]); location.hash = "r-" + r.id; }); await wait(600);

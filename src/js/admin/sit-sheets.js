@@ -131,8 +131,8 @@ export function sitListSheet(after) {
 /* 직접 추가하는 칸 만들기·고치기. 슬롯 시트 위에 겹쳐 뜸. 내장 코드(def.builtin)와 작품 폴더에 실린 코드(def.shipped)를 고치면 같은 번호의 내 칸을 만들어 덮음 — 실린 코드는 '코드 표 내보내기'로 다시 실음 */
 export function sitEditor(def, after) {
   const ov = document.createElement("div"); ov.className = "overlay gen-ov";
-  ov.innerHTML = `<div class="sheet" role="dialog" aria-modal="true"><div class="sheet-head"><h2>${def ? (def.builtin ? "내장 코드 덮어쓰기" : def.shipped ? "실린 코드 고치기" : "칸 고치기") : "이미지 칸 추가"}</h2><button class="icon-btn" data-x aria-label="닫기">${ICON.close}</button></div>
-    <p class="sub" style="margin-top:0">${def ? `번호 ${def.n} · ${DIM_NAMES[dimOf(def.n)]}${def.builtin ? " · 저장하면 이 번호의 내 칸이 생겨 내장 코드를 대신해요(지우면 되돌아와요)." : def.shipped ? " · 작품 폴더(content/codes.json)에 실린 코드예요. 저장하면 이 번호의 내 칸이 생겨 덮고, 작품 화면의 '코드 표 내보내기'로 다시 실어요." : ""}` : "모든 인물에 같은 칸이 생기고, 대화 중 AI가 이 칸의 그림을 넣을 수 있어요."}</p>
+  ov.innerHTML = `<div class="sheet" role="dialog" aria-modal="true"><div class="sheet-head"><h2>${def ? (def.builtin ? "내장 코드 덮어쓰기" : def.adminOnly ? "관리자 전용 코드 고치기" : def.shipped ? "실린 코드 고치기" : "칸 고치기") : "이미지 칸 추가"}</h2><button class="icon-btn" data-x aria-label="닫기">${ICON.close}</button></div>
+    <p class="sub" style="margin-top:0">${def ? `번호 ${def.n} · ${DIM_NAMES[dimOf(def.n)]}${def.builtin ? " · 저장하면 이 번호의 내 칸이 생겨 내장 코드를 대신해요(지우면 되돌아와요)." : def.adminOnly ? " · 관리자 전용 코드(content/codes.admin.json)예요. 저장하면 이 번호의 내 칸이 생겨 덮고 관리자 전용 표시는 유지돼요 — 사용자 사이트에는 실리지 않아요." : def.shipped ? " · 작품 폴더(content/codes.json)에 실린 코드예요. 저장하면 이 번호의 내 칸이 생겨 덮고, 작품 화면의 '코드 표 내보내기'로 다시 실어요." : ""}` : "모든 인물에 같은 칸이 생기고, 대화 중 AI가 이 칸의 그림을 넣을 수 있어요."}</p>
     ${def ? "" : `<div class="field"><label for="sdm">종류</label><select id="sdm"><option value="act">감정/행동 — 표정·자세·행동(번호 15~)</option><option value="wear">의상 — 감정 번호 뒤에 붙여 쓰는 옷(410~)</option><option value="place">장소 — 배경(510~)</option></select></div>`}
     <div class="field"><label for="snm">칸 이름</label><input id="snm" maxlength="16" value="${esc(def?.name || "")}" placeholder="예: 수영복, 잠옷, 비 오는 날"></div>
     <div class="field"><label for="spr">프롬프트 <span class="note">한국어로 써도 돼요 · 인물 외모는 자동으로 붙어요</span></label><textarea id="spr" maxlength="600" style="min-height:90px" placeholder="예: 비에 젖은 머리, 투명 우산, 밤거리 네온">${esc(def?.prompt || "")}</textarea></div>
@@ -153,7 +153,7 @@ export function sitEditor(def, after) {
       if (list.length >= CUSTOM_MAX) { toast(`칸은 ${CUSTOM_MAX}개까지 추가할 수 있어요.`); return; }
       const n = def ? def.n : freeSitNum($("#sdm", ov)?.value || "act");
       if (n < 0) { toast("이 종류의 빈 번호가 없어요. 쓰지 않는 칸을 지워 주세요."); return; }
-      list.push({ n, name, prompt, rating, ...(def && def.keys ? { keys: def.keys } : {}) });
+      list.push({ n, name, prompt, rating, ...(def && def.keys ? { keys: def.keys } : {}), ...(def && def.adminOnly ? { adminOnly: true } : {}) });
     }
     saveSettings(); close(); after && after(); toast(def ? "칸을 고쳤어요" : "칸을 추가했어요");
   };
@@ -171,7 +171,7 @@ export function codeTableSheet(after) {
     const row = (n, nameHTML, prompt, btn) => `<tr><td class="num">${n}</td><td><b>${nameHTML}</b></td><td class="note" style="white-space:normal">${esc(prompt)}</td><td>${btn}</td></tr>`;
     const rows = (dim) => [
       ...(dim === "act" ? SIT.map((s, i) => row(i, esc(s), "기본 칸", "")) : []),
-      ...defs.filter((d) => d.dim === dim).map((d) => row(d.n, esc(d.name) + (d.rating !== "safe" ? " 🔞" : "") + (d.builtin ? "" : d.shipped ? ' <span class="pill">작품 폴더</span>' : ' <span class="pill">내 칸</span>'), d.prompt || "(설정대로)",
+      ...defs.filter((d) => d.dim === dim).map((d) => row(d.n, esc(d.name) + (d.rating !== "safe" ? " 🔞" : "") + (d.builtin ? "" : d.adminOnly ? ' <span class="pill">관리자 전용</span>' : d.shipped ? ' <span class="pill">작품 폴더</span>' : ' <span class="pill">내 칸</span>'), d.prompt || "(설정대로)",
         d.builtin ? `<button class="btn sm ghost" data-ov="${d.n}">덮어쓰기</button>` : `<button class="btn sm" data-ed="${d.n}">고치기</button>`))
     ].join("");
     ov.innerHTML = `<div class="sheet wide" role="dialog" aria-modal="true"><div class="sheet-head"><h2>이미지 코드 표</h2><button class="icon-btn" data-x aria-label="닫기">${ICON.close}</button></div>

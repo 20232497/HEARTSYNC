@@ -22,7 +22,7 @@ import { BROWSER_GLOBALS } from "./globals.mjs";
 
 export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const SRC = path.join(ROOT, "src"), JS = path.join(SRC, "js"), CONTENT = path.join(ROOT, "content");
-const GEN_FILE = path.join(JS, "content", "generated.js"), BUILD_DIR = path.join(ROOT, ".build");
+const GEN_FILE = path.join(JS, "content", "generated.js"), GEN_ADMIN_FILE = path.join(JS, "content", "generated-admin.js"), BUILD_DIR = path.join(ROOT, ".build");
 
 /* 빌드 대상: page(뼈대, src/ 아래) → out(저장소 루트). strip이면 주석·빈 줄을 벗기고, doc이면 모듈마다 설명 머리를 붙임 */
 export const TARGETS = {
@@ -255,7 +255,7 @@ function bundleModules(entry, t, page) {
 /* ---------------------------------------------------------------- 앱 규칙 꺼내기(작품 검사용) */
 function appRules() {
   const files = [];
-  (function walk(d) { for (const e of fs.readdirSync(d, { withFileTypes: true })) { const p = path.join(d, e.name); if (e.isDirectory()) walk(p); else if (e.name.endsWith(".js") && p !== GEN_FILE) files.push(p); } })(JS);
+  (function walk(d) { for (const e of fs.readdirSync(d, { withFileTypes: true })) { const p = path.join(d, e.name); if (e.isDirectory()) walk(p); else if (e.name.endsWith(".js") && p !== GEN_FILE && p !== GEN_ADMIN_FILE) files.push(p); } })(JS);
   const lines = files.flatMap((f) => readText(f).split("\n")), parts = [];
   for (const name of APP_RULES) {
     const fn = new RegExp(`^(?:export )?function\\s+${name}\\s*\\(`), cn = new RegExp(`^(?:export )?const\\s+${name}\\s*=`);
@@ -334,9 +334,11 @@ async function buildContent(R) {
   }
   rows.filter((r) => !r.n).forEach((r) => warnings.push(`${r.rel}: 줄에 작품이 없어 홈에 안 보여요`));
   if (!errors.length && !works.length) errors.push("content/에 작품이 하나도 없어요");
-  // content/codes.json(이미지 코드 표)과 작품 폴더의 images/(관리자 도구가 내보낸 그림) — content/README.md
-  const codes = readCodes(R, errors, warnings);
-  for (const w of works) scanImages(w, R, codes, errors, warnings);
+  // content/codes.json(사용자에게 실리는 코드 표)·codes.admin.json(관리자 전용, git에 없음)과 작품 폴더의 images/(관리자 도구가 내보낸 그림) — content/README.md
+  const codes = readCodes(R, errors, warnings), adminCodes = readCodes(R, errors, warnings, "codes.admin.json", true);
+  const overlap = adminCodes.filter((d) => codes.some((x) => x.n === d.n)).map((d) => d.n);
+  if (overlap.length) warnings.push(`content/codes.admin.json: 번호 ${overlap.join(", ")}이 codes.json에도 있어요 — 앱에서는 codes.json 쪽이 우선`);
+  for (const w of works) scanImages(w, R, codes, adminCodes, errors, warnings);
   if (errors.length) throw new BuildError(errors);
 
   const byOrder = (a, b) => (a.order ?? Infinity) - (b.order ?? Infinity) || (a.rel < b.rel ? -1 : a.rel > b.rel ? 1 : 0);
@@ -365,20 +367,23 @@ ${codes.map((d) => "  " + JSON.stringify(d)).join(",\n")}
 ];
 `;
   writeIfChanged(GEN_FILE, jsSafe(code));
+  // 관리자 전용 코드는 따로 — 관리자 진입점(admin/codes.js)만 import하므로 사용자 빌드(index.html)에는 글자 하나도 들어가지 않음
+  writeIfChanged(GEN_ADMIN_FILE, jsSafe(`/* 빌드가 content/codes.admin.json(git에 없음)으로 만든 관리자 전용 이미지 코드 — 관리자 빌드(src/js/admin/codes.js)만 import. 직접 고치지 말 것 */\nexport const ADMIN_CODES = [\n${adminCodes.map((d) => "  " + JSON.stringify(d)).join(",\n")}\n];\n`));
   const count = (a) => works.filter((w) => w.aud === a).length, pics = works.reduce((a, w) => a + Object.values(w.images || {}).reduce((b, m) => b + Object.keys(m).length, 0) + (w.img ? 1 : 0) + Object.keys(w.loreImages || {}).length, 0);
-  return { warnings, stats: { works: works.length, f: count("f"), m: count("m"), all: count("all"), rows: rows.length, codes: codes.length, pics } };
+  return { warnings, stats: { works: works.length, f: count("f"), m: count("m"), all: count("all"), rows: rows.length, codes: codes.length, adminCodes: adminCodes.length, pics } };
 }
 
-/* content/codes.json → CONTENT_CODES: 관리자 도구의 '코드 표 내보내기'가 쓴 [{ n, name, prompt, rating, keys? }]. 번호는 15~599(400·500 제외), 성인 수위 코드는 미성년 표현 금지 */
-function readCodes(R, errors, warnings) {
-  const file = path.join(CONTENT, "codes.json");
+/* content/codes.json → CONTENT_CODES(사용자에게 실림), content/codes.admin.json → ADMIN_CODES(관리자 빌드만, admin = true): [{ n, name, prompt, rating, keys? }].
+   번호는 15~599(400·500 제외), 성인 수위 코드는 미성년 표현 금지. 사용자용 표에 성인 수위 코드가 있으면 경고(공개 저장소에 그대로 실림) */
+function readCodes(R, errors, warnings, name = "codes.json", admin = false) {
+  const file = path.join(CONTENT, name);
   if (!fs.existsSync(file)) return [];
   let list;
-  try { list = JSON.parse(readText(file)); } catch (e) { errors.push(`content/codes.json: JSON 형식이 아니에요 — ${e.message}`); return []; }
-  if (!Array.isArray(list)) { errors.push("content/codes.json: [{ n, name, prompt, rating }, …] 배열이어야 해요"); return []; }
+  try { list = JSON.parse(readText(file)); } catch (e) { errors.push(`content/${name}: JSON 형식이 아니에요 — ${e.message}`); return []; }
+  if (!Array.isArray(list)) { errors.push(`content/${name}: [{ n, name, prompt, rating }, …] 배열이어야 해요`); return []; }
   const out = [], seen = new Set();
   list.forEach((d, i) => {
-    const at = `content/codes.json[${i}]`;
+    const at = `content/${name}[${i}]`;
     if (!isObj(d) || !Number.isInteger(d.n) || !str(d.name) || typeof d.prompt !== "string") return errors.push(`${at}: { n: 번호, name: 이름, prompt: 프롬프트, rating?: safe|questionable|explicit, keys?: "낱말|낱말" } 모양이어야 해요`);
     if (d.n < R.SIT.length || d.n >= 600 || d.n === R.RESET.wear || d.n === R.RESET.place) return errors.push(`${at}: 번호 ${d.n} — 직접 만든 코드는 ${R.SIT.length}~599(400·500 제외)`);
     if (seen.has(d.n)) return errors.push(`${at}: 번호 ${d.n}이 겹쳐요`);
@@ -389,18 +394,20 @@ function readCodes(R, errors, warnings) {
     if (rating !== "safe" && R.minorHint(d.name + "\n" + d.prompt)) return errors.push(`${at}: 성인 수위 코드의 이름·프롬프트에 미성년으로 보이는 표현이 있어요(minorHint)`);
     const extra = Object.keys(d).filter((k) => !["n", "name", "prompt", "rating", "keys"].includes(k));
     if (extra.length) warnings.push(`${at}: 쓰지 않는 칸 ${extra.join(", ")}`);
-    out.push({ n: d.n, name: d.name.trim(), prompt: d.prompt.trim(), rating, ...(d.keys ? { keys: d.keys } : {}), shipped: true });
+    out.push({ n: d.n, name: d.name.trim(), prompt: d.prompt.trim(), rating, ...(d.keys ? { keys: d.keys } : {}), dim: R.dimOf(d.n), shipped: true, ...(admin ? { adminOnly: true } : {}) });
   });
+  const adult = out.filter((d) => d.rating !== "safe").length;
+  if (!admin && adult) warnings.push(`content/${name}: 성인 수위 코드 ${adult}개 — 사용자 사이트와 공개 저장소에 그대로 실려요(관리자만 쓸 코드는 content/codes.admin.json에)`);
   return out.sort((a, b) => a.n - b.n);
 }
 /* 작품 폴더의 images/ → 작품의 images(인물 코드 → 조합 키 → content/… 경로)·img(cover.*)·loreImages(lore-<n>.* → n번째 키워드북 항목).
    파일 이름: <인물코드>-<번호[-번호…]>.webp|png|jpg (조합 키의 쉼표는 -), cover.*, lore-<n>.*. 관리자 도구의 '작품 폴더에 저장'이 이 이름으로 쓴다 */
 const IMG_EXT = /\.(webp|png|jpe?g)$/i;
-function scanImages(w, R, codes, errors, warnings) {
+function scanImages(w, R, codes, adminCodes, errors, warnings) {
   const dir = path.join(ROOT, w.rel, "images");
   if (!fs.existsSync(dir)) return;
   const c = w.c, castCodes = new Set((c.cast || [{ code: "c" }]).map((x) => x.code)), lore = c.lore || [];
-  const known = (n) => n < R.SIT.length || !!R.DIMS[n] || codes.some((d) => d.n === n);
+  const adminN = new Set(adminCodes.map((d) => d.n)), known = (n) => n < R.SIT.length || !!R.DIMS[n] || codes.some((d) => d.n === n) || adminN.has(n);
   const images = {}, loreImages = {}; let img = "";
   for (const f of fs.readdirSync(dir).filter(visible).sort()) {
     const at = `${w.rel}/images/${f}`;
@@ -419,6 +426,7 @@ function scanImages(w, R, codes, errors, warnings) {
       if (!castCodes.has(code)) { errors.push(`${at}: 인물 코드 "${code}"가 cast에 없어요`); continue; }
       const unknown = nums.filter((n) => !known(n));
       if (unknown.length) { errors.push(`${at}: ${unknown.join(",")}은(는) 기본 번호(0~${R.SIT.length - 1})·내장 코드(1xx·4xx·5xx)·codes.json의 코드가 아니에요`); continue; }
+      if (nums.some((n) => adminN.has(n))) { warnings.push(`${at}: 관리자 전용 코드(${nums.filter((n) => adminN.has(n)).join(",")})의 그림은 사용자 사이트에 싣지 않아요(지나침)`); continue; }
       const key = R.keyOf(nums) || "1";
       if (key !== nums.join(",")) warnings.push(`${at}: 조합 키 ${key}로 등록해요(파일 이름은 ${code}-${key.replace(/,/g, "-")} 가 정확해요)`);
       images[code] = images[code] || {};
@@ -578,7 +586,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     const { content, outs } = await buildAll(names);
     [...new Set([...content.warnings, ...outs.flatMap((o) => o.warnings)])].forEach((x) => console.warn("⚠ " + x));
     const s = content.stats;
-    console.log(`작품 ${s.works}개(여성향 ${s.f} · 남성향 ${s.m} · 전체 ${s.all}), 홈 줄 ${s.rows}개, 실린 그림 ${s.pics}장, 코드 표 ${s.codes}개`);
+    console.log(`작품 ${s.works}개(여성향 ${s.f} · 남성향 ${s.m} · 전체 ${s.all}), 홈 줄 ${s.rows}개, 실린 그림 ${s.pics}장, 코드 표 ${s.codes}개, 관리자 전용 코드 ${s.adminCodes}개`);
     let fail = false;
     for (const o of outs) {
       const cur = fs.existsSync(o.out) ? readText(o.out) : null, same = cur === o.html;

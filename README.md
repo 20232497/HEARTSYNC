@@ -21,11 +21,11 @@ src/js/              ES 모듈 77개(사용자 빌드 62개) — 파일 하나 =
   images/            그림 코드·수위·그림 찾기·상황 칸·태그 캐시 (관리자만: 그림체·이미지 프롬프트·태그 번역·Runware 호출)
   ai/                모델 등급·llm()·성인 경로·OpenRouter·응답 파싱, prompt/(규칙·입력·키워드북·장기기억)  ← 모델 고도화는 여기만
   ui/                화면: 아이콘·시트·확장 고리(ext)·셸(화면 등록)·표지·홈·상세·대화방(chat/)·결제·드로어·세계관 일러스트 보기·대화 목록·스토어·로그인·계정·MY
-  admin/             관리자 도구: 스튜디오·이미지 슬롯·코드 표·생성 창·세계관 일러스트 관리·이미지 설정·작품 화면·대화 중 자동 생성·작품 폴더로 내보내기·그림체 설정 이전
+  admin/             관리자 도구: 스튜디오·이미지 슬롯·코드 표·생성 창·세계관 일러스트 관리·이미지 설정·작품 화면·코드 조합 테스트·관리자 전용 코드·대화 중 자동 생성·작품 폴더로 내보내기·그림체 설정 이전
   boot.js, app.js    부팅 / 사용자 모듈 묶음(화면 표·메뉴)
   main.js, admin.js  진입점 둘: 화면을 등록하고 boot()
   core/types.js      데이터 모양(JSDoc @typedef — 편집기·AI용 문서, 번들에 안 들어감), 공개 함수의 @param·@returns는 각 모듈에
-content/f|m|all/…    작품 폴더(여성향·남성향·전체), 작품 폴더의 images/와 content/codes.json은 관리자 도구가 내보낸 그림·코드 표 — content/README.md
+content/f|m|all/…    작품 폴더(여성향·남성향·전체), 작품 폴더의 images/와 content/codes.json은 관리자 도구가 내보낸 그림·코드 표, codes.admin.json은 관리자 전용 코드(git에 없음) — content/README.md
 tools/build.mjs      합치기 + 검사(두 빌드),  tools/dev.mjs 개발 서버,  tests/ 시험 — tests/README.md
 docs/ARCHITECTURE.md 층 규칙·두 빌드·그림 흐름·주석 정책·점검 결과
 ```

@@ -13,7 +13,7 @@ import { serve, ROOT } from "./serve.mjs";
 const ADMIN = "admin.html"; // 관리자 도구 빌드(npm run build가 함께 만듦, git에 없음)
 const PAGE = { admin: ADMIN, images: ADMIN, styles: ADMIN };
 const SUITES = {
-  admin: "관리자 도구(admin.html): 여섯 화면·상세의 관리 버튼·드로어 이미지 슬롯·MY 이미지 설정·시트 4종 + 사용자 빌드에는 그 자리가 비어 있고 관리자 함수가 없음",
+  admin: "관리자 도구(admin.html): 여섯 화면·상세의 관리 버튼·드로어 이미지 슬롯·MY 이미지 설정·시트 4종·코드 조합 테스트 + 사용자 빌드에는 그 자리가 비어 있고 관리자 함수·관리자 코드가 없음",
   social: "소셜 로그인·가입, 기기 그림 넘기기·합치기, 키 잠금 암호(Supabase를 page.route로 흉내)",
   vault: "API 키 금고: 가입·다른 기기 로그인·메일 링크 기기 잠김·비밀번호 재설정·로그아웃",
   cloud2: "계정 저장: 올리기·받기·서버 표 제약(kv_no_plain_keys·kv_vault_sealed)",
