@@ -1,6 +1,8 @@
 /* 응답 파싱: 본문/상태창 나누기(splitReply), 끊긴 JSON 고치기, 다인원 칸 합치기, 입력 되풀이 제거(dropEcho) */
 import { MARK } from "../core/constants.js";
 import { clamp } from "../core/util.js";
+/** @typedef {import("../core/types.js").StatusMap} StatusMap */
+/** @typedef {import("../core/types.js").Work} Work */
 
 export function looseJSON(t) {
   try { return JSON.parse(t); } catch {}
@@ -9,6 +11,7 @@ export function looseJSON(t) {
   return undefined;
 }
 /* 모델이 유저 입력을 본문 첫 줄에 다시 옮겨 적으면(조금 바꿔 쓴 것 포함, 글자 2개씩 묶어 70% 이상 같으면) 그 줄을 뺌 */
+/** @param {string} body 응답 본문 @param {string} said 직전 유저 입력 @returns {string} */
 export function dropEcho(body, said) {
   const m = /^\s*([^\n]+)\n/.exec(body); if (!m || !said) return body;
   const norm = (s) => s.replace(/[\s*"“”'‘’.,!?…~]/g, ""), a = norm(m[1]), b = norm(said);
@@ -18,6 +21,7 @@ export function dropEcho(body, said) {
   return hit / ga.size >= 0.7 ? body.slice(m[0].length).replace(/^\s+/, "") : body;
 }
 /* 응답 나누기: 본문 / 상태 JSON. 구분자가 변형("=== STATE ===")되거나 빠진 채 JSON(또는 ```json)만 붙어도 찾아냄 */
+/** @param {string} t 응답 전체 @returns {{ body: string, json: string }} 본문과 상태 JSON 글(없으면 "") */
 export function splitReply(t) {
   t = String(t || "");
   let i = t.indexOf(MARK), len = MARK.length;
@@ -47,6 +51,7 @@ function repairJSON(s) {
   return out;
 }
 /* "이화 5 · 설련 0" 같은 여러 인물 수치 칸 읽기 (문자열 또는 {"이화": 5}) */
+/** @param {unknown} v "이름 n · 이름 n" 문자열 또는 { 이름: n } @param {boolean} [strict=true] 이름에 숫자가 아닌 글자가 있어야 짝으로 봄 @returns {Array<[string, number]>} */
 export function multiPairs(v, strict = true) {
   if (v && typeof v === "object" && !Array.isArray(v)) return Object.entries(v).map(([k, n]) => [String(k).trim(), Number(n)]).filter(([k, n]) => k && Number.isFinite(n));
   if (typeof v !== "string") return [];
@@ -68,6 +73,11 @@ function mergeMulti(prev, next) {
 }
 /* 상태 값으로 객체·배열이 오면 표시용 문자열로 */
 function flatValue(o) { const p = multiPairs(o); return (p.length ? p.map(([k, n]) => `${k} ${n}`).join(" · ") : Array.isArray(o) ? o.join(", ") : JSON.stringify(o)).slice(0, 200); }
+/**
+ * 응답에서 상태창·추천 답변 읽기 — 빈 값은 직전 값 유지, 게이지는 한 턴에 -10~+8, 다인원 칸은 빠진 인물을 직전 값으로.
+ * @param {string} text 응답 전체 @param {Work} c @param {StatusMap} [before] 직전 상태창
+ * @returns {{ status: StatusMap, suggestions: string[] }}
+ */
 export function parseState(text, c, before) {
   const out = { status: { ...(before || {}) }, suggestions: [] };
   const { json } = splitReply(text);

@@ -6,6 +6,7 @@ import { WELCOME, ledger, refreshFree } from "../core/wallet.js";
 import { TAGS, setTags } from "../images/tags-cache.js";
 import { IMG } from "./images.js";
 
+/** 저장된 데이터(지갑·페르소나·프로필·내 작품·대화방 목록·그림 연결·요약 설정·표지·세계관·태그) 전부를 KV에서 읽어 S에 얹음. @returns {Promise<void>} */
 export async function loadAll() {
   const [w, p, pr, mine, rooms, packs, mc, cps, lps, tps] = await Promise.all(["wallet", "personas", "profile", "mine", "rooms", "imgpacks", "memcfg", "coverpacks", "lorepacks", "tagpacks"].map((k) => KV.get(k)));
   if (cps && typeof cps === "object") S.coverpacks = cps;

@@ -122,9 +122,12 @@ export async function generate(target, q, direction = "", isEdit = false) {
     if (!target && !isEdit) { r.turn = (r.turn || 0) + 1; r.sinceMem = (r.sinceMem || 0) + 1; }
     if (msg.alts[altIdx].text) done = bodyText;
   } catch (e) {
+    // 사용자가 멈췼거나 스트림이 중간에 끊긴(timeout) 경우: 받은 본문까지 남김(하트 환불 없음). 끊긴 거면 '다시 시도'(= 다시 쓰기) 안내
     const keep = e && e.text ? splitReply(e.text).body.trim() : "";
-    if (keep && e.code === "cancelled") Object.assign(msg.alts[altIdx], { text: keep, status: msg.statusBefore, cost: qShort(q) });
-    else {
+    if (keep && (e.code === "cancelled" || e.code === "timeout")) {
+      Object.assign(msg.alts[altIdx], { text: keep, status: msg.statusBefore, cost: qShort(q) });
+      if (e.code === "timeout") r.lastErr = "응답이 오는 중에 끊겨 여기까지만 남겼어요. '다시 시도'를 누르면 다시 써요.";
+    } else {
       msg.alts.splice(altIdx, 1);
       if (!msg.alts.length) r.msgs.splice(r.msgs.indexOf(msg), 1); else msg.idx = msg.alts.length - 1;
       refund(q, label);

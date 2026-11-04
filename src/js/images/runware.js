@@ -1,7 +1,9 @@
 /* Runware API 호출(runwareImage): 모델·수위·네거티브 조립, 대상별 보정, 오류 문구 */
 import { CFG } from "../core/config.js";
+import { TIMEOUT } from "../core/constants.js";
 import { minorHint } from "../core/safety.js";
 import { S, hasRunwareKey } from "../core/state.js";
+import { abortCode, timeoutSignal } from "../core/util.js";
 import { splitTags } from "./prompt.js";
 import { RATINGS, imgRating } from "./rating.js";
 import { ARCH, imgModelInfo, styleFor } from "./styles.js";
@@ -71,10 +73,12 @@ export async function runwareImage(prompt, { aspect = "4:5", rating = imgRating(
     outputFormat: "WEBP", outputType: "dataURI", ...(adult ? {} : { checkNSFW: true }) };
   let j, res;
   for (let tries = 0; tries < 2; tries++) {
+    const T = timeoutSignal(TIMEOUT.image, signal); // 생성 한 건의 시간 제한(보통 10~40초) — 넘으면 {code:"timeout"}
     try {
-      res = await fetch(CFG.runwareUrl, { method: "POST", signal, headers: { "content-type": "application/json", ...(S.settings.runwareKey ? { authorization: "Bearer " + S.settings.runwareKey } : {}) }, body: JSON.stringify([task]) });
-    } catch (e) { throw { code: e.name === "AbortError" ? "cancelled" : "network" }; }
-    j = await res.json().catch(() => ({}));
+      res = await fetch(CFG.runwareUrl, { method: "POST", signal: T.signal, headers: { "content-type": "application/json", ...(S.settings.runwareKey ? { authorization: "Bearer " + S.settings.runwareKey } : {}) }, body: JSON.stringify([task]) });
+      j = await res.json().catch(() => ({}));
+    } catch (e) { throw { code: abortCode(e, T, "network") }; }
+    finally { T.clear(); }
     const err = (Array.isArray(j.errors) ? j.errors : j.error ? [j.error] : [])[0];
     const msg = err ? String([err.code, err.message, err.parameter].filter(Boolean).join(" ")) : "";
     // checkNSFW를 모르는 엔드포인트(프록시 등)면 한 번만 빼고 다시
@@ -90,10 +94,12 @@ export async function runwareImage(prompt, { aspect = "4:5", rating = imgRating(
   const d = (j.data || []).find((x) => x && x.taskType === "imageInference") || (j.data || [])[0];
   if (!d) throw { code: "upstream_error", msg: "빈 응답" };
   if (!adult && d.NSFWContent) throw { code: "blocked" };
+  let T2 = null;
   try {
     if (d.imageDataURI || d.imageBase64Data) return await (await fetch(d.imageDataURI || `data:image/webp;base64,${d.imageBase64Data}`)).blob();
-    if (d.imageURL) return await (await fetch(d.imageURL, { signal })).blob();
-  } catch (e) { throw { code: e.name === "AbortError" ? "cancelled" : "image_fetch" }; }
+    if (d.imageURL) { T2 = timeoutSignal(TIMEOUT.api * 3, signal); return await (await fetch(d.imageURL, { signal: T2.signal })).blob(); }
+  } catch (e) { throw { code: abortCode(e, T2, "image_fetch") }; }
+  finally { if (T2) T2.clear(); }
   throw { code: "upstream_error", msg: "그림 없음" };
 }
 /* 그림 참조(kv:·/_blob/·data:) → data URL */
@@ -114,6 +120,7 @@ export function genErr(e) {
     blocked: "안전 필터에 걸려 이 그림은 쓰지 않았어요. 프롬프트를 바꿔 보세요.",
     minor_block: "미성년으로 보이는 표현(나이·학생·교복 등)이 있어 이 수위로는 만들지 않았어요. 전체이용가로 바꾸거나 표현을 고쳐 주세요.",
     image_fetch: "만든 그림을 내려받지 못했어요. 잠시 뒤 다시 시도해 주세요.",
+    timeout: "그림을 만드는 데 너무 오래 걸려 멈췄어요(2분). 잠시 뒤 다시 시도해 주세요.",
     no_claude: "그림을 읽어 태그를 쓰려면 Anthropic API 키(또는 서버 연결)가 필요해요.",
     bad_claude: "Anthropic API 키가 올바르지 않거나 권한이 없어요.",
     network: window.claude?.use ? "claude.ai 안에서는 외부 API 호출이 막혀 Runware를 부를 수 없어요. 파일로 열어서 써 주세요." : "Runware에 연결하지 못했어요. 인터넷 연결을 확인해 주세요.",

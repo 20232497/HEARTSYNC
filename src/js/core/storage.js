@@ -8,6 +8,10 @@ function storageFull() {
   setTimeout(() => toast("브라우저 저장 공간이 가득 찼어요. 오래된 대화방이나 쓰지 않는 그림·세트를 지워 주세요."), 0);
 }
 /* 큰 데이터(그림) 저장소: IndexedDB. localStorage(약 5MB)보다 훨씬 크고, 막혀 있으면(사생활 모드 등) null을 돌려 localStorage로 물러남 */
+/**
+ * IndexedDB "heartverse"/kv — 그림 본문용 큰 저장소.
+ * open() → Promise<IDBDatabase|null>(막힌 브라우저면 null) · get(k) → Promise<unknown> · set(k, v) → Promise<boolean>(v가 undefined면 지움) · clear() · keys() → Promise<string[]>
+ */
 export const IDB = {
   p: null,
   open() {
@@ -37,6 +41,11 @@ export const IDB = {
     return new Promise((res) => { try { const q = db.transaction("kv").objectStore("kv").getAllKeys(); q.onsuccess = () => res((q.result || []).map(String)); q.onerror = () => res([]); } catch { res([]); } });
   }
 };
+/**
+ * 키·값 저장 — 항상 localStorage(hv1_ 접두사)에 쓰고, claude.ai db가 되면(dbOk) data/users/<uid>/<key>에도, 로그인했으면 remote 고리(CLOUD.put)로 계정에도.
+ * getLocal(k)·setLocal(k, v)는 이 기기만 · get(k) → Promise<unknown>(db 우선) · set(k, v, { local = true })(v가 undefined면 지움, 그림 본문은 local:false)
+ * 값은 JSON으로 직렬화되는 것만. localStorage가 가득 차면 storageFull()이 한 번 알림
+ */
 export const KV = {
   db: null, uid: null, dbOk: false, queues: {},
   remote: null, // (k, v) => … 계정 저장(services/cloud.js가 꽂음). 없으면 이 기기·claude.ai db에만

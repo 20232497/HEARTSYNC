@@ -4,8 +4,13 @@ import { emit } from "./events.js";
 import { S } from "./state.js";
 import { KV } from "./storage.js";
 import { uid } from "./util.js";
+/** @typedef {import("./types.js").Message} Message */
+/** @typedef {import("./types.js").Persona} Persona */
+/** @typedef {import("./types.js").Room} Room */
+/** @typedef {import("./types.js").Work} Work */
 
 export function curText(m) { return m.role === "ai" ? (m.alts[m.idx] || {}).text || "" : m.text; }
+/** 대화방의 KV 키 "room-<id>". @param {string} id @returns {string} */
 export function roomKey(id) { return "room-" + id; }
 function indexRoom(r) {
   const c = r.char, lastAi = [...r.msgs].reverse().find((m) => curText(m));
@@ -14,6 +19,7 @@ function indexRoom(r) {
   S.rooms = [entry, ...S.rooms.filter((x) => x.id !== r.id)].sort((a, b) => b.at - a.at);
   KV.set("rooms", S.rooms); emit("rooms");
 }
+/** 대화방 저장 + 목록(S.rooms) 갱신 + "rooms" 이벤트. 지운 방(deletedRooms)은 저장하지 않고, 오래된 메시지는 MAX_MSGS_KEEP개만 남김. @param {Room} r @returns {void} */
 export function saveRoom(r) {
   if (deletedRooms.has(r.id)) return; // 지운 뒤 끝난 응답·요약이 방을 되살리지 않게
   r.at = Date.now();
@@ -23,7 +29,9 @@ export function saveRoom(r) {
   indexRoom(r);
 }
 const MAX_MSGS_KEEP = 160;
+/** 지운 대화방 id — 지운 뒤 끝난 응답·요약이 방을 되살리지 않게. @type {Set<string>} */
 export const deletedRooms = new Set();
+/** 예전 모양의 대화방(v2 아님)을 지금 모양으로 제자리 보정. @param {Room} r */
 export function migrateRoom(r) {
   normalizeChar(r.char);
   if (!r.v2) {
@@ -38,6 +46,10 @@ export function migrateRoom(r) {
   r.msgs.forEach((m) => delete m.editing);
   return r;
 }
+/**
+ * 새 대화방 — 작품 사본·시작 상황 본문을 첫 AI 메시지로, 게이지가 없으면 10. 바로 저장함.
+ * @param {Work} c @param {number} openingIdx 시작 상황 번호 @param {Persona} persona @returns {Room}
+ */
 export function newRoom(c, openingIdx, persona) {
   normalizeChar(c);
   const op = c.openings[openingIdx] || c.openings[0];

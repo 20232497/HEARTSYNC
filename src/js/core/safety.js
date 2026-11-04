@@ -1,5 +1,8 @@
 /* 안전: 미성년 인물 막기(minorFlags·minorHint) — 순수 함수라 빌드의 작품 검사와 단위 테스트가 그대로 import */
+/** @typedef {import("./types.js").CastMember} CastMember */
+/** @typedef {import("./types.js").Work} Work */
 /* 미성년 인물 막기: 출연진 외모나 캐릭터 설정 첫머리("이름(17, 여)")에 19세 미만 나이·학생 신분이 있으면 저장·공개하지 않음 */
+/** 19세 미만·학생으로 보이는 인물 이름들(비면 통과). 저장·공개·빌드 검사가 같은 함수를 씀. @param {Work|{ cast?: CastMember[], persona?: string }} c @returns {string[]} */
 export function minorFlags(c) {
   const out = [], under = (n) => n > 0 && n < 19;
   for (const x of c.cast || []) {
@@ -12,6 +15,7 @@ export function minorFlags(c) {
   return [...new Set(out)];
 }
 /* 글 속 미성년 암시(19세 미만 나이, 학생·아동 낱말, 그런 Danbooru 태그). 성인 경로·Claude 거절 우회·성인 수위 그림을 막는 데 씀 */
+/** 글 속 미성년 암시(나이·학생·아동·교복 낱말과 영문 태그). @param {string} t @returns {boolean} */
 export function minorHint(t) {
   t = String(t || "");
   if ([...t.matchAll(/(\d{1,2})\s*(?:세|살|years?[\s-]*old|yo\b)/gi)].some((m) => +m[1] > 0 && +m[1] < 19)) return true;

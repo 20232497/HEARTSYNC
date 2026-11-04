@@ -5,14 +5,19 @@ import { curText, saveRoom } from "../../core/rooms.js";
 import { S } from "../../core/state.js";
 import { $, $$, toast } from "../../core/util.js";
 import { plan } from "../../core/wallet.js";
+/** @typedef {import("../../core/types.js").MemCfg} MemCfg */
+/** @typedef {import("../../core/types.js").Room} Room */
 
 /* ---------------------------------------------------------------- 장기기억: N턴마다 자동 요약, 한도 초과 시 압축 후 히스토리 보관 */
 let summarizing = false;
+/** 요약 설정(한도는 요금제 memoMax로 자름). @returns {MemCfg} */
 export function memCfg() { const c = S.settings.memCfg; return { ...c, limit: Math.min(c.limit, plan().memoMax) }; }
+/** 지금 기억을 히스토리에 보관(요금제 hist개). @param {Room} r @param {string} text @param {string} label @returns {void} */
 export function pushHist(r, text, label) {
   if (!text || !text.trim()) return;
   r.memHist = [{ at: Date.now(), label, text }, ...(r.memHist || [])].slice(0, plan().hist);
 }
+/** 주기가 됐으면(또는 manual) 최근 대화를 장기기억으로 요약·압축. 동시에 하나만. @param {Room} r @param {boolean} [manual=false] @returns {Promise<void>} */
 export async function maybeSummarize(r, manual = false) {
   const cfg = memCfg();
   if (summarizing) return;
