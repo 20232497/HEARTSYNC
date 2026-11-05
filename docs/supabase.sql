@@ -179,7 +179,7 @@ grant select, delete on public.inquiries to authenticated;
 grant insert (category, title, body, reply_to, meta) on public.inquiries to authenticated;
 grant update (status, answer) on public.inquiries to authenticated;
 
--- 관리자 정하기: 관리자로 쓸 계정으로 앱에 한 번 로그인한 뒤, 아래의 이메일을 바꿔 실행(관리자 도구의 고객센터에도 내 계정 id와 이 줄이 보임)
+-- 관리자 정하기: 관리자로 쓸 계정으로 앱에 한 번 로그인한 뒤, 아래의 이메일을 바꿔 실행
 --   insert into public.admins (user_id) select id from auth.users where email = '관리자 이메일' on conflict do nothing;
 -- 소셜 로그인 계정(이메일 없음)은 Authentication → Users에서 User UID를 복사해:
 --   insert into public.admins (user_id) values ('계정 UID') on conflict do nothing;

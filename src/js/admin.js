@@ -19,5 +19,5 @@ import { boot } from "./boot.js";
 
 setTarget("admin");
 registerViews({ ...USER_VIEWS, works: viewWorks, studio: viewStudio, images: viewImages, codetest: viewImages });
-setNavs([USER_NAVS[0], USER_NAVS[1], ["works", "작품", "book"], ["images", "이미지", "image"], ["studio", "만들기", "plus"], USER_NAVS[2], USER_NAVS[3]]);
+setNavs([...USER_NAVS.slice(0, 3), ["works", "작품", "book"], ["images", "이미지", "image"], ["studio", "만들기", "plus"], ...USER_NAVS.slice(3)]); // 홈·대화·공지 → 관리자 메뉴 → 스토어·MY
 gate().then(() => boot({ migrate: migrateImageSettings }));

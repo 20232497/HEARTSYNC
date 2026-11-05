@@ -1,6 +1,6 @@
 /* ── 고객센터 관리(관리자 도구): 관리자 안내·공지 고치기 줄·받은 문의의 답변 칸 */
 .adm-note { margin:0 0 10px; font-size:13.5px; }
-.adm-note pre { white-space:pre-wrap; overflow-wrap:anywhere; user-select:all; -webkit-user-select:all; font-size:12.5px; background:var(--bg); border:1px solid var(--line); padding:8px 10px; border-radius:8px; margin:8px 0 0; }
+.adm-note .cta-row { margin:10px 0 0; }
 .adm-bar { margin:0 0 10px; }
 .adm-ask { padding:12px 16px 14px; border-top:1px dashed var(--line); }
 .adm-ask .note { margin:0 0 4px; overflow-wrap:anywhere; }

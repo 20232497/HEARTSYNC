@@ -1,4 +1,4 @@
-// 관리자 도구(admin.html) 스모크 + 사용자 빌드(index.html)와 갈라졌는지: 일곱 화면(홈·대화·작품·이미지·만들기·스토어·MY), 상세의 관리 버튼(일러스트 관리·이미지 관리·
+// 관리자 도구(admin.html) 스모크 + 사용자 빌드(index.html)와 갈라졌는지: 여덟 화면(홈·대화·공지·작품·이미지·만들기·스토어·MY), 상세의 관리 버튼(일러스트 관리·이미지 관리·
 // 작품 폴더에 저장), 드로어의 이미지 버튼, MY의 이미지 생성 설정(#rkey·#gstyle·기본 화풍 카드)·크리에이터 프로필, 페르소나 시트의 'AI로 만들기', 시트 5종(코드 편집기·
 // 세계관 일러스트·추천 코드·생성 창·페르소나), 만들기의 관심있는 대화 칸, 이미지 스튜디오(코드 목록·조합 키·프롬프트·찾기·접기·코드 선택 삭제·조합 모두 빼기·갤러리 움짤·⟳). 그리고 사용자 빌드에는 그 자리들이 비어 있고
 // 관리자 함수(viewStudio·viewImages·openImages)가 없어야 함.
@@ -16,8 +16,8 @@ for (const [dev, engine, opts] of [["Desktop Chrome", chromium, {}], ["iPhone 13
   try {
     await open(url);
     res.navs = await p.evaluate(() => [...document.querySelectorAll("#rail [data-nav]")].map((b) => b.dataset.nav));
-    if (res.navs.join() !== "home,chats,works,images,studio,store,me") errs.push("관리자 메뉴가 다름: " + res.navs.join());
-    for (const v of ["home", "chats", "works", "images", "studio", "store", "me"]) {
+    if (res.navs.join() !== "home,chats,notice,works,images,studio,store,me") errs.push("관리자 메뉴가 다름: " + res.navs.join());
+    for (const v of ["home", "chats", "notice", "works", "images", "studio", "store", "me"]) {
       await p.evaluate((v) => { location.hash = v; }, v); await wait(500);
       res.views[v] = await p.evaluate(() => $("#view").innerHTML.length);
       if (res.views[v] < 200) errs.push(`${v} 화면이 비어 있음`);
@@ -125,7 +125,7 @@ for (const [dev, engine, opts] of [["Desktop Chrome", chromium, {}], ["iPhone 13
     u.me = await p.evaluate(() => ({ rkey: !!$("#rkey"), gstyle: !!$("#gstyle"), nick: !!$("#nick"), save: !!$("#setSave"), key: !!$("#key") }));
     u.studioRoute = await p.evaluate(async () => { location.hash = "studio"; await new Promise((z) => setTimeout(z, 400)); return $("#view").textContent.includes("둘러보기") || !!$(".hero, .home, [data-aud]"); });
     res.user = u;
-    if (u.navs.join() !== "home,chats,store,me") errs.push("사용자 메뉴가 다름: " + u.navs.join());
+    if (u.navs.join() !== "home,chats,notice,store,me") errs.push("사용자 메뉴가 다름: " + u.navs.join());
     if (Object.values(u.fns).some((t) => t !== "undefined") || u.extra !== 0) errs.push("사용자 빌드에 관리자 함수·코드가 있음: " + JSON.stringify(u.fns) + " extra=" + u.extra);
     if (u.detail.wArt || u.detail.imgSlots || !u.detail.start || !u.detail.cast) errs.push("사용자 상세: " + JSON.stringify(u.detail));
     if (u.drawer.mImg || !u.drawer.gallery) errs.push("사용자 드로어: " + JSON.stringify(u.drawer));
