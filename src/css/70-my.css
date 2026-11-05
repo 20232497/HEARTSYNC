@@ -10,5 +10,8 @@
 .avatar-pick { display:flex; gap:14px; align-items:center; }
 .avatar-pick .pav { width:84px; height:84px; border-radius:18px; font-size:28px; }
 .toast { position:fixed; left:50%; bottom:calc(80px + env(safe-area-inset-bottom,0px)); transform:translateX(-50%); background:var(--fg); color:var(--bg); padding:9px 16px; border-radius:12px; font-size:13.5px; z-index:80; animation:up .2s; max-width:calc(100% - 32px); }
+.idv-box { display:grid; gap:8px; }
+.idv-box .d { margin:0; }
+.idv-box .d a { color:var(--accent); }
 .engine-warn { background:var(--accent-soft); border-radius:12px; padding:12px 14px; font-size:13px; margin-bottom:12px; }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation:none !important; transition:none !important; scroll-behavior:auto !important; } }

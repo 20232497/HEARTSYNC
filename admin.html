@@ -535,6 +535,9 @@ table.tbl .plus { color:var(--gold); font-weight:700; }
 .avatar-pick { display:flex; gap:14px; align-items:center; }
 .avatar-pick .pav { width:84px; height:84px; border-radius:18px; font-size:28px; }
 .toast { position:fixed; left:50%; bottom:calc(80px + env(safe-area-inset-bottom,0px)); transform:translateX(-50%); background:var(--fg); color:var(--bg); padding:9px 16px; border-radius:12px; font-size:13.5px; z-index:80; animation:up .2s; max-width:calc(100% - 32px); }
+.idv-box { display:grid; gap:8px; }
+.idv-box .d { margin:0; }
+.idv-box .d a { color:var(--accent); }
 .engine-warn { background:var(--accent-soft); border-radius:12px; padding:12px 14px; font-size:13px; margin-bottom:12px; }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation:none !important; transition:none !important; scroll-behavior:auto !important; } }
 
@@ -771,8 +774,8 @@ window.addEventListener("error", function (e) {
    ================================================================ */
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/core/config.js
-   내보냄: ANTHROPIC_URL, CFG, IN_CLAUDE
-   쓰는 곳: src/js/core/state.js, src/js/services/supabase.js, src/js/ai/adult.js, src/js/images/rating.js, src/js/ai/openrouter.js, src/js/ai/llm.js, src/js/ui/help.js, src/js/ui/login.js, src/js/ui/me.js, src/js/app.js, src/js/images/styles.js, src/js/images/runware.js, src/js/admin/image-settings.js, src/js/admin/auto-images.js
+   내보냄: ANTHROPIC_URL, CFG, idvOn, IN_CLAUDE
+   쓰는 곳: src/js/core/state.js, src/js/services/supabase.js, src/js/ai/adult.js, src/js/images/rating.js, src/js/ai/openrouter.js, src/js/ai/llm.js, src/js/ui/faq.js, src/js/ui/help.js, src/js/ui/login.js, src/js/services/idv.js, src/js/ui/idv.js, src/js/ui/me.js, src/js/app.js, src/js/images/styles.js, src/js/images/runware.js, src/js/admin/image-settings.js, src/js/admin/auto-images.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 환경·연결: 서버 프록시 설정 CFG(window.HEARTVERSE_CONFIG), claude.ai 안인지(IN_CLAUDE) — 아무것도 import하지 않는 잎 모듈(다른 모듈이 맨 윗단에서 CFG를 써도 안전) */
 /** @typedef {import("./types.js").Config} Config */
@@ -780,10 +783,14 @@ window.addEventListener("error", function (e) {
    API 주소를 서버 프록시로 바꿀 수 있음. serverKeys: true면 사용자 키 없이 호출하고(키는 프록시가 붙임) 키 입력 없이도 대화·이미지 생성이 켜짐 */
 const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
 // supabaseUrl·supabaseKey: 로그인·계정 저장용 Supabase 프로젝트(키는 publishable — 공개해도 되는 키, 데이터는 RLS로 본인만)
+// idv: 휴대폰 성인 인증(PortOne). mode off 자기 확인 그대로 · test 시험 채널 결과도 인정 · live 실제 채널 결과만. storeId·channelKey는 브라우저에 넣으라고 만든 공개 값(API Secret은 Supabase 함수에만 — docs/SETUP.md)
 /** 연결 설정 — window.HEARTVERSE_CONFIG가 덮음(서버 프록시 배포 때). @type {Config} */
 const CFG = Object.assign({ anthropicUrl: ANTHROPIC_URL, runwareUrl: "https://api.runware.ai/v1", openRouterUrl: "https://openrouter.ai/api/v1/chat/completions", serverKeys: false,
-  supabaseUrl: "https://mblvphojbmxiuqnlxisi.supabase.co", supabaseKey: "sb_publishable_Ob5V1vSGC1g6FTRjSKTjUg_rtpAaGuW" },
+  supabaseUrl: "https://mblvphojbmxiuqnlxisi.supabase.co", supabaseKey: "sb_publishable_Ob5V1vSGC1g6FTRjSKTjUg_rtpAaGuW",
+  idv: { mode: "off", storeId: "", channelKey: "" } },
   window.HEARTVERSE_CONFIG && typeof window.HEARTVERSE_CONFIG === "object" ? window.HEARTVERSE_CONFIG : {});
+/** 휴대폰 성인 인증을 쓰는지(모드·상점·채널이 다 있을 때). @returns {boolean} */
+const idvOn = () => !!(CFG.idv && (CFG.idv.mode === "test" || CFG.idv.mode === "live") && CFG.idv.storeId && CFG.idv.channelKey);
 /* ---------------------------------------------------------------- 성인 모드
    claude.ai 안(아티팩트)에서는 켜지 않음. 성인 서사는 OpenRouter 모델로만 보내고 Claude에는 성인 지시를 보내지 않음.
    미성년(19세 미만·학생·아동) 암시는 수위와 상관없이 성인 경로·우회·성인 수위 그림에서 뺌 */
@@ -810,7 +817,7 @@ const CATS = ["로맨스", "판타지", "RPG", "미스터리", "일상", "시뮬
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/core/util.js
    내보냄: $, $$, esc, uid, clamp, today, won, num, ago, timeoutSignal, abortCode, toast
-   쓰는 곳: src/js/core/storage.js, src/js/core/state.js, src/js/core/wallet.js, src/js/core/rooms.js, src/js/services/images.js, src/js/services/cloud.js, src/js/services/supabase.js, src/js/images/rating.js, src/js/services/community.js, src/js/ai/parse.js, src/js/ai/openrouter.js, src/js/ai/llm.js, src/js/ai/prompt/memory.js, src/js/ui/sheet.js, src/js/ui/chat/suggest.js, src/js/ui/cover.js, src/js/ui/store.js, src/js/ui/faq.js, src/js/ui/help.js, src/js/ui/home.js, src/js/ui/login.js, src/js/ui/account.js, src/js/ui/me.js, src/js/ui/pay.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/chat/render.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/ui/shell.js, src/js/ui/worldart.js, src/js/ui/detail.js, src/js/ui/chats.js, src/js/app.js, src/js/images/styles.js, src/js/images/runware.js, src/js/admin/export.js, src/js/admin/gen-sheet.js, src/js/admin/gate.js, src/js/admin/image-codes.js, src/js/admin/image-run.js, src/js/admin/sit-sheets.js, src/js/admin/image-studio.js, src/js/admin/worldart.js, src/js/admin/tools.js, src/js/admin/image-settings.js, src/js/admin/auto-images.js, src/js/admin/support.js, src/js/admin/studio.js, src/js/admin/works.js, src/js/core/migrate.js, src/js/boot.js
+   쓰는 곳: src/js/core/storage.js, src/js/core/state.js, src/js/core/wallet.js, src/js/core/rooms.js, src/js/services/images.js, src/js/services/cloud.js, src/js/services/supabase.js, src/js/images/rating.js, src/js/services/community.js, src/js/ai/parse.js, src/js/ai/openrouter.js, src/js/ai/llm.js, src/js/ai/prompt/memory.js, src/js/ui/sheet.js, src/js/ui/chat/suggest.js, src/js/ui/cover.js, src/js/ui/store.js, src/js/ui/faq.js, src/js/ui/help.js, src/js/ui/home.js, src/js/ui/login.js, src/js/ui/account.js, src/js/ui/idv.js, src/js/ui/me.js, src/js/ui/pay.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/chat/render.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/ui/shell.js, src/js/ui/worldart.js, src/js/ui/detail.js, src/js/ui/chats.js, src/js/app.js, src/js/images/styles.js, src/js/images/runware.js, src/js/admin/export.js, src/js/admin/gen-sheet.js, src/js/admin/gate.js, src/js/admin/image-codes.js, src/js/admin/image-run.js, src/js/admin/sit-sheets.js, src/js/admin/image-studio.js, src/js/admin/worldart.js, src/js/admin/tools.js, src/js/admin/image-settings.js, src/js/admin/auto-images.js, src/js/admin/support.js, src/js/admin/studio.js, src/js/admin/works.js, src/js/core/migrate.js, src/js/boot.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* DOM·문자열·숫자 유틸, toast, 예상 못 한 오류 기록(reportError) */
 /** @typedef {import("./types.js").TimeoutSignal} TimeoutSignal */
@@ -966,7 +973,7 @@ const KV = {
    가져옴: src/js/core/config.js { CFG }
            src/js/core/util.js { today }
    내보냄: hasClaudeKey, hasRunwareKey, hasOpenRouterKey, S, SAMPLE, samplePromise, DB, DOWNLOADS, setDB, setDownloads, setSample, setSamplePromise, room, gen, setGen, setRoom
-   쓰는 곳: src/js/core/audience.js, src/js/ai/models.js, src/js/core/wallet.js, src/js/core/character.js, src/js/core/rooms.js, src/js/core/settings.js, src/js/services/vault.js, src/js/services/cloud.js, src/js/ai/adult.js, src/js/images/rating.js, src/js/services/community.js, src/js/images/situations.js, src/js/services/load.js, src/js/services/sync.js, src/js/images/pick.js, src/js/ai/openrouter.js, src/js/ai/llm.js, src/js/ai/prompt/memory.js, src/js/ui/chat/suggest.js, src/js/ui/cover.js, src/js/ui/store.js, src/js/ui/help.js, src/js/ui/home.js, src/js/ui/login.js, src/js/ui/account.js, src/js/ui/me.js, src/js/ui/pay.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/ui/shell.js, src/js/ui/worldart.js, src/js/ui/detail.js, src/js/ui/chats.js, src/js/app.js, src/js/images/tags.js, src/js/images/prompt.js, src/js/images/styles.js, src/js/images/runware.js, src/js/admin/export.js, src/js/admin/gen-sheet.js, src/js/admin/image-run.js, src/js/admin/sit-sheets.js, src/js/admin/image-studio.js, src/js/admin/worldart.js, src/js/admin/tools.js, src/js/admin/image-settings.js, src/js/admin/auto-images.js, src/js/admin/migrate.js, src/js/admin/studio.js, src/js/admin/works.js, src/js/core/migrate.js, src/js/boot.js
+   쓰는 곳: src/js/core/audience.js, src/js/ai/models.js, src/js/core/wallet.js, src/js/core/character.js, src/js/core/rooms.js, src/js/core/settings.js, src/js/services/vault.js, src/js/services/cloud.js, src/js/ai/adult.js, src/js/images/rating.js, src/js/services/community.js, src/js/images/situations.js, src/js/services/load.js, src/js/services/sync.js, src/js/images/pick.js, src/js/ai/openrouter.js, src/js/ai/llm.js, src/js/ai/prompt/memory.js, src/js/ui/chat/suggest.js, src/js/ui/cover.js, src/js/ui/store.js, src/js/ui/help.js, src/js/ui/home.js, src/js/ui/login.js, src/js/ui/account.js, src/js/services/idv.js, src/js/ui/idv.js, src/js/ui/me.js, src/js/ui/pay.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/ui/shell.js, src/js/ui/worldart.js, src/js/ui/detail.js, src/js/ui/chats.js, src/js/app.js, src/js/images/tags.js, src/js/images/prompt.js, src/js/images/styles.js, src/js/images/runware.js, src/js/admin/export.js, src/js/admin/gen-sheet.js, src/js/admin/image-run.js, src/js/admin/sit-sheets.js, src/js/admin/image-studio.js, src/js/admin/worldart.js, src/js/admin/tools.js, src/js/admin/image-settings.js, src/js/admin/auto-images.js, src/js/admin/migrate.js, src/js/admin/studio.js, src/js/admin/works.js, src/js/core/migrate.js, src/js/boot.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 전역 상태 S(지갑·페르소나·대화방·설정), claude.ai capability, 현재 대화방·진행 중 생성(다른 모듈은 set…()로만 바꿈), API 키 유무(hasClaudeKey… — S와 CFG.serverKeys를 함께 봄).
    core 잎에 가깝게 — 이미지 모델·OpenRouter 모델의 기본값은 여기 두지 않고 쓰는 쪽(images/styles.js의 styleFor, ai/models.js의 orModel)이 비었을 때 채움 */
@@ -982,6 +989,7 @@ const hasOpenRouterKey = () => !!S.settings.openRouterKey || !!CFG.serverKeys;
 const S = {
   wallet: { hearts: 0, freeDay: today(), freeUsed: 0, pro: null, history: [], ledger: [], ack: {} },
   personas: [{ id: "p1", name: "유저", memo: "", desc: "", img: "", def: true }],
+  idv: null, // 휴대폰 성인 인증 결과(services/idv.js) — KV·계정에 저장하지 않음
   profile: { nick: "" }, mine: [], rooms: [], community: [], imgpacks: {}, coverpacks: {}, lorepacks: {}, tagpacks: {},
   settings: { fs: 15.5, chatLh: 1.8, narrFont: "serif", enterSend: true, sceneImg: true, autoImg: false, apiKey: "", runwareKey: "", customSits: [], imgModel: "", imgStyle: "auto", imgStyleCustom: "", styleRefs: [], styleSets: [], styleV2: true, styleV3: true, memCfg: { auto: true, every: 5, limit: 3000, guide: "auto", custom: "" },
     // 성인 모드: 자기 확인(isAgeVerified) 전에는 모두 꺼진 것과 같음. contentFilter false면 모든 대화방이 성인 모드
@@ -1095,7 +1103,7 @@ const LEN = { short: { name: "적게", mul: 0.75, desc: "짧고 빠른 티키타
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/core/events.js
    내보냄: on, emit
-   쓰는 곳: src/js/core/wallet.js, src/js/core/rooms.js, src/js/core/settings.js, src/js/services/vault.js, src/js/services/cloud.js, src/js/services/community.js, src/js/services/sync.js, src/js/ui/home.js, src/js/ui/login.js, src/js/ui/account.js, src/js/ui/shell.js
+   쓰는 곳: src/js/core/wallet.js, src/js/core/rooms.js, src/js/core/settings.js, src/js/services/vault.js, src/js/services/cloud.js, src/js/services/supabase.js, src/js/services/community.js, src/js/services/sync.js, src/js/ui/home.js, src/js/ui/login.js, src/js/ui/account.js, src/js/services/idv.js, src/js/ui/idv.js, src/js/ui/shell.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 모듈 사이의 느슨한 연결(이벤트 버스): 아래층(core·services)이 위층(ui)을 import하지 않고 "바뀌었다"고 알리기만 한다 — on(이름, fn)·emit(이름, 값).
    아무것도 import하지 않는 잎 모듈. 이름과 뜻:
@@ -1105,7 +1113,9 @@ const LEN = { short: { name: "적게", mul: 0.75, desc: "짧고 빠른 티키타
      vault      키 금고 상태가 바뀜(services/vault)        → ui/login이 MY → 계정의 잠금 상태 칸을 다시 그림
      cloud      계정 저장 상태가 바뀜(services/cloud)      → ui/account가 상태 글을 다시 그림
      community  커뮤니티 작품 목록을 받음(services/community) → ui/home이 홈에 있으면 다시 그림
-     route      화면을 다시 그려야 함(services/sync)       → ui/shell이 route() */
+     route      화면을 다시 그려야 함(services/sync)       → ui/shell이 route()
+     session    로그인한 계정이 바뀜(services/supabase)     → services/idv가 그 계정의 인증 결과로 바꿈
+     idv        성인 인증 상태가 바뀜(services/idv)        → ui/idv가 MY의 인증 칸을 다시 그림 */
 /** @typedef {import("./types.js").EventName} EventName */
 const handlers = {};
 /** 이벤트 구독. @param {EventName} name @param {(v?: unknown) => void} fn @returns {Function} 넘긴 fn 그대로 */
@@ -1688,10 +1698,10 @@ function allChars() { return [...S.mine, ...ORIGINALS, ...S.community.filter((c)
 function getChar(id) { return S.mine.find((c) => c.id === id) || ORIGINALS.find((c) => c.id === id) || S.community.find((c) => c.id === id); }
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/core/safety.js
-   내보냄: minorFlags, minorHint
-   쓰는 곳: src/js/ai/adult.js, src/js/services/community.js, src/js/app.js, src/js/admin/codes.js, src/js/images/prompt.js, src/js/images/runware.js, src/js/admin/gen-sheet.js, src/js/admin/sit-sheets.js, src/js/admin/studio.js
+   내보냄: minorFlags, idvPassed, minorHint
+   쓰는 곳: src/js/ai/adult.js, src/js/services/community.js, src/js/ui/idv.js, src/js/app.js, src/js/admin/codes.js, src/js/images/prompt.js, src/js/images/runware.js, src/js/admin/gen-sheet.js, src/js/admin/sit-sheets.js, src/js/admin/studio.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
-/* 안전: 미성년 인물 막기(minorFlags·minorHint) — 순수 함수라 빌드의 작품 검사와 단위 테스트가 그대로 import */
+/* 안전: 미성년 인물 막기(minorFlags·minorHint)·성인 인증 판정(idvPassed) — 순수 함수라 빌드의 작품 검사와 단위 테스트가 그대로 import */
 /** @typedef {import("./types.js").CastMember} CastMember */
 /** @typedef {import("./types.js").Work} Work */
 /* 미성년 인물 막기: 출연진 외모나 캐릭터 설정 첫머리("이름(17, 여)")에 19세 미만 나이·학생 신분이 있으면 저장·공개하지 않음 */
@@ -1708,6 +1718,11 @@ function minorFlags(c) {
   return [...new Set(out)];
 }
 /* 글 속 미성년 암시(19세 미만 나이, 학생·아동 낱말, 그런 Danbooru 태그). 성인 경로·Claude 거절 우회·성인 수위 그림을 막는 데 씀 */
+/**
+ * 휴대폰 성인 인증 결과가 지금 유효한지: 성인 판정 + 1년 안 + live 모드면 시험 채널 결과는 인정하지 않음(시험 채널은 통신사 확인 없이 통과함).
+ * @param {{ adult: boolean, test: boolean, until: number }|null|undefined} rec @param {string} mode CFG.idv.mode @param {number} [now] @returns {boolean}
+ */
+function idvPassed(rec, mode, now = Date.now()) { return !!rec && rec.adult === true && rec.until > now && (mode !== "live" || rec.test === false); }
 /** 글 속 미성년 암시(나이·학생·아동·교복 낱말과 영문 태그). @param {string} t @returns {boolean} */
 function minorHint(t) {
   t = String(t || "");
@@ -2244,13 +2259,15 @@ function cloudStateText() {
    src/js/services/supabase.js
    가져옴: src/js/core/config.js { CFG, IN_CLAUDE }
            src/js/core/constants.js { TIMEOUT }
+           src/js/core/events.js { emit }
            src/js/core/util.js { timeoutSignal, toast }
            src/js/services/cloud.js { CLOUD }
            src/js/services/vault.js { VAULT }
    내보냄: SB, PROVIDERS, OAUTH_ICONS, provName, acctName
-   쓰는 곳: src/js/services/vault.js, src/js/services/cloud.js, src/js/services/sync.js, src/js/services/support.js, src/js/ui/help.js, src/js/ui/login.js, src/js/ui/account.js, src/js/app.js, src/js/admin/support.js, src/js/boot.js
+   쓰는 곳: src/js/services/vault.js, src/js/services/cloud.js, src/js/services/sync.js, src/js/services/support.js, src/js/ui/help.js, src/js/ui/login.js, src/js/ui/account.js, src/js/services/idv.js, src/js/ui/idv.js, src/js/app.js, src/js/admin/support.js, src/js/boot.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* Supabase 인증 REST(SB): 로그인·가입·소셜·세션 갱신, 안내 문구 */
+
 
 
 
@@ -2270,7 +2287,11 @@ const SB = {
   s: null, refreshing: null, // 세션 { access_token, refresh_token, expires_at(ms), user: { id, email } }
   on() { return !IN_CLAUDE && !!(this.url && this.key); },
   load() { try { const s = JSON.parse(localStorage.getItem("hv1_auth") || "null"); this.s = s && s.access_token && s.user && s.user.id ? s : null; } catch { this.s = null; } },
-  keep(s) { this.s = s; try { if (s) localStorage.setItem("hv1_auth", JSON.stringify(s)); else localStorage.removeItem("hv1_auth"); } catch {} },
+  keep(s) {
+    const was = (this.s && this.s.user && this.s.user.id) || "", now = (s && s.user && s.user.id) || "";
+    this.s = s; try { if (s) localStorage.setItem("hv1_auth", JSON.stringify(s)); else localStorage.removeItem("hv1_auth"); } catch {}
+    if (was !== now) emit("session", now); // 토큰만 새로 받은 것은 알리지 않음
+  },
   session(j) { return { access_token: j.access_token, refresh_token: j.refresh_token, expires_at: Date.now() + (+j.expires_in || 3600) * 1000, user: this.who(j.user || {}) }; },
   // providers: 이 계정에 연결된 로그인 방법(email·kakao·google·custom:naver) — email이 없으면 비밀번호가 없는 소셜 전용 계정
   who(u) { const m = u.app_metadata || {}; return { id: u.id, email: u.email || "", provider: m.provider || "", providers: Array.isArray(m.providers) ? m.providers : m.provider ? [m.provider] : [] }; },
@@ -2525,11 +2546,11 @@ const usedNums = (list) => new Set([...(list || []).map((d) => d.n), ...Object.k
 function baseName(n) { return SIT[n] || (DIMS[n] && DIMS[n].name) || ""; }
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/ai/adult.js
-   가져옴: src/js/core/config.js { IN_CLAUDE }
-           src/js/core/safety.js { minorHint }
+   가져옴: src/js/core/config.js { CFG, IN_CLAUDE, idvOn }
+           src/js/core/safety.js { idvPassed, minorHint }
            src/js/core/state.js { S, hasOpenRouterKey, room }
    내보냄: ageOK, unfilteredRoute, refusedText, canFallback
-   쓰는 곳: src/js/images/rating.js, src/js/images/situations.js, src/js/ai/llm.js, src/js/ai/prompt/input.js, src/js/ai/prompt/rules.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/chat/generate.js, src/js/app.js, src/js/images/tags.js, src/js/admin/sit-sheets.js, src/js/admin/image-studio.js
+   쓰는 곳: src/js/images/rating.js, src/js/images/situations.js, src/js/ai/llm.js, src/js/ai/prompt/input.js, src/js/ai/prompt/rules.js, src/js/ui/idv.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/chat/generate.js, src/js/app.js, src/js/images/tags.js, src/js/admin/sit-sheets.js, src/js/admin/image-studio.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 성인 모드 경로 판정(ageOK·unfilteredRoute)과 Claude 거절 시 우회 조건(canFallback) */
 
@@ -2538,7 +2559,11 @@ function baseName(n) { return SIT[n] || (DIMS[n] && DIMS[n].name) || ""; }
 /** @typedef {import("../core/types.js").LLMMessage} LLMMessage */
 /** @typedef {import("../core/types.js").Room} Room */
 
-function ageOK() { return !!S.settings.isAgeVerified && !IN_CLAUDE; }
+/* 성인 확인: 휴대폰 인증을 켰으면(CFG.idv) 그 결과만, 아니면 자기 확인 체크. 켠 뒤에는 예전 체크가 남아 있어도 인정하지 않음 */
+function ageOK() {
+  if (IN_CLAUDE) return false;
+  return idvOn() ? idvPassed(S.idv, CFG.idv.mode) : !!S.settings.isAgeVerified;
+}
 function isUnfilteredActive(r = room) {
   if (!ageOK()) return false;
   if (r && typeof r.set?.allowUnfiltered === "boolean") return r.set.allowUnfiltered || !S.settings.contentFilter;
@@ -4024,7 +4049,8 @@ function checkout(item, after) {
 }
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/ui/faq.js
-   가져옴: src/js/core/wallet.js { PLAN, FREE_DAILY, PLUS_MONTHLY, WELCOME }
+   가져옴: src/js/core/config.js { idvOn }
+           src/js/core/wallet.js { PLAN, FREE_DAILY, PLUS_MONTHLY, WELCOME }
            src/js/core/util.js { num, won }
            src/js/services/support.js { SUPPORT_MAIL }
            src/js/ui/store.js { PLUS }
@@ -4034,6 +4060,7 @@ function checkout(item, after) {
 /* 자주 묻는 질문: 고객센터(#help-faq)의 묶음별 질문·답(고정 글). 요금·턴 수는 상수에서 읽어 앱과 어긋나지 않게 한다.
    답은 앱의 실제 동작(CLAUDE.md)을 근거로 쓴다 — 무료 턴·하트·PLUS·계정 저장·API 키 금고·성인 모드가 바뀌면 여기도 같이 고치기.
    답 글은 운영자가 쓴 고정 HTML이라 esc()를 거치지 않음(사용자 데이터를 넣지 않기) */
+
 
 
 
@@ -4071,7 +4098,7 @@ function faqGroups() {
       ["계정을 삭제하려면요?", "<a href=\"#me\">MY</a> → 계정의 <b>계정 삭제</b>를 누르면 계정과 계정에 저장된 데이터, 남긴 문의가 바로 지워져요. 이 기기에 남은 데이터는 MY의 <b>모든 데이터 초기화</b>로 지울 수 있어요."]
     ]],
     ["성인 모드", [
-      ["성인 모드는 어떻게 켜나요?", "<a href=\"#me\">MY</a> → AI 연결의 <b>성인 인증 · 수위</b>에서 만 19세 이상임을 확인하고 OpenRouter API 키를 넣어야 해요. 성인 수위 대화는 Claude가 아니라 OpenRouter 모델로만 보내요. claude.ai 안에서는 쓸 수 없어요."],
+      ["성인 모드는 어떻게 켜나요?", "<a href=\"#me\">MY</a> → AI 연결의 <b>성인 인증 · 수위</b>에서 " + (idvOn() ? "휴대폰 본인인증을 마치고(1년마다 다시 해요)" : "만 19세 이상임을 확인하고") + " OpenRouter API 키를 넣어야 해요. 성인 수위 대화는 Claude가 아니라 OpenRouter 모델로만 보내요. claude.ai 안에서는 쓸 수 없어요."],
       ["미성년 캐릭터는 어떻게 되나요?", "어떤 설정에서도 미성년자(또는 미성년자로 보이는 인물)의 성적 묘사와 그림은 막아요. 대화나 설정에 19세 미만·학생·교복 같은 암시가 있으면 성인 모드가 꺼진 것처럼 동작해요."]
     ]],
     ["문제 해결", [
@@ -4647,11 +4674,198 @@ function bindAccount(v) {
   });
 }
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
+   src/js/services/idv.js
+   가져옴: src/js/core/config.js { CFG, idvOn }
+           src/js/core/events.js { emit, on }
+           src/js/core/state.js { S }
+           src/js/services/supabase.js { SB }
+   내보냄: idvMsg, IDV
+   쓰는 곳: src/js/ui/idv.js, src/js/boot.js
+   ════════════════════════════════════════════════════════════════════════════════════════════════════ */
+/* 휴대폰 성인 인증(IDV): 인증 결과 읽기·이 기기 캐시, PortOne 인증창 열기, 결과 확인 요청.
+   브라우저는 창만 연다 — 결과를 조회하는 API Secret은 Edge Function(docs/edge/verify-adult.ts)에만 있고, 표 adult_checks는 앱이 읽기만 할 수 있어서 자기 결과를 꾸며 넣지 못한다.
+   단, 지금은 AI를 브라우저에서 사용자 키로 부르므로 이 판정(ai/adult.js ageOK)도 브라우저 안의 일 — 콘솔을 고치면 넘어갈 수 있고, 서버가 AI를 부르는 단계에서 서버 판정으로 옮겨야 진짜 관문이 됨(docs/ROADMAP.md).
+   CFG.idv.mode가 off면(기본) 아무 요청도 하지 않고 자기 확인을 그대로 쓴다. SDK(cdn.portone.io)는 '인증' 버튼을 눌렀을 때만 불러온다 — 외부 리소스 규칙의 예외(CLAUDE.md) */
+
+
+
+
+/** @typedef {import("../core/types.js").IdvRecord} IdvRecord */
+
+const IDV_FN = "/functions/v1/verify-adult", IDV_SDK = "https://cdn.portone.io/v2/browser-sdk.js";
+// 판정이 끝난 것 중 가장 최근 하나 — 나중 결과가 미성년이면 예전 통과를 덮음
+const IDV_ROWS = "/rest/v1/adult_checks?select=adult,test,checked_at,expires_at&checked_at=not.is.null&order=checked_at.desc&limit=1";
+const NOT_READY = "인증 서버가 아직 준비되지 않았어요. 잠시 뒤 다시 해 주세요.";
+const IDV_MSG = {
+  net: "서버에 연결하지 못했어요. 인터넷 연결을 확인해 주세요.",
+  login: "로그인이 풀렸어요. 다시 로그인해 주세요.",
+  no_function: NOT_READY, not_configured: NOT_READY, no_table: NOT_READY, portone_auth: NOT_READY,
+  too_many: "인증은 하루 10번까지 시도할 수 있어요. 내일 다시 해 주세요.",
+  not_verified: "인증이 끝나지 않았어요. 다시 시도해 주세요.",
+  no_birth: "인증 기관에서 생년월일을 받지 못했어요. 다시 시도해 주세요.",
+  not_yours: "이 계정에서 시작한 인증이 아니에요. 다시 시도해 주세요.",
+  sdk: "인증창을 불러오지 못했어요. 인터넷 연결이나 광고 차단 설정을 확인해 주세요."
+};
+/** 오류 → 안내 문구. @param {{ code?: string, msg?: string }} e @returns {string} */
+const idvMsg = (e) => (e && e.msg) || IDV_MSG[e && e.code] || "인증을 마치지 못했어요. 잠시 뒤 다시 해 주세요.";
+
+function loadPortOne() {
+  if (window.PortOne) return Promise.resolve(window.PortOne);
+  return new Promise((ok, no) => {
+    const s = document.createElement("script"); s.src = IDV_SDK;
+    s.onload = () => (window.PortOne ? ok(window.PortOne) : no({ code: "sdk" }));
+    s.onerror = () => no({ code: "sdk" });
+    document.head.appendChild(s);
+  });
+}
+const idvRec = (uid, x) => ({ uid, adult: x.adult === true, test: x.test !== false, at: Date.parse(x.checked_at) || 0, until: Date.parse(x.expires_at) || 0 });
+
+/** 휴대폰 성인 인증 상태·요청. 지금 결과는 S.idv(로그인한 계정 것만 — 로그아웃·계정 바뀜은 "session" 이벤트로 맞춤), 바뀌면 emit("idv"). */
+const IDV = {
+  busy: false, seq: 0,
+  cacheKey(uid) { return "hv1_idv_" + uid; },
+  /** 이 기기에 둔 지난 결과를 읽음(서버에 닿기 전·오프라인에도 판정할 수 있게 — 곧 refresh가 서버 값으로 덮음). @returns {void} */
+  load() {
+    S.idv = null;
+    const uid = SB.s && SB.s.user && SB.s.user.id;
+    if (!idvOn() || !uid) return;
+    try { const v = JSON.parse(localStorage.getItem(this.cacheKey(uid)) || "null"); if (v && v.uid === uid) S.idv = v; } catch {}
+  },
+  /** @param {IdvRecord|null} rec @param {string} uid @returns {void} */
+  keep(rec, uid) {
+    S.idv = rec;
+    try { if (rec) localStorage.setItem(this.cacheKey(uid), JSON.stringify(rec)); else localStorage.removeItem(this.cacheKey(uid)); } catch {}
+    emit("idv");
+  },
+  /** 서버의 결과로 맞춤 — 못 닿으면 이 기기 값을 그대로 둠. @returns {Promise<void>} */
+  async refresh() {
+    const uid = SB.s && SB.s.user && SB.s.user.id, seq = this.seq;
+    if (!idvOn() || !SB.on() || !uid) return;
+    let rows;
+    try { const r = await SB.req(IDV_ROWS); if (!r.ok) return; rows = await r.json(); } catch { return; }
+    // 그사이 로그아웃·계정이 바뀌었거나, 방금 끝난 인증이 더 새 값이면 버림
+    if (!Array.isArray(rows) || seq !== this.seq || !SB.s || SB.s.user.id !== uid) return;
+    this.keep(rows[0] ? idvRec(uid, rows[0]) : null, uid);
+  },
+  async call(body) {
+    let r;
+    try { r = await SB.req(IDV_FN, { method: "POST", body: JSON.stringify(body) }); } catch { throw { code: "net" }; }
+    const j = await r.json().catch(() => ({}));
+    if (r.ok) return j;
+    throw { code: IDV_MSG[j.code] ? j.code : r.status === 404 ? "no_function" : r.status === 401 ? "login" : "upstream" };
+  },
+  /** 인증 번호로 서버에 판정을 맡기고 결과를 둠. @param {string} id @returns {Promise<IdvRecord>} */
+  async confirm(id) {
+    const uid = SB.s.user.id, j = await this.call({ action: "confirm", id });
+    this.seq++;
+    const rec = idvRec(uid, { adult: j.adult, test: j.test, checked_at: j.checkedAt, expires_at: j.expiresAt });
+    this.keep(rec, uid);
+    return rec;
+  },
+  /**
+   * 인증창을 열고 끝까지. PC는 창이 닫히면 이어지고, 휴대폰은 redirectUrl로 페이지째 떠났다가 돌아옴(fromUrl) — 그때는 끝나지 않는 Promise.
+   * @returns {Promise<IdvRecord|null>} 결과(이미 진행 중이면 null) @throws {{ code?: string, msg?: string }}
+   */
+  async run() {
+    if (this.busy) return null;
+    this.busy = true; emit("idv");
+    try {
+      const { id } = await this.call({ action: "start" });
+      const sdk = await loadPortOne();
+      const res = await sdk.requestIdentityVerification({ storeId: CFG.idv.storeId, channelKey: CFG.idv.channelKey, identityVerificationId: id, redirectUrl: SB.site() });
+      if (!res) return null;
+      if (res.code) throw { code: "failed", msg: String(res.message || "인증을 마치지 못했어요.").slice(0, 120) };
+      return await this.confirm(id);
+    } finally { this.busy = false; emit("idv"); }
+  },
+  /**
+   * 휴대폰 인증창에서 돌아왔으면(?identityVerificationId=…) 그 값을 꺼내고 주소를 MY로 정리.
+   * @returns {{ id: string, failed: boolean }|null}
+   */
+  fromUrl() {
+    if (!idvOn()) return null;
+    const q = new URLSearchParams(location.search), id = q.get("identityVerificationId");
+    if (!id) return null;
+    try { history.replaceState(null, "", location.pathname + "#me"); } catch {}
+    return { id, failed: !!q.get("code") };
+  }
+};
+// 로그인·로그아웃·계정 바뀜(services/supabase.js keep): 그 계정의 결과로 바꿔 끼움
+on("session", () => { if (!idvOn()) return; IDV.load(); emit("idv"); IDV.refresh(); });
+/* ════════════════════════════════════════════════════════════════════════════════════════════════════
+   src/js/ui/idv.js
+   가져옴: src/js/ai/adult.js { ageOK }
+           src/js/core/config.js { CFG }
+           src/js/core/events.js { on }
+           src/js/core/safety.js { idvPassed }
+           src/js/core/state.js { S }
+           src/js/core/util.js { $, esc, toast }
+           src/js/services/idv.js { IDV, idvMsg }
+           src/js/services/supabase.js { SB }
+           src/js/ui/shell.js { bindGo }
+   내보냄: idvBoxHTML, bindIdv, finishIdv
+   쓰는 곳: src/js/ui/me.js, src/js/boot.js
+   ════════════════════════════════════════════════════════════════════════════════════════════════════ */
+/* MY의 휴대폰 성인 인증 칸: 상태·인증 버튼, 휴대폰 인증창에서 돌아온 결과 마무리 */
+
+
+
+
+
+
+
+
+
+
+const idvDay = (t) => new Date(t).toLocaleDateString("ko-KR");
+const TOO_YOUNG = "성인 모드는 만 19세가 되는 해부터 쓸 수 있어요.";
+function idvInner() {
+  const mode = CFG.idv.mode, rec = S.idv, pass = idvPassed(rec, mode);
+  const testNote = mode === "test" ? `<p class="d"><span class="pill gold">시험 모드</span> 실제 본인 확인이 아니에요. 인증 흐름을 시험하는 모의 인증이에요.</p>` : "";
+  if (!SB.s) return `<p class="d">성인 모드는 휴대폰 본인인증을 마친 계정에서 쓸 수 있어요. 먼저 로그인해 주세요.</p>${testNote}<div><button class="btn sm" data-go="login">로그인 · 회원가입</button></div>`;
+  const state = pass ? `<div class="acct-row"><span class="pill ok">인증 완료</span><span class="note">${esc(idvDay(rec.until))}까지 · 1년마다 다시 인증해요</span></div>`
+    : !rec ? `<p class="d">성인 모드를 쓰려면 휴대폰 본인인증이 필요해요.</p>`
+    : !rec.adult ? `<p class="d">${TOO_YOUNG}</p>`
+    : rec.until <= Date.now() ? `<p class="d">인증 기간(1년)이 지났어요. 다시 인증해 주세요.</p>`
+    : `<p class="d">시험 모드에서 한 인증은 효력이 없어요. 다시 인증해 주세요.</p>`;
+  const act = pass ? ""
+    : location.protocol === "file:" ? `<p class="d">파일로 열면 인증창을 쓸 수 없어요. <a href="${esc(SB.site())}" target="_blank" rel="noopener">웹 주소</a>에서 같은 계정으로 인증하면 여기에도 적용돼요.</p>`
+    : `<div><button class="btn sm pri" id="idvGo" ${IDV.busy ? "disabled" : ""}>${IDV.busy ? "인증하는 중…" : "휴대폰으로 성인 인증"}</button></div>
+       <p class="d">인증은 포트원과 본인인증 기관이 처리해요. HEART SYNC는 성인 여부·인증 시각·만료일만 저장하고, 이름·전화번호·생년월일은 저장하지 않아요.</p>`;
+  return state + testNote + act;
+}
+function idvResult(r) { return !r.adult ? TOO_YOUNG : `성인 인증을 마쳤어요 (${idvDay(r.until)}까지)${r.test ? " · 시험 모드" : ""}`; }
+async function startIdv() {
+  try { const r = await IDV.run(); if (r) toast(idvResult(r)); }
+  catch (e) { toast(idvMsg(e)); }
+}
+function paintIdv() {
+  const box = $("#idvBox"); if (!box) return;
+  box.innerHTML = idvInner(); bindGo(box);
+  const go = $("#idvGo", box); if (go) go.onclick = startIdv;
+  ["#unfilterChk", "#fallbackChk"].forEach((s) => { const x = $(s); if (x) x.disabled = !ageOK(); }); // 인증을 마쳐야 수위 해제 옵션을 고를 수 있음
+}
+on("idv", paintIdv);
+/** MY의 '성인 인증 · 수위' 안에 들어가는 자리(자기 확인 체크 대신 — CFG.idv를 켰을 때만). @returns {string} */
+const idvBoxHTML = () => `<div class="idv-box" id="idvBox"></div>`;
+/** MY를 그린 뒤 칸을 채움. @returns {void} */
+const bindIdv = paintIdv;
+/**
+ * 휴대폰 인증창에서 돌아왔을 때(boot) 결과를 확인. 주소의 문구는 누구나 꾸며 보낼 수 있어 화면에 그대로 쓰지 않음.
+ * @param {{ id: string, failed: boolean }} back
+ * @returns {Promise<void>}
+ */
+async function finishIdv(back) {
+  if (!SB.s) { toast("로그인이 풀렸어요. 다시 로그인한 뒤 인증해 주세요."); return; }
+  if (back.failed) { toast("인증을 마치지 못했어요. 취소했거나 실패했어요."); return; }
+  try { toast(idvResult(await IDV.confirm(back.id))); } catch (e) { toast(idvMsg(e)); }
+}
+/* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/ui/me.js
    가져옴: src/js/ai/llm.js { engineName }
            src/js/ai/models.js { OR_PRESETS }
            src/js/core/audience.js { AUDS, audience }
-           src/js/core/config.js { IN_CLAUDE }
+           src/js/core/config.js { IN_CLAUDE, idvOn }
            src/js/core/rooms.js { roomKey, saveRoom }
            src/js/core/settings.js { applySettings, cleanKeys, saveSettings }
            src/js/core/state.js { S, room }
@@ -4665,6 +4879,7 @@ function bindAccount(v) {
            src/js/ui/chat/log.js { renderLog }
            src/js/ui/cover.js { pavHTML }
            src/js/ui/ext.js { runExt }
+           src/js/ui/idv.js { bindIdv, idvBoxHTML }
            src/js/ui/help.js { checkNotices, docUrl, hasNewNotice }
            src/js/ui/home.js { audSegHTML, setAudience }
            src/js/ui/icons.js { ICON }
@@ -4674,6 +4889,7 @@ function bindAccount(v) {
    쓰는 곳: src/js/ui/login.js, src/js/ui/account.js, src/js/ui/room-drawer.js, src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* MY: 프로필·페르소나·관심있는 대화·채팅 설정·AI 연결·계정·고객센터·약관 및 정책. #meExt 자리는 관리자 빌드가 EXT.me로 채움(크리에이터 프로필·이미지 생성 설정), '설정 저장'은 EXT.meSave도 부름 */
+
 
 
 
@@ -4733,10 +4949,10 @@ function viewMe() {
       <div class="field" style="margin-top:0"><label for="key">Anthropic API 키 <span class="note">파일로 열었을 때만 필요</span></label><input id="key" type="password" autocomplete="off" placeholder="sk-ant-..." value="${esc(S.settings.apiKey)}"></div>
       ${IN_CLAUDE ? `<div class="setcard" style="margin-top:14px"><h4>성인 인증 · 수위</h4><p class="d" style="margin:0">파일로 열었을 때만 설정할 수 있어요.</p></div>`
         : `<div class="setcard" style="margin-top:14px"><h4>성인 인증 · 수위</h4>
-        <div class="toggle"><label for="ageChk">만 19세 이상이에요 (자기 확인)</label><input type="checkbox" id="ageChk" ${S.settings.isAgeVerified ? "checked" : ""}></div>
+        ${idvOn() ? idvBoxHTML() : `<div class="toggle"><label for="ageChk">만 19세 이상이에요 (자기 확인)</label><input type="checkbox" id="ageChk" ${S.settings.isAgeVerified ? "checked" : ""}></div>`}
         <div class="toggle"><label for="unfilterChk">모든 대화방 수위 제한 해제</label><input type="checkbox" id="unfilterChk" ${!S.settings.contentFilter ? "checked" : ""}></div>
         <div class="toggle"><label for="fallbackChk">Claude가 거절하면 OpenRouter로 이어 쓰기</label><input type="checkbox" id="fallbackChk" ${S.settings.autoFallback ? "checked" : ""}></div>
-        <p class="d" style="margin:0">OpenRouter 키가 있어야 동작해요. 미성년 인물·암시는 항상 막아요. 이 체크는 본인인증이 아니에요.</p></div>`}
+        <p class="d" style="margin:0">OpenRouter 키가 있어야 동작해요. 미성년 인물·암시는 항상 막아요.${idvOn() ? "" : " 이 체크는 본인인증이 아니에요."}</p></div>`}
       ${IN_CLAUDE ? "" : `<div class="two">
         <div class="field"><label for="orkey">OpenRouter API 키 <span class="note">성인 모드용</span></label><input id="orkey" type="password" autocomplete="off" placeholder="sk-or-..." value="${esc(S.settings.openRouterKey || "")}"></div>
         <div class="field"><label for="ormodel">무검열 모델</label><select id="ormodel">${(() => { const cur = String(S.settings.customUnfilteredModel || "").trim(), pre = OR_PRESETS.some((m) => m[0] === cur);
@@ -4774,15 +4990,17 @@ function viewMe() {
   $("#cImg").onchange = (e) => chatSet("sceneImg", e.target.checked);
   bindAccount(v);
   $$("[data-aud]", v).forEach((x) => x.onclick = () => { setAudience(x.dataset.aud); $$("[data-aud]", v).forEach((y) => y.classList.toggle("on", y === x)); toast(`${AUDS[audience()].name} 작품을 보여 드릴게요`); });
-  // 성인 인증을 체크해야 수위 해제 옵션을 고를 수 있음
+  // 성인 인증을 해야 수위 해제 옵션을 고를 수 있음(휴대폰 인증을 켰으면 ui/idv.js가 맞춤)
   const age = $("#ageChk");
   if (age) { const sync = () => ["#unfilterChk", "#fallbackChk"].forEach((s) => $(s).disabled = !age.checked); age.onchange = sync; sync(); }
+  bindIdv();
   const orm = $("#ormodel");
   if (orm) orm.onchange = () => { $("#ormodelBox").hidden = orm.value !== "custom"; if (orm.value === "custom") $("#ormodelTxt").focus(); };
   $("#setSave").onclick = () => {
     S.settings.apiKey = $("#key").value.trim();
-    if (age) {
-      S.settings.isAgeVerified = age.checked; S.settings.contentFilter = !$("#unfilterChk").checked; S.settings.autoFallback = $("#fallbackChk").checked;
+    if (age) S.settings.isAgeVerified = age.checked;
+    if ($("#unfilterChk")) {
+      S.settings.contentFilter = !$("#unfilterChk").checked; S.settings.autoFallback = $("#fallbackChk").checked;
       S.settings.openRouterKey = $("#orkey").value.trim();
       S.settings.customUnfilteredModel = orm.value === "custom" ? $("#ormodelTxt").value.trim() : orm.value;
     }
@@ -5775,7 +5993,7 @@ function stopGen() { if (gen) gen.ctl.abort(); }
            src/js/ui/icons.js { ICON }
            src/js/ui/sheet.js { closeOverlays }
    내보냄: registerViews, setNavs, go, route, LOGO, renderShell, renderRailRecent, renderWalletChips, topbar, bindGo
-   쓰는 곳: src/js/ui/store.js, src/js/ui/help.js, src/js/ui/home.js, src/js/ui/login.js, src/js/ui/me.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/detail.js, src/js/ui/chats.js, src/js/app.js, src/js/admin/gate.js, src/js/admin/image-studio.js, src/js/admin/tools.js, src/js/admin/support.js, src/js/admin/studio.js, src/js/admin/works.js, src/js/boot.js, src/js/admin.js
+   쓰는 곳: src/js/ui/store.js, src/js/ui/help.js, src/js/ui/home.js, src/js/ui/login.js, src/js/ui/idv.js, src/js/ui/me.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/detail.js, src/js/ui/chats.js, src/js/app.js, src/js/admin/gate.js, src/js/admin/image-studio.js, src/js/admin/tools.js, src/js/admin/support.js, src/js/admin/studio.js, src/js/admin/works.js, src/js/boot.js, src/js/admin.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 라우팅(go·route)·레일·탭바·상단바·지갑 칩. 화면은 진입점(main.js·admin.js)이 registerViews·setNavs로 등록한다 — 셸은 어떤 화면이 있는지 모른다.
    아래층의 "rooms"·"wallet"·"route" 이벤트를 받아 레일·칩·화면을 다시 그림 */
@@ -8280,12 +8498,14 @@ function migrateSettings() {
            src/js/core/util.js { $ }
            src/js/services/cloud.js { CLOUD }
            src/js/services/community.js { watchCommunity }
+           src/js/services/idv.js { IDV }
            src/js/services/images.js { IMG }
            src/js/services/load.js { loadAll }
            src/js/services/supabase.js { SB }
            src/js/services/sync.js { reloadFromCloud }
            src/js/ui/chat/generate.js { stopGen }
            src/js/ui/home.js { audSheet, viewHome }
+           src/js/ui/idv.js { finishIdv }
            src/js/ui/login.js { afterLogin, newPasswordSheet }
            src/js/ui/sheet.js { closeOverlays }
            src/js/ui/shell.js { renderRailRecent, renderShell, renderWalletChips, route }
@@ -8313,6 +8533,8 @@ function migrateSettings() {
 
 
 
+
+
 async function boot(opts = {}) {
   const saved = migrateSettings();
   if (opts.migrate) opts.migrate(saved);
@@ -8320,6 +8542,8 @@ async function boot(opts = {}) {
   // 계정: 인증 메일·소셜 로그인에서 돌아왔으면(#access_token…) 먼저 세션으로 바꿈
   SB.load();
   const authType = SB.on() ? await SB.fromHash() : "";
+  IDV.load();
+  const idvBack = IDV.fromUrl(); // 휴대폰 인증창에서 돌아옴(?identityVerificationId=…) — 주소를 먼저 #me로 정리
   await loadAll();
   renderShell();
   // 처음 시작: 로그인 페이지(계정 서버가 있고, 로그인도 둘러보기도 안 했을 때) → 관심있는 대화 고르기
@@ -8327,6 +8551,7 @@ async function boot(opts = {}) {
   if (askLogin) { try { history.replaceState(null, "", location.pathname + location.search + "#login"); } catch {} }
   route();
   window.addEventListener("hashchange", route);
+  if (idvBack) finishIdv(idvBack); else IDV.refresh();
   if (SB.s) afterLogin(!!authType).then(() => { if (authType === "recovery") newPasswordSheet(); else if (!AUDS[S.settings.audience] && !location.hash.startsWith("#r-")) audSheet(true); });
   else if (!askLogin && !AUDS[S.settings.audience] && !location.hash.startsWith("#r-")) audSheet(true);
   // 다른 기기에서 바꾼 것: 이 탭으로 돌아올 때 받아 오고, 떠날 때 못 올린 것을 올림

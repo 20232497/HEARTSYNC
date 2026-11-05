@@ -1,6 +1,7 @@
 /* Supabase 인증 REST(SB): 로그인·가입·소셜·세션 갱신, 안내 문구 */
 import { CFG, IN_CLAUDE } from "../core/config.js";
 import { TIMEOUT } from "../core/constants.js";
+import { emit } from "../core/events.js";
 import { timeoutSignal, toast } from "../core/util.js";
 import { CLOUD } from "./cloud.js";
 import { VAULT } from "./vault.js";
@@ -18,7 +19,11 @@ export const SB = {
   s: null, refreshing: null, // 세션 { access_token, refresh_token, expires_at(ms), user: { id, email } }
   on() { return !IN_CLAUDE && !!(this.url && this.key); },
   load() { try { const s = JSON.parse(localStorage.getItem("hv1_auth") || "null"); this.s = s && s.access_token && s.user && s.user.id ? s : null; } catch { this.s = null; } },
-  keep(s) { this.s = s; try { if (s) localStorage.setItem("hv1_auth", JSON.stringify(s)); else localStorage.removeItem("hv1_auth"); } catch {} },
+  keep(s) {
+    const was = (this.s && this.s.user && this.s.user.id) || "", now = (s && s.user && s.user.id) || "";
+    this.s = s; try { if (s) localStorage.setItem("hv1_auth", JSON.stringify(s)); else localStorage.removeItem("hv1_auth"); } catch {}
+    if (was !== now) emit("session", now); // 토큰만 새로 받은 것은 알리지 않음
+  },
   session(j) { return { access_token: j.access_token, refresh_token: j.refresh_token, expires_at: Date.now() + (+j.expires_in || 3600) * 1000, user: this.who(j.user || {}) }; },
   // providers: 이 계정에 연결된 로그인 방법(email·kakao·google·custom:naver) — email이 없으면 비밀번호가 없는 소셜 전용 계정
   who(u) { const m = u.app_metadata || {}; return { id: u.id, email: u.email || "", provider: m.provider || "", providers: Array.isArray(m.providers) ? m.providers : m.provider ? [m.provider] : [] }; },

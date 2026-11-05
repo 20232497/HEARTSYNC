@@ -1,11 +1,15 @@
 /* 성인 모드 경로 판정(ageOK·unfilteredRoute)과 Claude 거절 시 우회 조건(canFallback) */
-import { IN_CLAUDE } from "../core/config.js";
-import { minorHint } from "../core/safety.js";
+import { CFG, IN_CLAUDE, idvOn } from "../core/config.js";
+import { idvPassed, minorHint } from "../core/safety.js";
 import { S, hasOpenRouterKey, room } from "../core/state.js";
 /** @typedef {import("../core/types.js").LLMMessage} LLMMessage */
 /** @typedef {import("../core/types.js").Room} Room */
 
-export function ageOK() { return !!S.settings.isAgeVerified && !IN_CLAUDE; }
+/* 성인 확인: 휴대폰 인증을 켰으면(CFG.idv) 그 결과만, 아니면 자기 확인 체크. 켠 뒤에는 예전 체크가 남아 있어도 인정하지 않음 */
+export function ageOK() {
+  if (IN_CLAUDE) return false;
+  return idvOn() ? idvPassed(S.idv, CFG.idv.mode) : !!S.settings.isAgeVerified;
+}
 function isUnfilteredActive(r = room) {
   if (!ageOK()) return false;
   if (r && typeof r.set?.allowUnfiltered === "boolean") return r.set.allowUnfiltered || !S.settings.contentFilter;

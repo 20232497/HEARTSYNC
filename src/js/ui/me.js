@@ -2,7 +2,7 @@
 import { engineName } from "../ai/llm.js";
 import { OR_PRESETS } from "../ai/models.js";
 import { AUDS, audience } from "../core/audience.js";
-import { IN_CLAUDE } from "../core/config.js";
+import { IN_CLAUDE, idvOn } from "../core/config.js";
 import { roomKey, saveRoom } from "../core/rooms.js";
 import { applySettings, cleanKeys, saveSettings } from "../core/settings.js";
 import { S, room } from "../core/state.js";
@@ -16,6 +16,7 @@ import { accountBoxHTML, bindAccount } from "./account.js";
 import { renderLog } from "./chat/log.js";
 import { pavHTML } from "./cover.js";
 import { runExt } from "./ext.js";
+import { bindIdv, idvBoxHTML } from "./idv.js";
 import { checkNotices, docUrl, hasNewNotice } from "./help.js";
 import { audSegHTML, setAudience } from "./home.js";
 import { ICON } from "./icons.js";
@@ -58,10 +59,10 @@ export function viewMe() {
       <div class="field" style="margin-top:0"><label for="key">Anthropic API 키 <span class="note">파일로 열었을 때만 필요</span></label><input id="key" type="password" autocomplete="off" placeholder="sk-ant-..." value="${esc(S.settings.apiKey)}"></div>
       ${IN_CLAUDE ? `<div class="setcard" style="margin-top:14px"><h4>성인 인증 · 수위</h4><p class="d" style="margin:0">파일로 열었을 때만 설정할 수 있어요.</p></div>`
         : `<div class="setcard" style="margin-top:14px"><h4>성인 인증 · 수위</h4>
-        <div class="toggle"><label for="ageChk">만 19세 이상이에요 (자기 확인)</label><input type="checkbox" id="ageChk" ${S.settings.isAgeVerified ? "checked" : ""}></div>
+        ${idvOn() ? idvBoxHTML() : `<div class="toggle"><label for="ageChk">만 19세 이상이에요 (자기 확인)</label><input type="checkbox" id="ageChk" ${S.settings.isAgeVerified ? "checked" : ""}></div>`}
         <div class="toggle"><label for="unfilterChk">모든 대화방 수위 제한 해제</label><input type="checkbox" id="unfilterChk" ${!S.settings.contentFilter ? "checked" : ""}></div>
         <div class="toggle"><label for="fallbackChk">Claude가 거절하면 OpenRouter로 이어 쓰기</label><input type="checkbox" id="fallbackChk" ${S.settings.autoFallback ? "checked" : ""}></div>
-        <p class="d" style="margin:0">OpenRouter 키가 있어야 동작해요. 미성년 인물·암시는 항상 막아요. 이 체크는 본인인증이 아니에요.</p></div>`}
+        <p class="d" style="margin:0">OpenRouter 키가 있어야 동작해요. 미성년 인물·암시는 항상 막아요.${idvOn() ? "" : " 이 체크는 본인인증이 아니에요."}</p></div>`}
       ${IN_CLAUDE ? "" : `<div class="two">
         <div class="field"><label for="orkey">OpenRouter API 키 <span class="note">성인 모드용</span></label><input id="orkey" type="password" autocomplete="off" placeholder="sk-or-..." value="${esc(S.settings.openRouterKey || "")}"></div>
         <div class="field"><label for="ormodel">무검열 모델</label><select id="ormodel">${(() => { const cur = String(S.settings.customUnfilteredModel || "").trim(), pre = OR_PRESETS.some((m) => m[0] === cur);
@@ -99,15 +100,17 @@ export function viewMe() {
   $("#cImg").onchange = (e) => chatSet("sceneImg", e.target.checked);
   bindAccount(v);
   $$("[data-aud]", v).forEach((x) => x.onclick = () => { setAudience(x.dataset.aud); $$("[data-aud]", v).forEach((y) => y.classList.toggle("on", y === x)); toast(`${AUDS[audience()].name} 작품을 보여 드릴게요`); });
-  // 성인 인증을 체크해야 수위 해제 옵션을 고를 수 있음
+  // 성인 인증을 해야 수위 해제 옵션을 고를 수 있음(휴대폰 인증을 켰으면 ui/idv.js가 맞춤)
   const age = $("#ageChk");
   if (age) { const sync = () => ["#unfilterChk", "#fallbackChk"].forEach((s) => $(s).disabled = !age.checked); age.onchange = sync; sync(); }
+  bindIdv();
   const orm = $("#ormodel");
   if (orm) orm.onchange = () => { $("#ormodelBox").hidden = orm.value !== "custom"; if (orm.value === "custom") $("#ormodelTxt").focus(); };
   $("#setSave").onclick = () => {
     S.settings.apiKey = $("#key").value.trim();
-    if (age) {
-      S.settings.isAgeVerified = age.checked; S.settings.contentFilter = !$("#unfilterChk").checked; S.settings.autoFallback = $("#fallbackChk").checked;
+    if (age) S.settings.isAgeVerified = age.checked;
+    if ($("#unfilterChk")) {
+      S.settings.contentFilter = !$("#unfilterChk").checked; S.settings.autoFallback = $("#fallbackChk").checked;
       S.settings.openRouterKey = $("#orkey").value.trim();
       S.settings.customUnfilteredModel = orm.value === "custom" ? $("#ormodelTxt").value.trim() : orm.value;
     }
