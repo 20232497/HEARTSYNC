@@ -137,9 +137,9 @@ function chunkBy(items, max) {
 // core가 services를 모르게 고리로 꽂음: KV.set → 계정에도, 설정 저장 → "settings" 행
 KV.remote = (k, v) => CLOUD.put(k, v);
 on("settings", () => CLOUD.put("settings", cloudSettings()));
-// 이 기기 KV 키(그림·설정·세션·키 잠금 제외 — 그림은 IndexedDB, 설정은 "settings" 키로 따로)
+// 이 기기 KV 키(그림·설정·세션·로그인 뒤 돌아갈 곳·키 잠금 제외 — 그림은 IndexedDB, 설정은 "settings" 키로 따로)
 function localKVKeys() {
-  try { return Object.keys(localStorage).filter((k) => k.indexOf("hv1_") === 0).map((k) => k.slice(4)).filter((k) => !/^(settings|auth|guest|cloudlast_.*|cloudfix_.*|vault_.*|img[a-z0-9]{6,30})$/.test(k)); } catch { return []; }
+  try { return Object.keys(localStorage).filter((k) => k.indexOf("hv1_") === 0).map((k) => k.slice(4)).filter((k) => !/^(settings|auth|guest|back|cloudlast_.*|cloudfix_.*|vault_.*|img[a-z0-9]{6,30})$/.test(k)); } catch { return []; }
 }
 // 계정에 올리는 설정: 기기별 설정과 API 키는 뺌(키는 비밀번호로 잠가 "vault" 행에만 — VAULT. 서버의 표도 settings에 키 칸이 있으면 거부)
 /** 계정에 올릴 설정 — 기기별 칸(fs·enterSend)과 API 키 칸은 뺌(서버 제약 kv_no_plain_keys). @returns {Partial<Settings>} */
