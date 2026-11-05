@@ -566,6 +566,18 @@ function checkScripts(html, map, out) {
   return errors;
 }
 
+/* 사용자 빌드에 그림 생성이 섞이지 않았는지(2026-11-05, 사용자 결정 — 그림은 관리자 계정만 만들어 content/에 싣는다. 라이선스: docs/COMMERCIALIZATION.md §8).
+   생성 모듈(관리자 전용)의 머리·생성 함수 이름·Runware 작업 이름이 결과에 있으면 실패 — 사용자 모듈이 관리자 모듈을 import하게 바뀌는 실수를 막음 */
+const NO_GEN = [
+  [/\/\* ── src\/js\/admin\//, "관리자 모듈(src/js/admin/)"],
+  [/\/\* ── src\/js\/images\/(runware|prompt|tags|styles|style-fit|gen-guard)\.js/, "그림 생성 모듈(images/runware·prompt·tags·styles·style-fit·gen-guard)"],
+  [/\b(runwareImage|makeMotion|autoImages)\b/, "그림·움짤 생성 함수"],
+  [/["'](imageInference|videoInference)["']/, "Runware 생성 작업"]
+];
+function checkNoGen(html) {
+  return NO_GEN.filter(([re]) => re.test(html)).map(([, what]) => `index.html(사용자 사이트)에 들어가면 안 되는 것이 있어요: ${what} — 그림 생성은 관리자 빌드(admin.html)에만. 사용자 모듈이 그걸 import하는지 확인하세요(CLAUDE.md '두 빌드')`);
+}
+
 /* 대상 하나를 만든다(content/는 buildAll이 먼저). 결과 HTML과 줄 지도를 돌려주고 지도는 .build/에도 남김 */
 export async function build(name = "user") {
   const t = TARGETS[name];
@@ -574,6 +586,7 @@ export async function build(name = "user") {
   const { html: raw, map, css, bundle } = await assemble(t);
   const html = raw.replace(/<\/script(?![\s>])/gi, "<\\/script").split(LS).join("\\u2028").split(PS).join("\\u2029");
   const errors = checkScripts(html, map, t.out);
+  if (name === "user") errors.push(...checkNoGen(html));
   if (errors.length) throw new BuildError(errors);
   fs.mkdirSync(BUILD_DIR, { recursive: true });
   fs.writeFileSync(path.join(BUILD_DIR, t.linemap), JSON.stringify(map));

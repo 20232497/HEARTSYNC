@@ -6,6 +6,7 @@ import { S, hasRunwareKey } from "../core/state.js";
 import { abortCode, timeoutSignal } from "../core/util.js";
 import { splitTags } from "./prompt.js";
 import { RATINGS, imgRating } from "./rating.js";
+import { assertAdmin } from "./gen-guard.js";
 import { ARCH, imgModelInfo, styleFor } from "./styles.js";
 import { ponyTags } from "./tags.js";
 import { IMG, validRef } from "../services/images.js";
@@ -52,6 +53,7 @@ function fixSubject(tags, subj) {
 /* Runware 이미지 생성 → Blob (IMG.put에 그대로 넣을 수 있음). 그림은 dataURI로 받아 두 번째 요청·CORS 문제를 피하고, URL로 오면 내려받음.
    style은 styleFor(ctx)가 고른 {prompt, model} — 없으면 설정의 그림체 그대로(styleFor()) */
 export async function runwareImage(prompt, { aspect = "4:5", rating = imgRating(), signal, style: styleOpt } = {}) {
+  await assertAdmin(); // 관리자 계정만(images/gen-guard.js) — 키를 확인하기 전에
   if (!hasRunwareKey()) throw { code: "no_key" };
   rating = imgRating(rating);
   const adult = rating !== "safe", st = styleOpt || styleFor();
@@ -112,6 +114,8 @@ export async function refDataURL(ref) {
 }
 export function genErr(e) {
   return {
+    admin_login: "그림은 관리자 계정만 만들 수 있어요. MY → 계정에서 관리자 계정으로 로그인해 주세요.",
+    admin_only: "이 계정은 관리자로 확인되지 않아 그림을 만들 수 없어요(Supabase admins 표에 없거나 서버에 닿지 못함).",
     no_key: "설정에서 Runware API 키를 먼저 넣어 주세요.",
     bad_key: "Runware API 키가 올바르지 않거나 권한이 없어요.",
     no_funds: "Runware 크레딧이 부족해요. Runware 대시보드(runware.ai)에서 충전해 주세요.",
