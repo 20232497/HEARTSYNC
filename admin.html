@@ -286,7 +286,11 @@ h2.sec small, h1.sec small { font-family:var(--sans); font-size:12.5px; color:va
 .slot .artcard .ac-s { font-size:12px; }
 .thumb-art .artcard .ac-s, .thumb-art .artcard .ac-n { display:none; }
 .lightbox { position:fixed; inset:0; z-index:70; background:rgba(0,0,0,.85); display:flex; align-items:center; justify-content:center; padding:max(16px, env(safe-area-inset-top,0px)) 16px; cursor:zoom-out; animation:fade .18s; }
-.lightbox img { max-width:100%; max-height:100%; border-radius:12px; }
+.lightbox img, .lightbox video { max-width:100%; max-height:100%; border-radius:12px; }
+/* 움짤: 사진(크기를 정함) 위에 영상을 겹침 — 영상을 못 받으면(img-miss) 숨겨 사진이 보임 */
+.mo-wrap { position:relative; display:block; }
+.mo-wrap > video.mo { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; cursor:zoom-in; }
+.mo-wrap > video.mo.img-miss { display:none; }
 /* 아직 받지 못한 그림 자리(data-kv → img-wait): 은은한 반짝임. 끝내 못 받으면(img-miss) 회색으로 멈추고, 표지는 숨겨 글자 표지가 보임 */
 img[data-kv], img.img-wait { background:linear-gradient(100deg, var(--surface2) 35%, var(--line) 50%, var(--surface2) 65%); background-size:250% 100%; animation:skel 1.4s linear infinite; }
 img.img-miss { background:var(--surface2); }
@@ -718,7 +722,7 @@ body.gated .app { grid-template-columns:1fr; }
 .is-auto input { accent-color:var(--accent); }
 .is-auto .note { margin:0; }
 .is-busy { margin:8px 0 0; animation:genPulse 1.4s ease-in-out infinite; }
-.is-gal { display:grid; grid-template-columns:repeat(auto-fill, minmax(118px, 1fr)); gap:10px; align-items:start; }
+.is-gal { display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:10px; align-items:start; }
 .is-gi { border:1px solid var(--line); border-radius:12px; padding:6px; display:grid; gap:5px; text-align:center; font-size:12px; background:var(--surface); }
 .is-gi.on { border-color:var(--accent); box-shadow:0 0 0 1px var(--accent) inset; }
 .is-gi .pic { display:block; width:100%; border:0; padding:0; border-radius:9px; overflow:hidden; background:var(--surface2); cursor:pointer; }
@@ -726,7 +730,7 @@ body.gated .app { grid-template-columns:1fr; }
 .is-gi .lb { display:grid; font-weight:600; line-height:1.3; }
 .is-gi .lb small { color:var(--muted); font-weight:400; font-size:11px; }
 .is-gi .bs { display:flex; gap:4px; justify-content:center; }
-.is-gi .bs button { border:1px solid var(--line); background:var(--bg); border-radius:7px; font-size:11.5px; padding:2px 7px; }
+.is-gi .bs button { border:1px solid var(--line); background:var(--bg); border-radius:7px; font-size:11.5px; padding:2px 6px; }
 /* 조합 줄·프롬프트·결과 카드(그림은 원래 비율 그대로) */
 .ct-combo { display:flex; flex-wrap:wrap; align-items:center; gap:8px; font-size:14px; }
 .ct-combo code { background:var(--surface2); border-radius:6px; padding:2px 6px; font-size:12.5px; }
@@ -739,6 +743,34 @@ body.gated .app { grid-template-columns:1fr; }
 .ct-card .cap span { color:var(--muted); font-size:11.5px; }
 .ct-card .bs { display:flex; gap:4px; padding:6px 10px 10px; flex-wrap:wrap; }
 .ct-card .bs button { border:1px solid var(--line); background:var(--bg); border-radius:7px; font-size:11.5px; padding:2px 7px; }
+/* 선택 삭제 모드: 지울 수 있는 코드(내 칸)에만 체크 칸, 못 지우는 코드는 흐리게, 목록 아래 막대에 고른 수·지울 그림 수 */
+.is-chk { flex:0 0 auto; width:16px; height:16px; margin:0 0 0 6px; accent-color:var(--err); }
+.is-codes.deleting .is-code.locked { opacity:.45; }
+.is-codes.deleting .is-code.locked .is-pick { cursor:default; }
+.is-code.chk .is-pick { border-color:var(--err); }
+.is-code.chk .num { color:var(--err); }
+.is-delbar { display:grid; gap:8px; margin-top:10px; border:1px solid var(--err); border-radius:10px; padding:10px 12px; }
+.is-delbar .x { display:grid; gap:2px; font-size:13px; }
+.is-delbar .note { margin:0; }
+.is-delbar .cta-row { margin:0; justify-content:flex-end; }
+.is-clr { margin-left:auto; }
+/* 움짤: 사진 위에 영상을 겹침(.mo-wrap), 꼭지 표시·만드는 중 표시·사진 ↔ 움짤 바꾸기(⟳) 단추 */
+.is-now .pic, .is-gi .pic { position:relative; }
+.mo-badge { position:absolute; left:5px; top:5px; background:rgba(0,0,0,.6); color:#fff; font-size:10.5px; font-weight:600; border-radius:5px; padding:0 5px; pointer-events:none; }
+.mo-on .mo-badge, .is-now .mo-wrap + .mo-badge { background:var(--accent); color:var(--accent-ink); }
+.mo-busy { position:absolute; inset:auto 0 0; background:rgba(0,0,0,.66); color:#fff; font-size:11px; padding:3px 4px; text-align:center; animation:genPulse 1.4s ease-in-out infinite; pointer-events:none; }
+.mo-flip { display:inline-flex; align-items:center; justify-content:center; width:28px; height:26px; padding:0 !important; border:1px solid var(--line); background:var(--bg); border-radius:7px; color:var(--muted); }
+.mo-flip svg { width:16px; height:16px; transition:transform .25s; }
+.mo-flip.on { border-color:var(--accent); background:var(--accent-soft); color:var(--accent); }
+.mo-flip.on svg { transform:rotate(180deg); }
+.is-now .mo-flip { width:34px; height:30px; }
+.is-gi .bs { flex-wrap:wrap; }
+/* 움짤 만들기 창 */
+.mo-prev { display:flex; gap:10px; margin:4px 0 10px; }
+.mo-prev figure { margin:0; flex:0 1 150px; display:grid; gap:4px; font-size:11.5px; color:var(--muted); text-align:center; }
+.mo-prev .pic { display:block; border-radius:10px; overflow:hidden; background:var(--surface2); }
+.mo-prev img, .mo-prev video { width:100%; height:auto; display:block; }
+.mo-sheet textarea { width:100%; }
 
 /* ── 고객센터 관리(관리자 도구): 관리자 안내·공지 고치기 줄·받은 문의의 답변 칸 */
 .adm-note { margin:0 0 10px; font-size:13.5px; }
@@ -775,7 +807,7 @@ window.addEventListener("error", function (e) {
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/core/config.js
    내보냄: ANTHROPIC_URL, CFG, idvOn, IN_CLAUDE
-   쓰는 곳: src/js/core/state.js, src/js/services/supabase.js, src/js/ai/adult.js, src/js/images/rating.js, src/js/ai/openrouter.js, src/js/ai/llm.js, src/js/ui/faq.js, src/js/ui/help.js, src/js/ui/login.js, src/js/services/idv.js, src/js/ui/idv.js, src/js/ui/me.js, src/js/app.js, src/js/images/styles.js, src/js/images/runware.js, src/js/admin/image-settings.js, src/js/admin/auto-images.js
+   쓰는 곳: src/js/core/state.js, src/js/services/supabase.js, src/js/ai/adult.js, src/js/images/rating.js, src/js/ai/openrouter.js, src/js/ai/llm.js, src/js/ui/faq.js, src/js/ui/help.js, src/js/ui/login.js, src/js/services/idv.js, src/js/ui/idv.js, src/js/ui/me.js, src/js/app.js, src/js/images/styles.js, src/js/images/runware.js, src/js/admin/motion-run.js, src/js/admin/image-settings.js, src/js/admin/auto-images.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 환경·연결: 서버 프록시 설정 CFG(window.HEARTVERSE_CONFIG), claude.ai 안인지(IN_CLAUDE) — 아무것도 import하지 않는 잎 모듈(다른 모듈이 맨 윗단에서 CFG를 써도 안전) */
 /** @typedef {import("./types.js").Config} Config */
@@ -798,7 +830,7 @@ const IN_CLAUDE = !!(window.claude && typeof window.claude.use === "function");
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/core/constants.js
    내보냄: MARK, FREE_DAILY, WELCOME, PLUS_MONTHLY, TIMEOUT, SIT, SIT_TINT, PALETTES, MOTIFS, CATS
-   쓰는 곳: src/js/ai/models.js, src/js/core/wallet.js, src/js/services/supabase.js, src/js/images/codes.js, src/js/services/community.js, src/js/images/situations.js, src/js/ai/parse.js, src/js/ai/openrouter.js, src/js/ai/llm.js, src/js/ai/prompt/rules.js, src/js/ui/cover.js, src/js/ui/home.js, src/js/app.js, src/js/admin/codes.js, src/js/images/runware.js, src/js/admin/image-codes.js, src/js/admin/sit-sheets.js, src/js/admin/studio.js
+   쓰는 곳: src/js/ai/models.js, src/js/core/wallet.js, src/js/services/supabase.js, src/js/images/codes.js, src/js/services/community.js, src/js/images/situations.js, src/js/ai/parse.js, src/js/ai/openrouter.js, src/js/ai/llm.js, src/js/ai/prompt/rules.js, src/js/ui/cover.js, src/js/ui/home.js, src/js/app.js, src/js/admin/codes.js, src/js/images/runware.js, src/js/admin/image-codes.js, src/js/admin/motion-run.js, src/js/admin/sit-sheets.js, src/js/admin/studio.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 순수 상수: 응답 구분자(MARK), 상황 이름(SIT)·표지 색·무늬·장르, 요금 상수 — 다른 모듈을 import하지 않음 */
 const MARK = "===STATE===";
@@ -817,7 +849,7 @@ const CATS = ["로맨스", "판타지", "RPG", "미스터리", "일상", "시뮬
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/core/util.js
    내보냄: $, $$, esc, uid, clamp, today, won, num, ago, timeoutSignal, abortCode, toast
-   쓰는 곳: src/js/core/storage.js, src/js/core/state.js, src/js/core/wallet.js, src/js/core/rooms.js, src/js/services/images.js, src/js/services/cloud.js, src/js/services/supabase.js, src/js/images/rating.js, src/js/services/community.js, src/js/ai/parse.js, src/js/ai/openrouter.js, src/js/ai/llm.js, src/js/ai/prompt/memory.js, src/js/ui/sheet.js, src/js/ui/chat/suggest.js, src/js/ui/cover.js, src/js/ui/store.js, src/js/ui/faq.js, src/js/ui/help.js, src/js/ui/home.js, src/js/ui/login.js, src/js/ui/account.js, src/js/ui/idv.js, src/js/ui/me.js, src/js/ui/pay.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/chat/render.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/ui/shell.js, src/js/ui/worldart.js, src/js/ui/detail.js, src/js/ui/chats.js, src/js/app.js, src/js/images/styles.js, src/js/images/runware.js, src/js/admin/export.js, src/js/admin/gen-sheet.js, src/js/admin/gate.js, src/js/admin/image-codes.js, src/js/admin/image-run.js, src/js/admin/sit-sheets.js, src/js/admin/image-studio.js, src/js/admin/worldart.js, src/js/admin/tools.js, src/js/admin/image-settings.js, src/js/admin/auto-images.js, src/js/admin/support.js, src/js/admin/studio.js, src/js/admin/works.js, src/js/core/migrate.js, src/js/boot.js
+   쓰는 곳: src/js/core/storage.js, src/js/core/state.js, src/js/core/wallet.js, src/js/core/rooms.js, src/js/services/images.js, src/js/services/cloud.js, src/js/services/supabase.js, src/js/images/rating.js, src/js/services/community.js, src/js/ai/parse.js, src/js/ai/openrouter.js, src/js/ai/llm.js, src/js/ai/prompt/memory.js, src/js/ui/sheet.js, src/js/ui/chat/suggest.js, src/js/ui/cover.js, src/js/ui/store.js, src/js/ui/faq.js, src/js/ui/help.js, src/js/ui/home.js, src/js/ui/login.js, src/js/ui/account.js, src/js/ui/idv.js, src/js/ui/me.js, src/js/ui/pay.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/chat/render.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/ui/shell.js, src/js/ui/worldart.js, src/js/ui/detail.js, src/js/ui/chats.js, src/js/app.js, src/js/images/styles.js, src/js/images/runware.js, src/js/admin/export.js, src/js/admin/gen-sheet.js, src/js/admin/gate.js, src/js/admin/image-codes.js, src/js/admin/image-run.js, src/js/admin/motion-run.js, src/js/admin/sit-sheets.js, src/js/admin/image-studio.js, src/js/admin/worldart.js, src/js/admin/tools.js, src/js/admin/image-settings.js, src/js/admin/auto-images.js, src/js/admin/support.js, src/js/admin/studio.js, src/js/admin/works.js, src/js/core/migrate.js, src/js/boot.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* DOM·문자열·숫자 유틸, toast, 예상 못 한 오류 기록(reportError) */
 /** @typedef {import("./types.js").TimeoutSignal} TimeoutSignal */
@@ -884,7 +916,7 @@ if (typeof window !== "undefined") {
    src/js/core/storage.js
    가져옴: src/js/core/util.js { toast }
    내보냄: IDB, KV
-   쓰는 곳: src/js/core/wallet.js, src/js/core/rooms.js, src/js/core/settings.js, src/js/services/images.js, src/js/services/cloud.js, src/js/services/community.js, src/js/images/situations.js, src/js/services/load.js, src/js/services/sync.js, src/js/images/pick.js, src/js/ui/account.js, src/js/ui/me.js, src/js/ui/room-drawer.js, src/js/ui/chat/view.js, src/js/app.js, src/js/images/tags.js, src/js/images/prompt.js, src/js/admin/worldart.js, src/js/admin/tools.js, src/js/admin/studio.js, src/js/boot.js
+   쓰는 곳: src/js/core/wallet.js, src/js/core/rooms.js, src/js/core/settings.js, src/js/services/images.js, src/js/services/cloud.js, src/js/images/motion.js, src/js/services/community.js, src/js/images/situations.js, src/js/services/load.js, src/js/services/sync.js, src/js/images/pick.js, src/js/ui/account.js, src/js/ui/me.js, src/js/ui/room-drawer.js, src/js/ui/chat/view.js, src/js/app.js, src/js/images/tags.js, src/js/images/prompt.js, src/js/admin/worldart.js, src/js/admin/tools.js, src/js/admin/studio.js, src/js/boot.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 저장소: IndexedDB(IDB)와 KV(localStorage → claude.ai db → 계정). 계정 저장은 KV.remote 고리로 — services/cloud.js가 꽂음(core는 services를 모름) */
 
@@ -973,7 +1005,7 @@ const KV = {
    가져옴: src/js/core/config.js { CFG }
            src/js/core/util.js { today }
    내보냄: hasClaudeKey, hasRunwareKey, hasOpenRouterKey, S, SAMPLE, samplePromise, DB, DOWNLOADS, setDB, setDownloads, setSample, setSamplePromise, room, gen, setGen, setRoom
-   쓰는 곳: src/js/core/audience.js, src/js/ai/models.js, src/js/core/wallet.js, src/js/core/character.js, src/js/core/rooms.js, src/js/core/settings.js, src/js/services/vault.js, src/js/services/cloud.js, src/js/ai/adult.js, src/js/images/rating.js, src/js/services/community.js, src/js/images/situations.js, src/js/services/load.js, src/js/services/sync.js, src/js/images/pick.js, src/js/ai/openrouter.js, src/js/ai/llm.js, src/js/ai/prompt/memory.js, src/js/ui/chat/suggest.js, src/js/ui/cover.js, src/js/ui/store.js, src/js/ui/help.js, src/js/ui/home.js, src/js/ui/login.js, src/js/ui/account.js, src/js/services/idv.js, src/js/ui/idv.js, src/js/ui/me.js, src/js/ui/pay.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/ui/shell.js, src/js/ui/worldart.js, src/js/ui/detail.js, src/js/ui/chats.js, src/js/app.js, src/js/images/tags.js, src/js/images/prompt.js, src/js/images/styles.js, src/js/images/runware.js, src/js/admin/export.js, src/js/admin/gen-sheet.js, src/js/admin/image-run.js, src/js/admin/sit-sheets.js, src/js/admin/image-studio.js, src/js/admin/worldart.js, src/js/admin/tools.js, src/js/admin/image-settings.js, src/js/admin/auto-images.js, src/js/admin/migrate.js, src/js/admin/studio.js, src/js/admin/works.js, src/js/core/migrate.js, src/js/boot.js
+   쓰는 곳: src/js/core/audience.js, src/js/ai/models.js, src/js/core/wallet.js, src/js/core/character.js, src/js/core/rooms.js, src/js/core/settings.js, src/js/services/vault.js, src/js/services/cloud.js, src/js/ai/adult.js, src/js/images/motion.js, src/js/images/rating.js, src/js/services/community.js, src/js/images/situations.js, src/js/services/load.js, src/js/services/sync.js, src/js/images/pick.js, src/js/ai/openrouter.js, src/js/ai/llm.js, src/js/ai/prompt/memory.js, src/js/ui/chat/suggest.js, src/js/ui/cover.js, src/js/ui/store.js, src/js/ui/help.js, src/js/ui/home.js, src/js/ui/login.js, src/js/ui/account.js, src/js/services/idv.js, src/js/ui/idv.js, src/js/ui/me.js, src/js/ui/pay.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/ui/shell.js, src/js/ui/worldart.js, src/js/ui/detail.js, src/js/ui/chats.js, src/js/app.js, src/js/images/tags.js, src/js/images/prompt.js, src/js/images/styles.js, src/js/images/runware.js, src/js/admin/export.js, src/js/admin/gen-sheet.js, src/js/admin/image-codes.js, src/js/admin/image-run.js, src/js/admin/motion-run.js, src/js/admin/sit-sheets.js, src/js/admin/image-studio.js, src/js/admin/worldart.js, src/js/admin/tools.js, src/js/admin/image-settings.js, src/js/admin/auto-images.js, src/js/admin/migrate.js, src/js/admin/studio.js, src/js/admin/works.js, src/js/core/migrate.js, src/js/boot.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 전역 상태 S(지갑·페르소나·대화방·설정), claude.ai capability, 현재 대화방·진행 중 생성(다른 모듈은 set…()로만 바꿈), API 키 유무(hasClaudeKey… — S와 CFG.serverKeys를 함께 봄).
    core 잎에 가깝게 — 이미지 모델·OpenRouter 모델의 기본값은 여기 두지 않고 쓰는 쪽(images/styles.js의 styleFor, ai/models.js의 orModel)이 비었을 때 채움 */
@@ -990,7 +1022,7 @@ const S = {
   wallet: { hearts: 0, freeDay: today(), freeUsed: 0, pro: null, history: [], ledger: [], ack: {} },
   personas: [{ id: "p1", name: "유저", memo: "", desc: "", img: "", def: true }],
   idv: null, // 휴대폰 성인 인증 결과(services/idv.js) — KV·계정에 저장하지 않음
-  profile: { nick: "" }, mine: [], rooms: [], community: [], imgpacks: {}, coverpacks: {}, lorepacks: {}, tagpacks: {},
+  profile: { nick: "" }, mine: [], rooms: [], community: [], imgpacks: {}, motionpacks: {}, coverpacks: {}, lorepacks: {}, tagpacks: {},
   settings: { fs: 15.5, chatLh: 1.8, narrFont: "serif", enterSend: true, sceneImg: true, autoImg: false, apiKey: "", runwareKey: "", customSits: [], imgModel: "", imgStyle: "auto", imgStyleCustom: "", styleRefs: [], styleSets: [], styleV2: true, styleV3: true, memCfg: { auto: true, every: 5, limit: 3000, guide: "auto", custom: "" },
     // 성인 모드: 자기 확인(isAgeVerified) 전에는 모두 꺼진 것과 같음. contentFilter false면 모든 대화방이 성인 모드
     isAgeVerified: false, contentFilter: true, autoFallback: true, openRouterKey: "", customUnfilteredModel: "" },
@@ -1009,7 +1041,7 @@ function setRoom(v) { return (room = v); }
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/core/cast.js
    내보냄: castLook
-   쓰는 곳: src/js/core/audience.js, src/js/app.js, src/js/images/prompt.js, src/js/admin/image-run.js, src/js/admin/image-studio.js, src/js/admin/auto-images.js
+   쓰는 곳: src/js/core/audience.js, src/js/app.js, src/js/images/prompt.js, src/js/admin/image-run.js, src/js/admin/motion-run.js, src/js/admin/image-studio.js, src/js/admin/auto-images.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 인물 외모 문구: 설정의 "이름(나이, 성별)"·"외모:"와 출연진 look을 합쳐 castLook — S에 의존하지 않아 Node에서도 쓸 수 있음 */
 /** @typedef {import("./types.js").CastMember} CastMember */
@@ -1675,7 +1707,7 @@ for (const c of ORIGINALS) {
    가져옴: src/js/content/index.js { ORIGINALS }
            src/js/core/state.js { S }
    내보냄: normalizeChar, getChar
-   쓰는 곳: src/js/core/rooms.js, src/js/services/load.js, src/js/images/pick.js, src/js/ai/prompt/input.js, src/js/ui/room-drawer.js, src/js/ui/worldart.js, src/js/ui/detail.js, src/js/app.js, src/js/admin/image-studio.js, src/js/admin/worldart.js, src/js/admin/tools.js, src/js/admin/works.js
+   쓰는 곳: src/js/core/rooms.js, src/js/images/motion.js, src/js/services/load.js, src/js/images/pick.js, src/js/ai/prompt/input.js, src/js/ui/room-drawer.js, src/js/ui/worldart.js, src/js/ui/detail.js, src/js/app.js, src/js/admin/image-studio.js, src/js/admin/worldart.js, src/js/admin/tools.js, src/js/admin/works.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 작품 찾기·정규화: normalizeChar, 전체 목록(allChars), id로 찾기(getChar) */
 
@@ -1699,7 +1731,7 @@ function getChar(id) { return S.mine.find((c) => c.id === id) || ORIGINALS.find(
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/core/safety.js
    내보냄: minorFlags, idvPassed, minorHint
-   쓰는 곳: src/js/ai/adult.js, src/js/services/community.js, src/js/ui/idv.js, src/js/app.js, src/js/admin/codes.js, src/js/images/prompt.js, src/js/images/runware.js, src/js/admin/gen-sheet.js, src/js/admin/sit-sheets.js, src/js/admin/studio.js
+   쓰는 곳: src/js/ai/adult.js, src/js/services/community.js, src/js/ui/idv.js, src/js/app.js, src/js/admin/codes.js, src/js/images/prompt.js, src/js/images/runware.js, src/js/admin/gen-sheet.js, src/js/admin/motion-run.js, src/js/admin/sit-sheets.js, src/js/admin/studio.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 안전: 미성년 인물 막기(minorFlags·minorHint)·성인 인증 판정(idvPassed) — 순수 함수라 빌드의 작품 검사와 단위 테스트가 그대로 import */
 /** @typedef {import("./types.js").CastMember} CastMember */
@@ -1812,7 +1844,7 @@ function newRoom(c, openingIdx, persona) {
            src/js/core/state.js { S }
            src/js/core/storage.js { KV }
    내보냄: cleanKeys, saveSettings, applySettings
-   쓰는 곳: src/js/images/rating.js, src/js/services/sync.js, src/js/ui/home.js, src/js/ui/account.js, src/js/ui/me.js, src/js/ui/room-drawer.js, src/js/app.js, src/js/admin/sit-sheets.js, src/js/admin/image-settings.js, src/js/admin/migrate.js, src/js/core/migrate.js, src/js/boot.js
+   쓰는 곳: src/js/images/rating.js, src/js/services/sync.js, src/js/ui/home.js, src/js/ui/account.js, src/js/ui/me.js, src/js/ui/room-drawer.js, src/js/app.js, src/js/admin/sit-sheets.js, src/js/admin/image-studio.js, src/js/admin/image-settings.js, src/js/admin/migrate.js, src/js/core/migrate.js, src/js/boot.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 설정 저장·적용(글자 크기·줄 간격 등 CSS 변수), API 키 붙여넣기 실수 고치기. 저장하면 "settings" 이벤트 — 계정 저장(cloud)·키 금고(vault)가 받음 */
 
@@ -1844,10 +1876,10 @@ function applySettings() {
    가져옴: src/js/core/storage.js { IDB, KV }
            src/js/core/util.js { $$, uid }
            src/js/services/cloud.js { CLOUD }
-   내보냄: validRef, IMG, pubLore, pubImages
-   쓰는 곳: src/js/services/cloud.js, src/js/services/community.js, src/js/images/situations.js, src/js/services/load.js, src/js/services/sync.js, src/js/images/pick.js, src/js/ai/prompt/rules.js, src/js/ui/cover.js, src/js/ui/home.js, src/js/ui/me.js, src/js/ui/room-drawer.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/ui/shell.js, src/js/ui/worldart.js, src/js/ui/detail.js, src/js/ui/chats.js, src/js/app.js, src/js/images/styles.js, src/js/images/runware.js, src/js/admin/export.js, src/js/admin/image-codes.js, src/js/admin/image-run.js, src/js/admin/image-studio.js, src/js/admin/worldart.js, src/js/admin/tools.js, src/js/admin/image-settings.js, src/js/admin/auto-images.js, src/js/admin/migrate.js, src/js/admin/studio.js, src/js/admin/works.js, src/js/boot.js
+   내보냄: validRef, validMotion, IMG, pubLore, pubImages
+   쓰는 곳: src/js/services/cloud.js, src/js/images/motion.js, src/js/services/community.js, src/js/images/situations.js, src/js/services/load.js, src/js/services/sync.js, src/js/images/pick.js, src/js/ai/prompt/rules.js, src/js/ui/cover.js, src/js/ui/home.js, src/js/ui/me.js, src/js/ui/room-drawer.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/ui/shell.js, src/js/ui/worldart.js, src/js/ui/detail.js, src/js/ui/chats.js, src/js/app.js, src/js/images/styles.js, src/js/images/runware.js, src/js/admin/export.js, src/js/admin/image-codes.js, src/js/admin/image-run.js, src/js/admin/motion-run.js, src/js/admin/image-studio.js, src/js/admin/worldart.js, src/js/admin/tools.js, src/js/admin/image-settings.js, src/js/admin/auto-images.js, src/js/admin/migrate.js, src/js/admin/studio.js, src/js/admin/works.js, src/js/boot.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
-/* 그림 저장(IMG): assets → IndexedDB → data URL, 축소(shrink), 공개용 참조만 남기기. 참조 모양은 validRef — 작품 폴더에 실린 그림(content/… 상대 경로)도 참조로 씀 */
+/* 그림 저장(IMG): assets → IndexedDB → data URL, 축소(shrink), 공개용 참조만 남기기. 참조 모양은 validRef(움짤 영상은 validMotion) — 작품 폴더에 실린 그림(content/… 상대 경로)도 참조로 씀 */
 
 
 
@@ -1860,12 +1892,22 @@ function validRef(ref) {
   return typeof ref === "string" && (/^\/_blob\/[A-Za-z0-9_-]{8,80}$/.test(ref) || /^kv:img[a-z0-9]{6,30}$/.test(ref) || /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(ref)
     || /^content\/(?!.*\.\.)[A-Za-z0-9_./-]+\.(webp|png|jpe?g)$/.test(ref));
 }
+/* 움짤(짧은 반복 영상) 참조: 그림과 같은 저장소 모양(/_blob/ · kv:img… — 본문이 data:video/…) + 작품 폴더의 content/….mp4|webm + Runware가 준 임시 주소(내려받기가 막혔을 때만) */
+const VIDEO_DATA = /^data:video\/(mp4|webm|quicktime);base64,[A-Za-z0-9+/=]+$/;
+/** @param {unknown} ref @returns {boolean} 움짤 참조 모양인지 */
+function validMotion(ref) {
+  return typeof ref === "string" && (/^\/_blob\/[A-Za-z0-9_-]{8,80}$/.test(ref) || /^kv:img[a-z0-9]{6,30}$/.test(ref) || VIDEO_DATA.test(ref)
+    || /^content\/(?!.*\.\.)[A-Za-z0-9_./-]+\.(mp4|webm)$/.test(ref) || /^https:\/\/vm\.runware\.ai\/[A-Za-z0-9_./-]+\.(mp4|webm|mov)$/.test(ref));
+}
+const bodyOK = (v) => typeof v === "string" && (validRef(v) || VIDEO_DATA.test(v));
+/* 계정에 함께 올릴 움짤 본문의 최대 크기(글자 수) — 넘으면 이 기기(IndexedDB)에만 두고 작품 폴더로 내보내 싣는다(계정 저장은 1.5MB씩 보냄) */
+const CLOUD_VIDEO_MAX = 1400000;
 /**
  * 그림 저장소. put(file|Blob) → Promise<ImageRef>(assets면 /_blob/, 아니면 축소해 IndexedDB·kv:) · load(k)/local(k) kv 그림 본문(data URL) · tag(ref) → <img> HTML(kv:는 data-kv로 두고 hydrate가 채움)
  * hydrate(root) data-kv 그림 채우기(없으면 계정에서 받음, 받기 전 img-wait·못 받으면 img-miss) · drop(ref) 지우기 · keep(k, v) 계정에서 받은 그림을 IDB에 · migrate() 예전 localStorage 그림 옮기기
  */
 const IMG = {
-  assets: null, cache: {},
+  assets: null, cache: {}, vurl: {},
   async put(file) {
     if (this.assets) {
       try { const blob = await shrink(file, 960, 0.86, true); const r = await this.assets.upload(blob); if (r && r.id) return "/_blob/" + r.id; } catch {}
@@ -1878,23 +1920,31 @@ const IMG = {
     KV.set(key, data, { local: !saved });
     return "kv:" + key;
   },
+  /* 움짤 저장: assets면 그대로 올리고, 아니면 data URL로 IndexedDB에(작으면 계정에도). 돌려주는 값: { ref, local(계정에 안 올림) } */
+  async putVideo(blob) {
+    if (this.assets) { try { const r = await this.assets.upload(blob); if (r && r.id) return { ref: "/_blob/" + r.id, local: false }; } catch {} }
+    const data = await blobURL(blob), key = uid("img"); this.cache[key] = data;
+    const saved = !!(await IDB.open()) && await IDB.set(key, data), small = data.length <= CLOUD_VIDEO_MAX;
+    if (small) KV.set(key, data, { local: !saved }); else if (!saved) throw { code: "too_big" };
+    return { ref: "kv:" + key, local: !small };
+  },
   /* kv: 그림 읽기 — 메모리 → IndexedDB → (계정 db·예전 localStorage) 순서 */
   async local(k) {
     if (this.cache[k]) return this.cache[k];
     let v = await IDB.get(k);
     if (typeof v !== "string") v = await KV.get(k);
-    if (typeof v === "string" && validRef(v)) this.cache[k] = v;
+    if (bodyOK(v)) this.cache[k] = v;
     return this.cache[k];
   },
   // 계정에서 받은 그림은 IndexedDB에도 둠(다음부터는 받지 않음)
-  keep(k, v) { if (typeof v === "string" && validRef(v)) { this.cache[k] = v; IDB.set(k, v); } },
+  keep(k, v) { if (bodyOK(v)) { this.cache[k] = v; IDB.set(k, v); } },
   async load(k) {
     const v = await this.local(k);
     if (v || !CLOUD.on) return v;
     this.keep(k, await CLOUD.getOne(k)); // 다른 기기에서 만든 그림
     return this.cache[k];
   },
-  drop(ref) { if (typeof ref === "string" && ref.startsWith("kv:")) { const k = ref.slice(3); KV.set(k, undefined); IDB.set(k, undefined); delete this.cache[k]; } },
+  drop(ref) { if (typeof ref === "string" && ref.startsWith("kv:")) { const k = ref.slice(3); KV.set(k, undefined); IDB.set(k, undefined); delete this.cache[k]; if (this.vurl[k]) { URL.revokeObjectURL(this.vurl[k]); delete this.vurl[k]; } } },
   /* 예전 버전이 localStorage에 넣어 둔 그림을 IndexedDB로 옮겨 localStorage 자리를 비움 */
   async migrate() {
     if (!(await IDB.open())) return 0;
@@ -1913,6 +1963,22 @@ const IMG = {
     if (ref.startsWith("kv:")) { const k = ref.slice(3); return this.cache[k] ? `<img src="${this.cache[k]}" alt="">` : `<img data-kv="${k}" alt="">`; }
     return `<img src="${ref}" alt="" loading="lazy">`;
   },
+  /* 움짤 <video>(소리 없이 반복 재생). kv: 본문은 hydrate가 blob 주소로 바꿔 채움 — data: 영상은 iOS Safari가 재생하지 못함 */
+  vtag(ref) {
+    if (!validMotion(ref)) return "";
+    const a = 'class="mo" muted loop autoplay playsinline preload="auto" disablepictureinpicture';
+    if (ref.startsWith("kv:")) { const k = ref.slice(3); return this.vurl[k] ? `<video ${a} src="${this.vurl[k]}"></video>` : `<video ${a} data-vkv="${k}"></video>`; }
+    if (ref.startsWith("data:")) return `<video ${a} src="${ref}"></video>`;
+    return `<video ${a} src="${ref}"></video>`;
+  },
+  /* kv: 움짤 본문 → blob 주소(한 번 만들면 재사용) */
+  async videoURL(k) {
+    if (this.vurl[k]) return this.vurl[k];
+    const v = await this.load(k);
+    if (typeof v !== "string" || !VIDEO_DATA.test(v)) return null;
+    try { this.vurl[k] = URL.createObjectURL(await (await fetch(v)).blob()); } catch { return null; }
+    return this.vurl[k];
+  },
   // 이 기기에 있는 그림은 바로, 없는 그림(다른 기기에서 만든 것)은 계정에서 한 번에 받아 채움. 받는 동안 img-wait(반짝이는 자리), 끝내 못 받으면 img-miss(표지는 글자 표지로 되돌림)
   async hydrate(root = document) {
     const els = $$("img[data-kv]", root).map((el) => { const k = el.dataset.kv; el.removeAttribute("data-kv"); el.classList.add("img-wait"); return [el, k]; }), miss = [];
@@ -1923,8 +1989,15 @@ const IMG = {
       el.classList.remove("img-wait");
       if (!el.src) { el.classList.add("img-miss"); const cv = el.closest(".cover"); if (cv) cv.classList.remove("has-img"); }
     });
+    // 움짤: 본문을 blob 주소로(못 받으면 숨겨 아래의 사진이 보임)
+    for (const el of $$("video[data-vkv]", root)) {
+      const k = el.dataset.vkv; el.removeAttribute("data-vkv");
+      const u = await this.videoURL(k);
+      if (u) { el.src = u; el.play && el.play().catch(() => {}); } else el.classList.add("img-miss");
+    }
   }
 };
+function blobURL(blob) { return new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.onerror = rej; fr.readAsDataURL(blob); }); }
 function shrink(file, max, q, asBlob) {
   return new Promise((res, rej) => {
     const fr = new FileReader();
@@ -2398,7 +2471,7 @@ function acctName() { const u = SB.s && SB.s.user; if (!u) return ""; return u.e
    src/js/images/codes.js
    가져옴: src/js/core/constants.js { SIT }
    내보냄: DIM_NAMES, RESET, RANK, maxRating, dimOf, DIMS, MAX_ACT, parseCodes, splitDims, keyOf, fallbackKeys, IMG_TAG_RE, imgTags, lastDims, applyDims, freeNum, usedNums, baseName
-   쓰는 곳: src/js/images/situations.js, src/js/services/sync.js, src/js/images/pick.js, src/js/ai/prompt/rules.js, src/js/ui/cover.js, src/js/ui/room-drawer.js, src/js/ui/chat/render.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/app.js, src/js/admin/codes.js, src/js/images/prompt.js, src/js/admin/export.js, src/js/admin/image-codes.js, src/js/admin/image-run.js, src/js/admin/sit-sheets.js, src/js/admin/image-studio.js, src/js/admin/auto-images.js
+   쓰는 곳: src/js/images/motion.js, src/js/images/situations.js, src/js/services/sync.js, src/js/images/pick.js, src/js/ai/prompt/rules.js, src/js/ui/cover.js, src/js/ui/room-drawer.js, src/js/ui/chat/render.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/app.js, src/js/admin/codes.js, src/js/images/prompt.js, src/js/admin/export.js, src/js/admin/image-codes.js, src/js/admin/image-run.js, src/js/admin/motion-run.js, src/js/admin/sit-sheets.js, src/js/admin/image-studio.js, src/js/admin/auto-images.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 그림 상황 코드(순수 — SIT 상수만 import해 Node 단위 테스트가 바로 씀): 번호 차원, 조합 태그 파싱, 조합 키, 의상·장소 이어 가기(applyDims·lastDims), 내장 코드(DIMS).
    번호 체계: 0~14 기본 감정(SIT) · 15~99 직접 만든 감정/행동 칸(customSits) · 100~399 세부 감정/행동 · 400~499 의상 · 500~599 장소.
@@ -2550,7 +2623,7 @@ function baseName(n) { return SIT[n] || (DIMS[n] && DIMS[n].name) || ""; }
            src/js/core/safety.js { idvPassed, minorHint }
            src/js/core/state.js { S, hasOpenRouterKey, room }
    내보냄: ageOK, unfilteredRoute, refusedText, canFallback
-   쓰는 곳: src/js/images/rating.js, src/js/images/situations.js, src/js/ai/llm.js, src/js/ai/prompt/input.js, src/js/ai/prompt/rules.js, src/js/ui/idv.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/chat/generate.js, src/js/app.js, src/js/images/tags.js, src/js/admin/sit-sheets.js, src/js/admin/image-studio.js
+   쓰는 곳: src/js/images/rating.js, src/js/images/situations.js, src/js/ai/llm.js, src/js/ai/prompt/input.js, src/js/ai/prompt/rules.js, src/js/ui/idv.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/chat/generate.js, src/js/app.js, src/js/images/tags.js, src/js/admin/motion-run.js, src/js/admin/sit-sheets.js, src/js/admin/image-studio.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 성인 모드 경로 판정(ageOK·unfilteredRoute)과 Claude 거절 시 우회 조건(canFallback) */
 
@@ -2589,6 +2662,74 @@ function canFallback(messages, category = null) {
   return !minorHint(recent.map((m) => m.content).join("\n"));
 }
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
+   src/js/images/motion.js
+   가져옴: src/js/core/character.js { getChar }
+           src/js/core/state.js { S }
+           src/js/core/storage.js { KV }
+           src/js/images/codes.js { keyOf, parseCodes }
+           src/js/services/images.js { IMG, validMotion }
+   내보냄: motionsOf, motionOf, liveMotion, putMotion, flipMotion, dropMotionCodes
+   쓰는 곳: src/js/images/situations.js, src/js/images/pick.js, src/js/ui/cover.js, src/js/admin/export.js, src/js/admin/motion-run.js, src/js/admin/image-studio.js
+   ════════════════════════════════════════════════════════════════════════════════════════════════════ */
+/* 움짤(그림 칸의 짧은 반복 영상): 칸마다 사진과 움짤을 함께 두고 어느 쪽을 보여 줄지(on)를 정한다 — 대화·스튜디오·상세가 같은 규칙으로 고름.
+   저장은 S.motionpacks[작품 id][인물 코드][조합 키] = {ref, on, local?}(KV "motionpacks", 계정에도). 작품 폴더에 실린 움짤(c.motions — 경로 문자열)은 켜진 것으로 보고, 내 계정 값이 덮는다.
+   사진을 지우거나 바꾸면 그 칸의 움짤도 지움(다른 사진에서 만든 움짤이 남지 않게 — images/pick.js putCastImage) */
+
+
+
+
+
+/** @typedef {import("../core/types.js").Motion} Motion */
+
+const norm = (v) => typeof v === "string" ? { ref: v, on: true } : v && typeof v === "object" ? v : null;
+/** 인물 코드 → { 조합 키: Motion }. @returns {Record<string, Record<string, Motion>>} */
+function motionsOf(c) {
+  const live = getChar(c.id) || c, base = live.motions || c.motions || {}, over = S.motionpacks[c.id] || {}, out = {};
+  for (const x of c.cast || []) {
+    const m = {};
+    for (const [k, v] of Object.entries(base[x.code] || {})) { const e = norm(v); if (e) m[k] = e; }
+    for (const [k, v] of Object.entries(over[x.code] || {})) { const e = norm(v); if (e) m[k] = e; else delete m[k]; }
+    out[x.code] = m;
+  }
+  return out;
+}
+/** 그 칸의 움짤(켜짐·꺼짐 상관없이, 없으면 null). @returns {Motion|null} */
+function motionOf(c, code, key) { const m = (motionsOf(c)[code] || {})[keyOf(String(key))]; return m && validMotion(m.ref) ? m : null; }
+/** 보여 줄 움짤 참조 — 켜져 있을 때만. @returns {string|null} */
+function liveMotion(c, code, key) { const m = motionOf(c, code, key); return m && m.on ? m.ref : null; }
+/* 내 계정 값 쓰기: v가 null이면 지움(작품 폴더에 실린 움짤이 있으면 그 자리를 null로 덮어 '없음'으로) */
+function setPack(c, code, k, v) {
+  const p = S.motionpacks[c.id] = S.motionpacks[c.id] || {}, m = p[code] = p[code] || {};
+  const shipped = ((getChar(c.id) || c).motions || {})[code] || {};
+  if (v) m[k] = v; else if (shipped[k]) m[k] = null; else delete m[k];
+  if (!Object.keys(m).length) delete p[code];
+  if (!Object.keys(p).length) delete S.motionpacks[c.id];
+  KV.set("motionpacks", S.motionpacks);
+}
+/** 움짤 넣기(새로 만들면 켜짐). 예전 본문은 지움. ref가 없으면 그 칸의 움짤을 지움 */
+function putMotion(c, code, key, ref, { on = true, local = false } = {}) {
+  const k = keyOf(String(key)); if (!k) return;
+  const old = motionOf(c, code, k);
+  if (old && old.ref !== ref && !String(old.ref).startsWith("content/")) IMG.drop(old.ref);
+  setPack(c, code, k, ref ? { ref, on, ...(local ? { local: true } : {}) } : null);
+}
+/** 사진 ↔ 움짤 바꾸기. @returns {boolean} 바꾼 뒤 움짤이 켜졌는지 */
+function flipMotion(c, code, key) {
+  const k = keyOf(String(key)), m = motionOf(c, code, k); if (!m) return false;
+  setPack(c, code, k, { ...m, on: !m.on });
+  return !m.on;
+}
+/** 지운 코드 번호가 든 조합의 움짤을 모든 작품에서 지움(코드 삭제 때). @param {number[]} ns */
+function dropMotionCodes(ns) {
+  let changed = false;
+  for (const p of Object.values(S.motionpacks)) for (const m of Object.values(p || {})) for (const k of Object.keys(m || {})) {
+    if (!parseCodes(k).some((n) => ns.indexOf(n) >= 0)) continue;
+    if (m[k] && m[k].ref) IMG.drop(m[k].ref);
+    delete m[k]; changed = true;
+  }
+  if (changed) KV.set("motionpacks", S.motionpacks);
+}
+/* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/images/rating.js
    가져옴: src/js/ai/adult.js { ageOK }
            src/js/core/config.js { IN_CLAUDE }
@@ -2596,7 +2737,7 @@ function canFallback(messages, category = null) {
            src/js/core/state.js { S }
            src/js/core/util.js { esc }
    내보냄: RATINGS, imgRating, sheetRating, setSheetRating, ratingFieldHTML
-   쓰는 곳: src/js/images/situations.js, src/js/app.js, src/js/images/runware.js, src/js/admin/gen-sheet.js, src/js/admin/image-codes.js, src/js/admin/image-run.js, src/js/admin/sit-sheets.js, src/js/admin/image-studio.js, src/js/admin/worldart.js, src/js/admin/auto-images.js, src/js/core/migrate.js
+   쓰는 곳: src/js/images/situations.js, src/js/app.js, src/js/images/runware.js, src/js/admin/gen-sheet.js, src/js/admin/image-codes.js, src/js/admin/image-run.js, src/js/admin/motion-run.js, src/js/admin/sit-sheets.js, src/js/admin/image-studio.js, src/js/admin/worldart.js, src/js/admin/auto-images.js, src/js/core/migrate.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 그림 수위: 등급 태그, 시트별 수위, 수위 선택 칸 HTML */
 
@@ -2693,13 +2834,15 @@ function watchCommunity() {
            src/js/core/state.js { S }
            src/js/core/storage.js { KV }
            src/js/images/codes.js { DIMS, RESET, dimOf, freeNum, maxRating, parseCodes, usedNums }
+           src/js/images/motion.js { dropMotionCodes }
            src/js/images/rating.js { sheetRating }
            src/js/services/community.js { publishCommunity }
            src/js/services/images.js { IMG }
-   내보냄: CUSTOM_BASE, CUSTOM_MAX, CODE_MAX, EXTRA_CODES, setExtraCodes, allCustom, sitDef, sitName, keyName, knownCodes, customSits, builtinSits, codeDefs, slotNums, freeSitNum, codeRating, sitScores, dimPick, sitHints, dropSitImages
-   쓰는 곳: src/js/services/sync.js, src/js/ai/prompt/input.js, src/js/ai/prompt/rules.js, src/js/ui/cover.js, src/js/ui/room-drawer.js, src/js/ui/chat/generate.js, src/js/app.js, src/js/admin/codes.js, src/js/images/prompt.js, src/js/admin/export.js, src/js/admin/image-codes.js, src/js/admin/image-run.js, src/js/admin/sit-sheets.js, src/js/admin/image-studio.js, src/js/admin/auto-images.js, src/js/core/migrate.js
+   내보냄: CUSTOM_BASE, CUSTOM_MAX, CODE_MAX, EXTRA_CODES, setExtraCodes, allCustom, sitDef, sitName, keyName, knownCodes, customSits, builtinSits, codeDefs, slotNums, freeSitNum, codeRating, sitScores, dimPick, sitHints, dropSitImages, countSitImages
+   쓰는 곳: src/js/services/sync.js, src/js/ai/prompt/input.js, src/js/ai/prompt/rules.js, src/js/ui/cover.js, src/js/ui/room-drawer.js, src/js/ui/chat/generate.js, src/js/app.js, src/js/admin/codes.js, src/js/images/prompt.js, src/js/admin/export.js, src/js/admin/image-codes.js, src/js/admin/image-run.js, src/js/admin/motion-run.js, src/js/admin/sit-sheets.js, src/js/admin/image-studio.js, src/js/admin/auto-images.js, src/js/core/migrate.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 상황 칸: 기본 0~14 + 직접 만든 칸(customSits — 내 칸과 작품 폴더에 실린 코드 표) + 내장 코드(DIMS: 1xx 감정/행동·4xx 의상·5xx 장소), 조합 키 이름·수위, 유저 입력 → 번호 점수(sitHints·dimPick) */
+
 
 
 
@@ -2785,10 +2928,19 @@ function sitHints(text, adult) {
 }
 /* 칸을 지우면 모든 인물에 저장된 그 칸의 그림(그 번호가 든 조합도)도 지움 */
 function dropSitImages(n) {
-  const clean = (images) => Object.values(images || {}).forEach((m) => { if (!m) return; Object.keys(m).forEach((k) => { if (parseCodes(k).indexOf(n) >= 0) { IMG.drop(m[k]); delete m[k]; } }); });
+  const ns = [].concat(n), hit = (k) => parseCodes(k).some((x) => ns.indexOf(x) >= 0);
+  const clean = (images) => Object.values(images || {}).forEach((m) => { if (!m) return; Object.keys(m).forEach((k) => { if (hit(k)) { IMG.drop(m[k]); delete m[k]; } }); });
   Object.values(S.imgpacks).forEach(clean); KV.set("imgpacks", S.imgpacks);
   S.mine.forEach((c) => clean(c.images)); KV.set("mine", S.mine);
   if (S.mine.some((c) => c.publish)) publishCommunity();
+  dropMotionCodes(ns);
+}
+/** 지울 코드 번호가 든 그림 수(모든 작품·인물, 내 계정의 그림 칸만 — 작품 폴더에 실린 그림은 파일이라 그대로). @param {number[]} ns @returns {number} */
+function countSitImages(ns) {
+  let n = 0;
+  const walk = (images) => Object.values(images || {}).forEach((m) => Object.keys(m || {}).forEach((k) => { if (parseCodes(k).some((x) => ns.indexOf(x) >= 0)) n++; }));
+  Object.values(S.imgpacks).forEach(walk); S.mine.forEach((c) => walk(c.images));
+  return n;
 }
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/images/tags-cache.js
@@ -2809,7 +2961,7 @@ function setTags(v) { return (TAGS = v); }
    내보냄: loadAll
    쓰는 곳: src/js/services/sync.js, src/js/boot.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
-/* 저장된 데이터를 S에 읽어 들임(loadAll): 지갑·페르소나·프로필·내 작품·대화방 목록·그림 칸·요약 설정·표지·세계관·저장 태그. 부팅과 계정에서 다시 받을 때 씀 */
+/* 저장된 데이터를 S에 읽어 들임(loadAll): 지갑·페르소나·프로필·내 작품·대화방 목록·그림 칸·움짤·요약 설정·표지·세계관·저장 태그. 부팅과 계정에서 다시 받을 때 씀 */
 
 
 
@@ -2819,7 +2971,7 @@ function setTags(v) { return (TAGS = v); }
 
 /** 저장된 데이터(지갑·페르소나·프로필·내 작품·대화방 목록·그림 연결·요약 설정·표지·세계관·태그) 전부를 KV에서 읽어 S에 얹음. @returns {Promise<void>} */
 async function loadAll() {
-  const [w, p, pr, mine, rooms, packs, mc, cps, lps, tps] = await Promise.all(["wallet", "personas", "profile", "mine", "rooms", "imgpacks", "memcfg", "coverpacks", "lorepacks", "tagpacks"].map((k) => KV.get(k)));
+  const [w, p, pr, mine, rooms, packs, mc, cps, lps, tps, mps] = await Promise.all(["wallet", "personas", "profile", "mine", "rooms", "imgpacks", "memcfg", "coverpacks", "lorepacks", "tagpacks", "motionpacks"].map((k) => KV.get(k)));
   if (cps && typeof cps === "object") S.coverpacks = cps;
   if (tps && typeof tps === "object") S.tagpacks = tps;
   if (lps && typeof lps === "object") S.lorepacks = lps;
@@ -2830,6 +2982,7 @@ async function loadAll() {
   if (Array.isArray(mine)) S.mine = mine.map(normalizeChar);
   if (Array.isArray(rooms)) S.rooms = rooms;
   if (packs && typeof packs === "object") S.imgpacks = packs;
+  if (mps && typeof mps === "object") S.motionpacks = mps;
   IMG.migrate().catch(() => {});
   KV.get("ponytags").then((t) => { if (t && typeof t === "object") setTags({ ...t, ...TAGS }); }).catch(() => {});
   if (mc && typeof mc === "object") S.settings.memCfg = { ...S.settings.memCfg, ...mc };
@@ -2948,7 +3101,7 @@ function mergeGuest(remote, local) {
   const gp = guestPacks(remote, local);
   const sets = list(S.settings.styleSets), add = list(local.styleSets).filter((x) => x && !sets.some((y) => y && y.id === x.id));
   if (gp.sits.length !== list(S.settings.customSits).length || add.length) { S.settings.customSits = gp.sits; S.settings.styleSets = sets.concat(add); saveSettings(); }
-  const packs = { imgpacks: gp.imgpacks, coverpacks: local.coverpacks, lorepacks: local.lorepacks, tagpacks: gp.tagpacks, ponytags: local.ponytags };
+  const packs = { imgpacks: gp.imgpacks, motionpacks: local.motionpacks, coverpacks: local.coverpacks, lorepacks: local.lorepacks, tagpacks: gp.tagpacks, ponytags: local.ponytags };
   // 계정 값은 그대로 두고 빈 자리만 이 기기 값으로(같은 인물의 다른 칸 그림도 살림)
   Object.keys(packs).forEach((k) => { if (packs[k] && Object.keys(packs[k]).length) KV.set(k, fillIn(remote[k], packs[k])); });
 }
@@ -3088,12 +3241,14 @@ const SUPPORT = {
            src/js/core/state.js { S }
            src/js/core/storage.js { KV }
            src/js/images/codes.js { fallbackKeys, keyOf }
+           src/js/images/motion.js { motionOf, putMotion }
            src/js/services/community.js { publishCommunity }
            src/js/services/images.js { IMG, validRef }
-   내보냄: imagesOf, pickImg, hasImg, putCastImage
-   쓰는 곳: src/js/ai/prompt/rules.js, src/js/ui/cover.js, src/js/ui/room-drawer.js, src/js/ui/chat/generate.js, src/js/app.js, src/js/admin/export.js, src/js/admin/image-run.js, src/js/admin/image-studio.js, src/js/admin/tools.js, src/js/admin/auto-images.js, src/js/admin/works.js
+   내보냄: imagesOf, pickImg, pickKey, hasImg, putCastImage
+   쓰는 곳: src/js/ai/prompt/rules.js, src/js/ui/cover.js, src/js/ui/room-drawer.js, src/js/ui/chat/generate.js, src/js/app.js, src/js/admin/export.js, src/js/admin/image-run.js, src/js/admin/motion-run.js, src/js/admin/image-studio.js, src/js/admin/tools.js, src/js/admin/auto-images.js, src/js/admin/works.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
-/* 인물·칸별 그림 찾기(imagesOf·pickImg — 조합 키 폴백)·그림 넣기(putCastImage). 본문의 그림 태그 읽기는 codes.js의 imgTags */
+/* 인물·칸별 그림 찾기(imagesOf·pickImg·pickKey — 조합 키 폴백)·그림 넣기(putCastImage — 사진을 바꾸면 그 칸의 움짤은 지움). 본문의 그림 태그 읽기는 codes.js의 imgTags */
+
 
 
 
@@ -3109,9 +3264,11 @@ function imagesOf(c) {
   return out;
 }
 /* key: 번호(3) 또는 조합 키("3,404,501"). 조합 그대로 → 감정만 → 첫 감정 → 1 기본 → 0 프로필 순으로 있는 그림 */
-function pickImg(c, code, key) {
+function pickImg(c, code, key) { const k = pickKey(c, code, key); return k === null ? null : imagesOf(c)[code][k]; }
+/* 그 폴백 순서에서 실제로 그림이 있는 조합 키(없으면 null) — 그 칸의 움짤을 찾을 때 */
+function pickKey(c, code, key) {
   const m = imagesOf(c)[code] || {};
-  for (const k of fallbackKeys(key)) if (validRef(m[k])) return m[k];
+  for (const k of fallbackKeys(key)) if (validRef(m[k])) return k;
   return null;
 }
 /* 그 조합의 그림이 바로 있는지(폴백 없이) — 대화 중 자동 생성이 만들지 말지 정할 때 */
@@ -3122,7 +3279,7 @@ function putCastImage(c, code, key, ref) {
   if (!k) return;
   const store = mine ? (mine.images = mine.images || {}) : (S.imgpacks[c.id] = S.imgpacks[c.id] || {});
   const m = store[code] || {};
-  if (m[k] && m[k] !== ref) IMG.drop(m[k]);
+  if (m[k] && m[k] !== ref) { IMG.drop(m[k]); if (motionOf(c, code, k)) putMotion(c, code, k, null); }
   if (ref) m[k] = ref; else delete m[k];
   store[code] = m;
   if (mine) { KV.set("mine", S.mine); if (mine.publish) publishCommunity(); } else KV.set("imgpacks", S.imgpacks);
@@ -3773,7 +3930,7 @@ function flagMemo(on, txt) {
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/ui/icons.js
    내보냄: ICON
-   쓰는 곳: src/js/ui/chat/suggest.js, src/js/ui/help.js, src/js/ui/home.js, src/js/ui/me.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/shell.js, src/js/ui/detail.js, src/js/app.js, src/js/admin/gen-sheet.js, src/js/admin/sit-sheets.js, src/js/admin/image-studio.js, src/js/admin/worldart.js, src/js/admin/support.js
+   쓰는 곳: src/js/ui/chat/suggest.js, src/js/ui/help.js, src/js/ui/home.js, src/js/ui/me.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/shell.js, src/js/ui/detail.js, src/js/app.js, src/js/admin/gen-sheet.js, src/js/admin/motion-run.js, src/js/admin/sit-sheets.js, src/js/admin/image-studio.js, src/js/admin/worldart.js, src/js/admin/support.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 인라인 SVG 아이콘 */
 const ICON = {
@@ -3895,13 +4052,15 @@ ${recent}` }], { tier: "quick", json: true, room: r });
            src/js/core/state.js { S }
            src/js/core/util.js { esc }
            src/js/images/codes.js { keyOf, parseCodes, splitDims }
-           src/js/images/pick.js { pickImg }
+           src/js/images/motion.js { liveMotion }
+           src/js/images/pick.js { imagesOf, pickKey }
            src/js/images/situations.js { keyName, knownCodes, sitName }
            src/js/services/images.js { IMG }
-   내보냄: coverHTML, artHTML, figKey, figInner, figHTML, portraitHTML, lightbox, pavHTML
+   내보냄: coverHTML, artHTML, figKey, picHTML, showOf, figInner, figHTML, portraitHTML, lightbox, zoomPic, pavHTML
    쓰는 곳: src/js/ui/home.js, src/js/ui/me.js, src/js/ui/room-drawer.js, src/js/ui/chat/view.js, src/js/ui/chat/render.js, src/js/ui/chat/log.js, src/js/ui/shell.js, src/js/ui/detail.js, src/js/ui/chats.js, src/js/app.js, src/js/admin/image-studio.js, src/js/admin/auto-images.js, src/js/admin/works.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
-/* 표지·인물 그림 HTML(coverHTML·figHTML·portraitHTML), 라이트박스 */
+/* 표지·인물 그림 HTML(coverHTML·figHTML·portraitHTML — 움짤이 켜진 칸은 사진 위에 영상을 겹침), 라이트박스(그림·영상) */
+
 
 
 
@@ -3924,20 +4083,34 @@ function artHTML(c, cast, key) {
 }
 /* 태그의 번호들 → 그림 조합 키: 모르는 번호(지운 칸 등)는 빼고, 남는 게 없으면 1(기본) */
 function figKey(spec) { const codes = knownCodes(parseCodes(String(spec))); return keyOf(codes.length ? codes : [1]) || "1"; }
-/* 장면 그림 figure의 속: 그림이 있으면 그림 + 이름 설명, 없으면 아트 카드. 대화 중 자동 생성이 다 되면 같은 것으로 바꿔 그림 */
-function figInner(c, cast, key, ref) { return ref ? `${IMG.tag(ref)}<figcaption>${esc(cast.name)} · ${esc(keyName(key))}</figcaption>` : artHTML(c, cast, key); }
+/* 사진 + (켜진) 움짤: 사진이 크기를 정하고 영상은 그 위에 겹침 — 영상을 못 받으면 숨겨 사진이 보임 */
+function picHTML(ref, mo) { return mo ? `<span class="mo-wrap">${IMG.tag(ref)}${IMG.vtag(mo)}</span>` : IMG.tag(ref); }
+/* 그 인물의 key 칸에 보여 줄 것: 폴백 순서로 사진이 있는 칸 → {ref, mo(그 칸에 켜진 움짤)} */
+function showOf(c, code, key) {
+  const k = pickKey(c, code, key); if (k === null) return { ref: null, mo: null };
+  return { ref: imagesOf(c)[code][k], mo: liveMotion(c, code, k) };
+}
+/* 장면 그림 figure의 속: 그림이 있으면 그림(움짤) + 이름 설명, 없으면 아트 카드. 대화 중 자동 생성이 다 되면 같은 것으로 바꿔 그림 */
+function figInner(c, cast, key, ref, mo) { return ref ? `${picHTML(ref, mo)}<figcaption>${esc(cast.name)} · ${esc(keyName(key))}</figcaption>` : artHTML(c, cast, key); }
 function figHTML(c, code, spec) {
   const cast = (c.cast || []).find((x) => x.code === code); if (!cast) return "";
-  const key = figKey(spec), a = splitDims(parseCodes(key)).act;
-  return `<figure class="scene-img" data-code="${code}" data-key="${key}" data-sit="${a.length ? a[0] : 1}">${figInner(c, cast, key, pickImg(c, code, key))}</figure>`;
+  const key = figKey(spec), a = splitDims(parseCodes(key)).act, s = showOf(c, code, key);
+  return `<figure class="scene-img" data-code="${code}" data-key="${key}" data-sit="${a.length ? a[0] : 1}">${figInner(c, cast, key, s.ref, s.mo)}</figure>`;
 }
 function portraitHTML(c, cast) {
-  const ref = pickImg(c, cast.code, 0);
-  return `<div class="portrait thumb-art">${ref ? IMG.tag(ref) : artHTML(c, cast, 0)}</div>`;
+  const s = showOf(c, cast.code, 0);
+  return `<div class="portrait thumb-art">${s.ref ? picHTML(s.ref, s.mo) : artHTML(c, cast, 0)}</div>`;
 }
-function lightbox(src) {
-  const lb = document.createElement("div"); lb.className = "lightbox"; lb.innerHTML = `<img src="${esc(src)}" alt="확대 이미지">`;
+/* 크게 보기 — video면 소리 없이 반복 재생 */
+function lightbox(src, video) {
+  const lb = document.createElement("div"); lb.className = "lightbox";
+  lb.innerHTML = video ? `<video src="${esc(src)}" muted loop autoplay playsinline></video>` : `<img src="${esc(src)}" alt="확대 이미지">`;
   lb.onclick = () => lb.remove(); document.body.append(lb);
+}
+/* 그림 칸(사진·움짤 겹침)을 누르면 크게: 움짤이 재생 중이면 영상, 아니면 사진 */
+function zoomPic(box) {
+  const v = box.querySelector("video.mo"); if (v && v.currentSrc && !v.classList.contains("img-miss")) return lightbox(v.currentSrc, true);
+  const i = box.querySelector("img"); if (i && i.src) lightbox(i.src);
 }
 function pavHTML(p) { const img = IMG.tag(p.img); return `<div class="pav">${img || esc((p.name || "?").slice(0, 1))}</div>`; }
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
@@ -4605,7 +4778,7 @@ async function firstSync() {
   const remote = {}; rows.forEach((x) => { remote[x.key] = x.value; });
   // 계정이 비었으면 이 기기 데이터가 계정의 첫 데이터(API 키는 잠가서 따로 — VAULT)
   if (!rows.some((x) => x.key !== "settings" && x.key !== "vault")) { await CLOUD.pushAll(); await VAULT.take(remote.vault || null, true); toast("이 기기의 데이터를 계정에 저장했어요"); return; }
-  const local = { rooms: S.rooms, mine: S.mine, personas: S.personas, imgpacks: S.imgpacks, coverpacks: S.coverpacks, lorepacks: S.lorepacks, tagpacks: S.tagpacks, ponytags: KV.getLocal("ponytags"),
+  const local = { rooms: S.rooms, mine: S.mine, personas: S.personas, imgpacks: S.imgpacks, motionpacks: S.motionpacks, coverpacks: S.coverpacks, lorepacks: S.lorepacks, tagpacks: S.tagpacks, ponytags: KV.getLocal("ponytags"),
     customSits: S.settings.customSits, styleSets: S.settings.styleSets };
   const has = (list, id) => (Array.isArray(list) ? list : []).some((x) => x && x.id === id);
   const onlyRooms = local.rooms.filter((r) => !has(remote.rooms, r.id)), onlyMine = local.mine.filter((c) => !has(remote.mine, c.id)), pics = guestPics(remote, local);
@@ -5011,7 +5184,7 @@ function viewMe() {
   };
   $("#reset").onclick = () => confirmSheet("모든 데이터를 지울까요?", "대화방, 만든 캐릭터, 하트, 페르소나, 이미지 연결이 모두 지워져요." + (CLOUD.on ? " 로그인되어 있어서 계정에 저장된 데이터도 지워져요." : "") + " 되돌릴 수 없어요.", "전부 삭제", () => {
     S.rooms.forEach((r) => KV.set(roomKey(r.id), undefined));
-    ["rooms", "mine", "wallet", "personas", "profile", "imgpacks", "coverpacks", "lorepacks", "tagpacks", "ponytags"].forEach((k) => KV.set(k, undefined));
+    ["rooms", "mine", "wallet", "personas", "profile", "imgpacks", "motionpacks", "coverpacks", "lorepacks", "tagpacks", "ponytags"].forEach((k) => KV.set(k, undefined));
     IDB.clear(); try { Object.keys(localStorage).filter((k) => /^hv1_img[a-z0-9]{10,30}$/.test(k)).forEach((k) => localStorage.removeItem(k)); } catch {}
     S.mine = []; publishCommunity();
     (CLOUD.on ? CLOUD.wipe().catch(() => {}) : Promise.resolve()).then(() => setTimeout(() => location.reload(), 400));
@@ -5682,7 +5855,7 @@ function liveFill(el, text, c, persona, anim = true) {
            src/js/ui/chat/generate.js { generate, regen, regenAsk, sendTurn }
            src/js/ui/chat/render.js { fmt, liveFill, statusBlock }
            src/js/ui/chat/view.js { flashHint, lastAi, updateMeter }
-           src/js/ui/cover.js { coverHTML, lightbox, pavHTML }
+           src/js/ui/cover.js { coverHTML, pavHTML, zoomPic }
            src/js/ui/pay.js { ensurePay }
            src/js/ui/sheet.js { confirmSheet }
    내보냄: stick, setStick, autoScroll, followLog, syncJump, bindStick, renderLog, copyText
@@ -5773,7 +5946,7 @@ function editBox(text, i) {
 }
 function bindLog(box) {
   $$(".status .inner:not(.open)", box).forEach((el) => { const open = () => el.classList.add("open"); el.onclick = open; el.onkeydown = (e) => { if (e.key === "Enter") open(); }; });
-  $$(".scene-img img", box).forEach((im) => im.onclick = () => lightbox(im.src));
+  $$(".scene-img", box).forEach((f) => { if (f.querySelector("img")) f.onclick = (e) => { if (e.target.closest("img, video")) zoomPic(f); }; });
   const retry = $("#retry"); if (retry) retry.onclick = async () => {
     room.lastErr = ""; const i = room.msgs.length - 1;
     if (room.msgs[i]?.role === "ai") return regen(i);
@@ -6086,7 +6259,7 @@ function worldArtHTML(c) {
            src/js/core/util.js { $, $$, ago, esc }
            src/js/core/wallet.js { FREE_DAILY, plan }
            src/js/services/images.js { IMG }
-           src/js/ui/cover.js { coverHTML, lightbox, portraitHTML }
+           src/js/ui/cover.js { coverHTML, lightbox, portraitHTML, zoomPic }
            src/js/ui/ext.js { runExt }
            src/js/ui/icons.js { ICON }
            src/js/ui/pay.js { plusSheet }
@@ -6144,7 +6317,7 @@ function viewDetail(id) {
   bindGo(v); IMG.hydrate(v);
   $$("[data-room]", v).forEach((b) => b.onclick = () => go("r-" + b.dataset.room));
   $$("[data-wlb]", v).forEach((b) => b.onclick = () => { const i = b.querySelector("img"); if (i?.src) lightbox(i.src); });
-  $$("[data-cast]", v).forEach((b) => b.onclick = () => { const i = b.querySelector("img"); if (i?.src) lightbox(i.src); });
+  $$("[data-cast]", v).forEach((b) => b.onclick = () => zoomPic(b));
   $("#start").onclick = () => {
     if (rooms.length >= plan().rooms) return plusSheet("rooms");
     const opIdx = +(v.querySelector("input[name=op]:checked")?.value || 0);
@@ -6714,8 +6887,8 @@ async function claudeStyleTags(refs) {
            src/js/images/styles.js { ARCH, imgModelInfo, styleFor }
            src/js/images/tags.js { ponyTags }
            src/js/services/images.js { IMG, validRef }
-   내보냄: BAD_IMG_MODELS, runwareImage, refDataURL, genErr
-   쓰는 곳: src/js/images/styles.js, src/js/admin/export.js, src/js/admin/gen-sheet.js, src/js/admin/image-run.js, src/js/admin/sit-sheets.js, src/js/admin/image-settings.js, src/js/admin/auto-images.js, src/js/admin/migrate.js
+   내보냄: BAD_IMG_MODELS, NEG_MINOR, uuid4, runwareImage, refDataURL, genErr
+   쓰는 곳: src/js/images/styles.js, src/js/admin/export.js, src/js/admin/gen-sheet.js, src/js/admin/image-run.js, src/js/admin/motion-run.js, src/js/admin/sit-sheets.js, src/js/admin/image-settings.js, src/js/admin/auto-images.js, src/js/admin/migrate.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* Runware API 호출(runwareImage): 모델·수위·네거티브 조립, 대상별 보정, 오류 문구 */
 
@@ -6853,10 +7026,11 @@ function genErr(e) {
            src/js/core/state.js { S }
            src/js/core/util.js { toast }
            src/js/images/codes.js { parseCodes }
+           src/js/images/motion.js { motionsOf }
            src/js/images/pick.js { imagesOf }
            src/js/images/runware.js { refDataURL }
            src/js/images/situations.js { allCustom, sitDef }
-           src/js/services/images.js { validRef }
+           src/js/services/images.js { IMG, validMotion, validRef }
    내보냄: CONTENT, canPickDir, pickContentDir, workPath, workFiles, workSource, codesDropped, codesSource, exportWork, exportCodes
    쓰는 곳: src/js/admin/tools.js, src/js/admin/works.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
@@ -6865,10 +7039,12 @@ function genErr(e) {
      content/<f|m|all>/[<줄>/]<id>/images/<인물코드>-<조합키>.jpg   그림 칸 — 조합 키의 쉼표는 파일 이름에서 -(3-404-501)
      content/…/<id>/images/cover.jpg                                  대표 일러스트(표지)
      content/…/<id>/images/lore-<n>.jpg                               키워드북 n번째 항목의 세계관 일러스트(1부터)
+     content/…/<id>/images/<인물코드>-<조합키>.mp4                    그 칸의 움짤(켜 둔 것만 — 꺼 둔 움짤은 사진만 보이므로 싣지 않음)
      content/codes.json                                                이미지 코드 표([{n, name, prompt, rating, keys?}] — 실린 코드 + 이 브라우저에서 만든 칸 가운데 전체이용가만. 성인 수위·관리자 전용(codes.admin.json) 코드는 공개 저장소에 싣지 않음)
      content/<aud>/<id>/work.js                                        스튜디오에서 만든 내 작품을 오리지널로 올릴 때(이미 있으면 덮어씀)
    쓰는 방법: Chrome·Edge는 폴더 고르기(File System Access API)로 저장소의 content 폴더에 바로 씀. 그 밖의 브라우저는 같은 구조의 ZIP을 내려받아 풀어 넣는다.
-   빌드(tools/build.mjs)가 이 파일들을 찾아 ORIGINALS의 images·img·loreImages와 CONTENT_CODES로 넣는다(content/README.md) */
+   빌드(tools/build.mjs)가 이 파일들을 찾아 ORIGINALS의 images·img·loreImages·motions와 CONTENT_CODES로 넣는다(content/README.md) */
+
 
 
 
@@ -6903,14 +7079,29 @@ async function workFiles(c) {
   // 성인 수위·관리자 전용 코드가 든 조합 그림은 사용자 사이트에 싣지 않음(그 코드는 codes.json에도 안 실려 빌드가 번호를 모름)
   const imgs = imagesOf(c), skipKey = (key) => parseCodes(String(key)).some((n) => { const d = sitDef(n); return !!d && (d.adminOnly || d.rating !== "safe"); });
   for (const code of Object.keys(imgs)) for (const key of Object.keys(imgs[code])) if (!skipKey(key)) await add(`${code}-${fileKey(key)}`, imgs[code][key]);
+  // 켜 둔 움짤은 같은 이름의 .mp4로(사진이 함께 있어야 보임 — 빌드가 경고)
+  const mos = motionsOf(c);
+  for (const code of Object.keys(mos)) for (const key of Object.keys(mos[code])) {
+    const m = mos[code][key]; if (!m.on || skipKey(key) || !validMotion(m.ref) || /^(content\/|\/_blob\/)/.test(m.ref)) continue;
+    const d = await motionData(m.ref); if (d) out.push({ path: `images/${code}-${fileKey(key)}.${/^data:video\/webm/.test(d) ? "webm" : "mp4"}`, data: d });
+  }
   await add("cover", mine ? mine.img : S.coverpacks[c.id]);
   const lore = c.lore || [], lp = mine ? (mine.loreImages || {}) : (S.lorepacks[c.id] || {});
   for (let i = 0; i < lore.length; i++) await add(`lore-${i + 1}`, lp[lore[i].keys[0]]);
   return out;
 }
+/* 움짤 본문 → data:video/… (kv:는 이 기기·계정에서, Runware 임시 주소는 내려받기 — 브라우저가 막거나 사라졌으면 null) */
+async function motionData(ref) {
+  try {
+    if (ref.startsWith("kv:")) return await IMG.load(ref.slice(3));
+    if (ref.startsWith("data:")) return ref;
+    const b = await (await fetch(ref)).blob(); if (!/^video\//.test(b.type)) return null;
+    return await new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.onerror = rej; fr.readAsDataURL(b); });
+  } catch { return null; }
+}
 /* 내 작품을 work.js로(오리지널로 올릴 때). 그림·공개 여부 같은 기기 데이터는 빼고 작품 내용만 */
 function workSource(c) {
-  const o = { ...c }; ["images", "img", "loreImages", "publish", "creator", "updated", "aud", "row"].forEach((k) => delete o[k]);
+  const o = { ...c }; ["images", "img", "loreImages", "motions", "publish", "creator", "updated", "aud", "row"].forEach((k) => delete o[k]);
   return `/* ${c.title} — 스튜디오에서 내보냄(${new Date().toISOString().slice(0, 10)}). 폴더 이름이 id, 맨 위 폴더가 aud(content/README.md) */\nexport default ${JSON.stringify(o, null, 2)};\n`;
 }
 /* 사용자 사이트에 실을 코드 표 → codes.json 글: 전체이용가이고 관리자 전용이 아닌 것만(성인 수위 코드는 공개 저장소·사용자 빌드에 넣지 않음 — 빠진 수는 codesDropped). 빌드가 CONTENT_CODES로 다시 싣는다 */
@@ -7091,17 +7282,19 @@ function gate() {
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/admin/image-codes.js
    가져옴: src/js/core/constants.js { SIT }
+           src/js/core/state.js { S }
            src/js/core/util.js { esc }
            src/js/images/codes.js { DIM_NAMES, RESET, parseCodes }
            src/js/images/rating.js { RATINGS }
            src/js/images/situations.js { codeDefs }
            src/js/services/images.js { validRef }
-   내보냄: codeGroups, codeStats, dimCount, groupHTML
+   내보냄: deletable, codeGroups, codeStats, dimCount, groupHTML
    쓰는 곳: src/js/admin/image-studio.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 이미지 스튜디오의 코드 목록(관리자 빌드만): 감정·행동 / 의상 / 장소 세 갈래를 번호대별 묶음으로 나누고, 고른 인물에게 그 코드의 그림이 몇 장 있는지 함께 보여 준다.
    묶음 — 감정·행동: 기본 0~14 · 직접 만든 칸 15~99 · 100번대 · 200번대 · 300번대 / 의상 4xx / 장소 5xx(400·500은 '설정대로 되돌리기'라 뺌).
-   보이는 코드는 codeDefs()(성인 확인 전엔 전체이용가만) — 내 칸 > 작품 폴더 코드 표 > 관리자 전용 > 내장 순으로 같은 번호를 덮은 결과 */
+   보이는 코드는 codeDefs()(성인 확인 전엔 전체이용가만) — 내 칸 > 작품 폴더 코드 표 > 관리자 전용 > 내장 순으로 같은 번호를 덮은 결과.
+   선택 삭제 모드(del)면 지울 수 있는 코드(이 계정의 칸 — 직접 만들었거나 목록으로 들여온 것)에 체크 칸을, 묶음마다 '전체 선택'을 보여 줌. 기본·내장·실림·관리자 전용(파일) 코드는 잠금 */
 
 
 
@@ -7109,6 +7302,9 @@ function gate() {
 
 
 
+
+/* 지울 수 있는 코드인지 — 이 계정의 칸(S.settings.customSits — 직접 만들었거나 목록으로 들여온 것)만. 내장·실린·관리자 전용 번호를 덮은 칸을 지우면 그 코드로 돌아감 */
+const deletable = (d) => !!d.def && (S.settings.customSits || []).indexOf(d.def) >= 0;
 /* 감정·행동 번호대 묶음(이름은 번호대만 — 묶음의 뜻은 관리자가 만든 칸 이름으로 드러남) */
 const ACT_BANDS = [[0, SIT.length, "기본 감정 0~14", "모든 작품의 기본 칸 — 첫 등장은 0, 그림이 없을 때는 1·0으로 대신해요"], [SIT.length, 100, "직접 만든 칸 15~99"], [100, 200, "100번대"], [200, 300, "200번대"], [300, 400, "300번대"]];
 /* 갈래(act·wear·place) → 묶음 [{id, name, hint, items: [{n, name, prompt, rating, src, edit}]}] */
@@ -7132,21 +7328,22 @@ function codeStats(slots) {
 }
 /* 그 갈래에서 보이는 코드 수 */
 const dimCount = (dim) => codeGroups(dim).reduce((a, g) => a + g.items.length, 0);
-/* 묶음 하나의 HTML. on(n)은 지금 조합에 든 번호인지, closed면 접힘, st는 codeStats 결과 */
-function groupHTML(g, on, closed, st) {
-  const filled = g.items.filter((d) => (st[d.n] || {}).exact).length;
+/* 묶음 하나의 HTML. on(n)은 지금 조합에 든 번호인지, closed면 접힘, st는 codeStats 결과, del은 선택 삭제 모드일 때 고른 번호들(Set) */
+function groupHTML(g, on, closed, st, del) {
+  const filled = g.items.filter((d) => (st[d.n] || {}).exact).length, dels = g.items.filter(deletable), all = dels.length && dels.every((d) => del && del.has(d.n));
+  const tool = del ? (dels.length ? `<button class="btn sm ghost" data-gsel="${g.id}">${all ? "선택 해제" : `전체 선택 ${dels.length}`}</button>` : `<span class="note">지울 수 없음</span>`)
+    : g.items.length > filled ? `<button class="btn sm ghost" data-fill="${g.id}" title="이 묶음에서 그림이 없는 코드를 하나씩 AI로 그려 저장">빈 칸 ${g.items.length - filled}개 채우기</button>` : "";
   return `<div class="is-group${closed ? " closed" : ""}" data-group="${g.id}">
-    <div class="is-gh"><button class="is-fold" data-fold="${g.id}" aria-expanded="${!closed}"><b>${esc(g.name)}</b><small>${g.items.length}개 · 그림 ${filled}</small></button>
-      ${g.items.length > filled ? `<button class="btn sm ghost" data-fill="${g.id}" title="이 묶음에서 그림이 없는 코드를 하나씩 AI로 그려 저장">빈 칸 ${g.items.length - filled}개 채우기</button>` : ""}</div>
+    <div class="is-gh"><button class="is-fold" data-fold="${g.id}" aria-expanded="${!closed}"><b>${esc(g.name)}</b><small>${g.items.length}개 · 그림 ${filled}</small></button>${tool}</div>
     ${g.hint ? `<p class="note is-hint">${esc(g.hint)}</p>` : ""}
-    <div class="is-rows">${g.items.map((d) => rowHTML(d, on(d.n), st[d.n])).join("")}</div></div>`;
+    <div class="is-rows">${g.items.map((d) => rowHTML(d, on(d.n), st[d.n], del)).join("")}</div></div>`;
 }
-function rowHTML(d, on, s) {
-  const adult = d.rating !== "safe";
-  return `<div class="is-code${on ? " on" : ""}${adult ? " adult" : ""}${s && s.exact ? " filled" : ""}" data-row="${d.n}" data-find="${esc((d.n + " " + d.name).toLowerCase())}">
-    <button class="is-pick" data-pick="${d.n}" title="${esc(d.prompt || d.name)}"><span class="num">${d.n}</span><span class="nm">${esc(d.name)}</span>${adult ? `<span class="rt">${RATINGS[d.rating] ? esc(RATINGS[d.rating].name) : "성인"}</span>` : ""}${d.src !== "기본" && d.src !== "내장" ? `<span class="src">${d.src}</span>` : ""}</button>
+function rowHTML(d, on, s, del) {
+  const adult = d.rating !== "safe", can = !!del && deletable(d), chk = can && del.has(d.n);
+  return `<div class="is-code${on && !del ? " on" : ""}${adult ? " adult" : ""}${s && s.exact ? " filled" : ""}${del && !can ? " locked" : ""}${chk ? " chk" : ""}" data-row="${d.n}" data-find="${esc((d.n + " " + d.name).toLowerCase())}">
+    ${can ? `<input type="checkbox" class="is-chk" data-chk="${d.n}" ${chk ? "checked" : ""} aria-label="${esc(d.name)} 선택">` : ""}<button class="is-pick"${del && !can ? ' disabled title="기본·내장·작품 폴더·관리자 전용 코드는 여기서 지울 수 없어요"' : ""} data-pick="${d.n}" title="${esc(d.prompt || d.name)}"><span class="num">${d.n}</span><span class="nm">${esc(d.name)}</span>${adult ? `<span class="rt">${RATINGS[d.rating] ? esc(RATINGS[d.rating].name) : "성인"}</span>` : ""}${d.src !== "기본" && d.src !== "내장" ? `<span class="src">${d.src}</span>` : ""}</button>
     <span class="cnt" title="이 인물의 그림 중 이 번호가 든 것">${s ? s.count + "장" : ""}</span>
-    ${d.src === "기본" ? "" : `<button class="is-ed" data-edit="${d.n}" aria-label="${esc(d.name)} 고치기" title="이름·프롬프트·수위 고치기">✎</button>`}</div>`;
+    ${d.src === "기본" || del ? "" : `<button class="is-ed" data-edit="${d.n}" aria-label="${esc(d.name)} 고치기" title="이름·프롬프트·수위 고치기">✎</button>`}</div>`;
 }
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/admin/image-run.js
@@ -7181,8 +7378,8 @@ function rowHTML(d, on, s) {
 
 
 
-/* 스튜디오 상태 — 화면을 떠나도 세션 동안 남음. acts는 고른 순서(조합엔 앞 MAX_ACT개), wear·place는 하나 또는 null */
-const ISTATE = { work: "", cast: "", tab: "act", acts: [1], wear: null, place: null, aspect: "4:5", style: "", autoSave: false, prompt: false, closed: {}, results: [], busy: null };
+/* 스튜디오 상태 — 화면을 떠나도 세션 동안 남음. acts는 고른 순서(조합엔 앞 MAX_ACT개), wear·place는 하나 또는 null, del은 코드 선택 삭제 모드일 때 고른 번호(Set) */
+const ISTATE = { work: "", cast: "", tab: "act", acts: [1], wear: null, place: null, aspect: "4:5", style: "", autoSave: false, prompt: false, closed: {}, results: [], busy: null, del: null };
 const STOP_ON = ["no_key", "bad_key", "no_funds", "bad_model", "network", "rate_limited", "minor_block", "timeout"];
 
 const ctxOf = (c, cast) => ({ kind: "daily", aud: audOf(c), male: lookIsMale(castLook(cast, c)) });
@@ -7244,6 +7441,171 @@ function resultHTML(r) {
   return `<div class="ct-card" data-id="${r.id}"><div class="pic"><img src="${r.url}" alt="" data-lb="${r.id}"></div>
     <div class="cap"><b>${esc(r.castName)} · ${esc(r.name)}</b><span>${esc(r.key)} · ${RATINGS[r.rating].name} · ${esc(r.style)} · ${r.sec}초</span></div>
     <div class="bs"><button data-save="${r.id}" ${r.saved ? "disabled" : ""} title="이 인물의 그림 칸에 저장(대화에서 보임)">${r.saved ? "저장됨" : "저장"}</button><button data-tags="${r.id}">태그 복사</button><button data-del="${r.id}">빼기</button></div></div>`;
+}
+/* ════════════════════════════════════════════════════════════════════════════════════════════════════
+   src/js/admin/motion-run.js
+   가져옴: src/js/ai/adult.js { ageOK }
+           src/js/core/cast.js { castLook }
+           src/js/core/config.js { CFG }
+           src/js/core/constants.js { TIMEOUT }
+           src/js/core/safety.js { minorHint }
+           src/js/core/state.js { S, hasRunwareKey }
+           src/js/core/util.js { $, esc, timeoutSignal, abortCode, toast }
+           src/js/images/codes.js { keyOf, parseCodes }
+           src/js/images/motion.js { motionOf, putMotion }
+           src/js/images/pick.js { imagesOf }
+           src/js/images/rating.js { imgRating }
+           src/js/images/runware.js { NEG_MINOR, genErr, uuid4 }
+           src/js/images/situations.js { codeRating, keyName }
+           src/js/services/images.js { IMG }
+           src/js/ui/icons.js { ICON }
+   내보냄: VIDEO_MODELS, MOTION_PROMPT, MSTATE, MJOBS, jobId, makeMotion, motionErr, motionSheet
+   쓰는 곳: src/js/admin/image-studio.js
+   ════════════════════════════════════════════════════════════════════════════════════════════════════ */
+/* 움짤 만들기(관리자 빌드만): 저장한 사진 한 장을 첫 장면으로 Runware 영상 생성(videoInference — 이미지 → 영상)을 돌려 몇 초짜리 반복 영상을 만들고, 그 칸의 움짤로 저장한다(켜짐).
+   요청은 비동기(deliveryMethod "async") — 보낸 뒤 getResponse로 몇 초마다 물어 videoURL을 받아 내려받고 IMG.putVideo(브라우저가 내려받기를 막으면 Runware의 임시 주소를 그대로 씀 — 오래 두면 사라짐).
+   모델은 VIDEO_MODELS(싼 순 — 실패한 생성은 Runware가 청구하지 않음). 전체이용가 칸은 안전 검사를 켜고, 성인 수위 칸은 성인 확인 뒤에만·사진 설명·외모에 미성년 표현이 있으면 보내지 않음.
+   만드는 중인 일은 MJOBS(작품|인물|칸 → 진행 상태)에 있고, 스튜디오가 그 칸에 '움짤 만드는 중'을 보여 줌. 화면을 떠나도 계속되고 끝나면 저장 */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* 값싼 순. res는 Runware의 resolution(입력 사진 비율을 따름), dur은 고를 수 있는 길이(초), extra는 모델별 설정(2026-11 Runware 문서의 모델 스키마 기준) */
+const VIDEO_MODELS = [
+  { k: "seed480", id: "bytedance:2@2", name: "Seedance 1.0 Pro Fast · 480p", price: "5초 약 $0.03", res: "480p", dur: [3, 5, 8], extra: { providerSettings: { bytedance: { cameraFixed: true } } } },
+  { k: "seed720", id: "bytedance:2@2", name: "Seedance 1.0 Pro Fast · 720p", price: "5초 약 $0.07", res: "720p", dur: [3, 5, 8], extra: { providerSettings: { bytedance: { cameraFixed: true } } } },
+  { k: "wan720", id: "alibaba:wan@2.6-flash", name: "Wan 2.6 Flash · 720p", price: "5초 약 $0.13", res: "720p", dur: [3, 5, 8], neg: true, extra: { providerSettings: { alibaba: { audio: false } } } },
+  { k: "h3lite", id: "minimax:h3@lite", name: "MiniMax H3 Lite · 480p", price: "5초 약 $0.13", res: "480p", dur: [4, 5, 8], extra: {} }
+];
+const MOTION_PROMPT = "subtle idle animation, the character breathes gently and blinks naturally, hair and clothes sway slightly in a soft breeze, same pose, same outfit, same face, camera fixed, smooth seamless loop";
+/* 고른 모델·길이·움직임 설명(세션 동안 기억) */
+const MSTATE = { model: "seed480", dur: 5, prompt: MOTION_PROMPT };
+/* 만드는 중인 일: "작품|인물|칸" → { t0, status, progress } */
+const MJOBS = {};
+const jobId = (c, code, key) => [c.id, code, keyOf(String(key))].join("|");
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+/* 저장한 사진(kv:·/_blob/·content/·data:) → data URL(영상 생성의 첫 장면) */
+async function photoData(ref) {
+  if (ref.startsWith("kv:")) return await IMG.load(ref.slice(3));
+  if (ref.startsWith("data:")) return ref;
+  const b = await (await fetch(ref)).blob();
+  return await new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.onerror = rej; fr.readAsDataURL(b); });
+}
+/* Runware에 작업 하나 보내고 그 작업의 응답 행(없으면 null)을 돌려줌. 오류는 runwareImage와 같은 코드로 */
+async function rwTask(task) {
+  const T = timeoutSignal(TIMEOUT.api * 2);
+  let res, j;
+  try {
+    res = await fetch(CFG.runwareUrl, { method: "POST", signal: T.signal, headers: { "content-type": "application/json", ...(S.settings.runwareKey ? { authorization: "Bearer " + S.settings.runwareKey } : {}) }, body: JSON.stringify([task]) });
+    j = await res.json().catch(() => ({}));
+  } catch (e) { throw { code: abortCode(e, T, "network") }; }
+  finally { T.clear(); }
+  const err = (Array.isArray(j.errors) ? j.errors : j.error ? [j.error] : []).find((x) => !x.taskUUID || x.taskUUID === task.taskUUID);
+  const msg = err ? String([err.code, err.message, err.parameter].filter(Boolean).join(" ")) : "";
+  if (!res.ok || err) {
+    throw { code: res.status === 401 || res.status === 403 || /api.?key|auth/i.test(msg) ? "bad_key" : res.status === 402 || /credit|fund|balance|insufficient/i.test(msg) ? "no_funds"
+      : res.status === 429 ? "rate_limited" : /model/i.test(msg) && !/moderat|content|safety|nsfw/i.test(msg) ? "bad_model" : /moderat|safety|nsfw|sensitive/i.test(msg) ? "blocked" : "upstream_error", msg };
+  }
+  return (j.data || []).find((x) => x && x.taskUUID === task.taskUUID) || null;
+}
+/* 그 칸의 움짤 만들기 → 저장(켜짐). repaint는 진행할 때마다 부름. 돌려주는 값: 저장했으면 true */
+async function makeMotion(c, cast, key, opts, repaint = () => {}) {
+  const k = keyOf(String(key)), id = jobId(c, cast.code, k);
+  if (MJOBS[id]) { toast("이 칸의 움짤은 이미 만드는 중이에요"); return false; }
+  const ref = (imagesOf(c)[cast.code] || {})[k];
+  const M = VIDEO_MODELS.find((m) => m.k === opts.model) || VIDEO_MODELS[0];
+  const rating = imgRating(codeRating(parseCodes(k), c)), safe = rating === "safe";
+  const job = MJOBS[id] = { t0: Date.now(), status: "보내는 중", progress: 0 };
+  repaint();
+  try {
+    if (!hasRunwareKey()) throw { code: "no_key" };
+    if (!ref) throw { code: "upstream_error", msg: "저장한 사진이 없어요" };
+    if (!safe && (!ageOK() || minorHint(opts.prompt + "\n" + castLook(cast, c) + "\n" + keyName(k)))) throw { code: "minor_block" };
+    const image = await photoData(ref);
+    if (typeof image !== "string" || !/^data:image\//.test(image)) throw { code: "upstream_error", msg: "사진을 읽지 못했어요" };
+    const task = { taskType: "videoInference", taskUUID: uuid4(), model: M.id, positivePrompt: String(opts.prompt || MOTION_PROMPT).slice(0, 1500),
+      ...(M.neg ? { negativePrompt: "distorted face, extra limbs, morphing, flicker, text, watermark, " + NEG_MINOR } : {}),
+      inputs: { frameImages: [{ image, frame: "first" }] }, resolution: M.res, duration: M.dur.includes(+opts.dur) ? +opts.dur : 5,
+      outputType: "URL", outputFormat: "MP4", deliveryMethod: "async", includeCost: true, ...(safe ? { safety: { checkContent: true } } : {}), ...M.extra };
+    let row = await rwTask(task);
+    // 다 될 때까지 몇 초마다 물음(보통 30초~2분, 6분이 넘으면 멈춤). 같은 작업을 다시 보내면 또 청구되니 getResponse만
+    job.status = "만드는 중"; repaint();
+    await sleep(8000);
+    while (!row || row.status !== "success") {
+      if (Date.now() - job.t0 > 360000) throw { code: "timeout" };
+      try { row = await rwTask({ taskType: "getResponse", taskUUID: task.taskUUID }); }
+      catch (e) { if (e && (e.code === "network" || e.code === "timeout" || e.code === "rate_limited")) { row = null; } else throw e; }
+      if (row && row.status === "error") throw { code: "upstream_error", msg: row.message || "" };
+      if (row && typeof row.progress === "number") job.progress = row.progress; // 진행률은 스튜디오의 1초 타이머가 그림(다시 그리지 않음)
+      if (!row || row.status !== "success") await sleep(Date.now() - job.t0 > 120000 ? 6000 : 4000);
+    }
+    if (safe && row.NSFWContent) throw { code: "blocked" };
+    if (!row.videoURL) throw { code: "upstream_error", msg: "영상 주소 없음" };
+    job.status = "받는 중"; repaint();
+    let saved;
+    try {
+      const T = timeoutSignal(TIMEOUT.api * 3), blob = await (await fetch(row.videoURL, { signal: T.signal })).blob(); T.clear();
+      if (!/^video\//.test(blob.type)) throw new Error("type");
+      saved = await IMG.putVideo(blob);
+    } catch (e) {
+      if (e && e.code === "too_big") throw e;
+      saved = { ref: row.videoURL, local: false, remote: true }; // 브라우저가 내려받기를 막음 → 임시 주소
+    }
+    // 기다리는 사이 사진이 바뀌었으면(지움·바꿈) 저장하지 않음
+    if ((imagesOf(c)[cast.code] || {})[k] !== ref) { toast("사진이 바뀌어서 만든 움짤은 버렸어요"); return false; }
+    putMotion(c, cast.code, k, saved.ref, { on: true, local: saved.local });
+    toast(saved.remote ? `${cast.name} · ${keyName(k)} 움짤을 만들었어요 — Runware 임시 주소라 오래 두면 사라질 수 있어요` : `${cast.name} · ${keyName(k)} 움짤을 만들었어요${row.cost ? ` ($${(+row.cost).toFixed(3)})` : ""}${saved.local ? " — 커서 이 기기에만 저장" : ""}`);
+    return true;
+  } catch (e) {
+    toast(motionErr(e));
+    return false;
+  } finally { delete MJOBS[id]; repaint(); }
+}
+function motionErr(e) {
+  if (e && e.code === "too_big") return "움짤이 너무 커서 저장하지 못했어요(이 브라우저는 IndexedDB를 쓸 수 없어요).";
+  if (e && e.code === "timeout") return "움짤을 만드는 데 6분이 넘게 걸려 멈췄어요. 잠시 뒤 다시 해 보세요.";
+  if (e && e.code === "blocked") return "안전 검사에 걸려 이 움짤은 쓰지 않았어요. 움직임 설명을 바꾸거나 다른 모델로 해 보세요.";
+  return genErr(e).replace("이미지를 만들지 못했어요", "움짤을 만들지 못했어요");
+}
+/* 움짤 창: 모델·길이·움직임 설명을 고르고 만들기. 이 칸에 움짤이 있으면 미리 보기와 '움짤 지우기' */
+function motionSheet(c, cast, key, after) {
+  const k = keyOf(String(key)), ref = (imagesOf(c)[cast.code] || {})[k], mo = motionOf(c, cast.code, k), M = VIDEO_MODELS.find((m) => m.k === MSTATE.model) || VIDEO_MODELS[0];
+  const ov = document.createElement("div"); ov.className = "overlay gen-ov";
+  ov.innerHTML = `<div class="sheet mo-sheet" role="dialog" aria-modal="true"><div class="sheet-head"><h2>움짤 만들기 <small>${esc(cast.name)} · ${esc(keyName(k))}</small></h2><button class="icon-btn" data-x aria-label="닫기">${ICON.close}</button></div>
+    <div class="mo-prev"><figure><span class="pic">${IMG.tag(ref)}</span><figcaption>사진(첫 장면)</figcaption></figure>${mo ? `<figure><span class="pic">${IMG.vtag(mo.ref)}</span><figcaption>지금 움짤 · ${mo.on ? "켜짐" : "꺼짐(사진이 보임)"}</figcaption></figure>` : ""}</div>
+    <p class="note">저장한 사진을 첫 장면으로 몇 초짜리 반복 영상을 만들어요(보통 30초~2분). 다 되면 이 칸의 움짤로 저장되고 켜져요 — 갤러리의 ⟳ 단추로 사진과 번갈아 쓸 수 있어요. 실패한 생성은 청구되지 않아요.${mo ? " 새로 만들면 지금 움짤은 바뀌어요." : ""}</p>
+    <div class="two"><div class="field"><label for="moM">모델</label><select id="moM">${VIDEO_MODELS.map((m) => `<option value="${m.k}" ${m.k === M.k ? "selected" : ""}>${esc(m.name)} — ${esc(m.price)}</option>`).join("")}</select></div>
+      <div class="field"><label for="moD">길이</label><select id="moD"></select></div></div>
+    <div class="field"><label for="moP">움직임 설명 <span class="note">영어로 쓰면 더 정확해요</span></label><textarea id="moP" rows="3">${esc(MSTATE.prompt)}</textarea>
+      <div class="cta-row" style="margin-top:6px"><button class="btn sm ghost" id="moReset">기본 설명으로</button></div></div>
+    <div class="cta-row">${mo ? `<button class="btn danger" id="moDel">움짤 지우기</button>` : ""}<span class="spacer"></span><button class="btn ghost" data-x>취소</button><button class="btn pri" id="moGo" ${ref ? "" : "disabled"}>${mo ? "다시 만들기" : "만들기"}</button></div></div>`;
+  document.body.append(ov); IMG.hydrate(ov);
+  const close = () => ov.remove();
+  ov.addEventListener("click", (e) => { if (e.target === ov || e.target.closest("[data-x]")) close(); });
+  const durs = () => { const m = VIDEO_MODELS.find((x) => x.k === $("#moM", ov).value) || VIDEO_MODELS[0]; $("#moD", ov).innerHTML = m.dur.map((d) => `<option value="${d}" ${d === MSTATE.dur ? "selected" : ""}>${d}초</option>`).join(""); if (!m.dur.includes(MSTATE.dur)) $("#moD", ov).value = String(m.dur.includes(5) ? 5 : m.dur[0]); };
+  durs();
+  $("#moM", ov).onchange = durs;
+  $("#moReset", ov).onclick = () => { $("#moP", ov).value = MOTION_PROMPT; };
+  const del = $("#moDel", ov);
+  if (del) del.onclick = () => { if (!del.dataset.sure) { del.dataset.sure = "1"; del.textContent = "한 번 더 누르면 지워요(사진은 그대로)"; return; } putMotion(c, cast.code, k, null); close(); after && after(); toast("움짤을 지웠어요 — 사진이 보여요"); };
+  $("#moGo", ov).onclick = () => {
+    Object.assign(MSTATE, { model: $("#moM", ov).value, dur: +$("#moD", ov).value, prompt: $("#moP", ov).value.trim() || MOTION_PROMPT });
+    close();
+    makeMotion(c, cast, k, MSTATE, () => after && after());
+  };
 }
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/admin/sit-sheets.js
@@ -7432,30 +7794,33 @@ function sitEditor(def, after) {
            src/js/content/index.js { ORIGINALS }
            src/js/core/cast.js { castLook }
            src/js/core/character.js { getChar, normalizeChar }
+           src/js/core/settings.js { saveSettings }
            src/js/core/state.js { S, hasOpenRouterKey, hasRunwareKey }
            src/js/core/util.js { $, $$, esc, toast }
            src/js/images/codes.js { DIMS, DIM_NAMES, MAX_ACT, fallbackKeys, keyOf, parseCodes, splitDims }
+           src/js/images/motion.js { flipMotion, motionOf }
            src/js/images/pick.js { imagesOf, pickImg, putCastImage }
            src/js/images/prompt.js { savedParts }
            src/js/images/rating.js { RATINGS, ratingFieldHTML, setSheetRating, sheetRating }
-           src/js/images/situations.js { keyName, sitDef }
+           src/js/images/situations.js { countSitImages, dropSitImages, keyName, sitDef }
            src/js/images/styles.js { imgModelInfo, styleOptionsHTML }
            src/js/services/images.js { IMG, validRef }
            src/js/ui/chat/log.js { copyText }
-           src/js/ui/cover.js { artHTML, lightbox }
+           src/js/ui/cover.js { artHTML, lightbox, picHTML, zoomPic }
            src/js/ui/icons.js { ICON }
            src/js/ui/shell.js { bindGo, go, topbar }
            src/js/admin/gen-sheet.js { genImageSheet }
-           src/js/admin/image-codes.js { codeGroups, codeStats, dimCount, groupHTML }
+           src/js/admin/image-codes.js { codeGroups, codeStats, deletable, dimCount, groupHTML }
            src/js/admin/image-run.js { ISTATE, ctxOf, keyRating, pickStyle, promptText, resultHTML, runKeys, saveResult, uploadMany }
+           src/js/admin/motion-run.js { MJOBS, jobId, motionSheet }
            src/js/admin/sit-sheets.js { sitEditor, sitListSheet, sitPresetSheet }
    내보냄: openImages, viewImages
    쓰는 곳: src/js/admin/tools.js, src/js/admin/studio.js, src/js/admin/works.js, src/js/admin.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 이미지 스튜디오(관리자 빌드만, #images — 작품 id를 붙이면 #images-<id>): 인물 그림을 만드는 한 곳. 예전의 이미지 슬롯 시트(기본 칸 격자)·조합 만들기·코드 표·코드 조합 테스트를 합쳤다.
-   왼쪽 코드 목록(admin/image-codes.js — 감정·행동/의상/장소 갈래, 번호대 묶음, 이 인물의 그림 수, 고치기·추가·빈 칸 채우기)에서 번호를 눌러 조합을 만들고,
-   오른쪽에서 그 조합의 지금 그림(올리기·바꾸기·삭제)·프롬프트·화풍·비율을 보고 그린다(admin/image-run.js). 결과는 저장 전까지 화면에만, '바로 저장'을 켜면 그린 즉시 저장.
-   아래 갤러리는 이 인물에 저장된 그림 전부(누르면 그 조합을 고름). 기본 0~14도 다른 코드와 똑같이 목록의 한 묶음 — 따로 칸 격자를 두지 않는다.
+   왼쪽 코드 목록(admin/image-codes.js — 감정·행동/의상/장소 갈래, 번호대 묶음, 이 인물의 그림 수, 고치기·추가·빈 칸 채우기, 선택 삭제)에서 번호를 눌러 조합을 만들고,
+   오른쪽에서 그 조합의 지금 그림(올리기·바꾸기·삭제·움짤)·프롬프트·화풍·비율을 보고 그린다(admin/image-run.js). 결과는 저장 전까지 화면에만, '바로 저장'을 켜면 그린 즉시 저장.
+   아래 갤러리는 이 인물에 저장된 그림 전부(누르면 그 조합을 고름) — 칸마다 크게·움짤 만들기(admin/motion-run.js)·사진 ↔ 움짤 바꾸기·삭제. 기본 0~14도 다른 코드와 똑같이 목록의 한 묶음.
    들어오는 길: 메뉴 '이미지', 작품 화면·상세(인물 초상·'이미지 관리')·대화방 메뉴·스튜디오의 openImages(작품, 인물 코드) */
 
 
@@ -7479,14 +7844,22 @@ function sitEditor(def, after) {
 
 
 
+
+
+
 ICON.image = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-9 9"/></svg>';
+/* 사진 ↔ 움짤 바꾸기: 위아래로 도는 두 화살표 */
+ICON.flip = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19.5 9.5A8 8 0 0 0 5.2 7.4"/><path d="M4.5 14.5a8 8 0 0 0 14.3 2.1"/><path d="M5 3.5v4h4"/><path d="M19 20.5v-4h-4"/></svg>';
 const T = ISTATE, nn = (n) => n !== null && n !== undefined;
 const onHere = () => (location.hash.slice(1) || "").split("-")[0] === "images";
+let MO_TICK = null; // 움짤 만드는 중인 칸의 경과 시간을 1초마다 고침(화면은 다시 그리지 않음)
 /* 작품·인물을 골라 스튜디오를 엶 */
 function openImages(c, code) { T.work = c.id; T.cast = code || (T.work === c.id ? T.cast : ""); go("images-" + c.id); }
 const comboKey = () => keyOf([...T.acts.slice(0, MAX_ACT), T.wear, T.place].filter(nn)) || "1";
 /* 조합 키 → 고른 번호들로 */
 function loadKey(key) { const d = splitDims(parseCodes(String(key))); T.acts = d.act.length ? d.act : [1]; T.wear = d.wear || null; T.place = d.place || null; }
+const flipBtn = (k, on) => `<button class="mo-flip${on ? " on" : ""}" data-flip="${esc(k)}" title="${on ? "지금 움짤이 보여요 — 누르면 사진으로" : "지금 사진이 보여요 — 누르면 움짤로"}" aria-label="사진과 움짤 바꾸기">${ICON.flip}</button>`;
+const busyHTML = (id) => `<span class="mo-busy" data-mjob="${esc(id)}">움짤 만드는 중…</span>`;
 
 function viewImages(arg) {
   if (arg && getChar(arg)) T.work = arg;
@@ -7499,10 +7872,14 @@ function viewImages(arg) {
   T.acts = T.acts.filter((n) => visible.has(n)); if (!T.acts.length) T.acts = [1];
   if (nn(T.wear) && !visible.has(T.wear)) T.wear = null;
   if (nn(T.place) && !visible.has(T.place)) T.place = null;
+  if (T.del) [...T.del].forEach((n) => { if (!visible.has(n)) T.del.delete(n); });
   const on = (n) => T.acts.includes(n) || T.wear === n || T.place === n;
   const cur = validRef(slots[key]) ? slots[key] : null, fb = cur ? null : fallbackKeys(key).find((k) => validRef(slots[k]));
+  const curMo = cur ? motionOf(c, cast.code, key) : null, curJob = MJOBS[jobId(c, cast.code, key)];
   const saved = Object.keys(slots).filter((k) => validRef(slots[k])).sort((a, b) => a.localeCompare(b, "ko", { numeric: true }));
   const chip = (n, dim) => `<span class="is-sel"><b>${n}</b> ${esc(keyName(String(n)))}<button data-unsel="${dim}:${n}" aria-label="빼기">×</button></span>`;
+  const picked = T.acts.length > 1 || T.acts[0] !== 1 || nn(T.wear) || nn(T.place);
+  const canDel = (S.settings.customSits || []).length > 0, delN = T.del ? T.del.size : 0, delImgs = delN ? countSitImages([...T.del]) : 0;
   const busy = T.busy;
   const keep = { list: $(".is-list", v)?.scrollTop || 0, y: window.scrollY };
   v.innerHTML = `<div class="page is-page">${topbar(`<button class="icon-btn" data-go="works" aria-label="작품 화면으로">${ICON.back}</button>`)}
@@ -7514,21 +7891,24 @@ function viewImages(arg) {
       <p class="note" style="margin:6px 0 0">외모: ${esc(castLook(cast, c) || "(없음)")}${cast.tags ? ` · 영문 태그 ${esc(cast.tags)}` : ""}</p>
     </div>
     <div class="is-main">
-      <section class="box is-codes" aria-label="코드 목록">
+      <section class="box is-codes${T.del ? " deleting" : ""}" aria-label="코드 목록">
         <div class="is-tabs" role="tablist">${["act", "wear", "place"].map((d) => `<button role="tab" class="${T.tab === d ? "on" : ""}" data-tab="${d}" aria-selected="${T.tab === d}">${DIM_NAMES[d]} <small>${dimCount(d)}</small></button>`).join("")}</div>
         <input class="inp is-q" id="isQ" placeholder="번호·이름으로 찾기" aria-label="코드 찾기">
-        <div class="is-list">${codeGroups(T.tab).map((g) => groupHTML(g, on, !!T.closed[g.id], st)).join("")}</div>
-        <div class="cta-row" style="margin-top:10px"><button class="btn sm" id="isAdd">+ 코드 추가</button><button class="btn sm" id="isList">목록으로 추가</button><button class="btn sm ghost" id="isPreset">추천 코드</button></div>
+        <div class="is-list">${codeGroups(T.tab).map((g) => groupHTML(g, on, !!T.closed[g.id], st, T.del)).join("")}</div>
+        ${T.del ? `<div class="is-delbar"><div class="x"><b>${delN}개 선택</b><span class="note">${delN ? `${delImgs ? `이 코드가 든 그림 ${delImgs}장(모든 작품·인물, 움짤 포함)도 함께 지워져요.` : "이 코드로 저장한 그림은 없어요."} 내장 번호를 덮어쓴 칸은 지우면 내장 코드로 돌아가요.` : "지울 코드를 고르세요 — 직접 만들었거나 목록으로 들여온 코드만 지울 수 있어요. 탭을 바꿔도 고른 것은 남아요."}</span></div>
+          <div class="cta-row"><button class="btn sm ghost" id="isDelX">취소</button><button class="btn sm danger" id="isDelGo" ${delN ? "" : "disabled"}>선택 삭제</button></div></div>`
+        : `<div class="cta-row" style="margin-top:10px"><button class="btn sm" id="isAdd">+ 코드 추가</button><button class="btn sm" id="isList">목록으로 추가</button><button class="btn sm ghost" id="isPreset">추천 코드</button>${canDel ? `<span class="spacer"></span><button class="btn sm ghost" id="isDelMode" title="직접 만들었거나 목록으로 들여온 코드를 골라 한 번에 지우기">선택 삭제</button>` : ""}</div>`}
       </section>
       <section class="box is-make" aria-label="조합과 생성">
         <div class="is-sels"><span class="lbl">${DIM_NAMES.act}</span>${T.acts.map((n, i) => chip(n, "act") + (i === MAX_ACT - 1 && T.acts.length > MAX_ACT ? `<span class="note">· 조합엔 앞 ${MAX_ACT}개</span>` : "")).join("")}
-          <span class="lbl">${DIM_NAMES.wear}</span>${nn(T.wear) ? chip(T.wear, "wear") : `<span class="note">설정대로</span>`}<span class="lbl">${DIM_NAMES.place}</span>${nn(T.place) ? chip(T.place, "place") : `<span class="note">자동</span>`}</div>
+          <span class="lbl">${DIM_NAMES.wear}</span>${nn(T.wear) ? chip(T.wear, "wear") : `<span class="note">설정대로</span>`}<span class="lbl">${DIM_NAMES.place}</span>${nn(T.place) ? chip(T.place, "place") : `<span class="note">자동</span>`}
+          ${picked ? `<button class="btn sm ghost is-clr" id="isSelClr" title="고른 감정·의상·장소를 모두 빼고 기본(1)으로">모두 빼기</button>` : ""}</div>
         <div class="ct-combo"><code>[[img:${esc(cast.code)}:${esc(key)}]]</code><b>${esc(keyName(key))}</b><span class="pill">${RATINGS[rt].name}</span></div>
         <div class="is-now">
-          <div class="pic">${cur ? IMG.tag(cur) : fb ? `<span class="fb">${IMG.tag(slots[fb])}</span>` : artHTML(c, cast, key)}</div>
-          <div class="x"><b>${cur ? "이 조합의 그림" : "아직 그림 없음"}</b>
-            <span class="note">${cur ? "대화에서 이 조합이 나오면 이 그림이 보여요." : fb ? `대화에서는 가까운 '${esc(keyName(fb))}' 그림으로 대신해요.` : "대화에서는 그림 대신 색 카드가 보여요."}</span>
-            <div class="cta-row" style="margin-top:8px"><button class="btn sm" id="isUp">${cur ? "바꾸기(올리기)" : "그림 올리기"}</button>${cur ? `<button class="btn sm ghost" id="isRm">삭제</button>` : ""}</div></div>
+          <div class="pic">${cur ? picHTML(cur, curMo && curMo.on ? curMo.ref : null) : fb ? `<span class="fb">${IMG.tag(slots[fb])}</span>` : artHTML(c, cast, key)}${curMo ? `<span class="mo-badge">${curMo.on ? "움짤" : "사진"}</span>` : ""}${curJob ? busyHTML(jobId(c, cast.code, key)) : ""}</div>
+          <div class="x"><b>${cur ? (curMo && curMo.on ? "이 조합의 움짤" : "이 조합의 그림") : "아직 그림 없음"}</b>
+            <span class="note">${cur ? (curMo ? `대화에서 이 조합이 나오면 ${curMo.on ? "움짤" : "사진"}이 보여요. ⟳로 바꿔요.` : "대화에서 이 조합이 나오면 이 그림이 보여요.") : fb ? `대화에서는 가까운 '${esc(keyName(fb))}' 그림으로 대신해요.` : "대화에서는 그림 대신 색 카드가 보여요."}</span>
+            <div class="cta-row" style="margin-top:8px"><button class="btn sm" id="isUp">${cur ? "바꾸기(올리기)" : "그림 올리기"}</button>${cur ? `<button class="btn sm" data-mo="${esc(key)}" ${curJob ? "disabled" : ""}>${curMo ? "움짤 ✓" : "움짤 만들기"}</button>${curMo ? flipBtn(key, curMo.on) : ""}<button class="btn sm ghost" id="isRm">삭제</button>` : ""}</div></div>
         </div>
         <div class="two"><div class="field"><label for="isS">화풍 <span class="note">${esc(style.name)} · ${esc(imgModelInfo(style.model).name)}</span></label><select id="isS"><option value="">설정대로</option>${styleOptionsHTML()}</select></div>
           <div class="field"><label for="isR">비율</label><select id="isR">${["4:5", "3:4", "1:1", "16:9"].map((a) => `<option ${a === T.aspect ? "selected" : ""}>${a}</option>`).join("")}</select></div></div>
@@ -7543,13 +7923,26 @@ function viewImages(arg) {
     ${T.results.length ? `<div class="sheet-head" style="margin-top:14px"><h2 style="flex:1">결과 <small>${T.results.length}장 · ${T.results.filter((r) => r.saved).length}장 저장</small></h2><button class="btn sm ghost" id="isClear">결과 비우기</button></div>
       <div class="ct-results">${T.results.map(resultHTML).join("")}</div>` : ""}
     <div class="sheet-head" style="margin-top:14px"><h2 style="flex:1">${esc(cast.name)}의 그림 <small>${saved.length}장</small></h2><button class="btn sm" id="isMany">여러 장 올리기</button></div>
-    <p class="note" style="margin:0 0 8px">파일 이름을 3.png처럼 번호로, 조합은 3-404-501.png처럼 지으면 그 칸에 들어가요. 그림을 누르면 그 조합을 골라요.</p>
-    <div class="is-gal">${saved.map((k) => `<div class="is-gi${k === key ? " on" : ""}"><button class="pic" data-load="${esc(k)}" aria-label="${esc(keyName(k))} 고르기">${IMG.tag(slots[k])}</button><span class="lb">${esc(keyName(k))}<small>${esc(k)}</small></span><div class="bs"><button data-zoom="${esc(k)}">크게</button><button data-gdel="${esc(k)}">삭제</button></div></div>`).join("") || `<p class="note">아직 저장한 그림이 없어요.</p>`}</div>
+    <p class="note" style="margin:0 0 8px">파일 이름을 3.png처럼 번호로, 조합은 3-404-501.png처럼 지으면 그 칸에 들어가요. 그림을 누르면 그 조합을 골라요. '움짤'로 그 사진을 몇 초짜리 영상으로 만들고, ⟳로 사진과 움짤 중 대화에 보일 것을 바꿔요.</p>
+    <div class="is-gal">${saved.map((k) => { const mo = motionOf(c, cast.code, k), id = jobId(c, cast.code, k), job = MJOBS[id];
+      return `<div class="is-gi${k === key ? " on" : ""}${mo && mo.on ? " mo-on" : ""}"><button class="pic" data-load="${esc(k)}" aria-label="${esc(keyName(k))} 고르기">${picHTML(slots[k], mo && mo.on ? mo.ref : null)}${mo ? `<span class="mo-badge">${mo.on ? "움짤" : "사진"}</span>` : ""}${job ? busyHTML(id) : ""}</button><span class="lb">${esc(keyName(k))}<small>${esc(k)}</small></span>
+        <div class="bs"><button data-zoom="${esc(k)}">크게</button><button data-mo="${esc(k)}" ${job ? "disabled" : ""} title="${mo ? "움짤 다시 만들기·지우기" : "이 사진으로 움짤 만들기"}">움짤</button>${mo ? flipBtn(k, mo.on) : ""}<button data-gdel="${esc(k)}">삭제</button></div></div>`; }).join("") || `<p class="note">아직 저장한 그림이 없어요.</p>`}</div>
     <input type="file" id="isOne" accept="image/png,image/jpeg,image/webp" hidden><input type="file" id="isFiles" accept="image/png,image/jpeg,image/webp" multiple hidden>
   </div>`;
   bindGo(v); IMG.hydrate(v);
   const list = $(".is-list", v); list.scrollTop = keep.list; window.scrollTo(0, keep.y);
   bind(v, c, cast, key);
+  tickJobs();
+}
+/* 움짤 만드는 중인 칸의 글을 1초마다 고침(경과 시간·진행률). 일이 없으면 멈춤 */
+function tickJobs() {
+  const paint = () => {
+    const ids = Object.keys(MJOBS);
+    $$("[data-mjob]").forEach((el) => { const j = MJOBS[el.dataset.mjob]; if (j) el.textContent = `${j.status} · ${Math.round((Date.now() - j.t0) / 1000)}초${j.progress ? ` · ${j.progress}%` : ""}`; });
+    if (!ids.length || !onHere()) { clearInterval(MO_TICK); MO_TICK = null; }
+  };
+  paint();
+  if (Object.keys(MJOBS).length && !MO_TICK) MO_TICK = setInterval(paint, 1000);
 }
 function bind(v, c, cast, key) {
   const re = () => { if (onHere()) viewImages(); };
@@ -7560,17 +7953,35 @@ function bind(v, c, cast, key) {
   // 찾기는 다시 그리지 않고 줄만 숨김(입력 칸 포커스 유지)
   $("#isQ", v).oninput = (e) => { const q = e.target.value.trim().toLowerCase(); $$(".is-code", v).forEach((r) => { r.hidden = !!q && !r.dataset.find.includes(q); }); $$(".is-group", v).forEach((g) => g.classList.toggle("searching", !!q)); };
   $$("[data-fold]", v).forEach((b) => b.onclick = () => { const id = b.dataset.fold; T.closed[id] = !T.closed[id]; b.closest(".is-group").classList.toggle("closed", T.closed[id]); b.setAttribute("aria-expanded", String(!T.closed[id])); });
+  // 선택 삭제 모드: 줄을 누르거나 체크하면 고름/뺌, 묶음의 '전체 선택'
+  const toggleDel = (n) => { if (T.del.has(n)) T.del.delete(n); else T.del.add(n); re(); };
   $$("[data-pick]", v).forEach((b) => b.onclick = () => {
     const n = +b.dataset.pick, dim = T.tab;
+    if (T.del) { if (b.closest(".is-code").querySelector(".is-chk")) toggleDel(n); return; }
     if (dim === "act") T.acts = T.acts.includes(n) ? T.acts.filter((x) => x !== n) : [...T.acts, n];
     else T[dim] = T[dim] === n ? null : n;
     re();
   });
+  $$("[data-chk]", v).forEach((b) => b.onchange = () => toggleDel(+b.dataset.chk));
+  $$("[data-gsel]", v).forEach((b) => b.onclick = () => {
+    const g = codeGroups(T.tab).find((x) => x.id === b.dataset.gsel); if (!g) return;
+    const ns = g.items.filter(deletable).map((d) => d.n), allOn = ns.every((n) => T.del.has(n));
+    ns.forEach((n) => { if (allOn) T.del.delete(n); else T.del.add(n); }); re();
+  });
+  const dm = $("#isDelMode", v); if (dm) dm.onclick = () => { T.del = new Set(); re(); };
+  const dx = $("#isDelX", v); if (dx) dx.onclick = () => { T.del = null; re(); };
+  const dg = $("#isDelGo", v); if (dg) dg.onclick = () => {
+    const ns = [...T.del]; if (!ns.length) return;
+    if (!dg.dataset.sure) { dg.dataset.sure = "1"; dg.textContent = `한 번 더 누르면 ${ns.length}개 삭제`; return; }
+    S.settings.customSits = (S.settings.customSits || []).filter((d) => ns.indexOf(d.n) < 0);
+    dropSitImages(ns); saveSettings(); T.del = null; re(); toast(`코드 ${ns.length}개를 지웠어요`);
+  };
   $$("[data-unsel]", v).forEach((b) => b.onclick = () => { const [dim, n] = b.dataset.unsel.split(":"); if (dim === "act") T.acts = T.acts.filter((x) => x !== +n); else T[dim] = null; re(); });
+  const clr = $("#isSelClr", v); if (clr) clr.onclick = () => { T.acts = [1]; T.wear = null; T.place = null; re(); };
   $$("[data-edit]", v).forEach((b) => b.onclick = () => { const n = +b.dataset.edit; sitEditor(sitDef(n) || DIMS[n], re); });
-  $("#isAdd", v).onclick = () => { sitEditor(null, re); const dm = $("#sdm"); if (dm) dm.value = T.tab; };
-  $("#isList", v).onclick = () => sitListSheet(re);
-  $("#isPreset", v).onclick = () => sitPresetSheet(re);
+  const add = $("#isAdd", v); if (add) add.onclick = () => { sitEditor(null, re); const sd = $("#sdm"); if (sd) sd.value = T.tab; };
+  const lst = $("#isList", v); if (lst) lst.onclick = () => sitListSheet(re);
+  const pre = $("#isPreset", v); if (pre) pre.onclick = () => sitPresetSheet(re);
   // 묶음의 빈 칸 채우기: 그림이 없는 번호마다, 지금 고른 다른 갈래(의상·장소 / 감정)를 붙인 조합으로 그려 바로 저장
   $$("[data-fill]", v).forEach((b) => b.onclick = () => {
     const g = codeGroups(T.tab).find((x) => x.id === b.dataset.fill); if (!g) return;
@@ -7590,7 +8001,10 @@ function bind(v, c, cast, key) {
   // 지금 조합의 그림 올리기·삭제
   $("#isUp", v).onclick = () => $("#isOne", v).click();
   $("#isOne", v).onchange = async (e) => { const f = e.target.files[0]; if (!f) return; toast("올리는 중…"); try { putCastImage(c, cast.code, key, await IMG.put(f)); re(); toast("그림을 넣었어요"); } catch { toast("이미지를 읽지 못했어요. PNG·JPG로 다시 올려 주세요."); } };
-  const rm = $("#isRm", v); if (rm) rm.onclick = () => { if (!rm.dataset.sure) { rm.dataset.sure = "1"; rm.textContent = "한 번 더 누르면 삭제"; return; } putCastImage(c, cast.code, key, null); re(); };
+  const rm = $("#isRm", v); if (rm) rm.onclick = () => { if (!rm.dataset.sure) { rm.dataset.sure = "1"; rm.textContent = motionOf(c, cast.code, key) ? "한 번 더 — 사진·움짤 삭제" : "한 번 더 누르면 삭제"; return; } putCastImage(c, cast.code, key, null); re(); };
+  // 움짤: 만들기 창 · 사진 ↔ 움짤 바꾸기
+  $$("[data-mo]", v).forEach((b) => b.onclick = () => motionSheet(c, cast, b.dataset.mo, re));
+  $$("[data-flip]", v).forEach((b) => b.onclick = (e) => { e.stopPropagation(); const on = flipMotion(c, cast.code, b.dataset.flip); re(); toast(on ? "움짤로 바꿨어요 — 대화에서도 움짤이 보여요" : "사진으로 바꿨어요"); });
   // 결과 카드
   const find = (id) => T.results.find((r) => r.id === id);
   $$("[data-lb]", v).forEach((im) => im.onclick = () => lightbox(im.src));
@@ -7600,8 +8014,8 @@ function bind(v, c, cast, key) {
   const cl = $("#isClear", v); if (cl) cl.onclick = () => { T.results.forEach((r) => URL.revokeObjectURL(r.url)); T.results = []; re(); };
   // 갤러리
   $$("[data-load]", v).forEach((b) => b.onclick = () => { loadKey(b.dataset.load); window.scrollTo(0, 0); re(); });
-  $$("[data-zoom]", v).forEach((b) => b.onclick = () => { const i = b.closest(".is-gi").querySelector("img"); if (i?.src) lightbox(i.src); });
-  $$("[data-gdel]", v).forEach((b) => b.onclick = () => { if (!b.dataset.sure) { b.dataset.sure = "1"; b.textContent = "정말?"; return; } putCastImage(c, cast.code, b.dataset.gdel, null); re(); });
+  $$("[data-zoom]", v).forEach((b) => b.onclick = () => zoomPic(b.closest(".is-gi").querySelector(".pic")));
+  $$("[data-gdel]", v).forEach((b) => b.onclick = () => { if (!b.dataset.sure) { b.dataset.sure = "1"; b.textContent = motionOf(c, cast.code, b.dataset.gdel) ? "사진·움짤 삭제?" : "정말?"; return; } putCastImage(c, cast.code, b.dataset.gdel, null); re(); });
   $("#isMany", v).onclick = () => $("#isFiles", v).click();
   $("#isFiles", v).onchange = async (e) => { await uploadMany(c, cast.code, [...e.target.files]); re(); };
 }
@@ -8585,7 +8999,7 @@ async function boot(opts = {}) {
           setDB(db); KV.db = db; KV.uid = id; KV.dbOk = true;
           const remoteRooms = await KV.get("rooms");
           if (remoteRooms === undefined || remoteRooms === null) {
-            ["wallet", "personas", "profile", "mine", "rooms", "imgpacks", "memcfg", "coverpacks", "lorepacks", "tagpacks"].forEach((k) => { const v = KV.getLocal(k); if (v !== undefined) KV.set(k, v); });
+            ["wallet", "personas", "profile", "mine", "rooms", "imgpacks", "motionpacks", "memcfg", "coverpacks", "lorepacks", "tagpacks"].forEach((k) => { const v = KV.getLocal(k); if (v !== undefined) KV.set(k, v); });
             S.rooms.forEach((r) => { const v = KV.getLocal(roomKey(r.id)); if (v) KV.set(roomKey(r.id), v); });
           } else { await loadAll(); renderRailRecent(); renderWalletChips(); if (!location.hash.startsWith("#r-")) route(); }
           watchCommunity();

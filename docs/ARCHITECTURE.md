@@ -23,10 +23,10 @@
 core      config(잎) · constants · util · events · storage · state · target · cast · audience · wallet · character · safety · rooms · settings · migrate
 content   index.js — 빌드가 만든 generated.js(ORIGINALS · HOME_ROWS · CONTENT_CODES)
 services  supabase · cloud · vault · sync · load · community · images
-images    codes · rating · pick · situations · tags-cache        (관리자만) styles · prompt · tags · runware
+images    codes · rating · pick · motion · situations · tags-cache        (관리자만) styles · prompt · tags · runware
 ai        models · llm · adult · openrouter · parse · prompt/{lore,rules,input,memory}
 ui        icons · sheet · ext · shell · cover · home · detail · chat/{render,log,view,generate,suggest} · pay · model-sheet · room-drawer · worldart · chats · store · login · account · me
-admin     studio · image-studio · image-codes · image-run · sit-sheets · gen-sheet · worldart · image-settings · works · tools · auto-images · export · migrate
+admin     studio · image-studio · image-codes · image-run · motion-run · sit-sheets · gen-sheet · worldart · image-settings · works · tools · auto-images · export · migrate
 boot.js → app.js(USER_VIEWS · USER_NAVS) → main.js | admin.js
 ```
 
@@ -75,7 +75,8 @@ boot.js → app.js(USER_VIEWS · USER_NAVS) → main.js | admin.js
 - 스튜디오에서 만든 내 작품은 `work.js`도 함께 써서 오리지널로 올릴 수 있다(기기 데이터인 images·publish·creator는 뺌).
 - **관리자 전용 코드**(2026-11-05): 성인 수위 행동 코드 표는 `content/codes.admin.json`(git에 없음)을 `admin/codes.js`가 런타임에 fetch해(개발 서버에서만) `setExtraCodes`로 꽂거나, 웹 관리자 도구에서는 '목록으로 추가'로 계정(customSits)에 들여온다. admin.html이 배포되므로 빌드 결과물에는 넣지 않는다. 내보내기(codes.json·작품 폴더)가 성인 수위·관리자 전용 코드를 걸러 사용자 사이트로 흘러가지 않게 한다.
 - **관리자 웹 주소와 관문**(2026-11-05): admin.html도 커밋·배포(https://…/HEARTSYNC/admin.html). 웹 주소에서는 `admin/gate.js`가 비밀번호(SHA-256 해시 비교)를 묻고 localhost·file://은 묻지 않는다. 정적 페이지의 클라이언트 관문이라 소스를 읽는 사람은 우회할 수 있다 — 무심코 들어오는 것만 막고, 실제 데이터는 관리자의 브라우저·계정에만 있다. 관리자는 `#codetest`(코드 조합 테스트)에서 작품·인물·코드 조합을 골라 프롬프트를 보고 그려 본 뒤 마음에 드는 것만 슬롯에 저장한다.
-- **이미지 스튜디오**(2026-11-05): 관리자 도구의 그림 일은 `#images` 한 화면 — `admin/image-studio.js`(화면·이벤트) · `image-codes.js`(갈래·번호대 묶음과 인물별 그림 수, 순수 HTML 조각) · `image-run.js`(Runware 그리기·결과·저장·파일 이름 → 조합 키, 상태 `ISTATE`). 예전 이미지 슬롯 시트·조합 만들기·코드 표·코드 조합 테스트를 합쳐 고정 칸 격자를 없앴고(0~14는 목록의 "기본 감정" 묶음), 칸 편집기·목록으로 추가·추천 칸은 `admin/sit-sheets.js`를 그대로 씀. 다른 화면은 `openImages(c, code)`로만 들어옴.
+- **이미지 스튜디오**(2026-11-05): 관리자 도구의 그림 일은 `#images` 한 화면 — `admin/image-studio.js`(화면·이벤트) · `image-codes.js`(갈래·번호대 묶음과 인물별 그림 수, 순수 HTML 조각) · `image-run.js`(Runware 그리기·결과·저장·파일 이름 → 조합 키, 상태 `ISTATE`). 예전 이미지 슬롯 시트·조합 만들기·코드 표·코드 조합 테스트를 합쳐 고정 칸 격자를 없앴고(0~14는 목록의 "기본 감정" 묶음), 칸 편집기·목록으로 추가·추천 칸은 `admin/sit-sheets.js`를 그대로 씀. 다른 화면은 `openImages(c, code)`로만 들어옴. 코드 목록의 '선택 삭제'(계정의 내 칸만, 그 코드가 든 그림·움짤도 지움)와 조합의 '모두 빼기'도 이 화면.
+- **움짤**(2026-11-05): 그림 칸마다 사진과 움짤(짧은 반복 영상)을 함께 두고 `on`으로 어느 쪽을 보일지 정함 — 저장·고르기는 `images/motion.js`(사용자 빌드에도, KV `motionpacks` + 작품 폴더의 `c.motions`), 보이기는 `ui/cover.js`의 `picHTML`(사진 위에 `<video>`를 겹침 — 영상을 못 받으면 사진), 본문은 `services/images.js`의 `IMG.putVideo`·`vtag`·`videoURL`(kv: 영상은 blob 주소로 — iOS는 data: 영상을 재생 못 함). 만들기는 관리자만 `admin/motion-run.js`(Runware videoInference 비동기 + getResponse). 사진을 바꾸거나 지우면 움짤도 지워 다른 사진에서 만든 영상이 남지 않게 함.
 
 ## 5. 주석 정책
 

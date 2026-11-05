@@ -13,7 +13,7 @@ export const S = {
   wallet: { hearts: 0, freeDay: today(), freeUsed: 0, pro: null, history: [], ledger: [], ack: {} },
   personas: [{ id: "p1", name: "유저", memo: "", desc: "", img: "", def: true }],
   idv: null, // 휴대폰 성인 인증 결과(services/idv.js) — KV·계정에 저장하지 않음
-  profile: { nick: "" }, mine: [], rooms: [], community: [], imgpacks: {}, coverpacks: {}, lorepacks: {}, tagpacks: {},
+  profile: { nick: "" }, mine: [], rooms: [], community: [], imgpacks: {}, motionpacks: {}, coverpacks: {}, lorepacks: {}, tagpacks: {},
   settings: { fs: 15.5, chatLh: 1.8, narrFont: "serif", enterSend: true, sceneImg: true, autoImg: false, apiKey: "", runwareKey: "", customSits: [], imgModel: "", imgStyle: "auto", imgStyleCustom: "", styleRefs: [], styleSets: [], styleV2: true, styleV3: true, memCfg: { auto: true, every: 5, limit: 3000, guide: "auto", custom: "" },
     // 성인 모드: 자기 확인(isAgeVerified) 전에는 모두 꺼진 것과 같음. contentFilter false면 모든 대화방이 성인 모드
     isAgeVerified: false, contentFilter: true, autoFallback: true, openRouterKey: "", customUnfilteredModel: "" },

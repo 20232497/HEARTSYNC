@@ -349,6 +349,7 @@ async function buildContent(R) {
     if (w.images) o.images = w.images; // 작품 폴더 images/의 그림(content/… 상대 경로) — 사용자는 이 그림을 봄
     if (w.img) o.img = w.img;
     if (w.loreImages) o.loreImages = w.loreImages;
+    if (w.motions) o.motions = w.motions; // 같은 칸의 움짤(content/….mp4) — images/motion.js가 켜진 것으로 봄
     return `/* ${rel.slice("content/".length)} */ ${ser(o, "")}`;
   });
   const code = `/* 빌드가 content/ 폴더로 만든 작품 데이터 — 직접 고치지 말고 content/<f|m|all>/…/work.js를 고치세요(content/README.md). git에 넣지 않음 */
@@ -366,7 +367,8 @@ ${codes.map((d) => "  " + JSON.stringify(d)).join(",\n")}
 `;
   writeIfChanged(GEN_FILE, jsSafe(code));
   const count = (a) => works.filter((w) => w.aud === a).length, pics = works.reduce((a, w) => a + Object.values(w.images || {}).reduce((b, m) => b + Object.keys(m).length, 0) + (w.img ? 1 : 0) + Object.keys(w.loreImages || {}).length, 0);
-  return { warnings, stats: { works: works.length, f: count("f"), m: count("m"), all: count("all"), rows: rows.length, codes: codes.length, pics } };
+  const motions = works.reduce((a, w) => a + Object.values(w.motions || {}).reduce((b, m) => b + Object.keys(m).length, 0), 0);
+  return { warnings, stats: { works: works.length, f: count("f"), m: count("m"), all: count("all"), rows: rows.length, codes: codes.length, pics, motions } };
 }
 
 /* content/codes.json → CONTENT_CODES(사용자에게 실림): [{ n, name, prompt, rating, keys? }]. 번호는 15~599(400·500 제외), 성인 수위 코드는 미성년 표현 금지.
@@ -396,20 +398,21 @@ function readCodes(R, errors, warnings) {
   if (adult) warnings.push(`content/${name}: 성인 수위 코드 ${adult}개 — 사용자 사이트와 공개 저장소에 그대로 실려요(관리자만 쓸 코드는 content/codes.admin.json에)`);
   return out.sort((a, b) => a.n - b.n);
 }
-/* 작품 폴더의 images/ → 작품의 images(인물 코드 → 조합 키 → content/… 경로)·img(cover.*)·loreImages(lore-<n>.* → n번째 키워드북 항목).
+/* 작품 폴더의 images/ → 작품의 images(인물 코드 → 조합 키 → content/… 경로)·img(cover.*)·loreImages(lore-<n>.* → n번째 키워드북 항목)·motions(같은 이름의 .mp4|.webm — 그 칸의 움짤, 켜진 것으로 봄).
    파일 이름: <인물코드>-<번호[-번호…]>.webp|png|jpg (조합 키의 쉼표는 -), cover.*, lore-<n>.*. 관리자 도구의 '작품 폴더에 저장'이 이 이름으로 쓴다 */
-const IMG_EXT = /\.(webp|png|jpe?g)$/i;
+const IMG_EXT = /\.(webp|png|jpe?g)$/i, VIDEO_EXT = /\.(mp4|webm)$/i;
 function scanImages(w, R, codes, errors, warnings) {
   const dir = path.join(ROOT, w.rel, "images");
   if (!fs.existsSync(dir)) return;
   const c = w.c, castCodes = new Set((c.cast || [{ code: "c" }]).map((x) => x.code)), lore = c.lore || [];
   const known = (n) => n < R.SIT.length || !!R.DIMS[n] || codes.some((d) => d.n === n);
-  const images = {}, loreImages = {}; let img = "";
+  const images = {}, loreImages = {}, motions = {}; let img = "";
   for (const f of fs.readdirSync(dir).filter(visible).sort()) {
-    const at = `${w.rel}/images/${f}`;
-    if (!IMG_EXT.test(f)) { warnings.push(`${at}: 그림 파일(webp·png·jpg)이 아니라 지나쳐요`); continue; }
-    const base = f.replace(IMG_EXT, "");
+    const at = `${w.rel}/images/${f}`, video = VIDEO_EXT.test(f);
+    if (!IMG_EXT.test(f) && !video) { warnings.push(`${at}: 그림 파일(webp·png·jpg)이나 움짤(mp4·webm)이 아니라 지나쳐요`); continue; }
+    const base = f.replace(video ? VIDEO_EXT : IMG_EXT, "");
     let m;
+    if (video && !/^[a-z0-9]+-\d+(?:-\d+)*$/.test(base)) { warnings.push(`${at}: 움짤은 그림 칸(<인물코드>-<번호>.mp4)에만 실을 수 있어 지나쳐요`); continue; }
     if (base === "cover") { if (img) errors.push(`${at}: 표지가 둘이에요(${img})`); img = at; }
     else if ((m = base.match(/^lore-(\d+)$/))) {
       const i = +m[1];
@@ -424,12 +427,16 @@ function scanImages(w, R, codes, errors, warnings) {
       if (unknown.length) { errors.push(`${at}: ${unknown.join(",")}은(는) 기본 번호(0~${R.SIT.length - 1})·내장 코드(1xx·4xx·5xx)·codes.json의 코드가 아니에요`); continue; }
       const key = R.keyOf(nums) || "1";
       if (key !== nums.join(",")) warnings.push(`${at}: 조합 키 ${key}로 등록해요(파일 이름은 ${code}-${key.replace(/,/g, "-")} 가 정확해요)`);
-      images[code] = images[code] || {};
-      if (images[code][key]) errors.push(`${at}: ${code}의 ${key} 그림이 둘이에요(${images[code][key]})`);
-      images[code][key] = at;
+      const into = video ? motions : images, what = video ? "움짤" : "그림";
+      into[code] = into[code] || {};
+      if (into[code][key]) errors.push(`${at}: ${code}의 ${key} ${what}이 둘이에요(${into[code][key]})`);
+      into[code][key] = at;
     } else warnings.push(`${at}: 이름을 알 수 없어 지나쳐요 — <인물코드>-<번호[-번호…]>.webp · cover.webp · lore-<n>.webp`);
   }
+  // 움짤은 사진 위에 겹쳐 보이므로 같은 칸의 사진이 있어야 함(없으면 사용자 사이트에서 보이지 않음)
+  for (const code of Object.keys(motions)) for (const key of Object.keys(motions[code])) if (!(images[code] || {})[key]) warnings.push(`${motions[code][key]}: 같은 이름의 사진(${code}-${key.replace(/,/g, "-")}.webp 등)이 없어 이 움짤은 보이지 않아요`);
   if (Object.keys(images).length) w.images = images;
+  if (Object.keys(motions).length) w.motions = motions;
   if (img) w.img = img;
   if (Object.keys(loreImages).length) w.loreImages = loreImages;
 }
@@ -588,7 +595,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     const { content, outs } = await buildAll(names);
     [...new Set([...content.warnings, ...outs.flatMap((o) => o.warnings)])].forEach((x) => console.warn("⚠ " + x));
     const s = content.stats;
-    console.log(`작품 ${s.works}개(여성향 ${s.f} · 남성향 ${s.m} · 전체 ${s.all}), 홈 줄 ${s.rows}개, 실린 그림 ${s.pics}장, 코드 표 ${s.codes}개`);
+    console.log(`작품 ${s.works}개(여성향 ${s.f} · 남성향 ${s.m} · 전체 ${s.all}), 홈 줄 ${s.rows}개, 실린 그림 ${s.pics}장${s.motions ? ` · 움짤 ${s.motions}개` : ""}, 코드 표 ${s.codes}개`);
     let fail = false;
     for (const o of outs) {
       const cur = fs.existsSync(o.out) ? readText(o.out) : null, same = cur === o.html;

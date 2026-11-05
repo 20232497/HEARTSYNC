@@ -5,6 +5,7 @@ import { SIT } from "../core/constants.js";
 import { S } from "../core/state.js";
 import { KV } from "../core/storage.js";
 import { DIMS, RESET, dimOf, freeNum, maxRating, parseCodes, usedNums } from "./codes.js";
+import { dropMotionCodes } from "./motion.js";
 import { sheetRating } from "./rating.js";
 import { publishCommunity } from "../services/community.js";
 import { IMG } from "../services/images.js";
@@ -84,8 +85,17 @@ export function sitHints(text, adult) {
 }
 /* 칸을 지우면 모든 인물에 저장된 그 칸의 그림(그 번호가 든 조합도)도 지움 */
 export function dropSitImages(n) {
-  const clean = (images) => Object.values(images || {}).forEach((m) => { if (!m) return; Object.keys(m).forEach((k) => { if (parseCodes(k).indexOf(n) >= 0) { IMG.drop(m[k]); delete m[k]; } }); });
+  const ns = [].concat(n), hit = (k) => parseCodes(k).some((x) => ns.indexOf(x) >= 0);
+  const clean = (images) => Object.values(images || {}).forEach((m) => { if (!m) return; Object.keys(m).forEach((k) => { if (hit(k)) { IMG.drop(m[k]); delete m[k]; } }); });
   Object.values(S.imgpacks).forEach(clean); KV.set("imgpacks", S.imgpacks);
   S.mine.forEach((c) => clean(c.images)); KV.set("mine", S.mine);
   if (S.mine.some((c) => c.publish)) publishCommunity();
+  dropMotionCodes(ns);
+}
+/** 지울 코드 번호가 든 그림 수(모든 작품·인물, 내 계정의 그림 칸만 — 작품 폴더에 실린 그림은 파일이라 그대로). @param {number[]} ns @returns {number} */
+export function countSitImages(ns) {
+  let n = 0;
+  const walk = (images) => Object.values(images || {}).forEach((m) => Object.keys(m || {}).forEach((k) => { if (parseCodes(k).some((x) => ns.indexOf(x) >= 0)) n++; }));
+  Object.values(S.imgpacks).forEach(walk); S.mine.forEach((c) => walk(c.images));
+  return n;
 }
