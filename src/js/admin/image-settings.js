@@ -6,6 +6,7 @@ import { IN_CLAUDE } from "../core/config.js";
 import { saveSettings } from "../core/settings.js";
 import { S, hasClaudeKey } from "../core/state.js";
 import { $, $$, esc, toast, uid } from "../core/util.js";
+import { genAccess, localDev } from "../images/gen-guard.js";
 import { genErr } from "../images/runware.js";
 import { BUILTIN_SETS, IMG_MODELS, IMG_STYLES, activeSet, claudeStyleTags, effectiveSet, groupStyleFiles, guessStyleModel, guessStylePrompt, imgModelInfo, matchBuiltin, overridingSet, styleOptionsHTML, unzipImages } from "../images/styles.js";
 import { IMG, validRef } from "../services/images.js";
@@ -17,6 +18,7 @@ EXT.me.push((v) => {
   const box = $("#meExt", v); if (!box) return;
   box.insertAdjacentHTML("beforeend", `<h2 class="sec">이미지 생성 <small>Runware · 관리자 도구</small></h2>
     <div class="box">
+      <p class="note" id="genAcc" style="margin:0 0 10px">생성 권한 확인 중…</p>
       <div class="field" style="margin-top:0"><label for="rkey">Runware API 키 <span class="note">runware.ai에서 발급</span></label><input id="rkey" type="password" autocomplete="off" placeholder="Runware API 키" value="${esc(S.settings.runwareKey || "")}"></div>
       <div class="toggle" style="margin:0 0 12px"><label for="autoImg">대화 중 장면 그림 자동 생성 <span class="note">${IN_CLAUDE ? "파일·웹으로 열었을 때만 돼요" : "AI가 고른 감정·의상·장소 조합의 그림이 없으면 Runware로 만들어 저장해요(장당 약 $0.0025, 같은 조합은 다시 만들지 않음)"}</span></label><input type="checkbox" id="autoImg" ${S.settings.autoImg ? "checked" : ""} ${IN_CLAUDE ? "disabled" : ""}></div>
       <div class="field"><label for="gstyle">그림체</label><select id="gstyle">${styleOptionsHTML()}</select><p class="note" id="gstyleDesc" style="margin:2px 0 0"></p></div>
@@ -31,6 +33,8 @@ EXT.me.push((v) => {
       <p class="note" style="margin:0 0 10px">AI 그림은 전체이용가로 만들어요. 이미지 슬롯에서 세미·성인 수위로 직접 만든 칸만 그 칸의 수위로 만들어요.</p>
       <div class="cta-row" style="margin-top:10px"><button class="btn sm" id="gtest">연결 테스트</button><span class="note" id="gtestMsg">테스트 그림 1장을 만들어 봐요.</span></div>
     </div>`);
+  // 생성 권한(images/gen-guard.js) — 관리자 계정이 아니면 무엇이 필요한지 먼저 보여 줌(버튼은 그대로 두고 누르면 같은 문구로 막힘)
+  genAccess().then((a) => { const n = $("#genAcc", v); if (n) n.textContent = a.ok ? (localDev() ? "개발 주소라 관리자 확인 없이 만들 수 있어요." : "관리자 계정으로 확인됐어요 — 그림을 만들 수 있어요.") : genErr(a); });
   const gs = $("#gstyle", box), gt = $("#gstyleTxt", box), gm = $("#gmodel", box);
   const findSet = (k) => (S.settings.styleSets || []).find((s) => "set:" + s.id === k);
   // 고른 그림체에 맞춰 설명·모델·문구 칸을 보여 줌: 자동·내장·프리셋은 모델·문구 고정(내장 문구는 읽기만), 세트·직접 입력은 고칠 수 있음

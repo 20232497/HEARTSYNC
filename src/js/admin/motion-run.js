@@ -12,6 +12,7 @@ import { $, esc, timeoutSignal, abortCode, toast } from "../core/util.js";
 import { keyOf, parseCodes } from "../images/codes.js";
 import { motionOf, putMotion } from "../images/motion.js";
 import { imagesOf } from "../images/pick.js";
+import { assertAdmin } from "../images/gen-guard.js";
 import { imgRating } from "../images/rating.js";
 import { NEG_MINOR, genErr, uuid4 } from "../images/runware.js";
 import { codeRating, keyName } from "../images/situations.js";
@@ -42,6 +43,7 @@ async function photoData(ref) {
 }
 /* Runware에 작업 하나 보내고 그 작업의 응답 행(없으면 null)을 돌려줌. 오류는 runwareImage와 같은 코드로 */
 async function rwTask(task) {
+  await assertAdmin(); // 관리자 계정만(images/gen-guard.js) — 결과를 묻는 getResponse도 같은 길
   const T = timeoutSignal(TIMEOUT.api * 2);
   let res, j;
   try {
