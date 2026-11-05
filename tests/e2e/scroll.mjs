@@ -59,7 +59,8 @@ for (const [dev, engine] of [["Desktop Chrome", chromium], ["iPhone 13", webkit]
     await down(400); await to("store"); same("MY → 스토어", await y(), 0);
     await down(100, false); await to("chats"); same("스토어 → 대화", await y(), 0);
     await to("help-faq"); same("대화 → 자주 묻는 질문", await y(), 0);
-    await down(150, false); await to("help-notice"); same("고객센터 탭 바꾸기", await y(), 0);
+    await down(150, false); await to("help-ask"); same("고객센터 탭 바꾸기", await y(), 0);
+    await down(150, false); await to("notice"); same("문의하기 → 공지", await y(), 0);
     await to("c-hwanghu"); await down(300); await to("c-hasuk"); same("작품 → 다른 작품", await y(), 0);
 
     // 대화방: #view는 맨 위, #log는 맨 아래(따로 스크롤), 뒤로 나오면 홈의 보던 자리

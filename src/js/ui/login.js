@@ -15,37 +15,37 @@ import { viewMe } from "./me.js";
 import { sheet } from "./sheet.js";
 import { LOGO, bindGo, go } from "./shell.js";
 
-/* ---------------------------------------------------------------- 로그인 뒤 돌아갈 작품
-   처음 방문한 사람이 작품 주소(#c-<id>)로 들어오면 부팅이 주소를 #login-c-<id>로 바꾼다 — 주소가 갈 곳을 들고 있어 새로 고침해도 남고, 메뉴로 나가면 저절로 사라진다.
+/* ---------------------------------------------------------------- 로그인 뒤 돌아갈 곳(작품·공지)
+   처음 방문한 사람이 작품 주소(#c-<id>)나 공지(#notice)로 들어오면 부팅이 주소를 #login-c-<id>·#login-notice로 바꾼다 — 주소가 갈 곳을 들고 있어 새로 고침해도 남고, 메뉴로 나가면 저절로 사라진다.
    소셜 로그인·인증 메일은 redirect_to에 주소를 실을 수 없어 사이트 첫 화면으로 돌아오므로, 떠나기 전에 hv1_back에 적어 둔다.
    인증 메일은 새 탭으로 열리니 sessionStorage가 아니라 localStorage, 메일 링크가 유효한 1시간만 */
 const BACK_KEY = "hv1_back", BACK_MS = 3600000;
-const workHash = (h) => /^c-./.test(h) ? h : ""; // 돌아갈 수 있는 곳은 작품 주소뿐
-const hasWork = (h) => !!getChar(h.slice(2));
-const loginBack = () => { const h = location.hash.slice(1); return h.startsWith("login-") ? workHash(h.slice(6)) : ""; };
+const backHash = (h) => /^c-./.test(h) || h === "notice" ? h : ""; // 돌아갈 수 있는 곳은 작품 주소와 공지뿐
+const canBack = (h) => h === "notice" || !!getChar(h.slice(2));
+const loginBack = () => { const h = location.hash.slice(1); return h.startsWith("login-") ? backHash(h.slice(6)) : ""; };
 const setHash = (h) => { try { history.replaceState(null, "", location.pathname + location.search + "#" + h); } catch {} };
 function saveBack() { const to = loginBack(); if (to) { try { localStorage.setItem(BACK_KEY, JSON.stringify({ to, at: Date.now() })); } catch {} } }
 function takeBack() {
-  try { const v = localStorage.getItem(BACK_KEY); localStorage.removeItem(BACK_KEY); const b = JSON.parse(v); return b && Date.now() - b.at < BACK_MS ? workHash(b.to) : ""; } catch { return ""; }
+  try { const v = localStorage.getItem(BACK_KEY); localStorage.removeItem(BACK_KEY); const b = JSON.parse(v); return b && Date.now() - b.at < BACK_MS ? backHash(b.to) : ""; } catch { return ""; }
 }
 /* 부팅 때 첫 주소를 정함. 돌려주는 값은 아직 찾지 못한 작품(lateBack이 계정을 받은 뒤 다시 봄) */
 export function bootBack(askLogin) {
-  const h = location.hash.slice(1), saved = takeBack(), to = !h ? saved : loginBack() || (askLogin ? workHash(h) : "");
+  const h = location.hash.slice(1), saved = takeBack(), to = !h ? saved : loginBack() || (askLogin ? backHash(h) : "");
   if (askLogin) { setHash(to ? "login-" + to : "login"); return ""; }
   if (!to) return "";
-  setHash(hasWork(to) ? to : "home");
-  return hasWork(to) ? "" : to;
+  setHash(canBack(to) ? to : "home");
+  return canBack(to) ? "" : to;
 }
-/* 로그인·둘러보기를 마치고 나감: 돌아갈 작품이 있으면 그리로(로그인 화면은 방문 기록에서 빠짐), 없는 작품이면 홈. 돌려주는 값은 bootBack과 같음 */
+/* 로그인·둘러보기를 마치고 나감: 돌아갈 곳이 있으면 그리로(로그인 화면은 방문 기록에서 빠짐), 없는 작품이면 홈. 돌려주는 값은 bootBack과 같음 */
 function leaveLogin() {
   const to = loginBack(); takeBack();
   $("#view").scrollTop = 0; window.scrollTo(0, 0); // 폼을 내려 누른 자리가 다음 화면에 이어지면 작품 제목이 잘림
-  if (to && hasWork(to)) { location.replace("#" + to); return ""; }
+  if (to && canBack(to)) { location.replace("#" + to); return ""; }
   go("home");
   return to;
 }
 /* 계정에만 있던 작품(내가 만든 작품)은 받아 온 뒤에야 찾을 수 있음 — 그사이 다른 곳으로 가지 않았으면 이제 연다 */
-export function lateBack(to) { if (to && location.hash === "#home" && hasWork(to)) location.replace("#" + to); }
+export function lateBack(to) { if (to && location.hash === "#home" && canBack(to)) location.replace("#" + to); }
 
 /* ---------------------------------------------------------------- 로그인·계정 (Supabase, 계정 저장은 CLOUD) */
 export function viewLogin() {

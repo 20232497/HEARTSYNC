@@ -1281,10 +1281,12 @@ function minorFlags(c) {
 }
 function idvPassed(rec, mode, now = Date.now()) { return !!rec && rec.adult === true && rec.until > now && (mode !== "live" || rec.test === false); }
 function minorHint(t) {
-  t = String(t || "").normalize("NFKC").replace(/칼로리|글로리|플로리|쇼타임|유아독존|세 살 버릇|중2병|청소년[ \t]*(?:관람[ \t]*)?불가|(?:재벌|오너|창업주|교포|이민|그룹|한인|재일|재미)[ \t]*\d세|2세[ \t]*(?:계획|소식|준비)|(?:루이[ \t]*1[0-8]|베네딕토[ \t]*16|엘리자베스[ \t]*[12]|(?:루이|헨리|찰스|조지|에드워드|제임스|윌리엄|리처드|나폴레옹|프리드리히|빌헬름|카를|표트르|니콜라이|알렉산드르|이반|람세스|앙리|필리프|펠리페)[ \t]*[1-9]|교황[ \t]+[가-힣]{1,8}[ \t]*\d{1,2}|(?:황제|선황|국왕|선왕|여왕)[ \t]+(?!나이|당시|올해|겨우|고작|아직|이제)[가-힣]{1,8}[ \t]*[1-9])세(?![ \t]*(?:소녀|소년|아이|여아|남아|여성|남성|여자|남자|[,，)/][ \t]*(?:여|남)))|\d{1,2}세[ \t]*(?:이상[ \t]*)?(?:관람가|이용가|등급)|(?:살|세)[ \t]*(?:차이?|연상|연하|위|아래|밑|많|적[은다어]|어리|어린|더|터울)|살(?:아|았|려|리|린|릴|림|해|기|짝|결|점|갗|피|펴|폈|구(?!나)|벌|금|찌|쪘|찐|빼|빠|붙|덩|얼|며|랑|을)|살인[ \t]*(?:사건|범|마|자|귀|청부|미수|현장|죄|혐의|용의|동기|은|이|을|의|도|과)|세(?:기|대|트|계|상|력|월|자|금|수)/g, " ");
+  t = String(t || "").normalize("NFKC");
   const under = (re) => [...t.matchAll(re)].some((m) => +m[1] > 0 && +m[1] < 19);
+  if (under(/(?:^|\D)(\d{1,2})[ \t]*살(?=[가-힣])(?!차이?|연상|연하|위|아래|밑|많|적[은다어]|어리|어린|더|터울)/g)) return true;
+  t = t.replace(/칼로리|글로리|플로리|쇼타임|유아독존|세 살 버릇|중2병|청소년[ \t]*(?:관람[ \t]*)?불가|(?:재벌|오너|창업주|교포|이민|그룹|한인|재일|재미)[ \t]*\d세|2세[ \t]*(?:계획|소식|준비)|(?:루이[ \t]*1[0-8]|베네딕토[ \t]*16|엘리자베스[ \t]*[12]|(?:루이|헨리|찰스|조지|에드워드|제임스|윌리엄|리처드|나폴레옹|프리드리히|빌헬름|카를|표트르|니콜라이|알렉산드르|이반|람세스|앙리|필리프|펠리페)[ \t]*[1-9]|교황[ \t]+[가-힣]{1,8}[ \t]*\d{1,2}|(?:황제|선황|국왕|선왕|여왕)[ \t]+(?!나이|당시|올해|겨우|고작|아직|이제)[가-힣]{1,8}[ \t]*[1-9])세(?![ \t]*(?:소녀|소년|아이|여아|남아|여성|남성|여자|남자|[,，)/][ \t]*(?:여|남)))|\d{1,2}세[ \t]*(?:이상[ \t]*)?(?:관람가|이용가|등급)|(?:살|세)[ \t]*(?:차이?|연상|연하|위|아래|밑|많|적[은다어]|어리|어린(?![ \t]*(?:소녀|소년|아이|애|여자|남자|여아|남아))|더|터울)|살(?:아|았|려|리|린|릴|림|해|기|짝|결|점|갗|피|펴|폈|구(?!나)|벌|금|찌|쪘|찐|빼|빠|붙|덩|얼|며|랑)|살을(?=[ \t]*(?:빼|뺐|뺀|찌|쪘|찐|만지|만졌|만진|베|벴|벤|파고|꼬집|에는|도려|태|섞|맞대|비비|부비|뜯|물|깎|깍|떨|꼬))|살인[ \t]*(?:사건|범|마|자|귀|청부|미수|현장|죄|혐의|용의|동기|은|이|을|의|도|과)|세(?:기|대|트|계|상|력|월|자|금|수)/g, " ");
   if (under(/(?:^|\D)(\d{1,2})[ \t-]*(?:세|살|years?[ \t-]*olds?\b|yrs?[ \t-]*olds?\b|y[ \t]*[/.][ \t]*o\b|yo\b)/gi)
-    || under(/(?:\baged?[ \t]*[:=]?|나이[ \t]*(?:[:=]|은|는|가|도)?)[ \t]*(\d{1,2})(?!\d|[ \t]*(?:배|년|개|번|차))/gi)) return true;
+    || under(/(?:\baged?[ \t]*[:=]?|(?:나이|연령)[ \t]*(?:[:=]|은|는|이|가|도)?)[ \t]*(\d{1,2})(?!\d|[ \t]*(?:배|년|개|번|차))/gi)) return true;
   for (const m of t.matchAll(/(?:(스물|서른|마흔|쉰|예순|일흔|여든|아흔|백|천)[ \t]*)?(열[ \t]*)?(한|두|세|네|다섯|여섯|일곱|여덟|아홉)?[ \t]*(살|세)/g)) {
     const [, big, ten, one, unit] = m, n = (ten ? "열" : "") + (one || "");
     if (big || !n || n === "열아홉" || n === "한") continue;
@@ -1295,7 +1297,7 @@ function minorHint(t) {
   return /미성년|초등학생|초등생|중학생|고등학생|고교생|중고생|여고생|남고생|여중생|남중생|청소년|초딩|중딩|고딩|잼민이|교복|어린이|아동|유아|로리|쇼타/.test(t)
     || /(?:^|[^가-힣A-Za-z0-9])(?:고[1-3]|중[1-3]|초[1-6])(?![0-9A-Za-z])/.test(t)
     || /(?:고등학교|고교|여고|남고|중학교|여중|남중|초등학교|국민학교)[ \t]*(?:[1-6]|일|이|삼|사|오|육)[ \t]*학년|[1-6][ \t]*학년[ \t]*\d{1,2}[ \t]*반/.test(t)
-    || /열(?:한|두|세|네|다섯|여섯|일곱|여덟)의?[ \t]*(?:소녀|소년)|나이[ \t]*(?:[:=]|은|는|가|도)?[ \t]*열(?:한|두|세|네|다섯|여섯|일곱|여덟)/.test(t)
+    || /열(?:한|두|세|네|다섯|여섯|일곱|여덟)의?[ \t]*(?:소녀|소년)|(?:나이|연령)[ \t]*(?:[:=]|은|는|이|가|도)?[ \t]*열(?:한|두|세|네|다섯|여섯|일곱|여덟)|열(?:다섯|여섯|일곱|여덟)(?:이다|이야|이에요|이예요|입니다|이었|이던|이라|인[ \t])/.test(t)
     || /(?:^|[^이삼사오육칠팔구수몇백천])십[ \t]*[일이삼사오육칠팔]?[ \t]*(?:세|살)/.test(t)
     || /(?:(?:^|\D)10|(?:^|[^이삼사오육칠팔구수몇백천])십)[ \t]*대[ \t]*(?:소녀|소년|여자|남자|여성|남성|아이|초반|중반|후반)/.test(t)
     || /\b(?:child|children|kids?|loli|lolita|shota|toddler|underaged?|teens?|teenagers?|teenaged?|pre-?teens?|schoolgirls?|schoolboys?|school uniform|elementary school|middle school(?:ers?)?|junior high|high ?school(?:ers?)?|little girl|little boy|young girl|young boy|aged down|(?:ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen)[ \t-]*years?[ \t-]*old)\b/i.test(t);
@@ -3162,7 +3164,7 @@ function audSheet(first) {
 let audLater = false;
 function askAud() {
   if (AUDS[S.settings.audience]) return;
-  if (/^#[cr]-/.test(location.hash)) audLater = true; else audSheet(true);
+  if (/^#(?:[cr]-|notice$)/.test(location.hash)) audLater = true; else audSheet(true);
 }
 function viewHome() {
   const v = $("#view");
@@ -3202,29 +3204,29 @@ function viewHome() {
 on("community", () => { if ((location.hash.slice(1) || "home") === "home") viewHome(); });
 /* ── src/js/ui/login.js — 로그인·가입·비밀번호 찾기·소셜 로그인 화면, 로그인 뒤 돌아갈 작품, 키 잠금(금고) 시트 */
 const BACK_KEY = "hv1_back", BACK_MS = 3600000;
-const workHash = (h) => /^c-./.test(h) ? h : "";
-const hasWork = (h) => !!getChar(h.slice(2));
-const loginBack = () => { const h = location.hash.slice(1); return h.startsWith("login-") ? workHash(h.slice(6)) : ""; };
+const backHash = (h) => /^c-./.test(h) || h === "notice" ? h : "";
+const canBack = (h) => h === "notice" || !!getChar(h.slice(2));
+const loginBack = () => { const h = location.hash.slice(1); return h.startsWith("login-") ? backHash(h.slice(6)) : ""; };
 const setHash = (h) => { try { history.replaceState(null, "", location.pathname + location.search + "#" + h); } catch {} };
 function saveBack() { const to = loginBack(); if (to) { try { localStorage.setItem(BACK_KEY, JSON.stringify({ to, at: Date.now() })); } catch {} } }
 function takeBack() {
-  try { const v = localStorage.getItem(BACK_KEY); localStorage.removeItem(BACK_KEY); const b = JSON.parse(v); return b && Date.now() - b.at < BACK_MS ? workHash(b.to) : ""; } catch { return ""; }
+  try { const v = localStorage.getItem(BACK_KEY); localStorage.removeItem(BACK_KEY); const b = JSON.parse(v); return b && Date.now() - b.at < BACK_MS ? backHash(b.to) : ""; } catch { return ""; }
 }
 function bootBack(askLogin) {
-  const h = location.hash.slice(1), saved = takeBack(), to = !h ? saved : loginBack() || (askLogin ? workHash(h) : "");
+  const h = location.hash.slice(1), saved = takeBack(), to = !h ? saved : loginBack() || (askLogin ? backHash(h) : "");
   if (askLogin) { setHash(to ? "login-" + to : "login"); return ""; }
   if (!to) return "";
-  setHash(hasWork(to) ? to : "home");
-  return hasWork(to) ? "" : to;
+  setHash(canBack(to) ? to : "home");
+  return canBack(to) ? "" : to;
 }
 function leaveLogin() {
   const to = loginBack(); takeBack();
   $("#view").scrollTop = 0; window.scrollTo(0, 0);
-  if (to && hasWork(to)) { location.replace("#" + to); return ""; }
+  if (to && canBack(to)) { location.replace("#" + to); return ""; }
   go("home");
   return to;
 }
-function lateBack(to) { if (to && location.hash === "#home" && hasWork(to)) location.replace("#" + to); }
+function lateBack(to) { if (to && location.hash === "#home" && canBack(to)) location.replace("#" + to); }
 function viewLogin() {
   const v = $("#view");
   if (!SB.on() || SB.s) {

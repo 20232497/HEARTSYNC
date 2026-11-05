@@ -29,11 +29,11 @@ export function audSheet(first) {
   $$("[data-aud]", ov).forEach((b) => b.onclick = () => { setAudience(b.dataset.aud); closeOverlays(); if ((location.hash.slice(1) || "home") === "home") viewHome(); toast(`${AUDS[audience()].name} 작품을 보여 드릴게요`); });
   if (first) setAudience(audience()); // 닫기만 해도 다시 묻지 않게 '전체'로 정해 둠
 }
-// 처음 시작할 때 묻기. 작품·대화방 주소로 바로 들어왔으면 그 화면을 가리지 않고 홈에 처음 갈 때 묻는다(시트는 홈에 보일 작품을 고르는 것)
+// 처음 시작할 때 묻기. 작품·대화방·공지 주소로 바로 들어왔으면 그 화면을 가리지 않고 홈에 처음 갈 때 묻는다(시트는 홈에 보일 작품을 고르는 것)
 let audLater = false;
 export function askAud() {
   if (AUDS[S.settings.audience]) return;
-  if (/^#[cr]-/.test(location.hash)) audLater = true; else audSheet(true);
+  if (/^#(?:[cr]-|notice$)/.test(location.hash)) audLater = true; else audSheet(true);
 }
 export function viewHome() {
   const v = $("#view");

@@ -236,12 +236,31 @@ for (const [dev, engine] of [["Desktop Chrome", chromium], ["iPhone 13", webkit]
     await signIn(pg); await hashIs(pg, "#home"); await synced(pg); await settle(pg);
     await expect(pg, "메뉴로 나간 뒤 로그인", { hash: "#home", work: false, signedIn: true });
   });
+  // 공지 주소도 로그인·둘러보기 뒤 그리로, 새로 고쳐도 갈 곳이 남고, 관심있는 대화 시트로 가리지 않음
+  await scenario("notice", async (pg) => {
+    await opened(pg, "#notice");
+    await expect(pg, "공지 첫 화면", { hash: "#login-notice", login: true, sheet: false });
+    await pg.reload({ waitUntil: "load" }); await pg.waitForSelector("#lguest");
+    await expect(pg, "공지 첫 화면 새로 고침", { hash: "#login-notice", login: true });
+    await guest(pg); await hashIs(pg, "#notice"); await settle(pg);
+    await expect(pg, "공지 둘러보기 뒤", { hash: "#notice", login: false, sheet: false, audUnset: true });
+    if ((await pg.evaluate(() => document.querySelector("#view h1").textContent)) !== "공지") res.errors.push("둘러보기 뒤 공지 화면이 아님");
+  });
+  await scenario("notice-login", async (pg) => {
+    await opened(pg, "#notice");
+    await signIn(pg); await hashIs(pg, "#notice"); await synced(pg); await settle(pg);
+    await expect(pg, "공지 로그인 뒤", { hash: "#notice", signedIn: true, login: false, sheet: false });
+  });
   // 이미 둘러본 사람은 로그인 화면 없이 바로, 없는 작품은 예전처럼 안내
   await scenario("returning", async (pg, db, tab) => {
     await opened(pg, ""); await guest(pg); await hashIs(pg, "#home"); await settle(pg);
     await pg.click(".overlay [data-aud=all]"); await settle(pg);
     let p = await tab(); await opened(p, "#c-hangyeoul");
     await expect(p, "다시 온 사람", { hash: "#c-hangyeoul", work: true, login: false, sheet: false });
+    p = await tab(); await opened(p, "#notice");
+    await expect(p, "다시 온 사람 공지", { hash: "#notice", login: false, sheet: false });
+    p = await tab(); await opened(p, "#help-notice"); await hashIs(p, "#notice");
+    await expect(p, "새로 연 예전 공지 주소", { hash: "#notice", login: false });
     p = await tab(); await opened(p, "#c-nope");
     await expect(p, "다시 온 사람 없는 작품", { hash: "#c-nope", login: false, work: false });
     if (!/찾을 수 없어요/.test(await p.evaluate(() => document.querySelector("#view").textContent))) res.errors.push("없는 작품 안내가 없음");
