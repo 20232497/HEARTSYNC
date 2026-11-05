@@ -9,6 +9,7 @@ import { IN_CLAUDE } from "../core/config.js";
 import { S, hasRunwareKey } from "../core/state.js";
 import { $, $$, toast } from "../core/util.js";
 import { imgTags, parseCodes } from "../images/codes.js";
+import { genAccess } from "../images/gen-guard.js";
 import { hasImg, putCastImage } from "../images/pick.js";
 import { lookIsMale, partsTags, savedParts } from "../images/prompt.js";
 import { imgRating } from "../images/rating.js";
@@ -20,6 +21,7 @@ import { figInner, figKey, lightbox } from "../ui/cover.js";
 import { EXT } from "../ui/ext.js";
 
 const AUTO_MAX = 4, autoBusy = new Set();
+let autoDenied = false; // 권한 없음 안내를 이미 띄웠는지 — 턴마다 되풀이하지 않음
 export const autoImgOn = () => !!S.settings.autoImg && !IN_CLAUDE && hasRunwareKey() && S.settings.sceneImg !== false;
 const figsOf = (code, key) => $$(`#logInner figure.scene-img[data-code="${code}"][data-key="${key}"]`).filter((f) => !$("img", f));
 export async function autoImages(r, body) {
@@ -31,6 +33,11 @@ export async function autoImages(r, body) {
     if (autoBusy.has(id) || jobs.some((j) => j.id === id) || hasImg(c, t.code, key)) continue;
     jobs.push({ id, cast, key, codes: parseCodes(key) });
   }
+  if (!jobs.length) return;
+  // 태그 번역(사용자 키로 요금이 듦)·생성 전에 관리자 확인 — 관리자가 아니면 아무것도 보내지 않고 한 번만 알림
+  const access = await genAccess();
+  if (!access.ok) { if (!autoDenied) toast("장면 그림을 만들지 못했어요 · " + genErr(access)); autoDenied = true; return; }
+  autoDenied = false;
   let err = null;
   await Promise.all(jobs.slice(0, AUTO_MAX).map(async (j) => {
     autoBusy.add(j.id); figsOf(j.cast.code, j.key).forEach((f) => f.classList.add("gen"));

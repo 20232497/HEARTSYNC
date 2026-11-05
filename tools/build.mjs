@@ -574,7 +574,7 @@ const NO_GEN = [
   [/\b(runwareImage|makeMotion|autoImages)\b/, "그림·움짤 생성 함수"],
   [/["'](imageInference|videoInference)["']/, "Runware 생성 작업"]
 ];
-function checkNoGen(html) {
+export function checkNoGen(html) {
   return NO_GEN.filter(([re]) => re.test(html)).map(([, what]) => `index.html(사용자 사이트)에 들어가면 안 되는 것이 있어요: ${what} — 그림 생성은 관리자 빌드(admin.html)에만. 사용자 모듈이 그걸 import하는지 확인하세요(CLAUDE.md '두 빌드')`);
 }
 

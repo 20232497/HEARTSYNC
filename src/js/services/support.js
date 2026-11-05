@@ -100,10 +100,10 @@ export const SUPPORT = {
     if (!Array.isArray(j) || !j.length) throw { code: "denied" };
     return j[0];
   },
-  /** 이 계정이 고객센터 관리자인지(admins 표에 자기 행이 보이는지 — 계정마다 한 번). @returns {Promise<boolean>} */
+  /** 이 계정이 관리자인지(admins 표에 자기 행이 보이는지). '맞음'만 기억 — SQL Editor로 admins에 넣은 뒤 새로 고침 없이 바로 반영되게. @returns {Promise<boolean>} */
   async amAdmin() {
     const u = uidOf(); if (!u) return false;
-    if (this.admin && this.admin.uid === u) return this.admin.yes;
+    if (this.admin && this.admin.uid === u && this.admin.yes) return true;
     try { const j = await call(`/rest/v1/admins?select=user_id&user_id=eq.${encodeURIComponent(u)}`); this.admin = { uid: u, yes: Array.isArray(j) && j.length > 0 }; }
     catch { return false; } // 표가 없거나 연결 실패 — 기억하지 않고 다음에 다시 물음
     return this.admin.yes;

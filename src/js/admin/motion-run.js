@@ -43,7 +43,8 @@ async function photoData(ref) {
 }
 /* Runware에 작업 하나 보내고 그 작업의 응답 행(없으면 null)을 돌려줌. 오류는 runwareImage와 같은 코드로 */
 async function rwTask(task) {
-  await assertAdmin(); // 관리자 계정만(images/gen-guard.js) — 결과를 묻는 getResponse도 같은 길
+  // 생성 작업만 관리자 확인(images/gen-guard.js). 결과를 묻는 getResponse는 막지 않음 — 이미 청구된 작업이라, 기다리는 사이 로그인이 풀려도 만든 움짤을 받아야 함
+  if (task.taskType !== "getResponse") await assertAdmin();
   const T = timeoutSignal(TIMEOUT.api * 2);
   let res, j;
   try {
