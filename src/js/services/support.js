@@ -47,7 +47,7 @@ export function supportErr(e) {
 }
 
 /**
- * 고객센터 REST. notices() 공지 목록(고정 먼저·최신순) · saveNotice/dropNotice(관리자) · ask() 문의 남기기 · mine() 내 문의 · inbox()/answer()/dropAsk() 받은 문의(관리자) · amAdmin()
+ * 고객센터 REST. notices() 공지 목록(고정 먼저·최신순) · saveNotice/dropNotice(관리자) · ask() 문의 남기기 · mine() 내 문의 · inbox()/answer()/dropAsk() 받은 문의(관리자) · amAdmin()/adminStatus()
  */
 export const SUPPORT = {
   admin: null, // amAdmin() 결과(계정마다) { uid, yes }
@@ -100,12 +100,20 @@ export const SUPPORT = {
     if (!Array.isArray(j) || !j.length) throw { code: "denied" };
     return j[0];
   },
-  /** 이 계정이 관리자인지(admins 표에 자기 행이 보이는지). '맞음'만 기억 — SQL Editor로 admins에 넣은 뒤 새로 고침 없이 바로 반영되게. @returns {Promise<boolean>} */
-  async amAdmin() {
+  /**
+   * 이 계정이 관리자인지(admins 표에 자기 행이 보이는지) — '모름'을 따로 돌려줌. 되돌릴 수 없는 일(남은 키 지우기)은 서버가 '아니오'라고 답했을 때만 하도록.
+   * 모름: 연결 실패·표가 없음·권한 오류·응답이 목록이 아님·묻는 사이 로그인이 풀리거나 계정이 바뀜(그 답은 물어본 계정에 대한 답이 아님).
+   * '맞음'만 기억 — SQL Editor로 admins에 넣은 뒤 새로 고침 없이 바로 반영되게.
+   * @returns {Promise<boolean|null>} 참·거짓은 서버의 답(로그인 안 했으면 거짓), null은 모름
+   */
+  async adminStatus() {
     const u = uidOf(); if (!u) return false;
     if (this.admin && this.admin.uid === u && this.admin.yes) return true;
-    try { const j = await call(`/rest/v1/admins?select=user_id&user_id=eq.${encodeURIComponent(u)}`); this.admin = { uid: u, yes: Array.isArray(j) && j.length > 0 }; }
-    catch { return false; } // 표가 없거나 연결 실패 — 기억하지 않고 다음에 다시 물음
+    let j; try { j = await call(`/rest/v1/admins?select=user_id&user_id=eq.${encodeURIComponent(u)}`); } catch { return null; }
+    if (!Array.isArray(j) || uidOf() !== u) return null;
+    this.admin = { uid: u, yes: j.length > 0 };
     return this.admin.yes;
-  }
+  },
+  /** 이 계정이 관리자라고 확인됐는지(모르면 거짓). @returns {Promise<boolean>} */
+  async amAdmin() { return (await this.adminStatus()) === true; }
 };
