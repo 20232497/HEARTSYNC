@@ -36,5 +36,17 @@ MY → 고객센터(공지사항·자주 묻는 질문·문의하기)의 공지�
 - 권한은 서버가 정해요: 공지는 누구나(로그인 없이도) 공개된 것만 읽고 관리자만 씀, 문의는 쓴 사람 본인과 관리자만 봄, 사용자는 분류·제목·내용·답변 받을 이메일·앱 정보 칸만 쓸 수 있고(열 권한) 하루 5건까지(트리거). 관리자 페이지의 비밀번호 관문과 상관없이 `admins` 표에 없는 계정은 공지를 쓰거나 남의 문의를 볼 수 없어요
 - 문의 알림(메일·카카오톡)은 없어요 — 관리자 도구 MY의 답변 대기 수로 확인해요. 알림이 필요하면 Supabase Database Webhook이나 Edge Function으로 붙일 수 있어요
 
+## 휴대폰 성인 인증 설정(시험 모드 — 2026-11-05 추가, 사업자등록 없이 됨)
+기본은 꺼져 있어요(`src/js/core/config.js`의 `idv.mode: "off"` — 자기 확인 체크 그대로, 포트원으로 아무 요청도 안 감). 켜면 성인 모드는 **휴대폰 인증을 마친 로그인 계정**에서만 열리고 자기 확인 체크는 사라져요. 시험 모드는 통신사 확인 없는 **모의 인증**이라 실제 본인 확인이 아니에요(화면에 '시험 모드'로 표시됨).
+1. **포트원 콘솔** [admin.portone.io](https://admin.portone.io) 무료 가입 → 연동 모드 **테스트** → 채널 추가: PG사 NHN KCP, 채널 속성 **본인인증**, 공용 테스트 MID **KCP V2 본인인증 AO6R1**(KCP 안내에 '테스트 연동 정보가 없다'는 문구도 함께 있어서, 창이 안 뜨면 KG이니시스 통합인증 **MIIiasTest**로). 콘솔에서 **Store ID·채널 키**를 적어 두고 **V2 API Secret**을 발급해요
+2. Supabase **SQL Editor**에서 [supabase.sql](supabase.sql)을 **다시 전체 실행**(맨 아래 `adult_checks` 표가 새로 생김)
+3. Supabase **Edge Functions → Deploy a new function → Via Editor**: 이름 `verify-adult`, 내용은 [edge/verify-adult.ts](edge/verify-adult.ts) 전체를 붙여 넣고 Deploy. 그다음 함수의 설정에서 **JWT 검증(Verify JWT)을 꺼요** — 함수가 로그인 토큰을 직접 확인하고, 켜 두면 브라우저의 사전 요청이나 새 서명 키에서 막힐 수 있어요. CLI를 쓰면: `supabase functions deploy verify-adult --no-verify-jwt`(파일을 `supabase/functions/verify-adult/index.ts`로 복사한 뒤)
+4. Supabase **Edge Functions → Secrets**에 `PORTONE_API_SECRET` = 1번의 V2 API Secret(상점이 여러 개면 `PORTONE_STORE_ID`도). **API Secret은 저장소·채팅·앱 어디에도 넣지 않아요**
+5. `src/js/core/config.js`의 `idv`를 `{ mode: "test", storeId: "…", channelKey: "…" }`로(이 둘은 브라우저용 공개 값) → `npm run build` → `npm run dev`로 localhost에서 먼저 시험 → 커밋해 main에 병합하면 웹 주소의 **모든 방문자**에게 적용돼요
+6. MY → AI 연결 → **성인 인증 · 수위** → **휴대폰으로 성인 인증**. KCP 테스트는 SMS에 임의의 6자리를 넣으면 통과해요. 결과 판정은 생년월일 기준이라, 시험 채널이 미성년 생년월일을 돌려주면 '만 19세가 되는 해부터' 안내가 나와요(시험 채널이 어떤 값을 돌려주는지는 문서로 확인하지 못했어요)
+- **실제 운영으로 바꾸기**: 사업자등록 → 포트원에서 PG 계약(다날·KCP, 통신사 심사 2~3주. 'AI 성인 대화' 업종이 통과하는지 신청 전에 문의) → 실제 채널 키로 바꾸고 `mode: "live"`, Secret도 실제 것으로. live 모드는 시험 채널에서 한 인증을 인정하지 않아요(다시 인증)
+- **안 될 때**: '서버에 연결하지 못했어요' → 함수를 안 올렸거나 JWT 검증이 켜져 있음 / '인증 서버가 아직 준비되지 않았어요' → 2번(표)·4번(Secret) 확인
+- **한계**: 지금은 AI를 브라우저에서 사용자 키로 부르기 때문에 인증 판정도 브라우저 안의 일이에요. 표와 결과는 서버가 지키지만, 콘솔로 앱을 고치면 넘어갈 수 있어요 — 서버가 AI를 부르는 단계(COMMERCIALIZATION.md)에서 서버가 `adult_checks`를 보고 경로를 정해야 진짜 관문이 돼요
+
 ## Vercel 미리보기
 - `vercel.json`은 저장소에 붙어 있는 Vercel 미리보기 배포용(PR마다 `Vercel` 체크·봇 댓글) — `npm run build` 뒤 저장소 루트를 그대로 서빙하게 해(outputDirectory ".") GitHub Pages와 같은 모양으로 맞춤. 지우면 PR의 Vercel 체크가 실패해요. 기준 배포 주소는 위 GitHub Pages
