@@ -6725,6 +6725,46 @@ async function assertAdmin() {
   if (!a.ok) throw { code: a.code };
 }
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
+   src/js/images/style-fit.js
+   내보냄: dropNegConflicts, fitStyle
+   쓰는 곳: src/js/images/runware.js
+   ════════════════════════════════════════════════════════════════════════════════════════════════════ */
+/* 내장 화풍을 그릴 내용(인물·장면 태그)에 맞추기: 머리색으로 피부·색조 문구 고르기, 앞머리 없는 인물은 앞머리 태그 빼기, 내용에 있는 것은 네거티브에서 빼기. 순수 함수 — tests/unit/style-fit.test.mjs */
+const bare = (t) => String(t).toLowerCase().replace(/^\((.+):\d(?:\.\d+)?\)$/, "$1").trim();
+const has = (text, word) => new RegExp("(^|[^a-z0-9])" + word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "($|[^a-z0-9])").test(text);
+/* 괄호 안 쉼표는 나누지 않음 — "(3d, cgi, doll:1.2)" 같은 묶음 */
+function splitTop(s) {
+  const out = []; let depth = 0, cur = "";
+  for (const ch of String(s || "")) {
+    if (ch === "(") depth++; else if (ch === ")") depth--;
+    if (ch === "," && depth === 0) { out.push(cur); cur = ""; } else cur += ch;
+  }
+  out.push(cur);
+  return out.map((x) => x.trim()).filter(Boolean);
+}
+/* 내용에 있는 것을 네거티브에서 뺌: 귀걸이·올림머리를 설정한 인물은 그대로 그리게. 묶음은 그대로 둠 */
+function dropNegConflicts(neg, tags) {
+  const text = String(tags || "").toLowerCase();
+  return splitTop(neg).filter((n) => { const b = bare(n); return b.includes(",") || !has(text, b); }).join(", ");
+}
+const BLACK_HAIR_RE = /(^|[^a-z])(?:black|dark) hair\b/i;
+const PALE_HAIR_RE = /(^|[^a-z])(?:silver|grey|gray|white|ash) hair\b/i;
+const NO_BANGS_RE = /(^|[^a-z])(?:forehead|parted bangs|swept bangs|side-swept bangs|curtain bangs|no bangs|slicked back hair|hair slicked back)\b/i;
+const DARK_SKIN_RE = /(^|[^a-z])(?:dark skin|tanned skin|tan skin|brown skin)\b/i;
+/* 그림체 {prompt, coolPrompt?, blackTag?, bangs?, bangsNeg?, neg?}와 내용 태그 → 실제로 쓸 {prompt, neg}.
+   차가운 머리색(검정·은발·회색·흰색)은 피부를 더 하얗게 하는 coolPrompt, 그중 검정만 blackTag로 머리색을 진하게(은발이 검어지지 않게) */
+function fitStyle(st, tags) {
+  const t = String(tags || "");
+  let prompt = st.prompt || "", neg = st.neg || "";
+  if (st.coolPrompt) {
+    if (BLACK_HAIR_RE.test(t)) prompt = st.coolPrompt + (st.blackTag ? ", " + st.blackTag : "");
+    else if (PALE_HAIR_RE.test(t)) prompt = st.coolPrompt;
+  }
+  if (st.bangs && NO_BANGS_RE.test(t)) { prompt = prompt.replace(st.bangs + ", ", ""); neg = splitTop(neg).filter((n) => !splitTop(st.bangsNeg).includes(n)).join(", "); }
+  if (DARK_SKIN_RE.test(t)) prompt = splitTop(prompt).filter((x) => !/(?:pale|fair|white) skin/.test(x)).join(", ");
+  return { prompt, neg: dropNegConflicts(neg, t) };
+}
+/* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/images/styles.js
    가져옴: src/js/core/config.js { CFG }
            src/js/core/state.js { S, hasClaudeKey }
@@ -6776,10 +6816,29 @@ const imgModelInfo = (id) => IMG_MODELS.find((m) => m.id === id) || { id, name: 
    표지는 장면 태그가 앞이라 조명 태그에 가중치. 여성향 표지에도 (bishounen:1.2)·pretty boy — semILust가 옷·머리 태그만 있는 남자(은발 기사·셰프)를 여자로 그려서(2026-11-04, coverPrompt의 (1boy:1.2)·masculine 앵커만으로는 부족, HoJ도 마찬가지). 애니는 2026-11-04 세밀 태그로 재비교(WAI·Nova Anime 12.5/5·Nova Orange·Illustrious 2.0·Mistoon·Hassaku) → Hassaku XL v2.1 + (intricate details:1.3)·sketchy brushwork·ink splatter·dark background. 'lightning' 태그는 모든 그림을 번개로 덮어서 뺌 */
 const SEMI_L = "civitai:1160480@1449034", YABAL = "civitai:959624@1074388", HASSAKU = "civitai:140272@1617798", SEMI_SKIN = ", realistic skin texture";
 const SEMI = "korean, semi-realistic, 2.5d, realistic proportions, glossy hair, detailed hair, soft skin shading" + SEMI_SKIN + ", detailed eyes, cinematic lighting, depth of field, high detail";
+/* 남성향 일상(2026-11-05, 사용자와 19라운드 비교 생성으로 확정 — 고른 변형 g5·j1·v4·w2 + 하얀 느낌을 덜어낸 x3 + 후처리 t½·p2):
+   모델 Run七八造 + Add More Details 0.3·KoreanAI 0.3, DPM++ 2M Karras 35 steps, CFG 5, 모델 기본 네거티브는 안 씀. 태그 하나하나가 이유 있음 —
+   얇은 가닥·숱·빽빽한 앞머리(시스루·wispy는 이마가 드러나고 머리띠·비치는 옷이 생겨 네거티브로), 성숙한 얼굴·날티 나는 눈매(빽빽한 앞머리는 얼굴이 어려 보이게 함), source_anime·외곽선(실사·인형 느낌 빼기), 눈 색 차분하게.
+   검은 머리는 피부를 더 하얗게(coolPrompt, 사용자 요청 — 차가운 머리색에는 흰 피부), 태그만으로는 안 먹어 색조까지 차갑게. 'jet black hair'는 비행기가 그려져 안 씀.
+   전체 흐림과 밝기는 태그로 안 움직여 후처리(post, images/runware.js stylePost). 옷의 글자·무늬는 네거티브로도 다 막지 못함(알려진 한계) */
+const MD_BANGS = "(full bangs:1.3), dense bangs, long bangs, bangs reaching eyes, bangs covering forehead, hair between eyes";
+const MD_HEAD = "source_anime, (digital illustration:1.4), (anime illustration:1.3), drawing, (thin outlines:1.2), clean lineart, korean, 2.5d, soft gradient shading, smooth skin, soft bloom, depth of field, soft focus, hazy";
+const MD_FACE = "(narrow face:1.1), v-shaped jawline, small nose, small mouth, pouty lips, (half-closed eyes:1.1), almond eyes, detailed eyes, long eyelashes, thin eyebrows, light blush, (mature female:1.3), (adult woman:1.2), mature face, (defined cheekbones:1.1), slender face, sharp facial features, (upturned eyes:1.2), cat eyes, sharp eyes, arched eyebrows, thin winged eyeliner";
+const MD_HAIR = `(very thin hair strands:1.3), (individual hair strands:1.2), (detailed hair:1.2), (voluminous hair:1.2), full head of hair, (many fine hair strands:1.3), ${MD_BANGS}, silky hair, hair sheen, thin lineart`;
+const MD_TAIL = "eyeshadow, (low contrast:1.2), soft diffused light, brighter exposure, lifted shadows, (muted eye color:1.2), soft dark pupils, natural eyes, (high key lighting:1.05), (pastel colors:1.1), airy";
+const mdPrompt = (tone, skin, end = "") => [MD_HEAD, `low contrast, muted ${tone} palette, gentle lighting`, MD_FACE, MD_HAIR, skin, MD_TAIL].join(", ") + end;
+const MD_BANGS_NEG = "(side-swept bangs:1.3), swept bangs, asymmetrical bangs, (forehead:1.4), (see-through bangs:1.3), sparse bangs, wispy bangs, gaps in bangs";
 const BUILTIN_SETS = [
-  { id: "mdaily", name: "프롬1 남성향 일상", kind: "daily", aud: "m", match: /프롬\s*1.*남성향|남성향.*일상/, model: YABAL, samples: 3,
-    desc: "참고 그림 프롬1(남성향 일상) 14장에서 뽑은 화풍 — 한국 반실사 2.5D, 윤기 있는 머리칼과 매끈한 피부, 크고 부드러운 눈, 자연스러운 비율. 남성향 작품(여성 인물)의 인물 그림 기본값",
-    prompt: "korean, 2.5d, realistic proportions, glossy hair, detailed hair, soft skin shading, detailed eyes, cinematic lighting, depth of field, high detail, (illustration:1.3), anime-influenced face, (beautiful detailed eyes:1.3), large sparkling eyes, long eyelashes, pretty face, glossy lips, smooth skin, cel-painterly shading, soft bloom, vivid colors" },
+  { id: "mdaily", name: "프롬1 남성향 일상", kind: "daily", aud: "m", match: /프롬\s*1.*남성향|남성향.*일상/, model: IMG_MODELS[0].id, samples: 3,
+    desc: "참고 그림 프롬1(남성향 일상)에 맞춘 화풍 — 2.5D 일러스트, 가늘고 풍성한 머리 가닥과 빽빽한 앞머리, 성숙한 얼굴과 올라간 눈매, 차분한 색과 전체적인 흐림. 검은 머리는 피부를 더 하얗게. 남성향 작품(여성 인물)의 인물 그림 기본값",
+    prompt: mdPrompt("warm", "(pale skin:1.15), (fair skin:1.05)"),
+    coolPrompt: mdPrompt("cool", "(pale skin:1.2), (fair skin:1.15)", ", cool lighting"), blackTag: "(black hair:1.3)",
+    bangs: MD_BANGS, bangsNeg: MD_BANGS_NEG,
+    neg: `(3d, cgi, plastic skin, doll:1.2), high contrast, harsh shadows, underexposed, glowing eyes, vivid eye color, hime cut, hairband, headband, hair ornament, earrings, (see-through clothes:1.3), sheer clothes, transparent clothes, hair over one eye, windblown hair, thin hair, sparse hair, clumped hair, chunky hair strands, (baby face:1.3), (childish face:1.2), round face, chubby cheeks, ${MD_BANGS_NEG}, (graphic print:1.3), (text on clothes:1.3), emblem, (pendant:1.2), (cross necklace:1.2), brooch, badge, tanned skin, dark skin, sepia, (realistic:1.3), photo, (photorealistic:1.3), skin pores, skin texture, nose shadow, source_cartoon, monochrome, greyscale, (twintails:1.3), (low twintails:1.3), hair rings, (hair bun:1.2), updo, hair stick, animal ears, cat ears`,
+    lora: [{ model: "civitai:390892@1286572", weight: 0.3 }, { model: "civitai:690861@773211", weight: 0.3 }],
+    gen: { cfg: 5, steps: 35, scheduler: "DPM++ 2M Karras", modelNeg: false },
+    noHumans: { model: YABAL, prompt: "2.5d, (illustration:1.3), cel-painterly shading, cinematic lighting, depth of field, high detail, soft bloom, low contrast, muted warm palette, soft diffused light" },
+    post: { lift: "rgb(11,11,15)", soft: 0.08, blurK: 3, blurA: 0.6 } },
   { id: "fdaily", name: "프롬1 여성향 일상", kind: "daily", aud: "f", match: /프롬\s*1.*여성향|여성향.*일상/, model: YABAL, samples: 3,
     desc: "프롬1(여성향 일상) 10장 — 같은 반실사 계열의 남성 인물: 창백하고 매끈한 피부, 섬세한 이목구비와 또렷한 턱선, 차분한 조명과 채도, 회화적 음영. 여성향 작품(남성 인물)의 인물 그림 기본값",
     prompt: SEMI.replace(SEMI_SKIN, "") + ", handsome, (bishounen:1.2), pretty boy, youthful, delicate facial features, soft facial features, pale smooth skin, sharp jawline, soft painterly shading, gentle lighting, rich deep palette, manhwa style, (vivid colors:1.2), (detailed hair strands:1.3), wind-blown hair, (muscular:1.2), toned chest, broad shoulders, open collar, sultry expression, alluring" },
@@ -6803,10 +6862,10 @@ function effectiveSet(id) {
   const o = overridingSet(id);
   return o ? { ...b, prompt: o.prompt || b.prompt, model: o.model || b.model, over: o } : b;
 }
-/* 상황에 맞는 내장 화풍 id: 표지·세계관(world)은 작품 성향으로, 인물(daily)은 작품 성향 → 없으면(전체) 인물 성별로. 애니는 자동으로 고르지 않음 */
+/* 상황에 맞는 내장 화풍 id: 표지·세계관(world)은 작품 성향으로, 인물(daily)은 작품 성향 → 없으면(전체) 인물 성별로. 남성향 작품의 남자 인물은 여성향 일상으로 — 남성향 일상은 여성 인물 전용 태그라 남자도 여자처럼 그림(2026-11-05). 애니는 자동으로 고르지 않음 */
 function autoSetId(ctx = {}) {
   const aud = ctx.aud === "m" || ctx.aud === "f" ? ctx.aud : (ctx.male ? "f" : "m");
-  return ctx.kind === "world" ? (aud === "f" ? "fworld" : "mworld") : (aud === "f" ? "fdaily" : "mdaily");
+  return ctx.kind === "world" ? (aud === "f" ? "fworld" : "mworld") : (aud === "f" || ctx.male ? "fdaily" : "mdaily");
 }
 /* 그림체 프리셋: 모델 + 그림체 태그(그림체만 — 인물·구도·배경 태그를 넣으면 모든 그림이 그쪽으로 끌려감). 직접 입력·세트는 모델을 따로 고름 */
 const IMG_STYLES = {
@@ -6825,7 +6884,9 @@ function activeSet() { const k = String(S.settings.imgStyle || ""); return k.sta
    "sys:<id>"면 그 내장 화풍, "set:<id>"면 사용자의 세트, 그 밖은 프리셋·직접 입력 — 어디서 그리든 이 함수 하나로 정함 */
 function styleFor(ctx = {}) {
   const k = String(S.settings.imgStyle || "auto");
-  const sys = (id) => { const s = effectiveSet(id) || effectiveSet(autoSetId(ctx)); return { id: "sys:" + s.id, name: `기본 화풍 · ${s.name}${s.over ? " (내 세트)" : ""}`, prompt: s.prompt, model: s.model || IMG_MODELS[0].id }; };
+  // 내장 화풍은 머리색별 문구·네거티브·LoRA·샘플러·후처리도 정할 수 있음(남성향 일상) — 사용자의 세트가 덮으면 그 세트의 문구·모델만
+  const sys = (id) => { const s = effectiveSet(id) || effectiveSet(autoSetId(ctx)), { coolPrompt, blackTag, bangs, bangsNeg, neg, lora, gen, post, noHumans } = s.over ? {} : s;
+    return { id: "sys:" + s.id, name: `기본 화풍 · ${s.name}${s.over ? " (내 세트)" : ""}`, prompt: s.prompt, model: s.model || IMG_MODELS[0].id, coolPrompt, blackTag, bangs, bangsNeg, neg, lora, gen, post, noHumans }; };
   if (k === "auto") return sys(autoSetId(ctx));
   if (k.startsWith("sys:")) return sys(k.slice(4));
   if (k.startsWith("set:")) { const s = activeSet(); if (s) return { id: k, name: "세트 · " + s.name, prompt: s.prompt || "", model: s.model || S.settings.imgModel || IMG_MODELS[0].id }; return sys(autoSetId(ctx)); }
@@ -6912,6 +6973,7 @@ async function claudeStyleTags(refs) {
            src/js/images/prompt.js { splitTags }
            src/js/images/rating.js { RATINGS, imgRating }
            src/js/images/gen-guard.js { assertAdmin }
+           src/js/images/style-fit.js { fitStyle }
            src/js/images/styles.js { ARCH, imgModelInfo, styleFor }
            src/js/images/tags.js { ponyTags }
            src/js/services/images.js { IMG, validRef }
@@ -6919,6 +6981,7 @@ async function claudeStyleTags(refs) {
    쓰는 곳: src/js/images/styles.js, src/js/admin/export.js, src/js/admin/gen-sheet.js, src/js/admin/image-run.js, src/js/admin/motion-run.js, src/js/admin/sit-sheets.js, src/js/admin/image-settings.js, src/js/admin/auto-images.js, src/js/admin/migrate.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* Runware API 호출(runwareImage): 모델·수위·네거티브 조립, 대상별 보정, 오류 문구 */
+
 
 
 
@@ -6952,9 +7015,32 @@ function imgSubject(tags) {
 }
 /* 대상별로 그림체에서 뺄 태그(여자·사람 얼굴 쪽으로 끌림)와 더할 네거티브 */
 const SUBJ = {
-  male: { strip: /makeup|lip|eyelash|glamorous|cute|kawaii|beautiful/i, neg: "1girl, female, breasts, makeup, lipstick, feminine" },
-  none: { strip: /skin|makeup|lip|eye|face|hair|glamorous|mature|cute|kawaii|beautiful|portrait|body/i, neg: "1girl, 1boy, human, person, humanoid, anthro, kemonomimi, animal ears" }
+  // female·woman·eyeshadow 등: 여성 인물용 화풍(남성향 일상)으로 남자나 풍경을 그릴 때 여자가 끼어들지 않게
+  male: { strip: /makeup|lip|eyelash|glamorous|cute|kawaii|beautiful|female|woman|eyeshadow|eyeliner|blush/i, neg: "1girl, female, breasts, makeup, lipstick, feminine" },
+  none: { strip: /korean|skin|makeup|lip|eye|pupil|face|facial|jawline|v-shaped|cheek|nose|mouth|bangs|blush|hair|glamorous|mature|female|woman|cute|kawaii|beautiful|portrait|body/i, neg: "1girl, 1boy, human, person, humanoid, anthro, kemonomimi, animal ears" }
 };
+/* 내장 화풍의 후처리(style.post): 그림을 받은 뒤 브라우저에서 입힘 — 모델·태그로는 조절이 안 되는 전체 밝기와 흐림(2026-11-05 비교 생성으로 정함).
+   lift·soft: 옅은 빛을 screen으로 더하고 중간톤을 soft-light로 올림. blurK·blurA: 1/blurK로 줄였다 키운 사본을 blurA만큼 겹침(ctx.filter는 Safari에서 안 됨). 실패하면 원본 */
+async function stylePost(blob, p) {
+  const url = URL.createObjectURL(blob);
+  try {
+    const im = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = url; });
+    const w = im.width, h = im.height, cv = document.createElement("canvas"); cv.width = w; cv.height = h;
+    const g = cv.getContext("2d"); g.imageSmoothingQuality = "high"; g.drawImage(im, 0, 0);
+    if (p.lift) {
+      g.globalCompositeOperation = "screen"; g.fillStyle = p.lift; g.fillRect(0, 0, w, h);
+      g.globalCompositeOperation = "soft-light"; g.globalAlpha = p.soft || 0; g.fillStyle = "#fff"; g.fillRect(0, 0, w, h);
+      g.globalAlpha = 1; g.globalCompositeOperation = "source-over";
+    }
+    if (p.blurK) {
+      const sm = document.createElement("canvas"); sm.width = Math.round(w / p.blurK); sm.height = Math.round(h / p.blurK);
+      const sg = sm.getContext("2d"); sg.imageSmoothingQuality = "high"; sg.drawImage(cv, 0, 0, sm.width, sm.height);
+      g.globalAlpha = p.blurA; g.drawImage(sm, 0, 0, w, h); g.globalAlpha = 1;
+    }
+    return await new Promise((res) => cv.toBlob((b) => res(b || blob), "image/jpeg", 0.92));
+  } catch { return blob; }
+  finally { URL.revokeObjectURL(url); }
+}
 /* 태그 정리: 중복 빼기(★강조한 태그가 있으면 같은 태그의 보통 판은 뺌), 사람이 있으면 no humans·animal focus 빼기(곁의 동물 번역에 딸려 옴), 남자만이면 male focus 보태기 */
 function fixSubject(tags, subj) {
   const bare = (t) => t.toLowerCase().replace(/^\((.+):\d(?:\.\d+)?\)$/, "$1").trim();
@@ -6976,22 +7062,26 @@ async function runwareImage(prompt, { aspect = "4:5", rating = imgRating(), sign
   await assertAdmin(); // 관리자 계정만(images/gen-guard.js) — 키를 확인하기 전에
   if (!hasRunwareKey()) throw { code: "no_key" };
   rating = imgRating(rating);
-  const adult = rating !== "safe", st = styleOpt || styleFor();
+  const adult = rating !== "safe", st0 = styleOpt || styleFor();
   if (adult && minorHint(prompt)) throw { code: "minor_block" };
-  const rawTags = await ponyTags(prompt, adult), rawStyle = await ponyTags(st.prompt || "", adult);
+  const rawTags = await ponyTags(prompt, adult), subj = imgSubject(rawTags), Sb = SUBJ[subj] || {};
+  // 사람 없는 그림은 화풍이 따로 정한 모델·문구로 — 인물 위주 화풍은 고양이만 시켜도 사람을 함께 그림(2026-11-05, 남성향 일상). 후처리는 같게
+  const st = subj === "none" && st0.noHumans ? { ...st0.noHumans, post: st0.post } : st0, fit = fitStyle(st, rawTags), rawStyle = await ponyTags(fit.prompt, adult), G = st.gen || {};
   if (adult && minorHint(rawTags + ", " + rawStyle)) throw { code: "minor_block" };
-  const subj = imgSubject(rawTags), Sb = SUBJ[subj] || {};
-  const tags = fixSubject(rawTags, subj), style = splitTags(rawStyle).filter((t) => !(Sb.strip && Sb.strip.test(t))).join(", ");
+  // 사람 없는 그림은 no humans를 강하게 — 인물 위주 모델·화풍은 고양이만 시켜도 사람을 함께 그림(2026-11-05)
+  const tags = fixSubject(rawTags, subj).replace(/(^|, )no humans(?=,|$)/, subj === "none" ? "$1(no humans:1.4)" : "$1no humans"), style = splitTags(rawStyle).filter((t) => !(Sb.strip && Sb.strip.test(t))).join(", ");
   const [width, height] = RW_SIZES[aspect] || RW_SIZES["4:5"], R = RATINGS[rating], M = imgModelInfo(st.model), A = ARCH[M.arch] || ARCH.pony;
   // 사람 없는 그림에는 수위의 adult·mature 태그를 빼야 사람이 끼어들지 않음
   const rpos = splitTags(M.arch === "illustrious" ? R.ill : R.pos).filter((t) => subj !== "none" || !/^(?:adult|mature|nsfw)$/.test(t)).join(", ");
   // 내용(장면·인물) 다음에 그림체 — 그림체가 앞이면 표정·자세가 묻힘. 내용이나 그림체에 "(태그:1.3)" 강조가 있으면 Runware 가중치 문법(sdEmbeds)을 켬
   const task = { taskType: "imageInference", taskUUID: uuid4(),
     positivePrompt: [A.pos, rpos, M.pos, tags, style].filter(Boolean).join(", ").slice(0, 2900),
-    ...(/\([^()]+:\d(?:\.\d+)?\)/.test(tags + ", " + style) ? { promptWeighting: "sdEmbeds" } : {}),
-    // 여러 명 태그(3girls·3boys…)가 있으면 네거티브에 solo·1girl·1boy — 표지에서 한 명만 크게 그리던 것(2026-11-04)
-    negativePrompt: [A.neg, M.neg, IMG_NEG, NEG_MINOR, R.neg, Sb.neg, /\b[2-9](?:girls|boys)\b/.test(tags) ? "solo, 1girl, 1boy" : ""].filter(Boolean).join(", "),
-    model: M.id, width, height, numberResults: 1, steps: 28, CFGScale: M.cfg || A.cfg, scheduler: "Euler a",
+    ...(/\([^()]+:\d(?:\.\d+)?\)/.test(tags + ", " + style + ", " + fit.neg) ? { promptWeighting: "sdEmbeds" } : {}),
+    // 여러 명 태그(3girls·3boys…)가 있으면 네거티브에 solo·1girl·1boy — 표지에서 한 명만 크게 그리던 것(2026-11-04). 화풍의 네거티브(fit.neg)는 맨 뒤
+    negativePrompt: [A.neg, G.modelNeg === false ? "" : M.neg, IMG_NEG, NEG_MINOR, R.neg, Sb.neg, /\b[2-9](?:girls|boys)\b/.test(tags) ? "solo, 1girl, 1boy" : "", fit.neg].filter(Boolean).join(", "),
+    // 샘플러·스텝·CFG·LoRA는 내장 화풍이 정할 수 있음(style.gen·style.lora) — 없으면 모델·아키텍처 기본값
+    model: M.id, width, height, numberResults: 1, steps: G.steps || 28, CFGScale: G.cfg || M.cfg || A.cfg, scheduler: G.scheduler || "Euler a",
+    ...(Array.isArray(st.lora) && st.lora.length ? { lora: st.lora.map((l) => ({ model: l.model, weight: +l.weight || 1 })) } : {}),
     outputFormat: "WEBP", outputType: "dataURI", ...(adult ? {} : { checkNSFW: true }) };
   let j, res;
   for (let tries = 0; tries < 2; tries++) {
@@ -7017,9 +7107,10 @@ async function runwareImage(prompt, { aspect = "4:5", rating = imgRating(), sign
   if (!d) throw { code: "upstream_error", msg: "빈 응답" };
   if (!adult && d.NSFWContent) throw { code: "blocked" };
   let T2 = null;
+  const done = (blob) => st.post ? stylePost(blob, st.post) : blob;
   try {
-    if (d.imageDataURI || d.imageBase64Data) return await (await fetch(d.imageDataURI || `data:image/webp;base64,${d.imageBase64Data}`)).blob();
-    if (d.imageURL) { T2 = timeoutSignal(TIMEOUT.api * 3, signal); return await (await fetch(d.imageURL, { signal: T2.signal })).blob(); }
+    if (d.imageDataURI || d.imageBase64Data) return await done(await (await fetch(d.imageDataURI || `data:image/webp;base64,${d.imageBase64Data}`)).blob());
+    if (d.imageURL) { T2 = timeoutSignal(TIMEOUT.api * 3, signal); return await done(await (await fetch(d.imageURL, { signal: T2.signal })).blob()); }
   } catch (e) { throw { code: abortCode(e, T2, "image_fetch") }; }
   finally { if (T2) T2.clear(); }
   throw { code: "upstream_error", msg: "그림 없음" };

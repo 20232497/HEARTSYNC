@@ -7,6 +7,7 @@ import { abortCode, timeoutSignal } from "../core/util.js";
 import { splitTags } from "./prompt.js";
 import { RATINGS, imgRating } from "./rating.js";
 import { assertAdmin } from "./gen-guard.js";
+import { fitStyle } from "./style-fit.js";
 import { ARCH, imgModelInfo, styleFor } from "./styles.js";
 import { ponyTags } from "./tags.js";
 import { IMG, validRef } from "../services/images.js";
@@ -32,9 +33,32 @@ function imgSubject(tags) {
 }
 /* 대상별로 그림체에서 뺄 태그(여자·사람 얼굴 쪽으로 끌림)와 더할 네거티브 */
 const SUBJ = {
-  male: { strip: /makeup|lip|eyelash|glamorous|cute|kawaii|beautiful/i, neg: "1girl, female, breasts, makeup, lipstick, feminine" },
-  none: { strip: /skin|makeup|lip|eye|face|hair|glamorous|mature|cute|kawaii|beautiful|portrait|body/i, neg: "1girl, 1boy, human, person, humanoid, anthro, kemonomimi, animal ears" }
+  // female·woman·eyeshadow 등: 여성 인물용 화풍(남성향 일상)으로 남자나 풍경을 그릴 때 여자가 끼어들지 않게
+  male: { strip: /makeup|lip|eyelash|glamorous|cute|kawaii|beautiful|female|woman|eyeshadow|eyeliner|blush/i, neg: "1girl, female, breasts, makeup, lipstick, feminine" },
+  none: { strip: /korean|skin|makeup|lip|eye|pupil|face|facial|jawline|v-shaped|cheek|nose|mouth|bangs|blush|hair|glamorous|mature|female|woman|cute|kawaii|beautiful|portrait|body/i, neg: "1girl, 1boy, human, person, humanoid, anthro, kemonomimi, animal ears" }
 };
+/* 내장 화풍의 후처리(style.post): 그림을 받은 뒤 브라우저에서 입힘 — 모델·태그로는 조절이 안 되는 전체 밝기와 흐림(2026-11-05 비교 생성으로 정함).
+   lift·soft: 옅은 빛을 screen으로 더하고 중간톤을 soft-light로 올림. blurK·blurA: 1/blurK로 줄였다 키운 사본을 blurA만큼 겹침(ctx.filter는 Safari에서 안 됨). 실패하면 원본 */
+async function stylePost(blob, p) {
+  const url = URL.createObjectURL(blob);
+  try {
+    const im = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = url; });
+    const w = im.width, h = im.height, cv = document.createElement("canvas"); cv.width = w; cv.height = h;
+    const g = cv.getContext("2d"); g.imageSmoothingQuality = "high"; g.drawImage(im, 0, 0);
+    if (p.lift) {
+      g.globalCompositeOperation = "screen"; g.fillStyle = p.lift; g.fillRect(0, 0, w, h);
+      g.globalCompositeOperation = "soft-light"; g.globalAlpha = p.soft || 0; g.fillStyle = "#fff"; g.fillRect(0, 0, w, h);
+      g.globalAlpha = 1; g.globalCompositeOperation = "source-over";
+    }
+    if (p.blurK) {
+      const sm = document.createElement("canvas"); sm.width = Math.round(w / p.blurK); sm.height = Math.round(h / p.blurK);
+      const sg = sm.getContext("2d"); sg.imageSmoothingQuality = "high"; sg.drawImage(cv, 0, 0, sm.width, sm.height);
+      g.globalAlpha = p.blurA; g.drawImage(sm, 0, 0, w, h); g.globalAlpha = 1;
+    }
+    return await new Promise((res) => cv.toBlob((b) => res(b || blob), "image/jpeg", 0.92));
+  } catch { return blob; }
+  finally { URL.revokeObjectURL(url); }
+}
 /* 태그 정리: 중복 빼기(★강조한 태그가 있으면 같은 태그의 보통 판은 뺌), 사람이 있으면 no humans·animal focus 빼기(곁의 동물 번역에 딸려 옴), 남자만이면 male focus 보태기 */
 function fixSubject(tags, subj) {
   const bare = (t) => t.toLowerCase().replace(/^\((.+):\d(?:\.\d+)?\)$/, "$1").trim();
@@ -56,22 +80,26 @@ export async function runwareImage(prompt, { aspect = "4:5", rating = imgRating(
   await assertAdmin(); // 관리자 계정만(images/gen-guard.js) — 키를 확인하기 전에
   if (!hasRunwareKey()) throw { code: "no_key" };
   rating = imgRating(rating);
-  const adult = rating !== "safe", st = styleOpt || styleFor();
+  const adult = rating !== "safe", st0 = styleOpt || styleFor();
   if (adult && minorHint(prompt)) throw { code: "minor_block" };
-  const rawTags = await ponyTags(prompt, adult), rawStyle = await ponyTags(st.prompt || "", adult);
+  const rawTags = await ponyTags(prompt, adult), subj = imgSubject(rawTags), Sb = SUBJ[subj] || {};
+  // 사람 없는 그림은 화풍이 따로 정한 모델·문구로 — 인물 위주 화풍은 고양이만 시켜도 사람을 함께 그림(2026-11-05, 남성향 일상). 후처리는 같게
+  const st = subj === "none" && st0.noHumans ? { ...st0.noHumans, post: st0.post } : st0, fit = fitStyle(st, rawTags), rawStyle = await ponyTags(fit.prompt, adult), G = st.gen || {};
   if (adult && minorHint(rawTags + ", " + rawStyle)) throw { code: "minor_block" };
-  const subj = imgSubject(rawTags), Sb = SUBJ[subj] || {};
-  const tags = fixSubject(rawTags, subj), style = splitTags(rawStyle).filter((t) => !(Sb.strip && Sb.strip.test(t))).join(", ");
+  // 사람 없는 그림은 no humans를 강하게 — 인물 위주 모델·화풍은 고양이만 시켜도 사람을 함께 그림(2026-11-05)
+  const tags = fixSubject(rawTags, subj).replace(/(^|, )no humans(?=,|$)/, subj === "none" ? "$1(no humans:1.4)" : "$1no humans"), style = splitTags(rawStyle).filter((t) => !(Sb.strip && Sb.strip.test(t))).join(", ");
   const [width, height] = RW_SIZES[aspect] || RW_SIZES["4:5"], R = RATINGS[rating], M = imgModelInfo(st.model), A = ARCH[M.arch] || ARCH.pony;
   // 사람 없는 그림에는 수위의 adult·mature 태그를 빼야 사람이 끼어들지 않음
   const rpos = splitTags(M.arch === "illustrious" ? R.ill : R.pos).filter((t) => subj !== "none" || !/^(?:adult|mature|nsfw)$/.test(t)).join(", ");
   // 내용(장면·인물) 다음에 그림체 — 그림체가 앞이면 표정·자세가 묻힘. 내용이나 그림체에 "(태그:1.3)" 강조가 있으면 Runware 가중치 문법(sdEmbeds)을 켬
   const task = { taskType: "imageInference", taskUUID: uuid4(),
     positivePrompt: [A.pos, rpos, M.pos, tags, style].filter(Boolean).join(", ").slice(0, 2900),
-    ...(/\([^()]+:\d(?:\.\d+)?\)/.test(tags + ", " + style) ? { promptWeighting: "sdEmbeds" } : {}),
-    // 여러 명 태그(3girls·3boys…)가 있으면 네거티브에 solo·1girl·1boy — 표지에서 한 명만 크게 그리던 것(2026-11-04)
-    negativePrompt: [A.neg, M.neg, IMG_NEG, NEG_MINOR, R.neg, Sb.neg, /\b[2-9](?:girls|boys)\b/.test(tags) ? "solo, 1girl, 1boy" : ""].filter(Boolean).join(", "),
-    model: M.id, width, height, numberResults: 1, steps: 28, CFGScale: M.cfg || A.cfg, scheduler: "Euler a",
+    ...(/\([^()]+:\d(?:\.\d+)?\)/.test(tags + ", " + style + ", " + fit.neg) ? { promptWeighting: "sdEmbeds" } : {}),
+    // 여러 명 태그(3girls·3boys…)가 있으면 네거티브에 solo·1girl·1boy — 표지에서 한 명만 크게 그리던 것(2026-11-04). 화풍의 네거티브(fit.neg)는 맨 뒤
+    negativePrompt: [A.neg, G.modelNeg === false ? "" : M.neg, IMG_NEG, NEG_MINOR, R.neg, Sb.neg, /\b[2-9](?:girls|boys)\b/.test(tags) ? "solo, 1girl, 1boy" : "", fit.neg].filter(Boolean).join(", "),
+    // 샘플러·스텝·CFG·LoRA는 내장 화풍이 정할 수 있음(style.gen·style.lora) — 없으면 모델·아키텍처 기본값
+    model: M.id, width, height, numberResults: 1, steps: G.steps || 28, CFGScale: G.cfg || M.cfg || A.cfg, scheduler: G.scheduler || "Euler a",
+    ...(Array.isArray(st.lora) && st.lora.length ? { lora: st.lora.map((l) => ({ model: l.model, weight: +l.weight || 1 })) } : {}),
     outputFormat: "WEBP", outputType: "dataURI", ...(adult ? {} : { checkNSFW: true }) };
   let j, res;
   for (let tries = 0; tries < 2; tries++) {
@@ -97,9 +125,10 @@ export async function runwareImage(prompt, { aspect = "4:5", rating = imgRating(
   if (!d) throw { code: "upstream_error", msg: "빈 응답" };
   if (!adult && d.NSFWContent) throw { code: "blocked" };
   let T2 = null;
+  const done = (blob) => st.post ? stylePost(blob, st.post) : blob;
   try {
-    if (d.imageDataURI || d.imageBase64Data) return await (await fetch(d.imageDataURI || `data:image/webp;base64,${d.imageBase64Data}`)).blob();
-    if (d.imageURL) { T2 = timeoutSignal(TIMEOUT.api * 3, signal); return await (await fetch(d.imageURL, { signal: T2.signal })).blob(); }
+    if (d.imageDataURI || d.imageBase64Data) return await done(await (await fetch(d.imageDataURI || `data:image/webp;base64,${d.imageBase64Data}`)).blob());
+    if (d.imageURL) { T2 = timeoutSignal(TIMEOUT.api * 3, signal); return await done(await (await fetch(d.imageURL, { signal: T2.signal })).blob()); }
   } catch (e) { throw { code: abortCode(e, T2, "image_fetch") }; }
   finally { if (T2) T2.clear(); }
   throw { code: "upstream_error", msg: "그림 없음" };
