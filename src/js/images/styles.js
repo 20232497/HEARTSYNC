@@ -40,10 +40,29 @@ export const imgModelInfo = (id) => IMG_MODELS.find((m) => m.id === id) || { id,
    표지는 장면 태그가 앞이라 조명 태그에 가중치. 여성향 표지에도 (bishounen:1.2)·pretty boy — semILust가 옷·머리 태그만 있는 남자(은발 기사·셰프)를 여자로 그려서(2026-11-04, coverPrompt의 (1boy:1.2)·masculine 앵커만으로는 부족, HoJ도 마찬가지). 애니는 2026-11-04 세밀 태그로 재비교(WAI·Nova Anime 12.5/5·Nova Orange·Illustrious 2.0·Mistoon·Hassaku) → Hassaku XL v2.1 + (intricate details:1.3)·sketchy brushwork·ink splatter·dark background. 'lightning' 태그는 모든 그림을 번개로 덮어서 뺌 */
 const SEMI_L = "civitai:1160480@1449034", YABAL = "civitai:959624@1074388", HASSAKU = "civitai:140272@1617798", SEMI_SKIN = ", realistic skin texture";
 const SEMI = "korean, semi-realistic, 2.5d, realistic proportions, glossy hair, detailed hair, soft skin shading" + SEMI_SKIN + ", detailed eyes, cinematic lighting, depth of field, high detail";
+/* 남성향 일상(2026-11-05, 사용자와 19라운드 비교 생성으로 확정 — 고른 변형 g5·j1·v4·w2 + 하얀 느낌을 덜어낸 x3 + 후처리 t½·p2):
+   모델 Run七八造 + Add More Details 0.3·KoreanAI 0.3, DPM++ 2M Karras 35 steps, CFG 5, 모델 기본 네거티브는 안 씀. 태그 하나하나가 이유 있음 —
+   얇은 가닥·숱·빽빽한 앞머리(시스루·wispy는 이마가 드러나고 머리띠·비치는 옷이 생겨 네거티브로), 성숙한 얼굴·날티 나는 눈매(빽빽한 앞머리는 얼굴이 어려 보이게 함), source_anime·외곽선(실사·인형 느낌 빼기), 눈 색 차분하게.
+   검은 머리는 피부를 더 하얗게(coolPrompt, 사용자 요청 — 차가운 머리색에는 흰 피부), 태그만으로는 안 먹어 색조까지 차갑게. 'jet black hair'는 비행기가 그려져 안 씀.
+   전체 흐림과 밝기는 태그로 안 움직여 후처리(post, images/runware.js stylePost). 옷의 글자·무늬는 네거티브로도 다 막지 못함(알려진 한계) */
+const MD_BANGS = "(full bangs:1.3), dense bangs, long bangs, bangs reaching eyes, bangs covering forehead, hair between eyes";
+const MD_HEAD = "source_anime, (digital illustration:1.4), (anime illustration:1.3), drawing, (thin outlines:1.2), clean lineart, korean, 2.5d, soft gradient shading, smooth skin, soft bloom, depth of field, soft focus, hazy";
+const MD_FACE = "(narrow face:1.1), v-shaped jawline, small nose, small mouth, pouty lips, (half-closed eyes:1.1), almond eyes, detailed eyes, long eyelashes, thin eyebrows, light blush, (mature female:1.3), (adult woman:1.2), mature face, (defined cheekbones:1.1), slender face, sharp facial features, (upturned eyes:1.2), cat eyes, sharp eyes, arched eyebrows, thin winged eyeliner";
+const MD_HAIR = `(very thin hair strands:1.3), (individual hair strands:1.2), (detailed hair:1.2), (voluminous hair:1.2), full head of hair, (many fine hair strands:1.3), ${MD_BANGS}, silky hair, hair sheen, thin lineart`;
+const MD_TAIL = "eyeshadow, (low contrast:1.2), soft diffused light, brighter exposure, lifted shadows, (muted eye color:1.2), soft dark pupils, natural eyes, (high key lighting:1.05), (pastel colors:1.1), airy";
+const mdPrompt = (tone, skin, end = "") => [MD_HEAD, `low contrast, muted ${tone} palette, gentle lighting`, MD_FACE, MD_HAIR, skin, MD_TAIL].join(", ") + end;
+const MD_BANGS_NEG = "(side-swept bangs:1.3), swept bangs, asymmetrical bangs, (forehead:1.4), (see-through bangs:1.3), sparse bangs, wispy bangs, gaps in bangs";
 export const BUILTIN_SETS = [
-  { id: "mdaily", name: "프롬1 남성향 일상", kind: "daily", aud: "m", match: /프롬\s*1.*남성향|남성향.*일상/, model: YABAL, samples: 3,
-    desc: "참고 그림 프롬1(남성향 일상) 14장에서 뽑은 화풍 — 한국 반실사 2.5D, 윤기 있는 머리칼과 매끈한 피부, 크고 부드러운 눈, 자연스러운 비율. 남성향 작품(여성 인물)의 인물 그림 기본값",
-    prompt: "korean, 2.5d, realistic proportions, glossy hair, detailed hair, soft skin shading, detailed eyes, cinematic lighting, depth of field, high detail, (illustration:1.3), anime-influenced face, (beautiful detailed eyes:1.3), large sparkling eyes, long eyelashes, pretty face, glossy lips, smooth skin, cel-painterly shading, soft bloom, vivid colors" },
+  { id: "mdaily", name: "프롬1 남성향 일상", kind: "daily", aud: "m", match: /프롬\s*1.*남성향|남성향.*일상/, model: IMG_MODELS[0].id, samples: 3,
+    desc: "참고 그림 프롬1(남성향 일상)에 맞춘 화풍 — 2.5D 일러스트, 가늘고 풍성한 머리 가닥과 빽빽한 앞머리, 성숙한 얼굴과 올라간 눈매, 차분한 색과 전체적인 흐림. 검은 머리는 피부를 더 하얗게. 남성향 작품(여성 인물)의 인물 그림 기본값",
+    prompt: mdPrompt("warm", "(pale skin:1.15), (fair skin:1.05)"),
+    coolPrompt: mdPrompt("cool", "(pale skin:1.2), (fair skin:1.15)", ", cool lighting"), blackTag: "(black hair:1.3)",
+    bangs: MD_BANGS, bangsNeg: MD_BANGS_NEG,
+    neg: `(3d, cgi, plastic skin, doll:1.2), high contrast, harsh shadows, underexposed, glowing eyes, vivid eye color, hime cut, hairband, headband, hair ornament, earrings, (see-through clothes:1.3), sheer clothes, transparent clothes, hair over one eye, windblown hair, thin hair, sparse hair, clumped hair, chunky hair strands, (baby face:1.3), (childish face:1.2), round face, chubby cheeks, ${MD_BANGS_NEG}, (graphic print:1.3), (text on clothes:1.3), emblem, (pendant:1.2), (cross necklace:1.2), brooch, badge, tanned skin, dark skin, sepia, (realistic:1.3), photo, (photorealistic:1.3), skin pores, skin texture, nose shadow, source_cartoon, monochrome, greyscale, (twintails:1.3), (low twintails:1.3), hair rings, (hair bun:1.2), updo, hair stick, animal ears, cat ears`,
+    lora: [{ model: "civitai:390892@1286572", weight: 0.3 }, { model: "civitai:690861@773211", weight: 0.3 }],
+    gen: { cfg: 5, steps: 35, scheduler: "DPM++ 2M Karras", modelNeg: false },
+    noHumans: { model: YABAL, prompt: "2.5d, (illustration:1.3), cel-painterly shading, cinematic lighting, depth of field, high detail, soft bloom, low contrast, muted warm palette, soft diffused light" },
+    post: { lift: "rgb(11,11,15)", soft: 0.08, blurK: 3, blurA: 0.6 } },
   { id: "fdaily", name: "프롬1 여성향 일상", kind: "daily", aud: "f", match: /프롬\s*1.*여성향|여성향.*일상/, model: YABAL, samples: 3,
     desc: "프롬1(여성향 일상) 10장 — 같은 반실사 계열의 남성 인물: 창백하고 매끈한 피부, 섬세한 이목구비와 또렷한 턱선, 차분한 조명과 채도, 회화적 음영. 여성향 작품(남성 인물)의 인물 그림 기본값",
     prompt: SEMI.replace(SEMI_SKIN, "") + ", handsome, (bishounen:1.2), pretty boy, youthful, delicate facial features, soft facial features, pale smooth skin, sharp jawline, soft painterly shading, gentle lighting, rich deep palette, manhwa style, (vivid colors:1.2), (detailed hair strands:1.3), wind-blown hair, (muscular:1.2), toned chest, broad shoulders, open collar, sultry expression, alluring" },
@@ -67,10 +86,10 @@ export function effectiveSet(id) {
   const o = overridingSet(id);
   return o ? { ...b, prompt: o.prompt || b.prompt, model: o.model || b.model, over: o } : b;
 }
-/* 상황에 맞는 내장 화풍 id: 표지·세계관(world)은 작품 성향으로, 인물(daily)은 작품 성향 → 없으면(전체) 인물 성별로. 애니는 자동으로 고르지 않음 */
+/* 상황에 맞는 내장 화풍 id: 표지·세계관(world)은 작품 성향으로, 인물(daily)은 작품 성향 → 없으면(전체) 인물 성별로. 남성향 작품의 남자 인물은 여성향 일상으로 — 남성향 일상은 여성 인물 전용 태그라 남자도 여자처럼 그림(2026-11-05). 애니는 자동으로 고르지 않음 */
 export function autoSetId(ctx = {}) {
   const aud = ctx.aud === "m" || ctx.aud === "f" ? ctx.aud : (ctx.male ? "f" : "m");
-  return ctx.kind === "world" ? (aud === "f" ? "fworld" : "mworld") : (aud === "f" ? "fdaily" : "mdaily");
+  return ctx.kind === "world" ? (aud === "f" ? "fworld" : "mworld") : (aud === "f" || ctx.male ? "fdaily" : "mdaily");
 }
 /* 그림체 프리셋: 모델 + 그림체 태그(그림체만 — 인물·구도·배경 태그를 넣으면 모든 그림이 그쪽으로 끌려감). 직접 입력·세트는 모델을 따로 고름 */
 export const IMG_STYLES = {
@@ -89,7 +108,9 @@ export function activeSet() { const k = String(S.settings.imgStyle || ""); retur
    "sys:<id>"면 그 내장 화풍, "set:<id>"면 사용자의 세트, 그 밖은 프리셋·직접 입력 — 어디서 그리든 이 함수 하나로 정함 */
 export function styleFor(ctx = {}) {
   const k = String(S.settings.imgStyle || "auto");
-  const sys = (id) => { const s = effectiveSet(id) || effectiveSet(autoSetId(ctx)); return { id: "sys:" + s.id, name: `기본 화풍 · ${s.name}${s.over ? " (내 세트)" : ""}`, prompt: s.prompt, model: s.model || IMG_MODELS[0].id }; };
+  // 내장 화풍은 머리색별 문구·네거티브·LoRA·샘플러·후처리도 정할 수 있음(남성향 일상) — 사용자의 세트가 덮으면 그 세트의 문구·모델만
+  const sys = (id) => { const s = effectiveSet(id) || effectiveSet(autoSetId(ctx)), { coolPrompt, blackTag, bangs, bangsNeg, neg, lora, gen, post, noHumans } = s.over ? {} : s;
+    return { id: "sys:" + s.id, name: `기본 화풍 · ${s.name}${s.over ? " (내 세트)" : ""}`, prompt: s.prompt, model: s.model || IMG_MODELS[0].id, coolPrompt, blackTag, bangs, bangsNeg, neg, lora, gen, post, noHumans }; };
   if (k === "auto") return sys(autoSetId(ctx));
   if (k.startsWith("sys:")) return sys(k.slice(4));
   if (k.startsWith("set:")) { const s = activeSet(); if (s) return { id: k, name: "세트 · " + s.name, prompt: s.prompt || "", model: s.model || S.settings.imgModel || IMG_MODELS[0].id }; return sys(autoSetId(ctx)); }
