@@ -1,0 +1,4 @@
+# GitHub 언어 통계와 PR diff에서 빌드 결과물·보관본을 뺌(소스는 src/·content/). 줄바꿈 처리에는 영향 없음
+index.html linguist-generated=true
+admin.html linguist-generated=true
+archive/** linguist-vendored=true

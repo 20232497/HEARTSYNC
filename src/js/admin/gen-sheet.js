@@ -2,6 +2,7 @@
 import { minorHint } from "../core/safety.js";
 import { S, hasOpenRouterKey, hasRunwareKey } from "../core/state.js";
 import { $, $$, esc, toast } from "../core/util.js";
+import { assertAdmin } from "../images/gen-guard.js";
 import { asTag, clearCastTags, groupsPrompt, hasSavedTags, saveCastTags, savedParts, splitTags } from "../images/prompt.js";
 import { imgRating, ratingFieldHTML } from "../images/rating.js";
 import { genErr, runwareImage } from "../images/runware.js";
@@ -55,6 +56,7 @@ export function genImageSheet({ title = "AI로 이미지 만들기", prompt = ""
     const rt = $("#grt", ov)?.value || "safe", adult = imgRating(rt) !== "safe";
     mk.disabled = use.disabled = true; pv.innerHTML = `<span class="note">만드는 중… 10~30초쯤 걸려요</span>`; ctl = new AbortController();
     try {
+      await assertAdmin(); // 태그 번역(사용자 키로 요금이 듦)보다 먼저
       if (adult && minorHint(groups.flatMap((g) => g.tags.map((x) => x.t)).join(", "))) throw { code: "minor_block" };
       blob = await runwareImage(await buildPrompt(adult), { aspect, rating: rt, signal: ctl.signal, style: st });
       url && URL.revokeObjectURL(url); url = URL.createObjectURL(blob);

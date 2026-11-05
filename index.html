@@ -2307,7 +2307,7 @@ const SUPPORT = {
   },
   async amAdmin() {
     const u = uidOf(); if (!u) return false;
-    if (this.admin && this.admin.uid === u) return this.admin.yes;
+    if (this.admin && this.admin.uid === u && this.admin.yes) return true;
     try { const j = await call(`/rest/v1/admins?select=user_id&user_id=eq.${encodeURIComponent(u)}`); this.admin = { uid: u, yes: Array.isArray(j) && j.length > 0 }; }
     catch { return false; }
     return this.admin.yes;
@@ -2970,7 +2970,7 @@ function faqGroups() {
       ["무료로 얼마나 쓸 수 있나요?", `라이트 모델은 <b>매일 ${FREE_DAILY}턴 무료</b>예요. 자정에 다시 채워져요. 처음 방문하면 하트 ${WELCOME}개를 드려요.`],
       ["하트는 어디에 쓰나요?", "무료 턴을 다 쓴 뒤의 라이트 모델과, 스토리·마스터 모델 대화에 써요. 보내기 버튼에 이번 턴 비용이 항상 표시되고, 응답이 실패하면 자동으로 환불돼요. 장기기억 요약·AI 추천 답변은 무료예요."],
       ["PLUS는 무엇인가요?", `월 ${plus} 멤버십이에요. 라이트 모델 무제한, 스토리·마스터 50% 할인, 매달 하트 ${num(PLUS_MONTHLY)}개, 장기기억 ${num(PLAN.free.memoMax)}자 → ${num(PLAN.pro.memoMax)}자, 기억력 ${PLAN.free.memTurns}턴 → ${PLAN.pro.memTurns}턴으로 늘어나요.`],
-      ["결제하면 실제로 돈이 나가나요?", "지금 스토어는 결제 흐름을 보여 주는 <b>시연(데모)</b>이라 실제로 청구되지 않고, 하트와 멤버십은 체험용으로만 지급돼요. 다만 내 API 키로 쓰는 AI 대화·그림 요금은 그 키를 발급한 회사(Anthropic·OpenRouter 등)가 따로 청구해요."]
+      ["결제하면 실제로 돈이 나가나요?", "지금 스토어는 결제 흐름을 보여 주는 <b>시연(데모)</b>이라 실제로 청구되지 않고, 하트와 멤버십은 체험용으로만 지급돼요. 다만 내 API 키로 쓰는 AI 대화 요금은 그 키를 발급한 회사(Anthropic·OpenRouter 등)가 따로 청구해요."]
     ]],
     ["대화", [
       ["답이 너무 짧아요(길어요).", "대화방 오른쪽 위 메뉴(☰) → <b>출력 설정</b>에서 출력량(적게·보통·많게)을 바꿀 수 있어요. 모델을 스토리·마스터로 올리면 묘사가 더 풍부해져요."],

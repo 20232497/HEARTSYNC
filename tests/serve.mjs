@@ -9,6 +9,9 @@ export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "
 const TYPES = { ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".mjs": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8",
   ".json": "application/json; charset=utf-8", ".png": "image/png", ".jpg": "image/jpeg", ".webp": "image/webp", ".svg": "image/svg+xml", ".ico": "image/x-icon", ".txt": "text/plain; charset=utf-8" };
 
+/* git에 없는 파일의 대역: 관리자 전용 코드 표(content/codes.admin.json)가 없으면 예시 표를 줌 — 새로 받은 저장소에서도 관리자 도구의 fetch가 404 콘솔 오류를 내지 않아 흐름 시험이 통과하고, 그 길도 함께 시험됨. 실제 파일이 있으면 그것을 씀 */
+const STAND_IN = { "/content/codes.admin.json": "content/codes.admin.example.json" };
+
 /* 서버를 띄우고 { url, close } 를 돌려줌. root는 띄울 폴더(기본 저장소 루트) */
 export function serve(root = ROOT, port = 0) {
   return new Promise((resolve, reject) => {
@@ -17,7 +20,7 @@ export function serve(root = ROOT, port = 0) {
       if (p.endsWith("/")) p += "index.html";
       const file = path.resolve(root, "." + p);
       if (!file.startsWith(root + path.sep) || /(^|[\\/])\./.test(path.relative(root, file))) { res.writeHead(403).end(); return; }
-      fs.readFile(file, (err, buf) => {
+      fs.readFile(fs.existsSync(file) || !STAND_IN[p] ? file : path.resolve(root, STAND_IN[p]), (err, buf) => {
         if (err) { res.writeHead(404, { "content-type": "text/plain; charset=utf-8" }).end("없는 파일: " + p); return; }
         res.writeHead(200, { "content-type": TYPES[path.extname(file).toLowerCase()] || "application/octet-stream", "cache-control": "no-store" }).end(buf);
       });

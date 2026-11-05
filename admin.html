@@ -3270,10 +3270,10 @@ const SUPPORT = {
     if (!Array.isArray(j) || !j.length) throw { code: "denied" };
     return j[0];
   },
-  /** 이 계정이 고객센터 관리자인지(admins 표에 자기 행이 보이는지 — 계정마다 한 번). @returns {Promise<boolean>} */
+  /** 이 계정이 관리자인지(admins 표에 자기 행이 보이는지). '맞음'만 기억 — SQL Editor로 admins에 넣은 뒤 새로 고침 없이 바로 반영되게. @returns {Promise<boolean>} */
   async amAdmin() {
     const u = uidOf(); if (!u) return false;
-    if (this.admin && this.admin.uid === u) return this.admin.yes;
+    if (this.admin && this.admin.uid === u && this.admin.yes) return true;
     try { const j = await call(`/rest/v1/admins?select=user_id&user_id=eq.${encodeURIComponent(u)}`); this.admin = { uid: u, yes: Array.isArray(j) && j.length > 0 }; }
     catch { return false; } // 표가 없거나 연결 실패 — 기억하지 않고 다음에 다시 물음
     return this.admin.yes;
@@ -4297,7 +4297,7 @@ function faqGroups() {
       ["무료로 얼마나 쓸 수 있나요?", `라이트 모델은 <b>매일 ${FREE_DAILY}턴 무료</b>예요. 자정에 다시 채워져요. 처음 방문하면 하트 ${WELCOME}개를 드려요.`],
       ["하트는 어디에 쓰나요?", "무료 턴을 다 쓴 뒤의 라이트 모델과, 스토리·마스터 모델 대화에 써요. 보내기 버튼에 이번 턴 비용이 항상 표시되고, 응답이 실패하면 자동으로 환불돼요. 장기기억 요약·AI 추천 답변은 무료예요."],
       ["PLUS는 무엇인가요?", `월 ${plus} 멤버십이에요. 라이트 모델 무제한, 스토리·마스터 50% 할인, 매달 하트 ${num(PLUS_MONTHLY)}개, 장기기억 ${num(PLAN.free.memoMax)}자 → ${num(PLAN.pro.memoMax)}자, 기억력 ${PLAN.free.memTurns}턴 → ${PLAN.pro.memTurns}턴으로 늘어나요.`],
-      ["결제하면 실제로 돈이 나가나요?", "지금 스토어는 결제 흐름을 보여 주는 <b>시연(데모)</b>이라 실제로 청구되지 않고, 하트와 멤버십은 체험용으로만 지급돼요. 다만 내 API 키로 쓰는 AI 대화·그림 요금은 그 키를 발급한 회사(Anthropic·OpenRouter 등)가 따로 청구해요."]
+      ["결제하면 실제로 돈이 나가나요?", "지금 스토어는 결제 흐름을 보여 주는 <b>시연(데모)</b>이라 실제로 청구되지 않고, 하트와 멤버십은 체험용으로만 지급돼요. 다만 내 API 키로 쓰는 AI 대화 요금은 그 키를 발급한 회사(Anthropic·OpenRouter 등)가 따로 청구해요."]
     ]],
     ["대화", [
       ["답이 너무 짧아요(길어요).", "대화방 오른쪽 위 메뉴(☰) → <b>출력 설정</b>에서 출력량(적게·보통·많게)을 바꿀 수 있어요. 모델을 스토리·마스터로 올리면 묘사가 더 풍부해져요."],
@@ -6753,12 +6753,12 @@ function lorePrompt(c, e) {
    가져옴: src/js/services/supabase.js { SB }
            src/js/services/support.js { SUPPORT }
    내보냄: localDev, genAccess, assertAdmin
-   쓰는 곳: src/js/images/runware.js, src/js/admin/motion-run.js, src/js/admin/image-settings.js
+   쓰는 곳: src/js/images/runware.js, src/js/admin/gen-sheet.js, src/js/admin/image-run.js, src/js/admin/motion-run.js, src/js/admin/image-settings.js, src/js/admin/auto-images.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 그림·움짤 생성 관문(관리자 빌드만): 서버(Supabase admins 표)가 관리자로 확인한 계정만 Runware를 부른다. 개발 서버·흐름 시험(localhost·127.0.0.1)은 통과.
    왜(2026-11-05, 사용자 결정 — '오직 어드민 계정에서만 만들어서 세계관에 업데이트'): 그림은 관리자가 직접 만들어 content/에 싣는 것만 쓴다. Pony 계열 모델은 수익 모델 서비스 안에서 돌리면
    라이선스 허가가 필요하고(docs/COMMERCIALIZATION.md §8), admin.html은 웹에 공개돼 있어 비밀번호 관문(admin/gate.js — 클라이언트 해시)만으로는 아무나 자기 키를 넣고 우리 도구로 그릴 수 있었다.
-   관리자 여부는 SUPPORT.amAdmin()(RLS가 본인 행만 보여 주는 admins 표 — 계정마다 한 번 묻고 기억)이 정한다. 한계: 페이지 JS를 고치면 우회할 수 있지만, 그건 우리 도구가 아니라 직접 만든 클라이언트다 */
+   관리자 여부는 SUPPORT.amAdmin()(RLS가 본인 행만 보여 주는 admins 표 — '맞음'만 기억)이 정한다. 한계: 페이지 JS를 고치면 우회할 수 있지만, 그건 우리 도구가 아니라 직접 만든 클라이언트다 */
 
 
 
@@ -7335,6 +7335,7 @@ function crc32(bytes) {
    가져옴: src/js/core/safety.js { minorHint }
            src/js/core/state.js { S, hasOpenRouterKey, hasRunwareKey }
            src/js/core/util.js { $, $$, esc, toast }
+           src/js/images/gen-guard.js { assertAdmin }
            src/js/images/prompt.js { asTag, clearCastTags, groupsPrompt, hasSavedTags, saveCastTags, savedParts, splitTags }
            src/js/images/rating.js { imgRating, ratingFieldHTML }
            src/js/images/runware.js { genErr, runwareImage }
@@ -7344,6 +7345,7 @@ function crc32(bytes) {
    쓰는 곳: src/js/admin/image-studio.js, src/js/admin/worldart.js, src/js/admin/tools.js, src/js/admin/image-settings.js, src/js/admin/studio.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* AI 이미지 생성 창(태그 칩 편집·인물에 태그 저장) */
+
 
 
 
@@ -7400,6 +7402,7 @@ function genImageSheet({ title = "AI로 이미지 만들기", prompt = "", parts
     const rt = $("#grt", ov)?.value || "safe", adult = imgRating(rt) !== "safe";
     mk.disabled = use.disabled = true; pv.innerHTML = `<span class="note">만드는 중… 10~30초쯤 걸려요</span>`; ctl = new AbortController();
     try {
+      await assertAdmin(); // 태그 번역(사용자 키로 요금이 듦)보다 먼저
       if (adult && minorHint(groups.flatMap((g) => g.tags.map((x) => x.t)).join(", "))) throw { code: "minor_block" };
       blob = await runwareImage(await buildPrompt(adult), { aspect, rating: rt, signal: ctl.signal, style: st });
       url && URL.revokeObjectURL(url); url = URL.createObjectURL(blob);
@@ -7526,6 +7529,7 @@ function rowHTML(d, on, s, del) {
            src/js/core/state.js { S, hasRunwareKey }
            src/js/core/util.js { esc, toast, uid }
            src/js/images/codes.js { keyOf, parseCodes }
+           src/js/images/gen-guard.js { assertAdmin }
            src/js/images/pick.js { putCastImage }
            src/js/images/prompt.js { lookIsMale, partsTags, savedParts }
            src/js/images/rating.js { RATINGS, imgRating }
@@ -7552,9 +7556,10 @@ function rowHTML(d, on, s, del) {
 
 
 
+
 /* 스튜디오 상태 — 화면을 떠나도 세션 동안 남음. acts는 고른 순서(조합엔 앞 MAX_ACT개), wear·place는 하나 또는 null, del은 코드 선택 삭제 모드일 때 고른 번호(Set) */
 const ISTATE = { work: "", cast: "", tab: "act", acts: [1], wear: null, place: null, aspect: "4:5", style: "", autoSave: false, prompt: false, closed: {}, results: [], busy: null, del: null };
-const STOP_ON = ["no_key", "bad_key", "no_funds", "bad_model", "network", "rate_limited", "minor_block", "timeout"];
+const STOP_ON = ["admin_login", "admin_only", "no_key", "bad_key", "no_funds", "bad_model", "network", "rate_limited", "minor_block", "timeout"];
 
 const ctxOf = (c, cast) => ({ kind: "daily", aud: audOf(c), male: lookIsMale(castLook(cast, c)) });
 const keyRating = (c, key) => imgRating(codeRating(parseCodes(String(key)), c));
@@ -7570,6 +7575,7 @@ const promptText = (c, cast, key) => savedParts(c, cast, key).filter((p) => p.ta
 
 /* 조합 키 하나를 그려 결과 하나로 */
 async function draw(c, cast, key) {
+  await assertAdmin(); // 태그 번역(사용자 키로 요금이 듦)보다 먼저 — runwareImage의 확인은 번역 뒤에 옴
   const rt = keyRating(c, key), st = pickStyle(c, cast), t0 = Date.now();
   const tags = await partsTags(savedParts(c, cast, key), rt !== "safe");
   const blob = await runwareImage(tags, { aspect: ISTATE.aspect, rating: rt, style: st });
@@ -7682,7 +7688,8 @@ async function photoData(ref) {
 }
 /* Runware에 작업 하나 보내고 그 작업의 응답 행(없으면 null)을 돌려줌. 오류는 runwareImage와 같은 코드로 */
 async function rwTask(task) {
-  await assertAdmin(); // 관리자 계정만(images/gen-guard.js) — 결과를 묻는 getResponse도 같은 길
+  // 생성 작업만 관리자 확인(images/gen-guard.js). 결과를 묻는 getResponse는 막지 않음 — 이미 청구된 작업이라, 기다리는 사이 로그인이 풀려도 만든 움짤을 받아야 함
+  if (task.taskType !== "getResponse") await assertAdmin();
   const T = timeoutSignal(TIMEOUT.api * 2);
   let res, j;
   try {
@@ -8525,6 +8532,7 @@ EXT.meSave.push((v) => { const rk = $("#rkey", v); if (rk) S.settings.runwareKey
            src/js/core/state.js { S, hasRunwareKey }
            src/js/core/util.js { $, $$, toast }
            src/js/images/codes.js { imgTags, parseCodes }
+           src/js/images/gen-guard.js { genAccess }
            src/js/images/pick.js { hasImg, putCastImage }
            src/js/images/prompt.js { lookIsMale, partsTags, savedParts }
            src/js/images/rating.js { imgRating }
@@ -8558,7 +8566,9 @@ EXT.meSave.push((v) => { const rk = $("#rkey", v); if (rk) S.settings.runwareKey
 
 
 
+
 const AUTO_MAX = 4, autoBusy = new Set();
+let autoDenied = false; // 권한 없음 안내를 이미 띄웠는지 — 턴마다 되풀이하지 않음
 const autoImgOn = () => !!S.settings.autoImg && !IN_CLAUDE && hasRunwareKey() && S.settings.sceneImg !== false;
 const figsOf = (code, key) => $$(`#logInner figure.scene-img[data-code="${code}"][data-key="${key}"]`).filter((f) => !$("img", f));
 async function autoImages(r, body) {
@@ -8570,6 +8580,11 @@ async function autoImages(r, body) {
     if (autoBusy.has(id) || jobs.some((j) => j.id === id) || hasImg(c, t.code, key)) continue;
     jobs.push({ id, cast, key, codes: parseCodes(key) });
   }
+  if (!jobs.length) return;
+  // 태그 번역(사용자 키로 요금이 듦)·생성 전에 관리자 확인 — 관리자가 아니면 아무것도 보내지 않고 한 번만 알림
+  const access = await genAccess();
+  if (!access.ok) { if (!autoDenied) toast("장면 그림을 만들지 못했어요 · " + genErr(access)); autoDenied = true; return; }
+  autoDenied = false;
   let err = null;
   await Promise.all(jobs.slice(0, AUTO_MAX).map(async (j) => {
     autoBusy.add(j.id); figsOf(j.cast.code, j.key).forEach((f) => f.classList.add("gen"));
