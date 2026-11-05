@@ -25,14 +25,18 @@
 
 **HEART SYNC**는 이야기 속 인물과 직접 대화하며 에피소드를 이어 가는 캐릭터 대화 플랫폼이에요. 오리지널 작품을 고르고 시작 상황을 정한 뒤 내 페르소나로 말을 걸면, AI가 인물을 연기하며 장면·상태창·그림과 함께 이야기를 이어 가요.
 
+<div align="center">
+
 <table>
   <tr>
-    <td align="center" width="25%"><h3>12편</h3><sub>오리지널 작품</sub></td>
-    <td align="center" width="25%"><h3>43명</h3><sub>등장인물</sub></td>
-    <td align="center" width="25%"><h3>31개</h3><sub>시작 상황</sub></td>
-    <td align="center" width="25%"><h3>66개</h3><sub>키워드북 항목</sub></td>
+    <td align="center" width="200"><h3>12편</h3><sub>오리지널 작품</sub></td>
+    <td align="center" width="200"><h3>43명</h3><sub>등장인물</sub></td>
+    <td align="center" width="200"><h3>31개</h3><sub>시작 상황</sub></td>
+    <td align="center" width="200"><h3>66개</h3><sub>키워드북 항목</sub></td>
   </tr>
 </table>
+
+</div>
 
 > [!NOTE]
 > 대화에는 내 Anthropic API 키가 필요해요. **MY → AI 연결**에 넣으면 이 브라우저에 저장되고, 로그인했을 때 계정 저장을 켜 두면 비밀번호로 암호화한 금고로만 올라가요.
@@ -44,23 +48,23 @@
     <td colspan="6"><b>여성향</b> · 남성 인물들과 만들어 가는 이야기</td>
   </tr>
   <tr>
-    <td align="center" width="16.66%"><a href="https://20232497.github.io/HEARTSYNC/#c-hwanghu"><img src="docs/assets/covers/hwanghu.jpg" alt="계약 황후의 백 일 표지" width="100%"></a><br><sub><b>계약 황후의 백 일</b></sub></td>
-    <td align="center" width="16.66%"><a href="https://20232497.github.io/HEARTSYNC/#c-hasuk"><img src="docs/assets/covers/hasuk.jpg" alt="서촌 오월 하숙집 표지" width="100%"></a><br><sub><b>서촌 오월 하숙집</b></sub></td>
-    <td align="center" width="16.66%"><a href="https://20232497.github.io/HEARTSYNC/#c-lethe"><img src="docs/assets/covers/lethe.jpg" alt="호텔 레테: 마흔아홉 번째 밤 표지" width="100%"></a><br><sub><b>호텔 레테: 마흔아홉 번째 밤</b></sub></td>
-    <td align="center" width="16.66%"><a href="https://20232497.github.io/HEARTSYNC/#c-seodoyun"><img src="docs/assets/covers/seodoyun.jpg" alt="흑우 탐정사무소 표지" width="100%"></a><br><sub><b>흑우 탐정사무소</b></sub></td>
-    <td align="center" width="16.66%"><a href="https://20232497.github.io/HEARTSYNC/#c-kael"><img src="docs/assets/covers/kael.jpg" alt="몰락한 제국의 마지막 기사 표지" width="100%"></a><br><sub><b>몰락한 제국의 마지막 기사</b></sub></td>
-    <td align="center" width="16.66%"><a href="https://20232497.github.io/HEARTSYNC/#c-baekyeon"><img src="docs/assets/covers/baekyeon.jpg" alt="여우가 내리는 차 표지" width="100%"></a><br><sub><b>여우가 내리는 차</b></sub></td>
+    <td align="center" width="110"><a href="https://20232497.github.io/HEARTSYNC/#c-hwanghu"><img src="docs/assets/covers/hwanghu.jpg" alt="계약 황후의 백 일 표지" width="110"></a><br><sub><b>계약 황후의 백 일</b></sub></td>
+    <td align="center" width="110"><a href="https://20232497.github.io/HEARTSYNC/#c-hasuk"><img src="docs/assets/covers/hasuk.jpg" alt="서촌 오월 하숙집 표지" width="110"></a><br><sub><b>서촌 오월 하숙집</b></sub></td>
+    <td align="center" width="110"><a href="https://20232497.github.io/HEARTSYNC/#c-lethe"><img src="docs/assets/covers/lethe.jpg" alt="호텔 레테: 마흔아홉 번째 밤 표지" width="110"></a><br><sub><b>호텔 레테: 마흔아홉 번째 밤</b></sub></td>
+    <td align="center" width="110"><a href="https://20232497.github.io/HEARTSYNC/#c-seodoyun"><img src="docs/assets/covers/seodoyun.jpg" alt="흑우 탐정사무소 표지" width="110"></a><br><sub><b>흑우 탐정사무소</b></sub></td>
+    <td align="center" width="110"><a href="https://20232497.github.io/HEARTSYNC/#c-kael"><img src="docs/assets/covers/kael.jpg" alt="몰락한 제국의 마지막 기사 표지" width="110"></a><br><sub><b>몰락한 제국의 마지막 기사</b></sub></td>
+    <td align="center" width="110"><a href="https://20232497.github.io/HEARTSYNC/#c-baekyeon"><img src="docs/assets/covers/baekyeon.jpg" alt="여우가 내리는 차 표지" width="110"></a><br><sub><b>여우가 내리는 차</b></sub></td>
   </tr>
   <tr>
     <td colspan="6"><b>남성향</b> · 여성 인물들과 만들어 가는 이야기</td>
   </tr>
   <tr>
-    <td align="center" width="16.66%"><a href="https://20232497.github.io/HEARTSYNC/#c-daeyeon"><img src="docs/assets/covers/daeyeon.jpg" alt="대연궁 검시록 표지" width="100%"></a><br><sub><b>대연궁 검시록</b></sub></td>
-    <td align="center" width="16.66%"><a href="https://20232497.github.io/HEARTSYNC/#c-baekya"><img src="docs/assets/covers/baekya.jpg" alt="백야호: 열세 번째 겨울 표지" width="100%"></a><br><sub><b>백야호: 열세 번째 겨울</b></sub></td>
-    <td align="center" width="16.66%"><a href="https://20232497.github.io/HEARTSYNC/#c-sipjeol"><img src="docs/assets/covers/sipjeol.jpg" alt="십절곡: 백 일의 봉문 표지" width="100%"></a><br><sub><b>십절곡: 백 일의 봉문</b></sub></td>
-    <td align="center" width="16.66%"><a href="https://20232497.github.io/HEARTSYNC/#c-godseats"><img src="docs/assets/covers/godseats.jpg" alt="신님들, 관전 매너 좀 표지" width="100%"></a><br><sub><b>신님들, 관전 매너 좀</b></sub></td>
-    <td align="center" width="16.66%"><a href="https://20232497.github.io/HEARTSYNC/#c-yunhaera"><img src="docs/assets/covers/yunhaera.jpg" alt="계약 기간 90일 표지" width="100%"></a><br><sub><b>계약 기간 90일</b></sub></td>
-    <td align="center" width="16.66%"><a href="https://20232497.github.io/HEARTSYNC/#c-hangyeoul"><img src="docs/assets/covers/hangyeoul.jpg" alt="새벽 두 시의 편의점 표지" width="100%"></a><br><sub><b>새벽 두 시의 편의점</b></sub></td>
+    <td align="center" width="110"><a href="https://20232497.github.io/HEARTSYNC/#c-daeyeon"><img src="docs/assets/covers/daeyeon.jpg" alt="대연궁 검시록 표지" width="110"></a><br><sub><b>대연궁 검시록</b></sub></td>
+    <td align="center" width="110"><a href="https://20232497.github.io/HEARTSYNC/#c-baekya"><img src="docs/assets/covers/baekya.jpg" alt="백야호: 열세 번째 겨울 표지" width="110"></a><br><sub><b>백야호: 열세 번째 겨울</b></sub></td>
+    <td align="center" width="110"><a href="https://20232497.github.io/HEARTSYNC/#c-sipjeol"><img src="docs/assets/covers/sipjeol.jpg" alt="십절곡: 백 일의 봉문 표지" width="110"></a><br><sub><b>십절곡: 백 일의 봉문</b></sub></td>
+    <td align="center" width="110"><a href="https://20232497.github.io/HEARTSYNC/#c-godseats"><img src="docs/assets/covers/godseats.jpg" alt="신님들, 관전 매너 좀 표지" width="110"></a><br><sub><b>신님들, 관전 매너 좀</b></sub></td>
+    <td align="center" width="110"><a href="https://20232497.github.io/HEARTSYNC/#c-yunhaera"><img src="docs/assets/covers/yunhaera.jpg" alt="계약 기간 90일 표지" width="110"></a><br><sub><b>계약 기간 90일</b></sub></td>
+    <td align="center" width="110"><a href="https://20232497.github.io/HEARTSYNC/#c-hangyeoul"><img src="docs/assets/covers/hangyeoul.jpg" alt="새벽 두 시의 편의점 표지" width="110"></a><br><sub><b>새벽 두 시의 편의점</b></sub></td>
   </tr>
 </table>
 
@@ -106,19 +110,19 @@
 
 <table>
   <tr>
-    <td valign="top" width="33%">💬 <b>작품과 대화</b><br><br>시작 상황 선택, 지문·대사 서식, 상태창, 다시 쓰기·버전·수정·북마크, AI 추천 답변</td>
-    <td valign="top" width="33%">🧠 <b>이어지는 기억</b><br><br>장기기억 자동 요약과 키워드북으로 긴 대화에서도 설정을 유지해요</td>
-    <td valign="top" width="33%">🖼️ <b>장면 그림</b><br><br>응답마다 감정·의상·장소에 맞는 그림이나 움짤을 보여 줘요. 그림은 관리자 계정이 만들어 싣고 사용자는 보기만 해요</td>
+    <td valign="top" width="33%">💬 <b>작품과 대화</b><br>시작 상황 선택, 지문·대사 서식, 상태창, 다시 쓰기·버전·수정·북마크, AI 추천 답변</td>
+    <td valign="top" width="33%">🧠 <b>이어지는 기억</b><br>장기기억 자동 요약과 키워드북으로 긴 대화에서도 설정을 유지해요</td>
+    <td valign="top" width="33%">🖼️ <b>장면 그림</b><br>응답마다 감정·의상·장소에 맞는 그림이나 움짤을 보여 줘요. 그림은 관리자 계정이 만들어 싣고 사용자는 보기만 해요</td>
   </tr>
   <tr>
-    <td valign="top">🔐 <b>로그인과 계정 저장</b><br><br>이메일·카카오·네이버·Google 로그인. 대화·작품·설정·그림이 PC와 휴대폰에서 이어져요</td>
-    <td valign="top">🎯 <b>관심있는 대화</b><br><br>전체·남성향·여성향을 고르면 홈에 그쪽 작품만 보여요</td>
-    <td valign="top">🛟 <b>고객센터</b><br><br>공지사항, 자주 묻는 질문, 문의하기</td>
+    <td valign="top">🔐 <b>로그인과 계정 저장</b><br>이메일·카카오·네이버·Google 로그인. 대화·작품·설정·그림이 PC와 휴대폰에서 이어져요</td>
+    <td valign="top">🎯 <b>관심있는 대화</b><br>전체·남성향·여성향을 고르면 홈에 그쪽 작품만 보여요</td>
+    <td valign="top">🛟 <b>고객센터</b><br>공지사항, 자주 묻는 질문, 문의하기</td>
   </tr>
   <tr>
-    <td valign="top">💎 <b>요금(데모)</b><br><br>라이트 모델 하루 10턴 무료. 하트와 PLUS는 시연용이라 실제로 청구되지 않아요</td>
-    <td valign="top">🛠️ <b>관리자 도구</b><br><br>작품 만들기, 이미지 스튜디오(그림·움짤 생성), 코드 표, <code>content/</code>로 내보내기</td>
-    <td valign="top">🔞 <b>성인 모드(시험 단계)</b><br><br>성인 확인과 OpenRouter 키가 있을 때만 켜져요. 미성년 인물의 성적 묘사와 그림은 어떤 설정에서도 막는 것이 원칙이에요. 출시 조건은 <a href="docs/ROADMAP.md">로드맵</a>에 있어요</td>
+    <td valign="top">💎 <b>요금(데모)</b><br>라이트 모델 하루 10턴 무료. 하트와 PLUS는 시연용이라 실제로 청구되지 않아요</td>
+    <td valign="top">🛠️ <b>관리자 도구</b><br>작품 만들기, 이미지 스튜디오(그림·움짤 생성), 코드 표, <code>content/</code>로 내보내기</td>
+    <td valign="top">🔞 <b>성인 모드(시험 단계)</b><br>성인 확인과 OpenRouter 키가 있을 때만 켜져요. 미성년 인물의 성적 묘사와 그림은 어떤 설정에서도 막는 것이 원칙이에요. 출시 조건은 <a href="docs/ROADMAP.md">로드맵</a>에 있어요</td>
   </tr>
 </table>
 
