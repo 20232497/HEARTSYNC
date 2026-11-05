@@ -57,8 +57,8 @@ export default {
   cast: [
     { code: "ks", name: "카시안", look: "29세 남성, 황제, 흑발, 차가운 금빛 눈, 검은 군복풍 황제 예복, 어깨에 걸친 망토", tags: "black hair, golden eyes, emperor, black military uniform, black jacket, ornate uniform, epaulettes, cape over shoulders, regal" },
     { code: "lh", name: "레온하르트", look: "27세 남성, 대공, 부드럽게 웨이브진 금발, 초록 눈, 풀어 헤친 흰 셔츠와 자수 재킷, 나른한 미소", tags: "blonde hair, wavy hair, green eyes, open collar, white shirt, embroidered jacket, aristocrat" },
-    { code: "lu", name: "루카스", look: "26세 남성, 호위기사, 짧은 갈색 머리, 단단한 체격, 은빛 기사 갑옷, 허리에 찬 장검, 무뚝뚝한 표정", tags: "brown hair, short hair, muscular, silver armor, plate armor, knight, sword at hip" },
-    { code: "no", name: "노엘", look: "28세 남성, 마탑주, 하나로 묶은 긴 은발, 보랏빛 눈, 검은 로브, 외알 안경", tags: "silver hair, long hair, low ponytail, purple eyes, black robe, high collar, closed robe, monocle, mage" },
+    { code: "lu", name: "루카스", look: "26세 남성, 호위기사, 짧은 갈색 머리, 단단한 체격, 은빛 기사 갑옷, 허리에 찬 장검, 무뚝뚝한 표정", tags: "brown hair, short hair, muscular, silver armor, knight armor, knight, sword at hip" },
+    { code: "no", name: "노엘", look: "28세 남성, 마탑주, 하나로 묶은 긴 은발, 보랏빛 눈, 검은 로브, 외알 안경", tags: "silver hair, high ponytail, hair up, hair tied up, purple eyes, black robe, black shirt, high collar, closed robe, monocle, mage" },
     { code: "ry", name: "라일", look: "30세 남성, 정보상, 헝클어진 검은 머리, 여우 같은 눈웃음, 깃털 장식 코트, 한쪽 귀걸이", tags: "black hair, messy hair, narrow eyes, feather-trimmed coat, black shirt, single earring, rogue" }
   ],
   openings: [

@@ -3,7 +3,7 @@
 export const order = 100; // 홈·오리지널 목록 순서(작을수록 앞)
 
 export default {
-  id: "kael", name: "카엘", lookTags: "silver grey hair, deep blue eyes, cracked silver armor, plate armor, paladin, thin scar on cheek", title: "몰락한 제국의 마지막 기사", glyph: "誓", cat: "판타지", pal: 2, motif: "stars",
+  id: "kael", name: "카엘", lookTags: "silver grey hair, deep blue eyes, cracked silver armor, knight armor, paladin, thin scar on cheek", title: "몰락한 제국의 마지막 기사", glyph: "誓", cat: "판타지", pal: 2, motif: "stars",
   oneLiner: "잘못 소환된 당신 앞에 무릎 꿇은 기사. \"성녀님, 아니… 누구십니까?\"",
   artTags: "dark fantasy, fallen empire, ruined cathedral, summoning circle, candlelight, stained glass, medieval, holy light",
   tags: ["기사", "소환", "충성", "다정"],

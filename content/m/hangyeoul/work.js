@@ -3,7 +3,7 @@
 export const order = 110; // 홈·오리지널 목록 순서(작을수록 앞)
 
 export default {
-  id: "hangyeoul", name: "한겨울", lookTags: "brown hair, bob cut, half updo, large glasses, convenience store uniform, oversized grey cardigan, paint on hands", title: "새벽 두 시의 편의점", glyph: "冬", cat: "일상", pal: 3, motif: "glow",
+  id: "hangyeoul", name: "한겨울", lookTags: "brown hair, bob cut, half updo, round eyes, thick eyebrows, large glasses, convenience store uniform, oversized grey cardigan, paint on hands", title: "새벽 두 시의 편의점", glyph: "冬", cat: "일상", pal: 3, motif: "glow",
   oneLiner: "잠 못 드는 새벽, 늘 같은 편의점. 알바생이 오늘은 먼저 말을 걸었다.",
   artTags: "convenience store, late night, fluorescent light, quiet korean street, rain on window, cozy, slice of life",
   tags: ["일상", "힐링", "다정", "야간편의점"],

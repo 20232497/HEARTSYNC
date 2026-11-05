@@ -53,11 +53,11 @@ export default {
     { keys: ["첫 겨울", "13년 전", "대동결"], text: "13년 전 '대동결'. 하늘이 회색 재로 덮이고 한 달 만에 기온이 40도 떨어졌다. 열차에 오르지 못한 사람들은 그해 겨울을 넘기지 못했다.", kind: "event", tags: "great freeze, ash-covered sky, frozen city, snow, apocalypse, desolate" }
   ],
   cast: [
-    { code: "hj", name: "서하진", look: "28세 여성, 기름 묻은 방한 작업복, 짧게 친 흑발, 고글을 이마에 올림, 화상 흉터가 있는 손", tags: "black hair, very short hair, oil-stained winter work overalls, goggles on head, burn scar on hand, mechanic" },
-    { code: "rn", name: "홍레나", look: "24세 여성, 흰 모피 코트, 금빛 통행증 목걸이, 길게 땋은 금갈색 머리, 오만한 표정", tags: "golden brown hair, long braid, white fur coat, gold pendant, necklace, elegant" },
-    { code: "yr", name: "차유리", look: "26세 여성, 회색 위장 방한복, 긴 저격총, 짧은 은회색 머리, 왼뺨의 동상 자국", tags: "silver grey hair, short hair, grey camouflage winter jacket, frostbite scar on cheek, sniper rifle" },
-    { code: "ms", name: "미소", look: "23세 여성, 흰 사제복과 기어 문양 목걸이, 양 갈래 머리, 해맑은 미소", tags: "twin braids, white priestess robe, nun habit, gear pendant, necklace, bright eyes" },
-    { code: "dg", name: "윤도경", look: "30세 여성, 낡은 흰 가운 위 군용 외투, 흐트러진 묶음 머리, 손에 든 술병, 피곤한 눈", tags: "black hair, messy bun, worn white lab coat, military coat, holding bottle, tired eyes, doctor" }
+    { code: "hj", name: "서하진", look: "28세 여성, 기름 묻은 방한 작업복, 짧게 친 흑발, 고글을 이마에 올림, 화상 흉터가 있는 손", tags: "black hair, very short hair, side-swept bangs, narrow eyes, thick eyebrows, oil-stained winter work overalls, goggles on head, burn scar on hand, mechanic" },
+    { code: "rn", name: "홍레나", look: "24세 여성, 흰 모피 코트, 금빛 통행증 목걸이, 길게 땋은 금갈색 머리, 오만한 표정", tags: "golden brown hair, long braid, curtain bangs, upturned eyes, arched eyebrows, mole under mouth, white fur coat, gold pendant, necklace, elegant" },
+    { code: "yr", name: "차유리", look: "26세 여성, 회색 위장 방한복, 긴 저격총, 짧은 은회색 머리, 왼뺨의 동상 자국", tags: "silver grey hair, short hair, side-swept bangs, narrow eyes, straight eyebrows, grey camouflage winter jacket, frostbite scar on cheek, sniper rifle" },
+    { code: "ms", name: "미소", look: "23세 여성, 흰 사제복과 기어 문양 목걸이, 밝은 갈색 양 갈래 머리, 해맑은 미소", tags: "light brown hair, twin braids, round eyes, thin eyebrows, freckles, white priestess robe, nun habit, gear pendant, necklace, bright eyes" },
+    { code: "dg", name: "윤도경", look: "30세 여성, 낡은 흰 가운 위 군용 외투, 흐트러진 묶음 머리, 손에 든 술병, 피곤한 눈", tags: "black hair, messy bun, parted bangs, droopy eyes, thin eyebrows, worn white lab coat, military coat, holding bottle, tired eyes, doctor" }
   ],
   openings: [
     { title: "❄️ 설원에서 주워 온 사람", directive: "기본 시작. 유저가 꼬리칸 의무실에서 깨어난다. 윤도경과 차유리가 곁에 있다. 지도 조각의 존재가 곧 열차에 소문으로 퍼질 것임을 암시한다.",

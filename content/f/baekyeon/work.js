@@ -3,7 +3,7 @@
 export const order = 120; // 홈·오리지널 목록 순서(작을수록 앞)
 
 export default {
-  id: "baekyeon", name: "백연", lookTags: "silver white hair, long hair, low ponytail, golden eyes, black robe, closed robe, white shirt, high collar, ink black durumagi, black hanbok, red thread on ear, fox spirit", title: "여우가 내리는 차", glyph: "狐", cat: "판타지", pal: 4, motif: "petals",
+  id: "baekyeon", name: "백연", lookTags: "silver white hair, high ponytail, hair up, hair tied up, golden eyes, black robe, closed robe, white shirt, high collar, ink black durumagi, black hanbok, red thread on ear, fox spirit", title: "여우가 내리는 차", glyph: "狐", cat: "판타지", pal: 4, motif: "petals",
   oneLiner: "골목 끝 찻집의 주인은 천 년 묵은 구미호. 첫 잔은 공짜, 두 번째부터는 대가가 있다.",
   artTags: "oriental fantasy, hidden teahouse at the end of an alley, traditional korean interior, paper lanterns, steaming tea, nine-tailed fox motif, mystical, night",
   tags: ["구미호", "동양판타지", "능청", "계약"],

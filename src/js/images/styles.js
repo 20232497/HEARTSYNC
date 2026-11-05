@@ -4,7 +4,7 @@ import { S, hasClaudeKey } from "../core/state.js";
 import { esc } from "../core/util.js";
 import { refDataURL } from "./runware.js";
 import { validRef } from "../services/images.js";
-import { FDAILY } from "./style-fdaily.js";
+import { FDAILY, FRONT_WHEN } from "./style-fdaily.js";
 
 /* ---------------------------------------------------------------- AI 이미지 생성: Runware API (SDXL 계열 모델, Danbooru 영문 태그 프롬프트)
    이름·설명은 한국어. 모델은 영문 태그만 알아들으므로 한글(외모·키워드북·직접 쓴 그림체)은 보내기 직전 ponyTags()가 영문 태그로 바꿈 */
@@ -47,26 +47,29 @@ const SEMI = "korean, semi-realistic, 2.5d, realistic proportions, glossy hair, 
    검은 머리는 피부를 더 하얗게(coolPrompt, 사용자 요청 — 차가운 머리색에는 흰 피부), 태그만으로는 안 먹어 색조까지 차갑게. 'jet black hair'는 비행기가 그려져 안 씀.
    전체 흐림과 밝기는 태그로 안 움직여 후처리(post, images/runware.js stylePost). 옷의 글자·무늬는 네거티브로도 다 막지 못함(알려진 한계) */
 const MD_BANGS = "(full bangs:1.3), dense bangs, long bangs, bangs reaching eyes, bangs covering forehead, hair between eyes";
-const MD_HEAD = "source_anime, (digital illustration:1.4), (anime illustration:1.3), drawing, (thin outlines:1.2), clean lineart, korean, 2.5d, soft gradient shading, smooth skin, soft bloom, depth of field, soft focus, hazy";
-const MD_FACE = "(narrow face:1.1), v-shaped jawline, small nose, small mouth, pouty lips, (half-closed eyes:1.1), almond eyes, detailed eyes, long eyelashes, thin eyebrows, light blush, (mature female:1.3), (adult woman:1.2), mature face, (defined cheekbones:1.1), slender face, sharp facial features, (upturned eyes:1.2), cat eyes, sharp eyes, arched eyebrows, thin winged eyeliner";
-const MD_HAIR = `(very thin hair strands:1.3), (individual hair strands:1.2), (detailed hair:1.2), (voluminous hair:1.2), full head of hair, (many fine hair strands:1.3), ${MD_BANGS}, silky hair, hair sheen, thin lineart`;
-const MD_TAIL = "eyeshadow, (low contrast:1.2), soft diffused light, brighter exposure, lifted shadows, (muted eye color:1.2), soft dark pupils, natural eyes, (high key lighting:1.05), (pastel colors:1.1), airy";
-const mdPrompt = (tone, skin, end = "") => [MD_HEAD, `low contrast, muted ${tone} palette, gentle lighting`, MD_FACE, MD_HAIR, skin, MD_TAIL].join(", ") + end;
+/* 2026-11-06 정리(사용자 요청 — 표정이 굳고 인위적, 정면으로): 고정 표정(pouty lips·half-closed eyes·light blush·sharp eyes·cat eyes)과 짙은 눈가·입술(eyeshadow·thin winged eyeliner)을 빼고 표정은 코드에 맡김, 같은 뜻 태그를 줄여 프롬프트 1171 → 약 900자, 맨 앞에 정면(MD_FRONT — 여성향보다 약하게: 1.6이면 얼굴이 인형처럼 대칭이 됨, fd63 → fd72. 각도를 정한 장면은 뺌). 내용 가중치 1.2 — 없으면 옷·올려 묶은 머리가 묻힘. 정면 + 빽빽한 앞머리는 어려 보여(fd73) 성숙 태그를 올리고 큰 눈·moe를 막음 — 코드의 half-lidded eyes와 함께 성인으로 읽힘(fd74) */
+const MD_FRONT = "(facing viewer:1.35), (straight-on:1.25), (front view:1.1)";
+const MD_HEAD = "source_anime, (digital illustration:1.4), (anime illustration:1.3), (thin outlines:1.2), korean, 2.5d, soft gradient shading, smooth skin, soft bloom, soft focus";
+/* 얼굴 모양은 인물 태그가 정함(사용자 요청 — 다 비슷한 얼굴로 나옴, fd81·fd82): 화풍이 눈매·눈썹·턱선까지 정하고 빽빽한 앞머리가 이마·눈썹을 가리면 옷과 머리색만 다른 한 얼굴이 됨. 그래서 여기엔 성인 인상과 작은 코·입만 두고, 작품의 인물 tags에 눈매(narrow·sharp·droopy·round·upturned eyes)·눈썹(thin·thick·straight·arched·soft eyebrows)·앞머리(parted·side-swept·curtain bangs, forehead — NO_BANGS_RE가 빽빽한 앞머리를 풂)·점을 넣음 */
+const MD_FACE = "small nose, small mouth, long eyelashes, (mature female:1.45), (adult woman:1.45), (28 years old:1.25), mature face, slender face";
+const MD_HAIR = `(very thin hair strands:1.3), (voluminous hair:1.2), (many fine hair strands:1.3), ${MD_BANGS}, silky hair`;
+const MD_TAIL = "(low contrast:1.2), soft diffused light, brighter exposure, lifted shadows, (muted eye color:1.2), natural eyes, (pastel colors:1.1)";
+const mdPrompt = (tone, skin, end = "") => [MD_FRONT, MD_HEAD, `low contrast, muted ${tone} palette, gentle lighting`, MD_FACE, MD_HAIR, skin, MD_TAIL].join(", ") + end;
 const MD_BANGS_NEG = "(side-swept bangs:1.3), swept bangs, asymmetrical bangs, (forehead:1.4), (see-through bangs:1.3), sparse bangs, wispy bangs, gaps in bangs";
 export const BUILTIN_SETS = [
   { id: "mdaily", name: "프롬1 남성향 일상", kind: "daily", aud: "m", match: /프롬\s*1.*남성향|남성향.*일상/, model: IMG_MODELS[0].id, samples: 3,
-    desc: "참고 그림 프롬1(남성향 일상)에 맞춘 화풍 — 2.5D 일러스트, 가늘고 풍성한 머리 가닥과 빽빽한 앞머리, 성숙한 얼굴과 올라간 눈매, 차분한 색과 전체적인 흐림. 검은 머리는 피부를 더 하얗게. 남성향 작품(여성 인물)의 인물 그림 기본값",
+    desc: "참고 그림 프롬1(남성향 일상)에 맞춘 화풍 — 2.5D 일러스트, 정면, 가늘고 풍성한 머리 가닥과 빽빽한 앞머리(인물이 앞머리를 정했으면 그것을 따름), 성숙한 인상, 차분한 색과 전체적인 흐림. 눈매·눈썹은 인물 태그가, 표정은 코드가 정함. 검은 머리는 피부를 더 하얗게. 남성향 작품(여성 인물)의 인물 그림 기본값",
     prompt: mdPrompt("warm", "(pale skin:1.15), (fair skin:1.05)"),
     coolPrompt: mdPrompt("cool", "(pale skin:1.2), (fair skin:1.15)", ", cool lighting"), blackTag: "(black hair:1.3)",
-    bangs: MD_BANGS, bangsNeg: MD_BANGS_NEG,
-    neg: `(3d, cgi, plastic skin, doll:1.2), high contrast, harsh shadows, underexposed, glowing eyes, vivid eye color, hime cut, hairband, headband, hair ornament, earrings, (see-through clothes:1.3), sheer clothes, transparent clothes, hair over one eye, windblown hair, thin hair, sparse hair, clumped hair, chunky hair strands, (baby face:1.3), (childish face:1.2), round face, chubby cheeks, ${MD_BANGS_NEG}, (graphic print:1.3), (text on clothes:1.3), emblem, (pendant:1.2), (cross necklace:1.2), brooch, badge, tanned skin, dark skin, sepia, (realistic:1.3), photo, (photorealistic:1.3), skin pores, skin texture, nose shadow, source_cartoon, monochrome, greyscale, (twintails:1.3), (low twintails:1.3), hair rings, (hair bun:1.2), updo, hair stick, animal ears, cat ears`,
+    bangs: MD_BANGS, bangsNeg: MD_BANGS_NEG, fits: [{ when: FRONT_WHEN, drop: [MD_FRONT] }], contentWeight: 1.2, exprWeight: 1.1,
+    neg: `(3d, cgi, plastic skin, doll:1.2), high contrast, harsh shadows, underexposed, glowing eyes, vivid eye color, hime cut, hairband, headband, hair ornament, earrings, (see-through clothes:1.3), hair over one eye, windblown hair, thin hair, clumped hair, (baby face:1.3), (childish face:1.2), round face, chubby cheeks, ${MD_BANGS_NEG}, (graphic print:1.3), (text on clothes:1.3), emblem, (pendant:1.2), (cross necklace:1.2), brooch, badge, tanned skin, dark skin, (realistic:1.3), photo, (photorealistic:1.3), skin pores, skin texture, nose shadow, source_cartoon, monochrome, greyscale, (twintails:1.3), (hair bun:1.2), updo, animal ears, (red eyeshadow:1.3), (eyeshadow:1.3), eye makeup, (heavy makeup:1.2), (red lips:1.2), (eye bags:1.3), (red eyelids:1.2), (under-eye shadow:1.2), (framed picture:1.5), (picture frame:1.5), (ornate frame:1.5), (gold frame:1.4), (painting (object):1.4), (wall art:1.3), (framed:1.4), border, poster, (outstretched hand:1.3), (raised hands:1.2), (index finger raised:1.3), pointing, (large eyes:1.3), big eyes, (moe:1.3), (cute:1.2), (youthful:1.3), (teen:1.4), (young:1.3)`,
     lora: [{ model: "civitai:390892@1286572", weight: 0.3 }, { model: "civitai:690861@773211", weight: 0.3 }],
     gen: { cfg: 5, steps: 35, scheduler: "DPM++ 2M Karras", modelNeg: false },
     noHumans: { model: YABAL, prompt: "2.5d, (illustration:1.3), cel-painterly shading, cinematic lighting, depth of field, high detail, soft bloom, low contrast, muted warm palette, soft diffused light" },
     post: { lift: "rgb(11,11,15)", soft: 0.08, blurK: 3, blurA: 0.6 } },
   // 값은 images/style-fdaily.js(2026-11-06, 43라운드 비교 생성으로 정함)
   { id: "fdaily", name: "프롬1 여성향 일상", kind: "daily", aud: "f", match: /프롬\s*1.*여성향|여성향.*일상/, model: IMG_MODELS[0].id, samples: 3,
-    desc: "참고 그림 프롬1(여성향 일상)에 맞춘 화풍 — 가벼운 일러스트, 정면, 리프컷, 근육질 몸과 굵은 목, 성숙하고 섹시한 인상, 회색으로 덮은 차분한 색. 인물이 자기 머리 모양·표정을 정했으면 그것을 따름. 여성향 작품(남성 인물)의 인물 그림 기본값",
+    desc: "참고 그림 프롬1(여성향 일상)에 맞춘 화풍 — 가벼운 일러스트, 정면, 리프컷, 근육질 몸과 굵은 목, 성숙한 인상, 회색으로 덮은 차분한 색. 표정은 코드가 정함. 인물이 자기 머리 모양·표정을 정했으면 그것을 따름. 여성향 작품(남성 인물)의 인물 그림 기본값",
     ...FDAILY,
     // 사람 없는 그림: Run七八造는 동물만 시켜도 사람을 함께 그림. WAI가 Hassaku보다 동물 얼굴·자세를 잘 그리고 작가 표기가 필요 없음(fd44), YabaL은 그림 판매 불가라 안 씀
     noHumans: { model: IMG_MODELS[2].id, prompt: "(digital illustration:1.3), (soft painting:1.2), painterly, (flat color:1.1), soft edges, low contrast, soft warm palette, gentle lighting, soft diffused light, soft bloom" } },
@@ -114,8 +117,8 @@ export function activeSet() { const k = String(S.settings.imgStyle || ""); retur
 export function styleFor(ctx = {}) {
   const k = String(S.settings.imgStyle || "auto");
   // 내장 화풍은 머리색별 문구·네거티브·LoRA·샘플러·후처리도 정할 수 있음(남성향 일상) — 사용자의 세트가 덮으면 그 세트의 문구·모델만
-  const sys = (id) => { const s = effectiveSet(id) || effectiveSet(autoSetId(ctx)), { coolPrompt, blackTag, paleTag, bangs, bangsNeg, fits, contentWeight, neg, lora, gen, post, noHumans } = s.over ? {} : s;
-    return { id: "sys:" + s.id, name: `기본 화풍 · ${s.name}${s.over ? " (내 세트)" : ""}`, prompt: s.prompt, model: s.model || IMG_MODELS[0].id, coolPrompt, blackTag, paleTag, bangs, bangsNeg, fits, contentWeight, neg, lora, gen, post, noHumans }; };
+  const sys = (id) => { const s = effectiveSet(id) || effectiveSet(autoSetId(ctx)), { coolPrompt, blackTag, paleTag, bangs, bangsNeg, fits, contentWeight, exprWeight, neg, lora, gen, post, noHumans } = s.over ? {} : s;
+    return { id: "sys:" + s.id, name: `기본 화풍 · ${s.name}${s.over ? " (내 세트)" : ""}`, prompt: s.prompt, model: s.model || IMG_MODELS[0].id, coolPrompt, blackTag, paleTag, bangs, bangsNeg, fits, contentWeight, exprWeight, neg, lora, gen, post, noHumans }; };
   if (k === "auto") return sys(autoSetId(ctx));
   if (k.startsWith("sys:")) return sys(k.slice(4));
   if (k.startsWith("set:")) { const s = activeSet(); if (s) return { id: k, name: "세트 · " + s.name, prompt: s.prompt || "", model: s.model || S.settings.imgModel || IMG_MODELS[0].id }; return sys(autoSetId(ctx)); }

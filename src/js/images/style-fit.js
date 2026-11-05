@@ -22,12 +22,18 @@ const PALE_HAIR_RE = /(^|[^a-z])(?:silver|grey|gray|white|ash) hair\b/i;
 const ASH_BLOND_RE = /(^|[^a-z])(?:ash|platinum)[- ]blond(?:e)? hair\b/i;
 const NO_BANGS_RE = /(^|[^a-z])(?:forehead|parted bangs|swept bangs|side-swept bangs|curtain bangs|no bangs|slicked back hair|hair slicked back)\b/i;
 const DARK_SKIN_RE = /(^|[^a-z])(?:dark skin|tanned skin|tan skin|brown skin)\b/i;
-/* 인물·장면 태그에 가중치를 줌(st.contentWeight): 화풍 태그의 가중치가 크면(1.2~1.5) 가중치 없는 인물의 옷·머리·표정이 묻힘(여성향 일상 — 2026-11-06 작품 인물로 확인).
-   인원·성별·배경 자리 태그와 이미 가중치가 있는 태그, 쉼표 없는 이모티콘(:d)과 괄호가 든 태그는 그대로 */
+/* 인물·장면 태그에 가중치를 줌(st.contentWeight, 표정 태그는 st.exprWeight — 없으면 그대로): 화풍 태그의 가중치가 크면(1.2~1.5) 가중치 없는 인물의 옷·머리·표정이 묻힘(여성향 일상 — 2026-11-06 작품 인물로 확인).
+   인원·성별·배경 자리 태그와 이미 가중치가 있는 태그, 쉼표 없는 이모티콘(:d)과 괄호가 든 태그는 그대로.
+   표정 태그를 내용 가중치만큼 올리면 입이 과하게 벌어지고 얼굴이 굳어 인위적으로 나옴(fd61). 시선 중 looking at viewer는 정면을 돕는 구도 태그라 내용 가중치를 그대로 받음 */
+const EXPRESSION_RE = /\b(?:smil(?:e|ing)|smirk|grin|laugh(?:ing)?|giggling|happy|sad|angry|annoyed|irritated|flustered|nervous|worried|scared|surprised|shocked|shy|embarrassed|relieved|wistful|wary|despair|pleased|peaceful|calm|focused|determined|relaxed|drowsy|excited|moved|drunk|mischievous|playful|jealous|exhausted|injured|blush|blushing|tears?|crying|teary|frown|pout|sigh|yawning|expressionless|sweat|sweatdrop|wink|squinting|glaring)\b|(?:expression|gaze|glance|stare|mouth|lips|brow|eyebrows)$|(?:closed|half-lidded|half-closed|wide|narrowed|empty|sad|downturned|puppy|unfocused) eyes$|^looking (?!at viewer)/i;
 const NO_WEIGHT_RE = /^(?:\d*boys?|\d*girls?|male focus|solo|no humans|animal focus|simple background|detailed background)$/i;
-export function weighTags(tags, w) {
+export function weighTags(tags, w, ew) {
   if (!w) return String(tags || "");
-  return splitTop(tags).map((t) => (t.startsWith(":") || t.includes("(") || NO_WEIGHT_RE.test(t) ? t : `(${t}:${w})`)).join(", ");
+  return splitTop(tags).map((t) => {
+    if (t.startsWith(":") || t.includes("(") || NO_WEIGHT_RE.test(t)) return t;
+    if (EXPRESSION_RE.test(t)) return ew ? `(${t}:${ew})` : t;
+    return `(${t}:${w})`;
+  }).join(", ");
 }
 /* 그림체 {prompt, coolPrompt?, blackTag?, paleTag?, bangs?, bangsNeg?, fits?, neg?}와 내용 태그 → 실제로 쓸 {prompt, neg}.
    차가운 머리색(검정·은발·회색·흰색)은 피부를 더 하얗게 하는 coolPrompt, 그중 검정만 blackTag로 머리색을 진하게(은발이 검어지지 않게) */

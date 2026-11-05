@@ -24,23 +24,24 @@ export function coverPrompt(c) {
   const look = castLook(cast[0], c), who = lookIsMale(look) ? ["(1boy:1.2)", "male focus", "solo", "handsome man, masculine features"] : ["(1girl:1.2)", "solo", "beautiful woman"];
   return [...base, ...who, (cast[0] && cast[0].tags) || look, "looking at viewer", c.artTags || c.oneLiner, "atmospheric background"].filter(Boolean).join(", ");
 }
-/* 상황 번호(SIT 0~14) → 표정·자세 태그(Danbooru). 프롬프트 맨 앞(장면 자리)에 들어가야 모델이 따름 */
-const SIT_PONY_TAGS = [
-  "portrait, upper body, looking at viewer, light smile",                  // 0 프로필
-  "neutral expression, closed mouth, upper body, looking at viewer",       // 1 기본
-  "smile, open mouth, :d, laughing, closed eyes, happy",                   // 2 웃음
-  "blush, embarrassed, shy, looking away, hand on own cheek, nose blush",  // 3 부끄러움
-  "crying, streaming tears, sad, frown, looking down",                     // 4 슬픔
-  "surprised, wide-eyed, open mouth, :o, shocked",                         // 5 놀람
-  "angry, furious, clenched teeth, glaring, v-shaped eyebrows",            // 6 분노
-  "pout, puffy cheeks, annoyed, looking away, crossed arms",               // 7 삐침
-  "scared, frightened, trembling, wide-eyed, sweat",                       // 8 공포
-  "injured, bandages, bruise, blood on face, exhausted, torn clothes",     // 9 부상
-  "relieved, gentle smile, soft light, sparkle",                           // 10 회복
-  "sleeping, closed eyes, lying down, peaceful, pillow",                   // 11 휴식
-  "fighting stance, attacking, action pose, intense eyes, motion blur",    // 12 공격
-  "glowing eyes, aura, magic, floating hair, power",                       // 13 각성
-  "blush, loving gaze, gentle smile, hands on own chest"                   // 14 설렘
+/* 상황 번호(SIT 0~14) → 표정·자세 태그(Danbooru). 프롬프트 맨 앞(장면 자리)에 들어가야 모델이 따름.
+   2026-11-06 참고 일러스트에 맞춰 다시 씀(사용자 요청 — 표정이 굳고 인위적): furious·clenched teeth·:d·puffy cheeks·hand on own cheek처럼 얼굴을 일그러뜨리거나 어려 보이게 하는 태그를 빼고, 눈·눈썹·입을 은은하게. upper body는 얼굴이 크게 보여 표정이 잘 보임, 고개를 돌리는 looking away 대신 시선만 옮기는 looking to the side. 편안한 칸은 half-lidded eyes — 참고 일러스트의 눈이고, 눈을 크게 뜨면 정면에서 어려 보임(fd73 → fd74). 표정 태그에는 가중치가 붙지 않음(style-fit.js weighTags) — 눈물만 약해서 직접 올림 */
+export const SIT_PONY_TAGS = [
+  "upper body, looking at viewer, light smile, half-lidded eyes, relaxed expression, soft gaze", // 0 프로필
+  "upper body, looking at viewer, relaxed expression, half-lidded eyes, closed mouth, soft gaze", // 1 기본
+  "upper body, looking at viewer, happy, smile, half-lidded eyes, closed mouth", // 2 웃음
+  "upper body, looking to the side, blush, embarrassed, shy smile, half-lidded eyes, closed mouth", // 3 부끄러움
+  "upper body, looking at viewer, sad, (tears:1.2), teary eyes, downturned eyes, parted lips", // 4 슬픔
+  "upper body, looking at viewer, surprised, wide eyes, raised eyebrows, parted lips", // 5 놀람
+  "upper body, looking at viewer, angry, furrowed brow, glaring, frown, closed mouth", // 6 분노
+  "upper body, looking to the side, pout, annoyed, furrowed brow, crossed arms", // 7 삐침
+  "upper body, looking at viewer, scared, worried, wide eyes, raised inner eyebrows, parted lips, sweat", // 8 공포
+  "upper body, looking at viewer, injured, bandages, bruise, pained expression, parted lips", // 9 부상
+  "upper body, looking at viewer, relieved, gentle smile, half-lidded eyes, relaxed expression, soft light", // 10 회복
+  "sleeping, closed eyes, lying down, peaceful, pillow", // 11 휴식
+  "fighting stance, action pose, determined, intense gaze, closed mouth", // 12 공격
+  "upper body, glowing eyes, aura, magic, floating hair, intense gaze", // 13 각성
+  "upper body, looking at viewer, blush, gentle smile, half-lidded eyes, soft gaze, relaxed expression" // 14 설렘
 ];
 /* 기본 0~14를 고친 값(S.settings.baseSits[번호] = {prompt?, motion?} — 이미지 스튜디오의 ✎, 계정에도 저장). 이름은 SIT 그대로(AI 규칙이 이름으로 번호를 찾음), 수위는 작품마다(sheetRating) */
 export const baseSit = (n) => { const o = (S.settings.baseSits || {})[n]; return o && typeof o === "object" ? o : null; };
