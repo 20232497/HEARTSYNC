@@ -75,7 +75,7 @@ export function viewMe() {
     <p class="note">키와 데이터는 ${KV.dbOk ? "내 claude.ai 계정" : "이 브라우저"}에만 저장돼요 · 이미지: ${IMG.assets ? "아티팩트 저장소" : "압축 후 내 저장 공간"}</p>
     <h2 class="sec">고객센터</h2>
     <div class="box"><div class="menu-list" id="helpMenu">
-      <button data-go="help-notice">공지사항<span class="v" id="noticeNew">${hasNewNotice() ? "새 공지" : ""}</span></button>
+      <button data-go="notice">공지사항<span class="v" id="noticeNew">${hasNewNotice() ? "새 공지" : ""}</span></button>
       <button data-go="help-faq">자주 묻는 질문</button>
       <button data-go="help-ask">문의하기</button></div></div>
     <h2 class="sec">약관 및 정책</h2>

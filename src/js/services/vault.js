@@ -1,5 +1,6 @@
 /* API 키 금고(VAULT): 비밀번호·암호로 만든 키로 AES-GCM 암호화해 계정에 저장 */
 import { emit, on } from "../core/events.js";
+import { saveSettings } from "../core/settings.js";
 import { S, hasClaudeKey } from "../core/state.js";
 import { CLOUD } from "./cloud.js";
 import { SB } from "./supabase.js";
@@ -13,7 +14,7 @@ import { SB } from "./supabase.js";
 export const VAULT_FIELDS = ["apiKey", "runwareKey", "openRouterKey"];
 /**
  * API 키 금고 — 키를 로그인 비밀번호(또는 키 잠금 암호)로 기기에서 만든 잠금 키로 AES-GCM 암호화해 계정 "vault" 행에만 올림(서버는 못 봄).
- * fromPassword(pw, uid)/fromPhrase(phrase, uid, box) 잠금 키 만들기 · save() 바뀐 키 올리기(같은 kid일 때만) · take(box, merge) 계정 값을 기기에 · drop() 행 삭제 · state: ""|"ok"|"locked"|"stale"("vault" 이벤트)
+ * fromPassword(pw, uid)/fromPhrase(phrase, uid, box) 잠금 키 만들기 · save() 바뀐 키 올리기(같은 kid일 때만) · take(box, merge) 계정 값을 기기에 · clearField(f) 키 한 칸만 지움 · drop() 행 삭제 · state: ""|"ok"|"locked"|"stale"("vault" 이벤트)
  */
 export const VAULT = {
   rec: null, ck: null, state: "", timer: null, fresh: false, // rec { uid, k(잠금 키 base64), kid, seen(마지막으로 계정과 맞춘 키 묶음의 해시) }
@@ -107,6 +108,27 @@ export const VAULT = {
     return 1;
   },
   async remote() { const r = await SB.req("/rest/v1/kv?select=value&key=eq.vault"); await CLOUD.check(r); const j = await r.json(); return j[0] ? j[0].value : null; },
+  /**
+   * 키 한 칸만 이 기기와 계정에서 지움(사용자 사이트의 쓰지 않는 Runware 키 — ui/leftover-key.js).
+   * 계정의 최신 값을 먼저 받아 맞춘 뒤 올려서, 다른 기기에서 바꾼 키를 옛 값으로 덮지 않고 이 기기에서 바꾼 뒤 못 올린 키도 잃지 않음(take의 seen 규칙). 쓰기는 write()의 kid 규칙 그대로.
+   * 서버에 닿지 못하면 아무것도 바꾸지 않고 던짐 — 계정에 키가 남았는데 '지웠어요'라고 하지 않게.
+   * @param {string} f VAULT_FIELDS 칸 이름
+   * @returns {Promise<"done"|"none"|"locked">} done 계정의 암호문에서도 뺌 · none 계정에 잠긴 키가 없음(또는 계정에 안 올리는 설정) · locked 이 기기에서만 지움(잠금이 없거나 예전 잠금이라 계정 것은 못 고침)
+   * @throws 서버 오류·연결 실패
+   */
+  async clearField(f) {
+    const clear = (res) => { S.settings[f] = ""; saveSettings(); return res; };
+    if (!CLOUD.on || CLOUD.noTable || S.settings.syncKeys === false) return clear("none");
+    if (this.timer) await this.write(); // 이 기기에서 바꾼 키를 먼저 올림(타이머가 돌면 take가 맞춰 주지 않음)
+    const box = await this.remote();
+    if (!box) return clear("none");
+    if (!this.rec || !this.ok() || box.kid !== this.rec.kid) return clear("locked");
+    await this.take(box, this.rec.seen == null); // 계정과 맞춘 적 없는 기기면 합침 — 이 기기의 다른 키를 잃지 않게
+    if (this.state === "stale") return clear("locked"); // 잠금은 같은데 풀리지 않음
+    const before = S.settings[f]; S.settings[f] = "";
+    try { await this.write(); } catch (e) { S.settings[f] = before; throw e; }
+    return this.state === "stale" ? clear("locked") : clear("done"); // stale: 그사이 다른 기기에서 비밀번호가 바뀜
+  },
   // 'API 키도 계정에 저장'을 끔 → 계정의 잠긴 키도 지움
   async drop() {
     clearTimeout(this.timer); this.timer = null;

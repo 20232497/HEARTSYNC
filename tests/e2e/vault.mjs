@@ -1,10 +1,11 @@
 // API 키 금고 시험: Supabase를 page.route로 흉내 냄(실제 서버로는 아무것도 안 감). 키는 모두 시험용 가짜 값
 // PC 가입 → 계정에는 암호문만 → 휴대폰 로그인으로 키 받음 → 메일 링크로 들어온 기기는 잠김 → 비밀번호 입력으로 풂
 // → 비밀번호 재설정 → 예전 잠금 기기는 덮어쓰지 못함 → 다시 풂 → 키 저장 끄기 → 로그아웃하면 잠금 키도 지움
+// → 쓰지 않는 Runware 키 지우기: 일반 이용자(서버 답이 없으면 안 지움·다른 키 유지·다른 기기까지) → 잠긴 기기 → 관리자 계정은 유지(사용자 사이트·관리자 도구) → 로그인 전 → 관리자 관문을 지난 브라우저
 import { chromium, webkit, devices } from "playwright";
-const [, , url] = process.argv;
+const [, , url, shots] = process.argv;
 const SB = "https://mblvphojbmxiuqnlxisi.supabase.co";
-const db = { users: {}, tokens: {}, rows: [], n: 0, log: [] };
+const db = { users: {}, tokens: {}, rows: [], n: 0, log: [], admins: [], adminsDown: false };
 const now = () => new Date(Date.now() + db.n++).toISOString().replace("Z", "+00:00");
 const json = (route, status, body) => route.fulfill({ status, contentType: "application/json", headers: { "access-control-allow-origin": "*" }, body: body === undefined ? "" : JSON.stringify(body) });
 const pub = (u) => ({ id: u.id, email: u.email, app_metadata: { provider: "email" } });
@@ -56,6 +57,8 @@ async function handler(route) {
   }
   if (p === "/rest/v1/rpc/delete_me") { const uid = who(req); db.rows = db.rows.filter((r) => r.user_id !== uid); for (const e of Object.keys(db.users)) if (db.users[e].id === uid) delete db.users[e]; return json(route, 204); }
   if (p === "/auth/v1/logout") return route.fulfill({ status: 204, headers: { "access-control-allow-origin": "*" } });
+  // admins 표(docs/supabase.sql): 로그인한 계정만 읽고 RLS로 자기 행만 보임 — 관리자가 아니면 빈 목록, 토큰이 없으면 권한 오류. adminsDown은 서버가 답하지 않는 상황
+  if (p === "/rest/v1/admins") { if (db.adminsDown) return json(route, 503, { message: "down" }); const uid = who(req); if (!uid) return json(route, 401, { code: "42501", message: "permission denied" }); return json(route, 200, db.admins.includes(uid) ? [{ user_id: uid }] : []); }
   if (p === "/rest/v1/kv") {
     const uid = who(req); if (!uid) return json(route, 401, { message: "JWT" });
     const q = [...u.searchParams.entries()], prefer = req.headers()["prefer"] || "", sel = u.searchParams.get("select");
@@ -169,6 +172,99 @@ try {
   await B.click("#cOut"); await B.waitForTimeout(200); await B.click("#lok"); await B.waitForTimeout(1200);
   res.B_logout = await B.evaluate(() => ({ vaultKeys: Object.keys(localStorage).filter((k) => k.indexOf("hv1_vault_") === 0).length, auth: !!localStorage.getItem("hv1_auth"), apiKey: S.settings.apiKey }));
   res.serverSettingsFields = Object.keys(settingsRow()).filter((k) => /key/i.test(k));
+
+  // ---------- 쓰지 않는 Runware 키 지우기(ui/leftover-key.js) — 어긋나면 errs로 실패
+  const must = (name, ok, got) => { if (!ok) errs.push("leftover " + name + ": " + JSON.stringify(got).slice(0, 240)); };
+  const rowOf = (email, key) => { const id = db.users[email].id; return (db.rows.find((r) => r.user_id === id && r.key === key) || {}).value || null; };
+  const openBox = (pg, box) => pg.evaluate((b) => VAULT.open(b), box);
+  const card = async (pg) => { await pg.evaluate(() => { location.hash = "me"; viewMe(); }); await pg.waitForTimeout(500); return pg.evaluate(() => { const c = document.querySelector("#rwLeft"); return c ? { text: c.textContent, btn: !!c.querySelector("#rwDel") } : null; }); };
+  const press = async (pg) => { await pg.click("#rwDel"); await pg.waitForTimeout(150); const sub = await pg.textContent(".overlay .sub"); await pg.click(".overlay #ok"); await pg.waitForTimeout(1500); return sub; };
+  const three = (pg) => pg.evaluate(() => ({ apiKey: S.settings.apiKey, runwareKey: S.settings.runwareKey, openRouterKey: S.settings.openRouterKey, saved: JSON.parse(localStorage.getItem("hv1_settings")).runwareKey }));
+  const fakeKeys = (tag) => ({ apiKey: "sk-ant-test-fake-" + tag, runwareKey: "rw-test-fake-" + tag, openRouterKey: "sk-or-test-fake-" + tag });
+  const setKeys = (pg, keys) => pg.evaluate((k) => { Object.assign(S.settings, k); saveSettings(); }, keys);
+  const asGuest = async (dev) => { const pg = await device(chromium, dev); await pg.goto(url, { waitUntil: "load" }); await pg.waitForTimeout(800); await pg.click("#lguest"); await pg.waitForTimeout(300); await pg.click(".overlay [data-aud=all]"); await pg.waitForTimeout(200); return pg; };
+  const join = async (dev, email, pw, keys) => {
+    const pg = await asGuest(dev);
+    await setKeys(pg, keys);
+    await pg.evaluate(() => { location.hash = "login"; }); await pg.waitForTimeout(400);
+    await pg.click("#lmode [data-m=up]"); await pg.fill("#lmail", email); await pg.fill("#lpw", pw); await pg.fill("#lpw2", pw); await pg.click("#lgo"); await pg.waitForTimeout(3500);
+    return pg;
+  };
+  const logIn = async (dev, email, pw) => { const pg = await device(chromium, dev); await pg.goto(url, { waitUntil: "load" }); await pg.waitForTimeout(800); await pg.fill("#lmail", email); await pg.fill("#lpw", pw); await pg.click("#lgo"); await pg.waitForTimeout(4000); return pg; };
+
+  // 일반 이용자, 기기 둘(PC·휴대폰) — 둘 다 키를 받은 상태
+  const REG = "regular@example.test", K = fakeKeys("R"), PC = await join("Desktop Chrome", REG, "test-pass-r", K), PH = await logIn("Galaxy S9+", REG, "test-pass-r");
+  res.left_regular = { card: await card(PC), inVault: await openBox(PC, rowOf(REG, "vault")), phone: await three(PH) };
+  must("일반 이용자에게 칸·버튼이 보임", res.left_regular.card && res.left_regular.card.btn && /계정\(암호문\)/.test(res.left_regular.card.text), res.left_regular.card);
+  must("금고에 키가 들어 있음", res.left_regular.inVault.runwareKey === K.runwareKey && res.left_regular.phone.runwareKey === K.runwareKey, res.left_regular);
+  if (shots) await PC.locator("#rwLeft").screenshot({ path: shots + "/leftover-key.png" });
+  // 서버가 답하지 않으면: 버튼이 없고, 함수를 바로 불러도 지우지 않음
+  const boxBefore = JSON.stringify(rowOf(REG, "vault"));
+  db.adminsDown = true;
+  res.left_down = { card: await card(PC), call: await PC.evaluate(() => clearLeftover()), keys: await three(PC), vaultSame: JSON.stringify(rowOf(REG, "vault")) === boxBefore };
+  db.adminsDown = false;
+  must("서버 답이 없으면 지우지 않음", res.left_down.card && !res.left_down.card.btn && res.left_down.call.account === "" && res.left_down.keys.runwareKey === K.runwareKey && res.left_down.vaultSame, res.left_down);
+  // 휴대폰에서 Anthropic 키를 바꿈 → PC는 아직 모름 → PC에서 지우기 → 새 키를 잃지 않음
+  await setKeys(PH, { apiKey: "sk-ant-test-fake-R2" }); await PH.waitForTimeout(1800);
+  const kidBefore = rowOf(REG, "vault").kid;
+  await card(PC);
+  res.left_press = { confirm: await press(PC), keys: await three(PC), card: await card(PC), inVault: await openBox(PC, rowOf(REG, "vault")), kidSame: rowOf(REG, "vault").kid === kidBefore, plain: plainOnServer("rw-test-fake-R") };
+  const want = { apiKey: "sk-ant-test-fake-R2", runwareKey: "", openRouterKey: K.openRouterKey };
+  must("확인 창이 되돌릴 수 없다고 알림", /되돌릴 수 없어요/.test(res.left_press.confirm), res.left_press.confirm);
+  must("이 기기·금고에서 Runware 키만 빠짐", JSON.stringify(res.left_press.inVault) === JSON.stringify(want) && res.left_press.keys.runwareKey === "" && res.left_press.keys.saved === "" && res.left_press.keys.apiKey === want.apiKey && res.left_press.keys.openRouterKey === want.openRouterKey, res.left_press);
+  must("지운 뒤 칸이 사라지고 잠금은 그대로, 평문 없음", res.left_press.card === null && res.left_press.kidSame && !res.left_press.plain, res.left_press);
+  // 휴대폰은 다음 동기화 때 지워지고 다시 열어도 그대로
+  await PH.evaluate(() => CLOUD.pull());
+  await PH.reload({ waitUntil: "load" }); await PH.waitForTimeout(1500);
+  res.left_phone = { keys: await three(PH), card: await card(PH) };
+  must("다른 기기에서도 지워짐", res.left_phone.keys.runwareKey === "" && res.left_phone.keys.apiKey === want.apiKey && res.left_phone.keys.openRouterKey === want.openRouterKey && res.left_phone.card === null, res.left_phone);
+
+  // 잠긴 기기(메일 링크로 들어옴): 이 기기에서만 지움 → 금고는 그대로 → 잠금을 풀면 다시 받아져 칸이 '금고까지'로 바뀜 → 그때 금고에서도 지움
+  const LOCKED = "locked@example.test", KL = fakeKeys("L"), L1 = await join("Desktop Chrome", LOCKED, "test-pass-l", KL), L2 = await device(chromium, "Galaxy S9+");
+  await L2.goto(url, { waitUntil: "load" }); await L2.waitForTimeout(600);
+  const sessL = session(db.users[LOCKED]);
+  await L2.evaluate(([s, rw]) => { localStorage.setItem("hv1_auth", JSON.stringify({ access_token: s.access_token, refresh_token: s.refresh_token, expires_at: Date.now() + 3600000, user: { id: s.user.id, email: s.user.email, provider: "email" } })); localStorage.setItem("hv1_settings", JSON.stringify({ audience: "all", runwareKey: rw })); }, [sessL, KL.runwareKey]);
+  await L2.reload({ waitUntil: "load" }); await L2.waitForTimeout(1500);
+  const lockedBox = JSON.stringify(rowOf(LOCKED, "vault"));
+  res.left_locked = { state: await L2.evaluate(() => VAULT.state), card: await card(L2), confirm: await press(L2), keys: await three(L2), vaultSame: JSON.stringify(rowOf(LOCKED, "vault")) === lockedBox };
+  must("잠긴 기기는 이 기기에서만 지우고 금고는 그대로", res.left_locked.state === "locked" && /잠금을 풀어야/.test(res.left_locked.card.text) && /이 기기에서만/.test(res.left_locked.confirm) && res.left_locked.keys.runwareKey === "" && res.left_locked.vaultSame, res.left_locked);
+  res.left_unlocked = { r: await unlock(L2, "test-pass-l"), keys: await three(L2), card: await card(L2) };
+  must("잠금을 풀면 금고의 키가 다시 보임", res.left_unlocked.keys.runwareKey === KL.runwareKey && res.left_unlocked.card && /계정\(암호문\)/.test(res.left_unlocked.card.text), res.left_unlocked);
+  await press(L2);
+  res.left_unlockedDone = { keys: await three(L2), inVault: await openBox(L2, rowOf(LOCKED, "vault")), L1: await L1.evaluate(async () => { await CLOUD.pull(); return { apiKey: S.settings.apiKey, runwareKey: S.settings.runwareKey, openRouterKey: S.settings.openRouterKey }; }) };
+  must("풀고 지우면 금고에서도 빠지고 처음 기기까지", JSON.stringify(res.left_unlockedDone.inVault) === JSON.stringify({ ...KL, runwareKey: "" }) && res.left_unlockedDone.L1.runwareKey === "" && res.left_unlockedDone.L1.apiKey === KL.apiKey, res.left_unlockedDone);
+
+  // 관리자 계정: 같은 계정으로 사용자 사이트를 열어도 칸이 없고, 함수를 바로 불러도 안 지움 — 관리자 도구에는 키가 그대로
+  const ADMIN = "admin@example.test", KA = fakeKeys("A"), M = await join("Desktop Chrome", ADMIN, "test-pass-a", KA);
+  db.admins.push(db.users[ADMIN].id);
+  const adminBox = JSON.stringify(rowOf(ADMIN, "vault"));
+  res.left_admin = { card: await card(M), call: await M.evaluate(() => clearLeftover()), keys: await three(M), vaultSame: JSON.stringify(rowOf(ADMIN, "vault")) === adminBox };
+  must("관리자 계정은 칸이 없고 키가 그대로", res.left_admin.card === null && res.left_admin.call.account === "" && res.left_admin.keys.runwareKey === KA.runwareKey && res.left_admin.vaultSame, res.left_admin);
+  await M.waitForTimeout(1000);
+  const MA = await M.context().newPage();
+  MA.on("pageerror", (e) => errs.push("admin tool pageerror: " + e.message));
+  await MA.goto(new URL("admin.html", url).href, { waitUntil: "load" }); await MA.waitForTimeout(1500);
+  await MA.evaluate(() => { location.hash = "me"; }); await MA.waitForTimeout(600);
+  res.left_adminTool = await MA.evaluate(() => ({ rkey: document.querySelector("#rkey").value, card: !!document.querySelector("#rwLeft"), fn: typeof clearLeftover, kept: S.settings.runwareKey }));
+  must("관리자 도구에는 키가 그대로이고 정리 칸·함수가 없음", res.left_adminTool.rkey === KA.runwareKey && !res.left_adminTool.card && res.left_adminTool.fn === "undefined", res.left_adminTool);
+  // 새로 연 페이지에서 서버가 답하지 않으면('맞음'을 아직 기억하지 못함): 관리자인지 몰라도 지우지 않음
+  db.adminsDown = true;
+  await M.reload({ waitUntil: "load" }); await M.waitForTimeout(1200);
+  res.left_adminDown = { card: await card(M), call: await M.evaluate(() => clearLeftover()), keys: await three(M), vaultSame: JSON.stringify(rowOf(ADMIN, "vault")) === adminBox };
+  db.adminsDown = false;
+  must("관리자 확인이 안 되면 지우지 않음", res.left_adminDown.card && !res.left_adminDown.card.btn && res.left_adminDown.call.account === "" && res.left_adminDown.keys.runwareKey === KA.runwareKey && res.left_adminDown.vaultSame, res.left_adminDown);
+
+  // 로그인 전: 이 브라우저에서만 지움(계정 요청 없음). 관리자 관문을 지난 브라우저는 로그아웃해 있어도 칸이 없음
+  const G = await asGuest("Desktop Chrome");
+  await setKeys(G, fakeKeys("G"));
+  const logAt = db.log.length;
+  res.left_guest = { card: await card(G), confirm: await press(G), keys: await three(G), cardAfter: await card(G), kvRequests: db.log.slice(logAt).filter((l) => /rest\/v1\/(kv|admins)/.test(l)).length };
+  must("로그인 전에는 이 브라우저에서만 지움", /로그인한 뒤에/.test(res.left_guest.card.text) && res.left_guest.keys.runwareKey === "" && res.left_guest.keys.apiKey === "sk-ant-test-fake-G" && res.left_guest.cardAfter === null && res.left_guest.kvRequests === 0, res.left_guest);
+  const GA = await asGuest("Desktop Chrome");
+  await setKeys(GA, fakeKeys("O"));
+  await GA.evaluate(() => { localStorage.setItem("hv1_admin", "x"); });
+  res.left_gate = { card: await card(GA), call: await GA.evaluate(() => clearLeftover()), keys: await three(GA) };
+  must("관리자 관문을 지난 브라우저는 지우지 않음", res.left_gate.card === null && res.left_gate.call.account === "" && res.left_gate.keys.runwareKey === "rw-test-fake-O", res.left_gate);
 } catch (e) { res.fail = String(e).slice(0, 500); }
 for (const b of browsers) await b.close();
 res.errors = errs;

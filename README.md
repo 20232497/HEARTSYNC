@@ -65,7 +65,7 @@
   <a href="https://20232497.github.io/HEARTSYNC/#c-hangyeoul"><img src="docs/assets/covers/hangyeoul.jpg" alt="새벽 두 시의 편의점" title="새벽 두 시의 편의점" width="15.4%"></a>
 </p>
 
-표지를 누르면 그 작품이 열려요. 처음 방문하면 로그인 화면이 먼저 나오는데, **로그인 없이 둘러보기**로 들어갈 수 있어요. 작품은 폴더 하나로 더하고, 만드는 법은 [content/README.md](content/README.md)에 있어요.
+표지를 누르면 그 작품이 열려요. 처음 방문하면 로그인 화면이 먼저 나오지만, 로그인하거나 **로그인 없이 둘러보기**를 누르면 고른 작품으로 바로 이어져요. 작품은 폴더 하나로 더하고, 만드는 법은 [content/README.md](content/README.md)에 있어요.
 
 <details>
 <summary><b>여성향 6편 한 줄 소개</b></summary>

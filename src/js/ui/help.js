@@ -1,5 +1,5 @@
-/* 고객센터 화면(#help): 공지사항 · 자주 묻는 질문 · 문의하기 탭(#help-notice·#help-faq·#help-ask로 바로). MY의 고객센터 칸에서 들어옴.
-   공지·문의는 Supabase(services/support.js), FAQ는 ui/faq.js의 고정 글. 관리자 빌드는 탭을 그린 뒤 EXT.help(tab, box, list)로 공지 쓰기·받은 문의를 더함(admin/support.js).
+/* 공지 화면(#notice)과 고객센터 화면(#help — 자주 묻는 질문·문의하기). 공지는 홈·대화처럼 메뉴에서 바로 들어오고, 고객센터는 MY의 칸에서 들어옴(#help-faq·#help-ask로 바로, 예전 주소 #help-notice는 #notice로 넘김).
+   공지·문의는 Supabase(services/support.js), FAQ는 ui/faq.js의 고정 글. 관리자 빌드는 그린 뒤 EXT.help(tab, box, list)로 공지 쓰기·받은 문의를 더함(admin/support.js) — 관리자 계정이면 누를 것 없이 바로 관리 화면.
    claude.ai 안·서버 설정이 없으면(SB.on() 거짓) 공지는 마지막으로 받은 것만, 문의는 이메일 안내만 */
 import { IN_CLAUDE } from "../core/config.js";
 import { S } from "../core/state.js";
@@ -15,7 +15,7 @@ import { bindGo, go, topbar } from "./shell.js";
 /** @typedef {import("../core/types.js").Notice} Notice */
 /** @typedef {import("../core/types.js").Inquiry} Inquiry */
 
-const TABS = [["notice", "공지사항"], ["faq", "자주 묻는 질문"], ["ask", "문의하기"]];
+const TABS = [["faq", "자주 묻는 질문"], ["ask", "문의하기"]];
 const SITE = "https://20232497.github.io/HEARTSYNC/";
 const SEEN = "hv1_notice_seen"; // 마지막으로 본 공지 id(가장 큰 것) — MY의 '새 공지' 표시
 /** 정적 문서(terms.html·privacy.html) 주소 — 파일로 열었거나 claude.ai 안이면 같은 폴더에 문서가 없으니 웹 주소로. @param {string} f @returns {string} */
@@ -35,7 +35,8 @@ export function checkNotices() {
 }
 
 export function viewHelp(arg) {
-  const tab = TABS.some((t) => t[0] === arg) ? arg : "notice", v = $("#view");
+  if (arg === "notice") { location.replace("#notice"); return; } // 예전 주소
+  const tab = TABS.some((t) => t[0] === arg) ? arg : "faq", v = $("#view");
   v.innerHTML = `<div class="page help-page">${topbar()}
     <div class="help-head"><button class="icon-btn" data-go="me" aria-label="MY로 돌아가기">${ICON.back}</button><h1 class="sec">고객센터</h1></div>
     <div class="tabs" role="tablist">${TABS.map(([k, l]) => `<button type="button" role="tab" data-htab="${k}" aria-selected="${k === tab}" class="${k === tab ? "on" : ""}">${l}</button>`).join("")}</div>
@@ -43,16 +44,22 @@ export function viewHelp(arg) {
   bindGo(v);
   $$("[data-htab]", v).forEach((b) => b.onclick = () => go("help-" + b.dataset.htab));
   const box = $("#helpBody", v);
-  if (tab === "faq") faqTab(box); else if (tab === "ask") askTab(box); else noticeTab(box);
+  if (tab === "ask") askTab(box); else faqTab(box);
 }
 
-/* ---------------------------------------------------------------- 공지사항 */
+/* ---------------------------------------------------------------- 공지(메뉴 화면) */
+export function viewNotice() {
+  const v = $("#view");
+  v.innerHTML = `<div class="page help-page">${topbar()}<h1 class="sec" style="margin-top:4px">공지</h1><div id="helpBody"></div></div>`;
+  bindGo(v);
+  noticeBody($("#helpBody", v));
+}
 /** 공지 한 개(접힘). @param {Notice} n @param {boolean} open @returns {string} */
 function noticeHTML(n, open) {
   return `<details class="notice" data-nid="${+n.id}" ${open ? "open" : ""}><summary><span class="t">${n.pinned ? `<span class="pill">고정</span>` : ""}${n.published === false ? `<span class="pill gold">비공개</span>` : ""}<b>${esc(n.title)}</b></span><span class="d">${day(n.created_at)}</span></summary>
     <div class="nbody">${rich(n.body)}</div></details>`;
 }
-async function noticeTab(box) {
+async function noticeBody(box) {
   const seen = seenId();
   const paint = (list, msg) => {
     box.innerHTML = (msg ? `<p class="note help-msg">${esc(msg)}</p>` : "") +

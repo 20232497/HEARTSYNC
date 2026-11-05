@@ -6,8 +6,9 @@ import { dropEcho, parseState, splitReply } from "../../ai/parse.js";
 import { buildInput } from "../../ai/prompt/input.js";
 import { maybeSummarize } from "../../ai/prompt/memory.js";
 import { curText, saveRoom } from "../../core/rooms.js";
+import { minorHint } from "../../core/safety.js";
 import { gen, room, setGen } from "../../core/state.js";
-import { $, uid } from "../../core/util.js";
+import { $, toast, uid } from "../../core/util.js";
 import { charge, qShort, quote, refund } from "../../core/wallet.js";
 import { applyDims, dimOf, imgTags, lastDims } from "../../images/codes.js";
 import { imagesOf } from "../../images/pick.js";
@@ -37,7 +38,12 @@ export function regenAsk(i) {
     <div class="field"><label for="dir">다시 쓸 방향 (선택)</label><textarea id="dir" maxlength="300" placeholder="예: 서윤이 좀 더 솔직하게 반응하도록 / 전투를 더 길게"></textarea></div>
     <div class="cta-row"><button class="btn ghost" data-x>취소</button><span class="spacer"></span><button class="btn pri" id="go">다시 쓰기 · ${qShort(q)}</button></div>`);
   $("#dir", sh).focus();
-  $("#go", sh).onclick = () => { const d = $("#dir", sh).value.trim(); closeOverlays(); regen(i, d); };
+  $("#go", sh).onclick = () => {
+    const d = $("#dir", sh).value.trim();
+    // 다시 쓰기 지침은 방에 남지 않아 roomBlocked가 보지 못함 — 성인 경로로 나가는 지침은 여기서 막음(창은 그대로 두어 고칠 수 있게)
+    if (unfilteredRoute(room) && minorHint(d)) { toast("미성년으로 보이는 표현이 있어 이 방향으로는 다시 쓸 수 없어요"); return; }
+    closeOverlays(); regen(i, d);
+  };
 }
 export async function regen(i, direction = "") {
   if (gen) return;
