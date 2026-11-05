@@ -14,8 +14,8 @@ import { codeRating, keyName, knownCodes, slotNums } from "../images/situations.
 import { styleFor } from "../images/styles.js";
 import { IMG } from "../services/images.js";
 
-/* 스튜디오 상태 — 화면을 떠나도 세션 동안 남음. acts는 고른 순서(조합엔 앞 MAX_ACT개), wear·place는 하나 또는 null */
-export const ISTATE = { work: "", cast: "", tab: "act", acts: [1], wear: null, place: null, aspect: "4:5", style: "", autoSave: false, prompt: false, closed: {}, results: [], busy: null };
+/* 스튜디오 상태 — 화면을 떠나도 세션 동안 남음. acts는 고른 순서(조합엔 앞 MAX_ACT개), wear·place는 하나 또는 null, del은 코드 선택 삭제 모드일 때 고른 번호(Set) */
+export const ISTATE = { work: "", cast: "", tab: "act", acts: [1], wear: null, place: null, aspect: "4:5", style: "", autoSave: false, prompt: false, closed: {}, results: [], busy: null, del: null };
 const STOP_ON = ["no_key", "bad_key", "no_funds", "bad_model", "network", "rate_limited", "minor_block", "timeout"];
 
 export const ctxOf = (c, cast) => ({ kind: "daily", aud: audOf(c), male: lookIsMale(castLook(cast, c)) });

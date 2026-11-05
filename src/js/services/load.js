@@ -1,4 +1,4 @@
-/* 저장된 데이터를 S에 읽어 들임(loadAll): 지갑·페르소나·프로필·내 작품·대화방 목록·그림 칸·요약 설정·표지·세계관·저장 태그. 부팅과 계정에서 다시 받을 때 씀 */
+/* 저장된 데이터를 S에 읽어 들임(loadAll): 지갑·페르소나·프로필·내 작품·대화방 목록·그림 칸·움짤·요약 설정·표지·세계관·저장 태그. 부팅과 계정에서 다시 받을 때 씀 */
 import { normalizeChar } from "../core/character.js";
 import { S } from "../core/state.js";
 import { KV } from "../core/storage.js";
@@ -8,7 +8,7 @@ import { IMG } from "./images.js";
 
 /** 저장된 데이터(지갑·페르소나·프로필·내 작품·대화방 목록·그림 연결·요약 설정·표지·세계관·태그) 전부를 KV에서 읽어 S에 얹음. @returns {Promise<void>} */
 export async function loadAll() {
-  const [w, p, pr, mine, rooms, packs, mc, cps, lps, tps] = await Promise.all(["wallet", "personas", "profile", "mine", "rooms", "imgpacks", "memcfg", "coverpacks", "lorepacks", "tagpacks"].map((k) => KV.get(k)));
+  const [w, p, pr, mine, rooms, packs, mc, cps, lps, tps, mps] = await Promise.all(["wallet", "personas", "profile", "mine", "rooms", "imgpacks", "memcfg", "coverpacks", "lorepacks", "tagpacks", "motionpacks"].map((k) => KV.get(k)));
   if (cps && typeof cps === "object") S.coverpacks = cps;
   if (tps && typeof tps === "object") S.tagpacks = tps;
   if (lps && typeof lps === "object") S.lorepacks = lps;
@@ -19,6 +19,7 @@ export async function loadAll() {
   if (Array.isArray(mine)) S.mine = mine.map(normalizeChar);
   if (Array.isArray(rooms)) S.rooms = rooms;
   if (packs && typeof packs === "object") S.imgpacks = packs;
+  if (mps && typeof mps === "object") S.motionpacks = mps;
   IMG.migrate().catch(() => {});
   KV.get("ponytags").then((t) => { if (t && typeof t === "object") setTags({ ...t, ...TAGS }); }).catch(() => {});
   if (mc && typeof mc === "object") S.settings.memCfg = { ...S.settings.memCfg, ...mc };

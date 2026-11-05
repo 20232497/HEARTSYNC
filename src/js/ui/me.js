@@ -118,7 +118,7 @@ export function viewMe() {
   };
   $("#reset").onclick = () => confirmSheet("모든 데이터를 지울까요?", "대화방, 만든 캐릭터, 하트, 페르소나, 이미지 연결이 모두 지워져요." + (CLOUD.on ? " 로그인되어 있어서 계정에 저장된 데이터도 지워져요." : "") + " 되돌릴 수 없어요.", "전부 삭제", () => {
     S.rooms.forEach((r) => KV.set(roomKey(r.id), undefined));
-    ["rooms", "mine", "wallet", "personas", "profile", "imgpacks", "coverpacks", "lorepacks", "tagpacks", "ponytags"].forEach((k) => KV.set(k, undefined));
+    ["rooms", "mine", "wallet", "personas", "profile", "imgpacks", "motionpacks", "coverpacks", "lorepacks", "tagpacks", "ponytags"].forEach((k) => KV.set(k, undefined));
     IDB.clear(); try { Object.keys(localStorage).filter((k) => /^hv1_img[a-z0-9]{10,30}$/.test(k)).forEach((k) => localStorage.removeItem(k)); } catch {}
     S.mine = []; publishCommunity();
     (CLOUD.on ? CLOUD.wipe().catch(() => {}) : Promise.resolve()).then(() => setTimeout(() => location.reload(), 400));

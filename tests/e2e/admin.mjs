@@ -1,6 +1,6 @@
 // 관리자 도구(admin.html) 스모크 + 사용자 빌드(index.html)와 갈라졌는지: 일곱 화면(홈·대화·작품·이미지·만들기·스토어·MY), 상세의 관리 버튼(일러스트 관리·이미지 관리·
 // 작품 폴더에 저장), 드로어의 이미지 버튼, MY의 이미지 생성 설정(#rkey·#gstyle·기본 화풍 카드)·크리에이터 프로필, 페르소나 시트의 'AI로 만들기', 시트 5종(코드 편집기·
-// 세계관 일러스트·추천 코드·생성 창·페르소나), 만들기의 관심있는 대화 칸, 이미지 스튜디오(코드 목록·조합 키·프롬프트·찾기·접기). 그리고 사용자 빌드에는 그 자리들이 비어 있고
+// 세계관 일러스트·추천 코드·생성 창·페르소나), 만들기의 관심있는 대화 칸, 이미지 스튜디오(코드 목록·조합 키·프롬프트·찾기·접기·코드 선택 삭제·조합 모두 빼기·갤러리 움짤·⟳). 그리고 사용자 빌드에는 그 자리들이 비어 있고
 // 관리자 함수(viewStudio·viewImages·openImages)가 없어야 함.
 import { chromium, webkit, devices } from "playwright";
 import { noSupabase } from "./_offline.mjs";
@@ -73,12 +73,49 @@ for (const [dev, engine, opts] of [["Desktop Chrome", chromium, {}], ["iPhone 13
     });
     const st = res.studio;
     if (st.who < 5 || st.acts < 50 || st.groups < 2 || st.wears < 2 || st.places < 5 || !/\[\[img:[a-z0-9]+:\d+,4\d\d,5\d\d\]\]/.test(st.combo) || st.prompt < 40 || !st.found || st.found >= st.acts || !st.folded || !st.go || st.adultN < 6 || !st.adultRows || st.adminN !== st.adminCodes) errs.push("이미지 스튜디오: " + JSON.stringify(st));
+    // 코드 선택 삭제(내 칸만 체크 칸, 묶음 전체 선택, 두 번 눌러 삭제 → 그 코드의 그림도 지움) · 조합 '모두 빼기' · 갤러리의 크게·움짤·⟳(가짜 움짤로 사진 ↔ 움짤) — 움짤 만들기는 Runware 요금이 들어 창만 열어 봄
+    res.studio2 = await p.evaluate(async () => {
+      const w = (ms) => new Promise((z) => setTimeout(z, ms)), c = normalizeChar(getChar("hwanghu")), code = c.cast[0].code;
+      const PNG = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
+      S.settings.customSits = [...(S.settings.customSits || []), { n: 31, name: "시험칸가", prompt: "smile", rating: "safe" }, { n: 32, name: "시험칸나", prompt: "wink", rating: "safe" }]; saveSettings();
+      putCastImage(c, code, "31", PNG); putCastImage(c, code, "1", PNG);
+      ISTATE.cast = code; ISTATE.tab = "act"; viewImages("hwanghu"); await w(200);
+      const r = { delBtn: !!$("#isDelMode") };
+      $("#isDelMode").click(); await w(150);
+      r.bar = !!$(".is-delbar"); r.chks = $$(".is-chk").length; r.locked = $$(".is-code.locked").length; r.goOff = $("#isDelGo").disabled;
+      const chk = $('[data-chk="31"]'); chk.checked = true; chk.dispatchEvent(new Event("change")); await w(150);
+      r.one = ISTATE.del.size; r.imgs = countSitImages([31]);
+      const gsel = $('.is-code[data-row="32"]').closest(".is-group").querySelector("[data-gsel]"); gsel.click(); await w(150);
+      r.both = ISTATE.del.has(31) && ISTATE.del.has(32);
+      $("#isDelGo").click(); await w(50); r.sure = /한 번 더/.test($("#isDelGo").textContent); $("#isDelGo").click(); await w(200);
+      r.gone = !(S.settings.customSits || []).some((d) => d.n === 31 || d.n === 32) && !(imagesOf(c)[code] || {})["31"] && !$(".is-delbar") && ISTATE.del === null;
+      // 조합: 감정 둘 + 의상 → 모두 빼기 → 기본(1)만
+      ISTATE.acts = [1, 2]; ISTATE.wear = 404; viewImages(); await w(150);
+      r.clr = !!$("#isSelClr"); $("#isSelClr").click(); await w(150);
+      r.cleared = ISTATE.acts.join() === "1" && ISTATE.wear === null && !$("#isSelClr");
+      // 움짤: 칸 1에 가짜 움짤(켜짐) → 갤러리에 움짤 표시·⟳(켜짐)·영상, ⟳ 누르면 사진
+      putMotion(c, code, "1", "data:video/mp4;base64,AAAAIGZ0eXBpc29t"); viewImages(); await w(200);
+      const gi = () => $('[data-load="1"]').closest(".is-gi");
+      r.mo = { badge: gi().querySelector(".mo-badge")?.textContent, flipOn: gi().querySelector('[data-flip="1"]')?.classList.contains("on"), video: !!gi().querySelector("video.mo"), zoom: !!gi().querySelector('[data-zoom="1"]'), make: !!gi().querySelector('[data-mo="1"]'), now: !!$(".is-now [data-flip]") };
+      gi().querySelector('[data-flip="1"]').click(); await w(200);
+      r.mo.off = { badge: gi().querySelector(".mo-badge")?.textContent, video: !!gi().querySelector("video"), on: motionOf(c, code, "1").on };
+      gi().querySelector('[data-mo="1"]').click(); await w(200);
+      r.mo.sheet = { open: !!$(".mo-sheet"), models: $$("#moM option").length, durs: $$("#moD option").length, del: !!$("#moDel"), prev: $$(".mo-prev figure").length };
+      $(".mo-sheet [data-x]").click(); await w(100);
+      putCastImage(c, code, "1", null); r.mo.cleaned = !motionOf(c, code, "1");
+      ISTATE.cast = ""; viewImages("hwanghu"); await w(150);
+      return r;
+    });
+    const s2 = res.studio2;
+    if (!s2.delBtn || !s2.bar || s2.chks < 2 || !s2.locked || !s2.goOff || s2.one !== 1 || s2.imgs !== 1 || !s2.both || !s2.sure || !s2.gone || !s2.clr || !s2.cleared
+      || s2.mo.badge !== "움짤" || !s2.mo.flipOn || !s2.mo.video || !s2.mo.zoom || !s2.mo.make || !s2.mo.now || s2.mo.off.badge !== "사진" || s2.mo.off.video || s2.mo.off.on
+      || !s2.mo.sheet.open || s2.mo.sheet.models !== 4 || s2.mo.sheet.durs < 2 || !s2.mo.sheet.del || s2.mo.sheet.prev !== 2 || !s2.mo.cleaned) errs.push("스튜디오 삭제·움짤: " + JSON.stringify(s2));
     if (out) await p.screenshot({ path: `${out}/${tag}_admin_me.png`, fullPage: false });
 
     // 사용자 빌드: 관리 자리가 비어 있고 관리자 함수가 없음
     await open(userUrl);
     const u = { navs: await p.evaluate(() => [...document.querySelectorAll("#rail [data-nav]")].map((b) => b.dataset.nav)) };
-    u.fns = await p.evaluate(() => ({ studio: typeof viewStudio, images: typeof viewImages, openImages: typeof openImages, codeGroups: typeof codeGroups, gen: typeof genImageSheet, works: typeof viewWorks, runware: typeof runwareImage, gate: typeof gate, loadAdminCodes: typeof loadAdminCodes }));
+    u.fns = await p.evaluate(() => ({ studio: typeof viewStudio, images: typeof viewImages, openImages: typeof openImages, codeGroups: typeof codeGroups, gen: typeof genImageSheet, works: typeof viewWorks, runware: typeof runwareImage, gate: typeof gate, loadAdminCodes: typeof loadAdminCodes, makeMotion: typeof makeMotion, motionSheet: typeof motionSheet }));
     u.extra = await p.evaluate(() => EXTRA_CODES.length);
     await p.evaluate(() => { location.hash = "c-hwanghu"; }); await wait(500);
     u.detail = await p.evaluate(() => ({ wArt: !!$("#wArt"), imgSlots: !!$("#imgSlots"), start: !!$("#start"), cast: $$("[data-cast]").length }));

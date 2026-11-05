@@ -66,7 +66,7 @@ export async function boot(opts = {}) {
           setDB(db); KV.db = db; KV.uid = id; KV.dbOk = true;
           const remoteRooms = await KV.get("rooms");
           if (remoteRooms === undefined || remoteRooms === null) {
-            ["wallet", "personas", "profile", "mine", "rooms", "imgpacks", "memcfg", "coverpacks", "lorepacks", "tagpacks"].forEach((k) => { const v = KV.getLocal(k); if (v !== undefined) KV.set(k, v); });
+            ["wallet", "personas", "profile", "mine", "rooms", "imgpacks", "motionpacks", "memcfg", "coverpacks", "lorepacks", "tagpacks"].forEach((k) => { const v = KV.getLocal(k); if (v !== undefined) KV.set(k, v); });
             S.rooms.forEach((r) => { const v = KV.getLocal(roomKey(r.id)); if (v) KV.set(roomKey(r.id), v); });
           } else { await loadAll(); renderRailRecent(); renderWalletChips(); if (!location.hash.startsWith("#r-")) route(); }
           watchCommunity();
