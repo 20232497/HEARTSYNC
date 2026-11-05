@@ -38,10 +38,10 @@ export async function llm(messages, { tier = "quick", onText, signal, json = fal
     else if (hasClaudeKey()) out = await byok(messages, o);
     else throw { code: "no_engine" };
   } catch (e) {
-    if ((e?.code === "refused" || (e?.code === "invalid_json" && refusedText(e.text))) && canFallback(messages, e.category)) return fallbackStream(messages, o);
+    if ((e?.code === "refused" || (e?.code === "invalid_json" && refusedText(e.text))) && canFallback(messages, e.category, rr)) return fallbackStream(messages, o);
     throw e;
   }
-  if (refusedText(out) && canFallback(messages)) return fallbackStream(messages, o);
+  if (refusedText(out) && canFallback(messages, null, rr)) return fallbackStream(messages, o);
   return out;
 }
 function fallbackStream(messages, o) {

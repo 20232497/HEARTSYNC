@@ -1,5 +1,5 @@
 /* 대화방 관리 드로어(출력 설정·기억·갤러리·내보내기·삭제). 메뉴 끝은 관리자 빌드가 EXT.drawer로 채움(이미지 슬롯) */
-import { ageOK, unfilteredRoute } from "../ai/adult.js";
+import { ageOK, roomBlocked, unfilteredRoute } from "../ai/adult.js";
 import { engineName } from "../ai/llm.js";
 import { LEN, MODELS } from "../ai/models.js";
 import { maybeSummarize, memCfg, pushHist } from "../ai/prompt/memory.js";
@@ -161,7 +161,7 @@ export function openRoomDrawer(view = "main") {
           <div class="seg">${Object.entries(LEN).map(([k, l]) => `<button data-len="${k}" class="${s.len === k ? "on" : ""}">${l.name}<small>${l.chars}</small></button>`).join("")}</div><div class="res">${LEN[s.len].desc}</div></div>
         <div class="setcard"><div class="toggle"><div><h4>리롤 지침</h4><p class="d" style="margin:4px 0 0">다시 쓰기를 누르면 방향을 적는 창을 띄워요.</p></div><input type="checkbox" id="rr" ${s.rerollAsk ? "checked" : ""}></div></div>
         <div class="setcard"><div class="toggle"><div><h4>자동 스크롤</h4><p class="d" style="margin:4px 0 0">켜면 답이 써지는 동안 화면이 맨 아래를 따라 내려가요. 끄면 보낼 때 한 번만 내려가고, 답은 읽는 속도에 맞춰 직접 내려 보면 돼요.</p></div><input type="checkbox" id="as" ${s.autoScroll ? "checked" : ""}></div></div>
-        ${ageOK() ? `<div class="setcard"><div class="toggle"><div><h4>🔞 이 대화방에서 성인 무검열 서사 허용</h4><p class="d" style="margin:4px 0 0">${hasOpenRouterKey() ? "켜면 이 대화방은 OpenRouter 모델로 수위 제한 없이 써요." : "MY → 설정에 OpenRouter API 키를 넣어야 적용돼요."}${!S.settings.contentFilter ? " 지금은 설정에서 기본 수위 제한을 해제해 둬서 모든 대화방에 적용 중이에요." : ""} 미성년 인물·암시가 있는 턴은 수위와 상관없이 보호 모드로 써요.</p></div><input type="checkbox" id="au" ${s.allowUnfiltered ? "checked" : ""}></div></div>` : ""}
+        ${ageOK() ? `<div class="setcard"><div class="toggle"><div><h4>🔞 이 대화방에서 성인 무검열 서사 허용</h4><p class="d" style="margin:4px 0 0">${hasOpenRouterKey() ? "켜면 이 대화방은 OpenRouter 모델로 수위 제한 없이 써요." : "MY → 설정에 OpenRouter API 키를 넣어야 적용돼요."}${!S.settings.contentFilter ? " 지금은 설정에서 기본 수위 제한을 해제해 둬서 모든 대화방에 적용 중이에요." : ""} 대화나 설정에 미성년 인물·암시가 있으면 수위와 상관없이 보호 모드로 써요.${roomBlocked(r) ? " <b>지금 이 대화방은 그런 표현이 있어 보호 모드예요.</b>" : ""}</p></div><input type="checkbox" id="au" ${s.allowUnfiltered ? "checked" : ""}></div></div>` : ""}
         <div class="setcard"><h4>예상 비용</h4><table class="tbl"><tbody>${Object.keys(MODELS).map((k) => { const qq = quote({ ...s, model: k }); return `<tr><td>${MODELS[k].name}${k === s.model ? ' <span class="pill">사용 중</span>' : ""}</td><td class="num">${qq.type === "free" ? "무료 (" + freeLeft() + "턴 남음)" : qq.type === "plus" ? "PLUS 무제한" : "♥" + qq.n + " / 턴"}</td></tr>`; }).join("")}</tbody></table></div>
         <button class="btn pri block" id="oSave" style="margin-top:12px">저장 · 지금 모델 턴당 ${qShort(q2)}</button>`;
       $("#mM", body).onclick = () => { s.mem = Math.max(5, s.mem - 5); paint(); };
