@@ -807,7 +807,7 @@ window.addEventListener("error", function (e) {
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/core/config.js
    내보냄: ANTHROPIC_URL, CFG, idvOn, IN_CLAUDE
-   쓰는 곳: src/js/core/state.js, src/js/services/supabase.js, src/js/ai/adult.js, src/js/images/rating.js, src/js/ai/openrouter.js, src/js/ai/llm.js, src/js/ui/faq.js, src/js/ui/help.js, src/js/ui/login.js, src/js/services/idv.js, src/js/ui/idv.js, src/js/ui/me.js, src/js/app.js, src/js/images/styles.js, src/js/images/runware.js, src/js/admin/motion-run.js, src/js/admin/image-settings.js, src/js/admin/auto-images.js
+   쓰는 곳: src/js/core/state.js, src/js/services/supabase.js, src/js/ai/adult.js, src/js/images/rating.js, src/js/ai/openrouter.js, src/js/ai/llm.js, src/js/ui/faq.js, src/js/ui/help.js, src/js/ui/login.js, src/js/services/idv.js, src/js/ui/idv.js, src/js/ui/me.js, src/js/app.js, src/js/images/styles.js, src/js/images/runware.js, src/js/admin/motion-run.js, src/js/admin/auto-images.js, src/js/admin/image-settings.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 환경·연결: 서버 프록시 설정 CFG(window.HEARTVERSE_CONFIG), claude.ai 안인지(IN_CLAUDE) — 아무것도 import하지 않는 잎 모듈(다른 모듈이 맨 윗단에서 CFG를 써도 안전) */
 /** @typedef {import("./types.js").Config} Config */
@@ -849,7 +849,7 @@ const CATS = ["로맨스", "판타지", "RPG", "미스터리", "일상", "시뮬
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/core/util.js
    내보냄: $, $$, esc, uid, clamp, today, won, num, ago, timeoutSignal, abortCode, toast
-   쓰는 곳: src/js/core/storage.js, src/js/core/state.js, src/js/core/wallet.js, src/js/core/rooms.js, src/js/services/images.js, src/js/services/cloud.js, src/js/services/supabase.js, src/js/images/rating.js, src/js/services/community.js, src/js/ai/parse.js, src/js/ai/openrouter.js, src/js/ai/llm.js, src/js/ai/prompt/memory.js, src/js/ui/sheet.js, src/js/ui/chat/suggest.js, src/js/ui/cover.js, src/js/ui/store.js, src/js/ui/faq.js, src/js/ui/help.js, src/js/ui/home.js, src/js/ui/login.js, src/js/ui/account.js, src/js/ui/idv.js, src/js/ui/me.js, src/js/ui/pay.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/chat/render.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/ui/shell.js, src/js/ui/worldart.js, src/js/ui/detail.js, src/js/ui/chats.js, src/js/app.js, src/js/images/styles.js, src/js/images/runware.js, src/js/admin/export.js, src/js/admin/gen-sheet.js, src/js/admin/gate.js, src/js/admin/image-codes.js, src/js/admin/image-run.js, src/js/admin/motion-run.js, src/js/admin/sit-sheets.js, src/js/admin/image-studio.js, src/js/admin/worldart.js, src/js/admin/tools.js, src/js/admin/image-settings.js, src/js/admin/auto-images.js, src/js/admin/support.js, src/js/admin/studio.js, src/js/admin/works.js, src/js/core/migrate.js, src/js/boot.js
+   쓰는 곳: src/js/core/storage.js, src/js/core/state.js, src/js/core/wallet.js, src/js/core/rooms.js, src/js/services/images.js, src/js/services/cloud.js, src/js/services/supabase.js, src/js/images/rating.js, src/js/services/community.js, src/js/ai/parse.js, src/js/ai/openrouter.js, src/js/ai/llm.js, src/js/ai/prompt/memory.js, src/js/ui/sheet.js, src/js/ui/chat/suggest.js, src/js/ui/cover.js, src/js/ui/store.js, src/js/ui/faq.js, src/js/ui/help.js, src/js/ui/home.js, src/js/ui/login.js, src/js/ui/account.js, src/js/ui/idv.js, src/js/ui/me.js, src/js/ui/pay.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/chat/render.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/ui/shell.js, src/js/ui/worldart.js, src/js/ui/detail.js, src/js/ui/chats.js, src/js/app.js, src/js/images/styles.js, src/js/images/runware.js, src/js/admin/export.js, src/js/admin/gen-sheet.js, src/js/admin/gate.js, src/js/admin/image-codes.js, src/js/admin/image-run.js, src/js/admin/motion-run.js, src/js/admin/sit-sheets.js, src/js/admin/image-studio.js, src/js/admin/worldart.js, src/js/admin/tools.js, src/js/admin/auto-images.js, src/js/admin/image-settings.js, src/js/admin/support.js, src/js/admin/studio.js, src/js/admin/works.js, src/js/core/migrate.js, src/js/boot.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* DOM·문자열·숫자 유틸, toast, 예상 못 한 오류 기록(reportError) */
 /** @typedef {import("./types.js").TimeoutSignal} TimeoutSignal */
@@ -1005,7 +1005,7 @@ const KV = {
    가져옴: src/js/core/config.js { CFG }
            src/js/core/util.js { today }
    내보냄: hasClaudeKey, hasRunwareKey, hasOpenRouterKey, S, SAMPLE, samplePromise, DB, DOWNLOADS, setDB, setDownloads, setSample, setSamplePromise, room, gen, setGen, setRoom
-   쓰는 곳: src/js/core/audience.js, src/js/ai/models.js, src/js/core/wallet.js, src/js/core/character.js, src/js/core/rooms.js, src/js/core/settings.js, src/js/services/vault.js, src/js/services/cloud.js, src/js/ai/adult.js, src/js/images/motion.js, src/js/images/rating.js, src/js/services/community.js, src/js/images/situations.js, src/js/services/load.js, src/js/services/sync.js, src/js/images/pick.js, src/js/ai/openrouter.js, src/js/ai/llm.js, src/js/ai/prompt/memory.js, src/js/ui/chat/suggest.js, src/js/ui/cover.js, src/js/ui/store.js, src/js/ui/help.js, src/js/ui/home.js, src/js/ui/login.js, src/js/ui/account.js, src/js/services/idv.js, src/js/ui/idv.js, src/js/ui/me.js, src/js/ui/pay.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/ui/shell.js, src/js/ui/worldart.js, src/js/ui/detail.js, src/js/ui/chats.js, src/js/app.js, src/js/images/tags.js, src/js/images/prompt.js, src/js/images/styles.js, src/js/images/runware.js, src/js/admin/export.js, src/js/admin/gen-sheet.js, src/js/admin/image-codes.js, src/js/admin/image-run.js, src/js/admin/motion-run.js, src/js/admin/sit-sheets.js, src/js/admin/image-studio.js, src/js/admin/worldart.js, src/js/admin/tools.js, src/js/admin/image-settings.js, src/js/admin/auto-images.js, src/js/admin/migrate.js, src/js/admin/studio.js, src/js/admin/works.js, src/js/core/migrate.js, src/js/boot.js
+   쓰는 곳: src/js/core/audience.js, src/js/ai/models.js, src/js/core/wallet.js, src/js/core/character.js, src/js/core/rooms.js, src/js/core/settings.js, src/js/services/vault.js, src/js/services/cloud.js, src/js/ai/adult.js, src/js/images/motion.js, src/js/images/rating.js, src/js/services/community.js, src/js/images/situations.js, src/js/services/load.js, src/js/services/sync.js, src/js/images/pick.js, src/js/ai/openrouter.js, src/js/ai/llm.js, src/js/ai/prompt/memory.js, src/js/ui/chat/suggest.js, src/js/ui/cover.js, src/js/ui/store.js, src/js/ui/help.js, src/js/ui/home.js, src/js/ui/login.js, src/js/ui/account.js, src/js/services/idv.js, src/js/ui/idv.js, src/js/ui/me.js, src/js/ui/pay.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/ui/shell.js, src/js/ui/worldart.js, src/js/ui/detail.js, src/js/ui/chats.js, src/js/app.js, src/js/images/tags.js, src/js/images/prompt.js, src/js/images/styles.js, src/js/images/runware.js, src/js/admin/export.js, src/js/admin/gen-sheet.js, src/js/admin/image-codes.js, src/js/admin/image-run.js, src/js/admin/motion-run.js, src/js/admin/sit-sheets.js, src/js/admin/image-studio.js, src/js/admin/worldart.js, src/js/admin/tools.js, src/js/admin/auto-images.js, src/js/admin/image-settings.js, src/js/admin/migrate.js, src/js/admin/studio.js, src/js/admin/works.js, src/js/core/migrate.js, src/js/boot.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 전역 상태 S(지갑·페르소나·대화방·설정), claude.ai capability, 현재 대화방·진행 중 생성(다른 모듈은 set…()로만 바꿈), API 키 유무(hasClaudeKey… — S와 CFG.serverKeys를 함께 봄).
    core 잎에 가깝게 — 이미지 모델·OpenRouter 모델의 기본값은 여기 두지 않고 쓰는 쪽(images/styles.js의 styleFor, ai/models.js의 orModel)이 비었을 때 채움 */
@@ -1877,7 +1877,7 @@ function applySettings() {
            src/js/core/util.js { $$, uid }
            src/js/services/cloud.js { CLOUD }
    내보냄: validRef, validMotion, IMG, pubLore, pubImages
-   쓰는 곳: src/js/services/cloud.js, src/js/images/motion.js, src/js/services/community.js, src/js/images/situations.js, src/js/services/load.js, src/js/services/sync.js, src/js/images/pick.js, src/js/ai/prompt/rules.js, src/js/ui/cover.js, src/js/ui/home.js, src/js/ui/me.js, src/js/ui/room-drawer.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/ui/shell.js, src/js/ui/worldart.js, src/js/ui/detail.js, src/js/ui/chats.js, src/js/app.js, src/js/images/styles.js, src/js/images/runware.js, src/js/admin/export.js, src/js/admin/image-codes.js, src/js/admin/image-run.js, src/js/admin/motion-run.js, src/js/admin/image-studio.js, src/js/admin/worldart.js, src/js/admin/tools.js, src/js/admin/image-settings.js, src/js/admin/auto-images.js, src/js/admin/migrate.js, src/js/admin/studio.js, src/js/admin/works.js, src/js/boot.js
+   쓰는 곳: src/js/services/cloud.js, src/js/images/motion.js, src/js/services/community.js, src/js/images/situations.js, src/js/services/load.js, src/js/services/sync.js, src/js/images/pick.js, src/js/ai/prompt/rules.js, src/js/ui/cover.js, src/js/ui/home.js, src/js/ui/me.js, src/js/ui/room-drawer.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/ui/shell.js, src/js/ui/worldart.js, src/js/ui/detail.js, src/js/ui/chats.js, src/js/app.js, src/js/images/styles.js, src/js/images/runware.js, src/js/admin/export.js, src/js/admin/image-codes.js, src/js/admin/image-run.js, src/js/admin/motion-run.js, src/js/admin/image-studio.js, src/js/admin/worldart.js, src/js/admin/tools.js, src/js/admin/auto-images.js, src/js/admin/image-settings.js, src/js/admin/migrate.js, src/js/admin/studio.js, src/js/admin/works.js, src/js/boot.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 그림 저장(IMG): assets → IndexedDB → data URL, 축소(shrink), 공개용 참조만 남기기. 참조 모양은 validRef(움짤 영상은 validMotion) — 작품 폴더에 실린 그림(content/… 상대 경로)도 참조로 씀 */
 
@@ -2471,7 +2471,7 @@ function acctName() { const u = SB.s && SB.s.user; if (!u) return ""; return u.e
    src/js/images/codes.js
    가져옴: src/js/core/constants.js { SIT }
    내보냄: DIM_NAMES, RESET, RANK, maxRating, dimOf, DIMS, MAX_ACT, parseCodes, splitDims, keyOf, fallbackKeys, IMG_TAG_RE, imgTags, lastDims, applyDims, freeNum, usedNums, baseName
-   쓰는 곳: src/js/images/motion.js, src/js/images/situations.js, src/js/services/sync.js, src/js/images/pick.js, src/js/ai/prompt/rules.js, src/js/ui/cover.js, src/js/ui/room-drawer.js, src/js/ui/chat/render.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/app.js, src/js/admin/codes.js, src/js/images/prompt.js, src/js/admin/export.js, src/js/admin/image-codes.js, src/js/admin/image-run.js, src/js/admin/motion-run.js, src/js/admin/sit-sheets.js, src/js/admin/image-studio.js, src/js/admin/auto-images.js
+   쓰는 곳: src/js/images/motion.js, src/js/images/situations.js, src/js/services/sync.js, src/js/images/pick.js, src/js/ai/prompt/rules.js, src/js/ui/cover.js, src/js/ui/room-drawer.js, src/js/ui/chat/render.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/app.js, src/js/admin/codes.js, src/js/images/prompt.js, src/js/admin/export.js, src/js/admin/image-codes.js, src/js/admin/image-run.js, src/js/admin/motion-prompts.js, src/js/admin/motion-run.js, src/js/admin/sit-sheets.js, src/js/admin/image-studio.js, src/js/admin/auto-images.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 그림 상황 코드(순수 — SIT 상수만 import해 Node 단위 테스트가 바로 씀): 번호 차원, 조합 태그 파싱, 조합 키, 의상·장소 이어 가기(applyDims·lastDims), 내장 코드(DIMS).
    번호 체계: 0~14 기본 감정(SIT) · 15~99 직접 만든 감정/행동 칸(customSits) · 100~399 세부 감정/행동 · 400~499 의상 · 500~599 장소.
@@ -2669,7 +2669,7 @@ function canFallback(messages, category = null) {
            src/js/images/codes.js { keyOf, parseCodes }
            src/js/services/images.js { IMG, validMotion }
    내보냄: motionsOf, motionOf, liveMotion, putMotion, flipMotion, dropMotionCodes
-   쓰는 곳: src/js/images/situations.js, src/js/images/pick.js, src/js/ui/cover.js, src/js/admin/export.js, src/js/admin/motion-run.js, src/js/admin/image-studio.js
+   쓰는 곳: src/js/images/situations.js, src/js/images/pick.js, src/js/ui/cover.js, src/js/admin/export.js, src/js/admin/motion-run.js, src/js/admin/image-studio.js, src/js/admin/auto-images.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 움짤(그림 칸의 짧은 반복 영상): 칸마다 사진과 움짤을 함께 두고 어느 쪽을 보여 줄지(on)를 정한다 — 대화·스튜디오·상세가 같은 규칙으로 고름.
    저장은 S.motionpacks[작품 id][인물 코드][조합 키] = {ref, on, local?}(KV "motionpacks", 계정에도). 작품 폴더에 실린 움짤(c.motions — 경로 문자열)은 켜진 것으로 보고, 내 계정 값이 덮는다.
@@ -3974,7 +3974,7 @@ function confirmSheet(title, sub, okLabel, onOk) {
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/ui/ext.js
    내보냄: EXT, runExt
-   쓰는 곳: src/js/ui/help.js, src/js/ui/me.js, src/js/ui/room-drawer.js, src/js/ui/chat/generate.js, src/js/ui/detail.js, src/js/app.js, src/js/admin/tools.js, src/js/admin/image-settings.js, src/js/admin/auto-images.js, src/js/admin/support.js
+   쓰는 곳: src/js/ui/help.js, src/js/ui/me.js, src/js/ui/room-drawer.js, src/js/ui/chat/generate.js, src/js/ui/detail.js, src/js/app.js, src/js/admin/tools.js, src/js/admin/auto-images.js, src/js/admin/image-settings.js, src/js/admin/support.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 빌드 확장 고리(EXT): 사용자 화면 모듈이 비워 둔 자리를 관리자 모듈(src/js/admin/)이 채운다. 사용자 빌드(index.html)에는 꽂는 모듈이 없어 runExt가 아무 일도 안 한다.
    detail(c, v) 작품 상세 · drawer(r, body) 대화방 드로어 메뉴 · afterTurn(r, body) 응답이 끝난 뒤 · me(v) MY의 #meExt 자리 · meSave(v) MY '설정 저장' · persona(ov, setImg) 페르소나 시트
@@ -6543,7 +6543,7 @@ async function koTags(t, adult = false) {
            src/js/images/situations.js { sitDef }
            src/js/images/tags.js { ponyTags }
    내보냄: coverPrompt, splitTags, lookIsMale, buildPonyPrompt, asTag, savedParts, hasSavedTags, saveCastTags, clearCastTags, groupsPrompt, partsTags, lorePrompt
-   쓰는 곳: src/js/images/runware.js, src/js/admin/gen-sheet.js, src/js/admin/image-run.js, src/js/admin/image-studio.js, src/js/admin/worldart.js, src/js/admin/tools.js, src/js/admin/auto-images.js, src/js/admin/studio.js
+   쓰는 곳: src/js/images/runware.js, src/js/admin/gen-sheet.js, src/js/admin/image-run.js, src/js/admin/motion-run.js, src/js/admin/image-studio.js, src/js/admin/worldart.js, src/js/admin/tools.js, src/js/admin/auto-images.js, src/js/admin/studio.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 이미지 프롬프트 조립: 장면·인물·의상·배경 묶음(조합 키), 인물별 저장 태그, 표지·세계관 프롬프트 */
 
@@ -6702,7 +6702,7 @@ function lorePrompt(c, e) {
    가져옴: src/js/services/supabase.js { SB }
            src/js/services/support.js { SUPPORT }
    내보냄: localDev, genAccess, assertAdmin
-   쓰는 곳: src/js/images/runware.js, src/js/admin/gen-sheet.js, src/js/admin/image-run.js, src/js/admin/motion-run.js, src/js/admin/image-settings.js, src/js/admin/auto-images.js
+   쓰는 곳: src/js/images/runware.js, src/js/admin/gen-sheet.js, src/js/admin/image-run.js, src/js/admin/motion-run.js, src/js/admin/auto-images.js, src/js/admin/image-settings.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 그림·움짤 생성 관문(관리자 빌드만): 서버(Supabase admins 표)가 관리자로 확인한 계정만 Runware를 부른다. 개발 서버·흐름 시험(localhost·127.0.0.1)은 통과.
    왜(2026-11-05, 사용자 결정 — '오직 어드민 계정에서만 만들어서 세계관에 업데이트'): 그림은 관리자가 직접 만들어 content/에 싣는 것만 쓴다. Pony 계열 모델은 수익 모델 서비스 안에서 돌리면
@@ -6772,7 +6772,7 @@ function fitStyle(st, tags) {
            src/js/images/runware.js { refDataURL }
            src/js/services/images.js { validRef }
    내보냄: IMG_MODELS, ARCH, imgModelInfo, BUILTIN_SETS, builtinSet, matchBuiltin, overridingSet, effectiveSet, autoSetId, IMG_STYLES, OLD_STYLES, activeSet, styleFor, styleLabel, imgStyleText, imgModelId, styleOptionsHTML, SET_REFS, groupStyleFiles, unzipImages, guessStylePrompt, guessStyleModel, claudeStyleTags
-   쓰는 곳: src/js/images/runware.js, src/js/admin/gen-sheet.js, src/js/admin/image-run.js, src/js/admin/image-studio.js, src/js/admin/image-settings.js, src/js/admin/auto-images.js, src/js/admin/migrate.js
+   쓰는 곳: src/js/images/runware.js, src/js/admin/gen-sheet.js, src/js/admin/image-run.js, src/js/admin/image-studio.js, src/js/admin/auto-images.js, src/js/admin/image-settings.js, src/js/admin/migrate.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 그림체: 모델 목록·내장 기본 화풍(BUILTIN_SETS)·프리셋·세트(ZIP 가져오기, Claude가 그림체 태그 작성), 상황에 맞는 그림체 고르기(styleFor) */
 
@@ -6978,7 +6978,7 @@ async function claudeStyleTags(refs) {
            src/js/images/tags.js { ponyTags }
            src/js/services/images.js { IMG, validRef }
    내보냄: BAD_IMG_MODELS, NEG_MINOR, uuid4, runwareImage, refDataURL, genErr
-   쓰는 곳: src/js/images/styles.js, src/js/admin/export.js, src/js/admin/gen-sheet.js, src/js/admin/image-run.js, src/js/admin/motion-run.js, src/js/admin/sit-sheets.js, src/js/admin/image-settings.js, src/js/admin/auto-images.js, src/js/admin/migrate.js
+   쓰는 곳: src/js/images/styles.js, src/js/admin/export.js, src/js/admin/gen-sheet.js, src/js/admin/image-run.js, src/js/admin/motion-run.js, src/js/admin/sit-sheets.js, src/js/admin/auto-images.js, src/js/admin/image-settings.js, src/js/admin/migrate.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* Runware API 호출(runwareImage): 모델·수위·네거티브 조립, 대상별 보정, 오류 문구 */
 
@@ -7572,6 +7572,83 @@ function resultHTML(r) {
     <div class="bs"><button data-save="${r.id}" ${r.saved ? "disabled" : ""} title="이 인물의 그림 칸에 저장(대화에서 보임)">${r.saved ? "저장됨" : "저장"}</button><button data-tags="${r.id}">태그 복사</button><button data-del="${r.id}">빼기</button></div></div>`;
 }
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
+   src/js/admin/motion-prompts.js
+   가져옴: src/js/images/codes.js { splitDims }
+   내보냄: MOTION_PROMPT, IDLE_MOTION, MOTIONS, hasMotionCode, sceneTags, buildVideoPrompt
+   쓰는 곳: src/js/admin/motion-run.js, src/js/admin/auto-images.js
+   ════════════════════════════════════════════════════════════════════════════════════════════════════ */
+/* 움짤 프롬프트 조립(관리자 빌드만, 순수 — Node 단위 테스트가 바로 씀): 칸의 번호들로 영상 모델에 보낼 문장을 만든다.
+   공식: 카메라 → 인물·의상·장소(정적 묘사) → 코드별 움직임(MOTIONS) → 호흡·얼굴·반복 마무리. 영상 모델은 Danbooru 낱말 나열보다 동명사 문장에 잘 반응한다.
+   표는 전체이용가 감정·일상과 가벼운 스킨십만 담는다 — 세미 수위(104·111)와 성행위 코드의 움직임은 넣지 않음(CLAUDE.md 수위 원칙, tests/unit/motion-prompts.test.mjs가 범위를 고정). 표에 없는 칸은 IDLE_MOTION.
+   정적 묘사는 번역 없이 영문 태그만 — 창을 열 때 바로 채우고 요금이 들지 않게(생김새는 첫 장면 사진이 이미 정함) */
+
+
+/* 코드별 문장을 쓰지 않는 칸(세미·성인 수위)의 기본 설명 */
+const MOTION_PROMPT = "subtle idle animation, the character breathes gently and blinks naturally, hair and clothes sway slightly in a soft breeze, same pose, same outfit, same face, camera fixed, smooth seamless loop";
+const VIDEO_CAMERA = "Static camera locked on the character, same framing";
+/* 마무리: 숨·눈·표정이 조금씩 움직여야 마네킹처럼 보이지 않음 */
+const VIDEO_FINISH = "natural breathing, gentle blinking, subtle facial micro-expressions, hair and clothes moving slightly, same face, same outfit, smooth seamless loop";
+const IDLE_MOTION = "slight body movement, same pose";
+/* 감정/행동 번호 → 움직임. 의상(4xx)·장소(5xx)는 움직임이 없어 정적 묘사로만 들어감 */
+const MOTIONS = {
+  101: "smiling softly, gentle eyes blinking, warm and happy facial expression",
+  102: "glaring intensely, sharp hostile eye movement, frowning deeply",
+  103: "looking around in panic, sweating heavily, stiff and tense body movement, blushing deeply",
+  105: "swaying sluggishly, glazed eyes looking around, flushed cheeks",
+  106: "shoulders shaking violently from crying, tears streaming down cheeks, lips trembling, head bowing down",
+  107: "fidgeting nervously, looking away shyly, faint smile appearing, cheeks blushing",
+  108: "staring coldly without expression, arms crossed tightly, looking down with a distant gaze",
+  109: "panting heavily, slumped posture, chest rising and falling rapidly from exhaustion, sweat dripping",
+  110: "pouting angrily, casting side glances, crossing arms with a jealous expression, sulking movement",
+  112: "looking up with puppy eyes, clinging affectionately, rubbing cheek against viewer",
+  113: "pushing away forcefully, turning head in rejection, defensive grimacing facial expression",
+  114: "empty eyes staring blankly, listless sighing, shoulders slumping in emptiness",
+  115: "taking a deep breath of relief, soft smile forming, body relaxing peacefully",
+  116: "winking playfully, sticking tongue out teasingly, mischievous smile spreading",
+  117: "staring affectionately with wistful eyes, gentle touching motion, longing gaze",
+  118: "narrowing eyes warily, leaning back defensively, tense and suspicious posture",
+  119: "collapsing in despair, burying head in hands, crying uncontrollably, tear stains forming",
+  120: "smiling brightly, clapping hands together in excitement, eyes sparkling with joy",
+  121: "eyes widening in shock, mouth opening in gasp, stepping back, hands covering mouth",
+  122: "chewing food with a satisfied expression, holding and moving wine glass gently",
+  123: "staring intently at monitor, fingers moving rapidly on controller, focused gaming expression",
+  124: "nodding off to sleep, rubbing eyes sleepily, yawning wide, eyes slowly closing",
+  125: "turning book pages, adjusting glasses, focused reading expression, quiet movement",
+  126: "talking animatedly, making light hand gestures, maintaining eye contact while speaking",
+  127: "closing eyes contentedly while being patted on the head, head moving gently under the touch, soft hair swaying",
+  128: "lying peacefully on lap, looking up softly at viewer, relaxed breathing",
+  129: "flinching and squirming from tickling, giggling happily, dodging playfully",
+  130: "turning head away with puffed cheeks, sulking and pouting, avoiding eye contact",
+  131: "stirring food in kitchen, wearing apron, tasting food carefully with a concentrated look",
+  132: "typing rapidly on phone screen, screen glow illuminating face, indifferent scrolling motion",
+  133: "stretching arms high, languid body movement, closing eyes comfortably",
+  134: "applying lipstick carefully, looking in mirror, getting dressed up motion",
+  135: "head nodding to music rhythm, wearing earphones, humming with closed eyes",
+  136: "taking a deep calming breath, closing eyes to compose oneself, chest expanding",
+  137: "checking watch anxiously, looking around restlessly, biting lip in nervousness",
+  138: "forcing a stiff smile, sad eyes trembling, lips quivering slightly",
+  139: "crying tears of joy, smiling brightly while moved, eyes sparkling with emotion",
+  140: "sighing in irritation, putting hand on forehead, sharp annoyed glare",
+  // 가벼운 스킨십(관리자 코드 표에 있을 때만 쓰임)
+  201: "hugging warmly, rubbing back gently, swaying softly",
+  202: "pecking lightly on the lips, gentle kissing motion, eyes closing softly",
+  213: "fingers intertwining tightly, hands gripping with strength, subtle warm movement",
+  214: "kissing forehead and cheek affectionately, loving gaze, gentle touch",
+  215: "hugging warmly from behind, swaying gently together",
+  216: "rubbing cheeks together affectionately, smiling warmly, face pressing close"
+};
+/** 번호들 가운데 표에 움직임이 있는 감정/행동 코드가 있는지 — 대화 중 자동 움짤이 이 칸을 만들지 정할 때. @param {number[]} codes */
+function hasMotionCode(codes) { return splitDims(codes).act.some((n) => !!MOTIONS[n]); }
+/** 태그 묶음(savedParts)에서 정적 묘사만: 인물·의상·장소의 영문 태그(한글 태그는 번역해야 하니 뺌). @returns {string} */
+function sceneTags(parts) {
+  return parts.filter((g) => ["look", "wear", "bg"].includes(g.key)).flatMap((g) => g.tags.map((x) => x.t)).filter((t) => t && !/[ㄱ-힣]/.test(t)).join(", ");
+}
+/** 번호들 + 정적 묘사 → 영상 프롬프트. 감정/행동이 둘이면 움직임도 둘 다. @param {number[]} codes @param {string} [scene] @returns {string} */
+function buildVideoPrompt(codes, scene = "") {
+  const moves = splitDims(codes).act.map((n) => MOTIONS[n]).filter(Boolean);
+  return [VIDEO_CAMERA, scene && "Featuring " + scene, (moves.join(", ") || IDLE_MOTION) + ", " + VIDEO_FINISH].filter(Boolean).join(". ");
+}
+/* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/admin/motion-run.js
    가져옴: src/js/ai/adult.js { ageOK }
            src/js/core/cast.js { castLook }
@@ -7584,18 +7661,23 @@ function resultHTML(r) {
            src/js/images/motion.js { motionOf, putMotion }
            src/js/images/pick.js { imagesOf }
            src/js/images/gen-guard.js { assertAdmin }
+           src/js/images/prompt.js { savedParts }
            src/js/images/rating.js { imgRating }
            src/js/images/runware.js { NEG_MINOR, genErr, uuid4 }
            src/js/images/situations.js { codeRating, keyName }
            src/js/services/images.js { IMG }
            src/js/ui/icons.js { ICON }
-   내보냄: VIDEO_MODELS, MOTION_PROMPT, MSTATE, MJOBS, jobId, makeMotion, motionErr, motionSheet
-   쓰는 곳: src/js/admin/image-studio.js
+           src/js/admin/motion-prompts.js { MOTION_PROMPT, buildVideoPrompt, hasMotionCode, sceneTags }
+   내보냄: VIDEO_MODELS, MSTATE, MJOBS, jobId, motionPromptOf, makeMotion, motionErr, motionSheet
+   쓰는 곳: src/js/admin/image-studio.js, src/js/admin/auto-images.js, src/js/admin/image-settings.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 움짤 만들기(관리자 빌드만): 저장한 사진 한 장을 첫 장면으로 Runware 영상 생성(videoInference — 이미지 → 영상)을 돌려 몇 초짜리 반복 영상을 만들고, 그 칸의 움짤로 저장한다(켜짐).
    요청은 비동기(deliveryMethod "async") — 보낸 뒤 getResponse로 몇 초마다 물어 videoURL을 받아 내려받고 IMG.putVideo(브라우저가 내려받기를 막으면 Runware의 임시 주소를 그대로 씀 — 오래 두면 사라짐).
    모델은 VIDEO_MODELS(싼 순 — 실패한 생성은 Runware가 청구하지 않음). 전체이용가 칸은 안전 검사를 켜고, 성인 수위 칸은 성인 확인 뒤에만·사진 설명·외모에 미성년 표현이 있으면 보내지 않음.
+   움직임 설명은 칸마다 motionPromptOf가 채움(전체이용가 칸은 코드별 문장 — admin/motion-prompts.js).
    만드는 중인 일은 MJOBS(작품|인물|칸 → 진행 상태)에 있고, 스튜디오가 그 칸에 '움짤 만드는 중'을 보여 줌. 화면을 떠나도 계속되고 끝나면 저장 */
+
+
 
 
 
@@ -7620,13 +7702,17 @@ const VIDEO_MODELS = [
   { k: "wan720", id: "alibaba:wan@2.6-flash", name: "Wan 2.6 Flash · 720p", price: "5초 약 $0.13", res: "720p", dur: [3, 5, 8], neg: true, extra: { providerSettings: { alibaba: { audio: false } } } },
   { k: "h3lite", id: "minimax:h3@lite", name: "MiniMax H3 Lite · 480p", price: "5초 약 $0.13", res: "480p", dur: [4, 5, 8], extra: {} }
 ];
-const MOTION_PROMPT = "subtle idle animation, the character breathes gently and blinks naturally, hair and clothes sway slightly in a soft breeze, same pose, same outfit, same face, camera fixed, smooth seamless loop";
-/* 고른 모델·길이·움직임 설명(세션 동안 기억) */
-const MSTATE = { model: "seed480", dur: 5, prompt: MOTION_PROMPT };
+/* 고른 모델·길이(세션 동안 기억), 직접 고친 움직임 설명(칸마다 — jobId → 문장) */
+const MSTATE = { model: "seed480", dur: 5, edits: {} };
 /* 만드는 중인 일: "작품|인물|칸" → { t0, status, progress } */
 const MJOBS = {};
 const jobId = (c, code, key) => [c.id, code, keyOf(String(key))].join("|");
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+/* 그 칸의 기본 움직임 설명: 전체이용가 칸은 코드별 문장, 세미·성인 수위 칸은 MOTION_PROMPT. 수위는 칸 정의 그대로 본다(imgRating은 성인 확인 전이면 늘 safe라 거를 수 없음) */
+function motionPromptOf(c, cast, key) {
+  const k = keyOf(String(key)), codes = parseCodes(k);
+  return codeRating(codes, c) === "safe" ? buildVideoPrompt(codes, sceneTags(savedParts(c, cast, k))) : MOTION_PROMPT;
+}
 
 /* 저장한 사진(kv:·/_blob/·content/·data:) → data URL(영상 생성의 첫 장면) */
 async function photoData(ref) {
@@ -7716,13 +7802,14 @@ function motionErr(e) {
 /* 움짤 창: 모델·길이·움직임 설명을 고르고 만들기. 이 칸에 움짤이 있으면 미리 보기와 '움짤 지우기' */
 function motionSheet(c, cast, key, after) {
   const k = keyOf(String(key)), ref = (imagesOf(c)[cast.code] || {})[k], mo = motionOf(c, cast.code, k), M = VIDEO_MODELS.find((m) => m.k === MSTATE.model) || VIDEO_MODELS[0];
+  const id = jobId(c, cast.code, k), base = motionPromptOf(c, cast, k);
   const ov = document.createElement("div"); ov.className = "overlay gen-ov";
   ov.innerHTML = `<div class="sheet mo-sheet" role="dialog" aria-modal="true"><div class="sheet-head"><h2>움짤 만들기 <small>${esc(cast.name)} · ${esc(keyName(k))}</small></h2><button class="icon-btn" data-x aria-label="닫기">${ICON.close}</button></div>
     <div class="mo-prev"><figure><span class="pic">${IMG.tag(ref)}</span><figcaption>사진(첫 장면)</figcaption></figure>${mo ? `<figure><span class="pic">${IMG.vtag(mo.ref)}</span><figcaption>지금 움짤 · ${mo.on ? "켜짐" : "꺼짐(사진이 보임)"}</figcaption></figure>` : ""}</div>
     <p class="note">저장한 사진을 첫 장면으로 몇 초짜리 반복 영상을 만들어요(보통 30초~2분). 다 되면 이 칸의 움짤로 저장되고 켜져요 — 갤러리의 ⟳ 단추로 사진과 번갈아 쓸 수 있어요. 실패한 생성은 청구되지 않아요.${mo ? " 새로 만들면 지금 움짤은 바뀌어요." : ""}</p>
     <div class="two"><div class="field"><label for="moM">모델</label><select id="moM">${VIDEO_MODELS.map((m) => `<option value="${m.k}" ${m.k === M.k ? "selected" : ""}>${esc(m.name)} — ${esc(m.price)}</option>`).join("")}</select></div>
       <div class="field"><label for="moD">길이</label><select id="moD"></select></div></div>
-    <div class="field"><label for="moP">움직임 설명 <span class="note">영어로 쓰면 더 정확해요</span></label><textarea id="moP" rows="3">${esc(MSTATE.prompt)}</textarea>
+    <div class="field"><label for="moP">움직임 설명 <span class="note">${base !== MOTION_PROMPT && hasMotionCode(parseCodes(k)) ? "이 코드에 맞춰 채웠어요 · " : ""}영어로 쓰면 더 정확해요</span></label><textarea id="moP" rows="5">${esc(MSTATE.edits[id] || base)}</textarea>
       <div class="cta-row" style="margin-top:6px"><button class="btn sm ghost" id="moReset">기본 설명으로</button></div></div>
     <div class="cta-row">${mo ? `<button class="btn danger" id="moDel">움짤 지우기</button>` : ""}<span class="spacer"></span><button class="btn ghost" data-x>취소</button><button class="btn pri" id="moGo" ${ref ? "" : "disabled"}>${mo ? "다시 만들기" : "만들기"}</button></div></div>`;
   document.body.append(ov); IMG.hydrate(ov);
@@ -7731,13 +7818,15 @@ function motionSheet(c, cast, key, after) {
   const durs = () => { const m = VIDEO_MODELS.find((x) => x.k === $("#moM", ov).value) || VIDEO_MODELS[0]; $("#moD", ov).innerHTML = m.dur.map((d) => `<option value="${d}" ${d === MSTATE.dur ? "selected" : ""}>${d}초</option>`).join(""); if (!m.dur.includes(MSTATE.dur)) $("#moD", ov).value = String(m.dur.includes(5) ? 5 : m.dur[0]); };
   durs();
   $("#moM", ov).onchange = durs;
-  $("#moReset", ov).onclick = () => { $("#moP", ov).value = MOTION_PROMPT; };
+  $("#moReset", ov).onclick = () => { $("#moP", ov).value = base; };
   const del = $("#moDel", ov);
   if (del) del.onclick = () => { if (!del.dataset.sure) { del.dataset.sure = "1"; del.textContent = "한 번 더 누르면 지워요(사진은 그대로)"; return; } putMotion(c, cast.code, k, null); close(); after && after(); toast("움짤을 지웠어요 — 사진이 보여요"); };
   $("#moGo", ov).onclick = () => {
-    Object.assign(MSTATE, { model: $("#moM", ov).value, dur: +$("#moD", ov).value, prompt: $("#moP", ov).value.trim() || MOTION_PROMPT });
+    const prompt = $("#moP", ov).value.trim() || base;
+    Object.assign(MSTATE, { model: $("#moM", ov).value, dur: +$("#moD", ov).value });
+    if (prompt === base) delete MSTATE.edits[id]; else MSTATE.edits[id] = prompt;
     close();
-    makeMotion(c, cast, k, MSTATE, () => after && after());
+    makeMotion(c, cast, k, { model: MSTATE.model, dur: MSTATE.dur, prompt }, () => after && after());
   };
 }
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
@@ -8070,9 +8159,11 @@ function viewImages(arg) {
 /* 움짤 만드는 중인 칸의 글을 1초마다 고침(경과 시간·진행률). 일이 없으면 멈춤 */
 function tickJobs() {
   const paint = () => {
-    const ids = Object.keys(MJOBS);
-    $$("[data-mjob]").forEach((el) => { const j = MJOBS[el.dataset.mjob]; if (j) el.textContent = `${j.status} · ${Math.round((Date.now() - j.t0) / 1000)}초${j.progress ? ` · ${j.progress}%` : ""}`; });
+    const ids = Object.keys(MJOBS), els = $$("[data-mjob]");
+    els.forEach((el) => { const j = MJOBS[el.dataset.mjob]; if (j) el.textContent = `${j.status} · ${Math.round((Date.now() - j.t0) / 1000)}초${j.progress ? ` · ${j.progress}%` : ""}`; });
     if (!ids.length || !onHere()) { clearInterval(MO_TICK); MO_TICK = null; }
+    // 대화 중 자동 움짤처럼 이 화면 밖에서 시작한 일은 끝나도 다시 그려 주는 곳이 없으니 여기서
+    if (onHere() && els.some((el) => !MJOBS[el.dataset.mjob])) viewImages();
   };
   paint();
   if (Object.keys(MJOBS).length && !MO_TICK) MO_TICK = setInterval(paint, 1000);
@@ -8321,6 +8412,122 @@ async function exportWorkToast(c) {
   catch (e) { if (e && e.name !== "AbortError") toast("내보내지 못했어요: " + (e.message || e)); }
 }
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
+   src/js/admin/auto-images.js
+   가져옴: src/js/core/audience.js { audOf }
+           src/js/core/cast.js { castLook }
+           src/js/core/config.js { IN_CLAUDE }
+           src/js/core/state.js { S, hasRunwareKey, room }
+           src/js/core/util.js { $, $$, toast }
+           src/js/images/codes.js { imgTags, parseCodes }
+           src/js/images/gen-guard.js { genAccess }
+           src/js/images/motion.js { motionOf }
+           src/js/images/pick.js { hasImg, pickKey, putCastImage }
+           src/js/images/prompt.js { lookIsMale, partsTags, savedParts }
+           src/js/images/rating.js { imgRating }
+           src/js/images/runware.js { genErr, runwareImage }
+           src/js/images/situations.js { codeRating }
+           src/js/images/styles.js { styleFor }
+           src/js/services/images.js { IMG }
+           src/js/ui/cover.js { figInner, figKey, lightbox, showOf, zoomPic }
+           src/js/ui/ext.js { EXT }
+           src/js/admin/motion-prompts.js { hasMotionCode }
+           src/js/admin/motion-run.js { MJOBS, VIDEO_MODELS, jobId, makeMotion, motionPromptOf }
+   내보냄: AUTO_MOTION_MAX, autoImgOn, autoImages, autoMotionOn, autoMotions
+   쓰는 곳: src/js/admin/image-settings.js, src/js/admin.js
+   ════════════════════════════════════════════════════════════════════════════════════════════════════ */
+/* 대화 중 그림 자동 생성(관리자 빌드만): 한 턴의 응답이 끝나면(EXT.afterTurn) 이번 응답의 [[img]] 태그 가운데 그 조합(감정·의상·장소)의 그림이 아직 없는 것을
+   Runware로 만들어 인물 그림(내 작품 images·그 밖은 imgpacks)에 저장하고, 화면에 보이는 그 자리(figure[data-code][data-key])를 바꿔 그린다.
+   켜는 곳: 이미지 설정 '대화 중 장면 그림 자동 생성'(S.settings.autoImg). 한 응답에 최대 AUTO_MAX장, 같은 조합은 한 번만 — 있는 조합은 다시 만들지 않으므로
+   같은 감정·의상·장소가 반복되면 요금이 들지 않음. claude.ai 안(IN_CLAUDE)·Runware 키 없음·장면 이미지 끔이면 하지 않음.
+   수위는 번호들의 수위(codeRating → imgRating: 성인 확인 전엔 늘 전체이용가). 만든 그림은 '작품 폴더에 저장'(admin/export.js)으로 content/에 실을 수 있다.
+   그림이 끝나면 장면 움짤(autoMotions — 이미지 설정 '장면 움짤도 자동으로', S.settings.autoMotion, 기본 꺼짐): 영상 모델은 사진을 첫 장면으로 쓰므로 그림이 있는 칸만, 전체이용가 + 표에 움직임이 있는 코드(admin/motion-prompts.js)만.
+   한 응답에 최대 AUTO_MOTION_MAX개, 가장 싼 모델로 5초. 움짤이 이미 있는 칸(꺼 둔 것도)과 이번 세션에 시도한 칸은 다시 만들지 않음 */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const AUTO_MAX = 4, autoBusy = new Set();
+const AUTO_MOTION_MAX = 2;
+const motionTried = new Set();
+let autoDenied = false; // 권한 없음 안내를 이미 띄웠는지 — 턴마다 되풀이하지 않음
+const autoImgOn = () => !!S.settings.autoImg && !IN_CLAUDE && hasRunwareKey() && S.settings.sceneImg !== false;
+const figsOf = (code, key) => $$(`#logInner figure.scene-img[data-code="${code}"][data-key="${key}"]`).filter((f) => !$("img", f));
+async function autoImages(r, body) {
+  if (!autoImgOn()) return;
+  const c = r.char, jobs = [];
+  for (const t of imgTags(body)) {
+    const cast = (c.cast || []).find((x) => x.code === t.code); if (!cast) continue;
+    const key = figKey(t.codes.join(",")), id = `${c.id}|${t.code}|${key}`;
+    if (autoBusy.has(id) || jobs.some((j) => j.id === id) || hasImg(c, t.code, key)) continue;
+    jobs.push({ id, cast, key, codes: parseCodes(key) });
+  }
+  if (!jobs.length) return;
+  // 태그 번역(사용자 키로 요금이 듦)·생성 전에 관리자 확인 — 관리자가 아니면 아무것도 보내지 않고 한 번만 알림
+  const access = await genAccess();
+  if (!access.ok) { if (!autoDenied) toast("장면 그림을 만들지 못했어요 · " + genErr(access)); autoDenied = true; return; }
+  autoDenied = false;
+  let err = null;
+  await Promise.all(jobs.slice(0, AUTO_MAX).map(async (j) => {
+    autoBusy.add(j.id); figsOf(j.cast.code, j.key).forEach((f) => f.classList.add("gen"));
+    try {
+      const rt = imgRating(codeRating(j.codes, c)), adult = rt !== "safe";
+      const style = styleFor({ kind: "daily", aud: audOf(c), male: lookIsMale(castLook(j.cast, c)) }); // 기본 화풍(자동): 작품 성향 → 인물 성별
+      const ref = await IMG.put(await runwareImage(await partsTags(savedParts(c, j.cast, j.key), adult), { aspect: "4:5", rating: rt, style }));
+      putCastImage(c, j.cast.code, j.key, ref);
+      figsOf(j.cast.code, j.key).forEach((f) => { f.innerHTML = figInner(c, j.cast, j.key, ref); IMG.hydrate(f); $$("img", f).forEach((im) => im.onclick = () => lightbox(im.src)); });
+    } catch (e) { err = e; }
+    finally { autoBusy.delete(j.id); figsOf(j.cast.code, j.key).forEach((f) => f.classList.remove("gen")); }
+  }));
+  if (err && err.code !== "cancelled") toast("장면 그림을 만들지 못했어요 · " + genErr(err));
+}
+const autoMotionOn = () => !!S.settings.autoMotion && !IN_CLAUDE && hasRunwareKey() && S.settings.sceneImg !== false;
+/* 움짤이 다 되면 지금 방에서 그 칸을 보여 주는 자리(폴백 포함)를 바꿔 그림. 다른 작품의 방으로 옮겼으면 같은 인물 코드라도 그 방의 그림이 아니니 건드리지 않음 */
+function paintMotionFigs(c, cast, pk) {
+  if (!room || room.char.id !== c.id) return;
+  $$(`#logInner figure.scene-img[data-code="${cast.code}"]`).filter((f) => pickKey(c, cast.code, f.dataset.key) === pk).forEach((f) => {
+    const s = showOf(c, cast.code, f.dataset.key);
+    f.innerHTML = figInner(c, cast, f.dataset.key, s.ref, s.mo); IMG.hydrate(f);
+    f.onclick = (e) => { if (e.target.closest("img, video")) zoomPic(f); };
+  });
+}
+async function autoMotions(r, body) {
+  if (!autoMotionOn()) return;
+  const c = r.char, jobs = [];
+  for (const t of imgTags(body)) {
+    const cast = (c.cast || []).find((x) => x.code === t.code); if (!cast) continue;
+    const pk = pickKey(c, t.code, figKey(t.codes.join(","))); if (pk === null) continue; // 조합 그림이 없으면 대화에서 대신 보이는 칸(폴백 1·0은 표에 없어 아래에서 걸러짐)
+    const codes = parseCodes(pk), id = jobId(c, t.code, pk);
+    if (!hasMotionCode(codes) || codeRating(codes, c) !== "safe") continue;
+    if (motionTried.has(id) || MJOBS[id] || motionOf(c, t.code, pk) || jobs.some((j) => j.id === id)) continue;
+    jobs.push({ id, cast, pk });
+  }
+  if (!jobs.length) return;
+  const access = await genAccess();
+  if (!access.ok) { if (!autoDenied) toast("장면 움짤을 만들지 못했어요 · " + genErr(access)); autoDenied = true; return; }
+  autoDenied = false;
+  await Promise.all(jobs.slice(0, AUTO_MOTION_MAX).map(async (j) => {
+    motionTried.add(j.id);
+    if (await makeMotion(c, j.cast, j.pk, { model: VIDEO_MODELS[0].k, dur: 5, prompt: motionPromptOf(c, j.cast, j.pk) })) paintMotionFigs(c, j.cast, j.pk);
+  }));
+}
+EXT.afterTurn.push((r, body) => { autoImages(r, body).catch(() => {}).then(() => autoMotions(r, body)).catch(() => {}); });
+/* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/admin/image-settings.js
    가져옴: src/js/core/config.js { IN_CLAUDE }
            src/js/core/settings.js { saveSettings }
@@ -8331,13 +8538,17 @@ async function exportWorkToast(c) {
            src/js/images/styles.js { BUILTIN_SETS, IMG_MODELS, IMG_STYLES, activeSet, claudeStyleTags, effectiveSet, groupStyleFiles, guessStyleModel, guessStylePrompt, imgModelInfo, matchBuiltin, overridingSet, styleOptionsHTML, unzipImages }
            src/js/services/images.js { IMG, validRef }
            src/js/ui/ext.js { EXT }
+           src/js/admin/auto-images.js { AUTO_MOTION_MAX }
            src/js/admin/gen-sheet.js { genImageSheet }
+           src/js/admin/motion-run.js { VIDEO_MODELS }
    쓰는 곳: src/js/admin.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* MY → 이미지 생성 설정(관리자 빌드만): Runware API 키, 대화 중 장면 그림 자동 생성, 그림체(자동·내장 기본 화풍·프리셋·세트·직접 입력)와 이미지 모델,
    그림체 세트 가져오기(그림 또는 ZIP → 이름 앞부분별 3장 묶음 → Anthropic 키가 있으면 Claude가 그림체 문구 작성), 연결 테스트.
    ui/me.js의 #meExt 자리에 EXT.me로 끼워 넣고, '설정 저장'(EXT.meSave)에서 키·그림체를 S.settings에 쓴다(saveSettings는 me.js가 이어서 부름).
    사용자 사이트에는 이 칸이 없다 — 그림은 관리자가 만들어 content/에 싣는다(2026-11 결정). 그림체 관련 설정 이전은 admin/migrate.js */
+
+
 
 
 
@@ -8357,6 +8568,7 @@ EXT.me.push((v) => {
       <p class="note" id="genAcc" style="margin:0 0 10px">생성 권한 확인 중…</p>
       <div class="field" style="margin-top:0"><label for="rkey">Runware API 키 <span class="note">runware.ai에서 발급</span></label><input id="rkey" type="password" autocomplete="off" placeholder="Runware API 키" value="${esc(S.settings.runwareKey || "")}"></div>
       <div class="toggle" style="margin:0 0 12px"><label for="autoImg">대화 중 장면 그림 자동 생성 <span class="note">${IN_CLAUDE ? "파일·웹으로 열었을 때만 돼요" : "AI가 고른 감정·의상·장소 조합의 그림이 없으면 Runware로 만들어 저장해요(장당 약 $0.0025, 같은 조합은 다시 만들지 않음)"}</span></label><input type="checkbox" id="autoImg" ${S.settings.autoImg ? "checked" : ""} ${IN_CLAUDE ? "disabled" : ""}></div>
+      <div class="toggle" style="margin:0 0 12px"><label for="autoMotion">장면 움짤도 자동으로 만들기 <span class="note">${IN_CLAUDE ? "파일·웹으로 열었을 때만 돼요" : `전체이용가 감정·일상 코드의 그림이 있으면 움짤까지 만들어요(한 응답에 최대 ${AUTO_MOTION_MAX}개, ${VIDEO_MODELS[0].price}, 같은 칸은 다시 만들지 않음)`}</span></label><input type="checkbox" id="autoMotion" ${S.settings.autoMotion ? "checked" : ""} ${IN_CLAUDE ? "disabled" : ""}></div>
       <div class="field"><label for="gstyle">그림체</label><select id="gstyle">${styleOptionsHTML()}</select><p class="note" id="gstyleDesc" style="margin:2px 0 0"></p></div>
       <div class="field" id="gmodelBox"><label for="gmodel">이미지 모델</label><select id="gmodel">${[...IMG_MODELS, ...(IMG_MODELS.some((m) => m.id === S.settings.imgModel) ? [] : [{ id: S.settings.imgModel, name: S.settings.imgModel }])].map((m) => `<option value="${esc(m.id)}">${esc(m.name)}</option>`).join("")}</select></div>
       <div class="field" id="gstyleBox"><label for="gstyleTxt">그림체 문구 <span class="note" id="gstyleTxtNote">한국어로 써도 돼요</span></label><textarea id="gstyleTxt" maxlength="600" style="min-height:76px" placeholder="예: 한국 웹툰 그림체, 깔끔한 선화, 부드러운 피부 음영"></textarea></div>
@@ -8465,6 +8677,7 @@ EXT.me.push((v) => {
   };
   paintSets();
   $("#autoImg", box).onchange = (e) => { S.settings.autoImg = e.target.checked; saveSettings(); if (e.target.checked && !S.settings.runwareKey && !$("#rkey", box).value.trim()) toast("Runware API 키를 넣고 설정 저장을 눌러야 그림이 만들어져요"); };
+  $("#autoMotion", box).onchange = (e) => { S.settings.autoMotion = e.target.checked; saveSettings(); if (e.target.checked && !S.settings.runwareKey && !$("#rkey", box).value.trim()) toast("Runware API 키를 넣고 설정 저장을 눌러야 움짤이 만들어져요"); };
   $("#gtest", box).onclick = () => {
     S.settings.runwareKey = $("#rkey", box).value.trim(); saveStyle(); saveSettings();
     genImageSheet({ title: "Runware 연결 테스트", aspect: "1:1", prompt: "1girl, solo, adult, sitting by the window, holding coffee cup, cat, warm afternoon sunlight, cozy room", ctx: { kind: "daily", aud: "m" },
@@ -8473,82 +8686,6 @@ EXT.me.push((v) => {
 });
 /* '설정 저장': Runware 키와 그림체 선택을 S.settings에 — saveSettings·applySettings는 me.js가 이어서 부름 */
 EXT.meSave.push((v) => { const rk = $("#rkey", v); if (rk) S.settings.runwareKey = rk.value.trim(); saveStyle(); });
-/* ════════════════════════════════════════════════════════════════════════════════════════════════════
-   src/js/admin/auto-images.js
-   가져옴: src/js/core/audience.js { audOf }
-           src/js/core/cast.js { castLook }
-           src/js/core/config.js { IN_CLAUDE }
-           src/js/core/state.js { S, hasRunwareKey }
-           src/js/core/util.js { $, $$, toast }
-           src/js/images/codes.js { imgTags, parseCodes }
-           src/js/images/gen-guard.js { genAccess }
-           src/js/images/pick.js { hasImg, putCastImage }
-           src/js/images/prompt.js { lookIsMale, partsTags, savedParts }
-           src/js/images/rating.js { imgRating }
-           src/js/images/runware.js { genErr, runwareImage }
-           src/js/images/situations.js { codeRating }
-           src/js/images/styles.js { styleFor }
-           src/js/services/images.js { IMG }
-           src/js/ui/cover.js { figInner, figKey, lightbox }
-           src/js/ui/ext.js { EXT }
-   내보냄: autoImgOn, autoImages
-   쓰는 곳: src/js/admin.js
-   ════════════════════════════════════════════════════════════════════════════════════════════════════ */
-/* 대화 중 그림 자동 생성(관리자 빌드만): 한 턴의 응답이 끝나면(EXT.afterTurn) 이번 응답의 [[img]] 태그 가운데 그 조합(감정·의상·장소)의 그림이 아직 없는 것을
-   Runware로 만들어 인물 그림(내 작품 images·그 밖은 imgpacks)에 저장하고, 화면에 보이는 그 자리(figure[data-code][data-key])를 바꿔 그린다.
-   켜는 곳: 이미지 설정 '대화 중 장면 그림 자동 생성'(S.settings.autoImg). 한 응답에 최대 AUTO_MAX장, 같은 조합은 한 번만 — 있는 조합은 다시 만들지 않으므로
-   같은 감정·의상·장소가 반복되면 요금이 들지 않음. claude.ai 안(IN_CLAUDE)·Runware 키 없음·장면 이미지 끔이면 하지 않음.
-   수위는 번호들의 수위(codeRating → imgRating: 성인 확인 전엔 늘 전체이용가). 만든 그림은 '작품 폴더에 저장'(admin/export.js)으로 content/에 실을 수 있다 */
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-const AUTO_MAX = 4, autoBusy = new Set();
-let autoDenied = false; // 권한 없음 안내를 이미 띄웠는지 — 턴마다 되풀이하지 않음
-const autoImgOn = () => !!S.settings.autoImg && !IN_CLAUDE && hasRunwareKey() && S.settings.sceneImg !== false;
-const figsOf = (code, key) => $$(`#logInner figure.scene-img[data-code="${code}"][data-key="${key}"]`).filter((f) => !$("img", f));
-async function autoImages(r, body) {
-  if (!autoImgOn()) return;
-  const c = r.char, jobs = [];
-  for (const t of imgTags(body)) {
-    const cast = (c.cast || []).find((x) => x.code === t.code); if (!cast) continue;
-    const key = figKey(t.codes.join(",")), id = `${c.id}|${t.code}|${key}`;
-    if (autoBusy.has(id) || jobs.some((j) => j.id === id) || hasImg(c, t.code, key)) continue;
-    jobs.push({ id, cast, key, codes: parseCodes(key) });
-  }
-  if (!jobs.length) return;
-  // 태그 번역(사용자 키로 요금이 듦)·생성 전에 관리자 확인 — 관리자가 아니면 아무것도 보내지 않고 한 번만 알림
-  const access = await genAccess();
-  if (!access.ok) { if (!autoDenied) toast("장면 그림을 만들지 못했어요 · " + genErr(access)); autoDenied = true; return; }
-  autoDenied = false;
-  let err = null;
-  await Promise.all(jobs.slice(0, AUTO_MAX).map(async (j) => {
-    autoBusy.add(j.id); figsOf(j.cast.code, j.key).forEach((f) => f.classList.add("gen"));
-    try {
-      const rt = imgRating(codeRating(j.codes, c)), adult = rt !== "safe";
-      const style = styleFor({ kind: "daily", aud: audOf(c), male: lookIsMale(castLook(j.cast, c)) }); // 기본 화풍(자동): 작품 성향 → 인물 성별
-      const ref = await IMG.put(await runwareImage(await partsTags(savedParts(c, j.cast, j.key), adult), { aspect: "4:5", rating: rt, style }));
-      putCastImage(c, j.cast.code, j.key, ref);
-      figsOf(j.cast.code, j.key).forEach((f) => { f.innerHTML = figInner(c, j.cast, j.key, ref); IMG.hydrate(f); $$("img", f).forEach((im) => im.onclick = () => lightbox(im.src)); });
-    } catch (e) { err = e; }
-    finally { autoBusy.delete(j.id); figsOf(j.cast.code, j.key).forEach((f) => f.classList.remove("gen")); }
-  }));
-  if (err && err.code !== "cancelled") toast("장면 그림을 만들지 못했어요 · " + genErr(err));
-}
-EXT.afterTurn.push((r, body) => { autoImages(r, body).catch(() => {}); });
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/admin/support.js
    가져옴: src/js/core/util.js { $, $$, esc, toast }

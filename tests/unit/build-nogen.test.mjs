@@ -14,6 +14,8 @@ test("들어가면 안 되는 것은 종류마다 하나씩 잡음", () => {
     "await runwareImage(tags)",
     "makeMotion(c, cast, key)",
     "autoImages(r, body)",
+    "autoMotions(r, body)",
+    "buildVideoPrompt(codes, scene)",
     `{ taskType: "imageInference" }`,
     `{ taskType: 'videoInference' }`
   ]) assert.equal(checkNoGen(bad).length, 1, bad);

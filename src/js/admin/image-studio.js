@@ -118,9 +118,11 @@ export function viewImages(arg) {
 /* 움짤 만드는 중인 칸의 글을 1초마다 고침(경과 시간·진행률). 일이 없으면 멈춤 */
 function tickJobs() {
   const paint = () => {
-    const ids = Object.keys(MJOBS);
-    $$("[data-mjob]").forEach((el) => { const j = MJOBS[el.dataset.mjob]; if (j) el.textContent = `${j.status} · ${Math.round((Date.now() - j.t0) / 1000)}초${j.progress ? ` · ${j.progress}%` : ""}`; });
+    const ids = Object.keys(MJOBS), els = $$("[data-mjob]");
+    els.forEach((el) => { const j = MJOBS[el.dataset.mjob]; if (j) el.textContent = `${j.status} · ${Math.round((Date.now() - j.t0) / 1000)}초${j.progress ? ` · ${j.progress}%` : ""}`; });
     if (!ids.length || !onHere()) { clearInterval(MO_TICK); MO_TICK = null; }
+    // 대화 중 자동 움짤처럼 이 화면 밖에서 시작한 일은 끝나도 다시 그려 주는 곳이 없으니 여기서
+    if (onHere() && els.some((el) => !MJOBS[el.dataset.mjob])) viewImages();
   };
   paint();
   if (Object.keys(MJOBS).length && !MO_TICK) MO_TICK = setInterval(paint, 1000);

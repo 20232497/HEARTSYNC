@@ -26,7 +26,7 @@ services  supabase · cloud · vault · sync · load · community · images · s
 images    codes · rating · pick · motion · situations · tags-cache        (관리자만) styles · style-fit · prompt · tags · runware · gen-guard
 ai        models · llm · adult · openrouter · parse · prompt/{lore,rules,input,memory}
 ui        icons · sheet · ext · shell · cover · home · detail · chat/{render,log,view,generate,suggest} · pay · model-sheet · room-drawer · worldart · chats · store · login · account · me · help · faq · idv
-admin     studio · image-studio · image-codes · image-run · motion-run · sit-sheets · gen-sheet · worldart · image-settings · works · tools · auto-images · export · migrate · codes · gate · support
+admin     studio · image-studio · image-codes · image-run · motion-run · motion-prompts · sit-sheets · gen-sheet · worldart · image-settings · works · tools · auto-images · export · migrate · codes · gate · support
 boot.js → app.js(USER_VIEWS · USER_NAVS) → main.js | admin.js
 ```
 
@@ -77,7 +77,7 @@ boot.js → app.js(USER_VIEWS · USER_NAVS) → main.js | admin.js
 - **관리자 웹 주소와 관문**(2026-11-05): admin.html도 커밋·배포(https://…/HEARTSYNC/admin.html). 웹 주소에서는 `admin/gate.js`가 비밀번호(SHA-256 해시 비교)를 묻고 localhost·file://은 묻지 않는다. 정적 페이지의 클라이언트 관문이라 소스를 읽는 사람은 우회할 수 있다 — 무심코 들어오는 것만 막고, 실제 데이터는 관리자의 브라우저·계정에만 있다. 관리자는 `#codetest`(코드 조합 테스트)에서 작품·인물·코드 조합을 골라 프롬프트를 보고 그려 본 뒤 마음에 드는 것만 슬롯에 저장한다.
 - **그림 생성 권한**(2026-11-05~06): 비밀번호 관문과 별개로, 웹 주소·file://에서는 Supabase `admins` 표에 있는 계정만 그림·움짤을 만든다(`images/gen-guard.js`, localhost·127.0.0.1만 건너뜀). Runware를 부르는 두 곳(`runwareImage`, 움짤 `rwTask`)이 맨 앞에서 확인하고, 태그 번역(사용자 키로 요금이 듦)이 먼저 도는 곳(`image-run.js`의 draw, `gen-sheet.js`의 생성 버튼, `auto-images.js`)은 번역 전에 확인한다. 이미 청구된 움짤의 결과 묻기(`getResponse`)는 막지 않는다. 브라우저 안의 확인이라 페이지를 고치면 우회할 수 있고, 진짜 서버 관문은 서버가 Runware를 부르는 단계(ROADMAP)다. `gate.mjs`가 가짜 https 호스트에서 시험한다(다른 흐름 시험은 127.0.0.1이라 건너뜀).
 - **이미지 스튜디오**(2026-11-05): 관리자 도구의 그림 일은 `#images` 한 화면 — `admin/image-studio.js`(화면·이벤트) · `image-codes.js`(갈래·번호대 묶음과 인물별 그림 수, 순수 HTML 조각) · `image-run.js`(Runware 그리기·결과·저장·파일 이름 → 조합 키, 상태 `ISTATE`). 예전 이미지 슬롯 시트·조합 만들기·코드 표·코드 조합 테스트를 합쳐 고정 칸 격자를 없앴고(0~14는 목록의 "기본 감정" 묶음), 칸 편집기·목록으로 추가·추천 칸은 `admin/sit-sheets.js`를 그대로 씀. 다른 화면은 `openImages(c, code)`로만 들어옴. 코드 목록의 '선택 삭제'(계정의 내 칸만, 그 코드가 든 그림·움짤도 지움)와 조합의 '모두 빼기'도 이 화면.
-- **움짤**(2026-11-05): 그림 칸마다 사진과 움짤(짧은 반복 영상)을 함께 두고 `on`으로 어느 쪽을 보일지 정함 — 저장·고르기는 `images/motion.js`(사용자 빌드에도, KV `motionpacks` + 작품 폴더의 `c.motions`), 보이기는 `ui/cover.js`의 `picHTML`(사진 위에 `<video>`를 겹침 — 영상을 못 받으면 사진), 본문은 `services/images.js`의 `IMG.putVideo`·`vtag`·`videoURL`(kv: 영상은 blob 주소로 — iOS는 data: 영상을 재생 못 함). 만들기는 관리자만 `admin/motion-run.js`(Runware videoInference 비동기 + getResponse). 사진을 바꾸거나 지우면 움짤도 지워 다른 사진에서 만든 영상이 남지 않게 함.
+- **움짤**(2026-11-05): 그림 칸마다 사진과 움짤(짧은 반복 영상)을 함께 두고 `on`으로 어느 쪽을 보일지 정함 — 저장·고르기는 `images/motion.js`(사용자 빌드에도, KV `motionpacks` + 작품 폴더의 `c.motions`), 보이기는 `ui/cover.js`의 `picHTML`(사진 위에 `<video>`를 겹침 — 영상을 못 받으면 사진), 본문은 `services/images.js`의 `IMG.putVideo`·`vtag`·`videoURL`(kv: 영상은 blob 주소로 — iOS는 data: 영상을 재생 못 함). 만들기는 관리자만 `admin/motion-run.js`(Runware videoInference 비동기 + getResponse). 사진을 바꾸거나 지우면 움짤도 지워 다른 사진에서 만든 영상이 남지 않게 함. 움직임 설명은 `admin/motion-prompts.js`(2026-11-06, 순수)가 코드별로 조립함 — 카메라 → 정적 묘사 → 움직임 → 마무리. 표는 전체이용가 감정·일상과 가벼운 스킨십만이고, 세미·성인 수위 칸은 예전 기본 설명을 그대로 쓴다.
 
 ## 5. 주석 정책
 
@@ -94,7 +94,7 @@ boot.js → app.js(USER_VIEWS · USER_NAVS) → main.js | admin.js
 
 - **스튜디오(만들기)는 관리자 도구로 옮겼다.** 사용자가 작품을 만들면 그림도 만들어야 해 복잡해진다는 판단(2026-11-04). 되돌리려면 `src/js/main.js`에서 `viewStudio`를 `registerViews`에 더하고 USER_NAVS에 "만들기"를 넣으면 된다(모듈은 admin/에 그대로).
 - 커뮤니티 공개(publishCommunity)는 관리자 도구에서만 일어난다. 사용자 사이트는 커뮤니티를 읽기만 한다.
-- 대화 중 그림 자동 생성(`admin/auto-images.js`)은 관리자 도구에서만 돈다 — 사용자에게는 실린 그림이 없으면 조합 키 폴백(감정만 → 1 → 0) 뒤 글자 카드.
+- 대화 중 그림 자동 생성(`admin/auto-images.js`)은 관리자 도구에서만 돈다 — 사용자에게는 실린 그림이 없으면 조합 키 폴백(감정만 → 1 → 0) 뒤 글자 카드. 같은 곳의 자동 움짤(`autoMotions`, 기본 꺼짐)은 그림이 끝난 뒤 전체이용가 + 표에 움직임이 있는 코드의 칸만 만든다. 영상 모델이 사진을 첫 장면으로 쓰므로 그림을 대신하지 않고 그림 위에 겹친다.
 - 사용자 빌드에 남은 작은 짐: `images/rating.js`(수위 계산)·`dropSitImages`(관리자만 부름). 더 줄이려면 rating을 codes.js로 합치고 dropSitImages를 admin/으로 옮기면 된다.
 - 다음: 작품마다 그림을 실제로 만들어 `content/`에 싣기(관리자 도구 → 작품 화면 → 전부 저장), 실린 그림이 많아지면 `images/` 폴더 크기와 첫 화면 로딩(lazy)을 보기.
 

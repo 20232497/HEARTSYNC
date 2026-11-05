@@ -46,8 +46,8 @@ for (const [dev, engine, opts] of [["Desktop Chrome", chromium, {}], ["iPhone 13
     res.personaAi = await p.evaluate(async () => { personaSheet(S.personas[0]); await new Promise((z) => setTimeout(z, 200)); const ok = !!$("#avAi"); closeOverlays(); return ok; });
     if (!res.personaAi) errs.push("페르소나 시트에 'AI로 만들기'가 없음");
     await p.evaluate(() => { location.hash = "me"; }); await wait(500);
-    res.me = await p.evaluate(() => ({ rkey: !!$("#rkey"), gstyle: !!$("#gstyle"), bsets: $$("#bsets .bset").length, nick: !!$("#nick"), save: !!$("#setSave") }));
-    if (!res.me.rkey || !res.me.gstyle || !res.me.bsets || !res.me.nick || !res.me.save) errs.push("MY 이미지 설정: " + JSON.stringify(res.me));
+    res.me = await p.evaluate(() => ({ rkey: !!$("#rkey"), gstyle: !!$("#gstyle"), bsets: $$("#bsets .bset").length, nick: !!$("#nick"), save: !!$("#setSave"), autoMotion: !!$("#autoMotion") && !$("#autoMotion").checked }));
+    if (!res.me.rkey || !res.me.gstyle || !res.me.bsets || !res.me.nick || !res.me.save || !res.me.autoMotion) errs.push("MY 이미지 설정: " + JSON.stringify(res.me));
     // 비밀번호 관문: 로컬 주소에서는 세우지 않음(웹 주소에서만) — 함수가 있고, 이 서버(127.0.0.1)에서는 gateNeeded가 거짓
     res.gate = await p.evaluate(() => ({ fn: typeof gate, needed: gateNeeded(), gated: document.body.classList.contains("gated") }));
     if (res.gate.fn !== "function" || res.gate.needed || res.gate.gated) errs.push("관문: " + JSON.stringify(res.gate));
@@ -115,21 +115,21 @@ for (const [dev, engine, opts] of [["Desktop Chrome", chromium, {}], ["iPhone 13
     // 사용자 빌드: 관리 자리가 비어 있고 관리자 함수가 없음
     await open(userUrl);
     const u = { navs: await p.evaluate(() => [...document.querySelectorAll("#rail [data-nav]")].map((b) => b.dataset.nav)) };
-    u.fns = await p.evaluate(() => ({ studio: typeof viewStudio, images: typeof viewImages, openImages: typeof openImages, codeGroups: typeof codeGroups, gen: typeof genImageSheet, works: typeof viewWorks, runware: typeof runwareImage, gate: typeof gate, loadAdminCodes: typeof loadAdminCodes, makeMotion: typeof makeMotion, motionSheet: typeof motionSheet }));
+    u.fns = await p.evaluate(() => ({ studio: typeof viewStudio, images: typeof viewImages, openImages: typeof openImages, codeGroups: typeof codeGroups, gen: typeof genImageSheet, works: typeof viewWorks, runware: typeof runwareImage, gate: typeof gate, loadAdminCodes: typeof loadAdminCodes, makeMotion: typeof makeMotion, motionSheet: typeof motionSheet, autoMotions: typeof autoMotions, buildVideoPrompt: typeof buildVideoPrompt, MOTIONS: typeof MOTIONS }));
     u.extra = await p.evaluate(() => EXTRA_CODES.length);
     await p.evaluate(() => { location.hash = "c-hwanghu"; }); await wait(500);
     u.detail = await p.evaluate(() => ({ wArt: !!$("#wArt"), imgSlots: !!$("#imgSlots"), start: !!$("#start"), cast: $$("[data-cast]").length }));
     await p.evaluate(() => { const r = newRoom(normalizeChar(getChar("hwanghu")), 0, S.personas[0]); location.hash = "r-" + r.id; }); await wait(600);
     u.drawer = await p.evaluate(async () => { openRoomDrawer("main"); await new Promise((z) => setTimeout(z, 250)); const r = { mImg: !!$("#mImg"), gallery: !!$('[data-v="gallery"]') }; closeOverlays(); return r; });
     await p.evaluate(() => { location.hash = "me"; }); await wait(500);
-    u.me = await p.evaluate(() => ({ rkey: !!$("#rkey"), gstyle: !!$("#gstyle"), nick: !!$("#nick"), save: !!$("#setSave"), key: !!$("#key") }));
+    u.me = await p.evaluate(() => ({ rkey: !!$("#rkey"), gstyle: !!$("#gstyle"), nick: !!$("#nick"), save: !!$("#setSave"), key: !!$("#key"), autoMotion: !!$("#autoMotion") }));
     u.studioRoute = await p.evaluate(async () => { location.hash = "studio"; await new Promise((z) => setTimeout(z, 400)); return $("#view").textContent.includes("둘러보기") || !!$(".hero, .home, [data-aud]"); });
     res.user = u;
     if (u.navs.join() !== "home,chats,store,me") errs.push("사용자 메뉴가 다름: " + u.navs.join());
     if (Object.values(u.fns).some((t) => t !== "undefined") || u.extra !== 0) errs.push("사용자 빌드에 관리자 함수·코드가 있음: " + JSON.stringify(u.fns) + " extra=" + u.extra);
     if (u.detail.wArt || u.detail.imgSlots || !u.detail.start || !u.detail.cast) errs.push("사용자 상세: " + JSON.stringify(u.detail));
     if (u.drawer.mImg || !u.drawer.gallery) errs.push("사용자 드로어: " + JSON.stringify(u.drawer));
-    if (u.me.rkey || u.me.gstyle || u.me.nick || !u.me.save || !u.me.key) errs.push("사용자 MY: " + JSON.stringify(u.me));
+    if (u.me.rkey || u.me.gstyle || u.me.nick || u.me.autoMotion || !u.me.save || !u.me.key) errs.push("사용자 MY: " + JSON.stringify(u.me));
   } catch (e) { res.fail = String(e).slice(0, 400); }
   res.errs = [...new Set(errs)];
   console.log(JSON.stringify(res));

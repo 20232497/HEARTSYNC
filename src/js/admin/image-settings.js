@@ -11,7 +11,9 @@ import { genErr } from "../images/runware.js";
 import { BUILTIN_SETS, IMG_MODELS, IMG_STYLES, activeSet, claudeStyleTags, effectiveSet, groupStyleFiles, guessStyleModel, guessStylePrompt, imgModelInfo, matchBuiltin, overridingSet, styleOptionsHTML, unzipImages } from "../images/styles.js";
 import { IMG, validRef } from "../services/images.js";
 import { EXT } from "../ui/ext.js";
+import { AUTO_MOTION_MAX } from "./auto-images.js";
 import { genImageSheet } from "./gen-sheet.js";
+import { VIDEO_MODELS } from "./motion-run.js";
 
 let saveStyle = () => {}; // 지금 화면의 그림체 선택을 S.settings에 쓰는 함수 — 칸을 그릴 때 바꿈
 EXT.me.push((v) => {
@@ -21,6 +23,7 @@ EXT.me.push((v) => {
       <p class="note" id="genAcc" style="margin:0 0 10px">생성 권한 확인 중…</p>
       <div class="field" style="margin-top:0"><label for="rkey">Runware API 키 <span class="note">runware.ai에서 발급</span></label><input id="rkey" type="password" autocomplete="off" placeholder="Runware API 키" value="${esc(S.settings.runwareKey || "")}"></div>
       <div class="toggle" style="margin:0 0 12px"><label for="autoImg">대화 중 장면 그림 자동 생성 <span class="note">${IN_CLAUDE ? "파일·웹으로 열었을 때만 돼요" : "AI가 고른 감정·의상·장소 조합의 그림이 없으면 Runware로 만들어 저장해요(장당 약 $0.0025, 같은 조합은 다시 만들지 않음)"}</span></label><input type="checkbox" id="autoImg" ${S.settings.autoImg ? "checked" : ""} ${IN_CLAUDE ? "disabled" : ""}></div>
+      <div class="toggle" style="margin:0 0 12px"><label for="autoMotion">장면 움짤도 자동으로 만들기 <span class="note">${IN_CLAUDE ? "파일·웹으로 열었을 때만 돼요" : `전체이용가 감정·일상 코드의 그림이 있으면 움짤까지 만들어요(한 응답에 최대 ${AUTO_MOTION_MAX}개, ${VIDEO_MODELS[0].price}, 같은 칸은 다시 만들지 않음)`}</span></label><input type="checkbox" id="autoMotion" ${S.settings.autoMotion ? "checked" : ""} ${IN_CLAUDE ? "disabled" : ""}></div>
       <div class="field"><label for="gstyle">그림체</label><select id="gstyle">${styleOptionsHTML()}</select><p class="note" id="gstyleDesc" style="margin:2px 0 0"></p></div>
       <div class="field" id="gmodelBox"><label for="gmodel">이미지 모델</label><select id="gmodel">${[...IMG_MODELS, ...(IMG_MODELS.some((m) => m.id === S.settings.imgModel) ? [] : [{ id: S.settings.imgModel, name: S.settings.imgModel }])].map((m) => `<option value="${esc(m.id)}">${esc(m.name)}</option>`).join("")}</select></div>
       <div class="field" id="gstyleBox"><label for="gstyleTxt">그림체 문구 <span class="note" id="gstyleTxtNote">한국어로 써도 돼요</span></label><textarea id="gstyleTxt" maxlength="600" style="min-height:76px" placeholder="예: 한국 웹툰 그림체, 깔끔한 선화, 부드러운 피부 음영"></textarea></div>
@@ -129,6 +132,7 @@ EXT.me.push((v) => {
   };
   paintSets();
   $("#autoImg", box).onchange = (e) => { S.settings.autoImg = e.target.checked; saveSettings(); if (e.target.checked && !S.settings.runwareKey && !$("#rkey", box).value.trim()) toast("Runware API 키를 넣고 설정 저장을 눌러야 그림이 만들어져요"); };
+  $("#autoMotion", box).onchange = (e) => { S.settings.autoMotion = e.target.checked; saveSettings(); if (e.target.checked && !S.settings.runwareKey && !$("#rkey", box).value.trim()) toast("Runware API 키를 넣고 설정 저장을 눌러야 움짤이 만들어져요"); };
   $("#gtest", box).onclick = () => {
     S.settings.runwareKey = $("#rkey", box).value.trim(); saveStyle(); saveSettings();
     genImageSheet({ title: "Runware 연결 테스트", aspect: "1:1", prompt: "1girl, solo, adult, sitting by the window, holding coffee cup, cat, warm afternoon sunlight, cozy room", ctx: { kind: "daily", aud: "m" },

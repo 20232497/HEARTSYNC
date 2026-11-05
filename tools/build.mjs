@@ -571,7 +571,7 @@ function checkScripts(html, map, out) {
 const NO_GEN = [
   [/\/\* ── src\/js\/admin\//, "관리자 모듈(src/js/admin/)"],
   [/\/\* ── src\/js\/images\/(runware|prompt|tags|styles|style-fit|gen-guard)\.js/, "그림 생성 모듈(images/runware·prompt·tags·styles·style-fit·gen-guard)"],
-  [/\b(runwareImage|makeMotion|autoImages)\b/, "그림·움짤 생성 함수"],
+  [/\b(runwareImage|makeMotion|autoImages|autoMotions|buildVideoPrompt)\b/, "그림·움짤 생성 함수"],
   [/["'](imageInference|videoInference)["']/, "Runware 생성 작업"]
 ];
 export function checkNoGen(html) {

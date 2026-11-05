@@ -208,6 +208,7 @@
  * @property {boolean} enterSend
  * @property {boolean} sceneImg 대화 속 장면 그림 보기
  * @property {boolean} autoImg 대화 중 그림 자동 생성(관리자 도구)
+ * @property {boolean} [autoMotion] 대화 중 움짤 자동 생성(관리자 도구, 전체이용가 코드만)
  * @property {string} apiKey Anthropic
  * @property {string} runwareKey
  * @property {string} openRouterKey

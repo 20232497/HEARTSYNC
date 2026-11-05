@@ -1,6 +1,7 @@
 /* 움짤 만들기(관리자 빌드만): 저장한 사진 한 장을 첫 장면으로 Runware 영상 생성(videoInference — 이미지 → 영상)을 돌려 몇 초짜리 반복 영상을 만들고, 그 칸의 움짤로 저장한다(켜짐).
    요청은 비동기(deliveryMethod "async") — 보낸 뒤 getResponse로 몇 초마다 물어 videoURL을 받아 내려받고 IMG.putVideo(브라우저가 내려받기를 막으면 Runware의 임시 주소를 그대로 씀 — 오래 두면 사라짐).
    모델은 VIDEO_MODELS(싼 순 — 실패한 생성은 Runware가 청구하지 않음). 전체이용가 칸은 안전 검사를 켜고, 성인 수위 칸은 성인 확인 뒤에만·사진 설명·외모에 미성년 표현이 있으면 보내지 않음.
+   움직임 설명은 칸마다 motionPromptOf가 채움(전체이용가 칸은 코드별 문장 — admin/motion-prompts.js).
    만드는 중인 일은 MJOBS(작품|인물|칸 → 진행 상태)에 있고, 스튜디오가 그 칸에 '움짤 만드는 중'을 보여 줌. 화면을 떠나도 계속되고 끝나면 저장 */
 import { ageOK } from "../ai/adult.js";
 import { castLook } from "../core/cast.js";
@@ -13,11 +14,13 @@ import { keyOf, parseCodes } from "../images/codes.js";
 import { motionOf, putMotion } from "../images/motion.js";
 import { imagesOf } from "../images/pick.js";
 import { assertAdmin } from "../images/gen-guard.js";
+import { savedParts } from "../images/prompt.js";
 import { imgRating } from "../images/rating.js";
 import { NEG_MINOR, genErr, uuid4 } from "../images/runware.js";
 import { codeRating, keyName } from "../images/situations.js";
 import { IMG } from "../services/images.js";
 import { ICON } from "../ui/icons.js";
+import { MOTION_PROMPT, buildVideoPrompt, hasMotionCode, sceneTags } from "./motion-prompts.js";
 
 /* 값싼 순. res는 Runware의 resolution(입력 사진 비율을 따름), dur은 고를 수 있는 길이(초), extra는 모델별 설정(2026-11 Runware 문서의 모델 스키마 기준) */
 export const VIDEO_MODELS = [
@@ -26,13 +29,17 @@ export const VIDEO_MODELS = [
   { k: "wan720", id: "alibaba:wan@2.6-flash", name: "Wan 2.6 Flash · 720p", price: "5초 약 $0.13", res: "720p", dur: [3, 5, 8], neg: true, extra: { providerSettings: { alibaba: { audio: false } } } },
   { k: "h3lite", id: "minimax:h3@lite", name: "MiniMax H3 Lite · 480p", price: "5초 약 $0.13", res: "480p", dur: [4, 5, 8], extra: {} }
 ];
-export const MOTION_PROMPT = "subtle idle animation, the character breathes gently and blinks naturally, hair and clothes sway slightly in a soft breeze, same pose, same outfit, same face, camera fixed, smooth seamless loop";
-/* 고른 모델·길이·움직임 설명(세션 동안 기억) */
-export const MSTATE = { model: "seed480", dur: 5, prompt: MOTION_PROMPT };
+/* 고른 모델·길이(세션 동안 기억), 직접 고친 움직임 설명(칸마다 — jobId → 문장) */
+export const MSTATE = { model: "seed480", dur: 5, edits: {} };
 /* 만드는 중인 일: "작품|인물|칸" → { t0, status, progress } */
 export const MJOBS = {};
 export const jobId = (c, code, key) => [c.id, code, keyOf(String(key))].join("|");
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+/* 그 칸의 기본 움직임 설명: 전체이용가 칸은 코드별 문장, 세미·성인 수위 칸은 MOTION_PROMPT. 수위는 칸 정의 그대로 본다(imgRating은 성인 확인 전이면 늘 safe라 거를 수 없음) */
+export function motionPromptOf(c, cast, key) {
+  const k = keyOf(String(key)), codes = parseCodes(k);
+  return codeRating(codes, c) === "safe" ? buildVideoPrompt(codes, sceneTags(savedParts(c, cast, k))) : MOTION_PROMPT;
+}
 
 /* 저장한 사진(kv:·/_blob/·content/·data:) → data URL(영상 생성의 첫 장면) */
 async function photoData(ref) {
@@ -122,13 +129,14 @@ export function motionErr(e) {
 /* 움짤 창: 모델·길이·움직임 설명을 고르고 만들기. 이 칸에 움짤이 있으면 미리 보기와 '움짤 지우기' */
 export function motionSheet(c, cast, key, after) {
   const k = keyOf(String(key)), ref = (imagesOf(c)[cast.code] || {})[k], mo = motionOf(c, cast.code, k), M = VIDEO_MODELS.find((m) => m.k === MSTATE.model) || VIDEO_MODELS[0];
+  const id = jobId(c, cast.code, k), base = motionPromptOf(c, cast, k);
   const ov = document.createElement("div"); ov.className = "overlay gen-ov";
   ov.innerHTML = `<div class="sheet mo-sheet" role="dialog" aria-modal="true"><div class="sheet-head"><h2>움짤 만들기 <small>${esc(cast.name)} · ${esc(keyName(k))}</small></h2><button class="icon-btn" data-x aria-label="닫기">${ICON.close}</button></div>
     <div class="mo-prev"><figure><span class="pic">${IMG.tag(ref)}</span><figcaption>사진(첫 장면)</figcaption></figure>${mo ? `<figure><span class="pic">${IMG.vtag(mo.ref)}</span><figcaption>지금 움짤 · ${mo.on ? "켜짐" : "꺼짐(사진이 보임)"}</figcaption></figure>` : ""}</div>
     <p class="note">저장한 사진을 첫 장면으로 몇 초짜리 반복 영상을 만들어요(보통 30초~2분). 다 되면 이 칸의 움짤로 저장되고 켜져요 — 갤러리의 ⟳ 단추로 사진과 번갈아 쓸 수 있어요. 실패한 생성은 청구되지 않아요.${mo ? " 새로 만들면 지금 움짤은 바뀌어요." : ""}</p>
     <div class="two"><div class="field"><label for="moM">모델</label><select id="moM">${VIDEO_MODELS.map((m) => `<option value="${m.k}" ${m.k === M.k ? "selected" : ""}>${esc(m.name)} — ${esc(m.price)}</option>`).join("")}</select></div>
       <div class="field"><label for="moD">길이</label><select id="moD"></select></div></div>
-    <div class="field"><label for="moP">움직임 설명 <span class="note">영어로 쓰면 더 정확해요</span></label><textarea id="moP" rows="3">${esc(MSTATE.prompt)}</textarea>
+    <div class="field"><label for="moP">움직임 설명 <span class="note">${base !== MOTION_PROMPT && hasMotionCode(parseCodes(k)) ? "이 코드에 맞춰 채웠어요 · " : ""}영어로 쓰면 더 정확해요</span></label><textarea id="moP" rows="5">${esc(MSTATE.edits[id] || base)}</textarea>
       <div class="cta-row" style="margin-top:6px"><button class="btn sm ghost" id="moReset">기본 설명으로</button></div></div>
     <div class="cta-row">${mo ? `<button class="btn danger" id="moDel">움짤 지우기</button>` : ""}<span class="spacer"></span><button class="btn ghost" data-x>취소</button><button class="btn pri" id="moGo" ${ref ? "" : "disabled"}>${mo ? "다시 만들기" : "만들기"}</button></div></div>`;
   document.body.append(ov); IMG.hydrate(ov);
@@ -137,12 +145,14 @@ export function motionSheet(c, cast, key, after) {
   const durs = () => { const m = VIDEO_MODELS.find((x) => x.k === $("#moM", ov).value) || VIDEO_MODELS[0]; $("#moD", ov).innerHTML = m.dur.map((d) => `<option value="${d}" ${d === MSTATE.dur ? "selected" : ""}>${d}초</option>`).join(""); if (!m.dur.includes(MSTATE.dur)) $("#moD", ov).value = String(m.dur.includes(5) ? 5 : m.dur[0]); };
   durs();
   $("#moM", ov).onchange = durs;
-  $("#moReset", ov).onclick = () => { $("#moP", ov).value = MOTION_PROMPT; };
+  $("#moReset", ov).onclick = () => { $("#moP", ov).value = base; };
   const del = $("#moDel", ov);
   if (del) del.onclick = () => { if (!del.dataset.sure) { del.dataset.sure = "1"; del.textContent = "한 번 더 누르면 지워요(사진은 그대로)"; return; } putMotion(c, cast.code, k, null); close(); after && after(); toast("움짤을 지웠어요 — 사진이 보여요"); };
   $("#moGo", ov).onclick = () => {
-    Object.assign(MSTATE, { model: $("#moM", ov).value, dur: +$("#moD", ov).value, prompt: $("#moP", ov).value.trim() || MOTION_PROMPT });
+    const prompt = $("#moP", ov).value.trim() || base;
+    Object.assign(MSTATE, { model: $("#moM", ov).value, dur: +$("#moD", ov).value });
+    if (prompt === base) delete MSTATE.edits[id]; else MSTATE.edits[id] = prompt;
     close();
-    makeMotion(c, cast, k, MSTATE, () => after && after());
+    makeMotion(c, cast, k, { model: MSTATE.model, dur: MSTATE.dur, prompt }, () => after && after());
   };
 }
