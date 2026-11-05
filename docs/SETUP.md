@@ -19,6 +19,17 @@ README에서 옮겨 둔 운영 메모예요. 코드 구조는 [ARCHITECTURE.md](
 2. 관리자로 쓸 계정으로 앱에 한 번 로그인한 뒤 **SQL Editor**에서 `insert into public.admins (user_id) select id from auth.users where email = '관리자 이메일' on conflict do nothing;` (소셜 계정은 Authentication → Users의 User UID로 `values ('UID')`)
 3. 관리자 도구 → MY → 이미지 생성 맨 위에 **관리자 계정으로 확인됐어요**가 보이면 끝이에요. 표에 넣으면 새로 고침 없이 반영돼요
 
+### 관리자 계정 고정(한 번만 — 2026-11-06 추가)
+`admins`는 계정 id를 봐서, 계정을 지우고 다시 가입하면 id가 바뀌어 권한이 사라져요. 운영자 이메일을 `owner_emails`에 넣으면 **그 이메일의 인증된 계정은 늘 관리자**예요. 저장소가 공개라 이메일은 파일에 적지 않고 이 표에만 둬요(앱에서는 읽지도 쓰지도 못해요).
+1. [supabase.sql](supabase.sql)을 전체 실행한 뒤 SQL Editor에서: `insert into public.owner_emails (email) values ('관리자 이메일(소문자)') on conflict do nothing;`
+2. 확인: `select o.email, u.id is not null as has_account, u.email_confirmed_at is not null as confirmed, a.user_id is not null as is_admin from public.owner_emails o left join auth.users u on lower(u.email) = o.email left join public.admins a on a.user_id = u.id;` — 셋 다 true면 끝이에요. 계정이 아직 없으면 false로 보이고, 가입해서 메일 인증을 마치는 순간 관리자가 돼요
+- **계정을 지우고 다시 가입**: 메일 인증을 마치면 새 계정이 자동으로 관리자예요(같은 이메일을 Google 등으로 처음 가입해도 같음)
+- **`admins`에서 빼기**: 고정 계정은 오류로 막혀요. MY의 계정 삭제는 그대로 돼요
+- **표를 비우거나(`truncate`) 지웠을 때(`drop`)**: 막지는 못하지만 [supabase.sql](supabase.sql)을 다시 실행하면 복구돼요. `owner_emails`를 지웠거나 프로젝트를 새로 만들었다면 1번을 다시 해요
+- **전제**: Authentication의 **이메일 인증을 켜 둬요**. 끄면 가입 즉시 인증된 것으로 처리돼서, 그 이메일의 계정이 없을 때 남이 먼저 가입해 관리자가 될 수 있어요. 그 메일함을 가진 사람이 곧 관리자이니 메일 계정의 2단계 인증도 켜 둬요
+- **고정 풀기**: `delete from public.owner_emails where email = '관리자 이메일(소문자)';` — 관리자 권한은 남으니, 뺄 때는 이어서 `admins`에서 지워요. 고정 계정의 이메일을 다른 주소로 바꿔도 권한은 남고 고정만 풀려요
+- 이 고정은 Supabase 권한(공지·문의·그림 생성 확인)에만 해당해요. 웹 관리자 도구의 비밀번호 관문은 따로이고, SQL Editor에 들어올 수 있는 사람은 이 설정도 바꿀 수 있어요
+
 ## 계정 서버 설정(Supabase, 한 번만 — 2026-11-02 완료)
 1. Supabase 대시보드 → 프로젝트 → **SQL Editor**에 [supabase.sql](supabase.sql)을 붙여 넣고 실행(계정 저장 표 `kv`, 본인 행만 보이게 하는 RLS, 계정 삭제 함수, 고객센터 표 — 여러 번 실행해도 됨)
 2. **Authentication → URL Configuration**: Site URL을 `https://20232497.github.io/HEARTSYNC/`로, Redirect URLs에 `https://20232497.github.io/HEARTSYNC/**` 추가(인증 메일·비밀번호 재설정 링크가 돌아올 곳)

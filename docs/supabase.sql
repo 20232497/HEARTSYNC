@@ -185,6 +185,71 @@ grant update (status, answer) on public.inquiries to authenticated;
 --   insert into public.admins (user_id) values ('계정 UID') on conflict do nothing;
 -- 관리자에서 빼기: delete from public.admins where user_id = '계정 UID';
 
+-- 고정 관리자(2026-11-06, 사용자 요청 '어떤 작업을 하든 이 계정은 관리자'): admins는 계정 id를 보므로 계정을 지우고 다시 가입하면 id가 바뀌어 권한이 사라진다.
+-- owner_emails에 있는 이메일의 '인증된' 계정은 늘 admins에 있게 한다 — 가입·인증·이메일 변경 때 자동으로 넣고, 지우기를 막고, 이 파일을 다시 실행하면 복구한다.
+-- 이메일은 이 파일에 적지 않는다(공개 저장소). 이 파일을 실행한 뒤 SQL Editor에서 한 번만:
+--   insert into public.owner_emails (email) values ('관리자 이메일(소문자)') on conflict do nothing;
+-- 고정 풀기: delete from public.owner_emails where email = '관리자 이메일(소문자)'; (그 뒤에 admins에서 뺄 수 있음)
+-- 전제: Authentication의 이메일 인증을 켜 둘 것 — 끄면 가입 즉시 인증된 것으로 처리돼, 그 이메일의 계정이 없을 때 남이 가입해 관리자가 될 수 있다.
+create table if not exists public.owner_emails (
+  email text primary key check (email = lower(email)),
+  created_at timestamptz not null default now()
+);
+alter table public.owner_emails enable row level security;
+-- 정책·권한 없음: 앱(anon·authenticated)은 이 표를 읽지도 쓰지도 못한다 — 이메일이 API로 드러나지 않음
+revoke all on public.owner_emails from anon, authenticated;
+
+-- 가입·인증·이메일 변경 때: 인증된 고정 이메일이면 admins에 넣음(이 트리거가 실패하면 가입이 막히므로 이 일만 함)
+create or replace function public.pin_owner_admin() returns trigger
+language plpgsql security definer set search_path = '' as $$
+begin
+  if new.email_confirmed_at is not null and exists (select 1 from public.owner_emails where email = lower(new.email)) then
+    insert into public.admins (user_id) values (new.id) on conflict do nothing;
+  end if;
+  return null;
+end $$;
+revoke all on function public.pin_owner_admin() from public, anon, authenticated;
+drop trigger if exists pin_owner_admin on auth.users;
+create trigger pin_owner_admin after insert or update of email, email_confirmed_at on auth.users
+  for each row execute function public.pin_owner_admin();
+
+-- owner_emails에 넣는 순간: 이미 있는 계정도 admins로
+create or replace function public.pin_owner_email() returns trigger
+language plpgsql security definer set search_path = '' as $$
+begin
+  insert into public.admins (user_id)
+    select id from auth.users where lower(email) = new.email and email_confirmed_at is not null
+    on conflict do nothing;
+  return null;
+end $$;
+revoke all on function public.pin_owner_email() from public, anon, authenticated;
+drop trigger if exists pin_owner_email on public.owner_emails;
+create trigger pin_owner_email after insert on public.owner_emails
+  for each row execute function public.pin_owner_email();
+
+-- 고정 관리자는 admins에서 뺄 수 없음(계정을 지울 때의 연쇄 삭제는 그 계정이 이미 없어 통과)
+create or replace function public.keep_owner_admin() returns trigger
+language plpgsql security definer set search_path = '' as $$
+begin
+  if exists (
+    select 1 from auth.users u join public.owner_emails o on o.email = lower(u.email)
+    where u.id = old.user_id and u.email_confirmed_at is not null
+  ) then
+    raise exception '고정 관리자는 뺄 수 없어요. 먼저 owner_emails에서 지우세요.';
+  end if;
+  return old;
+end $$;
+revoke all on function public.keep_owner_admin() from public, anon, authenticated;
+drop trigger if exists keep_owner_admin on public.admins;
+create trigger keep_owner_admin before delete on public.admins
+  for each row execute function public.keep_owner_admin();
+
+-- 이 파일을 다시 실행하면 복구(admins를 비웠거나(truncate — 행 트리거가 돌지 않아 막지 못함) 지우고 다시 만든 경우)
+insert into public.admins (user_id)
+  select u.id from auth.users u join public.owner_emails o on o.email = lower(u.email)
+  where u.email_confirmed_at is not null
+  on conflict do nothing;
+
 -- 휴대폰 성인 인증(2026-11-05): 위와 같이 SQL Editor에서 한 번 실행(여러 번 실행해도 됨). 인증 결과는 Edge Function(docs/edge/verify-adult.ts)만 쓰고, 앱은 본인 것을 읽기만 한다.
 -- 이름·전화번호·생년월일·CI는 저장하지 않는다 — 성인 여부·시각·만료일·시험 채널 여부뿐. 계정을 지우면 함께 지워진다.
 create table if not exists public.adult_checks (
