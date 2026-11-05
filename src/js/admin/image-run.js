@@ -6,6 +6,7 @@ import { castLook } from "../core/cast.js";
 import { S, hasRunwareKey } from "../core/state.js";
 import { esc, toast, uid } from "../core/util.js";
 import { keyOf, parseCodes } from "../images/codes.js";
+import { assertAdmin } from "../images/gen-guard.js";
 import { putCastImage } from "../images/pick.js";
 import { lookIsMale, partsTags, savedParts } from "../images/prompt.js";
 import { RATINGS, imgRating } from "../images/rating.js";
@@ -16,7 +17,7 @@ import { IMG } from "../services/images.js";
 
 /* 스튜디오 상태 — 화면을 떠나도 세션 동안 남음. acts는 고른 순서(조합엔 앞 MAX_ACT개), wear·place는 하나 또는 null, del은 코드 선택 삭제 모드일 때 고른 번호(Set) */
 export const ISTATE = { work: "", cast: "", tab: "act", acts: [1], wear: null, place: null, aspect: "4:5", style: "", autoSave: false, prompt: false, closed: {}, results: [], busy: null, del: null };
-const STOP_ON = ["no_key", "bad_key", "no_funds", "bad_model", "network", "rate_limited", "minor_block", "timeout"];
+const STOP_ON = ["admin_login", "admin_only", "no_key", "bad_key", "no_funds", "bad_model", "network", "rate_limited", "minor_block", "timeout"];
 
 export const ctxOf = (c, cast) => ({ kind: "daily", aud: audOf(c), male: lookIsMale(castLook(cast, c)) });
 export const keyRating = (c, key) => imgRating(codeRating(parseCodes(String(key)), c));
@@ -32,6 +33,7 @@ export const promptText = (c, cast, key) => savedParts(c, cast, key).filter((p) 
 
 /* 조합 키 하나를 그려 결과 하나로 */
 async function draw(c, cast, key) {
+  await assertAdmin(); // 태그 번역(사용자 키로 요금이 듦)보다 먼저 — runwareImage의 확인은 번역 뒤에 옴
   const rt = keyRating(c, key), st = pickStyle(c, cast), t0 = Date.now();
   const tags = await partsTags(savedParts(c, cast, key), rt !== "safe");
   const blob = await runwareImage(tags, { aspect: ISTATE.aspect, rating: rt, style: st });
