@@ -4,6 +4,7 @@ import { S, hasClaudeKey } from "../core/state.js";
 import { esc } from "../core/util.js";
 import { refDataURL } from "./runware.js";
 import { validRef } from "../services/images.js";
+import { FDAILY } from "./style-fdaily.js";
 
 /* ---------------------------------------------------------------- AI 이미지 생성: Runware API (SDXL 계열 모델, Danbooru 영문 태그 프롬프트)
    이름·설명은 한국어. 모델은 영문 태그만 알아들으므로 한글(외모·키워드북·직접 쓴 그림체)은 보내기 직전 ponyTags()가 영문 태그로 바꿈 */
@@ -36,7 +37,7 @@ export const imgModelInfo = (id) => IMG_MODELS.find((m) => m.id === id) || { id,
 /* 비교 생성(2026-11-03, 6라운드 66장)으로 정함: 반실사 네 묶음은 semILust v2(Illustrious) — Run七八造(예전 기본)는 붓 자국이 보이는 일러스트, 포토리얼 계열은 사진처럼 나와서 뺌.
    남성향 일상은 2026-11-04 재조정 — realistic skin texture를 빼고 (semi-realistic:1.2)·(large eyes:1.1)·smooth glossy skin·airbrushed·soft focus·subsurface scattering, 모델도 YabaL로(semILust는 사진처럼 번들거리고 무대 조명을 끌어옴; 'idol-like'·'bust shot'은 각각 무대 배경·자세 충돌 때문에 뺌). 남성향 표지(mworld)만 semILust.
    여성향 인물은 사진 같은 성인 남성으로 치우쳐 (bishounen:1.2)·pretty boy·pale smooth skin으로 참고 그림의 부드러운 꽃미남 쪽으로 당김(realistic skin texture는 뺌).
-   여성향(남성 인물) 두 묶음은 2026-11-04 체크포인트 19종을 더 비교해 YabaL Mix 2.5D XL(sdxl)로 — semILust·myzy Korean XL보다 참고 그림의 부드럽고 창백한 꽃미남에 가깝고 표지·의상 조합에서도 남자를 남자로 그림.
+   여성향 표지는 2026-11-04 체크포인트 19종을 더 비교해 YabaL Mix 2.5D XL(sdxl)로 — semILust·myzy Korean XL보다 참고 그림의 부드럽고 창백한 꽃미남에 가깝고 표지·의상 조합에서도 남자를 남자로 그림. 여성향 일상은 2026-11-06 Run七八造로 옮김(style-fdaily.js).
    표지는 장면 태그가 앞이라 조명 태그에 가중치. 여성향 표지에도 (bishounen:1.2)·pretty boy — semILust가 옷·머리 태그만 있는 남자(은발 기사·셰프)를 여자로 그려서(2026-11-04, coverPrompt의 (1boy:1.2)·masculine 앵커만으로는 부족, HoJ도 마찬가지). 애니는 2026-11-04 세밀 태그로 재비교(WAI·Nova Anime 12.5/5·Nova Orange·Illustrious 2.0·Mistoon·Hassaku) → Hassaku XL v2.1 + (intricate details:1.3)·sketchy brushwork·ink splatter·dark background. 'lightning' 태그는 모든 그림을 번개로 덮어서 뺌 */
 const SEMI_L = "civitai:1160480@1449034", YABAL = "civitai:959624@1074388", HASSAKU = "civitai:140272@1617798", SEMI_SKIN = ", realistic skin texture";
 const SEMI = "korean, semi-realistic, 2.5d, realistic proportions, glossy hair, detailed hair, soft skin shading" + SEMI_SKIN + ", detailed eyes, cinematic lighting, depth of field, high detail";
@@ -63,9 +64,12 @@ export const BUILTIN_SETS = [
     gen: { cfg: 5, steps: 35, scheduler: "DPM++ 2M Karras", modelNeg: false },
     noHumans: { model: YABAL, prompt: "2.5d, (illustration:1.3), cel-painterly shading, cinematic lighting, depth of field, high detail, soft bloom, low contrast, muted warm palette, soft diffused light" },
     post: { lift: "rgb(11,11,15)", soft: 0.08, blurK: 3, blurA: 0.6 } },
-  { id: "fdaily", name: "프롬1 여성향 일상", kind: "daily", aud: "f", match: /프롬\s*1.*여성향|여성향.*일상/, model: YABAL, samples: 3,
-    desc: "프롬1(여성향 일상) 10장 — 같은 반실사 계열의 남성 인물: 창백하고 매끈한 피부, 섬세한 이목구비와 또렷한 턱선, 차분한 조명과 채도, 회화적 음영. 여성향 작품(남성 인물)의 인물 그림 기본값",
-    prompt: SEMI.replace(SEMI_SKIN, "") + ", handsome, (bishounen:1.2), pretty boy, youthful, delicate facial features, soft facial features, pale smooth skin, sharp jawline, soft painterly shading, gentle lighting, rich deep palette, manhwa style, (vivid colors:1.2), (detailed hair strands:1.3), wind-blown hair, (muscular:1.2), toned chest, broad shoulders, open collar, sultry expression, alluring" },
+  // 값은 images/style-fdaily.js(2026-11-06, 43라운드 비교 생성으로 정함)
+  { id: "fdaily", name: "프롬1 여성향 일상", kind: "daily", aud: "f", match: /프롬\s*1.*여성향|여성향.*일상/, model: IMG_MODELS[0].id, samples: 3,
+    desc: "참고 그림 프롬1(여성향 일상)에 맞춘 화풍 — 가벼운 일러스트, 정면, 리프컷, 근육질 몸과 굵은 목, 성숙하고 섹시한 인상, 회색으로 덮은 차분한 색. 인물이 자기 머리 모양·표정을 정했으면 그것을 따름. 여성향 작품(남성 인물)의 인물 그림 기본값",
+    ...FDAILY,
+    // 사람 없는 그림: Run七八造는 동물만 시켜도 사람을 함께 그림. WAI가 Hassaku보다 동물 얼굴·자세를 잘 그리고 작가 표기가 필요 없음(fd44), YabaL은 그림 판매 불가라 안 씀
+    noHumans: { model: IMG_MODELS[2].id, prompt: "(digital illustration:1.3), (soft painting:1.2), painterly, (flat color:1.1), soft edges, low contrast, soft warm palette, gentle lighting, soft diffused light, soft bloom" } },
   { id: "manime", name: "프롬2 남성향 애니", kind: "anime", aud: "m", match: /애니|anime/i, model: HASSAKU, samples: 3,
     desc: "프롬2(남성향 애니) 13장 — 애니 키 비주얼: 또렷한 선화와 회화적 하이라이트, 높은 대비와 선명한 색, 어두운 배경 위 빛 입자·먹 튀김 효과. 자동으로는 쓰지 않고 고르면 Hassaku 애니 모델로 그려요",
     prompt: "(anime key visual:1.3), (intricate details:1.4), extremely detailed, detailed lineart, sketchy brushwork, ink splatter, painterly highlights, cel shading, (high contrast:1.3), vivid colors, dramatic lighting, glowing particles, light streaks, dark background, shiny hair, (detailed face:1.3), (beautiful detailed eyes:1.4), tsurime, long eyelashes, glossy lips, defined nose, dramatic face lighting" },
@@ -86,10 +90,11 @@ export function effectiveSet(id) {
   const o = overridingSet(id);
   return o ? { ...b, prompt: o.prompt || b.prompt, model: o.model || b.model, over: o } : b;
 }
-/* 상황에 맞는 내장 화풍 id: 표지·세계관(world)은 작품 성향으로, 인물(daily)은 작품 성향 → 없으면(전체) 인물 성별로. 남성향 작품의 남자 인물은 여성향 일상으로 — 남성향 일상은 여성 인물 전용 태그라 남자도 여자처럼 그림(2026-11-05). 애니는 자동으로 고르지 않음 */
+/* 상황에 맞는 내장 화풍 id: 표지·세계관(world)은 작품 성향으로, 인물(daily)은 작품 성향 → 없으면(전체) 인물 성별로. 남성향 작품의 남자 인물은 여성향 일상으로 — 남성향 일상은 여성 인물 전용 태그라 남자도 여자처럼 그림(2026-11-05).
+   여성향 작품의 여자 인물(male이 false)은 남성향 일상으로 — 여성향 일상도 남성 전용 태그(muscular male·masculine)가 됨(2026-11-06). 애니는 자동으로 고르지 않음 */
 export function autoSetId(ctx = {}) {
   const aud = ctx.aud === "m" || ctx.aud === "f" ? ctx.aud : (ctx.male ? "f" : "m");
-  return ctx.kind === "world" ? (aud === "f" ? "fworld" : "mworld") : (aud === "f" || ctx.male ? "fdaily" : "mdaily");
+  return ctx.kind === "world" ? (aud === "f" ? "fworld" : "mworld") : (ctx.male || (aud === "f" && ctx.male !== false) ? "fdaily" : "mdaily");
 }
 /* 그림체 프리셋: 모델 + 그림체 태그(그림체만 — 인물·구도·배경 태그를 넣으면 모든 그림이 그쪽으로 끌려감). 직접 입력·세트는 모델을 따로 고름 */
 export const IMG_STYLES = {
@@ -109,8 +114,8 @@ export function activeSet() { const k = String(S.settings.imgStyle || ""); retur
 export function styleFor(ctx = {}) {
   const k = String(S.settings.imgStyle || "auto");
   // 내장 화풍은 머리색별 문구·네거티브·LoRA·샘플러·후처리도 정할 수 있음(남성향 일상) — 사용자의 세트가 덮으면 그 세트의 문구·모델만
-  const sys = (id) => { const s = effectiveSet(id) || effectiveSet(autoSetId(ctx)), { coolPrompt, blackTag, bangs, bangsNeg, neg, lora, gen, post, noHumans } = s.over ? {} : s;
-    return { id: "sys:" + s.id, name: `기본 화풍 · ${s.name}${s.over ? " (내 세트)" : ""}`, prompt: s.prompt, model: s.model || IMG_MODELS[0].id, coolPrompt, blackTag, bangs, bangsNeg, neg, lora, gen, post, noHumans }; };
+  const sys = (id) => { const s = effectiveSet(id) || effectiveSet(autoSetId(ctx)), { coolPrompt, blackTag, paleTag, bangs, bangsNeg, fits, contentWeight, neg, lora, gen, post, noHumans } = s.over ? {} : s;
+    return { id: "sys:" + s.id, name: `기본 화풍 · ${s.name}${s.over ? " (내 세트)" : ""}`, prompt: s.prompt, model: s.model || IMG_MODELS[0].id, coolPrompt, blackTag, paleTag, bangs, bangsNeg, fits, contentWeight, neg, lora, gen, post, noHumans }; };
   if (k === "auto") return sys(autoSetId(ctx));
   if (k.startsWith("sys:")) return sys(k.slice(4));
   if (k.startsWith("set:")) { const s = activeSet(); if (s) return { id: k, name: "세트 · " + s.name, prompt: s.prompt || "", model: s.model || S.settings.imgModel || IMG_MODELS[0].id }; return sys(autoSetId(ctx)); }

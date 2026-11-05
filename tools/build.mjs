@@ -572,7 +572,7 @@ function checkScripts(html, map, out) {
    생성 모듈(관리자 전용)의 머리·생성 함수 이름·Runware 작업 이름이 결과에 있으면 실패 — 사용자 모듈이 관리자 모듈을 import하게 바뀌는 실수를 막음 */
 const NO_GEN = [
   [/\/\* ── src\/js\/admin\//, "관리자 모듈(src/js/admin/)"],
-  [/\/\* ── src\/js\/images\/(runware|prompt|tags|styles|style-fit|gen-guard)\.js/, "그림 생성 모듈(images/runware·prompt·tags·styles·style-fit·gen-guard)"],
+  [/\/\* ── src\/js\/images\/(runware|prompt|tags|styles|style-fit|style-fdaily|gen-guard)\.js/, "그림 생성 모듈(images/runware·prompt·tags·styles·style-fit·style-fdaily·gen-guard)"],
   [/\b(runwareImage|makeMotion|autoImages|autoMotions|buildVideoPrompt|MotionPrompts)\b/, "그림·움짤 생성 함수·움짤 코드 표"],
   [/["'](imageInference|videoInference)["']/, "Runware 생성 작업"]
 ];

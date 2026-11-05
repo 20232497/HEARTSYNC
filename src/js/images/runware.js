@@ -7,7 +7,7 @@ import { abortCode, timeoutSignal } from "../core/util.js";
 import { splitTags } from "./prompt.js";
 import { RATINGS, imgRating } from "./rating.js";
 import { assertAdmin } from "./gen-guard.js";
-import { fitStyle } from "./style-fit.js";
+import { fitStyle, weighTags } from "./style-fit.js";
 import { ARCH, imgModelInfo, styleFor } from "./styles.js";
 import { ponyTags } from "./tags.js";
 import { IMG, validRef } from "../services/images.js";
@@ -15,7 +15,7 @@ import { IMG, validRef } from "../services/images.js";
 export const BAD_IMG_MODELS = ["civitai:257259@290640", "civitai:257749@290640"];
  // 없는 모델·Runware가 못 불러오는 ID → 로드 때 고침
 const RW_SIZES = { "4:5": [832, 1216], "3:4": [832, 1216], "1:1": [1024, 1024], "16:9": [1216, 832] };
-const IMG_NEG = "text, watermark, signature, logo, deformed, bad anatomy, bad hands, missing fingers, extra digits, blurry, low quality";
+export const IMG_NEG = "text, watermark, signature, logo, deformed, bad anatomy, bad hands, missing fingers, extra digits, blurry, low quality";
 // 미성년 태그는 수위와 상관없이 늘 네거티브에(CLAUDE.md 수위 원칙)
 export const NEG_MINOR = "child, loli, shota, underage, toddler, aged down";
 export function uuid4() {
@@ -32,13 +32,14 @@ function imgSubject(tags) {
   return /\bno humans\b/.test(t) ? "none" : "any";
 }
 /* 대상별로 그림체에서 뺄 태그(여자·사람 얼굴 쪽으로 끌림)와 더할 네거티브 */
-const SUBJ = {
+export const SUBJ = {
   // female·woman·eyeshadow 등: 여성 인물용 화풍(남성향 일상)으로 남자나 풍경을 그릴 때 여자가 끼어들지 않게
   male: { strip: /makeup|lip|eyelash|glamorous|cute|kawaii|beautiful|female|woman|eyeshadow|eyeliner|blush/i, neg: "1girl, female, breasts, makeup, lipstick, feminine" },
   none: { strip: /korean|skin|makeup|lip|eye|pupil|face|facial|jawline|v-shaped|cheek|nose|mouth|bangs|blush|hair|glamorous|mature|female|woman|cute|kawaii|beautiful|portrait|body/i, neg: "1girl, 1boy, human, person, humanoid, anthro, kemonomimi, animal ears" }
 };
 /* 내장 화풍의 후처리(style.post): 그림을 받은 뒤 브라우저에서 입힘 — 모델·태그로는 조절이 안 되는 전체 밝기와 흐림(2026-11-05 비교 생성으로 정함).
-   lift·soft: 옅은 빛을 screen으로 더하고 중간톤을 soft-light로 올림. blurK·blurA: 1/blurK로 줄였다 키운 사본을 blurA만큼 겹침(ctx.filter는 Safari에서 안 됨). 실패하면 원본 */
+   lift·soft: 옅은 빛을 screen으로 더하고 중간톤을 soft-light로 올림. blurK·blurA: 1/blurK로 줄였다 키운 사본을 blurA만큼 겹침(ctx.filter는 Safari에서 안 됨).
+   veil: 가운데에서 가장자리로 갈수록 채도를 빼고(saturation) 살짝 어둡게(multiply) 회색 막을 씌움 — 인물의 색은 남기고 전체를 회색조로(여성향 일상). 실패하면 원본 */
 async function stylePost(blob, p) {
   const url = URL.createObjectURL(blob);
   try {
@@ -54,6 +55,13 @@ async function stylePost(blob, p) {
       const sm = document.createElement("canvas"); sm.width = Math.round(w / p.blurK); sm.height = Math.round(h / p.blurK);
       const sg = sm.getContext("2d"); sg.imageSmoothingQuality = "high"; sg.drawImage(cv, 0, 0, sm.width, sm.height);
       g.globalAlpha = p.blurA; g.drawImage(sm, 0, 0, w, h); g.globalAlpha = 1;
+    }
+    if (p.veil) {
+      const v = p.veil, r = g.createRadialGradient(w * 0.5, h * 0.4, h * 0.12, w * 0.5, h * 0.4, h * 0.8), grey = (a) => `rgba(128,128,128,${a})`;
+      r.addColorStop(0, grey(v.center)); r.addColorStop(0.45, grey(v.center)); r.addColorStop(1, grey(v.edge));
+      g.globalCompositeOperation = "saturation"; g.fillStyle = r; g.fillRect(0, 0, w, h);
+      g.globalCompositeOperation = "multiply"; g.fillStyle = v.mul; g.fillRect(0, 0, w, h);
+      g.globalCompositeOperation = "source-over"; g.globalAlpha = v.a; g.fillStyle = v.color; g.fillRect(0, 0, w, h); g.globalAlpha = 1;
     }
     return await new Promise((res) => cv.toBlob((b) => res(b || blob), "image/jpeg", 0.92));
   } catch { return blob; }
@@ -87,7 +95,7 @@ export async function runwareImage(prompt, { aspect = "4:5", rating = imgRating(
   const st = subj === "none" && st0.noHumans ? { ...st0.noHumans, post: st0.post } : st0, fit = fitStyle(st, rawTags), rawStyle = await ponyTags(fit.prompt, adult), G = st.gen || {};
   if (adult && minorHint(rawTags + ", " + rawStyle)) throw { code: "minor_block" };
   // 사람 없는 그림은 no humans를 강하게 — 인물 위주 모델·화풍은 고양이만 시켜도 사람을 함께 그림(2026-11-05)
-  const tags = fixSubject(rawTags, subj).replace(/(^|, )no humans(?=,|$)/, subj === "none" ? "$1(no humans:1.4)" : "$1no humans"), style = splitTags(rawStyle).filter((t) => !(Sb.strip && Sb.strip.test(t))).join(", ");
+  const tags = weighTags(fixSubject(rawTags, subj).replace(/(^|, )no humans(?=,|$)/, subj === "none" ? "$1(no humans:1.4)" : "$1no humans"), st.contentWeight), style = splitTags(rawStyle).filter((t) => !(Sb.strip && Sb.strip.test(t))).join(", ");
   const [width, height] = RW_SIZES[aspect] || RW_SIZES["4:5"], R = RATINGS[rating], M = imgModelInfo(st.model), A = ARCH[M.arch] || ARCH.pony;
   // 사람 없는 그림에는 수위의 adult·mature 태그를 빼야 사람이 끼어들지 않음
   const rpos = splitTags(M.arch === "illustrious" ? R.ill : R.pos).filter((t) => subj !== "none" || !/^(?:adult|mature|nsfw)$/.test(t)).join(", ");

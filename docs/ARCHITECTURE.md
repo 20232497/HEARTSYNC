@@ -23,7 +23,7 @@
 core      config(잎) · constants · util · events · storage · state · target · cast · audience · wallet · character · safety · rooms · settings · migrate
 content   index.js — 빌드가 만든 generated.js(ORIGINALS · HOME_ROWS · CONTENT_CODES)
 services  supabase · cloud · vault · sync · load · community · images · support · idv
-images    codes · rating · pick · motion · situations · tags-cache        (관리자만) styles · style-fit · prompt · tags · runware · gen-guard
+images    codes · rating · pick · motion · situations · tags-cache        (관리자만) styles · style-fit · style-fdaily · prompt · tags · runware · gen-guard
 ai        models · llm · adult · openrouter · parse · prompt/{lore,rules,input,memory}
 ui        icons · sheet · ext · shell · cover · home · detail · chat/{render,log,view,generate,suggest} · pay · model-sheet · room-drawer · worldart · chats · store · login · account · me · help · faq · idv
 admin     studio · image-studio · image-codes · image-run · motion-run · motion-prompts · motion-table · sit-sheets · gen-sheet · worldart · image-settings · works · tools · auto-images · export · migrate · codes · gate · support
