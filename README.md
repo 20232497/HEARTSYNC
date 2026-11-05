@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <a href="https://20232497.github.io/HEARTSYNC/"><img alt="웹에서 열기" src="https://img.shields.io/badge/%EC%9B%B9%EC%97%90%EC%84%9C_%EC%97%B4%EA%B8%B0-ff5b8e?style=for-the-badge"></a>
+  <a href="https://20232497.github.io/HEARTSYNC/"><img src="docs/assets/open.svg" alt="웹에서 바로 열기" height="50"></a>
 </p>
 
 <p align="center">
@@ -14,59 +14,60 @@
 </p>
 
 <p align="center">
+  <a href="#-작품">작품</a> ·
   <a href="#-화면">화면</a> ·
   <a href="#-무엇을-하나">기능</a> ·
-  <a href="#-작품">작품</a> ·
   <a href="#-어떻게-돌아가나">구조</a> ·
   <a href="#-개발">개발</a> ·
   <a href="#-문서">문서</a> ·
   <a href="#-지금-상태">지금 상태</a>
 </p>
 
-**HEART SYNC**는 버블챗 스타일의 캐릭터 대화형 에피소드 플랫폼이에요. 오리지널 작품을 고르고 시작 상황을 정한 뒤 내 페르소나로 말을 걸면, AI가 인물을 연기하며 장면·상태창·그림과 함께 이야기를 이어 가요.
+**HEART SYNC**는 이야기 속 인물과 직접 대화하며 에피소드를 이어 가는 캐릭터 대화 플랫폼이에요. 오리지널 작품을 고르고 시작 상황을 정한 뒤 내 페르소나로 말을 걸면, AI가 인물을 연기하며 장면·상태창·그림과 함께 이야기를 이어 가요.
+
+<table>
+  <tr>
+    <td align="center" width="25%"><h3>12편</h3><sub>오리지널 작품</sub></td>
+    <td align="center" width="25%"><h3>43명</h3><sub>등장인물</sub></td>
+    <td align="center" width="25%"><h3>31개</h3><sub>시작 상황</sub></td>
+    <td align="center" width="25%"><h3>66개</h3><sub>키워드북 항목</sub></td>
+  </tr>
+</table>
 
 > [!NOTE]
 > 대화에는 내 Anthropic API 키가 필요해요. **MY → AI 연결**에 넣으면 이 브라우저에 저장되고, 로그인했을 때 계정 저장을 켜 두면 비밀번호로 암호화한 금고로만 올라가요.
 
-## 📱 화면
+## 📚 작품
 
 <table>
   <tr>
-    <td width="33%"><img src="docs/assets/home.jpg" alt="홈 화면: 대표 작품과 작품 가로 줄"></td>
-    <td width="33%"><img src="docs/assets/detail.jpg" alt="작품 소개 화면: 표지, 소개, 세계관 일러스트"></td>
-    <td width="33%"><img src="docs/assets/room.jpg" alt="대화방 화면: 지문과 대사, 상태창, 입력창"></td>
+    <td colspan="6"><b>여성향</b> · 남성 인물들과 만들어 가는 이야기</td>
   </tr>
   <tr>
-    <td align="center"><sub>홈</sub></td>
-    <td align="center"><sub>작품 소개</sub></td>
-    <td align="center"><sub>대화와 상태창</sub></td>
+    <td align="center" width="16.66%"><a href="https://20232497.github.io/HEARTSYNC/#c-hwanghu"><img src="docs/assets/covers/hwanghu.jpg" alt="계약 황후의 백 일 표지" width="100%"></a><br><sub><b>계약 황후의 백 일</b></sub></td>
+    <td align="center" width="16.66%"><a href="https://20232497.github.io/HEARTSYNC/#c-hasuk"><img src="docs/assets/covers/hasuk.jpg" alt="서촌 오월 하숙집 표지" width="100%"></a><br><sub><b>서촌 오월 하숙집</b></sub></td>
+    <td align="center" width="16.66%"><a href="https://20232497.github.io/HEARTSYNC/#c-lethe"><img src="docs/assets/covers/lethe.jpg" alt="호텔 레테: 마흔아홉 번째 밤 표지" width="100%"></a><br><sub><b>호텔 레테: 마흔아홉 번째 밤</b></sub></td>
+    <td align="center" width="16.66%"><a href="https://20232497.github.io/HEARTSYNC/#c-seodoyun"><img src="docs/assets/covers/seodoyun.jpg" alt="흑우 탐정사무소 표지" width="100%"></a><br><sub><b>흑우 탐정사무소</b></sub></td>
+    <td align="center" width="16.66%"><a href="https://20232497.github.io/HEARTSYNC/#c-kael"><img src="docs/assets/covers/kael.jpg" alt="몰락한 제국의 마지막 기사 표지" width="100%"></a><br><sub><b>몰락한 제국의 마지막 기사</b></sub></td>
+    <td align="center" width="16.66%"><a href="https://20232497.github.io/HEARTSYNC/#c-baekyeon"><img src="docs/assets/covers/baekyeon.jpg" alt="여우가 내리는 차 표지" width="100%"></a><br><sub><b>여우가 내리는 차</b></sub></td>
+  </tr>
+  <tr>
+    <td colspan="6"><b>남성향</b> · 여성 인물들과 만들어 가는 이야기</td>
+  </tr>
+  <tr>
+    <td align="center" width="16.66%"><a href="https://20232497.github.io/HEARTSYNC/#c-daeyeon"><img src="docs/assets/covers/daeyeon.jpg" alt="대연궁 검시록 표지" width="100%"></a><br><sub><b>대연궁 검시록</b></sub></td>
+    <td align="center" width="16.66%"><a href="https://20232497.github.io/HEARTSYNC/#c-baekya"><img src="docs/assets/covers/baekya.jpg" alt="백야호: 열세 번째 겨울 표지" width="100%"></a><br><sub><b>백야호: 열세 번째 겨울</b></sub></td>
+    <td align="center" width="16.66%"><a href="https://20232497.github.io/HEARTSYNC/#c-sipjeol"><img src="docs/assets/covers/sipjeol.jpg" alt="십절곡: 백 일의 봉문 표지" width="100%"></a><br><sub><b>십절곡: 백 일의 봉문</b></sub></td>
+    <td align="center" width="16.66%"><a href="https://20232497.github.io/HEARTSYNC/#c-godseats"><img src="docs/assets/covers/godseats.jpg" alt="신님들, 관전 매너 좀 표지" width="100%"></a><br><sub><b>신님들, 관전 매너 좀</b></sub></td>
+    <td align="center" width="16.66%"><a href="https://20232497.github.io/HEARTSYNC/#c-yunhaera"><img src="docs/assets/covers/yunhaera.jpg" alt="계약 기간 90일 표지" width="100%"></a><br><sub><b>계약 기간 90일</b></sub></td>
+    <td align="center" width="16.66%"><a href="https://20232497.github.io/HEARTSYNC/#c-hangyeoul"><img src="docs/assets/covers/hangyeoul.jpg" alt="새벽 두 시의 편의점 표지" width="100%"></a><br><sub><b>새벽 두 시의 편의점</b></sub></td>
   </tr>
 </table>
 
-휴대폰에서도 같은 주소로 열면 돼요.
-
-<p align="center"><img src="docs/assets/mobile.jpg" alt="휴대폰 화면 세 장: 홈, 작품 소개, 대화와 상태창" width="82%"></p>
-
-## ✨ 무엇을 하나
-
-| | 기능 | 내용 |
-|---|---|---|
-| 💬 | **작품과 대화** | 시작 상황 선택, 지문·대사 서식, 상태창, 다시 쓰기·버전·수정·북마크, AI 추천 답변 |
-| 🧠 | **이어지는 기억** | 장기기억 자동 요약과 키워드북으로 긴 대화에서도 설정을 유지 |
-| 🖼️ | **장면 그림** | 응답마다 `[[img:인물코드:번호]]` 코드로 감정·의상·장소에 맞는 그림이나 움짤을 표시. 그림은 관리자 계정이 만들어 싣고 사용자는 보기만 해요 |
-| 🔐 | **로그인과 계정 저장** | 이메일·카카오·네이버·Google 로그인. 대화·작품·설정·그림이 PC와 휴대폰에서 이어져요 |
-| 🎯 | **관심있는 대화** | 전체·남성향·여성향을 고르면 홈에 그쪽 작품만 |
-| 🛟 | **고객센터** | 공지사항, 자주 묻는 질문, 문의하기 |
-| 💎 | **요금(데모)** | 라이트 모델 하루 10턴 무료. 하트와 PLUS는 시연용이라 실제로 청구되지 않아요 |
-| 🛠️ | **관리자 도구** | 작품 만들기, 이미지 스튜디오(그림·움짤 생성), 코드 표, `content/`로 내보내기 |
-| 🔞 | **성인 모드(시험 단계)** | 성인 확인과 OpenRouter 키가 있을 때만 켜져요. 미성년 인물의 성적 묘사와 그림은 어떤 설정에서도 막는 것이 원칙이에요. 정식 출시 조건은 [로드맵](docs/ROADMAP.md)에 있어요 |
-
-## 📚 작품
-
-<p align="center"><img src="docs/assets/works.jpg" alt="오리지널 작품 12편의 표지" width="100%"></p>
+표지를 누르면 그 작품이 열려요. 처음 방문하면 로그인 화면이 먼저 나오는데, **로그인 없이 둘러보기**로 들어갈 수 있어요. 작품은 폴더 하나로 더하고, 만드는 법은 [content/README.md](content/README.md)에 있어요.
 
 <details>
-<summary><b>여성향 6편</b></summary>
+<summary><b>여성향 6편 한 줄 소개</b></summary>
 
 | 작품 | 장르 | 한 줄 소개 |
 |---|---|---|
@@ -80,7 +81,7 @@
 </details>
 
 <details>
-<summary><b>남성향 6편</b></summary>
+<summary><b>남성향 6편 한 줄 소개</b></summary>
 
 | 작품 | 장르 | 한 줄 소개 |
 |---|---|---|
@@ -93,7 +94,33 @@
 
 </details>
 
-작품은 폴더 하나로 더해요. 만드는 법은 [content/README.md](content/README.md)에 있어요.
+## 📱 화면
+
+<p align="center"><img src="docs/assets/screens.jpg" alt="PC 화면 두 장: 작품이 줄지어 있는 홈과, 지문·대사·상태창이 보이는 대화방" width="100%"></p>
+
+휴대폰에서도 같은 주소로 열면 돼요.
+
+<p align="center"><img src="docs/assets/mobile.jpg" alt="휴대폰 화면 세 장: 홈, 작품 소개, 대화와 상태창" width="100%"></p>
+
+## ✨ 무엇을 하나
+
+<table>
+  <tr>
+    <td valign="top" width="33%">💬 <b>작품과 대화</b><br><br>시작 상황 선택, 지문·대사 서식, 상태창, 다시 쓰기·버전·수정·북마크, AI 추천 답변</td>
+    <td valign="top" width="33%">🧠 <b>이어지는 기억</b><br><br>장기기억 자동 요약과 키워드북으로 긴 대화에서도 설정을 유지해요</td>
+    <td valign="top" width="33%">🖼️ <b>장면 그림</b><br><br>응답마다 감정·의상·장소에 맞는 그림이나 움짤을 보여 줘요. 그림은 관리자 계정이 만들어 싣고 사용자는 보기만 해요</td>
+  </tr>
+  <tr>
+    <td valign="top">🔐 <b>로그인과 계정 저장</b><br><br>이메일·카카오·네이버·Google 로그인. 대화·작품·설정·그림이 PC와 휴대폰에서 이어져요</td>
+    <td valign="top">🎯 <b>관심있는 대화</b><br><br>전체·남성향·여성향을 고르면 홈에 그쪽 작품만 보여요</td>
+    <td valign="top">🛟 <b>고객센터</b><br><br>공지사항, 자주 묻는 질문, 문의하기</td>
+  </tr>
+  <tr>
+    <td valign="top">💎 <b>요금(데모)</b><br><br>라이트 모델 하루 10턴 무료. 하트와 PLUS는 시연용이라 실제로 청구되지 않아요</td>
+    <td valign="top">🛠️ <b>관리자 도구</b><br><br>작품 만들기, 이미지 스튜디오(그림·움짤 생성), 코드 표, <code>content/</code>로 내보내기</td>
+    <td valign="top">🔞 <b>성인 모드(시험 단계)</b><br><br>성인 확인과 OpenRouter 키가 있을 때만 켜져요. 미성년 인물의 성적 묘사와 그림은 어떤 설정에서도 막는 것이 원칙이에요. 출시 조건은 <a href="docs/ROADMAP.md">로드맵</a>에 있어요</td>
+  </tr>
+</table>
 
 ## 🧭 어떻게 돌아가나
 
@@ -173,7 +200,6 @@ archive/                          초기 버전 보관
 | [tests/README.md](tests/README.md) | 시험 목록과 돌리는 법 |
 | [ROADMAP.md](docs/ROADMAP.md) | 남은 기술 과제 |
 | [COMMERCIALIZATION.md](docs/COMMERCIALIZATION.md) | 상용화 단계, 원가, 법·약관 체크리스트, 이미지 모델 라이선스 |
-| [개인정보처리방침](https://20232497.github.io/HEARTSYNC/privacy.html) · [이용약관](https://20232497.github.io/HEARTSYNC/terms.html) | 법률 검토 전 초안 |
 
 ## 🚧 지금 상태
 
@@ -186,6 +212,16 @@ archive/                          초기 버전 보관
 | **장면 그림** | 만드는 도구는 준비됐고, `content/`에 실린 그림은 아직 없음 | 작품별 그림 제작 |
 | **이미지 모델** | 개발 단계에서 사용 중 | 남성향 일상 화풍(Pony 계열)의 허가 또는 교체, 이미지 판매가 안 되는 YabaL Mix를 쓰는 화풍 교체 |
 | **성인 모드** | 시험 단계. 휴대폰 본인인증은 시험 모드까지 구현 | 실제 본인인증, 서버 판정, 법률 검토 |
-| **호스팅·약관** | GitHub Pages, 약관은 초안 | 상업 이용이 되는 호스팅으로 이전, 법률 검토 |
+| **호스팅·약관** | GitHub Pages, 약관은 법률 검토 전 초안 | 상업 이용이 되는 호스팅으로 이전, 법률 검토 |
 
 자세한 순서는 [상용화 계획](docs/COMMERCIALIZATION.md)에 있어요.
+
+---
+
+<p align="center">
+  <sub>
+    <a href="https://20232497.github.io/HEARTSYNC/">HEART SYNC 열기</a> ·
+    <a href="https://20232497.github.io/HEARTSYNC/privacy.html">개인정보처리방침</a> ·
+    <a href="https://20232497.github.io/HEARTSYNC/terms.html">이용약관</a>
+  </sub>
+</p>
