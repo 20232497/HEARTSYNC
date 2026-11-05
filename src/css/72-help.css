@@ -1,0 +1,36 @@
+/* ── 고객센터(#help — 공지사항·자주 묻는 질문·문의하기)와 MY의 고객센터·약관 및 정책 칸 */
+.help-head { display:flex; align-items:center; gap:2px; margin:4px 0 4px -8px; }
+.help-head h1.sec { margin:0; }
+.help-msg { margin:0 0 10px; }
+.help-page a:not(.btn) { color:var(--accent); text-underline-offset:2px; }
+.nlist { display:grid; gap:8px; }
+details.notice, details.ask, details.faq { background:var(--surface); border:1px solid var(--line); border-radius:14px; }
+details.notice > summary, details.ask > summary, details.faq > summary { cursor:pointer; list-style:none; padding:13px 16px; display:flex; align-items:center; gap:10px; }
+details.notice > summary::-webkit-details-marker, details.ask > summary::-webkit-details-marker, details.faq > summary::-webkit-details-marker { display:none; }
+details.notice > summary::after, details.ask > summary::after, details.faq > summary::after { content:"▾"; color:var(--muted); margin-left:auto; flex:none; }
+details.notice[open] > summary::after, details.ask[open] > summary::after, details.faq[open] > summary::after { content:"▴"; }
+details > summary .t { display:flex; align-items:center; gap:6px; flex:1; min-width:0; flex-wrap:wrap; }
+details > summary .t b { overflow-wrap:anywhere; }
+details > summary .d, .answer .d { color:var(--muted); font-size:12.5px; white-space:nowrap; }
+.nbody { padding:0 16px 14px; white-space:pre-wrap; font-size:14px; line-height:1.7; overflow-wrap:anywhere; }
+.answer { margin:0 16px 14px; padding:12px 14px; border-radius:12px; background:var(--accent-soft); font-size:14px; }
+.answer .d { margin-left:8px; }
+.answer > div { white-space:pre-wrap; margin-top:6px; overflow-wrap:anywhere; line-height:1.7; }
+details.ask > .cta-row, details.notice > .cta-row { padding:0 16px 12px; margin-top:0; }
+/* 자주 묻는 질문 */
+.faq-find { margin:2px 0 4px; }
+.faq-grp { display:grid; gap:8px; }
+.faq-grp h3 { font-size:13px; color:var(--muted); font-weight:600; margin:16px 0 0; letter-spacing:.04em; }
+details.faq > summary { font-weight:600; font-size:14.5px; }
+details.faq .a { padding:0 16px 14px; font-size:14px; line-height:1.75; }
+/* 문의하기 */
+.ask-form .field:first-of-type { margin-top:8px; }
+.ask-form .cta-row .note { flex:1 1 220px; margin:0; }
+.ask-form .toggle { margin-top:14px; }
+/* MY: 고객센터·약관 칸(.menu-list는 드로어와 같은 줄 모양 — 링크도 같게) */
+.box > .menu-list { margin:-8px 0; }
+.box > .menu-list > :last-child { border-bottom:0; }
+.menu-list a { display:flex; align-items:center; gap:10px; padding:13px 2px; border-bottom:1px solid var(--line); color:var(--fg); text-decoration:none; font-size:14.5px; }
+.menu-list a:hover { color:var(--accent); }
+.menu-list a::after { content:"↗"; margin-left:auto; color:var(--muted); font-size:13px; }
+#noticeNew:not(:empty) { color:var(--accent); font-weight:700; }

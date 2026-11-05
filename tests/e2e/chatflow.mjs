@@ -1,9 +1,10 @@
 // 채팅 흐름: 자동 스크롤 끔/켬, 추천 답변 수동, 출력 설정 카드, 설정 페이지(이미지 기본 수위 칸 없음)
 import { webkit, chromium, devices } from "playwright";
+import { noSupabase } from "./_offline.mjs";
 const url = process.argv[2], out = process.argv[3];
 const targets = [["iPhone 13", webkit], ["iPhone SE", webkit], ["Galaxy S9+", chromium]];
 for (const [dev, engine] of targets) {
-  const b = await engine.launch(); const ctx = await b.newContext({ ...devices[dev] }); const p = await ctx.newPage();
+  const b = await engine.launch(); const ctx = await b.newContext({ ...devices[dev] }); await noSupabase(ctx); const p = await ctx.newPage();
   const errs = []; p.on("pageerror", (e) => errs.push(e.message)); p.on("console", (m) => { if (m.type() === "error") errs.push("console: " + m.text().slice(0, 140)); });
   const res = { dev };
   try {

@@ -58,3 +58,129 @@ language sql security definer set search_path = '' as $$
 $$;
 revoke all on function public.delete_me() from public, anon;
 grant execute on function public.delete_me() to authenticated;
+
+-- ════════════════════════════════════════════════════════════════════════════
+-- 고객센터(2026-11-05): 관리자 · 공지사항 · 문의하기 — 위와 같이 SQL Editor에서 한 번 실행(여러 번 실행해도 됨)
+-- 공지는 누구나(로그인 없이도) 공개된 것을 읽고, 관리자만 쓴다. 문의는 로그인한 본인 것만 쓰고·읽고·지우며, 관리자가 모든 문의를 보고 답한다.
+-- 관리자는 앱에서 정할 수 없다 — 아래 admins 표에 계정 id를 SQL Editor에서만 넣는다(맨 아래 안내).
+
+-- 관리자 목록(앱에서는 자기 행이 있는지만 볼 수 있음)
+create table if not exists public.admins (
+  user_id uuid primary key references auth.users (id) on delete cascade,
+  created_at timestamptz not null default now()
+);
+alter table public.admins enable row level security;
+drop policy if exists "admins: 본인 확인" on public.admins;
+create policy "admins: 본인 확인" on public.admins for select to authenticated using ((select auth.uid()) = user_id);
+revoke all on public.admins from anon, authenticated;
+grant select on public.admins to authenticated;
+
+-- 이 요청의 계정이 관리자인가 — 정책에서 씀(security definer라 admins 표의 RLS와 상관없이 확인)
+create or replace function public.is_admin() returns boolean
+language sql stable security definer set search_path = '' as $$
+  select exists (select 1 from public.admins where user_id = (select auth.uid()));
+$$;
+revoke all on function public.is_admin() from public, anon;
+grant execute on function public.is_admin() to authenticated;
+
+-- 고칠 때마다 updated_at을 지금으로(공지·문의 공통)
+create or replace function public.touch_updated_at() returns trigger
+language plpgsql set search_path = '' as $$
+begin
+  new.updated_at := now();
+  return new;
+end;
+$$;
+
+-- 공지사항
+create table if not exists public.notices (
+  id bigint generated always as identity primary key,
+  title text not null check (char_length(title) between 1 and 120),
+  body text not null default '' check (char_length(body) <= 8000),
+  pinned boolean not null default false,
+  published boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create index if not exists notices_list on public.notices (pinned desc, created_at desc);
+drop trigger if exists notices_touch on public.notices;
+create trigger notices_touch before update on public.notices for each row execute function public.touch_updated_at();
+
+alter table public.notices enable row level security;
+drop policy if exists "notices: 누구나 공개 공지 읽기" on public.notices;
+drop policy if exists "notices: 로그인 읽기" on public.notices;
+drop policy if exists "notices: 관리자 쓰기" on public.notices;
+drop policy if exists "notices: 관리자 고치기" on public.notices;
+drop policy if exists "notices: 관리자 지우기" on public.notices;
+create policy "notices: 누구나 공개 공지 읽기" on public.notices for select to anon using (published);
+create policy "notices: 로그인 읽기" on public.notices for select to authenticated using (published or (select public.is_admin()));
+create policy "notices: 관리자 쓰기" on public.notices for insert to authenticated with check ((select public.is_admin()));
+create policy "notices: 관리자 고치기" on public.notices for update to authenticated using ((select public.is_admin())) with check ((select public.is_admin()));
+create policy "notices: 관리자 지우기" on public.notices for delete to authenticated using ((select public.is_admin()));
+revoke all on public.notices from anon, authenticated;
+grant select on public.notices to anon, authenticated;
+grant insert (title, body, pinned, published) on public.notices to authenticated;
+grant update (title, body, pinned, published) on public.notices to authenticated;
+grant delete on public.notices to authenticated;
+
+-- 문의하기: 사용자는 분류·제목·내용·답변 받을 이메일(선택)·앱 정보(선택)만 쓸 수 있고(열 권한), 답변·상태는 관리자만 고친다
+create table if not exists public.inquiries (
+  id bigint generated always as identity primary key,
+  user_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  category text not null default 'etc' check (category in ('account', 'pay', 'chat', 'image', 'adult', 'bug', 'suggest', 'etc')),
+  title text not null check (char_length(title) between 1 and 100),
+  body text not null check (char_length(body) between 1 and 4000),
+  reply_to text check (reply_to is null or char_length(reply_to) <= 120),
+  meta jsonb check (meta is null or (jsonb_typeof(meta) = 'object' and pg_column_size(meta) <= 2048)),
+  status text not null default 'open' check (status in ('open', 'answered', 'closed')),
+  answer text check (answer is null or char_length(answer) <= 4000),
+  answered_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create index if not exists inquiries_user on public.inquiries (user_id, created_at desc);
+create index if not exists inquiries_status on public.inquiries (status, created_at desc);
+
+-- 넣을 때: 하루 5건까지(앱의 ASK_DAILY와 같은 값), 답변·상태는 늘 처음 값으로
+-- 고칠 때: 답을 쓰면 answered_at을 채우고 답변 대기를 답변 완료로, 답을 지우면 answered_at도 비움
+create or replace function public.inquiries_guard() returns trigger
+language plpgsql set search_path = '' as $$
+begin
+  if tg_op = 'INSERT' then
+    if (select count(*) from public.inquiries where user_id = new.user_id and created_at > now() - interval '1 day') >= 5 then
+      raise exception 'too_many_inquiries' using errcode = 'P0001', hint = '문의는 하루 5건까지';
+    end if;
+    new.status := 'open'; new.answer := null; new.answered_at := null;
+  else
+    if new.answer is distinct from old.answer then
+      new.answered_at := case when new.answer is null or new.answer = '' then null else now() end;
+      if new.answer = '' then new.answer := null; end if;
+      if new.answer is not null and new.status = 'open' then new.status := 'answered'; end if;
+    end if;
+    new.updated_at := now();
+  end if;
+  return new;
+end;
+$$;
+drop trigger if exists inquiries_guard on public.inquiries;
+create trigger inquiries_guard before insert or update on public.inquiries for each row execute function public.inquiries_guard();
+
+alter table public.inquiries enable row level security;
+drop policy if exists "inquiries: 본인·관리자 읽기" on public.inquiries;
+drop policy if exists "inquiries: 본인 쓰기" on public.inquiries;
+drop policy if exists "inquiries: 관리자 답변" on public.inquiries;
+drop policy if exists "inquiries: 본인·관리자 지우기" on public.inquiries;
+create policy "inquiries: 본인·관리자 읽기" on public.inquiries for select to authenticated using ((select auth.uid()) = user_id or (select public.is_admin()));
+create policy "inquiries: 본인 쓰기" on public.inquiries for insert to authenticated with check ((select auth.uid()) = user_id);
+create policy "inquiries: 관리자 답변" on public.inquiries for update to authenticated using ((select public.is_admin())) with check ((select public.is_admin()));
+create policy "inquiries: 본인·관리자 지우기" on public.inquiries for delete to authenticated using ((select auth.uid()) = user_id or (select public.is_admin()));
+revoke all on public.inquiries from anon, authenticated;
+grant select, delete on public.inquiries to authenticated;
+grant insert (category, title, body, reply_to, meta) on public.inquiries to authenticated;
+grant update (status, answer) on public.inquiries to authenticated;
+
+-- 관리자 정하기: 관리자로 쓸 계정으로 앱에 한 번 로그인한 뒤, 아래의 이메일을 바꿔 실행(관리자 도구의 고객센터에도 내 계정 id와 이 줄이 보임)
+--   insert into public.admins (user_id) select id from auth.users where email = '관리자 이메일' on conflict do nothing;
+-- 소셜 로그인 계정(이메일 없음)은 Authentication → Users에서 User UID를 복사해:
+--   insert into public.admins (user_id) values ('계정 UID') on conflict do nothing;
+-- 관리자에서 빼기: delete from public.admins where user_id = '계정 UID';

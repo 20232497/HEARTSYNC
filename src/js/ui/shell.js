@@ -24,7 +24,7 @@ export function route() {
   document.body.classList.toggle("in-chat", h.startsWith("r-"));
   const [base, ...rest] = h.split("-"); const arg = rest.join("-");
   const view = VIEWS[base] || VIEWS.home;
-  setNav(base === "c" ? "home" : base === "r" ? "chats" : base === "login" ? "me" : VIEWS[base] ? base : "home");
+  setNav(base === "c" ? "home" : base === "r" ? "chats" : base === "login" || base === "help" ? "me" : VIEWS[base] ? base : "home");
   return view ? view(arg) : undefined;
 }
 export const LOGO = `<div class="logo"><span class="mark" aria-hidden="true"></span><span>HEART <i>SYNC</i></span></div>`;

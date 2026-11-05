@@ -1,10 +1,11 @@
 // 그림 조합 코드: [[img:코드:3,404,501]] 태그 그리기(figure[data-key]), 의상·장소 이어 가기·되돌리기(400·500), AI가 태그를 빠뜨린 인물의 자동 태그(지문의 장소 낱말),
 // 대화 중 자동 생성(가짜 runwareImage → 캔버스 PNG, 같은 조합은 다시 만들지 않음), 이미지 스튜디오(그 인물의 갤러리 → 조합 고르기·파일 이름 → 조합 키)·드로어 갤러리
 import { webkit, chromium, devices } from "playwright";
+import { noSupabase } from "./_offline.mjs";
 const url = process.argv[2], out = process.argv[3];
 const targets = [["Desktop Chrome", chromium], ["iPhone 13", webkit]];
 for (const [dev, engine] of targets) {
-  const b = await engine.launch(); const ctx = await b.newContext({ ...devices[dev] }); const p = await ctx.newPage();
+  const b = await engine.launch(); const ctx = await b.newContext({ ...devices[dev] }); await noSupabase(ctx); const p = await ctx.newPage();
   const errs = []; p.on("pageerror", (e) => errs.push(e.message)); p.on("console", (m) => { if (m.type() === "error") errs.push("console: " + m.text().slice(0, 140)); });
   const res = { dev };
   try {
