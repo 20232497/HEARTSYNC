@@ -184,3 +184,24 @@ grant update (status, answer) on public.inquiries to authenticated;
 -- 소셜 로그인 계정(이메일 없음)은 Authentication → Users에서 User UID를 복사해:
 --   insert into public.admins (user_id) values ('계정 UID') on conflict do nothing;
 -- 관리자에서 빼기: delete from public.admins where user_id = '계정 UID';
+
+-- 휴대폰 성인 인증(2026-11-05): 위와 같이 SQL Editor에서 한 번 실행(여러 번 실행해도 됨). 인증 결과는 Edge Function(docs/edge/verify-adult.ts)만 쓰고, 앱은 본인 것을 읽기만 한다.
+-- 이름·전화번호·생년월일·CI는 저장하지 않는다 — 성인 여부·시각·만료일·시험 채널 여부뿐. 계정을 지우면 함께 지워진다.
+create table if not exists public.adult_checks (
+  id text primary key check (id ~ '^hs[0-9a-f]{32}$'), -- PortOne에 넘기는 인증 번호(함수가 만듦)
+  user_id uuid not null references auth.users (id) on delete cascade,
+  created_at timestamptz not null default now(),
+  checked_at timestamptz, -- 판정한 시각(비어 있으면 인증창을 연 채 끝나지 않은 것)
+  adult boolean,
+  test boolean, -- 시험 채널의 결과(통신사 확인 없이 통과) — 앱의 live 모드는 인정하지 않음
+  expires_at timestamptz,
+  constraint adult_checks_done check ((checked_at is null) = (adult is null))
+);
+create index if not exists adult_checks_user on public.adult_checks (user_id, created_at desc);
+alter table public.adult_checks enable row level security;
+drop policy if exists "adult_checks: 본인 읽기" on public.adult_checks;
+create policy "adult_checks: 본인 읽기" on public.adult_checks for select to authenticated using ((select auth.uid()) = user_id);
+-- 쓰기 정책·권한 없음: 로그인한 사람도 자기 행을 만들거나 고치지 못한다(service_role을 쓰는 함수만)
+revoke all on public.adult_checks from anon, authenticated;
+grant select on public.adult_checks to authenticated;
+grant all on public.adult_checks to service_role;

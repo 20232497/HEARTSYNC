@@ -7,7 +7,7 @@
 /** @typedef {"quick"|"default"|"complex"} Tier AI 모델 등급(라이트·스토리·마스터가 차례로 씀) */
 /** @typedef {"lite"|"story"|"master"} ModelKey 대화방이 고르는 모델(ai/models.js MODELS) */
 /** @typedef {"short"|"mid"|"long"} LenKey 출력량(ai/models.js LEN) */
-/** @typedef {"rooms"|"wallet"|"settings"|"vault"|"cloud"|"community"|"route"} EventName core/events.js의 이벤트 이름 */
+/** @typedef {"rooms"|"wallet"|"settings"|"vault"|"cloud"|"community"|"route"|"session"|"idv"} EventName core/events.js의 이벤트 이름 */
 /** @typedef {string} ImageRef 그림 참조 — "/_blob/<id>"(claude.ai assets) · "kv:img…"(IndexedDB·계정) · "data:image/…" · "content/…/images/x.webp"(빌드가 실은 그림). 검사는 services/images.js validRef */
 /** @typedef {{ ref: string, on: boolean, local?: boolean }} Motion 그림 칸의 움짤(짧은 반복 영상) — ref는 /_blob/ · kv:img…(본문 data:video/…) · content/….mp4 · Runware 임시 주소(services/images.js validMotion), on이면 사진 대신 보임, local이면 커서 계정에 안 올리고 이 기기에만(images/motion.js) */
 /** @typedef {string} ComboKey 그림 조합 키 — "3"(번호 하나) 또는 "3,404,501"(감정 오름차순 → 의상 → 장소, images/codes.js keyOf) */
@@ -228,6 +228,7 @@
 /**
  * 전역 상태 S(core/state.js). 저장은 KV — 바꾼 모듈이 save…()로 씀.
  * @typedef {Object} State
+ * @property {IdvRecord|null} idv 휴대폰 성인 인증 결과(로그인한 계정 것)
  * @property {Wallet} wallet
  * @property {Persona[]} personas
  * @property {{ nick: string }} profile
@@ -245,7 +246,8 @@
  * @property {string} q
  * @property {string[]|null} [sampleTiers]
  */
-/** @typedef {{ anthropicUrl: string, runwareUrl: string, openRouterUrl: string, supabaseUrl?: string, supabaseKey?: string, serverKeys?: boolean }} Config window.HEARTVERSE_CONFIG로 덮는 연결 설정 — serverKeys면 프록시가 키를 가짐 */
+/** @typedef {{ anthropicUrl: string, runwareUrl: string, openRouterUrl: string, supabaseUrl?: string, supabaseKey?: string, serverKeys?: boolean, idv?: { mode: "off"|"test"|"live", storeId: string, channelKey: string } }} Config window.HEARTVERSE_CONFIG로 덮는 연결 설정 — serverKeys면 프록시가 키를 가짐 */
+/** @typedef {{ uid: string, adult: boolean, test: boolean, at: number, until: number }} IdvRecord 휴대폰 성인 인증 결과 — 시각은 ms, until은 만료(미성년이면 0), test는 시험 채널 결과(services/idv.js, 표 adult_checks) */
 /** @typedef {{ role: "system"|"user"|"assistant", content: string }} LLMMessage AI 요청 메시지(첫 메시지 = 시스템) */
 /**
  * llm()·openRouterStream() 옵션.

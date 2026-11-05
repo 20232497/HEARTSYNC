@@ -1,6 +1,7 @@
 /* 자주 묻는 질문: 고객센터(#help-faq)의 묶음별 질문·답(고정 글). 요금·턴 수는 상수에서 읽어 앱과 어긋나지 않게 한다.
    답은 앱의 실제 동작(CLAUDE.md)을 근거로 쓴다 — 무료 턴·하트·PLUS·계정 저장·API 키 금고·성인 모드가 바뀌면 여기도 같이 고치기.
    답 글은 운영자가 쓴 고정 HTML이라 esc()를 거치지 않음(사용자 데이터를 넣지 않기) */
+import { idvOn } from "../core/config.js";
 import { PLAN, FREE_DAILY, PLUS_MONTHLY, WELCOME } from "../core/wallet.js";
 import { num, won } from "../core/util.js";
 import { SUPPORT_MAIL } from "../services/support.js";
@@ -38,7 +39,7 @@ export function faqGroups() {
       ["계정을 삭제하려면요?", "<a href=\"#me\">MY</a> → 계정의 <b>계정 삭제</b>를 누르면 계정과 계정에 저장된 데이터, 남긴 문의가 바로 지워져요. 이 기기에 남은 데이터는 MY의 <b>모든 데이터 초기화</b>로 지울 수 있어요."]
     ]],
     ["성인 모드", [
-      ["성인 모드는 어떻게 켜나요?", "<a href=\"#me\">MY</a> → AI 연결의 <b>성인 인증 · 수위</b>에서 만 19세 이상임을 확인하고 OpenRouter API 키를 넣어야 해요. 성인 수위 대화는 Claude가 아니라 OpenRouter 모델로만 보내요. claude.ai 안에서는 쓸 수 없어요."],
+      ["성인 모드는 어떻게 켜나요?", "<a href=\"#me\">MY</a> → AI 연결의 <b>성인 인증 · 수위</b>에서 " + (idvOn() ? "휴대폰 본인인증을 마치고(1년마다 다시 해요)" : "만 19세 이상임을 확인하고") + " OpenRouter API 키를 넣어야 해요. 성인 수위 대화는 Claude가 아니라 OpenRouter 모델로만 보내요. claude.ai 안에서는 쓸 수 없어요."],
       ["미성년 캐릭터는 어떻게 되나요?", "어떤 설정에서도 미성년자(또는 미성년자로 보이는 인물)의 성적 묘사와 그림은 막아요. 대화나 설정에 19세 미만·학생·교복 같은 암시가 있으면 성인 모드가 꺼진 것처럼 동작해요."]
     ]],
     ["문제 해결", [

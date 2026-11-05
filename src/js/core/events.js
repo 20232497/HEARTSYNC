@@ -6,7 +6,9 @@
      vault      키 금고 상태가 바뀜(services/vault)        → ui/login이 MY → 계정의 잠금 상태 칸을 다시 그림
      cloud      계정 저장 상태가 바뀜(services/cloud)      → ui/account가 상태 글을 다시 그림
      community  커뮤니티 작품 목록을 받음(services/community) → ui/home이 홈에 있으면 다시 그림
-     route      화면을 다시 그려야 함(services/sync)       → ui/shell이 route() */
+     route      화면을 다시 그려야 함(services/sync)       → ui/shell이 route()
+     session    로그인한 계정이 바뀜(services/supabase)     → services/idv가 그 계정의 인증 결과로 바꿈
+     idv        성인 인증 상태가 바뀜(services/idv)        → ui/idv가 MY의 인증 칸을 다시 그림 */
 /** @typedef {import("./types.js").EventName} EventName */
 const handlers = {};
 /** 이벤트 구독. @param {EventName} name @param {(v?: unknown) => void} fn @returns {Function} 넘긴 fn 그대로 */
