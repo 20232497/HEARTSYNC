@@ -71,7 +71,7 @@ export function workSource(c) {
 /* 사용자 사이트에 실을 코드 표 → codes.json 글: 전체이용가이고 관리자 전용이 아닌 것만(성인 수위 코드는 공개 저장소·사용자 빌드에 넣지 않음 — 빠진 수는 codesDropped). 빌드가 CONTENT_CODES로 다시 싣는다 */
 export const codesDropped = () => allCustom().filter((d) => d.rating !== "safe" || d.adminOnly).length;
 export function codesSource() {
-  const list = allCustom().filter((d) => d.rating === "safe" && !d.adminOnly).sort((a, b) => a.n - b.n).map((d) => ({ n: d.n, name: d.name, prompt: d.prompt || "", ...(d.keys ? { keys: d.keys } : {}), rating: "safe" }));
+  const list = allCustom().filter((d) => d.rating === "safe" && !d.adminOnly).sort((a, b) => a.n - b.n).map((d) => ({ n: d.n, name: d.name, prompt: d.prompt || "", ...(d.keys ? { keys: d.keys } : {}), ...(d.motion ? { motion: d.motion } : {}), rating: "safe" }));
   return JSON.stringify(list, null, 2) + "\n";
 }
 const dataBytes = (d) => Uint8Array.from(atob(d.slice(d.indexOf(",") + 1)), (ch) => ch.charCodeAt(0));

@@ -79,8 +79,9 @@
  * @typedef {Object} CodeDef
  * @property {number} n
  * @property {string} name
- * @property {string} prompt 영문 태그 또는 한국어(만들 때 번역)
+ * @property {string} prompt 영문 태그 또는 한국어(만들 때 번역) — 작성 구조의 base_prompt
  * @property {Rating} rating
+ * @property {string} [motion] 움짤에 쓸 영어 문장(작성 구조의 motion_en, 전체이용가 코드만 저장)
  * @property {string} [keys] 유저 입력에서 이 코드를 고르는 낱말 "낱말|낱말"
  * @property {boolean} [builtin] images/codes.js DIMS의 내장 코드
  * @property {boolean} [shipped] content/codes.json에서 실린 코드(CONTENT_CODES)
@@ -198,7 +199,7 @@
  * @property {string} model 이미지 모델 AIR id
  * @property {string} [overrides] 덮어쓰는 내장 기본 화풍 id
  */
-/** @typedef {{ id: string, name: string, prompt: string, model: string, coolPrompt?: string, blackTag?: string, bangs?: string, bangsNeg?: string, neg?: string, lora?: {model: string, weight: number}[], gen?: {cfg?: number, steps?: number, scheduler?: string, modelNeg?: boolean}, post?: {lift?: string, soft?: number, blurK?: number, blurA?: number}, noHumans?: {model: string, prompt: string} }} StyleInfo styleFor()가 고른 그림체 — prompt·model 말고는 내장 화풍만 씀(images/style-fit.js·runware.js) */
+/** @typedef {{ id: string, name: string, prompt: string, model: string, coolPrompt?: string, blackTag?: string, paleTag?: string, bangs?: string, bangsNeg?: string, fits?: {when: RegExp, drop?: string[], swap?: string[], put?: string, negDrop?: string[]}[], contentWeight?: number, neg?: string, lora?: {model: string, weight: number}[], gen?: {cfg?: number, steps?: number, scheduler?: string, modelNeg?: boolean}, post?: {lift?: string, soft?: number, blurK?: number, blurA?: number, veil?: {center: number, edge: number, mul: string, a: number, color: string}}, noHumans?: {model: string, prompt: string} }} StyleInfo styleFor()가 고른 그림체 — prompt·model 말고는 내장 화풍만 씀(images/style-fit.js·runware.js) */
 /**
  * 설정(S.settings, localStorage hv1_settings). 키 칸(apiKey·runwareKey·openRouterKey)은 계정에는 암호화된 금고(vault)로만 올라감.
  * @typedef {Object} Settings
@@ -208,6 +209,8 @@
  * @property {boolean} enterSend
  * @property {boolean} sceneImg 대화 속 장면 그림 보기
  * @property {boolean} autoImg 대화 중 그림 자동 생성(관리자 도구)
+ * @property {boolean} [autoMotion] 대화 중 움짤 자동 생성(관리자 도구, 전체이용가 코드만)
+ * @property {Record<string, {prompt?: string, motion?: string}>} [baseSits] 기본 감정 0~14를 고친 값(관리자 도구 — 그림 태그·움직임 문장)
  * @property {string} apiKey Anthropic
  * @property {string} runwareKey
  * @property {string} openRouterKey

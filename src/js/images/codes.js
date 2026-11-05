@@ -14,6 +14,7 @@ export function dimOf(n) { return n >= 400 && n < 500 ? "wear" : n >= 500 && n <
 /* 내장 코드: 모든 인물에 공통. prompt는 영문 Danbooru 태그(번역 없이 바로 씀), keys는 유저 입력·지문에서 이 번호를 고를 때 보는 한국어 낱말(정규식 조각).
    rating이 questionable인 것은 성인 확인(ageOK) 뒤에만 보이고 세미 수위로 그림. 직접 만든 칸이 같은 번호를 쓰면 그 칸이 덮음 */
 const dimDef = (n, name, prompt, keys, rating) => [n, { n, name, prompt, keys: keys || "", rating: rating || "safe", dim: dimOf(n), builtin: true }];
+/* 전체이용가 행의 prompt는 관리자 빌드에서 admin/motion-table.js의 base_prompt가 덮음(admin/motion-prompts.js) — 여기를 고쳐도 표에 같은 번호가 있으면 관리자 도구는 표를 따름 */
 export const DIMS = Object.fromEntries([
   // 100번대: 세부 감정·일상
   dimDef(101, "미소", "smile, soft expression, gentle eyes, warm atmosphere, happy", "미소|싱긋|빙긋|방긋"),

@@ -1,5 +1,5 @@
 // 그림 조합 코드: [[img:코드:3,404,501]] 태그 그리기(figure[data-key]), 의상·장소 이어 가기·되돌리기(400·500), AI가 태그를 빠뜨린 인물의 자동 태그(지문의 장소 낱말),
-// 대화 중 자동 생성(가짜 runwareImage → 캔버스 PNG, 같은 조합은 다시 만들지 않음), 이미지 스튜디오(그 인물의 갤러리 → 조합 고르기·파일 이름 → 조합 키)·드로어 갤러리, 움짤(사진 위에 겹침·⟳ 끄기·사진을 바꾸면 지움)
+// 대화 중 자동 생성(가짜 runwareImage → 캔버스 PNG, 같은 조합은 다시 만들지 않음), 이미지 스튜디오(그 인물의 갤러리 → 조합 고르기·파일 이름 → 조합 키)·드로어 갤러리, 움짤(사진 위에 겹침·⟳ 끄기·사진을 바꾸면 지움), 코드별 움직임 설명·대화 중 자동 움짤(가짜 fetch)
 import { webkit, chromium, devices } from "playwright";
 import { noSupabase } from "./_offline.mjs";
 const url = process.argv[2], out = process.argv[3];
@@ -22,14 +22,21 @@ for (const [dev, engine] of targets) {
         return full;
       };
     });
-    const turn = async (body, text = "입력") => p.evaluate(async ([body, text]) => {
-      window.__body = body;
-      room.msgs.push({ id: uid("m"), role: "user", text });
-      await generate(null, quote(room.set));
-      const ai = lastAi(room), sys = window.__lastInput[0].content;
-      return { text: curText(ai), figs: $$("#logInner figure.scene-img").map((f) => ({ code: f.dataset.code, key: f.dataset.key, img: !!f.querySelector("img") })), rw: window.__rw || 0,
-        sysHasDims: /의상 번호: 400 기본 의상/.test(sys) && /장소 번호: 500 기본 배경/.test(sys), nowLine: (sys.match(/지금 이어지는 의상·장소: ([^\n]+)/) || [])[1] || "" };
-    }, [body, text]);
+    // 턴을 평가 안에서 await하지 않고 시작·기다리기·읽기로 나눔: Chromium 검사기는 평가가 돌려준 약속을 약하게만 쥐어 약속이 끝나는 순간 GC가 돌면 결과 대신 'Promise was collected'를 주고,
+    // Playwright는 이를 'Execution context was destroyed, most likely because of a navigation'으로 바꿔 보여 줌(실제 이동이 아니고 앱은 턴을 끝까지 처리함). 턴 끝에 화면을 크게 다시 그려 GC가 자주 여기서 돎
+    const turn = async (body, text = "입력") => {
+      await p.evaluate(([body, text]) => {
+        window.__body = body; window.__turnDone = false;
+        room.msgs.push({ id: uid("m"), role: "user", text });
+        generate(null, quote(room.set)).finally(() => { window.__turnDone = true; });
+      }, [body, text]);
+      await p.waitForFunction(() => window.__turnDone);
+      return p.evaluate(() => {
+        const ai = lastAi(room), sys = window.__lastInput[0].content;
+        return { text: curText(ai), figs: $$("#logInner figure.scene-img").map((f) => ({ code: f.dataset.code, key: f.dataset.key, img: !!f.querySelector("img") })), rw: window.__rw || 0,
+          sysHasDims: /의상 번호: 400 기본 의상/.test(sys) && /장소 번호: 500 기본 배경/.test(sys), nowLine: (sys.match(/지금 이어지는 의상·장소: ([^\n]+)/) || [])[1] || "" };
+      });
+    };
     const name = await p.evaluate(() => room.char.cast[0].name);
     // 1) 조합 태그 그대로 저장되고 figure에 조합 키가 붙음(그림은 없어 아트 카드)
     const t1 = await turn(`*바람이 불었다.*\n\n[[img:${code}:3,404,501]]\n\n${name}: "첫 대사예요."`);
@@ -78,6 +85,103 @@ for (const [dev, engine] of targets) {
       return { on, off, gone: !motionOf(c, code, "7,404"), body: !IMG.cache[k] };
     }, code);
     await p.evaluate(() => { location.hash = "r-" + room.id; }); await p.waitForTimeout(500);
+    // 9) 코드별 움직임 설명·대화 중 자동 움짤. Runware는 페이지 안의 가짜 fetch(영상 본문도 가짜), 기다리는 시간은 줄임 — 실제 네트워크·요금 없음
+    const PNG = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
+    await p.evaluate(() => {
+      const st = window.setTimeout, real = window.fetch; window.__vid = []; window.__failVid = false;
+      window.setTimeout = (f, ms, ...a) => st(f, ms === 8000 || ms === 4000 ? 5 : ms, ...a);
+      window.fetch = async (u, o) => {
+        if (String(u) === CFG.runwareUrl) {
+          const t = JSON.parse(o.body)[0];
+          if (t.taskType === "videoInference") __vid.push(t);
+          const row = t.taskType !== "getResponse" ? { status: "processing" } : __failVid ? { status: "error", message: "가짜 실패" } : { status: "success", videoURL: "https://vm.runware.ai/fake.mp4" };
+          return new Response(JSON.stringify({ data: [{ taskUUID: t.taskUUID, ...row }] }), { headers: { "content-type": "application/json" } });
+        }
+        if (String(u).includes("vm.runware.ai")) return new Response(new Uint8Array(64), { headers: { "content-type": "video/mp4" } });
+        return real(u, o);
+      };
+    });
+    // 창: 칸마다 맞는 문장을 채우고, 세미 수위 칸은 기본 설명 그대로, 고친 문장은 그 칸에만 기억하고 '기본 설명으로' 되돌림
+    res.sheet = await p.evaluate(async ([code, PNG]) => {
+      const c = room.char, cast = c.cast.find((x) => x.code === code), val = () => $("#moP").value, shut = () => $(".mo-sheet [data-x]").click();
+      S.settings.autoImg = false; putCastImage(c, code, "101", PNG);
+      const open = (k) => { motionSheet(c, cast, k); return val(); };
+      const smile = open("101"); shut();
+      const semi = open("111"); shut();
+      const combo = open("7,404"); shut();
+      open("101"); $("#moP").value = "waving a hand slowly"; $("#moGo").click();
+      for (let i = 0; i < 60 && !motionOf(c, code, "101"); i++) await new Promise((z) => setTimeout(z, 50));
+      const sent = __vid[__vid.length - 1] || {};
+      const again = open("101"); const other = (() => { shut(); return open("102"); })(); shut();
+      const pov = open("127"); shut();
+      open("101"); $("#moReset").click(); const reset = val();
+      // 성별에 따른 표(외모 글·태그), 고쳐 둔 코드의 문장, 수위·정의로 거르기 — 창을 열지 않고 문장만 봄
+      const he = { ...cast, look: "남성, 28세", tags: "" }, she = { ...cast, look: "여성, 26세", tags: "" }, tagged = { ...cast, look: "", tags: "1boy, short hair" };
+      S.settings.customSits.push({ n: 151, name: "시험남151", prompt: "loosening tie", rating: "safe" }, { n: 251, name: "시험남251", prompt: "pov, touched", rating: "safe" }, { n: 152, name: "시험움직임", prompt: "wave", rating: "safe", motion: "waving a hand" }, { n: 299, name: "시험성인", prompt: "wave", rating: "explicit", motion: "waving a hand" });
+      MotionPrompts[398] = { title: "시험", base_prompt: "wave", motion_en: "waving from the table" };
+      const gender = { male: motionPromptOf(c, he, "151"), female: motionPromptOf(c, she, "151"), byTag: motionPromptOf(c, tagged, "151"), malePov: motionPromptOf(c, he, "251"), femalePov: motionPromptOf(c, she, "251"), looks: ["남성", "male", "1boy", "여성", "female, 1girl", ""].map(lookIsMale) };
+      const own = motionPromptOf(c, she, "152"), adult = motionPromptOf(c, she, "299"), unknown = motionPromptOf(c, she, "398");
+      delete MotionPrompts[398]; S.settings.customSits = S.settings.customSits.filter((d) => ![151, 251, 152, 299].includes(d.n));
+      return { smile, semi, combo, isDefault: semi === MOTION_PROMPT, sent: sent.positivePrompt, safety: !!(sent.safety && sent.safety.checkContent), again, other, pov, reset, made: !!motionOf(c, code, "101"), gender, own, adultDefault: adult === MOTION_PROMPT, unknownDefault: unknown === MOTION_PROMPT, table: sitDef(120).prompt === MotionPrompts[120].base_prompt };
+    }, [code, PNG]);
+    await p.waitForTimeout(500); // 창이 나타나는 움직임이 끝난 뒤에
+    await p.screenshot({ path: `${out}/${dev.replace(/\W+/g, "_")}_motion_sheet.png` });
+    await p.evaluate((code) => { $(".mo-sheet [data-x]").click(); putMotion(room.char, code, "101", null); Object.keys(MSTATE.edits).forEach((k) => delete MSTATE.edits[k]); __vid.length = 0; }, code);
+    // 자동: 턴을 보내고 잠깐 기다린 뒤 이번에 나간 videoInference 수
+    const autoTurn = async (body) => {
+      const before = await p.evaluate(() => __vid.length);
+      await turn(`${body}\n\n${name}: "자동 움짤 대사예요."`);
+      await p.waitForTimeout(500);
+      return (await p.evaluate(() => __vid.length)) - before;
+    };
+    const auto = res.auto = {};
+    auto.off = await autoTurn(`[[img:${code}:101,400,500]]`);
+    await p.evaluate(() => { S.settings.autoMotion = true; });
+    auto.on = await autoTurn(`[[img:${code}:101,400,500]]`);
+    auto.task = await p.evaluate(() => { const t = __vid[__vid.length - 1] || {}; return { smiling: /smiling softly/.test(t.positivePrompt || ""), safety: !!(t.safety && t.safety.checkContent), model: t.model, dur: t.duration }; });
+    const saved = await p.waitForFunction((code) => !!motionOf(room.char, code, "101"), code, { timeout: 8000 }).then(() => true).catch(() => false);
+    await p.waitForTimeout(300);
+    auto.fig = await p.evaluate((code) => { const v = document.querySelector(`#logInner figure.scene-img[data-code="${code}"][data-key="101"] .mo-wrap video.mo`); return !!v; }, code);
+    auto.saved = saved;
+    auto.again = await autoTurn(`[[img:${code}:101,400,500]]`); // 이미 있으면 다시 안 만듦
+    await p.evaluate((code) => { flipMotion(room.char, code, "101"); }, code);
+    auto.flipped = await autoTurn(`[[img:${code}:101,400,500]]`); // 꺼 둔 움짤도 다시 안 만듦
+    await p.evaluate(([code, PNG]) => { for (const k of ["3", "111", "120"]) putCastImage(room.char, code, k, PNG); }, [code, PNG]);
+    auto.base = await autoTurn(`[[img:${code}:3,400,500]]`); // 표에 없는 기본 감정
+    auto.semi = await autoTurn(`[[img:${code}:111,400,500]]`); // 세미 수위
+    auto.noPic = await autoTurn(`[[img:${code}:130,400,500]]`); // 표에는 있지만 보여 줄 그 코드의 그림이 없음(폴백 칸은 번호대 밖)
+    // 번호대: 의상 코드(4xx)도 대상 — 표에 없으면 가만히 숨 쉬는 움직임, 장소 501은 번호대 밖. 세미·성인 수위 코드는 표에 있어도 만들지 않음
+    await p.evaluate(([code, PNG]) => { for (const k of ["3,404", "3,501", "299"]) putCastImage(room.char, code, k, PNG); S.settings.customSits.push({ n: 299, name: "시험성인", prompt: "wave", rating: "explicit" }); MotionPrompts[299] = { title: "시험", base_prompt: "wave", motion_en: "waving from the table" }; }, [code, PNG]);
+    auto.wear = await autoTurn(`[[img:${code}:3,404,500]]`);
+    auto.wearIdle = await p.evaluate(() => { const t = __vid[__vid.length - 1] || {}; return /subtle breathing/.test(t.positivePrompt || "") && /office lady/.test(t.positivePrompt || ""); });
+    auto.place = await autoTurn(`[[img:${code}:3,400,501]]`);
+    auto.adult = await autoTurn(`[[img:${code}:299,400,500]]`);
+    await p.evaluate(() => { S.settings.customSits = S.settings.customSits.filter((d) => d.n !== 299); delete MotionPrompts[299]; });
+    await p.waitForTimeout(300);
+    // 한 응답에 최대 2개, 남은 칸은 다음 턴에
+    const codes = await p.evaluate((PNG) => { const cs = room.char.cast.slice(0, 3).map((x) => x.code); cs.forEach((k) => putCastImage(room.char, k, "102", PNG)); return cs; }, PNG);
+    const tags = codes.map((k) => `[[img:${k}:102,400,500]]`).join("\n\n");
+    auto.cap = await autoTurn(tags);
+    await p.waitForTimeout(400);
+    auto.capNext = await autoTurn(tags);
+    await p.waitForTimeout(400);
+    // 실패한 칸은 이번 세션에 다시 시도하지 않음
+    await p.evaluate(() => { __failVid = true; });
+    auto.broke = await autoTurn(`[[img:${code}:120,400,500]]`);
+    await p.waitForTimeout(400);
+    auto.brokeAgain = await autoTurn(`[[img:${code}:120,400,500]]`);
+    auto.brokeSaved = await p.evaluate((code) => !!motionOf(room.char, code, "120"), code);
+    await p.evaluate(() => { S.settings.autoMotion = false; __failVid = false; });
+    // 스튜디오를 연 채로 화면 밖에서 시작한 일이 끝나면 '만드는 중' 글이 남지 않고 다시 그려짐
+    res.stale = await p.evaluate(async (code) => {
+      const c = room.char, id = jobId(c, code, "101"), w = (ms) => new Promise((z) => setTimeout(z, ms));
+      openImages(c, code); await w(500);
+      MJOBS[id] = { t0: Date.now(), status: "만드는 중", progress: 0 }; viewImages(); await w(100);
+      const shown = !!document.querySelector("[data-mjob]");
+      delete MJOBS[id]; await w(1300);
+      return { shown, gone: !document.querySelector("[data-mjob]") };
+    }, code);
+    await p.evaluate(() => { location.hash = "r-" + room.id; }); await p.waitForTimeout(500);
     await p.evaluate(() => { closeOverlays(); openRoomDrawer("gallery"); }); await p.waitForTimeout(400);
     res.gallery = await p.evaluate(() => $$(".gallery button").length);
     await p.evaluate(() => closeOverlays());
@@ -91,6 +195,16 @@ for (const [dev, engine] of targets) {
   if (res.t6 && !(res.t6.rw === 1 && res.t6.imgNow)) bad.push("t6 " + JSON.stringify(res.t6));
   if (res.studio && !(res.studio.card && /:7,404]]/.test(res.studio.combo) && res.studio.now && res.studio.sels === 2 && res.studio.cnt === "1장" && res.studio.keys.join("|") === "3|3,404,501|")) bad.push("studio " + JSON.stringify(res.studio));
   if (res.motion && !(res.motion.on.video && res.motion.on.blob && res.motion.on.img && res.motion.off.flipped === false && !res.motion.off.video && res.motion.off.img && res.motion.off.still && res.motion.gone && res.motion.body)) bad.push("motion " + JSON.stringify(res.motion));
+  const sh = res.sheet;
+  if (sh && !(/^Camera locked/.test(sh.smile) && /Featuring 1(girl|boy)/.test(sh.smile) && /smiling softly/.test(sh.smile) && !/[ㄱ-힣]/.test(sh.smile) && sh.isDefault && /office lady/.test(sh.combo) && /slight body movement/.test(sh.combo)
+    && sh.sent === "waving a hand slowly" && sh.safety && sh.made && sh.again === "waving a hand slowly" && !/waving/.test(sh.other) && /glaring intensely/.test(sh.other) && /^First-person POV/.test(sh.pov) && /petting/.test(sh.pov) && sh.reset === sh.smile)) bad.push("sheet " + JSON.stringify(sh));
+  const ge = sh && sh.gender;
+  if (ge && !(/loosening tie/.test(ge.male) && !/loosening tie/.test(ge.female) && /subtle breathing/.test(ge.female) && /loosening tie/.test(ge.byTag) && /^First-person POV/.test(ge.malePov) && /^Camera locked/.test(ge.femalePov) && ge.looks.join() === "true,true,true,false,false,false"
+    && /waving a hand/.test(sh.own) && sh.adultDefault && sh.unknownDefault && sh.table)) bad.push("gender " + JSON.stringify({ ge, own: sh.own, adultDefault: sh.adultDefault, unknownDefault: sh.unknownDefault, table: sh.table }));
+  const au = res.auto;
+  if (au && !(au.off === 0 && au.on === 1 && au.task.smiling && au.task.safety && au.task.model === "bytedance:2@2" && au.task.dur === 5 && au.saved && au.fig && au.again === 0 && au.flipped === 0 && au.base === 0 && au.semi === 0 && au.noPic === 0
+    && au.wear === 1 && au.wearIdle && au.place === 0 && au.adult === 0 && au.cap === 2 && au.capNext === 1 && au.broke === 1 && au.brokeAgain === 0 && !au.brokeSaved)) bad.push("auto " + JSON.stringify(au));
+  if (res.stale && !(res.stale.shown && res.stale.gone)) bad.push("stale " + JSON.stringify(res.stale));
   if (res.gallery !== undefined && res.gallery < 1) bad.push("gallery " + res.gallery);
   res.errs = errs.concat(bad); console.log(JSON.stringify(res)); await b.close();
 }

@@ -75,7 +75,17 @@ try {
     return { parts: __n.partsTags, told: __toasts.filter((t) => t.includes("장면 그림")).length };
   });
   res.genOut.video = await p.evaluate(() => rwTask({ taskType: "videoInference", taskUUID: "gate-video" }).then(() => "지나감", (e) => e.code));
+  // 자동 움짤도 관리자가 아니면 만들기 전에 멈춤(아래 '요청이 나감' 검사가 Runware까지 안 갔는지 봄)
+  res.genOut.autoMo = await p.evaluate(async (PNG) => {
+    const c = normalizeChar(getChar("seodoyun")), code = c.cast[0].code, body = `[[img:${code}:101]]`;
+    S.settings.autoMotion = true; putCastImage(c, code, "101", PNG);
+    await autoMotions({ char: c }, body);
+    const out = { jobs: Object.keys(MJOBS).length, made: !!motionOf(c, code, "101") };
+    putCastImage(c, code, "101", null); S.settings.autoMotion = false;
+    return out;
+  }, PNG);
   const g = res.genOut;
+  if (g.autoMo.jobs || g.autoMo.made) errs.push("비로그인 자동 움짤: " + JSON.stringify(g.autoMo));
   if (g.access.code !== "admin_login") errs.push("비로그인 권한: " + JSON.stringify(g.access));
   if (g.run.parts || g.run.results || g.run.busy || !g.run.toast.includes("관리자 계정")) errs.push("비로그인 연속 그리기: " + JSON.stringify(g.run));
   if (g.sheet.groups || !g.sheet.msg.includes("관리자 계정")) errs.push("비로그인 생성 창: " + JSON.stringify(g.sheet));

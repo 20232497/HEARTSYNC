@@ -1,11 +1,13 @@
 /* 이미지 스튜디오의 코드 목록(관리자 빌드만): 감정·행동 / 의상 / 장소 세 갈래를 번호대별 묶음으로 나누고, 고른 인물에게 그 코드의 그림이 몇 장 있는지 함께 보여 준다.
    묶음 — 감정·행동: 기본 0~14 · 직접 만든 칸 15~99 · 100번대 · 200번대 · 300번대 / 의상 4xx / 장소 5xx(400·500은 '설정대로 되돌리기'라 뺌).
    보이는 코드는 codeDefs()(성인 확인 전엔 전체이용가만) — 내 칸 > 작품 폴더 코드 표 > 관리자 전용 > 내장 순으로 같은 번호를 덮은 결과.
+   기본 0~14도 ✎로 그림 태그·움직임을 고침(baseSitEditor — 이름은 그대로, 고친 칸은 '수정' 표시).
    선택 삭제 모드(del)면 지울 수 있는 코드(이 계정의 칸 — 직접 만들었거나 목록으로 들여온 것)에 체크 칸을, 묶음마다 '전체 선택'을 보여 줌. 기본·내장·실림·관리자 전용(파일) 코드는 잠금 */
 import { SIT } from "../core/constants.js";
 import { S } from "../core/state.js";
 import { esc } from "../core/util.js";
 import { DIM_NAMES, RESET, parseCodes } from "../images/codes.js";
+import { baseSit, baseSitDefault } from "../images/prompt.js";
 import { RATINGS } from "../images/rating.js";
 import { codeDefs } from "../images/situations.js";
 import { validRef } from "../services/images.js";
@@ -20,7 +22,7 @@ export function codeGroups(dim) {
   const src = (d) => d.builtin ? "내장" : d.adminOnly ? "관리자" : d.shipped ? "실림" : "내 칸";
   const item = (d) => ({ n: d.n, name: d.name, prompt: d.prompt || "", rating: d.rating || "safe", src: src(d), def: d });
   if (dim !== "act") return [{ id: dim, name: DIM_NAMES[dim] + (dim === "wear" ? " 4xx" : " 5xx"), hint: dim === "wear" ? "감정 번호 뒤에 붙여 옷을 바꿔요" : "감정 번호 뒤에 붙여 배경을 바꿔요", items: defs.map(item) }];
-  const base = SIT.map((name, n) => ({ n, name, prompt: "", rating: "safe", src: "기본", def: null }));
+  const base = SIT.map((name, n) => { const o = baseSit(n); return { n, name, prompt: (o && o.prompt) || baseSitDefault(n), rating: "safe", src: "기본", def: null, edited: !!o }; });
   return ACT_BANDS.map(([a, b, name, hint], i) => ({ id: "act" + i, name, hint: hint || "", items: i === 0 ? base : defs.filter((d) => d.n >= a && d.n < b).map(item) })).filter((g) => g.items.length);
 }
 /* 인물 한 명의 그림 칸({조합 키: 참조})에서 번호마다: 그 번호 하나짜리 그림이 있는지(exact)와 그 번호가 든 그림 수(count) */
@@ -48,7 +50,7 @@ export function groupHTML(g, on, closed, st, del) {
 function rowHTML(d, on, s, del) {
   const adult = d.rating !== "safe", can = !!del && deletable(d), chk = can && del.has(d.n);
   return `<div class="is-code${on && !del ? " on" : ""}${adult ? " adult" : ""}${s && s.exact ? " filled" : ""}${del && !can ? " locked" : ""}${chk ? " chk" : ""}" data-row="${d.n}" data-find="${esc((d.n + " " + d.name).toLowerCase())}">
-    ${can ? `<input type="checkbox" class="is-chk" data-chk="${d.n}" ${chk ? "checked" : ""} aria-label="${esc(d.name)} 선택">` : ""}<button class="is-pick"${del && !can ? ' disabled title="기본·내장·작품 폴더·관리자 전용 코드는 여기서 지울 수 없어요"' : ""} data-pick="${d.n}" title="${esc(d.prompt || d.name)}"><span class="num">${d.n}</span><span class="nm">${esc(d.name)}</span>${adult ? `<span class="rt">${RATINGS[d.rating] ? esc(RATINGS[d.rating].name) : "성인"}</span>` : ""}${d.src !== "기본" && d.src !== "내장" ? `<span class="src">${d.src}</span>` : ""}</button>
+    ${can ? `<input type="checkbox" class="is-chk" data-chk="${d.n}" ${chk ? "checked" : ""} aria-label="${esc(d.name)} 선택">` : ""}<button class="is-pick"${del && !can ? ' disabled title="기본·내장·작품 폴더·관리자 전용 코드는 여기서 지울 수 없어요"' : ""} data-pick="${d.n}" title="${esc(d.prompt || d.name)}"><span class="num">${d.n}</span><span class="nm">${esc(d.name)}</span>${adult ? `<span class="rt">${RATINGS[d.rating] ? esc(RATINGS[d.rating].name) : "성인"}</span>` : ""}${d.src !== "기본" && d.src !== "내장" ? `<span class="src">${d.src}</span>` : d.edited ? `<span class="src">수정</span>` : ""}</button>
     <span class="cnt" title="이 인물의 그림 중 이 번호가 든 것">${s ? s.count + "장" : ""}</span>
-    ${d.src === "기본" || del ? "" : `<button class="is-ed" data-edit="${d.n}" aria-label="${esc(d.name)} 고치기" title="이름·프롬프트·수위 고치기">✎</button>`}</div>`;
+    ${del ? "" : `<button class="is-ed" data-edit="${d.n}" aria-label="${esc(d.name)} 고치기" title="${d.src === "기본" ? "그림 태그·움직임 고치기" : "이름·프롬프트·움직임·수위 고치기"}">✎</button>`}</div>`;
 }

@@ -390,9 +390,11 @@ function readCodes(R, errors, warnings) {
     if (!["safe", "questionable", "explicit"].includes(rating)) return errors.push(`${at}: rating은 safe·questionable·explicit 중 하나`);
     if (d.keys !== undefined && typeof d.keys !== "string") return errors.push(`${at}: keys는 "낱말|낱말" 글`);
     if (rating !== "safe" && R.minorHint(d.name + "\n" + d.prompt)) return errors.push(`${at}: 성인 수위 코드의 이름·프롬프트에 미성년으로 보이는 표현이 있어요(minorHint)`);
-    const extra = Object.keys(d).filter((k) => !["n", "name", "prompt", "rating", "keys"].includes(k));
+    if (d.motion !== undefined && typeof d.motion !== "string") return errors.push(`${at}: motion은 움직임 문장(글)`);
+    if (d.motion && rating !== "safe") warnings.push(`${at}: motion은 전체이용가 코드에만 쓰여서 뺐어요`);
+    const extra = Object.keys(d).filter((k) => !["n", "name", "prompt", "rating", "keys", "motion"].includes(k));
     if (extra.length) warnings.push(`${at}: 쓰지 않는 칸 ${extra.join(", ")}`);
-    out.push({ n: d.n, name: d.name.trim(), prompt: d.prompt.trim(), rating, ...(d.keys ? { keys: d.keys } : {}), dim: R.dimOf(d.n), shipped: true });
+    out.push({ n: d.n, name: d.name.trim(), prompt: d.prompt.trim(), rating, ...(d.keys ? { keys: d.keys } : {}), ...(d.motion && rating === "safe" ? { motion: d.motion.trim() } : {}), dim: R.dimOf(d.n), shipped: true });
   });
   const adult = out.filter((d) => d.rating !== "safe").length;
   if (adult) warnings.push(`content/${name}: 성인 수위 코드 ${adult}개 — 사용자 사이트와 공개 저장소에 그대로 실려요(관리자만 쓸 코드는 content/codes.admin.json에)`);
@@ -571,7 +573,7 @@ function checkScripts(html, map, out) {
 const NO_GEN = [
   [/\/\* ── src\/js\/admin\//, "관리자 모듈(src/js/admin/)"],
   [/\/\* ── src\/js\/images\/(runware|prompt|tags|styles|style-fit|gen-guard)\.js/, "그림 생성 모듈(images/runware·prompt·tags·styles·style-fit·gen-guard)"],
-  [/\b(runwareImage|makeMotion|autoImages)\b/, "그림·움짤 생성 함수"],
+  [/\b(runwareImage|makeMotion|autoImages|autoMotions|buildVideoPrompt|MotionPrompts)\b/, "그림·움짤 생성 함수·움짤 코드 표"],
   [/["'](imageInference|videoInference)["']/, "Runware 생성 작업"]
 ];
 export function checkNoGen(html) {
