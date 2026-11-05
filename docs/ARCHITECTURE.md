@@ -5,28 +5,28 @@
 ## 1. 한눈에
 
 ```
-                 src/js (ES 모듈 77개) + src/css + content/
-                              │  npm run build (tools/build.mjs)
+                 src/js (ES 모듈) + src/css + content/
+                              │  npm run build (tools/build.mjs — 모듈 수·크기를 출력)
             ┌─────────────────┴──────────────────┐
-   index.html  사용자 사이트(배포)          admin.html  관리자 도구(git에 없음, 로컬)
-   main.js → app.js(사용자 모듈 62개)       admin.js → app.js + admin/ 15개
+   index.html  사용자 사이트(배포)          admin.html  관리자 도구(커밋·배포, /admin.html)
+   main.js → app.js(사용자 모듈)            admin.js → app.js + admin/
    주석·빈 줄 없음, 모듈마다 한 줄 설명      주석 전부 + 모듈 머리(가져옴·내보냄·쓰는 곳)
-   메뉴: 홈·대화·스토어·MY                   메뉴: 홈·대화·작품·만들기·스토어·MY
+   메뉴: 홈·대화·스토어·MY                   메뉴: 홈·대화·작품·이미지·만들기·스토어·MY
 ```
 
 - 두 빌드는 **같은 저장소**(이 브라우저의 localStorage·IndexedDB, 로그인하면 Supabase 계정)를 쓴다. 관리자 도구에서 만든 그림·코드 표는 그 브라우저에만 있으므로 **작품 폴더에 저장**으로 `content/`에 써서 빌드에 실어야 사용자에게 보인다(§4).
-- 사용자 빌드에는 Runware·이미지 프롬프트·태그 번역·그림체·스튜디오 모듈이 들어가지 않는다(590KB → 425KB).
+- 사용자 빌드에는 Runware·이미지 프롬프트·태그 번역·그림체·스튜디오 모듈이 들어가지 않는다. 빌드 검사 `checkNoGen`이 강제한다(들어가면 빌드 실패).
 
 ## 2. 층과 규칙
 
 ```
 core      config(잎) · constants · util · events · storage · state · target · cast · audience · wallet · character · safety · rooms · settings · migrate
 content   index.js — 빌드가 만든 generated.js(ORIGINALS · HOME_ROWS · CONTENT_CODES)
-services  supabase · cloud · vault · sync · load · community · images
-images    codes · rating · pick · motion · situations · tags-cache        (관리자만) styles · prompt · tags · runware
+services  supabase · cloud · vault · sync · load · community · images · support · idv
+images    codes · rating · pick · motion · situations · tags-cache        (관리자만) styles · style-fit · prompt · tags · runware · gen-guard
 ai        models · llm · adult · openrouter · parse · prompt/{lore,rules,input,memory}
-ui        icons · sheet · ext · shell · cover · home · detail · chat/{render,log,view,generate,suggest} · pay · model-sheet · room-drawer · worldart · chats · store · login · account · me
-admin     studio · image-studio · image-codes · image-run · motion-run · sit-sheets · gen-sheet · worldart · image-settings · works · tools · auto-images · export · migrate
+ui        icons · sheet · ext · shell · cover · home · detail · chat/{render,log,view,generate,suggest} · pay · model-sheet · room-drawer · worldart · chats · store · login · account · me · help · faq · idv
+admin     studio · image-studio · image-codes · image-run · motion-run · sit-sheets · gen-sheet · worldart · image-settings · works · tools · auto-images · export · migrate · codes · gate · support
 boot.js → app.js(USER_VIEWS · USER_NAVS) → main.js | admin.js
 ```
 
@@ -75,6 +75,7 @@ boot.js → app.js(USER_VIEWS · USER_NAVS) → main.js | admin.js
 - 스튜디오에서 만든 내 작품은 `work.js`도 함께 써서 오리지널로 올릴 수 있다(기기 데이터인 images·publish·creator는 뺌).
 - **관리자 전용 코드**(2026-11-05): 성인 수위 행동 코드 표는 `content/codes.admin.json`(git에 없음)을 `admin/codes.js`가 런타임에 fetch해(개발 서버에서만) `setExtraCodes`로 꽂거나, 웹 관리자 도구에서는 '목록으로 추가'로 계정(customSits)에 들여온다. admin.html이 배포되므로 빌드 결과물에는 넣지 않는다. 내보내기(codes.json·작품 폴더)가 성인 수위·관리자 전용 코드를 걸러 사용자 사이트로 흘러가지 않게 한다.
 - **관리자 웹 주소와 관문**(2026-11-05): admin.html도 커밋·배포(https://…/HEARTSYNC/admin.html). 웹 주소에서는 `admin/gate.js`가 비밀번호(SHA-256 해시 비교)를 묻고 localhost·file://은 묻지 않는다. 정적 페이지의 클라이언트 관문이라 소스를 읽는 사람은 우회할 수 있다 — 무심코 들어오는 것만 막고, 실제 데이터는 관리자의 브라우저·계정에만 있다. 관리자는 `#codetest`(코드 조합 테스트)에서 작품·인물·코드 조합을 골라 프롬프트를 보고 그려 본 뒤 마음에 드는 것만 슬롯에 저장한다.
+- **그림 생성 권한**(2026-11-05~06): 비밀번호 관문과 별개로, 웹 주소·file://에서는 Supabase `admins` 표에 있는 계정만 그림·움짤을 만든다(`images/gen-guard.js`, localhost·127.0.0.1만 건너뜀). Runware를 부르는 두 곳(`runwareImage`, 움짤 `rwTask`)이 맨 앞에서 확인하고, 태그 번역(사용자 키로 요금이 듦)이 먼저 도는 곳(`image-run.js`의 draw, `gen-sheet.js`의 생성 버튼, `auto-images.js`)은 번역 전에 확인한다. 이미 청구된 움짤의 결과 묻기(`getResponse`)는 막지 않는다. 브라우저 안의 확인이라 페이지를 고치면 우회할 수 있고, 진짜 서버 관문은 서버가 Runware를 부르는 단계(ROADMAP)다. `gate.mjs`가 가짜 https 호스트에서 시험한다(다른 흐름 시험은 127.0.0.1이라 건너뜀).
 - **이미지 스튜디오**(2026-11-05): 관리자 도구의 그림 일은 `#images` 한 화면 — `admin/image-studio.js`(화면·이벤트) · `image-codes.js`(갈래·번호대 묶음과 인물별 그림 수, 순수 HTML 조각) · `image-run.js`(Runware 그리기·결과·저장·파일 이름 → 조합 키, 상태 `ISTATE`). 예전 이미지 슬롯 시트·조합 만들기·코드 표·코드 조합 테스트를 합쳐 고정 칸 격자를 없앴고(0~14는 목록의 "기본 감정" 묶음), 칸 편집기·목록으로 추가·추천 칸은 `admin/sit-sheets.js`를 그대로 씀. 다른 화면은 `openImages(c, code)`로만 들어옴. 코드 목록의 '선택 삭제'(계정의 내 칸만, 그 코드가 든 그림·움짤도 지움)와 조합의 '모두 빼기'도 이 화면.
 - **움짤**(2026-11-05): 그림 칸마다 사진과 움짤(짧은 반복 영상)을 함께 두고 `on`으로 어느 쪽을 보일지 정함 — 저장·고르기는 `images/motion.js`(사용자 빌드에도, KV `motionpacks` + 작품 폴더의 `c.motions`), 보이기는 `ui/cover.js`의 `picHTML`(사진 위에 `<video>`를 겹침 — 영상을 못 받으면 사진), 본문은 `services/images.js`의 `IMG.putVideo`·`vtag`·`videoURL`(kv: 영상은 blob 주소로 — iOS는 data: 영상을 재생 못 함). 만들기는 관리자만 `admin/motion-run.js`(Runware videoInference 비동기 + getResponse). 사진을 바꾸거나 지우면 움짤도 지워 다른 사진에서 만든 영상이 남지 않게 함.
 
@@ -95,7 +96,7 @@ boot.js → app.js(USER_VIEWS · USER_NAVS) → main.js | admin.js
 - 커뮤니티 공개(publishCommunity)는 관리자 도구에서만 일어난다. 사용자 사이트는 커뮤니티를 읽기만 한다.
 - 대화 중 그림 자동 생성(`admin/auto-images.js`)은 관리자 도구에서만 돈다 — 사용자에게는 실린 그림이 없으면 조합 키 폴백(감정만 → 1 → 0) 뒤 글자 카드.
 - 사용자 빌드에 남은 작은 짐: `images/rating.js`(수위 계산)·`dropSitImages`(관리자만 부름). 더 줄이려면 rating을 codes.js로 합치고 dropSitImages를 admin/으로 옮기면 된다.
-- 다음: 작품마다 그림을 실제로 만들어 `content/`에 싣기(관리자 도구 → 작품 화면 → 전부 저장), 실린 그림이 많아지면 `images/` 폴더 크기와 첫 화면 로딩(lazy)을 보기, Vercel 미리보기에 admin.html이 올라가지 않는지 한 번 확인(`--only user`).
+- 다음: 작품마다 그림을 실제로 만들어 `content/`에 싣기(관리자 도구 → 작품 화면 → 전부 저장), 실린 그림이 많아지면 `images/` 폴더 크기와 첫 화면 로딩(lazy)을 보기.
 
 ## 7. 외부 점검(Gemini 제안, 2026-11-05) 반영 여부
 

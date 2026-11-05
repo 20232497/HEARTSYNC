@@ -6,12 +6,18 @@ README에서 옮겨 둔 운영 메모예요. 코드 구조는 [ARCHITECTURE.md](
 | 무엇 | 주소 | 어떻게 올라가나 |
 |---|---|---|
 | 사용자 사이트 | https://20232497.github.io/HEARTSYNC/ | GitHub Pages가 `main` 루트의 `index.html`을 그대로 띄움(병합하면 자동) |
-| 관리자 도구 | https://20232497.github.io/HEARTSYNC/admin.html | 같은 빌드가 만든 `admin.html`(커밋됨). 웹 주소로 열면 **비밀번호 관문**(`src/js/admin/gate.js`, 해시만 저장) — 로컬(localhost·file://)은 묻지 않음 |
+| 관리자 도구 | https://20232497.github.io/HEARTSYNC/admin.html | 같은 빌드가 만든 `admin.html`(커밋됨). 웹 주소로 열면 **비밀번호 관문**(`src/js/admin/gate.js`, 해시만 저장) — 로컬(localhost·file://)은 묻지 않음. 그림을 만들려면 **관리자 계정**도 필요(아래) |
 | 데모(claude.ai) | https://claude.ai/artifact/3sfDYFeJ13dHrkWwBFj1YG | 같은 파일 경로로 다시 publish하면 같은 주소. `icons/`·`styles/`·`content/**/images/`도 files로 함께 |
 
 - GitHub Pages 경로는 대소문자를 구분해요(`/HEARTSYNC/`). 주소를 바꾸면 아래 Supabase URL Configuration·Google 브랜딩·네이버 서비스 URL도 같이 바꿔요.
 - 관리자 비밀번호 관문은 정적 페이지의 클라이언트 관문이라 소스를 읽는 사람은 우회할 수 있어요(무심코 들어오는 것만 막음). 실제 데이터(API 키·그림·대화)는 관리자의 브라우저와 계정(RLS)에만 있어요. 비밀번호를 바꾸려면 `gate.js`의 HASH를 새 비밀번호의 SHA-256으로 바꿔요.
 - 성인 수위 행동 코드 표는 공개 저장소에 두지 않아요. 웹 관리자 도구에서는 코드 표 시트의 **목록으로 추가**에 원본 표(.txt)를 한 번 들여오면 계정에 저장돼 어느 기기에서나 보여요. 로컬 개발 서버에서는 `content/codes.admin.json`(git 제외)을 자동으로 읽어요.
+
+## 관리자 계정(그림 생성·공지·문의 답변, 한 번만)
+비밀번호 관문은 화면만 가려요. 실제 권한은 Supabase `admins` 표에 있는 계정이 가져요. 웹 주소나 파일(`file://`)로 연 관리자 도구에서 **그림·움짤을 만들려면 이 계정으로 로그인**해야 하고, 개발 서버(`localhost`·`127.0.0.1`)만 이 확인을 건너뛰어요.
+1. 아래 계정 서버 설정과 고객센터 설정을 먼저 해요(`admins` 표는 [supabase.sql](supabase.sql)이 만들어요)
+2. 관리자로 쓸 계정으로 앱에 한 번 로그인한 뒤 **SQL Editor**에서 `insert into public.admins (user_id) select id from auth.users where email = '관리자 이메일' on conflict do nothing;` (소셜 계정은 Authentication → Users의 User UID로 `values ('UID')`)
+3. 관리자 도구 → MY → 이미지 생성 맨 위에 **관리자 계정으로 확인됐어요**가 보이면 끝이에요. 표에 넣으면 새로 고침 없이 반영돼요
 
 ## 계정 서버 설정(Supabase, 한 번만 — 2026-11-02 완료)
 1. Supabase 대시보드 → 프로젝트 → **SQL Editor**에 [supabase.sql](supabase.sql)을 붙여 넣고 실행(계정 저장 표 `kv`, 본인 행만 보이게 하는 RLS, 계정 삭제 함수, 고객센터 표 — 여러 번 실행해도 됨)
