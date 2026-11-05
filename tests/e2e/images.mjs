@@ -8,8 +8,6 @@ for (const [dev, engine] of targets) {
   const b = await engine.launch(); const ctx = await b.newContext({ ...devices[dev] }); await noSupabase(ctx); const p = await ctx.newPage();
   const errs = []; p.on("pageerror", (e) => errs.push(e.message)); p.on("console", (m) => { if (m.type() === "error") errs.push("console: " + m.text().slice(0, 140)); });
   const res = { dev };
-  const navs = []; p.on("framenavigated", (f) => { if (f === p.mainFrame()) navs.push(f.url().replace(/^.*\/\/[^/]+/, "")); });
-  p.on("close", () => navs.push("page closed")); p.on("crash", () => navs.push("page crashed"));
   try {
     await p.goto(url, { waitUntil: "load" }); await p.waitForTimeout(1200);
     const code = await p.evaluate(() => { const r = newRoom(normalizeChar(ORIGINALS.find((c) => c.id === "godseats")), 0, S.personas[0]); location.hash = "r-" + r.id; return r.char.cast[0].code; });
@@ -24,14 +22,21 @@ for (const [dev, engine] of targets) {
         return full;
       };
     });
-    const turn = async (body, text = "입력") => p.evaluate(async ([body, text]) => {
-      window.__body = body;
-      room.msgs.push({ id: uid("m"), role: "user", text });
-      await generate(null, quote(room.set));
-      const ai = lastAi(room), sys = window.__lastInput[0].content;
-      return { text: curText(ai), figs: $$("#logInner figure.scene-img").map((f) => ({ code: f.dataset.code, key: f.dataset.key, img: !!f.querySelector("img") })), rw: window.__rw || 0,
-        sysHasDims: /의상 번호: 400 기본 의상/.test(sys) && /장소 번호: 500 기본 배경/.test(sys), nowLine: (sys.match(/지금 이어지는 의상·장소: ([^\n]+)/) || [])[1] || "" };
-    }, [body, text]);
+    // 턴을 평가 안에서 await하지 않고 시작·기다리기·읽기로 나눔: Chromium 검사기는 평가가 돌려준 약속을 약하게만 쥐어 약속이 끝나는 순간 GC가 돌면 결과 대신 'Promise was collected'를 주고,
+    // Playwright는 이를 'Execution context was destroyed, most likely because of a navigation'으로 바꿔 보여 줌(실제 이동이 아니고 앱은 턴을 끝까지 처리함). 턴 끝에 화면을 크게 다시 그려 GC가 자주 여기서 돎
+    const turn = async (body, text = "입력") => {
+      await p.evaluate(([body, text]) => {
+        window.__body = body; window.__turnDone = false;
+        room.msgs.push({ id: uid("m"), role: "user", text });
+        generate(null, quote(room.set)).finally(() => { window.__turnDone = true; });
+      }, [body, text]);
+      await p.waitForFunction(() => window.__turnDone);
+      return p.evaluate(() => {
+        const ai = lastAi(room), sys = window.__lastInput[0].content;
+        return { text: curText(ai), figs: $$("#logInner figure.scene-img").map((f) => ({ code: f.dataset.code, key: f.dataset.key, img: !!f.querySelector("img") })), rw: window.__rw || 0,
+          sysHasDims: /의상 번호: 400 기본 의상/.test(sys) && /장소 번호: 500 기본 배경/.test(sys), nowLine: (sys.match(/지금 이어지는 의상·장소: ([^\n]+)/) || [])[1] || "" };
+      });
+    };
     const name = await p.evaluate(() => room.char.cast[0].name);
     // 1) 조합 태그 그대로 저장되고 figure에 조합 키가 붙음(그림은 없어 아트 카드)
     const t1 = await turn(`*바람이 불었다.*\n\n[[img:${code}:3,404,501]]\n\n${name}: "첫 대사예요."`);
@@ -108,8 +113,16 @@ for (const [dev, engine] of targets) {
       for (let i = 0; i < 60 && !motionOf(c, code, "101"); i++) await new Promise((z) => setTimeout(z, 50));
       const sent = __vid[__vid.length - 1] || {};
       const again = open("101"); const other = (() => { shut(); return open("102"); })(); shut();
+      const pov = open("127"); shut();
       open("101"); $("#moReset").click(); const reset = val();
-      return { smile, semi, combo, isDefault: semi === MOTION_PROMPT, sent: sent.positivePrompt, safety: !!(sent.safety && sent.safety.checkContent), again, other, reset, made: !!motionOf(c, code, "101") };
+      // 성별에 따른 표(외모 글·태그), 고쳐 둔 코드의 문장, 수위·정의로 거르기 — 창을 열지 않고 문장만 봄
+      const he = { ...cast, look: "남성, 28세", tags: "" }, she = { ...cast, look: "여성, 26세", tags: "" }, tagged = { ...cast, look: "", tags: "1boy, short hair" };
+      S.settings.customSits.push({ n: 151, name: "시험남151", prompt: "loosening tie", rating: "safe" }, { n: 251, name: "시험남251", prompt: "pov, touched", rating: "safe" }, { n: 152, name: "시험움직임", prompt: "wave", rating: "safe", motion: "waving a hand" }, { n: 299, name: "시험성인", prompt: "wave", rating: "explicit", motion: "waving a hand" });
+      MotionPrompts[398] = { title: "시험", base_prompt: "wave", motion_en: "waving from the table" };
+      const gender = { male: motionPromptOf(c, he, "151"), female: motionPromptOf(c, she, "151"), byTag: motionPromptOf(c, tagged, "151"), malePov: motionPromptOf(c, he, "251"), femalePov: motionPromptOf(c, she, "251"), looks: ["남성", "male", "1boy", "여성", "female, 1girl", ""].map(lookIsMale) };
+      const own = motionPromptOf(c, she, "152"), adult = motionPromptOf(c, she, "299"), unknown = motionPromptOf(c, she, "398");
+      delete MotionPrompts[398]; S.settings.customSits = S.settings.customSits.filter((d) => ![151, 251, 152, 299].includes(d.n));
+      return { smile, semi, combo, isDefault: semi === MOTION_PROMPT, sent: sent.positivePrompt, safety: !!(sent.safety && sent.safety.checkContent), again, other, pov, reset, made: !!motionOf(c, code, "101"), gender, own, adultDefault: adult === MOTION_PROMPT, unknownDefault: unknown === MOTION_PROMPT, table: sitDef(120).prompt === MotionPrompts[120].base_prompt };
     }, [code, PNG]);
     await p.waitForTimeout(500); // 창이 나타나는 움직임이 끝난 뒤에
     await p.screenshot({ path: `${out}/${dev.replace(/\W+/g, "_")}_motion_sheet.png` });
@@ -136,7 +149,15 @@ for (const [dev, engine] of targets) {
     await p.evaluate(([code, PNG]) => { for (const k of ["3", "111", "120"]) putCastImage(room.char, code, k, PNG); }, [code, PNG]);
     auto.base = await autoTurn(`[[img:${code}:3,400,500]]`); // 표에 없는 기본 감정
     auto.semi = await autoTurn(`[[img:${code}:111,400,500]]`); // 세미 수위
-    auto.noPic = await autoTurn(`[[img:${code}:130,400,500]]`); // 표에는 있지만 보여 줄 그 코드의 그림이 없음(폴백 칸은 표에 없음)
+    auto.noPic = await autoTurn(`[[img:${code}:130,400,500]]`); // 표에는 있지만 보여 줄 그 코드의 그림이 없음(폴백 칸은 번호대 밖)
+    // 번호대: 의상 코드(4xx)도 대상 — 표에 없으면 가만히 숨 쉬는 움직임, 장소 501은 번호대 밖. 세미·성인 수위 코드는 표에 있어도 만들지 않음
+    await p.evaluate(([code, PNG]) => { for (const k of ["3,404", "3,501", "299"]) putCastImage(room.char, code, k, PNG); S.settings.customSits.push({ n: 299, name: "시험성인", prompt: "wave", rating: "explicit" }); MotionPrompts[299] = { title: "시험", base_prompt: "wave", motion_en: "waving from the table" }; }, [code, PNG]);
+    auto.wear = await autoTurn(`[[img:${code}:3,404,500]]`);
+    auto.wearIdle = await p.evaluate(() => { const t = __vid[__vid.length - 1] || {}; return /subtle breathing/.test(t.positivePrompt || "") && /office lady/.test(t.positivePrompt || ""); });
+    auto.place = await autoTurn(`[[img:${code}:3,400,501]]`);
+    auto.adult = await autoTurn(`[[img:${code}:299,400,500]]`);
+    await p.evaluate(() => { S.settings.customSits = S.settings.customSits.filter((d) => d.n !== 299); delete MotionPrompts[299]; });
+    await p.waitForTimeout(300);
     // 한 응답에 최대 2개, 남은 칸은 다음 턴에
     const codes = await p.evaluate((PNG) => { const cs = room.char.cast.slice(0, 3).map((x) => x.code); cs.forEach((k) => putCastImage(room.char, k, "102", PNG)); return cs; }, PNG);
     const tags = codes.map((k) => `[[img:${k}:102,400,500]]`).join("\n\n");
@@ -164,7 +185,7 @@ for (const [dev, engine] of targets) {
     await p.evaluate(() => { closeOverlays(); openRoomDrawer("gallery"); }); await p.waitForTimeout(400);
     res.gallery = await p.evaluate(() => $$(".gallery button").length);
     await p.evaluate(() => closeOverlays());
-  } catch (e) { res.fail = String(e).slice(0, 300); res.navs = navs.slice(-8); }
+  } catch (e) { res.fail = String(e).slice(0, 300); }
   const bad = [];
   if (res.t1 && !(res.t1.tag && res.t1.fig && res.t1.sysHasDims)) bad.push("t1 " + JSON.stringify(res.t1));
   if (res.t2 && !(res.t2.tag && /오피스룩·침실/.test(res.t2.nowLine))) bad.push("t2 " + JSON.stringify(res.t2));
@@ -175,11 +196,14 @@ for (const [dev, engine] of targets) {
   if (res.studio && !(res.studio.card && /:7,404]]/.test(res.studio.combo) && res.studio.now && res.studio.sels === 2 && res.studio.cnt === "1장" && res.studio.keys.join("|") === "3|3,404,501|")) bad.push("studio " + JSON.stringify(res.studio));
   if (res.motion && !(res.motion.on.video && res.motion.on.blob && res.motion.on.img && res.motion.off.flipped === false && !res.motion.off.video && res.motion.off.img && res.motion.off.still && res.motion.gone && res.motion.body)) bad.push("motion " + JSON.stringify(res.motion));
   const sh = res.sheet;
-  if (sh && !(/^Static camera/.test(sh.smile) && /Featuring 1(girl|boy)/.test(sh.smile) && /smiling softly/.test(sh.smile) && !/[ㄱ-힣]/.test(sh.smile) && sh.isDefault && /office lady/.test(sh.combo) && /slight body movement/.test(sh.combo)
-    && sh.sent === "waving a hand slowly" && sh.safety && sh.made && sh.again === "waving a hand slowly" && !/waving/.test(sh.other) && /glaring intensely/.test(sh.other) && sh.reset === sh.smile)) bad.push("sheet " + JSON.stringify(sh));
+  if (sh && !(/^Camera locked/.test(sh.smile) && /Featuring 1(girl|boy)/.test(sh.smile) && /smiling softly/.test(sh.smile) && !/[ㄱ-힣]/.test(sh.smile) && sh.isDefault && /office lady/.test(sh.combo) && /slight body movement/.test(sh.combo)
+    && sh.sent === "waving a hand slowly" && sh.safety && sh.made && sh.again === "waving a hand slowly" && !/waving/.test(sh.other) && /glaring intensely/.test(sh.other) && /^First-person POV/.test(sh.pov) && /petting/.test(sh.pov) && sh.reset === sh.smile)) bad.push("sheet " + JSON.stringify(sh));
+  const ge = sh && sh.gender;
+  if (ge && !(/loosening tie/.test(ge.male) && !/loosening tie/.test(ge.female) && /subtle breathing/.test(ge.female) && /loosening tie/.test(ge.byTag) && /^First-person POV/.test(ge.malePov) && /^Camera locked/.test(ge.femalePov) && ge.looks.join() === "true,true,true,false,false,false"
+    && /waving a hand/.test(sh.own) && sh.adultDefault && sh.unknownDefault && sh.table)) bad.push("gender " + JSON.stringify({ ge, own: sh.own, adultDefault: sh.adultDefault, unknownDefault: sh.unknownDefault, table: sh.table }));
   const au = res.auto;
   if (au && !(au.off === 0 && au.on === 1 && au.task.smiling && au.task.safety && au.task.model === "bytedance:2@2" && au.task.dur === 5 && au.saved && au.fig && au.again === 0 && au.flipped === 0 && au.base === 0 && au.semi === 0 && au.noPic === 0
-    && au.cap === 2 && au.capNext === 1 && au.broke === 1 && au.brokeAgain === 0 && !au.brokeSaved)) bad.push("auto " + JSON.stringify(au));
+    && au.wear === 1 && au.wearIdle && au.place === 0 && au.adult === 0 && au.cap === 2 && au.capNext === 1 && au.broke === 1 && au.brokeAgain === 0 && !au.brokeSaved)) bad.push("auto " + JSON.stringify(au));
   if (res.stale && !(res.stale.shown && res.stale.gone)) bad.push("stale " + JSON.stringify(res.stale));
   if (res.gallery !== undefined && res.gallery < 1) bad.push("gallery " + res.gallery);
   res.errs = errs.concat(bad); console.log(JSON.stringify(res)); await b.close();

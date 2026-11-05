@@ -1,12 +1,14 @@
 /* 이미지 스튜디오(관리자 빌드만, #images — 작품 id를 붙이면 #images-<id>): 인물 그림을 만드는 한 곳. 예전의 이미지 슬롯 시트(기본 칸 격자)·조합 만들기·코드 표·코드 조합 테스트를 합쳤다.
    왼쪽 코드 목록(admin/image-codes.js — 감정·행동/의상/장소 갈래, 번호대 묶음, 이 인물의 그림 수, 고치기·추가·빈 칸 채우기, 선택 삭제)에서 번호를 눌러 조합을 만들고,
    오른쪽에서 그 조합의 지금 그림(올리기·바꾸기·삭제·움짤)·프롬프트·화풍·비율을 보고 그린다(admin/image-run.js). 결과는 저장 전까지 화면에만, '바로 저장'을 켜면 그린 즉시 저장.
-   아래 갤러리는 이 인물에 저장된 그림 전부(누르면 그 조합을 고름) — 칸마다 크게·움짤 만들기(admin/motion-run.js)·사진 ↔ 움짤 바꾸기·삭제. 기본 0~14도 다른 코드와 똑같이 목록의 한 묶음.
+   아래 갤러리는 이 인물에 저장된 그림 전부(누르면 그 조합을 고름) — 칸마다 크게·움짤 만들기(admin/motion-run.js)·사진 ↔ 움짤 바꾸기·삭제. 기본 0~14도 다른 코드와 똑같이 목록의 한 묶음이고 ✎로 고침.
+   감정·행동 탭의 코드 목록 아래에 행동 코드 작성 구조 안내(codeGuideHTML).
    들어오는 길: 메뉴 '이미지', 작품 화면·상세(인물 초상·'이미지 관리')·대화방 메뉴·스튜디오의 openImages(작품, 인물 코드) */
 import { ageOK } from "../ai/adult.js";
 import { ORIGINALS } from "../content/index.js";
 import { castLook } from "../core/cast.js";
 import { getChar, normalizeChar } from "../core/character.js";
+import { SIT } from "../core/constants.js";
 import { saveSettings } from "../core/settings.js";
 import { S, hasOpenRouterKey, hasRunwareKey } from "../core/state.js";
 import { $, $$, esc, toast } from "../core/util.js";
@@ -26,7 +28,7 @@ import { genImageSheet } from "./gen-sheet.js";
 import { codeGroups, codeStats, deletable, dimCount, groupHTML } from "./image-codes.js";
 import { ISTATE, ctxOf, keyRating, pickStyle, promptText, resultHTML, runKeys, saveResult, uploadMany } from "./image-run.js";
 import { MJOBS, jobId, motionSheet } from "./motion-run.js";
-import { sitEditor, sitListSheet, sitPresetSheet } from "./sit-sheets.js";
+import { baseSitEditor, codeGuideHTML, sitEditor, sitListSheet, sitPresetSheet } from "./sit-sheets.js";
 
 ICON.image = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-9 9"/></svg>';
 /* 사진 ↔ 움짤 바꾸기: 위아래로 도는 두 화살표 */
@@ -78,7 +80,8 @@ export function viewImages(arg) {
         <div class="is-list">${codeGroups(T.tab).map((g) => groupHTML(g, on, !!T.closed[g.id], st, T.del)).join("")}</div>
         ${T.del ? `<div class="is-delbar"><div class="x"><b>${delN}개 선택</b><span class="note">${delN ? `${delImgs ? `이 코드가 든 그림 ${delImgs}장(모든 작품·인물, 움짤 포함)도 함께 지워져요.` : "이 코드로 저장한 그림은 없어요."} 내장 번호를 덮어쓴 칸은 지우면 내장 코드로 돌아가요.` : "지울 코드를 고르세요 — 직접 만들었거나 목록으로 들여온 코드만 지울 수 있어요. 탭을 바꿔도 고른 것은 남아요."}</span></div>
           <div class="cta-row"><button class="btn sm ghost" id="isDelX">취소</button><button class="btn sm danger" id="isDelGo" ${delN ? "" : "disabled"}>선택 삭제</button></div></div>`
-        : `<div class="cta-row" style="margin-top:10px"><button class="btn sm" id="isAdd">+ 코드 추가</button><button class="btn sm" id="isList">목록으로 추가</button><button class="btn sm ghost" id="isPreset">추천 코드</button>${canDel ? `<span class="spacer"></span><button class="btn sm ghost" id="isDelMode" title="직접 만들었거나 목록으로 들여온 코드를 골라 한 번에 지우기">선택 삭제</button>` : ""}</div>`}
+        : `<div class="cta-row" style="margin-top:10px"><button class="btn sm" id="isAdd">+ 코드 추가</button><button class="btn sm" id="isList">목록으로 추가</button><button class="btn sm ghost" id="isPreset">추천 코드</button>${canDel ? `<span class="spacer"></span><button class="btn sm ghost" id="isDelMode" title="직접 만들었거나 목록으로 들여온 코드를 골라 한 번에 지우기">선택 삭제</button>` : ""}</div>
+        ${T.tab === "act" ? codeGuideHTML(true) : ""}`}
       </section>
       <section class="box is-make" aria-label="조합과 생성">
         <div class="is-sels"><span class="lbl">${DIM_NAMES.act}</span>${T.acts.map((n, i) => chip(n, "act") + (i === MAX_ACT - 1 && T.acts.length > MAX_ACT ? `<span class="note">· 조합엔 앞 ${MAX_ACT}개</span>` : "")).join("")}
@@ -161,7 +164,7 @@ function bind(v, c, cast, key) {
   };
   $$("[data-unsel]", v).forEach((b) => b.onclick = () => { const [dim, n] = b.dataset.unsel.split(":"); if (dim === "act") T.acts = T.acts.filter((x) => x !== +n); else T[dim] = null; re(); });
   const clr = $("#isSelClr", v); if (clr) clr.onclick = () => { T.acts = [1]; T.wear = null; T.place = null; re(); };
-  $$("[data-edit]", v).forEach((b) => b.onclick = () => { const n = +b.dataset.edit; sitEditor(sitDef(n) || DIMS[n], re); });
+  $$("[data-edit]", v).forEach((b) => b.onclick = () => { const n = +b.dataset.edit; if (n < SIT.length) baseSitEditor(n, re); else sitEditor(sitDef(n) || DIMS[n], re); });
   const add = $("#isAdd", v); if (add) add.onclick = () => { sitEditor(null, re); const sd = $("#sdm"); if (sd) sd.value = T.tab; };
   const lst = $("#isList", v); if (lst) lst.onclick = () => sitListSheet(re);
   const pre = $("#isPreset", v); if (pre) pre.onclick = () => sitPresetSheet(re);

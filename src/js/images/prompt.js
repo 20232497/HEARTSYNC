@@ -42,6 +42,11 @@ const SIT_PONY_TAGS = [
   "glowing eyes, aura, magic, floating hair, power",                       // 13 각성
   "blush, loving gaze, gentle smile, hands on own chest"                   // 14 설렘
 ];
+/* 기본 0~14를 고친 값(S.settings.baseSits[번호] = {prompt?, motion?} — 이미지 스튜디오의 ✎, 계정에도 저장). 이름은 SIT 그대로(AI 규칙이 이름으로 번호를 찾음), 수위는 작품마다(sheetRating) */
+export const baseSit = (n) => { const o = (S.settings.baseSits || {})[n]; return o && typeof o === "object" ? o : null; };
+export const baseSitDefault = (n) => SIT_PONY_TAGS[n] || "";
+/* 감정/행동 번호 → 장면 태그 글: 고친 기본 칸 → 기본 칸 → 칸 정의 */
+const sceneOf = (n) => (baseSit(n) || {}).prompt || SIT_PONY_TAGS[n] || sitDef(n)?.prompt || "";
 // 싸우는 장면(0 프로필·9 부상·12 공격·13 각성)이 아니면 외모의 무기를 뺌 — 무기가 있으면 모든 칸이 같은 무기 든 자세로 끌려감
 const COMBAT_SITS = [0, 9, 12, 13];
 const WEAPON_RE = /레이피어|장검|단검|대검|검$|칼$|비수|창$|활$|권총|리볼버|소총|라이플|총$|방패|배트$|쇠파이프|무기|\b(?:weapon|sword|rapier|katana|blade|dagger|knife|spear|bow|gun|pistol|revolver|rifle|shield|bat|pipe)s?\b/i;
@@ -51,7 +56,7 @@ export const splitTags = (t) => String(t || "").split(/\s*,\s*/).map((x) => x.tr
 /* 외모 글 → 인원·성별 태그. 남자는 male focus까지 넣어야 Pony 계열이 여자로 바꿔 그리지 않음. 사람 낱말 없이 동물만 있으면 사람 없는 그림 */
 const HUMAN_RE = /남성|여성|남자|여자|소년|소녀|청년|사람|인간|\d+\s*세|\b(?:male|female|man|woman|boy|girl|human|person)\b/i;
 const ANIMAL_RE = /고양이|강아지|진돗개|늑대|여우|토끼|곰|사슴|호랑이|사자|까마귀|부엉이|올빼미|독수리|참새|비둘기|드래곤|뱀|물고기|고래|햄스터|다람쥐|판다|펭귄|동물|짐승|\b(?:cat|dog|puppy|kitten|wolf|fox|rabbit|bear|deer|tiger|lion|horse|bird|crow|owl|eagle|hawk|dragon|snake|fish|whale|hamster|squirrel|panda|penguin|animal|creature|beast)s?\b/i;
-export const lookIsMale = (look) => /남성|남자|\b(?:male|man|boy)\b/i.test(String(look || "")) && !/여성|여자|\b(?:female|woman|girl)\b/i.test(String(look || ""));
+export const lookIsMale = (look) => /남성|남자|\b(?:male|man|boy|1boy)\b/i.test(String(look || "")) && !/여성|여자|\b(?:female|woman|girl|1girl)\b/i.test(String(look || ""));
 function whoTags(look) {
   const l = String(look || "");
   if (!HUMAN_RE.test(l) && ANIMAL_RE.test(l)) return ["no humans", "animal focus"];
@@ -65,8 +70,8 @@ const actKeyOf = (key) => keyOf(splitDims(parseCodes(String(key))).act) || "1";
 function slotParts(cast, key, c) {
   const codes = parseCodes(String(key)), d = splitDims(codes), acts = d.act.length ? d.act : [1], look = castLook(cast, c);
   const wear = d.wear ? sitDef(d.wear) : null, place = d.place ? sitDef(d.place) : null, combat = acts.some((n) => COMBAT_SITS.includes(n)), dressed = !!(wear && wear.prompt);
-  let scene = []; acts.forEach((n) => splitTags(SIT_PONY_TAGS[n] || sitDef(n)?.prompt || "").forEach((t) => { if (!scene.includes(t)) scene.push(t); }));
-  if (!scene.length) scene = splitTags(SIT_PONY_TAGS[1]);
+  let scene = []; acts.forEach((n) => splitTags(sceneOf(n)).forEach((t) => { if (!scene.includes(t)) scene.push(t); }));
+  if (!scene.length) scene = splitTags(sceneOf(1));
   const out = [
     { key: "scene", label: "장면·표정", tags: scene },
     { key: "look", label: "인물", tags: [...whoTags(look), ...splitTags(cast.tags || look).filter((t) => (combat || !WEAPON_RE.test(t)) && !(dressed && CLOTH_RE.test(t)))] }

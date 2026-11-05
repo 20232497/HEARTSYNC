@@ -1,12 +1,12 @@
 /* 움짤 만들기(관리자 빌드만): 저장한 사진 한 장을 첫 장면으로 Runware 영상 생성(videoInference — 이미지 → 영상)을 돌려 몇 초짜리 반복 영상을 만들고, 그 칸의 움짤로 저장한다(켜짐).
    요청은 비동기(deliveryMethod "async") — 보낸 뒤 getResponse로 몇 초마다 물어 videoURL을 받아 내려받고 IMG.putVideo(브라우저가 내려받기를 막으면 Runware의 임시 주소를 그대로 씀 — 오래 두면 사라짐).
    모델은 VIDEO_MODELS(싼 순 — 실패한 생성은 Runware가 청구하지 않음). 전체이용가 칸은 안전 검사를 켜고, 성인 수위 칸은 성인 확인 뒤에만·사진 설명·외모에 미성년 표현이 있으면 보내지 않음.
-   움직임 설명은 칸마다 motionPromptOf가 채움(전체이용가 칸은 코드별 문장 — admin/motion-prompts.js).
+   움직임 설명은 칸마다 motionPromptOf가 채움(전체이용가 칸은 코드별 문장·성별에 맞는 표 — admin/motion-prompts.js).
    만드는 중인 일은 MJOBS(작품|인물|칸 → 진행 상태)에 있고, 스튜디오가 그 칸에 '움짤 만드는 중'을 보여 줌. 화면을 떠나도 계속되고 끝나면 저장 */
 import { ageOK } from "../ai/adult.js";
 import { castLook } from "../core/cast.js";
 import { CFG } from "../core/config.js";
-import { TIMEOUT } from "../core/constants.js";
+import { SIT, TIMEOUT } from "../core/constants.js";
 import { minorHint } from "../core/safety.js";
 import { S, hasRunwareKey } from "../core/state.js";
 import { $, esc, timeoutSignal, abortCode, toast } from "../core/util.js";
@@ -14,10 +14,10 @@ import { keyOf, parseCodes } from "../images/codes.js";
 import { motionOf, putMotion } from "../images/motion.js";
 import { imagesOf } from "../images/pick.js";
 import { assertAdmin } from "../images/gen-guard.js";
-import { savedParts } from "../images/prompt.js";
+import { baseSit, lookIsMale, savedParts } from "../images/prompt.js";
 import { imgRating } from "../images/rating.js";
 import { NEG_MINOR, genErr, uuid4 } from "../images/runware.js";
-import { codeRating, keyName } from "../images/situations.js";
+import { codeRating, keyName, knownCodes, sitDef } from "../images/situations.js";
 import { IMG } from "../services/images.js";
 import { ICON } from "../ui/icons.js";
 import { MOTION_PROMPT, buildVideoPrompt, hasMotionCode, sceneTags } from "./motion-prompts.js";
@@ -35,10 +35,15 @@ export const MSTATE = { model: "seed480", dur: 5, edits: {} };
 export const MJOBS = {};
 export const jobId = (c, code, key) => [c.id, code, keyOf(String(key))].join("|");
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-/* 그 칸의 기본 움직임 설명: 전체이용가 칸은 코드별 문장, 세미·성인 수위 칸은 MOTION_PROMPT. 수위는 칸 정의 그대로 본다(imgRating은 성인 확인 전이면 늘 safe라 거를 수 없음) */
+/* 코드별 문장을 써도 되는 칸: 번호가 모두 정의돼 있고 수위가 전체이용가일 때만. 수위는 칸 정의 그대로 본다(imgRating은 성인 확인 전이면 늘 safe라 거를 수 없음),
+   정의가 없는 번호는 codeRating이 safe로 세므로 따로 거름 — 관리자 코드 표가 없는 웹 주소에서 그 번호가 든 칸을 열어도 표의 문장이 나가지 않게 */
+export const motionSafe = (codes, c) => knownCodes(codes).length === codes.length && codeRating(codes, c) === "safe";
+/* 표를 고르는 정보: 성별(외모 글·영문 태그)과 고쳐 둔 코드 정의(기본 0~14는 baseSits, 그 밖은 내 칸·코드 표) */
+const motionOpts = (c, cast) => ({ male: lookIsMale([castLook(cast, c), cast.tags].filter(Boolean).join(", ")), def: (n) => n < SIT.length ? baseSit(n) : sitDef(n) });
+/* 그 칸의 기본 움직임 설명: 전체이용가 칸은 코드별 문장, 세미·성인 수위 칸은 MOTION_PROMPT */
 export function motionPromptOf(c, cast, key) {
   const k = keyOf(String(key)), codes = parseCodes(k);
-  return codeRating(codes, c) === "safe" ? buildVideoPrompt(codes, sceneTags(savedParts(c, cast, k))) : MOTION_PROMPT;
+  return motionSafe(codes, c) ? buildVideoPrompt(codes, sceneTags(savedParts(c, cast, k)), motionOpts(c, cast)) : MOTION_PROMPT;
 }
 
 /* 저장한 사진(kv:·/_blob/·content/·data:) → data URL(영상 생성의 첫 장면) */
@@ -136,7 +141,7 @@ export function motionSheet(c, cast, key, after) {
     <p class="note">저장한 사진을 첫 장면으로 몇 초짜리 반복 영상을 만들어요(보통 30초~2분). 다 되면 이 칸의 움짤로 저장되고 켜져요 — 갤러리의 ⟳ 단추로 사진과 번갈아 쓸 수 있어요. 실패한 생성은 청구되지 않아요.${mo ? " 새로 만들면 지금 움짤은 바뀌어요." : ""}</p>
     <div class="two"><div class="field"><label for="moM">모델</label><select id="moM">${VIDEO_MODELS.map((m) => `<option value="${m.k}" ${m.k === M.k ? "selected" : ""}>${esc(m.name)} — ${esc(m.price)}</option>`).join("")}</select></div>
       <div class="field"><label for="moD">길이</label><select id="moD"></select></div></div>
-    <div class="field"><label for="moP">움직임 설명 <span class="note">${base !== MOTION_PROMPT && hasMotionCode(parseCodes(k)) ? "이 코드에 맞춰 채웠어요 · " : ""}영어로 쓰면 더 정확해요</span></label><textarea id="moP" rows="5">${esc(MSTATE.edits[id] || base)}</textarea>
+    <div class="field"><label for="moP">움직임 설명 <span class="note">${base !== MOTION_PROMPT && hasMotionCode(parseCodes(k), motionOpts(c, cast)) ? "이 코드에 맞춰 채웠어요 · " : ""}영어로 쓰면 더 정확해요</span></label><textarea id="moP" rows="5">${esc(MSTATE.edits[id] || base)}</textarea>
       <div class="cta-row" style="margin-top:6px"><button class="btn sm ghost" id="moReset">기본 설명으로</button></div></div>
     <div class="cta-row">${mo ? `<button class="btn danger" id="moDel">움짤 지우기</button>` : ""}<span class="spacer"></span><button class="btn ghost" data-x>취소</button><button class="btn pri" id="moGo" ${ref ? "" : "disabled"}>${mo ? "다시 만들기" : "만들기"}</button></div></div>`;
   document.body.append(ov); IMG.hydrate(ov);
