@@ -144,6 +144,21 @@
 - [ ] **청소년보호법** — 성인 콘텐츠를 제공하면 본인확인, 19세 표시, 청소년보호책임자
 - [ ] **음란물 배포 금지(정보통신망법)·아동청소년성보호법** — 성인 모드의 범위는 법률 검토 후 결정. **권장: 1차 출시는 성인 모드 없이, 또는 글만. 노골적인 그림은 제외**
 - [ ] AI 공급자 약관 — Anthropic 이용정책(성적 콘텐츠는 이미 OpenRouter로 분리), OpenRouter·각 모델 제공자·Runware의 성인 콘텐츠 정책
+- [ ] **이미지 모델 라이선스** — 지금은 BYOK·데모 결제라 유료 추론이 없지만, 하트·PLUS를 팔기 전에 해결해야 함. 아래 표는 2026-11-06 Civitai API의 작가 허용 값과 모델 설명을 읽은 것으로, 법률 검토가 아님(Runware 약관·허용 값의 정확한 뜻은 아직 확인 못 함)
+
+| 모델 (쓰는 곳) | 기반 | 이미지 판매 | 외부 생성 서비스(Rent) | 작가 표기 | 걸리는 점 |
+|---|---|---|---|---|---|
+| Run七八造 v2 (남성향 일상) | Pony | O | O | 불필요 | Pony 라이선스가 병합 모델에도 적용 |
+| Add More Details (남성향 일상 LoRA) | Pony | O | O | 불필요 | 위와 같음 |
+| KoreanAI Style (남성향 일상 LoRA) | Pony | O | **X** | 불필요 | Pony 라이선스, Rent 없음 |
+| YabaL Mix (사람 없는 그림 등) | SDXL | **X** | **X** | 필요 | Civitai 생성 서비스만 허용 |
+| Pony Diffusion V6 (원본) | — | O | X | 필요 | 수정 FAIPL 1.0-SD: 수익 모델이 있는 사이트·앱에서 추론 금지, 허가는 contact@purplesmart.ai |
+| Hassaku XL | Illustrious | O | O | 필요 | Illustrious 모델 카드: 비공개 병합 모델 수익화 금지 |
+| WAI · semILust | Illustrious | O | X | 불필요 | 위와 같음 |
+| ToonyStark | Pony | O | O | 불필요 | Pony 라이선스 |
+| Animagine XL 4.0 (후보, 아직 안 씀) | SDXL | O | O | 불필요 | 없음 — CreativeML Open RAIL++-M 그대로, 상업 이용 허용을 모델 설명에 명시(불법·유해 생성 금지 조항은 있음) |
+
+즉 남성향 일상(Run七八造 + LoRA 둘)은 PurpleSmart의 허가를 받거나 모델을 바꿔야 유료로 낼 수 있음. Civitai 표기와 달리 Hugging Face의 Pony V6 페이지는 creativeml-openrail-m이라 적혀 있어 어느 쪽이 맞는지 허가 문의 때 함께 확인. 출력물 자체는 FAIPL의 적용 대상이 아니지만 **서비스에서 모델을 돌리는 일**이 문제임.
 - [ ] 호스팅 이전(GitHub Pages 상업 이용 제한)
 
 ## 9. 운영

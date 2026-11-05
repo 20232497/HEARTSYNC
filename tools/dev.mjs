@@ -76,6 +76,15 @@ http.createServer((req, res) => {
     req.on("close", () => clients.delete(res));
     return;
   }
+  // 개발 전용: 브라우저에서 만든 그림(그림체 비교 생성 등)을 .build/samples/<이름>에 저장 — API 키는 페이지 안에 두고 결과 파일만 꺼내 보려고(git에는 안 들어감)
+  if (url.pathname === "/__dev/save" && req.method === "POST") {
+    const name = String(url.searchParams.get("name") || "").replace(/[^\w.\-가-힣]/g, "_").slice(0, 80);
+    if (!name) { res.writeHead(400).end("name"); return; }
+    const dir = path.join(ROOT, ".build", "samples"); fs.mkdirSync(dir, { recursive: true });
+    const chunks = []; req.on("data", (c) => chunks.push(c));
+    req.on("end", () => { fs.writeFileSync(path.join(dir, name), Buffer.concat(chunks)); res.writeHead(200, { "cache-control": "no-store" }).end("ok"); });
+    return;
+  }
   if (url.pathname === "/__dev/linemap") {
     fs.readFile(path.join(ROOT, ".build", url.searchParams.get("p") === "admin" ? "linemap-admin.json" : "linemap.json"), (err, buf) => {
       if (err) { res.writeHead(404).end("[]"); return; }
