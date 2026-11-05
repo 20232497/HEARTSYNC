@@ -1884,7 +1884,7 @@ function newRoom(c, openingIdx, persona) {
            src/js/core/state.js { S }
            src/js/core/storage.js { KV }
    내보냄: cleanKeys, saveSettings, applySettings
-   쓰는 곳: src/js/images/rating.js, src/js/services/sync.js, src/js/ui/home.js, src/js/ui/account.js, src/js/ui/me.js, src/js/ui/room-drawer.js, src/js/app.js, src/js/admin/sit-sheets.js, src/js/admin/image-studio.js, src/js/admin/image-settings.js, src/js/admin/migrate.js, src/js/core/migrate.js, src/js/boot.js
+   쓰는 곳: src/js/services/vault.js, src/js/images/rating.js, src/js/services/sync.js, src/js/ui/home.js, src/js/ui/account.js, src/js/ui/me.js, src/js/ui/room-drawer.js, src/js/app.js, src/js/admin/sit-sheets.js, src/js/admin/image-studio.js, src/js/admin/image-settings.js, src/js/admin/migrate.js, src/js/core/migrate.js, src/js/boot.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 설정 저장·적용(글자 크기·줄 간격 등 CSS 변수), API 키 붙여넣기 실수 고치기. 저장하면 "settings" 이벤트 — 계정 저장(cloud)·키 금고(vault)가 받음 */
 
@@ -2062,6 +2062,7 @@ function pubImages(images) {
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/services/vault.js
    가져옴: src/js/core/events.js { emit, on }
+           src/js/core/settings.js { saveSettings }
            src/js/core/state.js { S, hasClaudeKey }
            src/js/services/cloud.js { CLOUD }
            src/js/services/supabase.js { SB }
@@ -2069,6 +2070,7 @@ function pubImages(images) {
    쓰는 곳: src/js/services/cloud.js, src/js/services/supabase.js, src/js/ui/login.js, src/js/ui/account.js, src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* API 키 금고(VAULT): 비밀번호·암호로 만든 키로 AES-GCM 암호화해 계정에 저장 */
+
 
 
 
@@ -2083,7 +2085,7 @@ function pubImages(images) {
 const VAULT_FIELDS = ["apiKey", "runwareKey", "openRouterKey"];
 /**
  * API 키 금고 — 키를 로그인 비밀번호(또는 키 잠금 암호)로 기기에서 만든 잠금 키로 AES-GCM 암호화해 계정 "vault" 행에만 올림(서버는 못 봄).
- * fromPassword(pw, uid)/fromPhrase(phrase, uid, box) 잠금 키 만들기 · save() 바뀐 키 올리기(같은 kid일 때만) · take(box, merge) 계정 값을 기기에 · drop() 행 삭제 · state: ""|"ok"|"locked"|"stale"("vault" 이벤트)
+ * fromPassword(pw, uid)/fromPhrase(phrase, uid, box) 잠금 키 만들기 · save() 바뀐 키 올리기(같은 kid일 때만) · take(box, merge) 계정 값을 기기에 · clearField(f) 키 한 칸만 지움 · drop() 행 삭제 · state: ""|"ok"|"locked"|"stale"("vault" 이벤트)
  */
 const VAULT = {
   rec: null, ck: null, state: "", timer: null, fresh: false, // rec { uid, k(잠금 키 base64), kid, seen(마지막으로 계정과 맞춘 키 묶음의 해시) }
@@ -2177,6 +2179,27 @@ const VAULT = {
     return 1;
   },
   async remote() { const r = await SB.req("/rest/v1/kv?select=value&key=eq.vault"); await CLOUD.check(r); const j = await r.json(); return j[0] ? j[0].value : null; },
+  /**
+   * 키 한 칸만 이 기기와 계정에서 지움(사용자 사이트의 쓰지 않는 Runware 키 — ui/leftover-key.js).
+   * 계정의 최신 값을 먼저 받아 맞춘 뒤 올려서, 다른 기기에서 바꾼 키를 옛 값으로 덮지 않고 이 기기에서 바꾼 뒤 못 올린 키도 잃지 않음(take의 seen 규칙). 쓰기는 write()의 kid 규칙 그대로.
+   * 서버에 닿지 못하면 아무것도 바꾸지 않고 던짐 — 계정에 키가 남았는데 '지웠어요'라고 하지 않게.
+   * @param {string} f VAULT_FIELDS 칸 이름
+   * @returns {Promise<"done"|"none"|"locked">} done 계정의 암호문에서도 뺌 · none 계정에 잠긴 키가 없음(또는 계정에 안 올리는 설정) · locked 이 기기에서만 지움(잠금이 없거나 예전 잠금이라 계정 것은 못 고침)
+   * @throws 서버 오류·연결 실패
+   */
+  async clearField(f) {
+    const clear = (res) => { S.settings[f] = ""; saveSettings(); return res; };
+    if (!CLOUD.on || CLOUD.noTable || S.settings.syncKeys === false) return clear("none");
+    if (this.timer) await this.write(); // 이 기기에서 바꾼 키를 먼저 올림(타이머가 돌면 take가 맞춰 주지 않음)
+    const box = await this.remote();
+    if (!box) return clear("none");
+    if (!this.rec || !this.ok() || box.kid !== this.rec.kid) return clear("locked");
+    await this.take(box, this.rec.seen == null); // 계정과 맞춘 적 없는 기기면 합침 — 이 기기의 다른 키를 잃지 않게
+    if (this.state === "stale") return clear("locked"); // 잠금은 같은데 풀리지 않음
+    const before = S.settings[f]; S.settings[f] = "";
+    try { await this.write(); } catch (e) { S.settings[f] = before; throw e; }
+    return this.state === "stale" ? clear("locked") : clear("done"); // stale: 그사이 다른 기기에서 비밀번호가 바뀜
+  },
   // 'API 키도 계정에 저장'을 끔 → 계정의 잠긴 키도 지움
   async drop() {
     clearTimeout(this.timer); this.timer = null;
@@ -3217,7 +3240,7 @@ function supportErr(e) {
 }
 
 /**
- * 고객센터 REST. notices() 공지 목록(고정 먼저·최신순) · saveNotice/dropNotice(관리자) · ask() 문의 남기기 · mine() 내 문의 · inbox()/answer()/dropAsk() 받은 문의(관리자) · amAdmin()
+ * 고객센터 REST. notices() 공지 목록(고정 먼저·최신순) · saveNotice/dropNotice(관리자) · ask() 문의 남기기 · mine() 내 문의 · inbox()/answer()/dropAsk() 받은 문의(관리자) · amAdmin()/adminStatus()
  */
 const SUPPORT = {
   admin: null, // amAdmin() 결과(계정마다) { uid, yes }
@@ -3270,14 +3293,22 @@ const SUPPORT = {
     if (!Array.isArray(j) || !j.length) throw { code: "denied" };
     return j[0];
   },
-  /** 이 계정이 관리자인지(admins 표에 자기 행이 보이는지). '맞음'만 기억 — SQL Editor로 admins에 넣은 뒤 새로 고침 없이 바로 반영되게. @returns {Promise<boolean>} */
-  async amAdmin() {
+  /**
+   * 이 계정이 관리자인지(admins 표에 자기 행이 보이는지) — '모름'을 따로 돌려줌. 되돌릴 수 없는 일(남은 키 지우기)은 서버가 '아니오'라고 답했을 때만 하도록.
+   * 모름: 연결 실패·표가 없음·권한 오류·응답이 목록이 아님·묻는 사이 로그인이 풀리거나 계정이 바뀜(그 답은 물어본 계정에 대한 답이 아님).
+   * '맞음'만 기억 — SQL Editor로 admins에 넣은 뒤 새로 고침 없이 바로 반영되게.
+   * @returns {Promise<boolean|null>} 참·거짓은 서버의 답(로그인 안 했으면 거짓), null은 모름
+   */
+  async adminStatus() {
     const u = uidOf(); if (!u) return false;
     if (this.admin && this.admin.uid === u && this.admin.yes) return true;
-    try { const j = await call(`/rest/v1/admins?select=user_id&user_id=eq.${encodeURIComponent(u)}`); this.admin = { uid: u, yes: Array.isArray(j) && j.length > 0 }; }
-    catch { return false; } // 표가 없거나 연결 실패 — 기억하지 않고 다음에 다시 물음
+    let j; try { j = await call(`/rest/v1/admins?select=user_id&user_id=eq.${encodeURIComponent(u)}`); } catch { return null; }
+    if (!Array.isArray(j) || uidOf() !== u) return null;
+    this.admin = { uid: u, yes: j.length > 0 };
     return this.admin.yes;
-  }
+  },
+  /** 이 계정이 관리자라고 확인됐는지(모르면 거짓). @returns {Promise<boolean>} */
+  async amAdmin() { return (await this.adminStatus()) === true; }
 };
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/images/pick.js
@@ -4312,6 +4343,7 @@ function faqGroups() {
       ["API 키도 계정에 저장되나요? 안전한가요?", "<b>API 키도 계정에 저장</b>(MY → 계정)을 켜 두면, 로그인 비밀번호(소셜 로그인은 따로 정하는 <b>키 잠금 암호</b>)로 이 기기에서 암호화한 뒤 암호문만 올려요. 운영자와 서버도 키를 볼 수 없어요. 그래서 키 잠금 암호를 잊으면 찾아 드릴 수 없고, 키를 다시 넣어 새 암호로 잠그면 돼요."],
       ["다른 기기에서 'API 키가 잠겨 있어요'라고 나와요.", "메일 링크로 로그인했거나 다른 기기에서 비밀번호를 바꾼 경우예요. <a href=\"#me\">MY</a> → 계정의 <b>비밀번호 입력</b>(소셜 로그인은 <b>암호 입력</b>)으로 한 번만 풀면 돼요."],
       ["비밀번호를 잊었어요.", "로그인 화면의 <b>비밀번호를 잊었어요</b>로 재설정 메일을 받아요. 새 비밀번호를 정하면 이 기기의 API 키를 새 비밀번호로 다시 잠가요."],
+      ["예전에 넣은 Runware 키는 어떻게 지우나요?", "그림은 운영자가 미리 만들어 실어 드려서 Runware 키를 더 쓰지 않아요. 키가 남아 있으면 <a href=\"#me\">MY</a>에 <b>쓰지 않는 Runware 키</b> 칸이 보여요. <b>지우기</b>를 누르면 이 기기와 계정의 암호문에서 지워지고, 로그인한 다른 기기도 다음 동기화 때 지워져요. 계정의 키가 잠겨 있으면 잠금을 푼 뒤에 지워야 계정 것까지 지워져요."],
       ["계정을 삭제하려면요?", "<a href=\"#me\">MY</a> → 계정의 <b>계정 삭제</b>를 누르면 계정과 계정에 저장된 데이터, 남긴 문의가 바로 지워져요. 이 기기에 남은 데이터는 MY의 <b>모든 데이터 초기화</b>로 지울 수 있어요."]
     ]],
     ["성인 모드", [
