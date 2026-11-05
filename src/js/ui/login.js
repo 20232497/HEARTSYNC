@@ -1,5 +1,5 @@
-/* 로그인·가입·비밀번호 찾기·소셜 로그인 화면, 키 잠금(금고) 시트 */
-import { AUDS } from "../core/audience.js";
+/* 로그인·가입·비밀번호 찾기·소셜 로그인 화면, 로그인 뒤 돌아갈 작품, 키 잠금(금고) 시트 */
+import { getChar } from "../core/character.js";
 import { IN_CLAUDE } from "../core/config.js";
 import { on } from "../core/events.js";
 import { S } from "../core/state.js";
@@ -10,10 +10,42 @@ import { fixImgpacks, reloadFromCloud } from "../services/sync.js";
 import { VAULT, VAULT_FIELDS } from "../services/vault.js";
 import { firstSync } from "./account.js";
 import { docUrl } from "./help.js";
-import { audSheet } from "./home.js";
+import { askAud } from "./home.js";
 import { viewMe } from "./me.js";
 import { sheet } from "./sheet.js";
 import { LOGO, bindGo, go } from "./shell.js";
+
+/* ---------------------------------------------------------------- 로그인 뒤 돌아갈 작품
+   처음 방문한 사람이 작품 주소(#c-<id>)로 들어오면 부팅이 주소를 #login-c-<id>로 바꾼다 — 주소가 갈 곳을 들고 있어 새로 고침해도 남고, 메뉴로 나가면 저절로 사라진다.
+   소셜 로그인·인증 메일은 redirect_to에 주소를 실을 수 없어 사이트 첫 화면으로 돌아오므로, 떠나기 전에 hv1_back에 적어 둔다.
+   인증 메일은 새 탭으로 열리니 sessionStorage가 아니라 localStorage, 메일 링크가 유효한 1시간만 */
+const BACK_KEY = "hv1_back", BACK_MS = 3600000;
+const workHash = (h) => /^c-./.test(h) ? h : ""; // 돌아갈 수 있는 곳은 작품 주소뿐
+const hasWork = (h) => !!getChar(h.slice(2));
+const loginBack = () => { const h = location.hash.slice(1); return h.startsWith("login-") ? workHash(h.slice(6)) : ""; };
+const setHash = (h) => { try { history.replaceState(null, "", location.pathname + location.search + "#" + h); } catch {} };
+function saveBack() { const to = loginBack(); if (to) { try { localStorage.setItem(BACK_KEY, JSON.stringify({ to, at: Date.now() })); } catch {} } }
+function takeBack() {
+  try { const v = localStorage.getItem(BACK_KEY); localStorage.removeItem(BACK_KEY); const b = JSON.parse(v); return b && Date.now() - b.at < BACK_MS ? workHash(b.to) : ""; } catch { return ""; }
+}
+/* 부팅 때 첫 주소를 정함. 돌려주는 값은 아직 찾지 못한 작품(lateBack이 계정을 받은 뒤 다시 봄) */
+export function bootBack(askLogin) {
+  const h = location.hash.slice(1), saved = takeBack(), to = !h ? saved : loginBack() || (askLogin ? workHash(h) : "");
+  if (askLogin) { setHash(to ? "login-" + to : "login"); return ""; }
+  if (!to) return "";
+  setHash(hasWork(to) ? to : "home");
+  return hasWork(to) ? "" : to;
+}
+/* 로그인·둘러보기를 마치고 나감: 돌아갈 작품이 있으면 그리로(로그인 화면은 방문 기록에서 빠짐), 없는 작품이면 홈. 돌려주는 값은 bootBack과 같음 */
+function leaveLogin() {
+  const to = loginBack(); takeBack();
+  $("#view").scrollTop = 0; window.scrollTo(0, 0); // 폼을 내려 누른 자리가 다음 화면에 이어지면 작품 제목이 잘림
+  if (to && hasWork(to)) { location.replace("#" + to); return ""; }
+  go("home");
+  return to;
+}
+/* 계정에만 있던 작품(내가 만든 작품)은 받아 온 뒤에야 찾을 수 있음 — 그사이 다른 곳으로 가지 않았으면 이제 연다 */
+export function lateBack(to) { if (to && location.hash === "#home" && hasWork(to)) location.replace("#" + to); }
 
 /* ---------------------------------------------------------------- 로그인·계정 (Supabase, 계정 저장은 CLOUD) */
 export function viewLogin() {
@@ -65,6 +97,7 @@ export function viewLogin() {
       const st = await SB.signUp(email, pw);
       await VAULT.fromPassword(pw, SB.lastUid); // 인증 메일 링크를 이 브라우저에서 열면 바로 키를 잠글 수 있게
       if (st === "in") return loggedIn();
+      saveBack();
       say("인증 메일을 보냈어요. 메일의 링크를 누르면 바로 로그인돼요. 메일이 안 보이면 스팸함도 확인해 주세요.", true);
     } catch (x) { say((x && x.msg) || "로그인하지 못했어요."); }
     go2.disabled = false; go2.textContent = mode === "up" ? "회원가입" : "로그인";
@@ -72,27 +105,29 @@ export function viewLogin() {
   $("#lforgot").onclick = async () => {
     const email = $("#lmail").value.trim();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return say("비밀번호를 다시 정할 이메일을 먼저 적어 주세요.");
-    try { await SB.recover(email); say("비밀번호 재설정 메일을 보냈어요. 메일의 링크를 눌러 새 비밀번호를 정해 주세요.", true); }
+    try { await SB.recover(email); saveBack(); say("비밀번호 재설정 메일을 보냈어요. 메일의 링크를 눌러 새 비밀번호를 정해 주세요.", true); }
     catch (x) { say((x && x.msg) || "메일을 보내지 못했어요."); }
   };
-  $("#lguest").onclick = () => { try { localStorage.setItem("hv1_guest", "1"); } catch {} go("home"); setTimeout(() => { if (!AUDS[S.settings.audience]) audSheet(true); }, 80); };
+  $("#lguest").onclick = () => { try { localStorage.setItem("hv1_guest", "1"); } catch {} leaveLogin(); setTimeout(askAud, 80); };
   // 소셜 로그인 = 가입(처음이면 계정이 저절로 만들어짐). 대시보드에서 아직 안 켠 공급자는 안내만
   const obs = $$("[data-oauth]", v), lock = (on) => obs.forEach((x) => { x.disabled = on; });
   obs.forEach((b) => b.onclick = async () => {
     const oerr = $("#loerr");
     lock(true); say(""); oerr.textContent = "";
+    saveBack();
     const ok = await SB.oauth(b.dataset.oauth);
-    if (!ok) oerr.textContent = provName(b.dataset.oauth) + " 로그인은 아직 준비 중이에요. 이메일이나 다른 방법으로 시작해 주세요.";
+    if (!ok) { takeBack(); oerr.textContent = provName(b.dataset.oauth) + " 로그인은 아직 준비 중이에요. 이메일이나 다른 방법으로 시작해 주세요."; }
     setTimeout(() => lock(false), ok ? 4000 : 0); // 넘어갔다가 뒤로 돌아와도 다시 누를 수 있게
   });
 }
 async function loggedIn() {
   try { localStorage.removeItem("hv1_guest"); } catch {}
   toast("로그인했어요");
-  go("home");
+  const late = leaveLogin();
   await new Promise((r) => setTimeout(r, 80));
   await afterLogin(true);
-  if (!AUDS[S.settings.audience]) audSheet(true);
+  lateBack(late);
+  askAud();
 }
 /* 로그인 직후(fresh)는 계정과 이 기기를 맞추고, 그 밖에는 바뀐 것만 받아 옴 */
 export async function afterLogin(fresh) {

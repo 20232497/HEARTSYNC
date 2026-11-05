@@ -1066,7 +1066,7 @@ function castLook(cast, c) {
    가져옴: src/js/core/cast.js { castLook }
            src/js/core/state.js { S }
    내보냄: AUDS, guessAud, audOf, audience, audOK
-   쓰는 곳: src/js/services/community.js, src/js/ui/home.js, src/js/ui/login.js, src/js/ui/me.js, src/js/app.js, src/js/admin/export.js, src/js/admin/image-run.js, src/js/admin/worldart.js, src/js/admin/auto-images.js, src/js/admin/studio.js, src/js/admin/works.js, src/js/boot.js
+   쓰는 곳: src/js/services/community.js, src/js/ui/home.js, src/js/ui/me.js, src/js/app.js, src/js/admin/export.js, src/js/admin/image-run.js, src/js/admin/worldart.js, src/js/admin/auto-images.js, src/js/admin/studio.js, src/js/admin/works.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 관심있는 대화(전체·남성향·여성향): 작품 aud 판정과 필터 */
 
@@ -1707,7 +1707,7 @@ for (const c of ORIGINALS) {
    가져옴: src/js/content/index.js { ORIGINALS }
            src/js/core/state.js { S }
    내보냄: normalizeChar, getChar
-   쓰는 곳: src/js/core/rooms.js, src/js/images/motion.js, src/js/services/load.js, src/js/images/pick.js, src/js/ai/prompt/input.js, src/js/ui/room-drawer.js, src/js/ui/worldart.js, src/js/ui/detail.js, src/js/app.js, src/js/admin/image-studio.js, src/js/admin/worldart.js, src/js/admin/tools.js, src/js/admin/works.js
+   쓰는 곳: src/js/core/rooms.js, src/js/images/motion.js, src/js/services/load.js, src/js/images/pick.js, src/js/ai/prompt/input.js, src/js/ui/login.js, src/js/ui/room-drawer.js, src/js/ui/worldart.js, src/js/ui/detail.js, src/js/app.js, src/js/admin/image-studio.js, src/js/admin/worldart.js, src/js/admin/tools.js, src/js/admin/works.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 작품 찾기·정규화: normalizeChar, 전체 목록(allChars), id로 찾기(getChar) */
 
@@ -2323,9 +2323,9 @@ function chunkBy(items, max) {
 // core가 services를 모르게 고리로 꽂음: KV.set → 계정에도, 설정 저장 → "settings" 행
 KV.remote = (k, v) => CLOUD.put(k, v);
 on("settings", () => CLOUD.put("settings", cloudSettings()));
-// 이 기기 KV 키(그림·설정·세션·키 잠금 제외 — 그림은 IndexedDB, 설정은 "settings" 키로 따로)
+// 이 기기 KV 키(그림·설정·세션·로그인 뒤 돌아갈 곳·키 잠금 제외 — 그림은 IndexedDB, 설정은 "settings" 키로 따로)
 function localKVKeys() {
-  try { return Object.keys(localStorage).filter((k) => k.indexOf("hv1_") === 0).map((k) => k.slice(4)).filter((k) => !/^(settings|auth|guest|cloudlast_.*|cloudfix_.*|vault_.*|img[a-z0-9]{6,30})$/.test(k)); } catch { return []; }
+  try { return Object.keys(localStorage).filter((k) => k.indexOf("hv1_") === 0).map((k) => k.slice(4)).filter((k) => !/^(settings|auth|guest|back|cloudlast_.*|cloudfix_.*|vault_.*|img[a-z0-9]{6,30})$/.test(k)); } catch { return []; }
 }
 // 계정에 올리는 설정: 기기별 설정과 API 키는 뺌(키는 비밀번호로 잠가 "vault" 행에만 — VAULT. 서버의 표도 settings에 키 칸이 있으면 거부)
 /** 계정에 올릴 설정 — 기기별 칸(fs·enterSend)과 API 키 칸은 뺌(서버 제약 kv_no_plain_keys). @returns {Partial<Settings>} */
@@ -4493,7 +4493,7 @@ async function loadMine(box) {
            src/js/ui/icons.js { ICON }
            src/js/ui/sheet.js { closeOverlays, sheet }
            src/js/ui/shell.js { bindGo, go, topbar }
-   내보냄: cardHTML, audSegHTML, setAudience, audSheet, viewHome
+   내보냄: cardHTML, audSegHTML, setAudience, audSheet, askAud, viewHome
    쓰는 곳: src/js/ui/login.js, src/js/ui/me.js, src/js/app.js, src/js/admin/studio.js, src/js/boot.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 홈: 대표 작품·가로 줄·둘러보기, 관심있는 대화 고르기 */
@@ -4526,6 +4526,12 @@ function audSheet(first) {
   const ov = sheet(`<h2>관심있는 대화</h2><p class="sub">${first ? "어떤 대화를 보고 싶으세요? " : ""}고른 쪽 작품만 홈에 보여요. MY → 설정에서 언제든 바꿀 수 있어요.</p>${audSegHTML()}`);
   $$("[data-aud]", ov).forEach((b) => b.onclick = () => { setAudience(b.dataset.aud); closeOverlays(); if ((location.hash.slice(1) || "home") === "home") viewHome(); toast(`${AUDS[audience()].name} 작품을 보여 드릴게요`); });
   if (first) setAudience(audience()); // 닫기만 해도 다시 묻지 않게 '전체'로 정해 둠
+}
+// 처음 시작할 때 묻기. 작품·대화방 주소로 바로 들어왔으면 그 화면을 가리지 않고 홈에 처음 갈 때 묻는다(시트는 홈에 보일 작품을 고르는 것)
+let audLater = false;
+function askAud() {
+  if (AUDS[S.settings.audience]) return;
+  if (/^#[cr]-/.test(location.hash)) audLater = true; else audSheet(true);
 }
 function viewHome() {
   const v = $("#view");
@@ -4562,11 +4568,12 @@ function viewHome() {
   $$("[data-aud]", v).forEach((b) => b.onclick = () => { setAudience(b.dataset.aud); viewHome(); });
   const q = $("#q"); q.oninput = () => { S.q = q.value; const pos = q.selectionStart; viewHome(); const n = $("#q"); n.focus(); n.setSelectionRange(pos, pos); };
   bindGo(v); IMG.hydrate(v);
+  if (audLater) { audLater = false; askAud(); }
 }
 on("community", () => { if ((location.hash.slice(1) || "home") === "home") viewHome(); }); // 커뮤니티 작품을 받으면 홈을 다시 그림
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/ui/login.js
-   가져옴: src/js/core/audience.js { AUDS }
+   가져옴: src/js/core/character.js { getChar }
            src/js/core/config.js { IN_CLAUDE }
            src/js/core/events.js { on }
            src/js/core/state.js { S }
@@ -4577,14 +4584,14 @@ on("community", () => { if ((location.hash.slice(1) || "home") === "home") viewH
            src/js/services/vault.js { VAULT, VAULT_FIELDS }
            src/js/ui/account.js { firstSync }
            src/js/ui/help.js { docUrl }
-           src/js/ui/home.js { audSheet }
+           src/js/ui/home.js { askAud }
            src/js/ui/me.js { viewMe }
            src/js/ui/sheet.js { sheet }
            src/js/ui/shell.js { LOGO, bindGo, go }
-   내보냄: viewLogin, afterLogin, newPasswordSheet, vaultHTML, paintVault, phraseSheet, vaultSheet
+   내보냄: bootBack, lateBack, viewLogin, afterLogin, newPasswordSheet, vaultHTML, paintVault, phraseSheet, vaultSheet
    쓰는 곳: src/js/ui/account.js, src/js/app.js, src/js/boot.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
-/* 로그인·가입·비밀번호 찾기·소셜 로그인 화면, 키 잠금(금고) 시트 */
+/* 로그인·가입·비밀번호 찾기·소셜 로그인 화면, 로그인 뒤 돌아갈 작품, 키 잠금(금고) 시트 */
 
 
 
@@ -4600,6 +4607,38 @@ on("community", () => { if ((location.hash.slice(1) || "home") === "home") viewH
 
 
 
+
+/* ---------------------------------------------------------------- 로그인 뒤 돌아갈 작품
+   처음 방문한 사람이 작품 주소(#c-<id>)로 들어오면 부팅이 주소를 #login-c-<id>로 바꾼다 — 주소가 갈 곳을 들고 있어 새로 고침해도 남고, 메뉴로 나가면 저절로 사라진다.
+   소셜 로그인·인증 메일은 redirect_to에 주소를 실을 수 없어 사이트 첫 화면으로 돌아오므로, 떠나기 전에 hv1_back에 적어 둔다.
+   인증 메일은 새 탭으로 열리니 sessionStorage가 아니라 localStorage, 메일 링크가 유효한 1시간만 */
+const BACK_KEY = "hv1_back", BACK_MS = 3600000;
+const workHash = (h) => /^c-./.test(h) ? h : ""; // 돌아갈 수 있는 곳은 작품 주소뿐
+const hasWork = (h) => !!getChar(h.slice(2));
+const loginBack = () => { const h = location.hash.slice(1); return h.startsWith("login-") ? workHash(h.slice(6)) : ""; };
+const setHash = (h) => { try { history.replaceState(null, "", location.pathname + location.search + "#" + h); } catch {} };
+function saveBack() { const to = loginBack(); if (to) { try { localStorage.setItem(BACK_KEY, JSON.stringify({ to, at: Date.now() })); } catch {} } }
+function takeBack() {
+  try { const v = localStorage.getItem(BACK_KEY); localStorage.removeItem(BACK_KEY); const b = JSON.parse(v); return b && Date.now() - b.at < BACK_MS ? workHash(b.to) : ""; } catch { return ""; }
+}
+/* 부팅 때 첫 주소를 정함. 돌려주는 값은 아직 찾지 못한 작품(lateBack이 계정을 받은 뒤 다시 봄) */
+function bootBack(askLogin) {
+  const h = location.hash.slice(1), saved = takeBack(), to = !h ? saved : loginBack() || (askLogin ? workHash(h) : "");
+  if (askLogin) { setHash(to ? "login-" + to : "login"); return ""; }
+  if (!to) return "";
+  setHash(hasWork(to) ? to : "home");
+  return hasWork(to) ? "" : to;
+}
+/* 로그인·둘러보기를 마치고 나감: 돌아갈 작품이 있으면 그리로(로그인 화면은 방문 기록에서 빠짐), 없는 작품이면 홈. 돌려주는 값은 bootBack과 같음 */
+function leaveLogin() {
+  const to = loginBack(); takeBack();
+  $("#view").scrollTop = 0; window.scrollTo(0, 0); // 폼을 내려 누른 자리가 다음 화면에 이어지면 작품 제목이 잘림
+  if (to && hasWork(to)) { location.replace("#" + to); return ""; }
+  go("home");
+  return to;
+}
+/* 계정에만 있던 작품(내가 만든 작품)은 받아 온 뒤에야 찾을 수 있음 — 그사이 다른 곳으로 가지 않았으면 이제 연다 */
+function lateBack(to) { if (to && location.hash === "#home" && hasWork(to)) location.replace("#" + to); }
 
 /* ---------------------------------------------------------------- 로그인·계정 (Supabase, 계정 저장은 CLOUD) */
 function viewLogin() {
@@ -4651,6 +4690,7 @@ function viewLogin() {
       const st = await SB.signUp(email, pw);
       await VAULT.fromPassword(pw, SB.lastUid); // 인증 메일 링크를 이 브라우저에서 열면 바로 키를 잠글 수 있게
       if (st === "in") return loggedIn();
+      saveBack();
       say("인증 메일을 보냈어요. 메일의 링크를 누르면 바로 로그인돼요. 메일이 안 보이면 스팸함도 확인해 주세요.", true);
     } catch (x) { say((x && x.msg) || "로그인하지 못했어요."); }
     go2.disabled = false; go2.textContent = mode === "up" ? "회원가입" : "로그인";
@@ -4658,27 +4698,29 @@ function viewLogin() {
   $("#lforgot").onclick = async () => {
     const email = $("#lmail").value.trim();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return say("비밀번호를 다시 정할 이메일을 먼저 적어 주세요.");
-    try { await SB.recover(email); say("비밀번호 재설정 메일을 보냈어요. 메일의 링크를 눌러 새 비밀번호를 정해 주세요.", true); }
+    try { await SB.recover(email); saveBack(); say("비밀번호 재설정 메일을 보냈어요. 메일의 링크를 눌러 새 비밀번호를 정해 주세요.", true); }
     catch (x) { say((x && x.msg) || "메일을 보내지 못했어요."); }
   };
-  $("#lguest").onclick = () => { try { localStorage.setItem("hv1_guest", "1"); } catch {} go("home"); setTimeout(() => { if (!AUDS[S.settings.audience]) audSheet(true); }, 80); };
+  $("#lguest").onclick = () => { try { localStorage.setItem("hv1_guest", "1"); } catch {} leaveLogin(); setTimeout(askAud, 80); };
   // 소셜 로그인 = 가입(처음이면 계정이 저절로 만들어짐). 대시보드에서 아직 안 켠 공급자는 안내만
   const obs = $$("[data-oauth]", v), lock = (on) => obs.forEach((x) => { x.disabled = on; });
   obs.forEach((b) => b.onclick = async () => {
     const oerr = $("#loerr");
     lock(true); say(""); oerr.textContent = "";
+    saveBack();
     const ok = await SB.oauth(b.dataset.oauth);
-    if (!ok) oerr.textContent = provName(b.dataset.oauth) + " 로그인은 아직 준비 중이에요. 이메일이나 다른 방법으로 시작해 주세요.";
+    if (!ok) { takeBack(); oerr.textContent = provName(b.dataset.oauth) + " 로그인은 아직 준비 중이에요. 이메일이나 다른 방법으로 시작해 주세요."; }
     setTimeout(() => lock(false), ok ? 4000 : 0); // 넘어갔다가 뒤로 돌아와도 다시 누를 수 있게
   });
 }
 async function loggedIn() {
   try { localStorage.removeItem("hv1_guest"); } catch {}
   toast("로그인했어요");
-  go("home");
+  const late = leaveLogin();
   await new Promise((r) => setTimeout(r, 80));
   await afterLogin(true);
-  if (!AUDS[S.settings.audience]) audSheet(true);
+  lateBack(late);
+  askAud();
 }
 /* 로그인 직후(fresh)는 계정과 이 기기를 맞추고, 그 밖에는 바뀐 것만 받아 옴 */
 async function afterLogin(fresh) {
@@ -9081,8 +9123,7 @@ function migrateSettings() {
 }
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/boot.js
-   가져옴: src/js/core/audience.js { AUDS }
-           src/js/core/migrate.js { migrateSettings }
+   가져옴: src/js/core/migrate.js { migrateSettings }
            src/js/core/rooms.js { roomKey }
            src/js/core/settings.js { applySettings }
            src/js/core/state.js { S, SAMPLE, gen, hasClaudeKey, setDB, setDownloads, setSample, setSamplePromise }
@@ -9096,9 +9137,9 @@ function migrateSettings() {
            src/js/services/supabase.js { SB }
            src/js/services/sync.js { reloadFromCloud }
            src/js/ui/chat/generate.js { stopGen }
-           src/js/ui/home.js { audSheet, viewHome }
+           src/js/ui/home.js { askAud, viewHome }
            src/js/ui/idv.js { finishIdv }
-           src/js/ui/login.js { afterLogin, newPasswordSheet }
+           src/js/ui/login.js { afterLogin, bootBack, lateBack, newPasswordSheet }
            src/js/ui/sheet.js { closeOverlays }
            src/js/ui/shell.js { renderRailRecent, renderShell, renderWalletChips, route }
    내보냄: boot
@@ -9106,7 +9147,6 @@ function migrateSettings() {
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 부팅(boot): 설정 이전 → 저장 데이터 읽기 → 셸·첫 화면 → 계정·capability 연결. 진입점(main.js·admin.js)이 부른다.
    opts.migrate(saved): 빌드마다 다른 추가 이전(관리자 빌드의 그림체 설정 이전) — core/migrate 뒤, 데이터를 읽기 전에 돈다 */
-
 
 
 
@@ -9140,12 +9180,12 @@ async function boot(opts = {}) {
   renderShell();
   // 처음 시작: 로그인 페이지(계정 서버가 있고, 로그인도 둘러보기도 안 했을 때) → 관심있는 대화 고르기
   const askLogin = SB.on() && !SB.s && !localStorage.getItem("hv1_guest") && !location.hash.startsWith("#r-");
-  if (askLogin) { try { history.replaceState(null, "", location.pathname + location.search + "#login"); } catch {} }
+  const late = bootBack(askLogin); // 작품 주소로 처음 들어왔으면 로그인·둘러보기 뒤 그 작품으로
   route();
   window.addEventListener("hashchange", route);
   if (idvBack) finishIdv(idvBack); else IDV.refresh();
-  if (SB.s) afterLogin(!!authType).then(() => { if (authType === "recovery") newPasswordSheet(); else if (!AUDS[S.settings.audience] && !location.hash.startsWith("#r-")) audSheet(true); });
-  else if (!askLogin && !AUDS[S.settings.audience] && !location.hash.startsWith("#r-")) audSheet(true);
+  if (SB.s) afterLogin(!!authType).then(() => { if (authType === "recovery") newPasswordSheet(); else { lateBack(late); askAud(); } });
+  else if (!askLogin) askAud();
   // 다른 기기에서 바꾼 것: 이 탭으로 돌아올 때 받아 오고, 떠날 때 못 올린 것을 올림
   document.addEventListener("visibilitychange", () => {
     if (!CLOUD.on) return;

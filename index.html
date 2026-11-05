@@ -1687,7 +1687,7 @@ function chunkBy(items, max) {
 KV.remote = (k, v) => CLOUD.put(k, v);
 on("settings", () => CLOUD.put("settings", cloudSettings()));
 function localKVKeys() {
-  try { return Object.keys(localStorage).filter((k) => k.indexOf("hv1_") === 0).map((k) => k.slice(4)).filter((k) => !/^(settings|auth|guest|cloudlast_.*|cloudfix_.*|vault_.*|img[a-z0-9]{6,30})$/.test(k)); } catch { return []; }
+  try { return Object.keys(localStorage).filter((k) => k.indexOf("hv1_") === 0).map((k) => k.slice(4)).filter((k) => !/^(settings|auth|guest|back|cloudlast_.*|cloudfix_.*|vault_.*|img[a-z0-9]{6,30})$/.test(k)); } catch { return []; }
 }
 function cloudSettings() {
   const s = Object.assign({}, S.settings);
@@ -3130,6 +3130,11 @@ function audSheet(first) {
   $$("[data-aud]", ov).forEach((b) => b.onclick = () => { setAudience(b.dataset.aud); closeOverlays(); if ((location.hash.slice(1) || "home") === "home") viewHome(); toast(`${AUDS[audience()].name} 작품을 보여 드릴게요`); });
   if (first) setAudience(audience());
 }
+let audLater = false;
+function askAud() {
+  if (AUDS[S.settings.audience]) return;
+  if (/^#[cr]-/.test(location.hash)) audLater = true; else audSheet(true);
+}
 function viewHome() {
   const v = $("#view");
   const match = (c) => (S.cat === "전체" || c.cat === S.cat) && (!S.q || [c.name, c.title, c.oneLiner, ...(c.tags || [])].join(" ").toLowerCase().includes(S.q.toLowerCase()));
@@ -3163,9 +3168,34 @@ function viewHome() {
   $$("[data-aud]", v).forEach((b) => b.onclick = () => { setAudience(b.dataset.aud); viewHome(); });
   const q = $("#q"); q.oninput = () => { S.q = q.value; const pos = q.selectionStart; viewHome(); const n = $("#q"); n.focus(); n.setSelectionRange(pos, pos); };
   bindGo(v); IMG.hydrate(v);
+  if (audLater) { audLater = false; askAud(); }
 }
 on("community", () => { if ((location.hash.slice(1) || "home") === "home") viewHome(); });
-/* ── src/js/ui/login.js — 로그인·가입·비밀번호 찾기·소셜 로그인 화면, 키 잠금(금고) 시트 */
+/* ── src/js/ui/login.js — 로그인·가입·비밀번호 찾기·소셜 로그인 화면, 로그인 뒤 돌아갈 작품, 키 잠금(금고) 시트 */
+const BACK_KEY = "hv1_back", BACK_MS = 3600000;
+const workHash = (h) => /^c-./.test(h) ? h : "";
+const hasWork = (h) => !!getChar(h.slice(2));
+const loginBack = () => { const h = location.hash.slice(1); return h.startsWith("login-") ? workHash(h.slice(6)) : ""; };
+const setHash = (h) => { try { history.replaceState(null, "", location.pathname + location.search + "#" + h); } catch {} };
+function saveBack() { const to = loginBack(); if (to) { try { localStorage.setItem(BACK_KEY, JSON.stringify({ to, at: Date.now() })); } catch {} } }
+function takeBack() {
+  try { const v = localStorage.getItem(BACK_KEY); localStorage.removeItem(BACK_KEY); const b = JSON.parse(v); return b && Date.now() - b.at < BACK_MS ? workHash(b.to) : ""; } catch { return ""; }
+}
+function bootBack(askLogin) {
+  const h = location.hash.slice(1), saved = takeBack(), to = !h ? saved : loginBack() || (askLogin ? workHash(h) : "");
+  if (askLogin) { setHash(to ? "login-" + to : "login"); return ""; }
+  if (!to) return "";
+  setHash(hasWork(to) ? to : "home");
+  return hasWork(to) ? "" : to;
+}
+function leaveLogin() {
+  const to = loginBack(); takeBack();
+  $("#view").scrollTop = 0; window.scrollTo(0, 0);
+  if (to && hasWork(to)) { location.replace("#" + to); return ""; }
+  go("home");
+  return to;
+}
+function lateBack(to) { if (to && location.hash === "#home" && hasWork(to)) location.replace("#" + to); }
 function viewLogin() {
   const v = $("#view");
   if (!SB.on() || SB.s) {
@@ -3214,6 +3244,7 @@ function viewLogin() {
       const st = await SB.signUp(email, pw);
       await VAULT.fromPassword(pw, SB.lastUid);
       if (st === "in") return loggedIn();
+      saveBack();
       say("인증 메일을 보냈어요. 메일의 링크를 누르면 바로 로그인돼요. 메일이 안 보이면 스팸함도 확인해 주세요.", true);
     } catch (x) { say((x && x.msg) || "로그인하지 못했어요."); }
     go2.disabled = false; go2.textContent = mode === "up" ? "회원가입" : "로그인";
@@ -3221,26 +3252,28 @@ function viewLogin() {
   $("#lforgot").onclick = async () => {
     const email = $("#lmail").value.trim();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return say("비밀번호를 다시 정할 이메일을 먼저 적어 주세요.");
-    try { await SB.recover(email); say("비밀번호 재설정 메일을 보냈어요. 메일의 링크를 눌러 새 비밀번호를 정해 주세요.", true); }
+    try { await SB.recover(email); saveBack(); say("비밀번호 재설정 메일을 보냈어요. 메일의 링크를 눌러 새 비밀번호를 정해 주세요.", true); }
     catch (x) { say((x && x.msg) || "메일을 보내지 못했어요."); }
   };
-  $("#lguest").onclick = () => { try { localStorage.setItem("hv1_guest", "1"); } catch {} go("home"); setTimeout(() => { if (!AUDS[S.settings.audience]) audSheet(true); }, 80); };
+  $("#lguest").onclick = () => { try { localStorage.setItem("hv1_guest", "1"); } catch {} leaveLogin(); setTimeout(askAud, 80); };
   const obs = $$("[data-oauth]", v), lock = (on) => obs.forEach((x) => { x.disabled = on; });
   obs.forEach((b) => b.onclick = async () => {
     const oerr = $("#loerr");
     lock(true); say(""); oerr.textContent = "";
+    saveBack();
     const ok = await SB.oauth(b.dataset.oauth);
-    if (!ok) oerr.textContent = provName(b.dataset.oauth) + " 로그인은 아직 준비 중이에요. 이메일이나 다른 방법으로 시작해 주세요.";
+    if (!ok) { takeBack(); oerr.textContent = provName(b.dataset.oauth) + " 로그인은 아직 준비 중이에요. 이메일이나 다른 방법으로 시작해 주세요."; }
     setTimeout(() => lock(false), ok ? 4000 : 0);
   });
 }
 async function loggedIn() {
   try { localStorage.removeItem("hv1_guest"); } catch {}
   toast("로그인했어요");
-  go("home");
+  const late = leaveLogin();
   await new Promise((r) => setTimeout(r, 80));
   await afterLogin(true);
-  if (!AUDS[S.settings.audience]) audSheet(true);
+  lateBack(late);
+  askAud();
 }
 async function afterLogin(fresh) {
   CLOUD.start();
@@ -4515,12 +4548,12 @@ async function boot(opts = {}) {
   await loadAll();
   renderShell();
   const askLogin = SB.on() && !SB.s && !localStorage.getItem("hv1_guest") && !location.hash.startsWith("#r-");
-  if (askLogin) { try { history.replaceState(null, "", location.pathname + location.search + "#login"); } catch {} }
+  const late = bootBack(askLogin);
   route();
   window.addEventListener("hashchange", route);
   if (idvBack) finishIdv(idvBack); else IDV.refresh();
-  if (SB.s) afterLogin(!!authType).then(() => { if (authType === "recovery") newPasswordSheet(); else if (!AUDS[S.settings.audience] && !location.hash.startsWith("#r-")) audSheet(true); });
-  else if (!askLogin && !AUDS[S.settings.audience] && !location.hash.startsWith("#r-")) audSheet(true);
+  if (SB.s) afterLogin(!!authType).then(() => { if (authType === "recovery") newPasswordSheet(); else { lateBack(late); askAud(); } });
+  else if (!askLogin) askAud();
   document.addEventListener("visibilitychange", () => {
     if (!CLOUD.on) return;
     if (document.hidden) CLOUD.flush();
