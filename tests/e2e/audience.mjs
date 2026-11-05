@@ -1,10 +1,11 @@
 // 관심있는 대화(전체·남성향·여성향) 흐름 시험: 첫 시작 창 → 고르기 → 홈 필터 → 설정 → 신작 대화방
 import { webkit, chromium, devices } from "playwright";
+import { noSupabase } from "./_offline.mjs";
 const [, , url, out] = process.argv;
 const targets = [["Desktop Chrome", chromium], ["iPhone SE", webkit], ["Galaxy S9+", chromium]];
 for (const [dev, engine] of targets) {
   const browser = await engine.launch();
-  const ctx = await browser.newContext({ ...devices[dev] });
+  const ctx = await browser.newContext({ ...devices[dev] }); await noSupabase(ctx);
   const page = await ctx.newPage();
   const errors = [];
   page.on("pageerror", (e) => errors.push("pageerror: " + e.message));

@@ -3,10 +3,11 @@
 // 세계관 일러스트·추천 코드·생성 창·페르소나), 만들기의 관심있는 대화 칸, 이미지 스튜디오(코드 목록·조합 키·프롬프트·찾기·접기·코드 선택 삭제·조합 모두 빼기·갤러리 움짤·⟳). 그리고 사용자 빌드에는 그 자리들이 비어 있고
 // 관리자 함수(viewStudio·viewImages·openImages)가 없어야 함.
 import { chromium, webkit, devices } from "playwright";
+import { noSupabase } from "./_offline.mjs";
 const [, , url, out] = process.argv; // url = admin.html 주소(run.mjs가 붙임). 사용자 빌드는 admin.html을 뗀 주소
 const userUrl = url.replace(/admin\.html$/, "");
 for (const [dev, engine, opts] of [["Desktop Chrome", chromium, {}], ["iPhone 13", webkit, devices["iPhone 13"]]]) {
-  const b = await engine.launch(); const ctx = await b.newContext({ ...opts }); const p = await ctx.newPage();
+  const b = await engine.launch(); const ctx = await b.newContext({ ...opts }); await noSupabase(ctx); const p = await ctx.newPage();
   const errs = []; p.on("pageerror", (e) => errs.push("pageerror: " + e.message)); p.on("console", (m) => { if (m.type() === "error") errs.push("console: " + m.text().slice(0, 160)); });
   const res = { dev, views: {}, sheets: {} };
   const wait = (ms) => p.waitForTimeout(ms), tag = dev.replace(/\W+/g, "_");

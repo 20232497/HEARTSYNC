@@ -10,7 +10,7 @@
 `npm run e2e`는 `npm run build`가 만든 `index.html`·`admin.html`을 시험하므로 **빌드 뒤에** 돌린다(`run.mjs`의 `PAGE`가 시험마다 어느 빌드를 여는지 정함). 스크린샷은 `tests/.shots/`(git에 안 들어감). 관리자 페이지는 `content/codes.admin.json`(git에 없음)을 읽으므로, 그 파일이 없는 새 사본(worktree 등)에서는 404가 콘솔 오류로 잡혀 관리자 시험(`admin`·`images`·`styles`)이 실패한다 — 그 PC의 파일을 복사하거나 `content/codes.admin.example.json`을 그 이름으로 복사해 두고 돌린다.
 
 ## 흐름 시험(e2e)
-- 모든 스크립트는 Supabase·카카오 로그인을 `page.route`로 흉내 내므로 실제 서버·계정은 건드리지 않고, 키·이메일은 모두 시험용 가짜 값이다.
+- 모든 스크립트는 Supabase·카카오 로그인을 `page.route`로 흉내 내므로 실제 서버·계정은 건드리지 않고, 키·이메일은 모두 시험용 가짜 값이다. 계정을 흉내 내지 않는 시험도 `_offline.mjs`의 `noSupabase()`로 Supabase 요청을 빈 목록으로 받는다(로그인하지 않아도 MY가 공지사항을 확인하므로 — 2026-11-05).
 - 스크립트는 결과를 JSON으로 찍기만 하고 늘 exit 0으로 끝난다. `tests/run.mjs`가 결과의 `fail`·`error`·`errors`·`errs`·`pageerror` 칸이 비었는지로 판정한다. 새 시험을 더할 땐 같은 모양으로 쓰고(`console.log(JSON.stringify(res))`, 오류는 위 칸 이름에), `run.mjs`의 `SUITES`에 한 줄 설명을 더한다.
 - 인자: `node tests/e2e/<이름>.mjs <URL> [스크린샷 폴더]` (`mobile.mjs`는 URL 여러 개 + `SHOT_DIR` 환경변수).
 
@@ -19,6 +19,7 @@
 | `social.mjs` | 카카오·네이버·Google 버튼, 안 켠 공급자 안내, 이메일 없는 소셜 가입, PC 게스트 그림 → 계정, 휴대폰 합치기, 키 잠금 암호(정하기·틀림·잊음·stale), 취소 오류 |
 | `vault.mjs` | API 키 금고: PC 가입 → 계정엔 암호문만 → 휴대폰 로그인으로 받음 → 메일 링크 기기는 잠김 → 비밀번호 입력·재설정 → 키 저장 끄기 → 로그아웃 |
 | `cloud2.mjs` | 계정 저장 올리기·받기, 서버 표 제약(`kv_no_plain_keys`·`kv_vault_sealed`) |
+| `help.mjs` | 고객센터(사용자 사이트 + 관리자 도구, 가짜 Supabase는 docs/supabase.sql의 RLS·열 권한·트리거와 같은 규칙): MY의 고객센터·약관 칸과 '새 공지' → 공지(공개만·고정 먼저·본문 주소 링크) → FAQ 찾기 → 둘러보기면 로그인 안내 → 문의 남기기(보내는 칸은 열 권한 안의 것만, 앱 정보는 기본 꺼짐)·하루 5건·지우기 → 사용자 빌드에 관리자 함수 없음 → 관리자 도구: 관리자 아닌 계정은 SQL 한 줄 안내, 관리자는 비공개 공지·새 공지·고치기·지우기·받은 문의 답변(답변 완료로)·MY 답변 대기 수 → 사용자에게 답이 보임 → iPhone 13 가로 넘침 0 |
 | `audience.mjs` | 관심있는 대화 첫 시작 창 → 여성향 고르기 → 홈 필터·대표 작품·가로 줄 → 설정 → 신작 대화방 |
 | `chatflow.mjs` | 대화방 스트리밍(가짜 llm), 자동 스크롤 끔/켬, ✦ AI 추천 수동, 출력 설정 카드, 설정 페이지 |
 | `mobile.mjs` | 휴대폰 셸: 표준 모드 문서, bootMsg 사라짐, 탭바, 가로 넘침 0 |

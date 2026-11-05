@@ -1,4 +1,4 @@
-/* MY: 프로필·페르소나·관심있는 대화·채팅 설정·AI 연결·계정. #meExt 자리는 관리자 빌드가 EXT.me로 채움(크리에이터 프로필·이미지 생성 설정), '설정 저장'은 EXT.meSave도 부름 */
+/* MY: 프로필·페르소나·관심있는 대화·채팅 설정·AI 연결·계정·고객센터·약관 및 정책. #meExt 자리는 관리자 빌드가 EXT.me로 채움(크리에이터 프로필·이미지 생성 설정), '설정 저장'은 EXT.meSave도 부름 */
 import { engineName } from "../ai/llm.js";
 import { OR_PRESETS } from "../ai/models.js";
 import { AUDS, audience } from "../core/audience.js";
@@ -16,6 +16,7 @@ import { accountBoxHTML, bindAccount } from "./account.js";
 import { renderLog } from "./chat/log.js";
 import { pavHTML } from "./cover.js";
 import { runExt } from "./ext.js";
+import { checkNotices, docUrl, hasNewNotice } from "./help.js";
 import { audSegHTML, setAudience } from "./home.js";
 import { ICON } from "./icons.js";
 import { confirmSheet, sheet } from "./sheet.js";
@@ -71,8 +72,18 @@ export function viewMe() {
     <div id="meExt"></div>
     <div class="cta-row" style="margin-top:14px"><button class="btn pri" id="setSave">설정 저장</button><span class="spacer"></span><button class="btn sm danger" id="reset">모든 데이터 초기화</button></div>
     <p class="note">키와 데이터는 ${KV.dbOk ? "내 claude.ai 계정" : "이 브라우저"}에만 저장돼요 · 이미지: ${IMG.assets ? "아티팩트 저장소" : "압축 후 내 저장 공간"}</p>
+    <h2 class="sec">고객센터</h2>
+    <div class="box"><div class="menu-list" id="helpMenu">
+      <button data-go="help-notice">공지사항<span class="v" id="noticeNew">${hasNewNotice() ? "새 공지" : ""}</span></button>
+      <button data-go="help-faq">자주 묻는 질문</button>
+      <button data-go="help-ask">문의하기</button></div></div>
+    <h2 class="sec">약관 및 정책</h2>
+    <div class="box"><div class="menu-list">
+      <a href="${esc(docUrl("terms.html"))}" target="_blank" rel="noopener">이용약관</a>
+      <a href="${esc(docUrl("privacy.html"))}" target="_blank" rel="noopener">개인정보처리방침</a></div></div>
   </div>`;
   bindGo(v); IMG.hydrate(v);
+  checkNotices();
   runExt("me", v);
   $$("[data-def]", v).forEach((b) => b.onclick = () => { S.personas.forEach((p) => p.def = p.id === b.dataset.def); KV.set("personas", S.personas); viewMe(); });
   $$("[data-pedit]", v).forEach((b) => b.onclick = () => personaSheet(S.personas.find((p) => p.id === b.dataset.pedit), viewMe));

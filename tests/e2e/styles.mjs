@@ -1,10 +1,11 @@
 // 기본 화풍: 설정 기본값 '자동'이 작품 성향·인물 성별·표지 여부로 내장 화풍을 고르고, 같은 이름의 세트가 덮으면 그 문구·모델을 쓰며, 세트를 지우거나 '내장으로 되돌리기'를 누르면 내장으로 돌아오는지.
 // ZIP 파일 이름 묶기(groupStyleFiles)·이름 → 내장 화풍 맞추기(matchBuiltin), 설정 페이지의 기본 화풍 카드·선택지, 생성 창이 ctx에 맞는 화풍 이름을 보여 주는지
 import { webkit, chromium, devices } from "playwright";
+import { noSupabase } from "./_offline.mjs";
 const url = process.argv[2], out = process.argv[3];
 const targets = [["Desktop Chrome", chromium], ["iPhone 13", webkit]];
 for (const [dev, engine] of targets) {
-  const b = await engine.launch(); const ctx = await b.newContext({ ...devices[dev] }); const p = await ctx.newPage();
+  const b = await engine.launch(); const ctx = await b.newContext({ ...devices[dev] }); await noSupabase(ctx); const p = await ctx.newPage();
   const errs = []; p.on("pageerror", (e) => errs.push(e.message)); p.on("console", (m) => { if (m.type() === "error") errs.push("console: " + m.text().slice(0, 140)); });
   const res = { dev };
   try {

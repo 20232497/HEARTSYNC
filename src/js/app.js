@@ -17,6 +17,7 @@ import "./services/supabase.js";
 import "./services/cloud.js";
 import "./services/vault.js";
 import "./services/sync.js";
+import "./services/support.js";
 import "./services/images.js";
 import "./images/codes.js";
 import "./images/rating.js";
@@ -52,7 +53,8 @@ import { viewStore } from "./ui/store.js";
 import { viewLogin } from "./ui/login.js";
 import "./ui/account.js";
 import { viewMe } from "./ui/me.js";
+import { viewHelp } from "./ui/help.js";
 
-/* 해시 앞부분 → 화면. 상세(c-<id>)·대화방(r-<id>)은 "-" 뒤를 인자로 받음 */
-export const USER_VIEWS = { home: viewHome, c: viewDetail, r: viewChat, chats: viewChats, store: viewStore, me: viewMe, login: viewLogin };
+/* 해시 앞부분 → 화면. 상세(c-<id>)·대화방(r-<id>)·고객센터(help-<탭>)는 "-" 뒤를 인자로 받음 */
+export const USER_VIEWS = { home: viewHome, c: viewDetail, r: viewChat, chats: viewChats, store: viewStore, me: viewMe, login: viewLogin, help: viewHelp };
 export const USER_NAVS = [["home", "홈", "home"], ["chats", "대화", "chat"], ["store", "스토어", "heart"], ["me", "MY", "user"]];

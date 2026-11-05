@@ -1,12 +1,13 @@
 // HeartVerse mobile smoke test: WebKit (iPhone) + Chromium (Android) on given URLs
 import { webkit, chromium, devices } from "playwright";
+import { noSupabase } from "./_offline.mjs";
 const [, , ...urls] = process.argv;
 const out = process.env.SHOT_DIR;
 const targets = [["iPhone 13", webkit], ["iPhone SE", webkit], ["Galaxy S9+", chromium]];
 for (const url of urls) {
   for (const [dev, engine] of targets) {
     const browser = await engine.launch();
-    const ctx = await browser.newContext({ ...devices[dev] });
+    const ctx = await browser.newContext({ ...devices[dev] }); await noSupabase(ctx);
     const page = await ctx.newPage();
     const errors = [];
     page.on("pageerror", (e) => errors.push("pageerror: " + e.message));
