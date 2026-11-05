@@ -34,7 +34,7 @@ boot.js → app.js(USER_VIEWS · USER_NAVS) → main.js | admin.js
 - ★ 상대 경로의 이름 있는 import만, 다른 모듈의 `let`은 그 모듈의 `set…()`으로, 전체에서 같은 이름 두 번 선언 금지, 맨 윗단에서 뒤 모듈의 const 사용 금지(순환 의존).
 - **아래층은 윗층을 import하지 않는다.** core·services가 화면을 갱신해야 하면 `core/events.js`의 `emit("rooms"|"wallet"|"settings"|"vault"|"cloud"|"community"|"route")`를 부르고, ui가 `on()`으로 받는다(shell·login·account·home). `core/storage.js`는 `KV.remote` 고리로 CLOUD에 연결한다.
 - **셸은 화면을 모른다.** `ui/shell.js`는 `registerViews({ home: viewHome, c: viewDetail, … })`·`setNavs([...])`로 등록된 것만 라우팅한다. 진입점(main.js·admin.js)이 등록한다.
-- **관리자 기능은 EXT 고리에 꽂는다.** `ui/ext.js`의 `EXT.detail(c, v)`·`drawer(r, body)`·`afterTurn(r, body)`·`me(v)`·`meSave(v)`·`persona(ov, setImg)`·`help(tab, box, list)`. 사용자 화면 모듈은 자리(`#wArtTools`·`#castTools`·`#ctaTools`·`#meExt`·`#avTools`, 드로어 `.menu-list` 끝, 고객센터 `#helpBody`)만 두고 `runExt(...)`를 부른다. 고객센터(`ui/help.js`)의 공지 쓰기·받은 문의는 `admin/support.js`가 `EXT.help`로 더하며, 쓰기 권한 자체는 서버(Supabase RLS의 `is_admin()`)가 정한다. 사용자 빌드에는 꽂는 모듈이 없어 비어 있다.
+- **관리자 기능은 EXT 고리에 꽂는다.** `ui/ext.js`의 `EXT.detail(c, v)`·`drawer(r, body)`·`afterTurn(r, body)`·`me(v)`·`meSave(v)`·`persona(ov, setImg)`·`help(tab, box, list)`. 사용자 화면 모듈은 자리(`#wArtTools`·`#castTools`·`#ctaTools`·`#meExt`·`#avTools`, 드로어 `.menu-list` 끝, 공지·고객센터 `#helpBody`)만 두고 `runExt(...)`를 부른다. 공지 메뉴(`#notice`, `ui/help.js`의 `viewNotice`)의 공지 쓰기와 고객센터(`#help`, `viewHelp`)의 받은 문의는 `admin/support.js`가 `EXT.help`로 더하며, 쓰기 권한 자체는 서버(Supabase RLS의 `is_admin()`)가 정한다 — 로그인한 계정이 관리자면 공지 화면이 바로 관리 화면이 되고, 비밀번호 관문은 브라우저 안의 확인이라 서버 권한을 주지 않는다. 사용자 빌드에는 꽂는 모듈이 없어 비어 있다.
 - 빌드마다 다른 설정 이전은 `boot({ migrate })`로 주입한다(관리자: `admin/migrate.js`의 그림체·이미지 모델 이전).
 - `core/target.js`의 `isAdmin()`은 문구·배지 같은 작은 차이에만 쓴다(기능 분기는 EXT·화면 등록으로).
 

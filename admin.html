@@ -69,7 +69,7 @@ button { cursor:pointer; }
   .rail { display:none; }
   #view { height:calc(100% - 60px - env(safe-area-inset-bottom,0px)); }
   .tabbar { display:flex; position:fixed; left:0; right:0; bottom:0; height:calc(60px + env(safe-area-inset-bottom,0px)); padding:0 max(6px, env(safe-area-inset-right,0px)) env(safe-area-inset-bottom,0px) max(6px, env(safe-area-inset-left,0px)); background:var(--surface); border-top:1px solid var(--line); z-index:20; }
-  .tabbar button { flex:1; border:0; background:none; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; font-size:11px; color:var(--muted); }
+  .tabbar button { flex:1; min-width:0; padding:0; white-space:nowrap; border:0; background:none; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; font-size:11px; color:var(--muted); }
   .tabbar button.on { color:var(--accent); font-weight:600; }
   .tabbar svg { width:21px; height:21px; }
   body.in-chat .tabbar { display:none; }
@@ -774,7 +774,7 @@ body.gated .app { grid-template-columns:1fr; }
 
 /* ── 고객센터 관리(관리자 도구): 관리자 안내·공지 고치기 줄·받은 문의의 답변 칸 */
 .adm-note { margin:0 0 10px; font-size:13.5px; }
-.adm-note pre { white-space:pre-wrap; overflow-wrap:anywhere; user-select:all; -webkit-user-select:all; font-size:12.5px; background:var(--bg); border:1px solid var(--line); padding:8px 10px; border-radius:8px; margin:8px 0 0; }
+.adm-note .cta-row { margin:10px 0 0; }
 .adm-bar { margin:0 0 10px; }
 .adm-ask { padding:12px 16px 14px; border-top:1px dashed var(--line); }
 .adm-ask .note { margin:0 0 4px; overflow-wrap:anywhere; }
@@ -3970,6 +3970,7 @@ const ICON = {
   plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="5"/><path d="M12 8v8M8 12h8"/></svg>',
   heart: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 20s-7-4.4-9-9a4.8 4.8 0 0 1 9-3 4.8 4.8 0 0 1 9 3c-2 4.6-9 9-9 9z"/></svg>',
   user: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>',
+  bell: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 10a6 6 0 0 1 12 0c0 5.5 2.5 7 2.5 7h-17S6 15.5 6 10z"/><path d="M10 20.5a2.2 2.2 0 0 0 4 0"/></svg>',
   back: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 5l-7 7 7 7"/></svg>',
   book: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 21a2 2 0 0 1 2-2h13M8 7h7"/></svg>',
   menu: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>',
@@ -4325,11 +4326,11 @@ function faqGroups() {
            src/js/ui/icons.js { ICON }
            src/js/ui/sheet.js { confirmSheet }
            src/js/ui/shell.js { bindGo, go, topbar }
-   내보냄: docUrl, hasNewNotice, checkNotices, viewHelp, askHTML
+   내보냄: docUrl, hasNewNotice, checkNotices, viewHelp, viewNotice, askHTML
    쓰는 곳: src/js/ui/login.js, src/js/ui/me.js, src/js/app.js, src/js/admin/support.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
-/* 고객센터 화면(#help): 공지사항 · 자주 묻는 질문 · 문의하기 탭(#help-notice·#help-faq·#help-ask로 바로). MY의 고객센터 칸에서 들어옴.
-   공지·문의는 Supabase(services/support.js), FAQ는 ui/faq.js의 고정 글. 관리자 빌드는 탭을 그린 뒤 EXT.help(tab, box, list)로 공지 쓰기·받은 문의를 더함(admin/support.js).
+/* 공지 화면(#notice)과 고객센터 화면(#help — 자주 묻는 질문·문의하기). 공지는 홈·대화처럼 메뉴에서 바로 들어오고, 고객센터는 MY의 칸에서 들어옴(#help-faq·#help-ask로 바로, 예전 주소 #help-notice는 #notice로 넘김).
+   공지·문의는 Supabase(services/support.js), FAQ는 ui/faq.js의 고정 글. 관리자 빌드는 그린 뒤 EXT.help(tab, box, list)로 공지 쓰기·받은 문의를 더함(admin/support.js) — 관리자 계정이면 누를 것 없이 바로 관리 화면.
    claude.ai 안·서버 설정이 없으면(SB.on() 거짓) 공지는 마지막으로 받은 것만, 문의는 이메일 안내만 */
 
 
@@ -4345,7 +4346,7 @@ function faqGroups() {
 /** @typedef {import("../core/types.js").Notice} Notice */
 /** @typedef {import("../core/types.js").Inquiry} Inquiry */
 
-const TABS = [["notice", "공지사항"], ["faq", "자주 묻는 질문"], ["ask", "문의하기"]];
+const TABS = [["faq", "자주 묻는 질문"], ["ask", "문의하기"]];
 const SITE = "https://20232497.github.io/HEARTSYNC/";
 const SEEN = "hv1_notice_seen"; // 마지막으로 본 공지 id(가장 큰 것) — MY의 '새 공지' 표시
 /** 정적 문서(terms.html·privacy.html) 주소 — 파일로 열었거나 claude.ai 안이면 같은 폴더에 문서가 없으니 웹 주소로. @param {string} f @returns {string} */
@@ -4365,7 +4366,8 @@ function checkNotices() {
 }
 
 function viewHelp(arg) {
-  const tab = TABS.some((t) => t[0] === arg) ? arg : "notice", v = $("#view");
+  if (arg === "notice") { location.replace("#notice"); return; } // 예전 주소
+  const tab = TABS.some((t) => t[0] === arg) ? arg : "faq", v = $("#view");
   v.innerHTML = `<div class="page help-page">${topbar()}
     <div class="help-head"><button class="icon-btn" data-go="me" aria-label="MY로 돌아가기">${ICON.back}</button><h1 class="sec">고객센터</h1></div>
     <div class="tabs" role="tablist">${TABS.map(([k, l]) => `<button type="button" role="tab" data-htab="${k}" aria-selected="${k === tab}" class="${k === tab ? "on" : ""}">${l}</button>`).join("")}</div>
@@ -4373,16 +4375,22 @@ function viewHelp(arg) {
   bindGo(v);
   $$("[data-htab]", v).forEach((b) => b.onclick = () => go("help-" + b.dataset.htab));
   const box = $("#helpBody", v);
-  if (tab === "faq") faqTab(box); else if (tab === "ask") askTab(box); else noticeTab(box);
+  if (tab === "ask") askTab(box); else faqTab(box);
 }
 
-/* ---------------------------------------------------------------- 공지사항 */
+/* ---------------------------------------------------------------- 공지(메뉴 화면) */
+function viewNotice() {
+  const v = $("#view");
+  v.innerHTML = `<div class="page help-page">${topbar()}<h1 class="sec" style="margin-top:4px">공지</h1><div id="helpBody"></div></div>`;
+  bindGo(v);
+  noticeBody($("#helpBody", v));
+}
 /** 공지 한 개(접힘). @param {Notice} n @param {boolean} open @returns {string} */
 function noticeHTML(n, open) {
   return `<details class="notice" data-nid="${+n.id}" ${open ? "open" : ""}><summary><span class="t">${n.pinned ? `<span class="pill">고정</span>` : ""}${n.published === false ? `<span class="pill gold">비공개</span>` : ""}<b>${esc(n.title)}</b></span><span class="d">${day(n.created_at)}</span></summary>
     <div class="nbody">${rich(n.body)}</div></details>`;
 }
-async function noticeTab(box) {
+async function noticeBody(box) {
   const seen = seenId();
   const paint = (list, msg) => {
     box.innerHTML = (msg ? `<p class="note help-msg">${esc(msg)}</p>` : "") +
@@ -5170,7 +5178,7 @@ function viewMe() {
     <p class="note">키와 데이터는 ${KV.dbOk ? "내 claude.ai 계정" : "이 브라우저"}에만 저장돼요 · 이미지: ${IMG.assets ? "아티팩트 저장소" : "압축 후 내 저장 공간"}</p>
     <h2 class="sec">고객센터</h2>
     <div class="box"><div class="menu-list" id="helpMenu">
-      <button data-go="help-notice">공지사항<span class="v" id="noticeNew">${hasNewNotice() ? "새 공지" : ""}</span></button>
+      <button data-go="notice">공지사항<span class="v" id="noticeNew">${hasNewNotice() ? "새 공지" : ""}</span></button>
       <button data-go="help-faq">자주 묻는 질문</button>
       <button data-go="help-ask">문의하기</button></div></div>
     <h2 class="sec">약관 및 정책</h2>
@@ -6393,7 +6401,7 @@ function viewChats() {
            src/js/ui/store.js { viewStore }
            src/js/ui/login.js { viewLogin }
            src/js/ui/me.js { viewMe }
-           src/js/ui/help.js { viewHelp }
+           src/js/ui/help.js { viewHelp, viewNotice }
    내보냄: USER_VIEWS, USER_NAVS
    쓰는 곳: src/js/admin.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
@@ -6455,8 +6463,8 @@ function viewChats() {
 
 
 /* 해시 앞부분 → 화면. 상세(c-<id>)·대화방(r-<id>)·고객센터(help-<탭>)는 "-" 뒤를 인자로 받음 */
-const USER_VIEWS = { home: viewHome, c: viewDetail, r: viewChat, chats: viewChats, store: viewStore, me: viewMe, login: viewLogin, help: viewHelp };
-const USER_NAVS = [["home", "홈", "home"], ["chats", "대화", "chat"], ["store", "스토어", "heart"], ["me", "MY", "user"]];
+const USER_VIEWS = { home: viewHome, c: viewDetail, r: viewChat, chats: viewChats, notice: viewNotice, store: viewStore, me: viewMe, login: viewLogin, help: viewHelp };
+const USER_NAVS = [["home", "홈", "home"], ["chats", "대화", "chat"], ["notice", "공지", "bell"], ["store", "스토어", "heart"], ["me", "MY", "user"]];
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/admin/codes.js
    가져옴: src/js/core/constants.js { SIT }
@@ -8584,18 +8592,19 @@ EXT.afterTurn.push((r, body) => { autoImages(r, body).catch(() => {}); });
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/admin/support.js
    가져옴: src/js/core/util.js { $, $$, esc, toast }
-           src/js/services/supabase.js { SB }
+           src/js/services/supabase.js { SB, acctName }
            src/js/services/support.js { ASK_STATUS, SUPPORT, supportErr }
            src/js/ui/ext.js { EXT }
-           src/js/ui/help.js { askHTML, viewHelp }
+           src/js/ui/help.js { askHTML, viewNotice }
            src/js/ui/icons.js { ICON }
            src/js/ui/sheet.js { confirmSheet, sheet }
-           src/js/ui/shell.js { go }
+           src/js/ui/shell.js { bindGo, go }
    쓰는 곳: src/js/admin.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
-/* 고객센터 관리(관리자 빌드만 — EXT.help·EXT.me에 꽂음): 공지사항 탭에 '새 공지'와 공지마다 고치기·삭제, 문의하기 탭 아래에 받은 문의(상태별 — 답변·상태·삭제), MY에 답변 대기 수.
-   쓰기 권한은 서버가 정한다 — Supabase admins 표에 이 계정 id가 있어야 하고(docs/supabase.sql 맨 아래), 아니면 그 방법과 내 계정 id를 보여 줌.
-   사용자 화면(ui/help.js)이 탭을 그릴 때마다 불리므로(공지는 기기 사본 → 서버 목록으로 두 번) 이미 넣었으면 다시 넣지 않고, 기다리는 사이 화면이 바뀌었으면 그만둔다 */
+/* 공지·고객센터 관리(관리자 빌드만 — EXT.help·EXT.me에 꽂음): 공지 화면에 '새 공지'와 공지마다 고치기·삭제, 문의하기 탭 아래에 받은 문의(상태별 — 답변·상태·삭제), MY에 답변 대기 수.
+   관리자 계정으로 로그인돼 있으면 누를 것 없이 바로 관리 화면이 된다(2026-11-06 사용자 요청). 그 밖의 계정은 로그인 안내와 함께 읽기만.
+   실제 쓰기 권한은 서버가 정한다(RLS — admins 표, docs/SETUP.md '관리자 계정 고정'). 비밀번호 관문(admin/gate.js)은 브라우저 안의 검사라 소스를 보면 우회할 수 있어 서버 권한을 줄 수 없음.
+   사용자 화면(ui/help.js)이 그릴 때마다 불리므로(공지는 기기 사본 → 서버 목록으로 두 번) 이미 넣었으면 다시 넣지 않고, 기다리는 사이 화면이 바뀌었으면 그만둔다 */
 
 
 
@@ -8613,13 +8622,18 @@ let inboxStatus = "open"; // 받은 문의 거르기(세션 동안 남음)
 // 이 계정이 관리자인지 — 아니면 이유를 box 맨 위에 한 번 적음. stale()이 참이면(기다리는 사이 화면이 바뀜) 아무것도 안 함
 async function adminOK(box, what, stale) {
   if (!SB.on()) return false;
-  if (!SB.s) { if (!stale()) note(box, `${what} 관리자 계정으로 로그인해 주세요.`); return false; }
+  if (!SB.s) { if (!stale()) note(box, `${what} 관리자 계정으로 로그인해 주세요.`, "login", "로그인"); return false; }
   const yes = await SUPPORT.amAdmin();
   if (stale()) return false;
-  if (!yes) note(box, `이 계정은 고객센터 관리자가 아니에요. Supabase 대시보드 → SQL Editor에서 아래 한 줄을 실행하면 관리자가 돼요(docs/supabase.sql을 먼저 실행).<pre>insert into public.admins (user_id) values ('${esc(SB.s.user.id)}');</pre>`);
+  if (!yes) note(box, `지금 계정(<b>${esc(acctName())}</b>)은 관리자로 확인되지 않았어요. ${what} 관리자 계정으로 로그인해 주세요.`, "me", "계정 바꾸기");
   return yes;
 }
-function note(box, html) { if (!$(".adm-note", box)) box.insertAdjacentHTML("afterbegin", `<div class="box adm-note"><span class="pill">관리자</span> ${html}</div>`); }
+// 안내와 이동 버튼 하나를 box 맨 위에 한 번 적음
+function note(box, html, to, label) {
+  if ($(".adm-note", box)) return;
+  box.insertAdjacentHTML("afterbegin", `<div class="box adm-note"><span class="pill">관리자</span> ${html}<div class="cta-row"><span class="spacer"></span><button type="button" class="btn sm pri" data-go="${to}">${label}</button></div></div>`);
+  bindGo(box);
+}
 // 기다리기 전의 첫 자식을 기억해 화면이 다시 그려졌는지 봄
 const watch = (box) => { const first = box.firstElementChild; return () => !box.isConnected || box.firstElementChild !== first; };
 
@@ -8636,7 +8650,7 @@ EXT.help.push(async (tab, box, list) => {
       d.insertAdjacentHTML("beforeend", `<div class="cta-row nadm"><span class="spacer"></span><button type="button" class="btn sm danger" data-ndel>삭제</button><button type="button" class="btn sm" data-ned>고치기</button></div>`);
       $("[data-ned]", d).onclick = () => noticeSheet(n);
       $("[data-ndel]", d).onclick = () => confirmSheet("이 공지를 지울까요?", `‘${n.title}’ 공지가 모든 사용자에게서 사라져요. 되돌릴 수 없어요.`, "삭제", async () => {
-        try { await SUPPORT.dropNotice(n.id); toast("공지를 지웠어요"); viewHelp("notice"); } catch (e) { toast(supportErr(e)); }
+        try { await SUPPORT.dropNotice(n.id); toast("공지를 지웠어요"); viewNotice(); } catch (e) { toast(supportErr(e)); }
       });
     });
   }
@@ -8696,7 +8710,7 @@ function noticeSheet(n) {
     e.target.disabled = true;
     try {
       await SUPPORT.saveNotice({ id: n ? n.id : undefined, title, body: $("#ntB", ov).value.trim(), pinned: $("#ntP", ov).checked, published: $("#ntV", ov).checked });
-      ov.remove(); toast(n ? "공지를 고쳤어요" : "공지를 올렸어요"); viewHelp("notice");
+      ov.remove(); toast(n ? "공지를 고쳤어요" : "공지를 올렸어요"); viewNotice();
     } catch (x) { $("#ntE", ov).textContent = supportErr(x); e.target.disabled = false; }
   };
 }
@@ -8705,7 +8719,7 @@ function noticeSheet(n) {
 EXT.me.push((v) => {
   const box = $("#meExt", v); if (!box || !SB.on() || !SB.s) return;
   box.insertAdjacentHTML("beforeend", `<h2 class="sec">고객센터 관리 <small>관리자 도구</small></h2>
-    <div class="box"><div class="menu-list"><button data-hgo="help-ask">받은 문의<span class="v" id="inOpen">확인 중…</span></button><button data-hgo="help-notice">공지 쓰기·고치기</button></div></div>`);
+    <div class="box"><div class="menu-list"><button data-hgo="help-ask">받은 문의<span class="v" id="inOpen">확인 중…</span></button><button data-hgo="notice">공지 쓰기·고치기</button></div></div>`);
   $$("[data-hgo]", box).forEach((b) => b.onclick = () => go(b.dataset.hgo));
   const out = (t) => { const el = $("#inOpen", box); if (el) el.textContent = t; };
   SUPPORT.amAdmin().then((yes) => yes ? SUPPORT.inbox("open").then((l) => out(l.length ? `답변 대기 ${l.length}건` : "대기 없음")) : out("관리자 계정 아님"))
@@ -9220,7 +9234,7 @@ async function boot(opts = {}) {
 
 setTarget("admin");
 registerViews({ ...USER_VIEWS, works: viewWorks, studio: viewStudio, images: viewImages, codetest: viewImages });
-setNavs([USER_NAVS[0], USER_NAVS[1], ["works", "작품", "book"], ["images", "이미지", "image"], ["studio", "만들기", "plus"], USER_NAVS[2], USER_NAVS[3]]);
+setNavs([...USER_NAVS.slice(0, 3), ["works", "작품", "book"], ["images", "이미지", "image"], ["studio", "만들기", "plus"], ...USER_NAVS.slice(3)]); // 홈·대화·공지 → 관리자 메뉴 → 스토어·MY
 gate().then(() => boot({ migrate: migrateImageSettings }));
 </script>
 </html>
