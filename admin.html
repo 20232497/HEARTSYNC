@@ -6321,15 +6321,21 @@ let NAVS = [];    // 레일·탭바 메뉴 [해시, 이름, ICON 키]
 function registerViews(map) { Object.assign(VIEWS, map); }
 function setNavs(list) { NAVS = list; }
 function go(hash) { if (location.hash === "#" + hash) route(); else location.hash = hash; }
+// #view는 안의 화면이 바뀌어도 스크롤이 남음 — 주소가 바뀔 때만 옮김(같은 주소를 다시 그리면 계정 동기화·스토어 완료처럼 보던 자리 그대로)
+let routed = null, homeY = 0; // 마지막으로 그린 주소 · 홈을 떠날 때의 스크롤
 function route() {
-  const h = location.hash.slice(1) || "home";
+  const h = location.hash.slice(1) || "home", v = $("#view"), moved = h !== routed;
+  if (moved && routed === "home") homeY = v.scrollTop;
+  routed = h;
   closeOverlays();
   if (gen && !h.startsWith("r-")) stopGen();
   document.body.classList.toggle("in-chat", h.startsWith("r-"));
   const [base, ...rest] = h.split("-"); const arg = rest.join("-");
   const view = VIEWS[base] || VIEWS.home;
   setNav(base === "c" ? "home" : base === "r" ? "chats" : base === "login" || base === "help" ? "me" : VIEWS[base] ? base : "home");
-  return view ? view(arg) : undefined;
+  const out = view ? view(arg) : undefined;
+  if (moved) v.scrollTop = h === "home" ? homeY : 0; // 새 화면은 맨 위부터, 긴 홈은 작품을 보고 돌아오면 보던 자리
+  return out;
 }
 const LOGO = `<div class="logo"><span class="mark" aria-hidden="true"></span><span>HEART <i>SYNC</i></span></div>`;
 function renderShell() {
