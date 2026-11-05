@@ -43,30 +43,27 @@
 
 ## 📚 작품
 
-<table>
-  <tr>
-    <td colspan="6"><b>여성향</b> · 남성 인물들과 만들어 가는 이야기</td>
-  </tr>
-  <tr>
-    <td align="center" width="110"><a href="https://20232497.github.io/HEARTSYNC/#c-hwanghu"><img src="docs/assets/covers/hwanghu.jpg" alt="계약 황후의 백 일 표지" width="110"></a><br><sub><b>계약 황후의 백 일</b></sub></td>
-    <td align="center" width="110"><a href="https://20232497.github.io/HEARTSYNC/#c-hasuk"><img src="docs/assets/covers/hasuk.jpg" alt="서촌 오월 하숙집 표지" width="110"></a><br><sub><b>서촌 오월 하숙집</b></sub></td>
-    <td align="center" width="110"><a href="https://20232497.github.io/HEARTSYNC/#c-lethe"><img src="docs/assets/covers/lethe.jpg" alt="호텔 레테: 마흔아홉 번째 밤 표지" width="110"></a><br><sub><b>호텔 레테: 마흔아홉 번째 밤</b></sub></td>
-    <td align="center" width="110"><a href="https://20232497.github.io/HEARTSYNC/#c-seodoyun"><img src="docs/assets/covers/seodoyun.jpg" alt="흑우 탐정사무소 표지" width="110"></a><br><sub><b>흑우 탐정사무소</b></sub></td>
-    <td align="center" width="110"><a href="https://20232497.github.io/HEARTSYNC/#c-kael"><img src="docs/assets/covers/kael.jpg" alt="몰락한 제국의 마지막 기사 표지" width="110"></a><br><sub><b>몰락한 제국의 마지막 기사</b></sub></td>
-    <td align="center" width="110"><a href="https://20232497.github.io/HEARTSYNC/#c-baekyeon"><img src="docs/assets/covers/baekyeon.jpg" alt="여우가 내리는 차 표지" width="110"></a><br><sub><b>여우가 내리는 차</b></sub></td>
-  </tr>
-  <tr>
-    <td colspan="6"><b>남성향</b> · 여성 인물들과 만들어 가는 이야기</td>
-  </tr>
-  <tr>
-    <td align="center" width="110"><a href="https://20232497.github.io/HEARTSYNC/#c-daeyeon"><img src="docs/assets/covers/daeyeon.jpg" alt="대연궁 검시록 표지" width="110"></a><br><sub><b>대연궁 검시록</b></sub></td>
-    <td align="center" width="110"><a href="https://20232497.github.io/HEARTSYNC/#c-baekya"><img src="docs/assets/covers/baekya.jpg" alt="백야호: 열세 번째 겨울 표지" width="110"></a><br><sub><b>백야호: 열세 번째 겨울</b></sub></td>
-    <td align="center" width="110"><a href="https://20232497.github.io/HEARTSYNC/#c-sipjeol"><img src="docs/assets/covers/sipjeol.jpg" alt="십절곡: 백 일의 봉문 표지" width="110"></a><br><sub><b>십절곡: 백 일의 봉문</b></sub></td>
-    <td align="center" width="110"><a href="https://20232497.github.io/HEARTSYNC/#c-godseats"><img src="docs/assets/covers/godseats.jpg" alt="신님들, 관전 매너 좀 표지" width="110"></a><br><sub><b>신님들, 관전 매너 좀</b></sub></td>
-    <td align="center" width="110"><a href="https://20232497.github.io/HEARTSYNC/#c-yunhaera"><img src="docs/assets/covers/yunhaera.jpg" alt="계약 기간 90일 표지" width="110"></a><br><sub><b>계약 기간 90일</b></sub></td>
-    <td align="center" width="110"><a href="https://20232497.github.io/HEARTSYNC/#c-hangyeoul"><img src="docs/assets/covers/hangyeoul.jpg" alt="새벽 두 시의 편의점 표지" width="110"></a><br><sub><b>새벽 두 시의 편의점</b></sub></td>
-  </tr>
-</table>
+**여성향** · 남성 인물들과 만들어 가는 이야기
+
+<p align="center">
+  <a href="https://20232497.github.io/HEARTSYNC/#c-hwanghu"><img src="docs/assets/covers/hwanghu.jpg" alt="계약 황후의 백 일" title="계약 황후의 백 일" width="15.4%"></a>
+  <a href="https://20232497.github.io/HEARTSYNC/#c-hasuk"><img src="docs/assets/covers/hasuk.jpg" alt="서촌 오월 하숙집" title="서촌 오월 하숙집" width="15.4%"></a>
+  <a href="https://20232497.github.io/HEARTSYNC/#c-lethe"><img src="docs/assets/covers/lethe.jpg" alt="호텔 레테: 마흔아홉 번째 밤" title="호텔 레테: 마흔아홉 번째 밤" width="15.4%"></a>
+  <a href="https://20232497.github.io/HEARTSYNC/#c-seodoyun"><img src="docs/assets/covers/seodoyun.jpg" alt="흑우 탐정사무소" title="흑우 탐정사무소" width="15.4%"></a>
+  <a href="https://20232497.github.io/HEARTSYNC/#c-kael"><img src="docs/assets/covers/kael.jpg" alt="몰락한 제국의 마지막 기사" title="몰락한 제국의 마지막 기사" width="15.4%"></a>
+  <a href="https://20232497.github.io/HEARTSYNC/#c-baekyeon"><img src="docs/assets/covers/baekyeon.jpg" alt="여우가 내리는 차" title="여우가 내리는 차" width="15.4%"></a>
+</p>
+
+**남성향** · 여성 인물들과 만들어 가는 이야기
+
+<p align="center">
+  <a href="https://20232497.github.io/HEARTSYNC/#c-daeyeon"><img src="docs/assets/covers/daeyeon.jpg" alt="대연궁 검시록" title="대연궁 검시록" width="15.4%"></a>
+  <a href="https://20232497.github.io/HEARTSYNC/#c-baekya"><img src="docs/assets/covers/baekya.jpg" alt="백야호: 열세 번째 겨울" title="백야호: 열세 번째 겨울" width="15.4%"></a>
+  <a href="https://20232497.github.io/HEARTSYNC/#c-sipjeol"><img src="docs/assets/covers/sipjeol.jpg" alt="십절곡: 백 일의 봉문" title="십절곡: 백 일의 봉문" width="15.4%"></a>
+  <a href="https://20232497.github.io/HEARTSYNC/#c-godseats"><img src="docs/assets/covers/godseats.jpg" alt="신님들, 관전 매너 좀" title="신님들, 관전 매너 좀" width="15.4%"></a>
+  <a href="https://20232497.github.io/HEARTSYNC/#c-yunhaera"><img src="docs/assets/covers/yunhaera.jpg" alt="계약 기간 90일" title="계약 기간 90일" width="15.4%"></a>
+  <a href="https://20232497.github.io/HEARTSYNC/#c-hangyeoul"><img src="docs/assets/covers/hangyeoul.jpg" alt="새벽 두 시의 편의점" title="새벽 두 시의 편의점" width="15.4%"></a>
+</p>
 
 표지를 누르면 그 작품이 열려요. 처음 방문하면 로그인 화면이 먼저 나오는데, **로그인 없이 둘러보기**로 들어갈 수 있어요. 작품은 폴더 하나로 더하고, 만드는 법은 [content/README.md](content/README.md)에 있어요.
 
