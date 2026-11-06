@@ -1,10 +1,10 @@
 /* 상황 칸: 기본 0~14 + 직접 만든 칸(customSits — 내 칸과 작품 폴더에 실린 코드 표) + 내장 코드(DIMS: 1xx 감정/행동·4xx 의상·5xx 장소), 조합 키 이름·수위, 유저 입력 → 번호 점수(sitHints·dimPick) */
 import { ageOK } from "../ai/adult.js";
 import { CONTENT_CODES } from "../content/index.js";
-import { RPG_ONLY_SITS, SIT } from "../core/constants.js";
+import { SIT } from "../core/constants.js";
 import { S } from "../core/state.js";
 import { KV } from "../core/storage.js";
-import { DIMS, RESET, dimOf, freeNum, maxRating, parseCodes, usedNums } from "./codes.js";
+import { DIMS, MERGED_CODES, RESET, dimOf, freeNum, maxRating, parseCodes, usedNums } from "./codes.js";
 import { dropMotionCodes } from "./motion.js";
 import { sheetRating } from "./rating.js";
 import { publishCommunity } from "../services/community.js";
@@ -28,7 +28,9 @@ export function allCustom() {
 const customList = allCustom;
 /* 칸 정의: 직접 만든 칸 → 내장 코드(DIMS). 기본 0~14는 null */
 export function sitDef(n) { return n >= CUSTOM_BASE ? customList().find((d) => d.n === n) || DIMS[n] || null : null; }
-export function sitName(n) { return SIT[n] || sitDef(n)?.name || "칸 " + n; }
+export function sitName(n) { return SIT[n] || sitDef(n)?.name || (MERGED_CODES[n] !== undefined ? sitName(MERGED_CODES[n]) : "칸 " + n); }
+/* 줄인 내장 코드 → 대신할 번호. 같은 번호를 내 칸으로 다시 들여왔으면 그 칸 그대로 */
+export const mergedCode = (n) => MERGED_CODES[n] !== undefined && !sitDef(n) ? MERGED_CODES[n] : n;
 /* 조합 키("3,404,501") → "부끄러움 · 오피스룩 · 침실" */
 export function keyName(key) { return parseCodes(key).map(sitName).join(" · ") || SIT[1]; }
 export const knownCodes = (codes) => codes.filter((n) => n < CUSTOM_BASE || !!sitDef(n)); // 모르는 번호(지운 칸 등)는 뺌
@@ -41,13 +43,11 @@ export const slotNums = () => [...SIT.keys(), ...customSits().filter((d) => d.n 
 export function freeSitNum(dim = "act") { return freeNum(usedNums(customList()), dim); }
 /* 번호들의 그림 수위: 기본 0~14는 그 작품의 시트 수위(기본 전체이용가), 그 밖은 칸 정의의 수위 — 가장 높은 것 */
 export function codeRating(codes, c) { return maxRating(codes.map((n) => n < CUSTOM_BASE ? sheetRating(c.id) : (sitDef(n)?.rating || "safe"))); }
-/* 이 작품이 쓰는 번호인지: RPG 전용 칸은 cat이 RPG인 작품에서만 AI 번호 목록·낱말 후보에 넣음. 이미 쓴 태그와 스튜디오에서 직접 고른 조합은 막지 않음 */
-export const sitFits = (n, c) => RPG_ONLY_SITS.indexOf(n) < 0 || !!(c && c.cat === "RPG");
 /* 상황 번호를 고르는 낱말(정규식 조각). AI가 그림을 빠뜨린 인물의 번호를 고를 때와, 유저 입력에서 번호 후보를 뽑을 때 씀 */
-const SIT_KEYS = { 2: "웃|미소|싱긋|방긋|피식|킥킥|깔깔|농담|재밌", 3: "부끄|수줍|민망|얼굴이 (?:붉|빨개)|귀까지|빨개|장난|놀리|놀려|짓궂|칭찬|예쁘|예쁜|예뻐|귀여|귀엽",
-  4: "울먹|울었|우는|눈물|슬프|슬퍼|흐느|서럽|그리워", 5: "놀라|놀란|깜짝|화들짝|헉|휘둥그|설마", 6: "화가|화를|화난|분노|노려|버럭|소리쳤|이를 악|짜증|열받|닥쳐",
-  7: "삐졌|삐친|삐죽|토라|흥[,.!…]|볼을 부풀|서운|입을 내밀", 8: "무서|두려|겁에|겁먹|떨리|떨었|비명|공포|소름", 9: "다쳤|다친|부상|피를|피가|상처|쓰러",
-  10: "치료|붕대|회복|응급", 11: "쉬자|쉬어|잠들|졸려|하품|휴식|기지개|낮잠", 12: "공격|휘둘|베었|베어|찔렀|쏘았|쐈|주먹|덤벼|전투|싸우",
+const SIT_KEYS = { 2: "웃|미소|싱긋|방긋|피식|킥킥|깔깔|농담|재밌|환희|기뻐|기쁘|신이 나|신나", 3: "부끄|수줍|쑥스|머뭇|민망|얼굴이 (?:붉|빨개)|귀까지|빨개|장난|놀리|놀려|짓궂|칭찬|예쁘|예쁜|예뻐|귀여|귀엽",
+  4: "울먹|울었|우는|눈물|슬프|슬퍼|흐느|오열|울음을 터|서럽|그리워", 5: "놀라|놀란|깜짝|화들짝|헉|휘둥그|설마|경악|기겁|소스라", 6: "화가|화를|화난|분노|노려|적대|버럭|소리쳤|이를 악|짜증|신경질|이마를 짚|성가|열받|닥쳐",
+  7: "삐졌|삐친|삐죽|토라|흥[,.!…]|볼을 부풀|서운|입을 내밀|질투|샘이 나|샘나", 8: "무서|두려|겁에|겁먹|떨리|떨었|비명|공포|소름", 9: "다쳤|다친|부상|피를|피가|상처|쓰러",
+  10: "치료|붕대|회복|응급", 11: "쉬자|쉬어|잠들|졸려|하품|휴식|기지개|낮잠", 12: "공격|휘둘|베었|베어|찔렀|쏘았|쐈|주먹|맨손|때렸|후려|걷어차|덤벼|전투|싸우",
   13: "각성|힘이 솟|눈빛이 변|폭주|기운이 치솟", 14: "설레|두근|심장이|가슴이 뛰|손을 잡|손잡|안아|포옹|고백|좋아해|데이트" };
 // 추천 칸 이름별 낱말. 그 밖의 직접 만든 칸은 칸 이름 자체로(내장 코드는 keys로) 찾음
 const SIT_KEYS_EXTRA = { 식사: "식사|밥|먹", 만남: "처음 뵙|반가워|반갑", 정색: "정색|굳은 얼굴|차갑게", 행복: "행복|기뻐|기쁘", 경계: "경계|의심|수상", 고민: "고민|생각에 잠|망설",
@@ -60,11 +60,11 @@ function sitKeys(n) {
   return [SIT_KEYS_EXTRA[d.name.trim()], d.keys, d.name.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&")].filter(Boolean).join("|");
 }
 /* 글 속 낱말로 번호마다 점수(adult면 성인 수위 칸도 후보). 직접 만든 칸·내장 코드는 더 구체적이라 0.5 더함. 400·500(되돌리기)은 뽑지 않음 */
-export function sitScores(text, adult, c) {
+export function sitScores(text, adult) {
   const out = new Map(), s = String(text || "");
   if (!s.trim()) return out;
   for (const n of [...SIT.keys(), ...codeDefs(adult).map((d) => d.n)]) {
-    if (n === RESET.wear || n === RESET.place || !sitFits(n, c)) continue;
+    if (n === RESET.wear || n === RESET.place) continue;
     const k = sitKeys(n); if (!k) continue;
     const hits = (s.match(new RegExp(k, "g")) || []).length;
     if (hits) out.set(n, hits + (n >= CUSTOM_BASE ? 0.5 : 0));
@@ -78,8 +78,8 @@ export function dimPick(text, adult, sc = sitScores(text, adult)) {
   return out;
 }
 /* 유저 입력에 맞는 번호 후보: 감정/행동 둘("3 부끄러움") + 의상·장소("의상 404 오피스룩") — [이번 응답]에 붙여 AI가 고르게 */
-export function sitHints(text, adult, c) {
-  const sc = sitScores(text, adult, c), out = [...sc].filter(([n]) => dimOf(n) === "act").sort((a, b) => b[1] - a[1]).slice(0, 2).map(([n]) => n + " " + sitName(n));
+export function sitHints(text, adult) {
+  const sc = sitScores(text, adult), out = [...sc].filter(([n]) => dimOf(n) === "act").sort((a, b) => b[1] - a[1]).slice(0, 2).map(([n]) => n + " " + sitName(n));
   const d = dimPick(text, adult, sc);
   if (d.wear) out.push(`의상 ${d.wear} ${sitName(d.wear)}`);
   if (d.place) out.push(`장소 ${d.place} ${sitName(d.place)}`);

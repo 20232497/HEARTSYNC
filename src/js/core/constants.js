@@ -5,8 +5,6 @@ export const FREE_DAILY = 10, WELCOME = 30, PLUS_MONTHLY = 300;
 /* 네트워크 시간 제한(ms): connect 응답 머리가 올 때까지 · stall 스트림 조각 사이 · image Runware 생성 한 건 · api Supabase 요청 하나. 넘으면 {code:"timeout"}(core/util.js timeoutSignal) */
 export const TIMEOUT = { connect: 45000, stall: 60000, image: 120000, api: 20000 };
 export const SIT = ["프로필", "기본", "웃음", "부끄러움", "슬픔", "놀람", "분노", "삐침", "공포", "부상", "회복", "휴식", "공격", "각성", "설렘"];
-/* RPG 세계관 전용 기본 칸: 12 공격(사용자 결정 2026-11-06). 판정은 images/situations.js sitFits */
-export const RPG_ONLY_SITS = [12];
 export const SIT_TINT = ["#f5f0ff", "#9fb4ff", "#ffd166", "#ff8fab", "#7b96ff", "#ffe066", "#ff5d5d", "#c77dff", "#56cfe1", "#e63946", "#80ed99", "#a0c4ff", "#ff8c42", "#f9c74f", "#ff70a6"];
 export const PALETTES = [
   ["#1d2735", "#3c5a73", "#c9a46a"], ["#2a1720", "#7a2e48", "#f0b7c8"], ["#151a2e", "#3b3f7a", "#d8c38a"], ["#16222a", "#2f6f73", "#f6d58e"],

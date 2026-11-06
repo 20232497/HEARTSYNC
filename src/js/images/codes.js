@@ -18,26 +18,20 @@ const dimDef = (n, name, prompt, keys, rating) => [n, { n, name, prompt, keys: k
 export const DIMS = Object.fromEntries([
   // 100번대: 세부 감정·일상
   dimDef(101, "미소", "smile, soft expression, gentle eyes, warm atmosphere, happy", "미소|싱긋|빙긋|방긋"),
-  dimDef(102, "분노 표출", "furrowed brow, cold eyes, stern expression, hostile, glaring", "적대|노려보|분노"),
   dimDef(103, "당황", "panicked, nervous sweat, flushed face, averting eyes, stiff posture", "당황|허둥|어쩔 줄|말문이"),
   dimDef(104, "달아오름", "heavy breathing, flushed, wet eyes, half-closed eyes, blush", "달아오|숨이 가빠|젖은 눈|열이 오", "questionable"),
   dimDef(105, "취기", "drunk, glazed eyes, unsteady, blush, languid", "취했|취한|술에 취|비틀거"),
-  dimDef(106, "오열", "tears, sobbing, head down, sad eyes, trembling lips", "오열|흐느|울음을 터|눈물이 터"),
-  dimDef(107, "수줍음", "blush, looking away, fidgeting fingers, shy, faint smile", "수줍|쑥스|머뭇"),
   dimDef(108, "차가운 정색", "expressionless, cold stare, crossed arms, distant, looking down at viewer", "정색|냉담|차갑게|싸늘"),
   dimDef(109, "탈진", "panting, sitting on ground, sweat, slumped, heavy breathing", "탈진|헐떡|주저앉|녹초"),
-  dimDef(110, "질투", "pout, side glance, crossed arms, possessive, sulking", "질투|샘이 나|샘나"),
   dimDef(111, "유혹", "licking lips, sultry gaze, seductive pose, bedroom eyes, leaning close", "유혹|도발|요염|끈적", "questionable"),
   dimDef(112, "애교", "looking up at viewer, puppy eyes, clinging, cute, cheek press", "애교|부비|달라붙|칭얼"),
   dimDef(113, "거부", "hand blocking, turning head away, grimace, resisting, pushing away", "밀쳐|밀어내|거부|뿌리치"),
   dimDef(114, "허탈", "empty eyes, blank expression, listless, sigh, slumped shoulders", "허탈|공허|멍하니|무기력"),
-  dimDef(115, "안도", "relieved, relaxed shoulders, deep breath, soft smile, hand on own chest", "안도|한숨 돌|가슴을 쓸어"),
+  dimDef(115, "안도", "relieved, relaxed shoulders, deep breath, soft smile, hand on own chest", "안도|한숨 돌|가슴을 쓸어|심호흡|숨을 고르|진정"),
   dimDef(116, "장난", "wink, tongue out, playful smile, mischievous, teasing", "장난스|윙크|메롱|능청"),
   dimDef(117, "애틋함", "wistful eyes, gentle touch, tender, affectionate, eye contact", "애틋|그리워|그립|아련"),
   dimDef(118, "경계", "side glance, narrowed eyes, leaning back, defensive stance, tense", "경계|의심|수상|미심쩍"),
   dimDef(119, "절망", "head in hands, staring at floor, collapsed posture, despair, tear stains", "절망|좌절|무너져|주저앉아 울"),
-  dimDef(120, "환희", "big smile, hands together, bright expression, excited, sparkling eyes", "환희|기뻐|기쁘|신이 나|신나"),
-  dimDef(121, "경악", "open mouth, wide eyes, stepping back, hand over own mouth, frozen", "경악|기겁|헉|소스라"),
   dimDef(122, "식사", "eating, holding wine glass, tableware, food, satisfied expression", "식사|먹|마시|와인|술잔|건배"),
   dimDef(123, "게임", "looking at monitor, serious expression, typing, holding controller, focused", "게임|컨트롤러|모니터|키보드"),
   dimDef(124, "졸음", "closed eyes, nodding off, yawning, calm breathing, rubbing eyes", "졸려|졸음|하품|잠들|꾸벅"),
@@ -46,17 +40,14 @@ export const DIMS = Object.fromEntries([
   dimDef(127, "쓰다듬 받음", "closed eyes, pleased expression, hand on head, soft hair, warmth", "쓰다듬|머리를 토닥|토닥"),
   dimDef(128, "무릎베개", "lap pillow, lying on lap, looking down at viewer, peaceful face, intimate", "무릎베개|무릎에 누|무릎을 베"),
   dimDef(129, "간지럼", "flinching, giggling, dodging, cheerful", "간지럼|간지러|까르르"),
-  dimDef(130, "토라짐", "turning away, pursed lips, puffed cheeks, not looking, sulking", "토라|삐졌|삐친|흥,"),
   dimDef(131, "요리", "apron, kitchen utensils, focused, tasting, homely atmosphere", "요리|부엌|앞치마|베이킹|주방"),
   dimDef(132, "스마트폰", "phone screen glow, typing on phone, looking at phone, lowered eyes, nonchalant", "스마트폰|휴대폰|핸드폰|문자를|메시지를 보"),
   dimDef(133, "기지개", "arms raised, stretching, closed eyes, languid, flexible", "기지개|스트레칭"),
   dimDef(134, "단장", "looking in mirror, applying lipstick, brushing hair, getting ready, dressed up", "화장|거울 앞|립스틱|단장|꾸미"),
   dimDef(135, "음악 감상", "earphones, nodding to rhythm, closed eyes, calm, humming", "음악|이어폰|노래를 들|흥얼"),
-  dimDef(136, "심호흡", "deep breath, chest rising, calming down, closed eyes, composing oneself", "심호흡|숨을 고르|진정"),
   dimDef(137, "초조", "checking watch, tapping foot, looking around, biting lip, restless", "초조|안절부절|시계를|입술을 깨"),
   dimDef(138, "억지 미소", "forced smile, stiff smile, sad eyes, hidden pain, trembling", "억지로 웃|억지웃음|애써 웃"),
   dimDef(139, "감동", "overwhelmed expression, tears streaming, bright smile, hands together, sparkling eyes", "감동|벅차|울컥|코끝이"),
-  dimDef(140, "짜증", "hand on own forehead, deep sigh, sharp glare, irritated, standing on one leg", "짜증|신경질|이마를 짚|성가"),
   // 400번대: 의상. 400은 '설정대로'(프롬프트 없음). 체육복·알몸 같은 것은 내장하지 않음
   dimDef(400, "기본 의상", "", ""),
   dimDef(401, "비키니", "micro bikini, string bikini, wet, beach", "비키니|수영복", "questionable"),
@@ -75,6 +66,8 @@ export const DIMS = Object.fromEntries([
   dimDef(506, "화장실 칸", "restroom stall, tiled wall, narrow stall, leaning on door", "화장실"),
   dimDef(507, "야외", "outdoors, nature scenery, night air, wind, open sky", "야외|들판|숲속|공원|밤하늘")
 ]);
+/* 줄인 내장 코드 → 대신할 번호(2026-11-06, 사용자 요청 — 기본 칸·다른 코드와 그림이 겹침, 낱말은 대신할 칸으로 옮김). 예전 대화의 태그가 비슷한 칸으로 보이게(ui/cover.js figKey). 번호는 빈 번호라 다시 들여오면 그 칸이 씀 */
+export const MERGED_CODES = { 102: 6, 106: 4, 107: 3, 110: 7, 120: 2, 121: 5, 130: 7, 136: 115, 140: 6 };
 export const MAX_ACT = 2; // 한 태그의 감정/행동 번호 최대 수
 const isReset = (n) => n === RESET.wear || n === RESET.place;
 /* "101,404,501" 또는 숫자 → 번호 배열(중복·이상한 값 제거, 순서 유지) */

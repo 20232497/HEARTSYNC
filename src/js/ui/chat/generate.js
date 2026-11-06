@@ -74,8 +74,8 @@ function addCastImages(body, r, prev, said) {
     if (!seen.has(f.x.code)) sit = 0;
     else {
       const mine = !!said2 && (f.keys.some((k) => said2.includes(k)) || (!anyNamed && i === 0)), sc = new Map();
-      sitScores(f.own, adult, c).forEach((v, k) => { if (dimOf(k) === "act") sc.set(k, v * 2); });
-      if (mine) sitScores(said2, adult, c).forEach((v, k) => { if (dimOf(k) === "act") sc.set(k, (sc.get(k) || 0) + v); });
+      sitScores(f.own, adult).forEach((v, k) => { if (dimOf(k) === "act") sc.set(k, v * 2); });
+      if (mine) sitScores(said2, adult).forEach((v, k) => { if (dimOf(k) === "act") sc.set(k, (sc.get(k) || 0) + v); });
       let best = 0; sc.forEach((v, k) => { const s = v + (validRef((imgs[f.x.code] || {})[k]) ? 0.5 : 0); if (s > best) { best = s; sit = k; } });
       const dp = dimPick(f.own + (mine ? "\n" + said2 : ""), adult); extra = [dp.wear, dp.place].filter(Boolean);
     }

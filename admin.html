@@ -835,7 +835,7 @@ const idvOn = () => !!(CFG.idv && (CFG.idv.mode === "test" || CFG.idv.mode === "
 const IN_CLAUDE = !!(window.claude && typeof window.claude.use === "function");
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/core/constants.js
-   내보냄: MARK, FREE_DAILY, WELCOME, PLUS_MONTHLY, TIMEOUT, SIT, RPG_ONLY_SITS, SIT_TINT, PALETTES, MOTIFS, CATS
+   내보냄: MARK, FREE_DAILY, WELCOME, PLUS_MONTHLY, TIMEOUT, SIT, SIT_TINT, PALETTES, MOTIFS, CATS
    쓰는 곳: src/js/ai/models.js, src/js/core/wallet.js, src/js/services/supabase.js, src/js/images/codes.js, src/js/services/community.js, src/js/images/situations.js, src/js/ai/parse.js, src/js/ai/openrouter.js, src/js/ai/llm.js, src/js/ai/prompt/rules.js, src/js/ui/cover.js, src/js/ui/home.js, src/js/app.js, src/js/admin/codes.js, src/js/images/runware.js, src/js/admin/image-codes.js, src/js/admin/motion-run.js, src/js/admin/sit-sheets.js, src/js/admin/image-studio.js, src/js/admin/studio.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 순수 상수: 응답 구분자(MARK), 상황 이름(SIT)·표지 색·무늬·장르, 요금 상수 — 다른 모듈을 import하지 않음 */
@@ -845,8 +845,6 @@ const FREE_DAILY = 10, WELCOME = 30, PLUS_MONTHLY = 300;
 /* 네트워크 시간 제한(ms): connect 응답 머리가 올 때까지 · stall 스트림 조각 사이 · image Runware 생성 한 건 · api Supabase 요청 하나. 넘으면 {code:"timeout"}(core/util.js timeoutSignal) */
 const TIMEOUT = { connect: 45000, stall: 60000, image: 120000, api: 20000 };
 const SIT = ["프로필", "기본", "웃음", "부끄러움", "슬픔", "놀람", "분노", "삐침", "공포", "부상", "회복", "휴식", "공격", "각성", "설렘"];
-/* RPG 세계관 전용 기본 칸: 12 공격(사용자 결정 2026-11-06). 판정은 images/situations.js sitFits */
-const RPG_ONLY_SITS = [12];
 const SIT_TINT = ["#f5f0ff", "#9fb4ff", "#ffd166", "#ff8fab", "#7b96ff", "#ffe066", "#ff5d5d", "#c77dff", "#56cfe1", "#e63946", "#80ed99", "#a0c4ff", "#ff8c42", "#f9c74f", "#ff70a6"];
 const PALETTES = [
   ["#1d2735", "#3c5a73", "#c9a46a"], ["#2a1720", "#7a2e48", "#f0b7c8"], ["#151a2e", "#3b3f7a", "#d8c38a"], ["#16222a", "#2f6f73", "#f6d58e"],
@@ -1314,7 +1312,7 @@ const ORIGINALS = [
     {"code":"th","name":"강태하","look":"32세 남성, 셰프, 짧게 깎은 검은 머리, 날카로운 눈매, 검은 앞치마, 걷어붙인 소매와 팔뚝의 화상 자국","tags":"black hair, very short hair, sharp eyes, chef, black apron, sleeves rolled up, burn scar on forearm, toned arms"},
     {"code":"sh","name":"윤시후","look":"29세 남성, 무명 배우, 갈색 펌 머리, 장난스러운 웃음, 헐렁한 후드티, 귀의 작은 피어싱","tags":"brown hair, wavy hair, permed hair, oversized hoodie, ear piercing, small earrings"},
     {"code":"dh","name":"백도현","look":"31세 남성, 수의사, 단정한 검은 머리, 둥근 안경, 흰 가운 위 회색 니트, 다정한 눈","tags":"black hair, neat hair, round eyewear, glasses, grey sweater, white coat, veterinarian, gentle eyes"},
-    {"code":"hg","name":"이한결","look":"27세 남성, 웹툰 작가, 눈을 덮는 부스스한 흑발, 다크서클, 늘어진 검은 티셔츠, 목에 건 헤드폰","tags":"black hair, messy hair, hair over eyes, bags under eyes, black v-neck shirt, black shirt, loose shirt, headphones around neck"},
+    {"code":"hg","name":"이한결","look":"27세 남성, 웹툰 작가, 눈썹을 덮는 부스스한 흑발, 피곤한 눈, 다크서클, 늘어진 검은 티셔츠, 목에 건 헤드폰","tags":"black hair, short hair, messy hair, shaggy bangs, hair between eyes, tired eyes, dark circles under eyes, black v-neck shirt, black shirt, loose shirt, headphones around neck"},
     {"code":"jh","name":"서진혁","look":"34세 남성, 변호사, 깔끔하게 넘긴 머리, 무테안경, 남색 정장, 차가운 표정","tags":"black hair, slicked back hair, rimless eyewear, navy blue suit, necktie, lawyer"}
   ],
   "openings": [
@@ -1406,7 +1404,7 @@ const ORIGINALS = [
   ],
   "cast": [
     {"code":"ih","name":"이화","look":"22세 여성, 상복 차림의 공주, 흰 비단 당의, 올림머리에 은비녀, 차가운 눈매","tags":"black hair, hair up, silver hairpin, forehead, parted bangs, narrow eyes, thin eyebrows, mole under eye, binyeo, white hanbok, korean clothes, jeogori, goreum, long sleeves, white chima skirt, joseon princess"},
-    {"code":"sr","name":"설련","look":"24세 여성, 포도청 다모 복장, 질끈 묶은 머리, 쇠도리깨, 뺨의 작은 흉터","tags":"black hair, tied hair, side-swept bangs, sharp eyes, thick eyebrows, joseon police uniform, damo, hanbok, iron flail, small scar on cheek"},
+    {"code":"sr","name":"설련","look":"24세 여성, 포도청 다모 복장, 질끈 묶은 머리, 쇠도리깨, 뺨의 작은 흉터","tags":"black hair, tied hair, side-swept bangs, sharp eyes, thick eyebrows, korean clothes, hanbok, dark blue jeogori, joseon dynasty, iron baton, small scar on cheek"},
     {"code":"jo","name":"정옥","look":"23세 여성, 내의원 의녀, 연두색 저고리, 단정한 쪽머리, 약초 바구니","tags":"black hair, neat chignon, forehead, parted bangs, droopy eyes, soft eyebrows, light green jeogori, hanbok, herb basket, physician"},
     {"code":"wh","name":"월하","look":"27세 여성, 기방 행수, 짙은 남색 치마, 화려한 떨잠, 접부채, 웃는 눈","tags":"black hair, elaborate updo, ornate hair ornament, forehead, upturned eyes, arched eyebrows, beauty mark, dark navy chima, hanbok, folding fan, gisaeng"},
     {"code":"db","name":"단비","look":"25세 여성, 국무당, 붉은 무복과 갓, 방울과 부채, 겁먹은 큰 눈","tags":"black hair, round eyes, straight eyebrows, red shaman robe, gat, korean hat, hanbok, bells, fan, shaman"}
@@ -1501,7 +1499,7 @@ const ORIGINALS = [
   ],
   "cast": [
     {"code":"ns","name":"남궁설","look":"24세 여성, 흰 무복에 푸른 띠, 높게 묶은 흑발, 장검, 차가운 눈빛","tags":"black hair, high ponytail, side-swept bangs, narrow eyes, straight eyebrows, white martial arts uniform, blue sash, hanfu, longsword"},
-    {"code":"ss","name":"당소소","look":"22세 여성, 보라색 무복, 손목의 암기 팔찌, 짧은 단발, 장난스러운 미소","tags":"black hair, short bob cut, round eyes, upturned eyes, thin eyebrows, purple martial arts uniform, hanfu, bracelet, hidden weapons"},
+    {"code":"ss","name":"당소소","look":"22세 여성, 보라색 무복, 손목의 암기 팔찌, 짧은 단발, 장난스러운 미소","tags":"black hair, short bob cut, round eyes, upturned eyes, thin eyebrows, purple martial arts uniform, hanfu, bracelet, poison dagger"},
     {"code":"hw","name":"혜원","look":"25세 여성, 회색 아미파 무복, 반쯤 묶은 긴 머리, 약상자, 단정한 얼굴","tags":"black hair, long hair, half updo, curtain bangs, droopy eyes, soft eyebrows, grey martial arts robe, hanfu, medicine box"},
     {"code":"mr","name":"묵란","look":"26세 여성, 검은 무복 위 화산파 외문제자 외투, 길게 늘어뜨린 흑발, 붉은 입술, 냉소","tags":"black hair, very long hair, forehead, parted bangs, upturned eyes, arched eyebrows, black martial arts uniform, red-trimmed outer robe, hanfu, red lips"},
     {"code":"hr","name":"화린","look":"23세 여성, 기운 누더기 옷, 대나무 타구봉, 헝클어진 갈색 머리, 크게 웃는 얼굴","tags":"brown hair, messy hair, round eyes, thick eyebrows, freckles, patched ragged clothes, bamboo staff, beggar sect"}
@@ -1614,7 +1612,7 @@ const ORIGINALS = [
 /* f/kael */ {
   "id": "kael",
   "name": "카엘",
-  "lookTags": "silver grey hair, deep blue eyes, cracked silver armor, knight armor, paladin, thin scar on cheek",
+  "lookTags": "silver grey hair, deep blue eyes, cracked silver armor, knight armor, paladin, longsword, thin scar on cheek",
   "title": "몰락한 제국의 마지막 기사",
   "glyph": "誓",
   "cat": "판타지",
@@ -2478,7 +2476,7 @@ function acctName() { const u = SB.s && SB.s.user; if (!u) return ""; return u.e
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/images/codes.js
    가져옴: src/js/core/constants.js { SIT }
-   내보냄: DIM_NAMES, RESET, RANK, maxRating, dimOf, DIMS, MAX_ACT, parseCodes, splitDims, keyOf, fallbackKeys, IMG_TAG_RE, imgTags, lastDims, applyDims, freeNum, usedNums, baseName
+   내보냄: DIM_NAMES, RESET, RANK, maxRating, dimOf, DIMS, MERGED_CODES, MAX_ACT, parseCodes, splitDims, keyOf, fallbackKeys, IMG_TAG_RE, imgTags, lastDims, applyDims, freeNum, usedNums, baseName
    쓰는 곳: src/js/images/motion.js, src/js/images/situations.js, src/js/services/sync.js, src/js/images/pick.js, src/js/ai/prompt/rules.js, src/js/ui/cover.js, src/js/ui/room-drawer.js, src/js/ui/chat/render.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/app.js, src/js/admin/codes.js, src/js/images/prompt.js, src/js/admin/export.js, src/js/admin/image-codes.js, src/js/admin/image-run.js, src/js/admin/motion-prompts.js, src/js/admin/motion-run.js, src/js/admin/sit-sheets.js, src/js/admin/image-studio.js, src/js/admin/auto-images.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 그림 상황 코드(순수 — SIT 상수만 import해 Node 단위 테스트가 바로 씀): 번호 차원, 조합 태그 파싱, 조합 키, 의상·장소 이어 가기(applyDims·lastDims), 내장 코드(DIMS).
@@ -2501,26 +2499,20 @@ const dimDef = (n, name, prompt, keys, rating) => [n, { n, name, prompt, keys: k
 const DIMS = Object.fromEntries([
   // 100번대: 세부 감정·일상
   dimDef(101, "미소", "smile, soft expression, gentle eyes, warm atmosphere, happy", "미소|싱긋|빙긋|방긋"),
-  dimDef(102, "분노 표출", "furrowed brow, cold eyes, stern expression, hostile, glaring", "적대|노려보|분노"),
   dimDef(103, "당황", "panicked, nervous sweat, flushed face, averting eyes, stiff posture", "당황|허둥|어쩔 줄|말문이"),
   dimDef(104, "달아오름", "heavy breathing, flushed, wet eyes, half-closed eyes, blush", "달아오|숨이 가빠|젖은 눈|열이 오", "questionable"),
   dimDef(105, "취기", "drunk, glazed eyes, unsteady, blush, languid", "취했|취한|술에 취|비틀거"),
-  dimDef(106, "오열", "tears, sobbing, head down, sad eyes, trembling lips", "오열|흐느|울음을 터|눈물이 터"),
-  dimDef(107, "수줍음", "blush, looking away, fidgeting fingers, shy, faint smile", "수줍|쑥스|머뭇"),
   dimDef(108, "차가운 정색", "expressionless, cold stare, crossed arms, distant, looking down at viewer", "정색|냉담|차갑게|싸늘"),
   dimDef(109, "탈진", "panting, sitting on ground, sweat, slumped, heavy breathing", "탈진|헐떡|주저앉|녹초"),
-  dimDef(110, "질투", "pout, side glance, crossed arms, possessive, sulking", "질투|샘이 나|샘나"),
   dimDef(111, "유혹", "licking lips, sultry gaze, seductive pose, bedroom eyes, leaning close", "유혹|도발|요염|끈적", "questionable"),
   dimDef(112, "애교", "looking up at viewer, puppy eyes, clinging, cute, cheek press", "애교|부비|달라붙|칭얼"),
   dimDef(113, "거부", "hand blocking, turning head away, grimace, resisting, pushing away", "밀쳐|밀어내|거부|뿌리치"),
   dimDef(114, "허탈", "empty eyes, blank expression, listless, sigh, slumped shoulders", "허탈|공허|멍하니|무기력"),
-  dimDef(115, "안도", "relieved, relaxed shoulders, deep breath, soft smile, hand on own chest", "안도|한숨 돌|가슴을 쓸어"),
+  dimDef(115, "안도", "relieved, relaxed shoulders, deep breath, soft smile, hand on own chest", "안도|한숨 돌|가슴을 쓸어|심호흡|숨을 고르|진정"),
   dimDef(116, "장난", "wink, tongue out, playful smile, mischievous, teasing", "장난스|윙크|메롱|능청"),
   dimDef(117, "애틋함", "wistful eyes, gentle touch, tender, affectionate, eye contact", "애틋|그리워|그립|아련"),
   dimDef(118, "경계", "side glance, narrowed eyes, leaning back, defensive stance, tense", "경계|의심|수상|미심쩍"),
   dimDef(119, "절망", "head in hands, staring at floor, collapsed posture, despair, tear stains", "절망|좌절|무너져|주저앉아 울"),
-  dimDef(120, "환희", "big smile, hands together, bright expression, excited, sparkling eyes", "환희|기뻐|기쁘|신이 나|신나"),
-  dimDef(121, "경악", "open mouth, wide eyes, stepping back, hand over own mouth, frozen", "경악|기겁|헉|소스라"),
   dimDef(122, "식사", "eating, holding wine glass, tableware, food, satisfied expression", "식사|먹|마시|와인|술잔|건배"),
   dimDef(123, "게임", "looking at monitor, serious expression, typing, holding controller, focused", "게임|컨트롤러|모니터|키보드"),
   dimDef(124, "졸음", "closed eyes, nodding off, yawning, calm breathing, rubbing eyes", "졸려|졸음|하품|잠들|꾸벅"),
@@ -2529,17 +2521,14 @@ const DIMS = Object.fromEntries([
   dimDef(127, "쓰다듬 받음", "closed eyes, pleased expression, hand on head, soft hair, warmth", "쓰다듬|머리를 토닥|토닥"),
   dimDef(128, "무릎베개", "lap pillow, lying on lap, looking down at viewer, peaceful face, intimate", "무릎베개|무릎에 누|무릎을 베"),
   dimDef(129, "간지럼", "flinching, giggling, dodging, cheerful", "간지럼|간지러|까르르"),
-  dimDef(130, "토라짐", "turning away, pursed lips, puffed cheeks, not looking, sulking", "토라|삐졌|삐친|흥,"),
   dimDef(131, "요리", "apron, kitchen utensils, focused, tasting, homely atmosphere", "요리|부엌|앞치마|베이킹|주방"),
   dimDef(132, "스마트폰", "phone screen glow, typing on phone, looking at phone, lowered eyes, nonchalant", "스마트폰|휴대폰|핸드폰|문자를|메시지를 보"),
   dimDef(133, "기지개", "arms raised, stretching, closed eyes, languid, flexible", "기지개|스트레칭"),
   dimDef(134, "단장", "looking in mirror, applying lipstick, brushing hair, getting ready, dressed up", "화장|거울 앞|립스틱|단장|꾸미"),
   dimDef(135, "음악 감상", "earphones, nodding to rhythm, closed eyes, calm, humming", "음악|이어폰|노래를 들|흥얼"),
-  dimDef(136, "심호흡", "deep breath, chest rising, calming down, closed eyes, composing oneself", "심호흡|숨을 고르|진정"),
   dimDef(137, "초조", "checking watch, tapping foot, looking around, biting lip, restless", "초조|안절부절|시계를|입술을 깨"),
   dimDef(138, "억지 미소", "forced smile, stiff smile, sad eyes, hidden pain, trembling", "억지로 웃|억지웃음|애써 웃"),
   dimDef(139, "감동", "overwhelmed expression, tears streaming, bright smile, hands together, sparkling eyes", "감동|벅차|울컥|코끝이"),
-  dimDef(140, "짜증", "hand on own forehead, deep sigh, sharp glare, irritated, standing on one leg", "짜증|신경질|이마를 짚|성가"),
   // 400번대: 의상. 400은 '설정대로'(프롬프트 없음). 체육복·알몸 같은 것은 내장하지 않음
   dimDef(400, "기본 의상", "", ""),
   dimDef(401, "비키니", "micro bikini, string bikini, wet, beach", "비키니|수영복", "questionable"),
@@ -2558,6 +2547,8 @@ const DIMS = Object.fromEntries([
   dimDef(506, "화장실 칸", "restroom stall, tiled wall, narrow stall, leaning on door", "화장실"),
   dimDef(507, "야외", "outdoors, nature scenery, night air, wind, open sky", "야외|들판|숲속|공원|밤하늘")
 ]);
+/* 줄인 내장 코드 → 대신할 번호(2026-11-06, 사용자 요청 — 기본 칸·다른 코드와 그림이 겹침, 낱말은 대신할 칸으로 옮김). 예전 대화의 태그가 비슷한 칸으로 보이게(ui/cover.js figKey). 번호는 빈 번호라 다시 들여오면 그 칸이 씀 */
+const MERGED_CODES = { 102: 6, 106: 4, 107: 3, 110: 7, 120: 2, 121: 5, 130: 7, 136: 115, 140: 6 };
 const MAX_ACT = 2; // 한 태그의 감정/행동 번호 최대 수
 const isReset = (n) => n === RESET.wear || n === RESET.place;
 /* "101,404,501" 또는 숫자 → 번호 배열(중복·이상한 값 제거, 순서 유지) */
@@ -2839,15 +2830,15 @@ function watchCommunity() {
    src/js/images/situations.js
    가져옴: src/js/ai/adult.js { ageOK }
            src/js/content/index.js { CONTENT_CODES }
-           src/js/core/constants.js { RPG_ONLY_SITS, SIT }
+           src/js/core/constants.js { SIT }
            src/js/core/state.js { S }
            src/js/core/storage.js { KV }
-           src/js/images/codes.js { DIMS, RESET, dimOf, freeNum, maxRating, parseCodes, usedNums }
+           src/js/images/codes.js { DIMS, MERGED_CODES, RESET, dimOf, freeNum, maxRating, parseCodes, usedNums }
            src/js/images/motion.js { dropMotionCodes }
            src/js/images/rating.js { sheetRating }
            src/js/services/community.js { publishCommunity }
            src/js/services/images.js { IMG }
-   내보냄: CUSTOM_BASE, CUSTOM_MAX, CODE_MAX, EXTRA_CODES, setExtraCodes, allCustom, sitDef, sitName, keyName, knownCodes, customSits, builtinSits, codeDefs, slotNums, freeSitNum, codeRating, sitFits, sitScores, dimPick, sitHints, dropSitImages, countSitImages
+   내보냄: CUSTOM_BASE, CUSTOM_MAX, CODE_MAX, EXTRA_CODES, setExtraCodes, allCustom, sitDef, sitName, mergedCode, keyName, knownCodes, customSits, builtinSits, codeDefs, slotNums, freeSitNum, codeRating, sitScores, dimPick, sitHints, dropSitImages, countSitImages
    쓰는 곳: src/js/services/sync.js, src/js/ai/prompt/input.js, src/js/ai/prompt/rules.js, src/js/ui/cover.js, src/js/ui/room-drawer.js, src/js/ui/chat/generate.js, src/js/app.js, src/js/admin/codes.js, src/js/images/prompt.js, src/js/admin/export.js, src/js/admin/image-codes.js, src/js/admin/image-run.js, src/js/admin/motion-run.js, src/js/admin/sit-sheets.js, src/js/admin/image-studio.js, src/js/admin/auto-images.js, src/js/core/migrate.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 상황 칸: 기본 0~14 + 직접 만든 칸(customSits — 내 칸과 작품 폴더에 실린 코드 표) + 내장 코드(DIMS: 1xx 감정/행동·4xx 의상·5xx 장소), 조합 키 이름·수위, 유저 입력 → 번호 점수(sitHints·dimPick) */
@@ -2880,7 +2871,9 @@ function allCustom() {
 const customList = allCustom;
 /* 칸 정의: 직접 만든 칸 → 내장 코드(DIMS). 기본 0~14는 null */
 function sitDef(n) { return n >= CUSTOM_BASE ? customList().find((d) => d.n === n) || DIMS[n] || null : null; }
-function sitName(n) { return SIT[n] || sitDef(n)?.name || "칸 " + n; }
+function sitName(n) { return SIT[n] || sitDef(n)?.name || (MERGED_CODES[n] !== undefined ? sitName(MERGED_CODES[n]) : "칸 " + n); }
+/* 줄인 내장 코드 → 대신할 번호. 같은 번호를 내 칸으로 다시 들여왔으면 그 칸 그대로 */
+const mergedCode = (n) => MERGED_CODES[n] !== undefined && !sitDef(n) ? MERGED_CODES[n] : n;
 /* 조합 키("3,404,501") → "부끄러움 · 오피스룩 · 침실" */
 function keyName(key) { return parseCodes(key).map(sitName).join(" · ") || SIT[1]; }
 const knownCodes = (codes) => codes.filter((n) => n < CUSTOM_BASE || !!sitDef(n)); // 모르는 번호(지운 칸 등)는 뺌
@@ -2893,13 +2886,11 @@ const slotNums = () => [...SIT.keys(), ...customSits().filter((d) => d.n < 100).
 function freeSitNum(dim = "act") { return freeNum(usedNums(customList()), dim); }
 /* 번호들의 그림 수위: 기본 0~14는 그 작품의 시트 수위(기본 전체이용가), 그 밖은 칸 정의의 수위 — 가장 높은 것 */
 function codeRating(codes, c) { return maxRating(codes.map((n) => n < CUSTOM_BASE ? sheetRating(c.id) : (sitDef(n)?.rating || "safe"))); }
-/* 이 작품이 쓰는 번호인지: RPG 전용 칸은 cat이 RPG인 작품에서만 AI 번호 목록·낱말 후보에 넣음. 이미 쓴 태그와 스튜디오에서 직접 고른 조합은 막지 않음 */
-const sitFits = (n, c) => RPG_ONLY_SITS.indexOf(n) < 0 || !!(c && c.cat === "RPG");
 /* 상황 번호를 고르는 낱말(정규식 조각). AI가 그림을 빠뜨린 인물의 번호를 고를 때와, 유저 입력에서 번호 후보를 뽑을 때 씀 */
-const SIT_KEYS = { 2: "웃|미소|싱긋|방긋|피식|킥킥|깔깔|농담|재밌", 3: "부끄|수줍|민망|얼굴이 (?:붉|빨개)|귀까지|빨개|장난|놀리|놀려|짓궂|칭찬|예쁘|예쁜|예뻐|귀여|귀엽",
-  4: "울먹|울었|우는|눈물|슬프|슬퍼|흐느|서럽|그리워", 5: "놀라|놀란|깜짝|화들짝|헉|휘둥그|설마", 6: "화가|화를|화난|분노|노려|버럭|소리쳤|이를 악|짜증|열받|닥쳐",
-  7: "삐졌|삐친|삐죽|토라|흥[,.!…]|볼을 부풀|서운|입을 내밀", 8: "무서|두려|겁에|겁먹|떨리|떨었|비명|공포|소름", 9: "다쳤|다친|부상|피를|피가|상처|쓰러",
-  10: "치료|붕대|회복|응급", 11: "쉬자|쉬어|잠들|졸려|하품|휴식|기지개|낮잠", 12: "공격|휘둘|베었|베어|찔렀|쏘았|쐈|주먹|덤벼|전투|싸우",
+const SIT_KEYS = { 2: "웃|미소|싱긋|방긋|피식|킥킥|깔깔|농담|재밌|환희|기뻐|기쁘|신이 나|신나", 3: "부끄|수줍|쑥스|머뭇|민망|얼굴이 (?:붉|빨개)|귀까지|빨개|장난|놀리|놀려|짓궂|칭찬|예쁘|예쁜|예뻐|귀여|귀엽",
+  4: "울먹|울었|우는|눈물|슬프|슬퍼|흐느|오열|울음을 터|서럽|그리워", 5: "놀라|놀란|깜짝|화들짝|헉|휘둥그|설마|경악|기겁|소스라", 6: "화가|화를|화난|분노|노려|적대|버럭|소리쳤|이를 악|짜증|신경질|이마를 짚|성가|열받|닥쳐",
+  7: "삐졌|삐친|삐죽|토라|흥[,.!…]|볼을 부풀|서운|입을 내밀|질투|샘이 나|샘나", 8: "무서|두려|겁에|겁먹|떨리|떨었|비명|공포|소름", 9: "다쳤|다친|부상|피를|피가|상처|쓰러",
+  10: "치료|붕대|회복|응급", 11: "쉬자|쉬어|잠들|졸려|하품|휴식|기지개|낮잠", 12: "공격|휘둘|베었|베어|찔렀|쏘았|쐈|주먹|맨손|때렸|후려|걷어차|덤벼|전투|싸우",
   13: "각성|힘이 솟|눈빛이 변|폭주|기운이 치솟", 14: "설레|두근|심장이|가슴이 뛰|손을 잡|손잡|안아|포옹|고백|좋아해|데이트" };
 // 추천 칸 이름별 낱말. 그 밖의 직접 만든 칸은 칸 이름 자체로(내장 코드는 keys로) 찾음
 const SIT_KEYS_EXTRA = { 식사: "식사|밥|먹", 만남: "처음 뵙|반가워|반갑", 정색: "정색|굳은 얼굴|차갑게", 행복: "행복|기뻐|기쁘", 경계: "경계|의심|수상", 고민: "고민|생각에 잠|망설",
@@ -2912,11 +2903,11 @@ function sitKeys(n) {
   return [SIT_KEYS_EXTRA[d.name.trim()], d.keys, d.name.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&")].filter(Boolean).join("|");
 }
 /* 글 속 낱말로 번호마다 점수(adult면 성인 수위 칸도 후보). 직접 만든 칸·내장 코드는 더 구체적이라 0.5 더함. 400·500(되돌리기)은 뽑지 않음 */
-function sitScores(text, adult, c) {
+function sitScores(text, adult) {
   const out = new Map(), s = String(text || "");
   if (!s.trim()) return out;
   for (const n of [...SIT.keys(), ...codeDefs(adult).map((d) => d.n)]) {
-    if (n === RESET.wear || n === RESET.place || !sitFits(n, c)) continue;
+    if (n === RESET.wear || n === RESET.place) continue;
     const k = sitKeys(n); if (!k) continue;
     const hits = (s.match(new RegExp(k, "g")) || []).length;
     if (hits) out.set(n, hits + (n >= CUSTOM_BASE ? 0.5 : 0));
@@ -2930,8 +2921,8 @@ function dimPick(text, adult, sc = sitScores(text, adult)) {
   return out;
 }
 /* 유저 입력에 맞는 번호 후보: 감정/행동 둘("3 부끄러움") + 의상·장소("의상 404 오피스룩") — [이번 응답]에 붙여 AI가 고르게 */
-function sitHints(text, adult, c) {
-  const sc = sitScores(text, adult, c), out = [...sc].filter(([n]) => dimOf(n) === "act").sort((a, b) => b[1] - a[1]).slice(0, 2).map(([n]) => n + " " + sitName(n));
+function sitHints(text, adult) {
+  const sc = sitScores(text, adult), out = [...sc].filter(([n]) => dimOf(n) === "act").sort((a, b) => b[1] - a[1]).slice(0, 2).map(([n]) => n + " " + sitName(n));
   const d = dimPick(text, adult, sc);
   if (d.wear) out.push(`의상 ${d.wear} ${sitName(d.wear)}`);
   if (d.place) out.push(`장소 ${d.place} ${sitName(d.place)}`);
@@ -3742,7 +3733,7 @@ function buildInput(r, uptoIdx, statusBefore, direction) {
     if (m.role === "ai") { out.push({ role: "assistant", content: curText(m) }); return; }
     let t = m.sys ? "// 직전 장면에서 자연스럽게 이어서 다음 장면을 써라. 유저의 행동은 쓰지 않는다." : m.text;
     // 분량·대화·새 전개 지시는 시스템 프롬프트에도 있지만, 모델이 가장 잘 따르는 마지막 입력 옆에 한 번 더
-    if (last) t = `[현재 상태창 — 이번 장면은 여기서 출발한다]\n${JSON.stringify(statusBefore || {})}\n\n[${r.persona.name}의 입력]\n${t}${direction ? "\n\n// 다시 쓰기 지침: " + direction : ""}\n\n[이번 응답] 위 입력을 본문에 다시 옮겨 적지 말고 그 직후의 반응부터 쓴다. 본문 ${len.chars}, 대사 ${len.lines}줄 이상을 주고받고, 직전 응답과 다른 새 전개를 넣는다. 나오는 인물마다 [[img:코드:번호]]를 한 장씩 넣는다(의상·장소가 바뀌면 번호 뒤에 쉼표로)${(() => { const h = m.sys ? [] : sitHints(m.text, unfilteredRoute(r), r.char); return h.length ? `(유저 입력에 맞는 번호 후보: ${h.join(", ")})` : ""; })()}.`;
+    if (last) t = `[현재 상태창 — 이번 장면은 여기서 출발한다]\n${JSON.stringify(statusBefore || {})}\n\n[${r.persona.name}의 입력]\n${t}${direction ? "\n\n// 다시 쓰기 지침: " + direction : ""}\n\n[이번 응답] 위 입력을 본문에 다시 옮겨 적지 말고 그 직후의 반응부터 쓴다. 본문 ${len.chars}, 대사 ${len.lines}줄 이상을 주고받고, 직전 응답과 다른 새 전개를 넣는다. 나오는 인물마다 [[img:코드:번호]]를 한 장씩 넣는다(의상·장소가 바뀌면 번호 뒤에 쉼표로)${(() => { const h = m.sys ? [] : sitHints(m.text, unfilteredRoute(r)); return h.length ? `(유저 입력에 맞는 번호 후보: ${h.join(", ")})` : ""; })()}.`;
     out.push({ role: "user", content: t });
   });
   return out;
@@ -3757,7 +3748,7 @@ function buildInput(r, uptoIdx, statusBefore, direction) {
            src/js/core/rooms.js { curText }
            src/js/images/codes.js { imgTags, lastDims, parseCodes, splitDims }
            src/js/images/pick.js { imagesOf }
-           src/js/images/situations.js { CUSTOM_BASE, codeDefs, sitDef, sitFits, sitName }
+           src/js/images/situations.js { CUSTOM_BASE, codeDefs, sitDef, sitName }
            src/js/services/images.js { validRef }
    내보냄: speakerName, rulesPrompt
    쓰는 곳: src/js/ai/prompt/input.js, src/js/ai/prompt/memory.js, src/js/ui/chat/suggest.js, src/js/ui/room-drawer.js, src/js/ui/chat/log.js, src/js/app.js
@@ -3796,7 +3787,7 @@ function rulesPrompt(r, lore = [], hist = r.msgs) {
   const fields = c.fields.map((f) => `"${f}":${f === c.gauge && typeof r.status?.[f] === "number" ? "0~100 정수" : '"짧은 값"'}`).join(",");
   const seen = new Set(); hist.forEach((m) => imgTags(curText(m)).forEach((t) => seen.add(t.code)));
   const castLine = (c.cast || []).map((x) => `${x.code}=${x.name}`).join(", ");
-  const sn = (name) => SIT.indexOf(name) + " " + name, okSit = (n) => sitFits(n, c) && (n < CUSTOM_BASE || (sitDef(n) && (sitDef(n).rating === "safe" || unfilteredRoute(r))));
+  const sn = (name) => SIT.indexOf(name) + " " + name, okSit = (n) => n < CUSTOM_BASE || (sitDef(n) && (sitDef(n).rating === "safe" || unfilteredRoute(r)));
   // 인물별로 그림이 들어 있는 감정/행동 번호(조합 키의 감정 부분까지 — 준비된 이미지셋 안에서 고르게)
   const ready = (c.cast || []).map((x) => { const m = imagesOf(c)[x.code] || {}; const ns = [...new Set(Object.keys(m).filter((k) => validRef(m[k])).flatMap((k) => splitDims(parseCodes(k)).act))].filter(okSit).sort((a, b) => a - b); return ns.length ? `${x.name} ${ns.join("·")}` : ""; }).filter(Boolean);
   // 감정/행동·의상·장소 번호 목록(성인 수위 칸은 성인 경로일 때만)과 인물별로 이어지는 의상·장소(applyDims가 태그에 남긴 것)
@@ -3849,9 +3840,9 @@ ${(() => { const used = usedOpeners(hist); return used.length ? `\n[이미 쓴 �
 [장면 이미지 — 매 응답 필수]
 - 이번 응답에 나오는(말하거나 움직이는) 인물마다 그림을 한 장씩 넣는다. 그 인물이 처음 말하거나 등장하는 줄 바로 위에 별도 줄로 [[img:코드:번호]] 만 쓴다. 설명을 덧붙이지 않는다.
 - 인물 코드: ${castLine}
-- 감정·행동 번호: ${[...SIT.map((s, i) => i + " " + s).filter((s, i) => sitFits(i, c)), ...byDim("act")].join(", ")}
+- 감정·행동 번호: ${[...SIT.map((s, i) => i + " " + s), ...byDim("act")].join(", ")}
 - 의상 번호: ${byDim("wear").join(", ")} / 장소 번호: ${byDim("place").join(", ")}. 옷이나 장소가 바뀌는 순간에만 감정 번호 뒤에 쉼표로 붙인다(예: [[img:${(c.cast || [{ code: "c" }])[0].code}:3,404,501]]). 한 번 쓴 의상·장소는 다음 응답에도 자동으로 이어지므로 바뀌지 않으면 다시 쓰지 않고, 설정의 원래 옷·장면에 맞는 배경으로 돌아가면 400(기본 의상)·500(기본 배경)을 쓴다.${nowLine ? `\n- 지금 이어지는 의상·장소: ${nowLine}` : ""}
-- 번호는 그 순간 그 인물의 표정·상황으로 고르고, 유저의 말과 행동에 대한 반응을 먼저 본다: 놀림·짓궂은 장난 → ${sn("부끄러움")}·${sn("삐침")}, 칭찬·농담 → ${sn("웃음")}, 고백·스킨십 → ${sn("설렘")}·${sn("부끄러움")}, 무례·배신 → ${sn("분노")}, 위협·괴물 → ${sn("공포")}·${sn("놀람")}, 싸움 → ${sn(sitFits(SIT.indexOf("공격"), c) ? "공격" : "분노")}, 다침 → ${sn("부상")}. 장소·행동에 맞는 추가 번호(식사·데이트 등)가 있으면 그 번호.
+- 번호는 그 순간 그 인물의 표정·상황으로 고르고, 유저의 말과 행동에 대한 반응을 먼저 본다: 놀림·짓궂은 장난 → ${sn("부끄러움")}·${sn("삐침")}, 칭찬·농담 → ${sn("웃음")}, 고백·스킨십 → ${sn("설렘")}·${sn("부끄러움")}, 무례·배신 → ${sn("분노")}, 위협·괴물 → ${sn("공포")}·${sn("놀람")}, 싸움 → ${sn("공격")}(맨손·무기 모두), 다침 → ${sn("부상")}. 장소·행동에 맞는 추가 번호(식사·데이트 등)가 있으면 그 번호.
 - 인물이 이야기에 처음 등장하는 순간은 0번(프로필). 이미 등장한 인물: ${[...seen].join(", ") || "없음"}${ready.length ? `\n- 그림이 준비된 번호(되도록 이 안에서 고른다): ${ready.join(" / ")}` : ""}
 - 같은 인물은 한 응답에 한 장(감정이 크게 뒤집히면 두 장까지). 감정이 이어지면 직전과 같은 번호를 써도 된다.
 
@@ -4065,7 +4056,7 @@ ${recent}` }], { tier: "quick", json: true, room: r });
            src/js/images/codes.js { keyOf, parseCodes, splitDims }
            src/js/images/motion.js { liveMotion }
            src/js/images/pick.js { imagesOf, pickKey }
-           src/js/images/situations.js { keyName, knownCodes, sitName }
+           src/js/images/situations.js { keyName, knownCodes, mergedCode, sitName }
            src/js/services/images.js { IMG }
    내보냄: coverHTML, artHTML, figKey, picHTML, showOf, figInner, figHTML, portraitHTML, lightbox, zoomPic, pavHTML
    쓰는 곳: src/js/ui/home.js, src/js/ui/me.js, src/js/ui/room-drawer.js, src/js/ui/chat/view.js, src/js/ui/chat/render.js, src/js/ui/chat/log.js, src/js/ui/shell.js, src/js/ui/detail.js, src/js/ui/chats.js, src/js/app.js, src/js/admin/image-studio.js, src/js/admin/auto-images.js, src/js/admin/works.js
@@ -4093,7 +4084,7 @@ function artHTML(c, cast, key) {
   return `<div class="artcard" style="--c1:${pal[0]};--c2:${pal[1]};--c3:${pal[2]};--tint:${SIT_TINT[sit] || "#c9b8ff"}"><span class="ac-g">${esc((cast.name || "?").slice(0, 1))}</span><span class="ac-s">${esc(sitName(sit))}${codes.length > 1 ? ` +${codes.length - 1}` : ""}</span><span class="ac-n">${esc(cast.name)}</span></div>`;
 }
 /* 태그의 번호들 → 그림 조합 키: 모르는 번호(지운 칸 등)는 빼고, 남는 게 없으면 1(기본) */
-function figKey(spec) { const codes = knownCodes(parseCodes(String(spec))); return keyOf(codes.length ? codes : [1]) || "1"; }
+function figKey(spec) { const codes = knownCodes(parseCodes(String(spec)).map(mergedCode)); return keyOf(codes.length ? codes : [1]) || "1"; }
 /* 사진 + (켜진) 움짤: 사진이 크기를 정하고 영상은 그 위에 겹침 — 영상을 못 받으면 숨겨 사진이 보임 */
 function picHTML(ref, mo) { return mo ? `<span class="mo-wrap">${IMG.tag(ref)}${IMG.vtag(mo)}</span>` : IMG.tag(ref); }
 /* 그 인물의 key 칸에 보여 줄 것: 폴백 순서로 사진이 있는 칸 → {ref, mo(그 칸에 켜진 움짤)} */
@@ -6093,8 +6084,8 @@ function addCastImages(body, r, prev, said) {
     if (!seen.has(f.x.code)) sit = 0;
     else {
       const mine = !!said2 && (f.keys.some((k) => said2.includes(k)) || (!anyNamed && i === 0)), sc = new Map();
-      sitScores(f.own, adult, c).forEach((v, k) => { if (dimOf(k) === "act") sc.set(k, v * 2); });
-      if (mine) sitScores(said2, adult, c).forEach((v, k) => { if (dimOf(k) === "act") sc.set(k, (sc.get(k) || 0) + v); });
+      sitScores(f.own, adult).forEach((v, k) => { if (dimOf(k) === "act") sc.set(k, v * 2); });
+      if (mine) sitScores(said2, adult).forEach((v, k) => { if (dimOf(k) === "act") sc.set(k, (sc.get(k) || 0) + v); });
       let best = 0; sc.forEach((v, k) => { const s = v + (validRef((imgs[f.x.code] || {})[k]) ? 0.5 : 0); if (s > best) { best = s; sit = k; } });
       const dp = dimPick(f.own + (mine ? "\n" + said2 : ""), adult); extra = [dp.wear, dp.place].filter(Boolean);
     }
@@ -6449,14 +6440,10 @@ const USER_NAVS = [["home", "홈", "home"], ["chats", "대화", "chat"], ["store
 const MotionPrompts = {
   // 100번대: 세부 감정·일상. base_prompt의 표정은 은은한 낱말로(2026-11-06 사용자 요청 — furious·clenched teeth·stiff posture처럼 센 낱말은 얼굴이 굳음, images/prompt.js SIT_PONY_TAGS와 같은 원칙). motion_en은 움짤 문장이라 그대로
   101: { title: "미소_지음", base_prompt: "upper body, smile, gentle smile, half-lidded eyes, soft gaze, relaxed expression", motion_en: "smiling softly, gentle eyes blinking, warm and happy facial expression" },
-  102: { title: "분노_표출", base_prompt: "upper body, angry, furrowed brow, glaring, frown, closed mouth", motion_en: "glaring intensely, sharp hostile eye movement, frowning deeply" },
   103: { title: "당황함", base_prompt: "upper body, flustered, blush, nervous smile, sweatdrop, looking to the side", motion_en: "looking around in panic, sweating heavily, stiff and tense body movement, blushing deeply" },
   105: { title: "취기_오름", base_prompt: "upper body, drunk, blush, half-lidded eyes, relaxed smile, unfocused eyes", motion_en: "swaying sluggishly, glazed eyes looking around, bold and unrestrained body movement, flushed cheeks" },
-  106: { title: "슬픔_오열", base_prompt: "upper body, crying, tears, sad, closed eyes, parted lips", motion_en: "shoulders shaking violently from crying, tears streaming down cheeks, lips trembling, head bowing down" },
-  107: { title: "수줍음_부끄러움", base_prompt: "upper body, blush, shy smile, half-lidded eyes, looking to the side, closed mouth", motion_en: "fidgeting nervously, looking away shyly, faint smile appearing, cheeks blushing" },
   108: { title: "차가운_정색", base_prompt: "upper body, expressionless, cold gaze, half-lidded eyes, closed mouth, crossed arms", motion_en: "staring coldly without expression, arms crossed tightly, looking down with a distant gaze" },
   109: { title: "체력_방전", base_prompt: "upper body, exhausted, sweat, half-lidded eyes, parted lips, slumped shoulders", motion_en: "panting heavily, slumped posture, chest rising and falling rapidly from exhaustion, sweat dripping" },
-  110: { title: "질투_폭발", base_prompt: "upper body, annoyed, pout, half-lidded eyes, side glance, crossed arms", motion_en: "pouting angrily, casting side glances, crossing arms with a jealous expression, sulking movement" },
   112: { title: "애교_부림", base_prompt: "looking at viewer, puppy eyes, blush, playful smile", motion_en: "looking up with puppy eyes, clinging affectionately, rubbing cheek against viewer" },
   113: { title: "거부_밀쳐냄", base_prompt: "upper body, annoyed, frown, hand up, pushing away, looking to the side", motion_en: "pushing away forcefully, turning head in rejection, defensive grimacing facial expression" },
   114: { title: "허탈함_공허함", base_prompt: "upper body, empty eyes, blank expression, parted lips, slumped shoulders", motion_en: "empty eyes staring blankly, listless sighing, shoulders slumping in emptiness" },
@@ -6465,8 +6452,6 @@ const MotionPrompts = {
   117: { title: "애틋함_그리움", base_prompt: "upper body, wistful smile, soft gaze, teary eyes, relaxed expression", motion_en: "staring affectionately with wistful eyes, gentle touching motion, longing gaze" },
   118: { title: "경계_의심", base_prompt: "upper body, wary, narrowed eyes, furrowed brow, side glance, closed mouth", motion_en: "narrowing eyes warily, leaning back defensively, tense and suspicious posture" },
   119: { title: "절망_좌절", base_prompt: "upper body, despair, tears, empty eyes, head in hands", motion_en: "collapsing in despair, burying head in hands, crying uncontrollably, tear stains forming" },
-  120: { title: "환희_기쁨", base_prompt: "upper body, happy, bright smile, open mouth, excited, hands together", motion_en: "smiling brightly, clapping hands together in excitement, eyes sparkling with joy" },
-  121: { title: "놀람_경악", base_prompt: "upper body, surprised, wide eyes, open mouth, hand over own mouth", motion_en: "eyes widening in shock, mouth opening in gasp, stepping back, hands covering mouth" },
   122: { title: "식사_음주", base_prompt: "eating, holding wine glass, tableware, food, half-lidded eyes, relaxed smile", motion_en: "chewing food with a satisfied expression, holding and moving wine glass gently" },
   123: { title: "게임_집중", base_prompt: "playing games, holding controller, focused, slight smile, monitor", motion_en: "staring intently at monitor, fingers moving rapidly on controller, focused gaming expression" },
   124: { title: "수면_졸음", base_prompt: "drowsy, half-closed eyes, yawning, rubbing eyes", motion_en: "nodding off to sleep, rubbing eyes sleepily, yawning wide, eyes slowly closing" },
@@ -6475,17 +6460,14 @@ const MotionPrompts = {
   127: { title: "머리쓰다듬기_받음", base_prompt: "pov, headpat, closed eyes, pleased, gentle smile, soft hair", motion_en: "POV partner's hand gently petting and stroking head, hair swaying smoothly under touch, closing eyes in pleasure, soft affectionate movement" },
   128: { title: "무릎베개_누움", base_prompt: "lap pillow, lying on partner's lap, looking up at viewer, pov, peaceful, gentle smile", motion_en: "POV looking up from partner's lap, peaceful relaxed breathing, slight head movement on thighs, soft intimate eye contact" },
   129: { title: "가벼운장난_간지럼_받음", base_prompt: "being tickled, laughing, flinching, happy, closed eyes", motion_en: "POV partner's hands tickling sides, body flinching and squirming dynamically, giggling happily, playfully dodging hands" },
-  130: { title: "삐침_토라짐", base_prompt: "upper body, pout, annoyed, half-lidded eyes, looking to the side, crossed arms, closed mouth", motion_en: "turning head away with puffed cheeks, sulking and pouting, avoiding eye contact" },
   131: { title: "요리_베이킹", base_prompt: "cooking, wearing apron, kitchen, tasting food, gentle smile", motion_en: "stirring food in kitchen, wearing apron, tasting food carefully with a concentrated look" },
   132: { title: "스마트폰_보기", base_prompt: "looking at phone, holding phone, phone screen glow, half-lidded eyes, calm expression", motion_en: "typing rapidly on phone screen, screen glow illuminating face, indifferent scrolling motion" },
   133: { title: "기지개_스트레칭", base_prompt: "stretching, arms up, closed eyes, relaxed smile", motion_en: "stretching arms high, languid body movement, closing eyes comfortably" },
   134: { title: "화장_단장", base_prompt: "applying makeup, looking in mirror, applying lipstick, gentle smile", motion_en: "applying lipstick carefully, looking in mirror, getting dressed up motion" },
   135: { title: "음악_감상", base_prompt: "listening to music, wearing earphones, closed eyes, relaxed smile", motion_en: "head nodding to music rhythm, wearing earphones, humming with closed eyes" },
-  136: { title: "심호흡_진정", base_prompt: "upper body, deep breath, closed eyes, calm expression, hand on own chest", motion_en: "taking a deep calming breath, closing eyes to compose oneself, chest expanding" },
   137: { title: "기다림_초조", base_prompt: "upper body, worried, nervous, checking watch, biting lip, looking to the side", motion_en: "checking watch anxiously, looking around restlessly, biting lip in nervousness" },
   138: { title: "억지_미소", base_prompt: "upper body, forced smile, sad eyes, raised inner eyebrows, closed mouth", motion_en: "forcing a stiff smile, sad eyes trembling, lips quivering slightly" },
   139: { title: "감동의_눈물", base_prompt: "upper body, tears of joy, teary eyes, smile, moved", motion_en: "crying tears of joy, smiling brightly while moved, eyes sparkling with emotion" },
-  140: { title: "짜증_신경질", base_prompt: "upper body, annoyed, furrowed brow, hand on own forehead, sigh, closed mouth", motion_en: "sighing in irritation, putting hand on forehead, sharp annoyed glare" },
   // 200번대: 가벼운 스킨십(코드 정의는 관리자 코드 표 content/codes.admin.json — 정의가 있을 때만 쓰임)
   201: { title: "가벼운_포옹", base_prompt: "hug, embracing, close contact, chest to chest, looking at each other", motion_en: "hugging tightly, rubbing back gently, chest pressing against chest, swaying softly" },
   202: { title: "베이비_키스", base_prompt: "light kiss, pecking, gentle kiss, closed eyes", motion_en: "pecking lightly on lips, gentle kissing motion, eyes closing softly" },
@@ -6663,7 +6645,7 @@ const SIT_PONY_TAGS = [
   "upper body, looking at viewer, injured, bandages, bruise, pained expression, parted lips", // 9 부상
   "upper body, looking at viewer, relieved, gentle smile, half-lidded eyes, relaxed expression, soft light", // 10 회복
   "sleeping, closed eyes, lying down, peaceful, pillow", // 11 휴식
-  "fighting stance, action pose, determined, intense gaze, closed mouth", // 12 공격
+  "fighting stance, clenched hands, action pose, determined, intense gaze, closed mouth", // 12 공격(맨손·무기 모두) — 맨손 기준. 무기가 있는 인물은 slotParts가 주먹 낱말을 빼고 무기를 쥐게 함
   "upper body, glowing eyes, aura, magic, floating hair, intense gaze", // 13 각성
   "upper body, looking at viewer, blush, gentle smile, half-lidded eyes, soft gaze, relaxed expression" // 14 설렘
 ];
@@ -6674,7 +6656,13 @@ const baseSitDefault = (n) => SIT_PONY_TAGS[n] || "";
 const sceneOf = (n) => (baseSit(n) || {}).prompt || SIT_PONY_TAGS[n] || sitDef(n)?.prompt || "";
 // 싸우는 장면(0 프로필·9 부상·12 공격·13 각성)이 아니면 외모의 무기를 뺌 — 무기가 있으면 모든 칸이 같은 무기 든 자세로 끌려감
 const COMBAT_SITS = [0, 9, 12, 13];
-const WEAPON_RE = /레이피어|장검|단검|대검|검$|칼$|비수|창$|활$|권총|리볼버|소총|라이플|총$|방패|배트$|쇠파이프|무기|\b(?:weapon|sword|rapier|katana|blade|dagger|knife|spear|bow|gun|pistol|revolver|rifle|shield|bat|pipe)s?\b/i;
+/* 무기 낱말: 쉼표로 나눈 태그 한 조각을 봄 — 그래서 검$·칼$처럼 끝을 봐도 '검은 머리'에 걸리지 않음. hair bow·bow tie는 무기가 아니라서 bow는 혼자 있을 때만 */
+const WEAPON_RE = /레이피어|장검|단검|대검|검$|칼$|비수|창$|활$|권총|리볼버|소총|라이플|총$|방패|배트$|쇠파이프|도리깨|타구봉|무기|^bows?$|\bbow and arrows?\b|\b(?:cross|long)bows?\b|\b(?:long|great|short)?swords?\b|\b(?:weapon|rapier|katana|blade|dagger|knife|spear|gun|pistol|revolver|rifle|shield|bat|baton|pipe|flail|(?:bamboo|iron|wooden) staff)s?\b/i;
+/* 12 공격은 맨손·무기 모두: 장면 태그는 맨손 기준이고, 무기 낱말이 있는 인물은 주먹 낱말(FIST_RE)을 빼고 무기를 쥠 — fighting stance가 있으면 무기를 줘도 주먹을 쥠(fd97) */
+const ATTACK_SITS = [12], FIST_RE = /^(?:fighting stance|clenched hands?|raised fists?)$/i;
+/* 공격 칸의 무기 낱말 앞에 붙이는 '쥔 모습': holding sword·holding gun처럼 Danbooru 낱말에 가중치까지 있어야 손에 그려짐 — holding rapier·장면의 holding weapon만으로는 빈손(fd96~fd100) */
+const WEAPON_GRIP = [[/sword|rapier|katana|blade|레이피어|장검|대검|검$|칼$/i, "holding sword"], [/gun|pistol|revolver|rifle|권총|리볼버|소총|라이플|총$/i, "holding gun"], [/dagger|비수|단검/i, "holding dagger"], [/knife/i, "holding knife"], [/shield|방패/i, "holding shield"], [/spear|창$/i, "holding spear"], [/bow|활$/i, "holding bow"], [/flail|도리깨/i, "holding flail"], [/staff|타구봉/i, "holding staff"]];
+const gripOf = (t) => "(" + (WEAPON_GRIP.find((g) => g[0].test(t)) || [null, "holding weapon"])[1] + ":1.4)";
 // 의상 번호가 붙은 조합이면 외모 글의 옷 조각을 뺌 — 설정의 옷과 의상 코드가 겹치면 둘이 섞여 그려짐
 const CLOTH_RE = /옷|복(?![가-힣])|드레스|셔츠|블라우스|정장|수트|슈트|코트|재킷|자켓|치마|스커트|바지|청바지|원피스|한복|제복|갑옷|갑주|로브|망토|가운|니트|후드|티셔츠|넥타이|구두|부츠|힐(?![가-힣])|샌들|장갑|모자|베레|두건|도포|무복|도복|기모노|유카타|\b(?:dress|shirt|blouse|suit|coat|jacket|skirt|pants|jeans|uniform|armor|robe|cloak|cape|gown|sweater|hoodie|t-shirt|tie|shoes|boots|heels|gloves|hat|cap|beret|hood|kimono|yukata|hanbok|outfit|clothes|clothing)\b/i;
 const splitTags = (t) => String(t || "").split(/\s*,\s*/).map((x) => x.trim()).filter(Boolean);
@@ -6694,12 +6682,13 @@ const actKeyOf = (key) => keyOf(splitDims(parseCodes(String(key))).act) || "1";
    출연진에 영문 태그 tags가 있으면(오리지널 12작품은 전부, 1:1 작품은 lookTags) 외모 글 대신 번역 없이 그대로 써서 같은 인물이 매번 같은 생김새로 — 성별·인원(whoTags)은 한국어 look으로 */
 function slotParts(cast, key, c) {
   const codes = parseCodes(String(key)), d = splitDims(codes), acts = d.act.length ? d.act : [1], look = castLook(cast, c);
-  const wear = d.wear ? sitDef(d.wear) : null, place = d.place ? sitDef(d.place) : null, combat = acts.some((n) => COMBAT_SITS.includes(n)), dressed = !!(wear && wear.prompt);
+  const wear = d.wear ? sitDef(d.wear) : null, place = d.place ? sitDef(d.place) : null, combat = acts.some((n) => COMBAT_SITS.includes(n)), dressed = !!(wear && wear.prompt), armed = acts.some((n) => ATTACK_SITS.includes(n)) && splitTags(cast.tags || look).some((t) => WEAPON_RE.test(t));
   let scene = []; acts.forEach((n) => splitTags(sceneOf(n)).forEach((t) => { if (!scene.includes(t)) scene.push(t); }));
   if (!scene.length) scene = splitTags(sceneOf(1));
+  if (armed) scene = ["holding weapon", ...scene.filter((t) => !FIST_RE.test(t))];
   const out = [
     { key: "scene", label: "장면·표정", tags: scene },
-    { key: "look", label: "인물", tags: [...whoTags(look), ...splitTags(cast.tags || look).filter((t) => (combat || !WEAPON_RE.test(t)) && !(dressed && CLOTH_RE.test(t)))] }
+    { key: "look", label: "인물", tags: [...whoTags(look), ...splitTags(cast.tags || look).filter((t) => (combat || !WEAPON_RE.test(t)) && !(dressed && CLOTH_RE.test(t))).flatMap((t) => armed && WEAPON_RE.test(t) ? [gripOf(t), t] : [t])] }
   ];
   if (dressed) out.push({ key: "wear", label: "의상", tags: splitTags(wear.prompt) });
   out.push({ key: "bg", label: "배경", tags: place && place.prompt ? splitTags(place.prompt) : [acts[0] === 0 ? "simple background" : "detailed background"] });
@@ -7614,13 +7603,13 @@ function gate() {
 }
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/admin/image-codes.js
-   가져옴: src/js/core/constants.js { RPG_ONLY_SITS, SIT }
+   가져옴: src/js/core/constants.js { SIT }
            src/js/core/state.js { S }
            src/js/core/util.js { esc }
            src/js/images/codes.js { DIM_NAMES, RESET, parseCodes }
            src/js/images/prompt.js { baseSit, baseSitDefault }
            src/js/images/rating.js { RATINGS }
-           src/js/images/situations.js { codeDefs, sitFits }
+           src/js/images/situations.js { codeDefs }
            src/js/services/images.js { validRef }
    내보냄: deletable, codeGroups, codeStats, dimCount, groupHTML
    쓰는 곳: src/js/admin/image-studio.js
@@ -7628,7 +7617,7 @@ function gate() {
 /* 이미지 스튜디오의 코드 목록(관리자 빌드만): 감정·행동 / 의상 / 장소 세 갈래를 번호대별 묶음으로 나누고, 고른 인물에게 그 코드의 그림이 몇 장 있는지 함께 보여 준다.
    묶음 — 감정·행동: 기본 0~14 · 직접 만든 칸 15~99 · 100번대 · 200번대 · 300번대 / 의상 4xx / 장소 5xx(400·500은 '설정대로 되돌리기'라 뺌).
    보이는 코드는 codeDefs()(성인 확인 전엔 전체이용가만) — 내 칸 > 작품 폴더 코드 표 > 관리자 전용 > 내장 순으로 같은 번호를 덮은 결과.
-   기본 0~14도 ✎로 그림 태그·움직임을 고침(baseSitEditor — 이름은 그대로, 고친 칸은 '수정' 표시). RPG 전용 칸(12 공격)은 어느 작품에서나 'RPG 전용' 표시로 보이고 직접 고를 수 있지만, RPG가 아닌 작품의 빈 칸 채우기에서는 빠짐.
+   기본 0~14도 ✎로 그림 태그·움직임을 고침(baseSitEditor — 이름은 그대로, 고친 칸은 '수정' 표시).
    선택 삭제 모드(del)면 지울 수 있는 코드(이 계정의 칸 — 직접 만들었거나 목록으로 들여온 것)에 체크 칸을, 묶음마다 '전체 선택'을 보여 줌. 기본·내장·실림·관리자 전용(파일) 코드는 잠금 */
 
 
@@ -7643,13 +7632,13 @@ function gate() {
 const deletable = (d) => !!d.def && (S.settings.customSits || []).indexOf(d.def) >= 0;
 /* 감정·행동 번호대 묶음(이름은 번호대만 — 묶음의 뜻은 관리자가 만든 칸 이름으로 드러남) */
 const ACT_BANDS = [[0, SIT.length, "기본 감정 0~14", "모든 작품의 기본 칸 — 첫 등장은 0, 그림이 없을 때는 1·0으로 대신해요"], [SIT.length, 100, "직접 만든 칸 15~99"], [100, 200, "100번대"], [200, 300, "200번대"], [300, 400, "300번대"]];
-/* 갈래(act·wear·place) → 묶음 [{id, name, hint, items: [{n, name, prompt, rating, src, edit, rpg, off}]}]. c는 지금 작품 — off면 그 작품의 빈 칸 채우기에서 뺌 */
-function codeGroups(dim, c) {
+/* 갈래(act·wear·place) → 묶음 [{id, name, hint, items: [{n, name, prompt, rating, src, edit}]}] */
+function codeGroups(dim) {
   const defs = codeDefs().filter((d) => d.dim === dim && d.n !== RESET.wear && d.n !== RESET.place);
   const src = (d) => d.builtin ? "내장" : d.adminOnly ? "관리자" : d.shipped ? "실림" : "내 칸";
   const item = (d) => ({ n: d.n, name: d.name, prompt: d.prompt || "", rating: d.rating || "safe", src: src(d), def: d });
   if (dim !== "act") return [{ id: dim, name: DIM_NAMES[dim] + (dim === "wear" ? " 4xx" : " 5xx"), hint: dim === "wear" ? "감정 번호 뒤에 붙여 옷을 바꿔요" : "감정 번호 뒤에 붙여 배경을 바꿔요", items: defs.map(item) }];
-  const base = SIT.map((name, n) => { const o = baseSit(n); return { n, name, prompt: (o && o.prompt) || baseSitDefault(n), rating: "safe", src: "기본", def: null, edited: !!o, rpg: RPG_ONLY_SITS.indexOf(n) >= 0, off: !sitFits(n, c) }; });
+  const base = SIT.map((name, n) => { const o = baseSit(n); return { n, name, prompt: (o && o.prompt) || baseSitDefault(n), rating: "safe", src: "기본", def: null, edited: !!o }; });
   return ACT_BANDS.map(([a, b, name, hint], i) => ({ id: "act" + i, name, hint: hint || "", items: i === 0 ? base : defs.filter((d) => d.n >= a && d.n < b).map(item) })).filter((g) => g.items.length);
 }
 /* 인물 한 명의 그림 칸({조합 키: 참조})에서 번호마다: 그 번호 하나짜리 그림이 있는지(exact)와 그 번호가 든 그림 수(count) */
@@ -7666,9 +7655,9 @@ function codeStats(slots) {
 const dimCount = (dim) => codeGroups(dim).reduce((a, g) => a + g.items.length, 0);
 /* 묶음 하나의 HTML. on(n)은 지금 조합에 든 번호인지, closed면 접힘, st는 codeStats 결과, del은 선택 삭제 모드일 때 고른 번호들(Set) */
 function groupHTML(g, on, closed, st, del) {
-  const filled = g.items.filter((d) => (st[d.n] || {}).exact).length, empty = g.items.filter((d) => !d.off && !(st[d.n] || {}).exact).length, dels = g.items.filter(deletable), all = dels.length && dels.every((d) => del && del.has(d.n));
+  const filled = g.items.filter((d) => (st[d.n] || {}).exact).length, dels = g.items.filter(deletable), all = dels.length && dels.every((d) => del && del.has(d.n));
   const tool = del ? (dels.length ? `<button class="btn sm ghost" data-gsel="${g.id}">${all ? "선택 해제" : `전체 선택 ${dels.length}`}</button>` : `<span class="note">지울 수 없음</span>`)
-    : empty ? `<button class="btn sm ghost" data-fill="${g.id}" title="이 묶음에서 그림이 없는 코드를 하나씩 AI로 그려 저장">빈 칸 ${empty}개 채우기</button>` : "";
+    : g.items.length > filled ? `<button class="btn sm ghost" data-fill="${g.id}" title="이 묶음에서 그림이 없는 코드를 하나씩 AI로 그려 저장">빈 칸 ${g.items.length - filled}개 채우기</button>` : "";
   return `<div class="is-group${closed ? " closed" : ""}" data-group="${g.id}">
     <div class="is-gh"><button class="is-fold" data-fold="${g.id}" aria-expanded="${!closed}"><b>${esc(g.name)}</b><small>${g.items.length}개 · 그림 ${filled}</small></button>${tool}</div>
     ${g.hint ? `<p class="note is-hint">${esc(g.hint)}</p>` : ""}
@@ -7677,7 +7666,7 @@ function groupHTML(g, on, closed, st, del) {
 function rowHTML(d, on, s, del) {
   const adult = d.rating !== "safe", can = !!del && deletable(d), chk = can && del.has(d.n);
   return `<div class="is-code${on && !del ? " on" : ""}${adult ? " adult" : ""}${s && s.exact ? " filled" : ""}${del && !can ? " locked" : ""}${chk ? " chk" : ""}" data-row="${d.n}" data-find="${esc((d.n + " " + d.name).toLowerCase())}">
-    ${can ? `<input type="checkbox" class="is-chk" data-chk="${d.n}" ${chk ? "checked" : ""} aria-label="${esc(d.name)} 선택">` : ""}<button class="is-pick"${del && !can ? ' disabled title="기본·내장·작품 폴더·관리자 전용 코드는 여기서 지울 수 없어요"' : ""} data-pick="${d.n}" title="${esc(d.prompt || d.name)}"><span class="num">${d.n}</span><span class="nm">${esc(d.name)}</span>${adult ? `<span class="rt">${RATINGS[d.rating] ? esc(RATINGS[d.rating].name) : "성인"}</span>` : ""}${d.src !== "기본" && d.src !== "내장" ? `<span class="src">${d.src}</span>` : d.edited ? `<span class="src">수정</span>` : ""}${d.rpg ? `<span class="src">RPG 전용</span>` : ""}</button>
+    ${can ? `<input type="checkbox" class="is-chk" data-chk="${d.n}" ${chk ? "checked" : ""} aria-label="${esc(d.name)} 선택">` : ""}<button class="is-pick"${del && !can ? ' disabled title="기본·내장·작품 폴더·관리자 전용 코드는 여기서 지울 수 없어요"' : ""} data-pick="${d.n}" title="${esc(d.prompt || d.name)}"><span class="num">${d.n}</span><span class="nm">${esc(d.name)}</span>${adult ? `<span class="rt">${RATINGS[d.rating] ? esc(RATINGS[d.rating].name) : "성인"}</span>` : ""}${d.src !== "기본" && d.src !== "내장" ? `<span class="src">${d.src}</span>` : d.edited ? `<span class="src">수정</span>` : ""}</button>
     <span class="cnt" title="이 인물의 그림 중 이 번호가 든 것">${s ? s.count + "장" : ""}</span>
     ${del ? "" : `<button class="is-ed" data-edit="${d.n}" aria-label="${esc(d.name)} 고치기" title="${d.src === "기본" ? "그림 태그·움직임 고치기" : "이름·프롬프트·움직임·수위 고치기"}">✎</button>`}</div>`;
 }
@@ -8379,7 +8368,7 @@ function viewImages(arg) {
       <section class="box is-codes${T.del ? " deleting" : ""}" aria-label="코드 목록">
         <div class="is-tabs" role="tablist">${["act", "wear", "place"].map((d) => `<button role="tab" class="${T.tab === d ? "on" : ""}" data-tab="${d}" aria-selected="${T.tab === d}">${DIM_NAMES[d]} <small>${dimCount(d)}</small></button>`).join("")}</div>
         <input class="inp is-q" id="isQ" placeholder="번호·이름으로 찾기" aria-label="코드 찾기">
-        <div class="is-list">${codeGroups(T.tab, c).map((g) => groupHTML(g, on, !!T.closed[g.id], st, T.del)).join("")}</div>
+        <div class="is-list">${codeGroups(T.tab).map((g) => groupHTML(g, on, !!T.closed[g.id], st, T.del)).join("")}</div>
         ${T.del ? `<div class="is-delbar"><div class="x"><b>${delN}개 선택</b><span class="note">${delN ? `${delImgs ? `이 코드가 든 그림 ${delImgs}장(모든 작품·인물, 움짤 포함)도 함께 지워져요.` : "이 코드로 저장한 그림은 없어요."} 내장 번호를 덮어쓴 칸은 지우면 내장 코드로 돌아가요.` : "지울 코드를 고르세요 — 직접 만들었거나 목록으로 들여온 코드만 지울 수 있어요. 탭을 바꿔도 고른 것은 남아요."}</span></div>
           <div class="cta-row"><button class="btn sm ghost" id="isDelX">취소</button><button class="btn sm danger" id="isDelGo" ${delN ? "" : "disabled"}>선택 삭제</button></div></div>`
         : `<div class="cta-row" style="margin-top:10px"><button class="btn sm" id="isAdd">+ 코드 추가</button><button class="btn sm" id="isList">목록으로 추가</button><button class="btn sm ghost" id="isPreset">추천 코드</button>${canDel ? `<span class="spacer"></span><button class="btn sm ghost" id="isDelMode" title="직접 만들었거나 목록으로 들여온 코드를 골라 한 번에 지우기">선택 삭제</button>` : ""}</div>
@@ -8472,9 +8461,9 @@ function bind(v, c, cast, key) {
   const pre = $("#isPreset", v); if (pre) pre.onclick = () => sitPresetSheet(re);
   // 묶음의 빈 칸 채우기: 그림이 없는 번호마다, 지금 고른 다른 갈래(의상·장소 / 감정)를 붙인 조합으로 그려 바로 저장
   $$("[data-fill]", v).forEach((b) => b.onclick = () => {
-    const g = codeGroups(T.tab, c).find((x) => x.id === b.dataset.fill); if (!g) return;
+    const g = codeGroups(T.tab).find((x) => x.id === b.dataset.fill); if (!g) return;
     const st = codeStats(imagesOf(c)[cast.code] || {}), acts = T.acts.slice(0, MAX_ACT);
-    const keys = g.items.filter((d) => !d.off && !(st[d.n] || {}).exact).map((d) => keyOf(T.tab === "act" ? [d.n, T.wear, T.place].filter(nn) : T.tab === "wear" ? [...acts, d.n, T.place].filter(nn) : [...acts, T.wear, d.n].filter(nn)));
+    const keys = g.items.filter((d) => !(st[d.n] || {}).exact).map((d) => keyOf(T.tab === "act" ? [d.n, T.wear, T.place].filter(nn) : T.tab === "wear" ? [...acts, d.n, T.place].filter(nn) : [...acts, T.wear, d.n].filter(nn)));
     runKeys(c, cast, [...new Set(keys)].filter((k) => !validRef((imagesOf(c)[cast.code] || {})[k])), true, re);
   });
   $("#isGo", v).onclick = () => runKeys(c, cast, [key], T.autoSave, re);

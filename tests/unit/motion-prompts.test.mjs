@@ -14,8 +14,8 @@ test("공식 순서: 카메라 → 정적 묘사 → 움직임 → 마무리", (
   assert.deepEqual(at, [...at].sort((a, b) => a - b));
 });
 test("감정/행동이 둘이면 움직임도 둘 다", () => {
-  const p = buildVideoPrompt([101, 107]);
-  assert.ok(p.includes(MotionPrompts[101].motion_en) && p.includes(MotionPrompts[107].motion_en));
+  const p = buildVideoPrompt([101, 103]);
+  assert.ok(p.includes(MotionPrompts[101].motion_en) && p.includes(MotionPrompts[103].motion_en));
 });
 test("표에 없는 칸(기본 감정·의상·장소만)은 가만히 숨 쉬는 움직임", () => {
   for (const codes of [[3], [404, 501], []]) assert.ok(buildVideoPrompt(codes).includes(IDLE_MOTION), String(codes));
@@ -39,9 +39,9 @@ test("성별: 남자 인물은 남성 표를 먼저, 없으면 기본 표. 여�
   assert.ok(buildVideoPrompt([101], "", { male: true }).includes(MotionPrompts[101].motion_en), "남성 표에 없으면 기본 표");
 });
 test("고쳐 둔 코드의 움직임이 표보다 먼저", () => {
-  const def = (n) => n === 101 ? { prompt: "wave", motion: "waving a hand" } : n === 102 ? { prompt: "x" } : null;
+  const def = (n) => n === 101 ? { prompt: "wave", motion: "waving a hand" } : n === 103 ? { prompt: "x" } : null;
   assert.equal(motionRow(101, { def }).motion_en, "waving a hand");
-  assert.equal(motionRow(102, { def }).motion_en, MotionPrompts[102].motion_en, "움직임을 안 고쳤으면 표");
+  assert.equal(motionRow(103, { def }).motion_en, MotionPrompts[103].motion_en, "움직임을 안 고쳤으면 표");
   assert.equal(motionRow(399, { def }), null);
 });
 test("번호대: 100~500이 있으면 움짤 대상, 기본·직접 만든 칸·장소 501~만이면 아님", () => {
@@ -64,7 +64,7 @@ test("hasMotionCode: 표에 있는 감정/행동 코드만 참", () => {
   assert.ok(hasMotionCode([151], { male: true }) && !hasMotionCode([151]));
 });
 test("표의 base_prompt가 전체이용가 내장 코드의 그림 프롬프트가 됨, 세미 수위 코드는 그대로", () => {
-  assert.equal(DIMS[120].prompt, MotionPrompts[120].base_prompt);
+  assert.equal(DIMS[122].prompt, MotionPrompts[122].base_prompt);
   assert.equal(DIMS[127].prompt, MotionPrompts[127].base_prompt);
   assert.ok(!MotionPrompts[104] && !MotionPrompts[111]);
   assert.equal(DIMS[104].rating, "questionable");

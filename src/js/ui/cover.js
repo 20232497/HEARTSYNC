@@ -5,7 +5,7 @@ import { esc } from "../core/util.js";
 import { keyOf, parseCodes, splitDims } from "../images/codes.js";
 import { liveMotion } from "../images/motion.js";
 import { imagesOf, pickKey } from "../images/pick.js";
-import { keyName, knownCodes, sitName } from "../images/situations.js";
+import { keyName, knownCodes, mergedCode, sitName } from "../images/situations.js";
 import { IMG } from "../services/images.js";
 
 export function coverHTML(c, cls = "", opts = {}) {
@@ -21,7 +21,7 @@ export function artHTML(c, cast, key) {
   return `<div class="artcard" style="--c1:${pal[0]};--c2:${pal[1]};--c3:${pal[2]};--tint:${SIT_TINT[sit] || "#c9b8ff"}"><span class="ac-g">${esc((cast.name || "?").slice(0, 1))}</span><span class="ac-s">${esc(sitName(sit))}${codes.length > 1 ? ` +${codes.length - 1}` : ""}</span><span class="ac-n">${esc(cast.name)}</span></div>`;
 }
 /* 태그의 번호들 → 그림 조합 키: 모르는 번호(지운 칸 등)는 빼고, 남는 게 없으면 1(기본) */
-export function figKey(spec) { const codes = knownCodes(parseCodes(String(spec))); return keyOf(codes.length ? codes : [1]) || "1"; }
+export function figKey(spec) { const codes = knownCodes(parseCodes(String(spec)).map(mergedCode)); return keyOf(codes.length ? codes : [1]) || "1"; }
 /* 사진 + (켜진) 움짤: 사진이 크기를 정하고 영상은 그 위에 겹침 — 영상을 못 받으면 숨겨 사진이 보임 */
 export function picHTML(ref, mo) { return mo ? `<span class="mo-wrap">${IMG.tag(ref)}${IMG.vtag(mo)}</span>` : IMG.tag(ref); }
 /* 그 인물의 key 칸에 보여 줄 것: 폴백 순서로 사진이 있는 칸 → {ref, mo(그 칸에 켜진 움짤)} */

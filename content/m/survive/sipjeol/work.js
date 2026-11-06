@@ -54,7 +54,7 @@ export default {
   ],
   cast: [
     { code: "ns", name: "남궁설", look: "24세 여성, 흰 무복에 푸른 띠, 높게 묶은 흑발, 장검, 차가운 눈빛", tags: "black hair, high ponytail, side-swept bangs, narrow eyes, straight eyebrows, white martial arts uniform, blue sash, hanfu, longsword" },
-    { code: "ss", name: "당소소", look: "22세 여성, 보라색 무복, 손목의 암기 팔찌, 짧은 단발, 장난스러운 미소", tags: "black hair, short bob cut, round eyes, upturned eyes, thin eyebrows, purple martial arts uniform, hanfu, bracelet, hidden weapons" },
+    { code: "ss", name: "당소소", look: "22세 여성, 보라색 무복, 손목의 암기 팔찌, 짧은 단발, 장난스러운 미소", tags: "black hair, short bob cut, round eyes, upturned eyes, thin eyebrows, purple martial arts uniform, hanfu, bracelet, poison dagger" },
     { code: "hw", name: "혜원", look: "25세 여성, 회색 아미파 무복, 반쯤 묶은 긴 머리, 약상자, 단정한 얼굴", tags: "black hair, long hair, half updo, curtain bangs, droopy eyes, soft eyebrows, grey martial arts robe, hanfu, medicine box" },
     { code: "mr", name: "묵란", look: "26세 여성, 검은 무복 위 화산파 외문제자 외투, 길게 늘어뜨린 흑발, 붉은 입술, 냉소", tags: "black hair, very long hair, forehead, parted bangs, upturned eyes, arched eyebrows, black martial arts uniform, red-trimmed outer robe, hanfu, red lips" },
     { code: "hr", name: "화린", look: "23세 여성, 기운 누더기 옷, 대나무 타구봉, 헝클어진 갈색 머리, 크게 웃는 얼굴", tags: "brown hair, messy hair, round eyes, thick eyebrows, freckles, patched ragged clothes, bamboo staff, beggar sect" }

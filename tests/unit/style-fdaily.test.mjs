@@ -165,7 +165,7 @@ test("장면 가리기: 표정·구도뿐이면 거짓, 행동·시선을 정했
   const still = [0, 1, 2, 4, 5, 6, 8, 9, 10, 14], moving = [3, 7, 12, 13];
   for (const n of still) assert.equal(sceneMoves(SIT_PONY_TAGS[n]), false, "기본 " + n + ": " + SIT_PONY_TAGS[n]);
   for (const n of moving) assert.equal(sceneMoves(SIT_PONY_TAGS[n]), true, "기본 " + n + ": " + SIT_PONY_TAGS[n]);
-  const stillRows = [101, 102, 105, 106, 112, 116, 117, 138, 139];
+  const stillRows = [101, 105, 112, 116, 117, 138, 139];
   for (const [n, row] of Object.entries(MotionPrompts)) assert.equal(sceneMoves(row.base_prompt), !stillRows.includes(+n), n + ": " + row.base_prompt);
   // 직접 만든 코드 — 목록에 없는 낱말은 행동으로 봄
   for (const s of ["turning head, looking back", "leaning forward, hand on table", "walking, hands in pockets", "hugging, arms around another", "sitting, crossed legs"]) assert.equal(sceneMoves(s), true, s);
@@ -200,7 +200,7 @@ test("출연진 태그: 손을 묶는 낱말(모든 칸의 자세를 정해 행�
     for (const m of c.cast || [{ name: c.name, tags: c.lookTags }]) {
       n++;
       assert.ok(!/\bholding\b|\bon hands?\b/.test(m.tags || ""), m.name + ": " + m.tags);
-      assert.ok(!/\b\w+ hair ribbon\b|\bdress shirt\b|\bmourning dress\b/.test(m.tags || ""), m.name + ": " + m.tags);
+      assert.ok(!/\b\w+ hair ribbon\b|\bdress shirt\b|\bmourning dress\b|\bpolice\b|\bflail\b/.test(m.tags || ""), m.name + ": " + m.tags);
     }
   }
   assert.ok(n >= 40, "출연진 수 " + n);

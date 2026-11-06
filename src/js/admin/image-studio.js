@@ -77,7 +77,7 @@ export function viewImages(arg) {
       <section class="box is-codes${T.del ? " deleting" : ""}" aria-label="코드 목록">
         <div class="is-tabs" role="tablist">${["act", "wear", "place"].map((d) => `<button role="tab" class="${T.tab === d ? "on" : ""}" data-tab="${d}" aria-selected="${T.tab === d}">${DIM_NAMES[d]} <small>${dimCount(d)}</small></button>`).join("")}</div>
         <input class="inp is-q" id="isQ" placeholder="번호·이름으로 찾기" aria-label="코드 찾기">
-        <div class="is-list">${codeGroups(T.tab, c).map((g) => groupHTML(g, on, !!T.closed[g.id], st, T.del)).join("")}</div>
+        <div class="is-list">${codeGroups(T.tab).map((g) => groupHTML(g, on, !!T.closed[g.id], st, T.del)).join("")}</div>
         ${T.del ? `<div class="is-delbar"><div class="x"><b>${delN}개 선택</b><span class="note">${delN ? `${delImgs ? `이 코드가 든 그림 ${delImgs}장(모든 작품·인물, 움짤 포함)도 함께 지워져요.` : "이 코드로 저장한 그림은 없어요."} 내장 번호를 덮어쓴 칸은 지우면 내장 코드로 돌아가요.` : "지울 코드를 고르세요 — 직접 만들었거나 목록으로 들여온 코드만 지울 수 있어요. 탭을 바꿔도 고른 것은 남아요."}</span></div>
           <div class="cta-row"><button class="btn sm ghost" id="isDelX">취소</button><button class="btn sm danger" id="isDelGo" ${delN ? "" : "disabled"}>선택 삭제</button></div></div>`
         : `<div class="cta-row" style="margin-top:10px"><button class="btn sm" id="isAdd">+ 코드 추가</button><button class="btn sm" id="isList">목록으로 추가</button><button class="btn sm ghost" id="isPreset">추천 코드</button>${canDel ? `<span class="spacer"></span><button class="btn sm ghost" id="isDelMode" title="직접 만들었거나 목록으로 들여온 코드를 골라 한 번에 지우기">선택 삭제</button>` : ""}</div>
@@ -170,9 +170,9 @@ function bind(v, c, cast, key) {
   const pre = $("#isPreset", v); if (pre) pre.onclick = () => sitPresetSheet(re);
   // 묶음의 빈 칸 채우기: 그림이 없는 번호마다, 지금 고른 다른 갈래(의상·장소 / 감정)를 붙인 조합으로 그려 바로 저장
   $$("[data-fill]", v).forEach((b) => b.onclick = () => {
-    const g = codeGroups(T.tab, c).find((x) => x.id === b.dataset.fill); if (!g) return;
+    const g = codeGroups(T.tab).find((x) => x.id === b.dataset.fill); if (!g) return;
     const st = codeStats(imagesOf(c)[cast.code] || {}), acts = T.acts.slice(0, MAX_ACT);
-    const keys = g.items.filter((d) => !d.off && !(st[d.n] || {}).exact).map((d) => keyOf(T.tab === "act" ? [d.n, T.wear, T.place].filter(nn) : T.tab === "wear" ? [...acts, d.n, T.place].filter(nn) : [...acts, T.wear, d.n].filter(nn)));
+    const keys = g.items.filter((d) => !(st[d.n] || {}).exact).map((d) => keyOf(T.tab === "act" ? [d.n, T.wear, T.place].filter(nn) : T.tab === "wear" ? [...acts, d.n, T.place].filter(nn) : [...acts, T.wear, d.n].filter(nn)));
     runKeys(c, cast, [...new Set(keys)].filter((k) => !validRef((imagesOf(c)[cast.code] || {})[k])), true, re);
   });
   $("#isGo", v).onclick = () => runKeys(c, cast, [key], T.autoSave, re);

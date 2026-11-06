@@ -39,7 +39,7 @@ export const SIT_PONY_TAGS = [
   "upper body, looking at viewer, injured, bandages, bruise, pained expression, parted lips", // 9 부상
   "upper body, looking at viewer, relieved, gentle smile, half-lidded eyes, relaxed expression, soft light", // 10 회복
   "sleeping, closed eyes, lying down, peaceful, pillow", // 11 휴식
-  "fighting stance, action pose, determined, intense gaze, closed mouth", // 12 공격
+  "fighting stance, clenched hands, action pose, determined, intense gaze, closed mouth", // 12 공격(맨손·무기 모두) — 맨손 기준. 무기가 있는 인물은 slotParts가 주먹 낱말을 빼고 무기를 쥐게 함
   "upper body, glowing eyes, aura, magic, floating hair, intense gaze", // 13 각성
   "upper body, looking at viewer, blush, gentle smile, half-lidded eyes, soft gaze, relaxed expression" // 14 설렘
 ];
@@ -50,7 +50,13 @@ export const baseSitDefault = (n) => SIT_PONY_TAGS[n] || "";
 const sceneOf = (n) => (baseSit(n) || {}).prompt || SIT_PONY_TAGS[n] || sitDef(n)?.prompt || "";
 // 싸우는 장면(0 프로필·9 부상·12 공격·13 각성)이 아니면 외모의 무기를 뺌 — 무기가 있으면 모든 칸이 같은 무기 든 자세로 끌려감
 const COMBAT_SITS = [0, 9, 12, 13];
-const WEAPON_RE = /레이피어|장검|단검|대검|검$|칼$|비수|창$|활$|권총|리볼버|소총|라이플|총$|방패|배트$|쇠파이프|무기|\b(?:weapon|sword|rapier|katana|blade|dagger|knife|spear|bow|gun|pistol|revolver|rifle|shield|bat|pipe)s?\b/i;
+/* 무기 낱말: 쉼표로 나눈 태그 한 조각을 봄 — 그래서 검$·칼$처럼 끝을 봐도 '검은 머리'에 걸리지 않음. hair bow·bow tie는 무기가 아니라서 bow는 혼자 있을 때만 */
+const WEAPON_RE = /레이피어|장검|단검|대검|검$|칼$|비수|창$|활$|권총|리볼버|소총|라이플|총$|방패|배트$|쇠파이프|도리깨|타구봉|무기|^bows?$|\bbow and arrows?\b|\b(?:cross|long)bows?\b|\b(?:long|great|short)?swords?\b|\b(?:weapon|rapier|katana|blade|dagger|knife|spear|gun|pistol|revolver|rifle|shield|bat|baton|pipe|flail|(?:bamboo|iron|wooden) staff)s?\b/i;
+/* 12 공격은 맨손·무기 모두: 장면 태그는 맨손 기준이고, 무기 낱말이 있는 인물은 주먹 낱말(FIST_RE)을 빼고 무기를 쥠 — fighting stance가 있으면 무기를 줘도 주먹을 쥠(fd97) */
+const ATTACK_SITS = [12], FIST_RE = /^(?:fighting stance|clenched hands?|raised fists?)$/i;
+/* 공격 칸의 무기 낱말 앞에 붙이는 '쥔 모습': holding sword·holding gun처럼 Danbooru 낱말에 가중치까지 있어야 손에 그려짐 — holding rapier·장면의 holding weapon만으로는 빈손(fd96~fd100) */
+const WEAPON_GRIP = [[/sword|rapier|katana|blade|레이피어|장검|대검|검$|칼$/i, "holding sword"], [/gun|pistol|revolver|rifle|권총|리볼버|소총|라이플|총$/i, "holding gun"], [/dagger|비수|단검/i, "holding dagger"], [/knife/i, "holding knife"], [/shield|방패/i, "holding shield"], [/spear|창$/i, "holding spear"], [/bow|활$/i, "holding bow"], [/flail|도리깨/i, "holding flail"], [/staff|타구봉/i, "holding staff"]];
+const gripOf = (t) => "(" + (WEAPON_GRIP.find((g) => g[0].test(t)) || [null, "holding weapon"])[1] + ":1.4)";
 // 의상 번호가 붙은 조합이면 외모 글의 옷 조각을 뺌 — 설정의 옷과 의상 코드가 겹치면 둘이 섞여 그려짐
 const CLOTH_RE = /옷|복(?![가-힣])|드레스|셔츠|블라우스|정장|수트|슈트|코트|재킷|자켓|치마|스커트|바지|청바지|원피스|한복|제복|갑옷|갑주|로브|망토|가운|니트|후드|티셔츠|넥타이|구두|부츠|힐(?![가-힣])|샌들|장갑|모자|베레|두건|도포|무복|도복|기모노|유카타|\b(?:dress|shirt|blouse|suit|coat|jacket|skirt|pants|jeans|uniform|armor|robe|cloak|cape|gown|sweater|hoodie|t-shirt|tie|shoes|boots|heels|gloves|hat|cap|beret|hood|kimono|yukata|hanbok|outfit|clothes|clothing)\b/i;
 export const splitTags = (t) => String(t || "").split(/\s*,\s*/).map((x) => x.trim()).filter(Boolean);
@@ -70,12 +76,13 @@ const actKeyOf = (key) => keyOf(splitDims(parseCodes(String(key))).act) || "1";
    출연진에 영문 태그 tags가 있으면(오리지널 12작품은 전부, 1:1 작품은 lookTags) 외모 글 대신 번역 없이 그대로 써서 같은 인물이 매번 같은 생김새로 — 성별·인원(whoTags)은 한국어 look으로 */
 function slotParts(cast, key, c) {
   const codes = parseCodes(String(key)), d = splitDims(codes), acts = d.act.length ? d.act : [1], look = castLook(cast, c);
-  const wear = d.wear ? sitDef(d.wear) : null, place = d.place ? sitDef(d.place) : null, combat = acts.some((n) => COMBAT_SITS.includes(n)), dressed = !!(wear && wear.prompt);
+  const wear = d.wear ? sitDef(d.wear) : null, place = d.place ? sitDef(d.place) : null, combat = acts.some((n) => COMBAT_SITS.includes(n)), dressed = !!(wear && wear.prompt), armed = acts.some((n) => ATTACK_SITS.includes(n)) && splitTags(cast.tags || look).some((t) => WEAPON_RE.test(t));
   let scene = []; acts.forEach((n) => splitTags(sceneOf(n)).forEach((t) => { if (!scene.includes(t)) scene.push(t); }));
   if (!scene.length) scene = splitTags(sceneOf(1));
+  if (armed) scene = ["holding weapon", ...scene.filter((t) => !FIST_RE.test(t))];
   const out = [
     { key: "scene", label: "장면·표정", tags: scene },
-    { key: "look", label: "인물", tags: [...whoTags(look), ...splitTags(cast.tags || look).filter((t) => (combat || !WEAPON_RE.test(t)) && !(dressed && CLOTH_RE.test(t)))] }
+    { key: "look", label: "인물", tags: [...whoTags(look), ...splitTags(cast.tags || look).filter((t) => (combat || !WEAPON_RE.test(t)) && !(dressed && CLOTH_RE.test(t))).flatMap((t) => armed && WEAPON_RE.test(t) ? [gripOf(t), t] : [t])] }
   ];
   if (dressed) out.push({ key: "wear", label: "의상", tags: splitTags(wear.prompt) });
   out.push({ key: "bg", label: "배경", tags: place && place.prompt ? splitTags(place.prompt) : [acts[0] === 0 ? "simple background" : "detailed background"] });

@@ -7,7 +7,7 @@ import { MARK, SIT } from "../../core/constants.js";
 import { curText } from "../../core/rooms.js";
 import { imgTags, lastDims, parseCodes, splitDims } from "../../images/codes.js";
 import { imagesOf } from "../../images/pick.js";
-import { CUSTOM_BASE, codeDefs, sitDef, sitFits, sitName } from "../../images/situations.js";
+import { CUSTOM_BASE, codeDefs, sitDef, sitName } from "../../images/situations.js";
 import { validRef } from "../../services/images.js";
 /** @typedef {import("../../core/types.js").LoreEntry} LoreEntry */
 /** @typedef {import("../../core/types.js").Message} Message */
@@ -32,7 +32,7 @@ export function rulesPrompt(r, lore = [], hist = r.msgs) {
   const fields = c.fields.map((f) => `"${f}":${f === c.gauge && typeof r.status?.[f] === "number" ? "0~100 정수" : '"짧은 값"'}`).join(",");
   const seen = new Set(); hist.forEach((m) => imgTags(curText(m)).forEach((t) => seen.add(t.code)));
   const castLine = (c.cast || []).map((x) => `${x.code}=${x.name}`).join(", ");
-  const sn = (name) => SIT.indexOf(name) + " " + name, okSit = (n) => sitFits(n, c) && (n < CUSTOM_BASE || (sitDef(n) && (sitDef(n).rating === "safe" || unfilteredRoute(r))));
+  const sn = (name) => SIT.indexOf(name) + " " + name, okSit = (n) => n < CUSTOM_BASE || (sitDef(n) && (sitDef(n).rating === "safe" || unfilteredRoute(r)));
   // 인물별로 그림이 들어 있는 감정/행동 번호(조합 키의 감정 부분까지 — 준비된 이미지셋 안에서 고르게)
   const ready = (c.cast || []).map((x) => { const m = imagesOf(c)[x.code] || {}; const ns = [...new Set(Object.keys(m).filter((k) => validRef(m[k])).flatMap((k) => splitDims(parseCodes(k)).act))].filter(okSit).sort((a, b) => a - b); return ns.length ? `${x.name} ${ns.join("·")}` : ""; }).filter(Boolean);
   // 감정/행동·의상·장소 번호 목록(성인 수위 칸은 성인 경로일 때만)과 인물별로 이어지는 의상·장소(applyDims가 태그에 남긴 것)
@@ -85,9 +85,9 @@ ${(() => { const used = usedOpeners(hist); return used.length ? `\n[이미 쓴 �
 [장면 이미지 — 매 응답 필수]
 - 이번 응답에 나오는(말하거나 움직이는) 인물마다 그림을 한 장씩 넣는다. 그 인물이 처음 말하거나 등장하는 줄 바로 위에 별도 줄로 [[img:코드:번호]] 만 쓴다. 설명을 덧붙이지 않는다.
 - 인물 코드: ${castLine}
-- 감정·행동 번호: ${[...SIT.map((s, i) => i + " " + s).filter((s, i) => sitFits(i, c)), ...byDim("act")].join(", ")}
+- 감정·행동 번호: ${[...SIT.map((s, i) => i + " " + s), ...byDim("act")].join(", ")}
 - 의상 번호: ${byDim("wear").join(", ")} / 장소 번호: ${byDim("place").join(", ")}. 옷이나 장소가 바뀌는 순간에만 감정 번호 뒤에 쉼표로 붙인다(예: [[img:${(c.cast || [{ code: "c" }])[0].code}:3,404,501]]). 한 번 쓴 의상·장소는 다음 응답에도 자동으로 이어지므로 바뀌지 않으면 다시 쓰지 않고, 설정의 원래 옷·장면에 맞는 배경으로 돌아가면 400(기본 의상)·500(기본 배경)을 쓴다.${nowLine ? `\n- 지금 이어지는 의상·장소: ${nowLine}` : ""}
-- 번호는 그 순간 그 인물의 표정·상황으로 고르고, 유저의 말과 행동에 대한 반응을 먼저 본다: 놀림·짓궂은 장난 → ${sn("부끄러움")}·${sn("삐침")}, 칭찬·농담 → ${sn("웃음")}, 고백·스킨십 → ${sn("설렘")}·${sn("부끄러움")}, 무례·배신 → ${sn("분노")}, 위협·괴물 → ${sn("공포")}·${sn("놀람")}, 싸움 → ${sn(sitFits(SIT.indexOf("공격"), c) ? "공격" : "분노")}, 다침 → ${sn("부상")}. 장소·행동에 맞는 추가 번호(식사·데이트 등)가 있으면 그 번호.
+- 번호는 그 순간 그 인물의 표정·상황으로 고르고, 유저의 말과 행동에 대한 반응을 먼저 본다: 놀림·짓궂은 장난 → ${sn("부끄러움")}·${sn("삐침")}, 칭찬·농담 → ${sn("웃음")}, 고백·스킨십 → ${sn("설렘")}·${sn("부끄러움")}, 무례·배신 → ${sn("분노")}, 위협·괴물 → ${sn("공포")}·${sn("놀람")}, 싸움 → ${sn("공격")}(맨손·무기 모두), 다침 → ${sn("부상")}. 장소·행동에 맞는 추가 번호(식사·데이트 등)가 있으면 그 번호.
 - 인물이 이야기에 처음 등장하는 순간은 0번(프로필). 이미 등장한 인물: ${[...seen].join(", ") || "없음"}${ready.length ? `\n- 그림이 준비된 번호(되도록 이 안에서 고른다): ${ready.join(" / ")}` : ""}
 - 같은 인물은 한 응답에 한 장(감정이 크게 뒤집히면 두 장까지). 감정이 이어지면 직전과 같은 번호를 써도 된다.
 
