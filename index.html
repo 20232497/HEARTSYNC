@@ -1098,8 +1098,8 @@ const ORIGINALS = [
   "cast": [
     {"code":"p1","name":"한서윤","look":"26세 여성, 높게 묶은 흑발 포니테일, 날카로운 눈매, 찢어진 흰 펜싱 재킷, 레이피어","tags":"black hair, high ponytail, side-swept bangs, arched eyebrows, sharp eyes, white fencing uniform, high collar, rapier"},
     {"code":"p2","name":"도하린","look":"27세 여성, 헝클어진 갈색 단발, 피 묻은 수술복 위 회색 카디건","tags":"brown hair, messy bob cut, parted bangs, droopy eyes, thick eyebrows, bloodstained scrubs, grey cardigan"},
-    {"code":"p3","name":"류건","look":"29세 남성, 짧은 머리, 넓은 어깨, 그을린 방화복, 버스 문짝 방패","tags":"black hair, very short hair, broad shoulders, scorched firefighter jacket, improvised shield, bus door shield"},
-    {"code":"p4","name":"세레나 바이스","look":"27세 여성, 은발 웨이브, 삼각모, 붉은 코트, 쌍권총","tags":"silver hair, wavy hair, side-swept bangs, upturned eyes, arched eyebrows, beauty mark, tricorne, red coat, pirate, dual wielding, pistols"},
+    {"code":"p3","name":"류건","look":"29세 남성, 짧은 머리, 넓은 어깨, 그을린 방화복, 버스 문짝 방패","tags":"black hair, very short hair, broad shoulders, scorched firefighter jacket, improvised shield, rectangular metal shield"},
+    {"code":"p4","name":"세레나 바이스","look":"27세 여성, 은발 웨이브, 삼각모, 붉은 코트, 쌍권총","tags":"silver hair, wavy hair, side-swept bangs, upturned eyes, arched eyebrows, beauty mark, pirate hat, red coat, pirate, dual wielding, pistols"},
     {"code":"p5","name":"연화","look":"25세 여성, 검은 땋은 머리, 무림 객잔 점소이 복장, 소매 속 비수","tags":"black hair, single braid, narrow eyes, upturned eyes, thin eyebrows, hanfu, chinese clothes, inn servant, hidden dagger"},
     {"code":"p6","name":"윤채이","look":"30세 여성, 둥근 안경, 낡은 트렌치코트, 커피 텀블러","tags":"black hair, parted bangs, narrow eyes, thin eyebrows, round eyewear, glasses, worn trench coat, journalist"},
     {"code":"p7","name":"카일 노스","look":"26세 남성, 모래색 머리, 판초, 턱의 흉터, 리볼버","tags":"sandy blonde hair, brown cape, cloak, white shirt, brown vest, small chin scar, revolver, gunslinger"},
@@ -2049,7 +2049,7 @@ function codeRating(codes, c) { return maxRating(codes.map((n) => n < CUSTOM_BAS
 const SIT_KEYS = { 2: "웃|미소|싱긋|방긋|피식|킥킥|깔깔|농담|재밌|환희|기뻐|기쁘|신이 나|신나", 3: "부끄|수줍|쑥스|머뭇|민망|얼굴이 (?:붉|빨개)|귀까지|빨개|장난|놀리|놀려|짓궂|칭찬|예쁘|예쁜|예뻐|귀여|귀엽",
   4: "울먹|울었|우는|눈물|슬프|슬퍼|흐느|오열|울음을 터|서럽|그리워", 5: "놀라|놀란|깜짝|화들짝|헉|휘둥그|설마|경악|기겁|소스라", 6: "화가|화를|화난|분노|노려|적대|버럭|소리쳤|이를 악|짜증|신경질|이마를 짚|성가|열받|닥쳐",
   7: "삐졌|삐친|삐죽|토라|흥[,.!…]|볼을 부풀|서운|입을 내밀|질투|샘이 나|샘나", 8: "무서|두려|겁에|겁먹|떨리|떨었|비명|공포|소름", 9: "다쳤|다친|부상|피를|피가|상처|쓰러",
-  10: "치료|붕대|회복|응급", 11: "쉬자|쉬어|잠들|졸려|하품|휴식|기지개|낮잠", 12: "공격|휘둘|베었|베어|찔렀|쏘았|쐈|주먹|맨손|때렸|후려|걷어차|덤벼|전투|싸우",
+  10: "치료|붕대|회복|응급", 11: "쉬자|쉬어|잠들|졸려|하품|휴식|기지개|낮잠", 12: "공격|휘둘|베었|베어|찔렀|쏘았|쐈|겨누|겨눠|겨눴|조준|방아쇠|사격|발사|총구|활시위|주먹|맨손|때렸|후려|걷어차|덤벼|전투|싸우",
   13: "각성|힘이 솟|눈빛이 변|폭주|기운이 치솟", 14: "설레|두근|심장이|가슴이 뛰|손을 잡|손잡|안아|포옹|고백|좋아해|데이트" };
 const SIT_KEYS_EXTRA = { 식사: "식사|밥|먹", 만남: "처음 뵙|반가워|반갑", 정색: "정색|굳은 얼굴|차갑게", 행복: "행복|기뻐|기쁘", 경계: "경계|의심|수상", 고민: "고민|생각에 잠|망설",
   지침: "지쳐|지친|피곤|녹초", 비웃음: "비웃|코웃음", 취함: "취했|취한|술잔|건배", 요리: "요리|부엌|앞치마", 게임: "게임", 카페: "카페|커피", 해변: "해변|바다|파도",
@@ -2675,7 +2675,7 @@ ${(() => { const used = usedOpeners(hist); return used.length ? `\n[이미 쓴 �
 - 인물 코드: ${castLine}
 - 감정·행동 번호: ${[...SIT.map((s, i) => i + " " + s), ...byDim("act")].join(", ")}
 - 의상 번호: ${byDim("wear").join(", ")} / 장소 번호: ${byDim("place").join(", ")}. 옷이나 장소가 바뀌는 순간에만 감정 번호 뒤에 쉼표로 붙인다(예: [[img:${(c.cast || [{ code: "c" }])[0].code}:3,404,501]]). 한 번 쓴 의상·장소는 다음 응답에도 자동으로 이어지므로 바뀌지 않으면 다시 쓰지 않고, 설정의 원래 옷·장면에 맞는 배경으로 돌아가면 400(기본 의상)·500(기본 배경)을 쓴다.${nowLine ? `\n- 지금 이어지는 의상·장소: ${nowLine}` : ""}
-- 번호는 그 순간 그 인물의 표정·상황으로 고르고, 유저의 말과 행동에 대한 반응을 먼저 본다: 놀림·짓궂은 장난 → ${sn("부끄러움")}·${sn("삐침")}, 칭찬·농담 → ${sn("웃음")}, 고백·스킨십 → ${sn("설렘")}·${sn("부끄러움")}, 무례·배신 → ${sn("분노")}, 위협·괴물 → ${sn("공포")}·${sn("놀람")}, 싸움 → ${sn("공격")}(맨손·무기 모두), 다침 → ${sn("부상")}. 장소·행동에 맞는 추가 번호(식사·데이트 등)가 있으면 그 번호.
+- 번호는 그 순간 그 인물의 표정·상황으로 고르고, 유저의 말과 행동에 대한 반응을 먼저 본다: 놀림·짓궂은 장난 → ${sn("부끄러움")}·${sn("삐침")}, 칭찬·농담 → ${sn("웃음")}, 고백·스킨십 → ${sn("설렘")}·${sn("부끄러움")}, 무례·배신 → ${sn("분노")}, 위협·괴물 → ${sn("공포")}·${sn("놀람")}, 싸움·무기를 겨눔 → ${sn("공격")}(맨손·무기 모두), 다침 → ${sn("부상")}. 장소·행동에 맞는 추가 번호(식사·데이트 등)가 있으면 그 번호.
 - 인물이 이야기에 처음 등장하는 순간은 0번(프로필). 이미 등장한 인물: ${[...seen].join(", ") || "없음"}${ready.length ? `\n- 그림이 준비된 번호(되도록 이 안에서 고른다): ${ready.join(" / ")}` : ""}
 - 같은 인물은 한 응답에 한 장(감정이 크게 뒤집히면 두 장까지). 감정이 이어지면 직전과 같은 번호를 써도 된다.
 [출력 형식 — 반드시 이 순서]

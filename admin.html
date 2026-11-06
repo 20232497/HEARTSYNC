@@ -1535,8 +1535,8 @@ const ORIGINALS = [
   "cast": [
     {"code":"p1","name":"한서윤","look":"26세 여성, 높게 묶은 흑발 포니테일, 날카로운 눈매, 찢어진 흰 펜싱 재킷, 레이피어","tags":"black hair, high ponytail, side-swept bangs, arched eyebrows, sharp eyes, white fencing uniform, high collar, rapier"},
     {"code":"p2","name":"도하린","look":"27세 여성, 헝클어진 갈색 단발, 피 묻은 수술복 위 회색 카디건","tags":"brown hair, messy bob cut, parted bangs, droopy eyes, thick eyebrows, bloodstained scrubs, grey cardigan"},
-    {"code":"p3","name":"류건","look":"29세 남성, 짧은 머리, 넓은 어깨, 그을린 방화복, 버스 문짝 방패","tags":"black hair, very short hair, broad shoulders, scorched firefighter jacket, improvised shield, bus door shield"},
-    {"code":"p4","name":"세레나 바이스","look":"27세 여성, 은발 웨이브, 삼각모, 붉은 코트, 쌍권총","tags":"silver hair, wavy hair, side-swept bangs, upturned eyes, arched eyebrows, beauty mark, tricorne, red coat, pirate, dual wielding, pistols"},
+    {"code":"p3","name":"류건","look":"29세 남성, 짧은 머리, 넓은 어깨, 그을린 방화복, 버스 문짝 방패","tags":"black hair, very short hair, broad shoulders, scorched firefighter jacket, improvised shield, rectangular metal shield"},
+    {"code":"p4","name":"세레나 바이스","look":"27세 여성, 은발 웨이브, 삼각모, 붉은 코트, 쌍권총","tags":"silver hair, wavy hair, side-swept bangs, upturned eyes, arched eyebrows, beauty mark, pirate hat, red coat, pirate, dual wielding, pistols"},
     {"code":"p5","name":"연화","look":"25세 여성, 검은 땋은 머리, 무림 객잔 점소이 복장, 소매 속 비수","tags":"black hair, single braid, narrow eyes, upturned eyes, thin eyebrows, hanfu, chinese clothes, inn servant, hidden dagger"},
     {"code":"p6","name":"윤채이","look":"30세 여성, 둥근 안경, 낡은 트렌치코트, 커피 텀블러","tags":"black hair, parted bangs, narrow eyes, thin eyebrows, round eyewear, glasses, worn trench coat, journalist"},
     {"code":"p7","name":"카일 노스","look":"26세 남성, 모래색 머리, 판초, 턱의 흉터, 리볼버","tags":"sandy blonde hair, brown cape, cloak, white shirt, brown vest, small chin scar, revolver, gunslinger"},
@@ -2890,7 +2890,7 @@ function codeRating(codes, c) { return maxRating(codes.map((n) => n < CUSTOM_BAS
 const SIT_KEYS = { 2: "웃|미소|싱긋|방긋|피식|킥킥|깔깔|농담|재밌|환희|기뻐|기쁘|신이 나|신나", 3: "부끄|수줍|쑥스|머뭇|민망|얼굴이 (?:붉|빨개)|귀까지|빨개|장난|놀리|놀려|짓궂|칭찬|예쁘|예쁜|예뻐|귀여|귀엽",
   4: "울먹|울었|우는|눈물|슬프|슬퍼|흐느|오열|울음을 터|서럽|그리워", 5: "놀라|놀란|깜짝|화들짝|헉|휘둥그|설마|경악|기겁|소스라", 6: "화가|화를|화난|분노|노려|적대|버럭|소리쳤|이를 악|짜증|신경질|이마를 짚|성가|열받|닥쳐",
   7: "삐졌|삐친|삐죽|토라|흥[,.!…]|볼을 부풀|서운|입을 내밀|질투|샘이 나|샘나", 8: "무서|두려|겁에|겁먹|떨리|떨었|비명|공포|소름", 9: "다쳤|다친|부상|피를|피가|상처|쓰러",
-  10: "치료|붕대|회복|응급", 11: "쉬자|쉬어|잠들|졸려|하품|휴식|기지개|낮잠", 12: "공격|휘둘|베었|베어|찔렀|쏘았|쐈|주먹|맨손|때렸|후려|걷어차|덤벼|전투|싸우",
+  10: "치료|붕대|회복|응급", 11: "쉬자|쉬어|잠들|졸려|하품|휴식|기지개|낮잠", 12: "공격|휘둘|베었|베어|찔렀|쏘았|쐈|겨누|겨눠|겨눴|조준|방아쇠|사격|발사|총구|활시위|주먹|맨손|때렸|후려|걷어차|덤벼|전투|싸우",
   13: "각성|힘이 솟|눈빛이 변|폭주|기운이 치솟", 14: "설레|두근|심장이|가슴이 뛰|손을 잡|손잡|안아|포옹|고백|좋아해|데이트" };
 // 추천 칸 이름별 낱말. 그 밖의 직접 만든 칸은 칸 이름 자체로(내장 코드는 keys로) 찾음
 const SIT_KEYS_EXTRA = { 식사: "식사|밥|먹", 만남: "처음 뵙|반가워|반갑", 정색: "정색|굳은 얼굴|차갑게", 행복: "행복|기뻐|기쁘", 경계: "경계|의심|수상", 고민: "고민|생각에 잠|망설",
@@ -3842,7 +3842,7 @@ ${(() => { const used = usedOpeners(hist); return used.length ? `\n[이미 쓴 �
 - 인물 코드: ${castLine}
 - 감정·행동 번호: ${[...SIT.map((s, i) => i + " " + s), ...byDim("act")].join(", ")}
 - 의상 번호: ${byDim("wear").join(", ")} / 장소 번호: ${byDim("place").join(", ")}. 옷이나 장소가 바뀌는 순간에만 감정 번호 뒤에 쉼표로 붙인다(예: [[img:${(c.cast || [{ code: "c" }])[0].code}:3,404,501]]). 한 번 쓴 의상·장소는 다음 응답에도 자동으로 이어지므로 바뀌지 않으면 다시 쓰지 않고, 설정의 원래 옷·장면에 맞는 배경으로 돌아가면 400(기본 의상)·500(기본 배경)을 쓴다.${nowLine ? `\n- 지금 이어지는 의상·장소: ${nowLine}` : ""}
-- 번호는 그 순간 그 인물의 표정·상황으로 고르고, 유저의 말과 행동에 대한 반응을 먼저 본다: 놀림·짓궂은 장난 → ${sn("부끄러움")}·${sn("삐침")}, 칭찬·농담 → ${sn("웃음")}, 고백·스킨십 → ${sn("설렘")}·${sn("부끄러움")}, 무례·배신 → ${sn("분노")}, 위협·괴물 → ${sn("공포")}·${sn("놀람")}, 싸움 → ${sn("공격")}(맨손·무기 모두), 다침 → ${sn("부상")}. 장소·행동에 맞는 추가 번호(식사·데이트 등)가 있으면 그 번호.
+- 번호는 그 순간 그 인물의 표정·상황으로 고르고, 유저의 말과 행동에 대한 반응을 먼저 본다: 놀림·짓궂은 장난 → ${sn("부끄러움")}·${sn("삐침")}, 칭찬·농담 → ${sn("웃음")}, 고백·스킨십 → ${sn("설렘")}·${sn("부끄러움")}, 무례·배신 → ${sn("분노")}, 위협·괴물 → ${sn("공포")}·${sn("놀람")}, 싸움·무기를 겨눔 → ${sn("공격")}(맨손·무기 모두), 다침 → ${sn("부상")}. 장소·행동에 맞는 추가 번호(식사·데이트 등)가 있으면 그 번호.
 - 인물이 이야기에 처음 등장하는 순간은 0번(프로필). 이미 등장한 인물: ${[...seen].join(", ") || "없음"}${ready.length ? `\n- 그림이 준비된 번호(되도록 이 안에서 고른다): ${ready.join(" / ")}` : ""}
 - 같은 인물은 한 응답에 한 장(감정이 크게 뒤집히면 두 장까지). 감정이 이어지면 직전과 같은 번호를 써도 된다.
 
@@ -6656,25 +6656,39 @@ const baseSitDefault = (n) => SIT_PONY_TAGS[n] || "";
 const sceneOf = (n) => (baseSit(n) || {}).prompt || SIT_PONY_TAGS[n] || sitDef(n)?.prompt || "";
 // 싸우는 장면(0 프로필·9 부상·12 공격·13 각성)이 아니면 외모의 무기를 뺌 — 무기가 있으면 모든 칸이 같은 무기 든 자세로 끌려감
 const COMBAT_SITS = [0, 9, 12, 13];
-/* 무기 낱말: 쉼표로 나눈 태그 한 조각을 봄 — 그래서 검$·칼$처럼 끝을 봐도 '검은 머리'에 걸리지 않음. hair bow·bow tie는 무기가 아니라서 bow는 혼자 있을 때만 */
-const WEAPON_RE = /레이피어|장검|단검|대검|검$|칼$|비수|창$|활$|권총|리볼버|소총|라이플|총$|방패|배트$|쇠파이프|도리깨|타구봉|무기|^bows?$|\bbow and arrows?\b|\b(?:cross|long)bows?\b|\b(?:long|great|short)?swords?\b|\b(?:weapon|rapier|katana|blade|dagger|knife|spear|gun|pistol|revolver|rifle|shield|bat|baton|pipe|flail|(?:bamboo|iron|wooden) staff)s?\b/i;
+/* 무기 낱말: 쉼표로 나눈 태그 한 조각을 봄 — 그래서 검$·칼$처럼 끝을 봐도 '검은 머리'에 걸리지 않음. 한글은 끝을 봐서 도끼눈에 걸리지 않게, hair bow·bow tie는 무기가 아니라서 bow는 혼자 있을 때만, gunslinger·whipped cream은 낱말 경계로 빠짐. club은 뜻이 여럿이라 넣지 않음 */
+const WEAPON_RE = /레이피어|장검|단검|대검|검$|칼$|비수|창$|활$|권총|리볼버|소총|라이플|총$|석궁|방패|배트$|쇠파이프|도리깨|타구봉|곤봉$|몽둥이$|도끼$|철퇴$|망치$|채찍$|낫$|언월도|무기|^bows?$|\bbow and arrows?\b|\b(?:cross|long)bows?\b|\b(?:long|great|short)?swords?\b|\b(?:weapon|rapier|katana|blade|dagger|knife|spear|gun|handgun|shotgun|pistol|revolver|rifle|musket|flintlock|shield|bat|baton|pipe|flail|axe|mace|hammer|whip|scythe|lance|halberd|naginata|glaive|polearm|trident|(?:bamboo|iron|wooden) staff)s?\b/i;
 /* 12 공격은 맨손·무기 모두: 장면 태그는 맨손 기준이고, 무기 낱말이 있는 인물은 주먹 낱말(FIST_RE)을 빼고 무기를 쥠 — fighting stance가 있으면 무기를 줘도 주먹을 쥠(fd97) */
 const ATTACK_SITS = [12], FIST_RE = /^(?:fighting stance|clenched hands?|raised fists?)$/i;
-/* 공격 칸의 무기 낱말 앞에 붙이는 '쥔 모습': holding sword·holding gun처럼 Danbooru 낱말에 가중치까지 있어야 손에 그려짐 — holding rapier·장면의 holding weapon만으로는 빈손(fd96~fd100) */
-const WEAPON_GRIP = [[/dagger|비수|단검/i, "holding dagger"], [/knife/i, "holding knife"], [/sword|rapier|katana|blade|레이피어|장검|대검|검$|칼$/i, "holding sword"], [/rifle|소총|라이플/i, "holding rifle"], [/gun|pistol|revolver|권총|리볼버|총$/i, "holding gun"], [/shield|방패/i, "holding shield"], [/spear|창$/i, "holding spear"], [/bow|활$/i, "holding bow"], [/flail|도리깨/i, "holding flail"], [/staff|타구봉/i, "holding staff"]];
+/* 총은 넷으로 나눔(사용자 요청 — 권총과 리볼버를 구분): 긴 총 → 리볼버 → 쌍권총 → 권총 순서로 봄. 저격총·엽총 같은 한글은 끝이 총이라 권총 줄보다 먼저 봐야 함 */
+const SNIPER_RE = /sniper|저격/i, LONG_GUN_RE = /rifle|musket|shotgun|소총|라이플|저격|엽총|산탄|기관총|장총|머스킷/i, REVOLVER_RE = /revolver|리볼버/i, DUAL_GUN_RE = /pistols\b|쌍권총/i, PISTOL_RE = /gun|pistol|flintlock|권총|총$/i;
+const POLE_RE = /halberd|polearm|lance|naginata|glaive|trident|언월도/i, BOW_RE = /bow|활$/i, CROSSBOW_RE = /crossbow|석궁/i, WHIP_RE = /whip|채찍$/i, SCYTHE_RE = /scythe|낫$/i, AXE_RE = /axe|도끼$/i, HAMMER_RE = /hammer|mace|망치$|철퇴$/i;
+/* 공격 칸의 무기 낱말 앞에 붙이는 '쥔 모습': holding sword·holding gun처럼 Danbooru 낱말에 가중치까지 있어야 손에 그려짐 — holding rapier·장면의 holding weapon만으로는 빈손(fd96~fd100). 소총에 holding gun을 쓰면 권총으로 나옴, 쌍권총에 holding handgun을 쓰면 한 자루만 나옴(fd119) */
+const WEAPON_GRIP = [[/dagger|비수|단검/i, "holding dagger"], [/knife/i, "holding knife"], [/sword|rapier|katana|blade|레이피어|장검|대검|검$|칼$/i, "holding sword"], [LONG_GUN_RE, "holding rifle"], [REVOLVER_RE, "holding revolver"], [DUAL_GUN_RE, "holding gun"], [PISTOL_RE, "holding handgun"], [/shield|방패/i, "holding shield"], [POLE_RE, "holding polearm"], [/spear|창$/i, "holding spear"], [CROSSBOW_RE, "holding crossbow"], [BOW_RE, "holding bow"], [WHIP_RE, "holding whip"], [SCYTHE_RE, "holding scythe"], [AXE_RE, "holding axe"], [HAMMER_RE, "holding hammer"], [/flail|도리깨/i, "holding flail"], [/staff|타구봉/i, "holding staff"]];
 const gripOf = (t) => "(" + (WEAPON_GRIP.find((g) => g[0].test(t)) || [null, "holding weapon"])[1] + ":1.4)";
-/* 무기를 쥔 공격 자세(사용자 요청 — 무기 모습이 보이게, 긴 무기·총은 앞으로, 자연스럽게). 위 줄이 먼저. 활은 해당 인물이 없어 줄이 없음(holding weapon만).
+/* 무기를 쥔 공격 자세(사용자 요청 — 무기 모습이 보이게, 긴 무기·총은 앞으로, 자연스럽게). 위 줄이 먼저.
    쥔 낱말과 무기 낱말은 장면 맨 앞으로 옮기고 인물 묶음에서는 뺌 — 인물 묶음에 두면 칼을 등 뒤에 지거나 손이 빔(fd114 → fd115). 몸을 비스듬히 틀고(three-quarter view) 무기를 대각선으로 쥐면 자연스럽고 무기 전체가 보임.
-   낱말은 비교 생성으로 고름(fd103~fd117): pointing …은 칼 대신 큰 손가락을 그림, arms raised는 팔을 어색하게 치켜듦, foreshortening·incoming attack·sword aimed는 듣지 않음, full body는 맨발에 칼 두 자루. 칼끝이 정면을 향하지는 않고 소총은 어깨에 대고 조준하지는 못함 — 시드마다 다르니 저장 전에 눈으로 볼 것 */
-const WEAPON_STANCE = "three-quarter view, looking at viewer, (fighting stance:1.2)";
+   낱말은 비교 생성으로 고름(fd103~fd122): pointing …은 칼 대신 큰 손가락을 그림, arms raised는 팔을 어색하게 치켜듦, foreshortening·incoming attack·sword aimed는 듣지 않음, full body는 맨발에 칼 두 자루. 칼끝이 정면을 향하지는 않고 소총은 어깨에 대고 조준하지는 못함 — 시드마다 다르니 저장 전에 눈으로 볼 것.
+   총 낱말의 함정(fd119·fd120): wooden grip은 배경을 나무판으로 바꾸고, western revolver·six-shooter는 다른 인물을 그리고, trigger guard는 군인을 그리기도 함. flintlock을 더해도 부싯돌 총으로 보이지 않아 넣지 않음 */
+const WEAPON_STANCE = "three-quarter view, looking at viewer, (fighting stance:1.2)", GUN_POSE = "three-quarter view, looking at viewer, (aiming:1.3)", RIFLE_POSE = GUN_POSE + ", rifle raised, rifle stock on shoulder, long barrel";
 const WEAPON_AIM = [
-  [/rifle|소총|라이플/i, "three-quarter view, looking at viewer, (aiming:1.3), rifle raised, rifle stock on shoulder, long barrel, scope, finger on trigger"],
-  [/gun|pistol|revolver|권총|리볼버|총$/i, "three-quarter view, looking at viewer, (aiming:1.3), arm extended forward, finger on trigger"],
+  [SNIPER_RE, RIFLE_POSE + ", scope, finger on trigger"],
+  [LONG_GUN_RE, RIFLE_POSE + ", finger on trigger"],
+  [REVOLVER_RE, GUN_POSE + ", revolver cylinder, long barrel, one-handed, arm extended forward, finger on trigger"],
+  [DUAL_GUN_RE, "(dual wielding:1.4), two guns, gun in each hand, " + GUN_POSE + ", arms apart, arms extended forward, finger on trigger"],
+  [PISTOL_RE, "handgun, semi-automatic pistol, " + GUN_POSE + ", two-handed, arms extended forward, finger on trigger"],
   [/dagger|knife|비수|단검/i, WEAPON_STANCE + ", one-handed, blade forward, wind"],
   [/sword|rapier|katana|blade|레이피어|장검|대검|검$|칼$/i, WEAPON_STANCE + ", two-handed, sword held diagonally, unsheathed, long blade, wind"],
+  [POLE_RE, WEAPON_STANCE + ", two-handed, huge weapon, weapon over shoulder, wind"],
   [/spear|창$/i, WEAPON_STANCE + ", two-handed, spear held diagonally, wind"],
   [/staff|타구봉/i, WEAPON_STANCE + ", two-handed, staff held diagonally, wind"],
-  [/baton|flail|pipe|\bbat\b|도리깨|쇠파이프|배트$/i, WEAPON_STANCE + ", two-handed, weapon held diagonally, wind"],
+  [CROSSBOW_RE, GUN_POSE + ", two-handed, arms extended forward, finger on trigger"],
+  [BOW_RE, "archery, (drawing bow:1.3), arrow, bowstring, bow raised, three-quarter view, looking at viewer"],
+  [WHIP_RE, WEAPON_STANCE + ", one-handed, wind"],
+  [SCYTHE_RE, WEAPON_STANCE + ", two-handed, huge weapon, weapon over shoulder, wind"],
+  [AXE_RE, WEAPON_STANCE + ", two-handed, huge weapon, weapon over shoulder, wind"],
+  [HAMMER_RE, WEAPON_STANCE + ", two-handed, huge weapon, weapon over shoulder, wind"],
+  [/baton|flail|pipe|\bbat\b|도리깨|쇠파이프|배트$|곤봉$|몽둥이$/i, WEAPON_STANCE + ", two-handed, weapon held diagonally, wind"],
   [/shield|방패/i, WEAPON_STANCE + ", shield raised, shield in front of body, wind"]
 ];
 // 의상 번호가 붙은 조합이면 외모 글의 옷 조각을 뺌 — 설정의 옷과 의상 코드가 겹치면 둘이 섞여 그려짐
@@ -6703,7 +6717,8 @@ function slotParts(cast, key, c) {
   if (armed) {
     const rest = scene.filter((t) => !FIST_RE.test(t) && !(aim && t === "action pose"));
     // sword at hip처럼 자리가 붙은 낱말은 칼을 뒤로 보내서 무기만(fd115 → fd116)
-    scene = aim ? [...held.flatMap((t) => [gripOf(t), t.replace(/\s+at hip$/i, "")]), ...splitTags(aim[1]), "cowboy shot", ...rest] : ["holding weapon", ...rest];
+    // 무기 낱말이 둘이면(improvised shield, bus door shield) 쥔 낱말은 한 번만
+    scene = aim ? [...new Set(held.flatMap((t) => [gripOf(t), t.replace(/\s+at hip$/i, "")])), ...splitTags(aim[1]), "cowboy shot", ...rest] : ["holding weapon", ...rest];
   }
   const out = [
     { key: "scene", label: "장면·표정", tags: scene },
