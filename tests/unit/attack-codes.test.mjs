@@ -39,12 +39,34 @@ test("공격 그림: 맨손이면 주먹, 무기가 있으면 주먹 낱말을 �
   assert.ok(group(bare, "12", "scene").includes("fighting stance") && group(bare, "12", "scene").includes("clenched hands"));
   assert.ok(!group(bare, "12", "scene").includes("holding weapon"));
   assert.ok(!group(bare, "12", "look").some((t) => /holding/.test(t)));
-  for (const [tags, grip] of [["rapier", "holding sword"], ["longsword", "holding sword"], ["sword at hip", "holding sword"], ["pistols", "holding gun"], ["revolver", "holding gun"], ["sniper rifle", "holding gun"], ["poison dagger", "holding dagger"], ["bus door shield", "holding shield"], ["bamboo staff", "holding staff"], ["iron flail", "holding flail"], ["iron baton", "holding weapon"], ["장검", "holding sword"], ["쌍권총", "holding gun"]]) {
+  for (const [tags, grip] of [["rapier", "holding sword"], ["longsword", "holding sword"], ["sword at hip", "holding sword"], ["pistols", "holding gun"], ["revolver", "holding gun"], ["sniper rifle", "holding rifle"], ["poison dagger", "holding dagger"], ["bus door shield", "holding shield"], ["bamboo staff", "holding staff"], ["iron flail", "holding flail"], ["iron baton", "holding weapon"], ["장검", "holding sword"], ["쌍권총", "holding gun"]]) {
     const cast = { code: "s", name: "s", tags: "black hair, " + tags }, look = group(cast, "12", "look"), scene = group(cast, "12", "scene");
     assert.ok(look.includes(`(${grip}:1.4)`) && look.includes(tags), tags);
-    assert.equal(scene[0], "holding weapon", tags);
     assert.ok(!scene.includes("fighting stance") && !scene.includes("clenched hands"), tags);
   }
+});
+test("겨눈 자세: 긴 무기·총은 무기마다 낱말이 다르고, 짧은 무기는 쥐기만", () => {
+  const scene = (tags) => group({ code: "s", name: "s", tags: "black hair, " + tags }, "12", "scene");
+  for (const [tags, word] of [["rapier", "(thrusting sword forward:1.4)"], ["longsword", "(thrusting sword forward:1.4)"], ["sword at hip", "(thrusting sword forward:1.4)"], ["장검", "(thrusting sword forward:1.4)"], ["long spear", "(thrusting spear forward:1.4)"], ["bamboo staff", "(thrusting staff forward:1.5)"], ["iron baton", "(thrusting weapon forward:1.4)"], ["iron flail", "(thrusting weapon forward:1.4)"], ["pistols", "(aiming at viewer:1.3)"], ["revolver", "(aiming at viewer:1.3)"], ["쌍권총", "(aiming at viewer:1.3)"], ["sniper rifle", "(aiming at viewer:1.4)"]]) {
+    const s = scene(tags);
+    assert.ok(s.includes(word), tags);
+    assert.ok(s.includes("cowboy shot") && !s.includes("action pose"), tags + " 구도");
+    assert.ok(s.includes("intense gaze"), tags + " 표정은 남음");
+  }
+  assert.ok(scene("sniper rifle").includes("rifle raised"));
+  // 긴 무기는 들어 올려야 허리에서 잘리지 않음(fd113), 약한 fighting stance는 주먹 낱말(FIST_RE)로 지워지지 않음
+  assert.ok(scene("longsword").includes("arms raised") && scene("longsword").includes("(fighting stance:1.2)"));
+  // pointing은 칼 대신 큰 손가락을 그림(fd103·fd106·fd108)
+  for (const tags of ["rapier", "pistols", "sniper rifle", "bamboo staff"]) assert.ok(!scene(tags).some((t) => /pointing/.test(t)), tags);
+  for (const tags of ["poison dagger", "hidden dagger", "bus door shield"]) {
+    const s = scene(tags);
+    assert.equal(s[0], "holding weapon", tags);
+    assert.ok(s.includes("action pose") && !s.some((t) => /aiming|thrusting/.test(t)), tags);
+  }
+  // 총과 칼을 함께 가지면 총이 먼저
+  assert.ok(scene("longsword, revolver").includes("(aiming at viewer:1.3)"));
+  // 무기 낱말이 아니면 겨누지 않음
+  assert.ok(!group({ code: "s", name: "s", tags: "gunslinger, batman" }, "12", "scene").some((t) => /aiming|thrusting/.test(t)));
 });
 test("무기 낱말은 싸우는 칸에만: 다른 칸에서는 빠지고, 12가 아닌 싸우는 칸은 지니기만", () => {
   const cast = { code: "s", name: "s", tags: "black hair, longsword" };
