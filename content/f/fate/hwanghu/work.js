@@ -55,7 +55,7 @@ export default {
     { keys: ["에반스", "빚", "백작가"], text: "유저의 가문 에반스 백작가. 선대 백작이 흉작 때 영지민에게 곡물을 풀다 진 빚으로 몰락했다. 빚 문서는 여러 손을 거쳐 지금은 이름 모를 채권자 한 명이 모두 쥐고 있다.", kind: "group", tags: "ruined noble manor, debt documents, wax seal, faded family crest, empty hall, dust" }
   ],
   cast: [
-    { code: "ks", name: "카시안", look: "29세 남성, 황제, 흑발, 차가운 금빛 눈, 검은 군복풍 황제 예복, 어깨에 걸친 망토", tags: "black hair, golden eyes, emperor, black military uniform, black jacket, ornate uniform, epaulettes, cape over shoulders, regal" },
+    { code: "ks", name: "카시안", look: "29세 남성, 황제, 흑발, 차가운 금빛 눈, 검은 군복풍 황제 예복, 어깨에 걸친 망토", tags: "black hair, golden eyes, emperor, black military uniform, black jacket, gold trim, epaulettes, cape over shoulders" },
     { code: "lh", name: "레온하르트", look: "27세 남성, 대공, 부드럽게 웨이브진 금발, 초록 눈, 풀어 헤친 흰 셔츠와 자수 재킷, 나른한 미소", tags: "blonde hair, wavy hair, green eyes, open collar, white shirt, embroidered jacket, aristocrat" },
     { code: "lu", name: "루카스", look: "26세 남성, 호위기사, 짧은 갈색 머리, 단단한 체격, 은빛 기사 갑옷, 허리에 찬 장검, 무뚝뚝한 표정", tags: "brown hair, short hair, muscular, silver armor, knight armor, knight, sword at hip" },
     { code: "no", name: "노엘", look: "28세 남성, 마탑주, 하나로 묶은 긴 은발, 보랏빛 눈, 검은 로브, 외알 안경", tags: "silver hair, high ponytail, hair up, hair tied up, purple eyes, black robe, black shirt, high collar, closed robe, monocle, mage" },

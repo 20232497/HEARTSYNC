@@ -835,7 +835,7 @@ const idvOn = () => !!(CFG.idv && (CFG.idv.mode === "test" || CFG.idv.mode === "
 const IN_CLAUDE = !!(window.claude && typeof window.claude.use === "function");
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/core/constants.js
-   내보냄: MARK, FREE_DAILY, WELCOME, PLUS_MONTHLY, TIMEOUT, SIT, SIT_TINT, PALETTES, MOTIFS, CATS
+   내보냄: MARK, FREE_DAILY, WELCOME, PLUS_MONTHLY, TIMEOUT, SIT, RPG_ONLY_SITS, SIT_TINT, PALETTES, MOTIFS, CATS
    쓰는 곳: src/js/ai/models.js, src/js/core/wallet.js, src/js/services/supabase.js, src/js/images/codes.js, src/js/services/community.js, src/js/images/situations.js, src/js/ai/parse.js, src/js/ai/openrouter.js, src/js/ai/llm.js, src/js/ai/prompt/rules.js, src/js/ui/cover.js, src/js/ui/home.js, src/js/app.js, src/js/admin/codes.js, src/js/images/runware.js, src/js/admin/image-codes.js, src/js/admin/motion-run.js, src/js/admin/sit-sheets.js, src/js/admin/image-studio.js, src/js/admin/studio.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 순수 상수: 응답 구분자(MARK), 상황 이름(SIT)·표지 색·무늬·장르, 요금 상수 — 다른 모듈을 import하지 않음 */
@@ -845,6 +845,8 @@ const FREE_DAILY = 10, WELCOME = 30, PLUS_MONTHLY = 300;
 /* 네트워크 시간 제한(ms): connect 응답 머리가 올 때까지 · stall 스트림 조각 사이 · image Runware 생성 한 건 · api Supabase 요청 하나. 넘으면 {code:"timeout"}(core/util.js timeoutSignal) */
 const TIMEOUT = { connect: 45000, stall: 60000, image: 120000, api: 20000 };
 const SIT = ["프로필", "기본", "웃음", "부끄러움", "슬픔", "놀람", "분노", "삐침", "공포", "부상", "회복", "휴식", "공격", "각성", "설렘"];
+/* RPG 세계관 전용 기본 칸: 12 공격(사용자 결정 2026-11-06). 판정은 images/situations.js sitFits */
+const RPG_ONLY_SITS = [12];
 const SIT_TINT = ["#f5f0ff", "#9fb4ff", "#ffd166", "#ff8fab", "#7b96ff", "#ffe066", "#ff5d5d", "#c77dff", "#56cfe1", "#e63946", "#80ed99", "#a0c4ff", "#ff8c42", "#f9c74f", "#ff70a6"];
 const PALETTES = [
   ["#1d2735", "#3c5a73", "#c9a46a"], ["#2a1720", "#7a2e48", "#f0b7c8"], ["#151a2e", "#3b3f7a", "#d8c38a"], ["#16222a", "#2f6f73", "#f6d58e"],
@@ -1262,7 +1264,7 @@ const ORIGINALS = [
     {"keys":["에반스","빚","백작가"],"text":"유저의 가문 에반스 백작가. 선대 백작이 흉작 때 영지민에게 곡물을 풀다 진 빚으로 몰락했다. 빚 문서는 여러 손을 거쳐 지금은 이름 모를 채권자 한 명이 모두 쥐고 있다.","kind":"group","tags":"ruined noble manor, debt documents, wax seal, faded family crest, empty hall, dust"}
   ],
   "cast": [
-    {"code":"ks","name":"카시안","look":"29세 남성, 황제, 흑발, 차가운 금빛 눈, 검은 군복풍 황제 예복, 어깨에 걸친 망토","tags":"black hair, golden eyes, emperor, black military uniform, black jacket, ornate uniform, epaulettes, cape over shoulders, regal"},
+    {"code":"ks","name":"카시안","look":"29세 남성, 황제, 흑발, 차가운 금빛 눈, 검은 군복풍 황제 예복, 어깨에 걸친 망토","tags":"black hair, golden eyes, emperor, black military uniform, black jacket, gold trim, epaulettes, cape over shoulders"},
     {"code":"lh","name":"레온하르트","look":"27세 남성, 대공, 부드럽게 웨이브진 금발, 초록 눈, 풀어 헤친 흰 셔츠와 자수 재킷, 나른한 미소","tags":"blonde hair, wavy hair, green eyes, open collar, white shirt, embroidered jacket, aristocrat"},
     {"code":"lu","name":"루카스","look":"26세 남성, 호위기사, 짧은 갈색 머리, 단단한 체격, 은빛 기사 갑옷, 허리에 찬 장검, 무뚝뚝한 표정","tags":"brown hair, short hair, muscular, silver armor, knight armor, knight, sword at hip"},
     {"code":"no","name":"노엘","look":"28세 남성, 마탑주, 하나로 묶은 긴 은발, 보랏빛 눈, 검은 로브, 외알 안경","tags":"silver hair, high ponytail, hair up, hair tied up, purple eyes, black robe, black shirt, high collar, closed robe, monocle, mage"},
@@ -1312,7 +1314,7 @@ const ORIGINALS = [
     {"code":"th","name":"강태하","look":"32세 남성, 셰프, 짧게 깎은 검은 머리, 날카로운 눈매, 검은 앞치마, 걷어붙인 소매와 팔뚝의 화상 자국","tags":"black hair, very short hair, sharp eyes, chef, black apron, sleeves rolled up, burn scar on forearm, toned arms"},
     {"code":"sh","name":"윤시후","look":"29세 남성, 무명 배우, 갈색 펌 머리, 장난스러운 웃음, 헐렁한 후드티, 귀의 작은 피어싱","tags":"brown hair, wavy hair, permed hair, oversized hoodie, ear piercing, small earrings"},
     {"code":"dh","name":"백도현","look":"31세 남성, 수의사, 단정한 검은 머리, 둥근 안경, 흰 가운 위 회색 니트, 다정한 눈","tags":"black hair, neat hair, round eyewear, glasses, grey sweater, white coat, veterinarian, gentle eyes"},
-    {"code":"hg","name":"이한결","look":"27세 남성, 웹툰 작가, 눈을 덮는 부스스한 흑발, 다크서클, 늘어진 검은 티셔츠, 목에 건 헤드폰","tags":"black hair, messy hair, hair over eyes, bags under eyes, baggy black t-shirt, headphones around neck"},
+    {"code":"hg","name":"이한결","look":"27세 남성, 웹툰 작가, 눈을 덮는 부스스한 흑발, 다크서클, 늘어진 검은 티셔츠, 목에 건 헤드폰","tags":"black hair, messy hair, hair over eyes, bags under eyes, black v-neck shirt, black shirt, loose shirt, headphones around neck"},
     {"code":"jh","name":"서진혁","look":"34세 남성, 변호사, 깔끔하게 넘긴 머리, 무테안경, 남색 정장, 차가운 표정","tags":"black hair, slicked back hair, rimless eyewear, navy blue suit, necktie, lawyer"}
   ],
   "openings": [
@@ -1356,7 +1358,7 @@ const ORIGINALS = [
     {"keys":["사고","교차로","빗길"],"text":"유저가 사고를 당한 비 오는 밤의 교차로. 유저는 그때 무언가를 들고 누군가에게 가던 길이었다. 그 이상은 아직 기억나지 않는다.","kind":"event","tags":"rainy night, crossroads, headlights, wet asphalt, traffic light, blurred motion"}
   ],
   "cast": [
-    {"code":"sa","name":"차사현","look":"33세 남성, 호텔 지배인, 저승차사, 단정하게 넘긴 흑발, 창백한 피부, 검은 쓰리피스 정장, 은색 회중시계, 무표정","tags":"black hair, slicked back hair, pale skin, black suit, black jacket, black three-piece suit, white shirt, waistcoat, silver pocket watch, hotel manager"},
+    {"code":"sa","name":"차사현","look":"33세 남성, 호텔 지배인, 저승차사, 단정하게 넘긴 흑발, 창백한 피부, 검은 쓰리피스 정장, 은색 회중시계, 무표정","tags":"black hair, slicked back hair, pale skin, black three-piece suit, black suit jacket, black waistcoat, black lapels, black necktie, silver pocket watch, hotel manager"},
     {"code":"ig","name":"한이결","look":"29세 남성, 바텐더 도깨비, 반쯤 묶은 붉은 기가 도는 머리, 장난스러운 눈웃음, 소매를 걷은 흰 셔츠와 검은 조끼","tags":"dark red hair, half updo, hair bun, hair tied up, white shirt, sleeves rolled up, black vest, bartender"},
     {"code":"mh","name":"강무혁","look":"27세 남성, 도어맨, 짧은 흑발, 곧은 자세, 남색 도어맨 제복과 모자, 흰 장갑","tags":"black hair, short hair, navy blue uniform, doorman, bellhop hat, white gloves, straight posture"},
     {"code":"hj","name":"서하준","look":"32세 남성, 의사, 부드러운 갈색 머리, 지친 눈가, 흰 의사 가운, 목에 건 청진기","tags":"brown hair, soft hair, tired eyes, white lab coat, doctor, stethoscope around neck"},
@@ -1403,7 +1405,7 @@ const ORIGINALS = [
     {"keys":["통로","비밀 통로"],"text":"궁 지하에는 선대 왕이 만든 비밀 통로가 있다. 국무당 단비만 지도를 안다. 동궁, 수라간 뒤뜰, 대비전 담 아래로 이어진다.","kind":"place","tags":"secret underground passage, stone tunnel, torch, joseon palace, darkness"}
   ],
   "cast": [
-    {"code":"ih","name":"이화","look":"22세 여성, 상복 차림의 공주, 흰 비단 당의, 올림머리에 은비녀, 차가운 눈매","tags":"black hair, hair up, silver hairpin, forehead, parted bangs, narrow eyes, thin eyebrows, mole under eye, binyeo, white hanbok, silk dangui, long sleeves, high collar, closed robe, princess, joseon"},
+    {"code":"ih","name":"이화","look":"22세 여성, 상복 차림의 공주, 흰 비단 당의, 올림머리에 은비녀, 차가운 눈매","tags":"black hair, hair up, silver hairpin, forehead, parted bangs, narrow eyes, thin eyebrows, mole under eye, binyeo, white hanbok, korean clothes, jeogori, goreum, long sleeves, white chima skirt, joseon princess"},
     {"code":"sr","name":"설련","look":"24세 여성, 포도청 다모 복장, 질끈 묶은 머리, 쇠도리깨, 뺨의 작은 흉터","tags":"black hair, tied hair, side-swept bangs, sharp eyes, thick eyebrows, joseon police uniform, damo, hanbok, iron flail, small scar on cheek"},
     {"code":"jo","name":"정옥","look":"23세 여성, 내의원 의녀, 연두색 저고리, 단정한 쪽머리, 약초 바구니","tags":"black hair, neat chignon, forehead, parted bangs, droopy eyes, soft eyebrows, light green jeogori, hanbok, herb basket, physician"},
     {"code":"wh","name":"월하","look":"27세 여성, 기방 행수, 짙은 남색 치마, 화려한 떨잠, 접부채, 웃는 눈","tags":"black hair, elaborate updo, ornate hair ornament, forehead, upturned eyes, arched eyebrows, beauty mark, dark navy chima, hanbok, folding fan, gisaeng"},
@@ -1533,14 +1535,14 @@ const ORIGINALS = [
   "fields": ["📅 날짜","📍 위치","Lv","S 코인","EXP","HP","MP","스탯","📜 기록","⚡ 스킬","✨ 계약","💎 정수","🧪 회복","❤️ 호감도","퀘스트","보상"],
   "gauge": "HP",
   "cast": [
-    {"code":"p1","name":"한서윤","look":"26세 여성, 높게 묶은 흑발 포니테일, 날카로운 눈매, 찢어진 흰 펜싱 재킷, 레이피어","tags":"black hair, high ponytail, side-swept bangs, arched eyebrows, sharp eyes, torn white fencing jacket, rapier"},
+    {"code":"p1","name":"한서윤","look":"26세 여성, 높게 묶은 흑발 포니테일, 날카로운 눈매, 찢어진 흰 펜싱 재킷, 레이피어","tags":"black hair, high ponytail, side-swept bangs, arched eyebrows, sharp eyes, white fencing uniform, high collar, rapier"},
     {"code":"p2","name":"도하린","look":"27세 여성, 헝클어진 갈색 단발, 피 묻은 수술복 위 회색 카디건","tags":"brown hair, messy bob cut, parted bangs, droopy eyes, thick eyebrows, bloodstained scrubs, grey cardigan"},
     {"code":"p3","name":"류건","look":"29세 남성, 짧은 머리, 넓은 어깨, 그을린 방화복, 버스 문짝 방패","tags":"black hair, very short hair, broad shoulders, scorched firefighter jacket, improvised shield, bus door shield"},
     {"code":"p4","name":"세레나 바이스","look":"27세 여성, 은발 웨이브, 삼각모, 붉은 코트, 쌍권총","tags":"silver hair, wavy hair, side-swept bangs, upturned eyes, arched eyebrows, beauty mark, tricorne, red coat, pirate, dual wielding, pistols"},
     {"code":"p5","name":"연화","look":"25세 여성, 검은 땋은 머리, 무림 객잔 점소이 복장, 소매 속 비수","tags":"black hair, single braid, narrow eyes, upturned eyes, thin eyebrows, hanfu, chinese clothes, inn servant, hidden dagger"},
     {"code":"p6","name":"윤채이","look":"30세 여성, 둥근 안경, 낡은 트렌치코트, 커피 텀블러","tags":"black hair, parted bangs, narrow eyes, thin eyebrows, round eyewear, glasses, worn trench coat, journalist"},
-    {"code":"p7","name":"카일 노스","look":"26세 남성, 모래색 머리, 판초, 턱의 흉터, 리볼버","tags":"sandy blonde hair, brown poncho, white shirt, scar on chin, cowboy, revolver"},
-    {"code":"p8","name":"백여울","look":"25세 여성, 붉은 댕기, 개량 한복 점퍼, 손에 든 부적","tags":"black hair, long braid, red hair ribbon, round eyes, straight eyebrows, mole under eye, modernized hanbok, hanbok jacket"}
+    {"code":"p7","name":"카일 노스","look":"26세 남성, 모래색 머리, 판초, 턱의 흉터, 리볼버","tags":"sandy blonde hair, brown cape, cloak, white shirt, brown vest, small chin scar, revolver, gunslinger"},
+    {"code":"p8","name":"백여울","look":"25세 여성, 붉은 댕기, 개량 한복 점퍼, 손에 든 부적","tags":"black hair, long braid, red ribbon on braid, round eyes, straight eyebrows, mole under eye, modern hanbok, korean clothes, cropped jacket"}
   ],
   "openings": [
     {"title":"😊 이지 모드 · 든든한 첫 파티","directive":"이지 모드. 초기 파티: 한서윤, 도하린, 류건. 셋 모두 유저에게 우호적이다. 전투 난이도는 낮게, 보상은 넉넉하게.","status":{"📅 날짜":"2026.10.01 16:44","📍 위치":"1층 · 붕괴한 광화문","Lv":"1","S 코인":"3,000S","EXP":"0%","HP":"100/100","MP":"100/100","스탯":"체력 1 · 근력 1 · 민첩 1 · 마력 1 · 매력 1 · SP 3","📜 기록":"[고급] 무대 체질","⚡ 스킬":"[일반] 급소 간파","✨ 계약":"잠김 (3층 클리어 시 해금)","💎 정수":"없음","🧪 회복":"[일반] 붕대 x3","❤️ 호감도":"한서윤 10 · 도하린 15 · 류건 20","퀘스트":"1/5 · 광화문의 하운드 무리를 처치하고 생존자를 확보하라","보상":"1,000S · [일반] 정수 1개"},"text":"*2026년 10월 1일 오후 4시 44분. 하늘이 극장의 막처럼 좌우로 갈라졌다.*\n\n*광화문 사거리의 소음이 한순간에 멎는다. 갈라진 하늘 너머로 끝없이 층을 이룬 관람석이 보였고, 그 자리마다 사람이 아닌 무언가가 앉아 있었다.*\n\n[탑 '시어터'에 오신 것을 환영합니다. 이곳은 1층 무대, 붕괴한 서울입니다.]\n[관객 입장이 완료되었습니다. 공연을 시작합니다.]\n[관람신 '천 년 묵은 여우'가 턱을 괴고 당신을 내려다봅니다. \"어머, 저 아이 얼굴이 반반하네.\"]\n[관람신 '명부의 여왕'이 오늘의 사망자 수를 세기 시작합니다.]\n\n*아스팔트가 비명처럼 갈라지고, 지하철 입구에서 검은 개 형상의 괴수들이 기어 나온다. 그때 당신 옆에서 누군가 부러진 우산대를 검처럼 고쳐 쥐었다.*\n\n[[img:p1:0]]\n\n한서윤: \"멍하니 서 있을 거면 비켜요. 방해되니까.\"\n\n*그 뒤로 방화복 차림의 거구가 넘어진 버스 문짝을 방패처럼 들어 올리고, 피 묻은 수술복의 여자가 쓰러진 시민의 목에 손가락을 댄다.*\n\n류건: \"…셋. 앞으로 셋 온다. 뒤로.\"\n\n도하린: \"아 진짜, 맥박 없는 사람 하나 더 늘리지 말라고요. 거기 당신! 다쳤어요?\"\n\n[어둠의 하운드 A - HP 50/50] [어둠의 하운드 B - HP 50/50] [어둠의 하운드 C - HP 50/50]\n[1층 퀘스트 1/5 개시: 광화문의 하운드 무리를 처치하고 생존자를 확보하라.]"},
@@ -1636,7 +1638,7 @@ const ORIGINALS = [
 /* m/hangyeoul */ {
   "id": "hangyeoul",
   "name": "한겨울",
-  "lookTags": "brown hair, bob cut, half updo, round eyes, thick eyebrows, large glasses, convenience store uniform, oversized grey cardigan",
+  "lookTags": "brown hair, bob cut, half updo, round eyes, thick eyebrows, large glasses, convenience store uniform, grey cardigan",
   "title": "새벽 두 시의 편의점",
   "glyph": "冬",
   "cat": "일상",
@@ -2837,7 +2839,7 @@ function watchCommunity() {
    src/js/images/situations.js
    가져옴: src/js/ai/adult.js { ageOK }
            src/js/content/index.js { CONTENT_CODES }
-           src/js/core/constants.js { SIT }
+           src/js/core/constants.js { RPG_ONLY_SITS, SIT }
            src/js/core/state.js { S }
            src/js/core/storage.js { KV }
            src/js/images/codes.js { DIMS, RESET, dimOf, freeNum, maxRating, parseCodes, usedNums }
@@ -2845,7 +2847,7 @@ function watchCommunity() {
            src/js/images/rating.js { sheetRating }
            src/js/services/community.js { publishCommunity }
            src/js/services/images.js { IMG }
-   내보냄: CUSTOM_BASE, CUSTOM_MAX, CODE_MAX, EXTRA_CODES, setExtraCodes, allCustom, sitDef, sitName, keyName, knownCodes, customSits, builtinSits, codeDefs, slotNums, freeSitNum, codeRating, sitScores, dimPick, sitHints, dropSitImages, countSitImages
+   내보냄: CUSTOM_BASE, CUSTOM_MAX, CODE_MAX, EXTRA_CODES, setExtraCodes, allCustom, sitDef, sitName, keyName, knownCodes, customSits, builtinSits, codeDefs, slotNums, freeSitNum, codeRating, sitFits, sitScores, dimPick, sitHints, dropSitImages, countSitImages
    쓰는 곳: src/js/services/sync.js, src/js/ai/prompt/input.js, src/js/ai/prompt/rules.js, src/js/ui/cover.js, src/js/ui/room-drawer.js, src/js/ui/chat/generate.js, src/js/app.js, src/js/admin/codes.js, src/js/images/prompt.js, src/js/admin/export.js, src/js/admin/image-codes.js, src/js/admin/image-run.js, src/js/admin/motion-run.js, src/js/admin/sit-sheets.js, src/js/admin/image-studio.js, src/js/admin/auto-images.js, src/js/core/migrate.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 상황 칸: 기본 0~14 + 직접 만든 칸(customSits — 내 칸과 작품 폴더에 실린 코드 표) + 내장 코드(DIMS: 1xx 감정/행동·4xx 의상·5xx 장소), 조합 키 이름·수위, 유저 입력 → 번호 점수(sitHints·dimPick) */
@@ -2891,6 +2893,8 @@ const slotNums = () => [...SIT.keys(), ...customSits().filter((d) => d.n < 100).
 function freeSitNum(dim = "act") { return freeNum(usedNums(customList()), dim); }
 /* 번호들의 그림 수위: 기본 0~14는 그 작품의 시트 수위(기본 전체이용가), 그 밖은 칸 정의의 수위 — 가장 높은 것 */
 function codeRating(codes, c) { return maxRating(codes.map((n) => n < CUSTOM_BASE ? sheetRating(c.id) : (sitDef(n)?.rating || "safe"))); }
+/* 이 작품이 쓰는 번호인지: RPG 전용 칸은 cat이 RPG인 작품에서만 AI 번호 목록·낱말 후보에 넣음. 이미 쓴 태그와 스튜디오에서 직접 고른 조합은 막지 않음 */
+const sitFits = (n, c) => RPG_ONLY_SITS.indexOf(n) < 0 || !!(c && c.cat === "RPG");
 /* 상황 번호를 고르는 낱말(정규식 조각). AI가 그림을 빠뜨린 인물의 번호를 고를 때와, 유저 입력에서 번호 후보를 뽑을 때 씀 */
 const SIT_KEYS = { 2: "웃|미소|싱긋|방긋|피식|킥킥|깔깔|농담|재밌", 3: "부끄|수줍|민망|얼굴이 (?:붉|빨개)|귀까지|빨개|장난|놀리|놀려|짓궂|칭찬|예쁘|예쁜|예뻐|귀여|귀엽",
   4: "울먹|울었|우는|눈물|슬프|슬퍼|흐느|서럽|그리워", 5: "놀라|놀란|깜짝|화들짝|헉|휘둥그|설마", 6: "화가|화를|화난|분노|노려|버럭|소리쳤|이를 악|짜증|열받|닥쳐",
@@ -2908,11 +2912,11 @@ function sitKeys(n) {
   return [SIT_KEYS_EXTRA[d.name.trim()], d.keys, d.name.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&")].filter(Boolean).join("|");
 }
 /* 글 속 낱말로 번호마다 점수(adult면 성인 수위 칸도 후보). 직접 만든 칸·내장 코드는 더 구체적이라 0.5 더함. 400·500(되돌리기)은 뽑지 않음 */
-function sitScores(text, adult) {
+function sitScores(text, adult, c) {
   const out = new Map(), s = String(text || "");
   if (!s.trim()) return out;
   for (const n of [...SIT.keys(), ...codeDefs(adult).map((d) => d.n)]) {
-    if (n === RESET.wear || n === RESET.place) continue;
+    if (n === RESET.wear || n === RESET.place || !sitFits(n, c)) continue;
     const k = sitKeys(n); if (!k) continue;
     const hits = (s.match(new RegExp(k, "g")) || []).length;
     if (hits) out.set(n, hits + (n >= CUSTOM_BASE ? 0.5 : 0));
@@ -2926,8 +2930,8 @@ function dimPick(text, adult, sc = sitScores(text, adult)) {
   return out;
 }
 /* 유저 입력에 맞는 번호 후보: 감정/행동 둘("3 부끄러움") + 의상·장소("의상 404 오피스룩") — [이번 응답]에 붙여 AI가 고르게 */
-function sitHints(text, adult) {
-  const sc = sitScores(text, adult), out = [...sc].filter(([n]) => dimOf(n) === "act").sort((a, b) => b[1] - a[1]).slice(0, 2).map(([n]) => n + " " + sitName(n));
+function sitHints(text, adult, c) {
+  const sc = sitScores(text, adult, c), out = [...sc].filter(([n]) => dimOf(n) === "act").sort((a, b) => b[1] - a[1]).slice(0, 2).map(([n]) => n + " " + sitName(n));
   const d = dimPick(text, adult, sc);
   if (d.wear) out.push(`의상 ${d.wear} ${sitName(d.wear)}`);
   if (d.place) out.push(`장소 ${d.place} ${sitName(d.place)}`);
@@ -3738,7 +3742,7 @@ function buildInput(r, uptoIdx, statusBefore, direction) {
     if (m.role === "ai") { out.push({ role: "assistant", content: curText(m) }); return; }
     let t = m.sys ? "// 직전 장면에서 자연스럽게 이어서 다음 장면을 써라. 유저의 행동은 쓰지 않는다." : m.text;
     // 분량·대화·새 전개 지시는 시스템 프롬프트에도 있지만, 모델이 가장 잘 따르는 마지막 입력 옆에 한 번 더
-    if (last) t = `[현재 상태창 — 이번 장면은 여기서 출발한다]\n${JSON.stringify(statusBefore || {})}\n\n[${r.persona.name}의 입력]\n${t}${direction ? "\n\n// 다시 쓰기 지침: " + direction : ""}\n\n[이번 응답] 위 입력을 본문에 다시 옮겨 적지 말고 그 직후의 반응부터 쓴다. 본문 ${len.chars}, 대사 ${len.lines}줄 이상을 주고받고, 직전 응답과 다른 새 전개를 넣는다. 나오는 인물마다 [[img:코드:번호]]를 한 장씩 넣는다(의상·장소가 바뀌면 번호 뒤에 쉼표로)${(() => { const h = m.sys ? [] : sitHints(m.text, unfilteredRoute(r)); return h.length ? `(유저 입력에 맞는 번호 후보: ${h.join(", ")})` : ""; })()}.`;
+    if (last) t = `[현재 상태창 — 이번 장면은 여기서 출발한다]\n${JSON.stringify(statusBefore || {})}\n\n[${r.persona.name}의 입력]\n${t}${direction ? "\n\n// 다시 쓰기 지침: " + direction : ""}\n\n[이번 응답] 위 입력을 본문에 다시 옮겨 적지 말고 그 직후의 반응부터 쓴다. 본문 ${len.chars}, 대사 ${len.lines}줄 이상을 주고받고, 직전 응답과 다른 새 전개를 넣는다. 나오는 인물마다 [[img:코드:번호]]를 한 장씩 넣는다(의상·장소가 바뀌면 번호 뒤에 쉼표로)${(() => { const h = m.sys ? [] : sitHints(m.text, unfilteredRoute(r), r.char); return h.length ? `(유저 입력에 맞는 번호 후보: ${h.join(", ")})` : ""; })()}.`;
     out.push({ role: "user", content: t });
   });
   return out;
@@ -3753,7 +3757,7 @@ function buildInput(r, uptoIdx, statusBefore, direction) {
            src/js/core/rooms.js { curText }
            src/js/images/codes.js { imgTags, lastDims, parseCodes, splitDims }
            src/js/images/pick.js { imagesOf }
-           src/js/images/situations.js { CUSTOM_BASE, codeDefs, sitDef, sitName }
+           src/js/images/situations.js { CUSTOM_BASE, codeDefs, sitDef, sitFits, sitName }
            src/js/services/images.js { validRef }
    내보냄: speakerName, rulesPrompt
    쓰는 곳: src/js/ai/prompt/input.js, src/js/ai/prompt/memory.js, src/js/ui/chat/suggest.js, src/js/ui/room-drawer.js, src/js/ui/chat/log.js, src/js/app.js
@@ -3792,7 +3796,7 @@ function rulesPrompt(r, lore = [], hist = r.msgs) {
   const fields = c.fields.map((f) => `"${f}":${f === c.gauge && typeof r.status?.[f] === "number" ? "0~100 정수" : '"짧은 값"'}`).join(",");
   const seen = new Set(); hist.forEach((m) => imgTags(curText(m)).forEach((t) => seen.add(t.code)));
   const castLine = (c.cast || []).map((x) => `${x.code}=${x.name}`).join(", ");
-  const sn = (name) => SIT.indexOf(name) + " " + name, okSit = (n) => n < CUSTOM_BASE || (sitDef(n) && (sitDef(n).rating === "safe" || unfilteredRoute(r)));
+  const sn = (name) => SIT.indexOf(name) + " " + name, okSit = (n) => sitFits(n, c) && (n < CUSTOM_BASE || (sitDef(n) && (sitDef(n).rating === "safe" || unfilteredRoute(r))));
   // 인물별로 그림이 들어 있는 감정/행동 번호(조합 키의 감정 부분까지 — 준비된 이미지셋 안에서 고르게)
   const ready = (c.cast || []).map((x) => { const m = imagesOf(c)[x.code] || {}; const ns = [...new Set(Object.keys(m).filter((k) => validRef(m[k])).flatMap((k) => splitDims(parseCodes(k)).act))].filter(okSit).sort((a, b) => a - b); return ns.length ? `${x.name} ${ns.join("·")}` : ""; }).filter(Boolean);
   // 감정/행동·의상·장소 번호 목록(성인 수위 칸은 성인 경로일 때만)과 인물별로 이어지는 의상·장소(applyDims가 태그에 남긴 것)
@@ -3845,9 +3849,9 @@ ${(() => { const used = usedOpeners(hist); return used.length ? `\n[이미 쓴 �
 [장면 이미지 — 매 응답 필수]
 - 이번 응답에 나오는(말하거나 움직이는) 인물마다 그림을 한 장씩 넣는다. 그 인물이 처음 말하거나 등장하는 줄 바로 위에 별도 줄로 [[img:코드:번호]] 만 쓴다. 설명을 덧붙이지 않는다.
 - 인물 코드: ${castLine}
-- 감정·행동 번호: ${[...SIT.map((s, i) => i + " " + s), ...byDim("act")].join(", ")}
+- 감정·행동 번호: ${[...SIT.map((s, i) => i + " " + s).filter((s, i) => sitFits(i, c)), ...byDim("act")].join(", ")}
 - 의상 번호: ${byDim("wear").join(", ")} / 장소 번호: ${byDim("place").join(", ")}. 옷이나 장소가 바뀌는 순간에만 감정 번호 뒤에 쉼표로 붙인다(예: [[img:${(c.cast || [{ code: "c" }])[0].code}:3,404,501]]). 한 번 쓴 의상·장소는 다음 응답에도 자동으로 이어지므로 바뀌지 않으면 다시 쓰지 않고, 설정의 원래 옷·장면에 맞는 배경으로 돌아가면 400(기본 의상)·500(기본 배경)을 쓴다.${nowLine ? `\n- 지금 이어지는 의상·장소: ${nowLine}` : ""}
-- 번호는 그 순간 그 인물의 표정·상황으로 고르고, 유저의 말과 행동에 대한 반응을 먼저 본다: 놀림·짓궂은 장난 → ${sn("부끄러움")}·${sn("삐침")}, 칭찬·농담 → ${sn("웃음")}, 고백·스킨십 → ${sn("설렘")}·${sn("부끄러움")}, 무례·배신 → ${sn("분노")}, 위협·괴물 → ${sn("공포")}·${sn("놀람")}, 싸움 → ${sn("공격")}, 다침 → ${sn("부상")}. 장소·행동에 맞는 추가 번호(식사·데이트 등)가 있으면 그 번호.
+- 번호는 그 순간 그 인물의 표정·상황으로 고르고, 유저의 말과 행동에 대한 반응을 먼저 본다: 놀림·짓궂은 장난 → ${sn("부끄러움")}·${sn("삐침")}, 칭찬·농담 → ${sn("웃음")}, 고백·스킨십 → ${sn("설렘")}·${sn("부끄러움")}, 무례·배신 → ${sn("분노")}, 위협·괴물 → ${sn("공포")}·${sn("놀람")}, 싸움 → ${sn(sitFits(SIT.indexOf("공격"), c) ? "공격" : "분노")}, 다침 → ${sn("부상")}. 장소·행동에 맞는 추가 번호(식사·데이트 등)가 있으면 그 번호.
 - 인물이 이야기에 처음 등장하는 순간은 0번(프로필). 이미 등장한 인물: ${[...seen].join(", ") || "없음"}${ready.length ? `\n- 그림이 준비된 번호(되도록 이 안에서 고른다): ${ready.join(" / ")}` : ""}
 - 같은 인물은 한 응답에 한 장(감정이 크게 뒤집히면 두 장까지). 감정이 이어지면 직전과 같은 번호를 써도 된다.
 
@@ -6089,8 +6093,8 @@ function addCastImages(body, r, prev, said) {
     if (!seen.has(f.x.code)) sit = 0;
     else {
       const mine = !!said2 && (f.keys.some((k) => said2.includes(k)) || (!anyNamed && i === 0)), sc = new Map();
-      sitScores(f.own, adult).forEach((v, k) => { if (dimOf(k) === "act") sc.set(k, v * 2); });
-      if (mine) sitScores(said2, adult).forEach((v, k) => { if (dimOf(k) === "act") sc.set(k, (sc.get(k) || 0) + v); });
+      sitScores(f.own, adult, c).forEach((v, k) => { if (dimOf(k) === "act") sc.set(k, v * 2); });
+      if (mine) sitScores(said2, adult, c).forEach((v, k) => { if (dimOf(k) === "act") sc.set(k, (sc.get(k) || 0) + v); });
       let best = 0; sc.forEach((v, k) => { const s = v + (validRef((imgs[f.x.code] || {})[k]) ? 0.5 : 0); if (s > best) { best = s; sit = k; } });
       const dp = dimPick(f.own + (mine ? "\n" + said2 : ""), adult); extra = [dp.wear, dp.place].filter(Boolean);
     }
@@ -6897,8 +6901,8 @@ function fitStyle(st, tags, scene) {
    wolf cut·leaf → 짐승 귀·나뭇잎 / navy → 제복 / 머리 태그의 collar → 초커 / plain t-shirt → 무늬(white undershirt를 씀) / sweater + neck → 터틀넥 /
    adam's apple → 사과 / bomber jacket → 패치 / ash hair → 진갈색(grey hair를 씀) / hair sheen → 갈색으로 번짐 / hair down·loose hair → 머리가 길어짐 /
    soft brush strokes → 손에 붓 / shoulder-length hair → 들쭉날쭉 / ponytail만 쓰면 낮게 처짐(high ponytail·hair bun을 씀). 눈 색 네거티브(purple·green eyes)는 다른 눈을 빨갛게 만들어 안 씀.
-   인물의 옷이 설정과 달라지면 작품 태그에 색과 옷을 쉬운 낱말로 더하면 잡힘(fd47·fd49·fd50): black three-piece suit만으로는 흰 정장 → black suit, white shirt / black military uniform만으로는 진녹색 → black jacket / feather-trimmed coat·black robe는 가슴이 드러남 → black shirt·high collar, closed robe(closed robe만으로는 안 닫힘 — 백연·노엘은 셔츠까지 — 근육질 태그 때문에 옷이 느슨하면 가슴이 드러남, 카일 노스의 판초도 흰 셔츠를 더함, fd55·fd76). 고개가 조금 돌아가면 태그보다 시드를 바꿈(네거티브에 from side·head tilt를 더해도 나아지지 않음, fd61).
-   알려진 한계: 실내 장면에 액자가 자주 걸림(painted background·soft painting은 원인이 아니었음), 눈가 붉은 기(참고 그림 일부에도 있음), 회색 머리는 다른 색보다 어려 보이기 쉬워 만든 그림을 보고 고를 것, 티셔츠·후드의 글자 무늬, 눈 색을 안 정한 인물은 파란 눈이 되기도 함, 두 번째 시드 배경의 얼룩, 넘긴 머리는 일부만 넘어감 */
+   인물의 옷이 설정과 달라지면 작품 태그에 색과 옷을 쉬운 낱말로 더하면 잡힘(fd47·fd49·fd50): black three-piece suit만으로는 흰 정장 → black suit jacket, black waistcoat, black necktie(white shirt를 적으면 흰 재킷으로 번지고 white dress shirt는 흰 치마를 부름, fd91·fd92) / ornate uniform은 배경까지 금장식 → gold trim / black military uniform만으로는 진녹색 → black jacket / feather-trimmed coat·black robe는 가슴이 드러남 → black shirt·high collar, closed robe(closed robe만으로는 안 닫힘 — 백연·노엘은 셔츠까지 — 근육질 태그 때문에 옷이 느슨하면 가슴이 드러남, 카일 노스도 흰 셔츠를 더함, poncho는 잘 안 그려져 brown cape, cloak으로, fd55·fd76·fd92). 고개가 조금 돌아가면 태그보다 시드를 바꿈(네거티브에 from side·head tilt를 더해도 나아지지 않음, fd61).
+   알려진 한계: 실내 장면에 액자가 자주 걸림(painted background·soft painting은 원인이 아니었음), 눈가 붉은 기(참고 그림 일부에도 있음), 회색 머리는 다른 색보다 어려 보이기 쉬워 만든 그림을 보고 고를 것, 티셔츠·후드의 글자 무늬(검은 티셔츠는 밴드 티셔츠로 읽혀 어떤 낱말로도 몇몇 시드에 남음, plain을 붙이면 흰옷이 됨, fd94 — 시드를 바꿈), 눈 색을 안 정한 인물은 파란 눈이 되기도 함, 두 번째 시드 배경의 얼룩, 넘긴 머리는 일부만 넘어감 */
 /* 정면(사용자 요청 — 사선이면 표정이 잘 안 보임). 장면이 다른 각도를 정하거나(FRONT_WHEN, 남성향 일상도 씀 — styles.js) 행동·시선을 정하면(moves — style-fit.js sceneMoves, 자세가 마네킹처럼 굳고 옆을 보는 코드와 부딪힘) 뺌. 정장·넘긴 머리는 몇몇 시드에서 그래도 조금 돌아감(fd72) — 태그를 더 올려도 나아지지 않아 시드를 바꿈 */
 const FRONT_WHEN = /(^|[^a-z])(?:from behind|from above|from below|from side|three-quarter view|profile|lying|sleeping)\b/i;
 const FD_FRONT = "(facing viewer:1.7), (straight-on:1.6), (front view:1.4), (head straight:1.3)";
@@ -7610,13 +7614,13 @@ function gate() {
 }
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/admin/image-codes.js
-   가져옴: src/js/core/constants.js { SIT }
+   가져옴: src/js/core/constants.js { RPG_ONLY_SITS, SIT }
            src/js/core/state.js { S }
            src/js/core/util.js { esc }
            src/js/images/codes.js { DIM_NAMES, RESET, parseCodes }
            src/js/images/prompt.js { baseSit, baseSitDefault }
            src/js/images/rating.js { RATINGS }
-           src/js/images/situations.js { codeDefs }
+           src/js/images/situations.js { codeDefs, sitFits }
            src/js/services/images.js { validRef }
    내보냄: deletable, codeGroups, codeStats, dimCount, groupHTML
    쓰는 곳: src/js/admin/image-studio.js
@@ -7624,7 +7628,7 @@ function gate() {
 /* 이미지 스튜디오의 코드 목록(관리자 빌드만): 감정·행동 / 의상 / 장소 세 갈래를 번호대별 묶음으로 나누고, 고른 인물에게 그 코드의 그림이 몇 장 있는지 함께 보여 준다.
    묶음 — 감정·행동: 기본 0~14 · 직접 만든 칸 15~99 · 100번대 · 200번대 · 300번대 / 의상 4xx / 장소 5xx(400·500은 '설정대로 되돌리기'라 뺌).
    보이는 코드는 codeDefs()(성인 확인 전엔 전체이용가만) — 내 칸 > 작품 폴더 코드 표 > 관리자 전용 > 내장 순으로 같은 번호를 덮은 결과.
-   기본 0~14도 ✎로 그림 태그·움직임을 고침(baseSitEditor — 이름은 그대로, 고친 칸은 '수정' 표시).
+   기본 0~14도 ✎로 그림 태그·움직임을 고침(baseSitEditor — 이름은 그대로, 고친 칸은 '수정' 표시). RPG 전용 칸(12 공격)은 어느 작품에서나 'RPG 전용' 표시로 보이고 직접 고를 수 있지만, RPG가 아닌 작품의 빈 칸 채우기에서는 빠짐.
    선택 삭제 모드(del)면 지울 수 있는 코드(이 계정의 칸 — 직접 만들었거나 목록으로 들여온 것)에 체크 칸을, 묶음마다 '전체 선택'을 보여 줌. 기본·내장·실림·관리자 전용(파일) 코드는 잠금 */
 
 
@@ -7639,13 +7643,13 @@ function gate() {
 const deletable = (d) => !!d.def && (S.settings.customSits || []).indexOf(d.def) >= 0;
 /* 감정·행동 번호대 묶음(이름은 번호대만 — 묶음의 뜻은 관리자가 만든 칸 이름으로 드러남) */
 const ACT_BANDS = [[0, SIT.length, "기본 감정 0~14", "모든 작품의 기본 칸 — 첫 등장은 0, 그림이 없을 때는 1·0으로 대신해요"], [SIT.length, 100, "직접 만든 칸 15~99"], [100, 200, "100번대"], [200, 300, "200번대"], [300, 400, "300번대"]];
-/* 갈래(act·wear·place) → 묶음 [{id, name, hint, items: [{n, name, prompt, rating, src, edit}]}] */
-function codeGroups(dim) {
+/* 갈래(act·wear·place) → 묶음 [{id, name, hint, items: [{n, name, prompt, rating, src, edit, rpg, off}]}]. c는 지금 작품 — off면 그 작품의 빈 칸 채우기에서 뺌 */
+function codeGroups(dim, c) {
   const defs = codeDefs().filter((d) => d.dim === dim && d.n !== RESET.wear && d.n !== RESET.place);
   const src = (d) => d.builtin ? "내장" : d.adminOnly ? "관리자" : d.shipped ? "실림" : "내 칸";
   const item = (d) => ({ n: d.n, name: d.name, prompt: d.prompt || "", rating: d.rating || "safe", src: src(d), def: d });
   if (dim !== "act") return [{ id: dim, name: DIM_NAMES[dim] + (dim === "wear" ? " 4xx" : " 5xx"), hint: dim === "wear" ? "감정 번호 뒤에 붙여 옷을 바꿔요" : "감정 번호 뒤에 붙여 배경을 바꿔요", items: defs.map(item) }];
-  const base = SIT.map((name, n) => { const o = baseSit(n); return { n, name, prompt: (o && o.prompt) || baseSitDefault(n), rating: "safe", src: "기본", def: null, edited: !!o }; });
+  const base = SIT.map((name, n) => { const o = baseSit(n); return { n, name, prompt: (o && o.prompt) || baseSitDefault(n), rating: "safe", src: "기본", def: null, edited: !!o, rpg: RPG_ONLY_SITS.indexOf(n) >= 0, off: !sitFits(n, c) }; });
   return ACT_BANDS.map(([a, b, name, hint], i) => ({ id: "act" + i, name, hint: hint || "", items: i === 0 ? base : defs.filter((d) => d.n >= a && d.n < b).map(item) })).filter((g) => g.items.length);
 }
 /* 인물 한 명의 그림 칸({조합 키: 참조})에서 번호마다: 그 번호 하나짜리 그림이 있는지(exact)와 그 번호가 든 그림 수(count) */
@@ -7662,9 +7666,9 @@ function codeStats(slots) {
 const dimCount = (dim) => codeGroups(dim).reduce((a, g) => a + g.items.length, 0);
 /* 묶음 하나의 HTML. on(n)은 지금 조합에 든 번호인지, closed면 접힘, st는 codeStats 결과, del은 선택 삭제 모드일 때 고른 번호들(Set) */
 function groupHTML(g, on, closed, st, del) {
-  const filled = g.items.filter((d) => (st[d.n] || {}).exact).length, dels = g.items.filter(deletable), all = dels.length && dels.every((d) => del && del.has(d.n));
+  const filled = g.items.filter((d) => (st[d.n] || {}).exact).length, empty = g.items.filter((d) => !d.off && !(st[d.n] || {}).exact).length, dels = g.items.filter(deletable), all = dels.length && dels.every((d) => del && del.has(d.n));
   const tool = del ? (dels.length ? `<button class="btn sm ghost" data-gsel="${g.id}">${all ? "선택 해제" : `전체 선택 ${dels.length}`}</button>` : `<span class="note">지울 수 없음</span>`)
-    : g.items.length > filled ? `<button class="btn sm ghost" data-fill="${g.id}" title="이 묶음에서 그림이 없는 코드를 하나씩 AI로 그려 저장">빈 칸 ${g.items.length - filled}개 채우기</button>` : "";
+    : empty ? `<button class="btn sm ghost" data-fill="${g.id}" title="이 묶음에서 그림이 없는 코드를 하나씩 AI로 그려 저장">빈 칸 ${empty}개 채우기</button>` : "";
   return `<div class="is-group${closed ? " closed" : ""}" data-group="${g.id}">
     <div class="is-gh"><button class="is-fold" data-fold="${g.id}" aria-expanded="${!closed}"><b>${esc(g.name)}</b><small>${g.items.length}개 · 그림 ${filled}</small></button>${tool}</div>
     ${g.hint ? `<p class="note is-hint">${esc(g.hint)}</p>` : ""}
@@ -7673,7 +7677,7 @@ function groupHTML(g, on, closed, st, del) {
 function rowHTML(d, on, s, del) {
   const adult = d.rating !== "safe", can = !!del && deletable(d), chk = can && del.has(d.n);
   return `<div class="is-code${on && !del ? " on" : ""}${adult ? " adult" : ""}${s && s.exact ? " filled" : ""}${del && !can ? " locked" : ""}${chk ? " chk" : ""}" data-row="${d.n}" data-find="${esc((d.n + " " + d.name).toLowerCase())}">
-    ${can ? `<input type="checkbox" class="is-chk" data-chk="${d.n}" ${chk ? "checked" : ""} aria-label="${esc(d.name)} 선택">` : ""}<button class="is-pick"${del && !can ? ' disabled title="기본·내장·작품 폴더·관리자 전용 코드는 여기서 지울 수 없어요"' : ""} data-pick="${d.n}" title="${esc(d.prompt || d.name)}"><span class="num">${d.n}</span><span class="nm">${esc(d.name)}</span>${adult ? `<span class="rt">${RATINGS[d.rating] ? esc(RATINGS[d.rating].name) : "성인"}</span>` : ""}${d.src !== "기본" && d.src !== "내장" ? `<span class="src">${d.src}</span>` : d.edited ? `<span class="src">수정</span>` : ""}</button>
+    ${can ? `<input type="checkbox" class="is-chk" data-chk="${d.n}" ${chk ? "checked" : ""} aria-label="${esc(d.name)} 선택">` : ""}<button class="is-pick"${del && !can ? ' disabled title="기본·내장·작품 폴더·관리자 전용 코드는 여기서 지울 수 없어요"' : ""} data-pick="${d.n}" title="${esc(d.prompt || d.name)}"><span class="num">${d.n}</span><span class="nm">${esc(d.name)}</span>${adult ? `<span class="rt">${RATINGS[d.rating] ? esc(RATINGS[d.rating].name) : "성인"}</span>` : ""}${d.src !== "기본" && d.src !== "내장" ? `<span class="src">${d.src}</span>` : d.edited ? `<span class="src">수정</span>` : ""}${d.rpg ? `<span class="src">RPG 전용</span>` : ""}</button>
     <span class="cnt" title="이 인물의 그림 중 이 번호가 든 것">${s ? s.count + "장" : ""}</span>
     ${del ? "" : `<button class="is-ed" data-edit="${d.n}" aria-label="${esc(d.name)} 고치기" title="${d.src === "기본" ? "그림 태그·움직임 고치기" : "이름·프롬프트·움직임·수위 고치기"}">✎</button>`}</div>`;
 }
@@ -8075,7 +8079,7 @@ const SIT_PRESETS = [
     ["요리", "cooking, apron, kitchen, holding ladle"], ["게임", "playing video games, holding controller, sitting on floor, room"]] },
   { name: "장소·데이트", items: [
     ["카페", "cafe, sitting, holding cup, window, warm lighting"], ["해변", "beach, ocean, summer, sundress, wind, sunlight"],
-    ["놀이공원", "amusement park, ferris wheel, holding balloon, smile"], ["밤 산책", "night, street lights, walking, city lights, scarf"],
+    ["놀이공원", "amusement park, ferris wheel, holding balloon, smile"], ["밤 산책", "night, street lights, full body, walking, mid-stride, one leg forward, shoes, city lights, scarf"],
     ["벚꽃", "cherry blossoms, falling petals, spring, park"], ["크리스마스", "christmas, santa hat, snow, christmas lights, holding gift"],
     ["비 오는 날", "rain, holding umbrella, wet hair, puddle, city street"], ["영화관", "movie theater, sitting, popcorn, dark, screen light on face"]] },
   { name: "로맨스", items: [
@@ -8375,7 +8379,7 @@ function viewImages(arg) {
       <section class="box is-codes${T.del ? " deleting" : ""}" aria-label="코드 목록">
         <div class="is-tabs" role="tablist">${["act", "wear", "place"].map((d) => `<button role="tab" class="${T.tab === d ? "on" : ""}" data-tab="${d}" aria-selected="${T.tab === d}">${DIM_NAMES[d]} <small>${dimCount(d)}</small></button>`).join("")}</div>
         <input class="inp is-q" id="isQ" placeholder="번호·이름으로 찾기" aria-label="코드 찾기">
-        <div class="is-list">${codeGroups(T.tab).map((g) => groupHTML(g, on, !!T.closed[g.id], st, T.del)).join("")}</div>
+        <div class="is-list">${codeGroups(T.tab, c).map((g) => groupHTML(g, on, !!T.closed[g.id], st, T.del)).join("")}</div>
         ${T.del ? `<div class="is-delbar"><div class="x"><b>${delN}개 선택</b><span class="note">${delN ? `${delImgs ? `이 코드가 든 그림 ${delImgs}장(모든 작품·인물, 움짤 포함)도 함께 지워져요.` : "이 코드로 저장한 그림은 없어요."} 내장 번호를 덮어쓴 칸은 지우면 내장 코드로 돌아가요.` : "지울 코드를 고르세요 — 직접 만들었거나 목록으로 들여온 코드만 지울 수 있어요. 탭을 바꿔도 고른 것은 남아요."}</span></div>
           <div class="cta-row"><button class="btn sm ghost" id="isDelX">취소</button><button class="btn sm danger" id="isDelGo" ${delN ? "" : "disabled"}>선택 삭제</button></div></div>`
         : `<div class="cta-row" style="margin-top:10px"><button class="btn sm" id="isAdd">+ 코드 추가</button><button class="btn sm" id="isList">목록으로 추가</button><button class="btn sm ghost" id="isPreset">추천 코드</button>${canDel ? `<span class="spacer"></span><button class="btn sm ghost" id="isDelMode" title="직접 만들었거나 목록으로 들여온 코드를 골라 한 번에 지우기">선택 삭제</button>` : ""}</div>
@@ -8468,9 +8472,9 @@ function bind(v, c, cast, key) {
   const pre = $("#isPreset", v); if (pre) pre.onclick = () => sitPresetSheet(re);
   // 묶음의 빈 칸 채우기: 그림이 없는 번호마다, 지금 고른 다른 갈래(의상·장소 / 감정)를 붙인 조합으로 그려 바로 저장
   $$("[data-fill]", v).forEach((b) => b.onclick = () => {
-    const g = codeGroups(T.tab).find((x) => x.id === b.dataset.fill); if (!g) return;
+    const g = codeGroups(T.tab, c).find((x) => x.id === b.dataset.fill); if (!g) return;
     const st = codeStats(imagesOf(c)[cast.code] || {}), acts = T.acts.slice(0, MAX_ACT);
-    const keys = g.items.filter((d) => !(st[d.n] || {}).exact).map((d) => keyOf(T.tab === "act" ? [d.n, T.wear, T.place].filter(nn) : T.tab === "wear" ? [...acts, d.n, T.place].filter(nn) : [...acts, T.wear, d.n].filter(nn)));
+    const keys = g.items.filter((d) => !d.off && !(st[d.n] || {}).exact).map((d) => keyOf(T.tab === "act" ? [d.n, T.wear, T.place].filter(nn) : T.tab === "wear" ? [...acts, d.n, T.place].filter(nn) : [...acts, T.wear, d.n].filter(nn)));
     runKeys(c, cast, [...new Set(keys)].filter((k) => !validRef((imagesOf(c)[cast.code] || {})[k])), true, re);
   });
   $("#isGo", v).onclick = () => runKeys(c, cast, [key], T.autoSave, re);

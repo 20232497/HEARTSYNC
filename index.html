@@ -579,6 +579,7 @@ const MARK = "===STATE===";
 const FREE_DAILY = 10, WELCOME = 30, PLUS_MONTHLY = 300;
 const TIMEOUT = { connect: 45000, stall: 60000, image: 120000, api: 20000 };
 const SIT = ["프로필", "기본", "웃음", "부끄러움", "슬픔", "놀람", "분노", "삐침", "공포", "부상", "회복", "휴식", "공격", "각성", "설렘"];
+const RPG_ONLY_SITS = [12];
 const SIT_TINT = ["#f5f0ff", "#9fb4ff", "#ffd166", "#ff8fab", "#7b96ff", "#ffe066", "#ff5d5d", "#c77dff", "#56cfe1", "#e63946", "#80ed99", "#a0c4ff", "#ff8c42", "#f9c74f", "#ff70a6"];
 const PALETTES = [
   ["#1d2735", "#3c5a73", "#c9a46a"], ["#2a1720", "#7a2e48", "#f0b7c8"], ["#151a2e", "#3b3f7a", "#d8c38a"], ["#16222a", "#2f6f73", "#f6d58e"],
@@ -825,7 +826,7 @@ const ORIGINALS = [
     {"keys":["에반스","빚","백작가"],"text":"유저의 가문 에반스 백작가. 선대 백작이 흉작 때 영지민에게 곡물을 풀다 진 빚으로 몰락했다. 빚 문서는 여러 손을 거쳐 지금은 이름 모를 채권자 한 명이 모두 쥐고 있다.","kind":"group","tags":"ruined noble manor, debt documents, wax seal, faded family crest, empty hall, dust"}
   ],
   "cast": [
-    {"code":"ks","name":"카시안","look":"29세 남성, 황제, 흑발, 차가운 금빛 눈, 검은 군복풍 황제 예복, 어깨에 걸친 망토","tags":"black hair, golden eyes, emperor, black military uniform, black jacket, ornate uniform, epaulettes, cape over shoulders, regal"},
+    {"code":"ks","name":"카시안","look":"29세 남성, 황제, 흑발, 차가운 금빛 눈, 검은 군복풍 황제 예복, 어깨에 걸친 망토","tags":"black hair, golden eyes, emperor, black military uniform, black jacket, gold trim, epaulettes, cape over shoulders"},
     {"code":"lh","name":"레온하르트","look":"27세 남성, 대공, 부드럽게 웨이브진 금발, 초록 눈, 풀어 헤친 흰 셔츠와 자수 재킷, 나른한 미소","tags":"blonde hair, wavy hair, green eyes, open collar, white shirt, embroidered jacket, aristocrat"},
     {"code":"lu","name":"루카스","look":"26세 남성, 호위기사, 짧은 갈색 머리, 단단한 체격, 은빛 기사 갑옷, 허리에 찬 장검, 무뚝뚝한 표정","tags":"brown hair, short hair, muscular, silver armor, knight armor, knight, sword at hip"},
     {"code":"no","name":"노엘","look":"28세 남성, 마탑주, 하나로 묶은 긴 은발, 보랏빛 눈, 검은 로브, 외알 안경","tags":"silver hair, high ponytail, hair up, hair tied up, purple eyes, black robe, black shirt, high collar, closed robe, monocle, mage"},
@@ -875,7 +876,7 @@ const ORIGINALS = [
     {"code":"th","name":"강태하","look":"32세 남성, 셰프, 짧게 깎은 검은 머리, 날카로운 눈매, 검은 앞치마, 걷어붙인 소매와 팔뚝의 화상 자국","tags":"black hair, very short hair, sharp eyes, chef, black apron, sleeves rolled up, burn scar on forearm, toned arms"},
     {"code":"sh","name":"윤시후","look":"29세 남성, 무명 배우, 갈색 펌 머리, 장난스러운 웃음, 헐렁한 후드티, 귀의 작은 피어싱","tags":"brown hair, wavy hair, permed hair, oversized hoodie, ear piercing, small earrings"},
     {"code":"dh","name":"백도현","look":"31세 남성, 수의사, 단정한 검은 머리, 둥근 안경, 흰 가운 위 회색 니트, 다정한 눈","tags":"black hair, neat hair, round eyewear, glasses, grey sweater, white coat, veterinarian, gentle eyes"},
-    {"code":"hg","name":"이한결","look":"27세 남성, 웹툰 작가, 눈을 덮는 부스스한 흑발, 다크서클, 늘어진 검은 티셔츠, 목에 건 헤드폰","tags":"black hair, messy hair, hair over eyes, bags under eyes, baggy black t-shirt, headphones around neck"},
+    {"code":"hg","name":"이한결","look":"27세 남성, 웹툰 작가, 눈을 덮는 부스스한 흑발, 다크서클, 늘어진 검은 티셔츠, 목에 건 헤드폰","tags":"black hair, messy hair, hair over eyes, bags under eyes, black v-neck shirt, black shirt, loose shirt, headphones around neck"},
     {"code":"jh","name":"서진혁","look":"34세 남성, 변호사, 깔끔하게 넘긴 머리, 무테안경, 남색 정장, 차가운 표정","tags":"black hair, slicked back hair, rimless eyewear, navy blue suit, necktie, lawyer"}
   ],
   "openings": [
@@ -919,7 +920,7 @@ const ORIGINALS = [
     {"keys":["사고","교차로","빗길"],"text":"유저가 사고를 당한 비 오는 밤의 교차로. 유저는 그때 무언가를 들고 누군가에게 가던 길이었다. 그 이상은 아직 기억나지 않는다.","kind":"event","tags":"rainy night, crossroads, headlights, wet asphalt, traffic light, blurred motion"}
   ],
   "cast": [
-    {"code":"sa","name":"차사현","look":"33세 남성, 호텔 지배인, 저승차사, 단정하게 넘긴 흑발, 창백한 피부, 검은 쓰리피스 정장, 은색 회중시계, 무표정","tags":"black hair, slicked back hair, pale skin, black suit, black jacket, black three-piece suit, white shirt, waistcoat, silver pocket watch, hotel manager"},
+    {"code":"sa","name":"차사현","look":"33세 남성, 호텔 지배인, 저승차사, 단정하게 넘긴 흑발, 창백한 피부, 검은 쓰리피스 정장, 은색 회중시계, 무표정","tags":"black hair, slicked back hair, pale skin, black three-piece suit, black suit jacket, black waistcoat, black lapels, black necktie, silver pocket watch, hotel manager"},
     {"code":"ig","name":"한이결","look":"29세 남성, 바텐더 도깨비, 반쯤 묶은 붉은 기가 도는 머리, 장난스러운 눈웃음, 소매를 걷은 흰 셔츠와 검은 조끼","tags":"dark red hair, half updo, hair bun, hair tied up, white shirt, sleeves rolled up, black vest, bartender"},
     {"code":"mh","name":"강무혁","look":"27세 남성, 도어맨, 짧은 흑발, 곧은 자세, 남색 도어맨 제복과 모자, 흰 장갑","tags":"black hair, short hair, navy blue uniform, doorman, bellhop hat, white gloves, straight posture"},
     {"code":"hj","name":"서하준","look":"32세 남성, 의사, 부드러운 갈색 머리, 지친 눈가, 흰 의사 가운, 목에 건 청진기","tags":"brown hair, soft hair, tired eyes, white lab coat, doctor, stethoscope around neck"},
@@ -966,7 +967,7 @@ const ORIGINALS = [
     {"keys":["통로","비밀 통로"],"text":"궁 지하에는 선대 왕이 만든 비밀 통로가 있다. 국무당 단비만 지도를 안다. 동궁, 수라간 뒤뜰, 대비전 담 아래로 이어진다.","kind":"place","tags":"secret underground passage, stone tunnel, torch, joseon palace, darkness"}
   ],
   "cast": [
-    {"code":"ih","name":"이화","look":"22세 여성, 상복 차림의 공주, 흰 비단 당의, 올림머리에 은비녀, 차가운 눈매","tags":"black hair, hair up, silver hairpin, forehead, parted bangs, narrow eyes, thin eyebrows, mole under eye, binyeo, white hanbok, silk dangui, long sleeves, high collar, closed robe, princess, joseon"},
+    {"code":"ih","name":"이화","look":"22세 여성, 상복 차림의 공주, 흰 비단 당의, 올림머리에 은비녀, 차가운 눈매","tags":"black hair, hair up, silver hairpin, forehead, parted bangs, narrow eyes, thin eyebrows, mole under eye, binyeo, white hanbok, korean clothes, jeogori, goreum, long sleeves, white chima skirt, joseon princess"},
     {"code":"sr","name":"설련","look":"24세 여성, 포도청 다모 복장, 질끈 묶은 머리, 쇠도리깨, 뺨의 작은 흉터","tags":"black hair, tied hair, side-swept bangs, sharp eyes, thick eyebrows, joseon police uniform, damo, hanbok, iron flail, small scar on cheek"},
     {"code":"jo","name":"정옥","look":"23세 여성, 내의원 의녀, 연두색 저고리, 단정한 쪽머리, 약초 바구니","tags":"black hair, neat chignon, forehead, parted bangs, droopy eyes, soft eyebrows, light green jeogori, hanbok, herb basket, physician"},
     {"code":"wh","name":"월하","look":"27세 여성, 기방 행수, 짙은 남색 치마, 화려한 떨잠, 접부채, 웃는 눈","tags":"black hair, elaborate updo, ornate hair ornament, forehead, upturned eyes, arched eyebrows, beauty mark, dark navy chima, hanbok, folding fan, gisaeng"},
@@ -1096,14 +1097,14 @@ const ORIGINALS = [
   "fields": ["📅 날짜","📍 위치","Lv","S 코인","EXP","HP","MP","스탯","📜 기록","⚡ 스킬","✨ 계약","💎 정수","🧪 회복","❤️ 호감도","퀘스트","보상"],
   "gauge": "HP",
   "cast": [
-    {"code":"p1","name":"한서윤","look":"26세 여성, 높게 묶은 흑발 포니테일, 날카로운 눈매, 찢어진 흰 펜싱 재킷, 레이피어","tags":"black hair, high ponytail, side-swept bangs, arched eyebrows, sharp eyes, torn white fencing jacket, rapier"},
+    {"code":"p1","name":"한서윤","look":"26세 여성, 높게 묶은 흑발 포니테일, 날카로운 눈매, 찢어진 흰 펜싱 재킷, 레이피어","tags":"black hair, high ponytail, side-swept bangs, arched eyebrows, sharp eyes, white fencing uniform, high collar, rapier"},
     {"code":"p2","name":"도하린","look":"27세 여성, 헝클어진 갈색 단발, 피 묻은 수술복 위 회색 카디건","tags":"brown hair, messy bob cut, parted bangs, droopy eyes, thick eyebrows, bloodstained scrubs, grey cardigan"},
     {"code":"p3","name":"류건","look":"29세 남성, 짧은 머리, 넓은 어깨, 그을린 방화복, 버스 문짝 방패","tags":"black hair, very short hair, broad shoulders, scorched firefighter jacket, improvised shield, bus door shield"},
     {"code":"p4","name":"세레나 바이스","look":"27세 여성, 은발 웨이브, 삼각모, 붉은 코트, 쌍권총","tags":"silver hair, wavy hair, side-swept bangs, upturned eyes, arched eyebrows, beauty mark, tricorne, red coat, pirate, dual wielding, pistols"},
     {"code":"p5","name":"연화","look":"25세 여성, 검은 땋은 머리, 무림 객잔 점소이 복장, 소매 속 비수","tags":"black hair, single braid, narrow eyes, upturned eyes, thin eyebrows, hanfu, chinese clothes, inn servant, hidden dagger"},
     {"code":"p6","name":"윤채이","look":"30세 여성, 둥근 안경, 낡은 트렌치코트, 커피 텀블러","tags":"black hair, parted bangs, narrow eyes, thin eyebrows, round eyewear, glasses, worn trench coat, journalist"},
-    {"code":"p7","name":"카일 노스","look":"26세 남성, 모래색 머리, 판초, 턱의 흉터, 리볼버","tags":"sandy blonde hair, brown poncho, white shirt, scar on chin, cowboy, revolver"},
-    {"code":"p8","name":"백여울","look":"25세 여성, 붉은 댕기, 개량 한복 점퍼, 손에 든 부적","tags":"black hair, long braid, red hair ribbon, round eyes, straight eyebrows, mole under eye, modernized hanbok, hanbok jacket"}
+    {"code":"p7","name":"카일 노스","look":"26세 남성, 모래색 머리, 판초, 턱의 흉터, 리볼버","tags":"sandy blonde hair, brown cape, cloak, white shirt, brown vest, small chin scar, revolver, gunslinger"},
+    {"code":"p8","name":"백여울","look":"25세 여성, 붉은 댕기, 개량 한복 점퍼, 손에 든 부적","tags":"black hair, long braid, red ribbon on braid, round eyes, straight eyebrows, mole under eye, modern hanbok, korean clothes, cropped jacket"}
   ],
   "openings": [
     {"title":"😊 이지 모드 · 든든한 첫 파티","directive":"이지 모드. 초기 파티: 한서윤, 도하린, 류건. 셋 모두 유저에게 우호적이다. 전투 난이도는 낮게, 보상은 넉넉하게.","status":{"📅 날짜":"2026.10.01 16:44","📍 위치":"1층 · 붕괴한 광화문","Lv":"1","S 코인":"3,000S","EXP":"0%","HP":"100/100","MP":"100/100","스탯":"체력 1 · 근력 1 · 민첩 1 · 마력 1 · 매력 1 · SP 3","📜 기록":"[고급] 무대 체질","⚡ 스킬":"[일반] 급소 간파","✨ 계약":"잠김 (3층 클리어 시 해금)","💎 정수":"없음","🧪 회복":"[일반] 붕대 x3","❤️ 호감도":"한서윤 10 · 도하린 15 · 류건 20","퀘스트":"1/5 · 광화문의 하운드 무리를 처치하고 생존자를 확보하라","보상":"1,000S · [일반] 정수 1개"},"text":"*2026년 10월 1일 오후 4시 44분. 하늘이 극장의 막처럼 좌우로 갈라졌다.*\n\n*광화문 사거리의 소음이 한순간에 멎는다. 갈라진 하늘 너머로 끝없이 층을 이룬 관람석이 보였고, 그 자리마다 사람이 아닌 무언가가 앉아 있었다.*\n\n[탑 '시어터'에 오신 것을 환영합니다. 이곳은 1층 무대, 붕괴한 서울입니다.]\n[관객 입장이 완료되었습니다. 공연을 시작합니다.]\n[관람신 '천 년 묵은 여우'가 턱을 괴고 당신을 내려다봅니다. \"어머, 저 아이 얼굴이 반반하네.\"]\n[관람신 '명부의 여왕'이 오늘의 사망자 수를 세기 시작합니다.]\n\n*아스팔트가 비명처럼 갈라지고, 지하철 입구에서 검은 개 형상의 괴수들이 기어 나온다. 그때 당신 옆에서 누군가 부러진 우산대를 검처럼 고쳐 쥐었다.*\n\n[[img:p1:0]]\n\n한서윤: \"멍하니 서 있을 거면 비켜요. 방해되니까.\"\n\n*그 뒤로 방화복 차림의 거구가 넘어진 버스 문짝을 방패처럼 들어 올리고, 피 묻은 수술복의 여자가 쓰러진 시민의 목에 손가락을 댄다.*\n\n류건: \"…셋. 앞으로 셋 온다. 뒤로.\"\n\n도하린: \"아 진짜, 맥박 없는 사람 하나 더 늘리지 말라고요. 거기 당신! 다쳤어요?\"\n\n[어둠의 하운드 A - HP 50/50] [어둠의 하운드 B - HP 50/50] [어둠의 하운드 C - HP 50/50]\n[1층 퀘스트 1/5 개시: 광화문의 하운드 무리를 처치하고 생존자를 확보하라.]"},
@@ -1199,7 +1200,7 @@ const ORIGINALS = [
  {
   "id": "hangyeoul",
   "name": "한겨울",
-  "lookTags": "brown hair, bob cut, half updo, round eyes, thick eyebrows, large glasses, convenience store uniform, oversized grey cardigan",
+  "lookTags": "brown hair, bob cut, half updo, round eyes, thick eyebrows, large glasses, convenience store uniform, grey cardigan",
   "title": "새벽 두 시의 편의점",
   "glyph": "冬",
   "cat": "일상",
@@ -2053,6 +2054,7 @@ function codeDefs(adult = ageOK()) { return [...customSits(), ...builtinSits()].
 const slotNums = () => [...SIT.keys(), ...customSits().filter((d) => d.n < 100).map((d) => d.n)];
 function freeSitNum(dim = "act") { return freeNum(usedNums(customList()), dim); }
 function codeRating(codes, c) { return maxRating(codes.map((n) => n < CUSTOM_BASE ? sheetRating(c.id) : (sitDef(n)?.rating || "safe"))); }
+const sitFits = (n, c) => RPG_ONLY_SITS.indexOf(n) < 0 || !!(c && c.cat === "RPG");
 const SIT_KEYS = { 2: "웃|미소|싱긋|방긋|피식|킥킥|깔깔|농담|재밌", 3: "부끄|수줍|민망|얼굴이 (?:붉|빨개)|귀까지|빨개|장난|놀리|놀려|짓궂|칭찬|예쁘|예쁜|예뻐|귀여|귀엽",
   4: "울먹|울었|우는|눈물|슬프|슬퍼|흐느|서럽|그리워", 5: "놀라|놀란|깜짝|화들짝|헉|휘둥그|설마", 6: "화가|화를|화난|분노|노려|버럭|소리쳤|이를 악|짜증|열받|닥쳐",
   7: "삐졌|삐친|삐죽|토라|흥[,.!…]|볼을 부풀|서운|입을 내밀", 8: "무서|두려|겁에|겁먹|떨리|떨었|비명|공포|소름", 9: "다쳤|다친|부상|피를|피가|상처|쓰러",
@@ -2067,11 +2069,11 @@ function sitKeys(n) {
   const d = sitDef(n); if (!d || !d.name.trim()) return "";
   return [SIT_KEYS_EXTRA[d.name.trim()], d.keys, d.name.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&")].filter(Boolean).join("|");
 }
-function sitScores(text, adult) {
+function sitScores(text, adult, c) {
   const out = new Map(), s = String(text || "");
   if (!s.trim()) return out;
   for (const n of [...SIT.keys(), ...codeDefs(adult).map((d) => d.n)]) {
-    if (n === RESET.wear || n === RESET.place) continue;
+    if (n === RESET.wear || n === RESET.place || !sitFits(n, c)) continue;
     const k = sitKeys(n); if (!k) continue;
     const hits = (s.match(new RegExp(k, "g")) || []).length;
     if (hits) out.set(n, hits + (n >= CUSTOM_BASE ? 0.5 : 0));
@@ -2083,8 +2085,8 @@ function dimPick(text, adult, sc = sitScores(text, adult)) {
   sc.forEach((v, n) => { const k = dimOf(n); if (k !== "act" && v > best[k]) { best[k] = v; out[k] = n; } });
   return out;
 }
-function sitHints(text, adult) {
-  const sc = sitScores(text, adult), out = [...sc].filter(([n]) => dimOf(n) === "act").sort((a, b) => b[1] - a[1]).slice(0, 2).map(([n]) => n + " " + sitName(n));
+function sitHints(text, adult, c) {
+  const sc = sitScores(text, adult, c), out = [...sc].filter(([n]) => dimOf(n) === "act").sort((a, b) => b[1] - a[1]).slice(0, 2).map(([n]) => n + " " + sitName(n));
   const d = dimPick(text, adult, sc);
   if (d.wear) out.push(`의상 ${d.wear} ${sitName(d.wear)}`);
   if (d.place) out.push(`장소 ${d.place} ${sitName(d.place)}`);
@@ -2617,7 +2619,7 @@ function buildInput(r, uptoIdx, statusBefore, direction) {
     const last = i === recent.length - 1;
     if (m.role === "ai") { out.push({ role: "assistant", content: curText(m) }); return; }
     let t = m.sys ? "// 직전 장면에서 자연스럽게 이어서 다음 장면을 써라. 유저의 행동은 쓰지 않는다." : m.text;
-    if (last) t = `[현재 상태창 — 이번 장면은 여기서 출발한다]\n${JSON.stringify(statusBefore || {})}\n\n[${r.persona.name}의 입력]\n${t}${direction ? "\n\n// 다시 쓰기 지침: " + direction : ""}\n\n[이번 응답] 위 입력을 본문에 다시 옮겨 적지 말고 그 직후의 반응부터 쓴다. 본문 ${len.chars}, 대사 ${len.lines}줄 이상을 주고받고, 직전 응답과 다른 새 전개를 넣는다. 나오는 인물마다 [[img:코드:번호]]를 한 장씩 넣는다(의상·장소가 바뀌면 번호 뒤에 쉼표로)${(() => { const h = m.sys ? [] : sitHints(m.text, unfilteredRoute(r)); return h.length ? `(유저 입력에 맞는 번호 후보: ${h.join(", ")})` : ""; })()}.`;
+    if (last) t = `[현재 상태창 — 이번 장면은 여기서 출발한다]\n${JSON.stringify(statusBefore || {})}\n\n[${r.persona.name}의 입력]\n${t}${direction ? "\n\n// 다시 쓰기 지침: " + direction : ""}\n\n[이번 응답] 위 입력을 본문에 다시 옮겨 적지 말고 그 직후의 반응부터 쓴다. 본문 ${len.chars}, 대사 ${len.lines}줄 이상을 주고받고, 직전 응답과 다른 새 전개를 넣는다. 나오는 인물마다 [[img:코드:번호]]를 한 장씩 넣는다(의상·장소가 바뀌면 번호 뒤에 쉼표로)${(() => { const h = m.sys ? [] : sitHints(m.text, unfilteredRoute(r), r.char); return h.length ? `(유저 입력에 맞는 번호 후보: ${h.join(", ")})` : ""; })()}.`;
     out.push({ role: "user", content: t });
   });
   return out;
@@ -2636,7 +2638,7 @@ function rulesPrompt(r, lore = [], hist = r.msgs) {
   const fields = c.fields.map((f) => `"${f}":${f === c.gauge && typeof r.status?.[f] === "number" ? "0~100 정수" : '"짧은 값"'}`).join(",");
   const seen = new Set(); hist.forEach((m) => imgTags(curText(m)).forEach((t) => seen.add(t.code)));
   const castLine = (c.cast || []).map((x) => `${x.code}=${x.name}`).join(", ");
-  const sn = (name) => SIT.indexOf(name) + " " + name, okSit = (n) => n < CUSTOM_BASE || (sitDef(n) && (sitDef(n).rating === "safe" || unfilteredRoute(r)));
+  const sn = (name) => SIT.indexOf(name) + " " + name, okSit = (n) => sitFits(n, c) && (n < CUSTOM_BASE || (sitDef(n) && (sitDef(n).rating === "safe" || unfilteredRoute(r))));
   const ready = (c.cast || []).map((x) => { const m = imagesOf(c)[x.code] || {}; const ns = [...new Set(Object.keys(m).filter((k) => validRef(m[k])).flatMap((k) => splitDims(parseCodes(k)).act))].filter(okSit).sort((a, b) => a - b); return ns.length ? `${x.name} ${ns.join("·")}` : ""; }).filter(Boolean);
   const defs = codeDefs(unfilteredRoute(r)), byDim = (k) => defs.filter((d) => d.dim === k).map((d) => d.n + " " + d.name), dims = lastDims(hist.map(curText));
   const nowLine = (c.cast || []).map((x) => { const d = dims[x.code], parts = d ? [d.wear && sitName(d.wear), d.place && sitName(d.place)].filter(Boolean) : []; return parts.length ? `${x.name} ${parts.join("·")}` : ""; }).filter(Boolean).join(", ");
@@ -2680,9 +2682,9 @@ ${(() => { const used = usedOpeners(hist); return used.length ? `\n[이미 쓴 �
 [장면 이미지 — 매 응답 필수]
 - 이번 응답에 나오는(말하거나 움직이는) 인물마다 그림을 한 장씩 넣는다. 그 인물이 처음 말하거나 등장하는 줄 바로 위에 별도 줄로 [[img:코드:번호]] 만 쓴다. 설명을 덧붙이지 않는다.
 - 인물 코드: ${castLine}
-- 감정·행동 번호: ${[...SIT.map((s, i) => i + " " + s), ...byDim("act")].join(", ")}
+- 감정·행동 번호: ${[...SIT.map((s, i) => i + " " + s).filter((s, i) => sitFits(i, c)), ...byDim("act")].join(", ")}
 - 의상 번호: ${byDim("wear").join(", ")} / 장소 번호: ${byDim("place").join(", ")}. 옷이나 장소가 바뀌는 순간에만 감정 번호 뒤에 쉼표로 붙인다(예: [[img:${(c.cast || [{ code: "c" }])[0].code}:3,404,501]]). 한 번 쓴 의상·장소는 다음 응답에도 자동으로 이어지므로 바뀌지 않으면 다시 쓰지 않고, 설정의 원래 옷·장면에 맞는 배경으로 돌아가면 400(기본 의상)·500(기본 배경)을 쓴다.${nowLine ? `\n- 지금 이어지는 의상·장소: ${nowLine}` : ""}
-- 번호는 그 순간 그 인물의 표정·상황으로 고르고, 유저의 말과 행동에 대한 반응을 먼저 본다: 놀림·짓궂은 장난 → ${sn("부끄러움")}·${sn("삐침")}, 칭찬·농담 → ${sn("웃음")}, 고백·스킨십 → ${sn("설렘")}·${sn("부끄러움")}, 무례·배신 → ${sn("분노")}, 위협·괴물 → ${sn("공포")}·${sn("놀람")}, 싸움 → ${sn("공격")}, 다침 → ${sn("부상")}. 장소·행동에 맞는 추가 번호(식사·데이트 등)가 있으면 그 번호.
+- 번호는 그 순간 그 인물의 표정·상황으로 고르고, 유저의 말과 행동에 대한 반응을 먼저 본다: 놀림·짓궂은 장난 → ${sn("부끄러움")}·${sn("삐침")}, 칭찬·농담 → ${sn("웃음")}, 고백·스킨십 → ${sn("설렘")}·${sn("부끄러움")}, 무례·배신 → ${sn("분노")}, 위협·괴물 → ${sn("공포")}·${sn("놀람")}, 싸움 → ${sn(sitFits(SIT.indexOf("공격"), c) ? "공격" : "분노")}, 다침 → ${sn("부상")}. 장소·행동에 맞는 추가 번호(식사·데이트 등)가 있으면 그 번호.
 - 인물이 이야기에 처음 등장하는 순간은 0번(프로필). 이미 등장한 인물: ${[...seen].join(", ") || "없음"}${ready.length ? `\n- 그림이 준비된 번호(되도록 이 안에서 고른다): ${ready.join(" / ")}` : ""}
 - 같은 인물은 한 응답에 한 장(감정이 크게 뒤집히면 두 장까지). 감정이 이어지면 직전과 같은 번호를 써도 된다.
 [출력 형식 — 반드시 이 순서]
@@ -4243,8 +4245,8 @@ function addCastImages(body, r, prev, said) {
     if (!seen.has(f.x.code)) sit = 0;
     else {
       const mine = !!said2 && (f.keys.some((k) => said2.includes(k)) || (!anyNamed && i === 0)), sc = new Map();
-      sitScores(f.own, adult).forEach((v, k) => { if (dimOf(k) === "act") sc.set(k, v * 2); });
-      if (mine) sitScores(said2, adult).forEach((v, k) => { if (dimOf(k) === "act") sc.set(k, (sc.get(k) || 0) + v); });
+      sitScores(f.own, adult, c).forEach((v, k) => { if (dimOf(k) === "act") sc.set(k, v * 2); });
+      if (mine) sitScores(said2, adult, c).forEach((v, k) => { if (dimOf(k) === "act") sc.set(k, (sc.get(k) || 0) + v); });
       let best = 0; sc.forEach((v, k) => { const s = v + (validRef((imgs[f.x.code] || {})[k]) ? 0.5 : 0); if (s > best) { best = s; sit = k; } });
       const dp = dimPick(f.own + (mine ? "\n" + said2 : ""), adult); extra = [dp.wear, dp.place].filter(Boolean);
     }

@@ -58,7 +58,7 @@ export default {
     { code: "th", name: "강태하", look: "32세 남성, 셰프, 짧게 깎은 검은 머리, 날카로운 눈매, 검은 앞치마, 걷어붙인 소매와 팔뚝의 화상 자국", tags: "black hair, very short hair, sharp eyes, chef, black apron, sleeves rolled up, burn scar on forearm, toned arms" },
     { code: "sh", name: "윤시후", look: "29세 남성, 무명 배우, 갈색 펌 머리, 장난스러운 웃음, 헐렁한 후드티, 귀의 작은 피어싱", tags: "brown hair, wavy hair, permed hair, oversized hoodie, ear piercing, small earrings" },
     { code: "dh", name: "백도현", look: "31세 남성, 수의사, 단정한 검은 머리, 둥근 안경, 흰 가운 위 회색 니트, 다정한 눈", tags: "black hair, neat hair, round eyewear, glasses, grey sweater, white coat, veterinarian, gentle eyes" },
-    { code: "hg", name: "이한결", look: "27세 남성, 웹툰 작가, 눈을 덮는 부스스한 흑발, 다크서클, 늘어진 검은 티셔츠, 목에 건 헤드폰", tags: "black hair, messy hair, hair over eyes, bags under eyes, baggy black t-shirt, headphones around neck" },
+    { code: "hg", name: "이한결", look: "27세 남성, 웹툰 작가, 눈을 덮는 부스스한 흑발, 다크서클, 늘어진 검은 티셔츠, 목에 건 헤드폰", tags: "black hair, messy hair, hair over eyes, bags under eyes, black v-neck shirt, black shirt, loose shirt, headphones around neck" },
     { code: "jh", name: "서진혁", look: "34세 남성, 변호사, 깔끔하게 넘긴 머리, 무테안경, 남색 정장, 차가운 표정", tags: "black hair, slicked back hair, rimless eyewear, navy blue suit, necktie, lawyer" }
   ],
   openings: [

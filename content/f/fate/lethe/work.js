@@ -55,7 +55,7 @@ export default {
     { keys: ["사고", "교차로", "빗길"], text: "유저가 사고를 당한 비 오는 밤의 교차로. 유저는 그때 무언가를 들고 누군가에게 가던 길이었다. 그 이상은 아직 기억나지 않는다.", kind: "event", tags: "rainy night, crossroads, headlights, wet asphalt, traffic light, blurred motion" }
   ],
   cast: [
-    { code: "sa", name: "차사현", look: "33세 남성, 호텔 지배인, 저승차사, 단정하게 넘긴 흑발, 창백한 피부, 검은 쓰리피스 정장, 은색 회중시계, 무표정", tags: "black hair, slicked back hair, pale skin, black suit, black jacket, black three-piece suit, white shirt, waistcoat, silver pocket watch, hotel manager" },
+    { code: "sa", name: "차사현", look: "33세 남성, 호텔 지배인, 저승차사, 단정하게 넘긴 흑발, 창백한 피부, 검은 쓰리피스 정장, 은색 회중시계, 무표정", tags: "black hair, slicked back hair, pale skin, black three-piece suit, black suit jacket, black waistcoat, black lapels, black necktie, silver pocket watch, hotel manager" },
     { code: "ig", name: "한이결", look: "29세 남성, 바텐더 도깨비, 반쯤 묶은 붉은 기가 도는 머리, 장난스러운 눈웃음, 소매를 걷은 흰 셔츠와 검은 조끼", tags: "dark red hair, half updo, hair bun, hair tied up, white shirt, sleeves rolled up, black vest, bartender" },
     { code: "mh", name: "강무혁", look: "27세 남성, 도어맨, 짧은 흑발, 곧은 자세, 남색 도어맨 제복과 모자, 흰 장갑", tags: "black hair, short hair, navy blue uniform, doorman, bellhop hat, white gloves, straight posture" },
     { code: "hj", name: "서하준", look: "32세 남성, 의사, 부드러운 갈색 머리, 지친 눈가, 흰 의사 가운, 목에 건 청진기", tags: "brown hair, soft hair, tired eyes, white lab coat, doctor, stethoscope around neck" },

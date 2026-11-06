@@ -193,13 +193,14 @@ test("정면 고정: 표정 칸은 유지하고 행동·시선을 정한 칸에�
   for (const st of [FDAILY, MD]) for (const t of ["(young:1.3)", "(teen:1.4)", "(baby face:1.3)", "(see-through clothes:1.3)"]) assert.ok(fitStyle(st, "walking, 1girl", "walking").neg.includes(t), t);
 });
 const walkWorks = (d) => readdirSync(d, { withFileTypes: true }).flatMap((e) => e.isDirectory() ? walkWorks(join(d, e.name)) : e.name === "work.js" ? [join(d, e.name)] : []);
-test("출연진 태그는 손을 묶지 않음: 손에 든 물건·손의 표시는 모든 칸의 자세를 정해 행동 코드와 부딪힘(fd85 → fd88)", async () => {
+test("출연진 태그: 손을 묶는 낱말(모든 칸의 자세를 정해 행동 코드와 부딪힘, fd85 → fd88)과 색·옷이 번지는 낱말(fd91·fd92)을 쓰지 않음", async () => {
   let n = 0;
   for (const file of walkWorks(fileURLToPath(new URL("../../content", import.meta.url)))) {
     const c = (await import(pathToFileURL(file).href)).default;
     for (const m of c.cast || [{ name: c.name, tags: c.lookTags }]) {
       n++;
       assert.ok(!/\bholding\b|\bon hands?\b/.test(m.tags || ""), m.name + ": " + m.tags);
+      assert.ok(!/\b\w+ hair ribbon\b|\bdress shirt\b|\bmourning dress\b/.test(m.tags || ""), m.name + ": " + m.tags);
     }
   }
   assert.ok(n >= 40, "출연진 수 " + n);
