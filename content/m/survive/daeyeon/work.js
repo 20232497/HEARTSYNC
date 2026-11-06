@@ -54,7 +54,7 @@ export default {
     { keys: ["통로", "비밀 통로"], text: "궁 지하에는 선대 왕이 만든 비밀 통로가 있다. 국무당 단비만 지도를 안다. 동궁, 수라간 뒤뜰, 대비전 담 아래로 이어진다.", kind: "place", tags: "secret underground passage, stone tunnel, torch, joseon palace, darkness" }
   ],
   cast: [
-    { code: "ih", name: "이화", look: "22세 여성, 상복 차림의 공주, 흰 비단 당의, 올림머리에 은비녀, 차가운 눈매", tags: "black hair, hair up, silver hairpin, forehead, parted bangs, narrow eyes, thin eyebrows, mole under eye, binyeo, white hanbok, mourning dress, silk dangui, princess, joseon" },
+    { code: "ih", name: "이화", look: "22세 여성, 상복 차림의 공주, 흰 비단 당의, 올림머리에 은비녀, 차가운 눈매", tags: "black hair, hair up, silver hairpin, forehead, parted bangs, narrow eyes, thin eyebrows, mole under eye, binyeo, white hanbok, silk dangui, long sleeves, high collar, closed robe, princess, joseon" },
     { code: "sr", name: "설련", look: "24세 여성, 포도청 다모 복장, 질끈 묶은 머리, 쇠도리깨, 뺨의 작은 흉터", tags: "black hair, tied hair, side-swept bangs, sharp eyes, thick eyebrows, joseon police uniform, damo, hanbok, iron flail, small scar on cheek" },
     { code: "jo", name: "정옥", look: "23세 여성, 내의원 의녀, 연두색 저고리, 단정한 쪽머리, 약초 바구니", tags: "black hair, neat chignon, forehead, parted bangs, droopy eyes, soft eyebrows, light green jeogori, hanbok, herb basket, physician" },
     { code: "wh", name: "월하", look: "27세 여성, 기방 행수, 짙은 남색 치마, 화려한 떨잠, 접부채, 웃는 눈", tags: "black hair, elaborate updo, ornate hair ornament, forehead, upturned eyes, arched eyebrows, beauty mark, dark navy chima, hanbok, folding fan, gisaeng" },

@@ -192,12 +192,23 @@ test("정면 고정: 표정 칸은 유지하고 행동·시선을 정한 칸에�
   // 안전 태그는 행동 칸에서도 그대로
   for (const st of [FDAILY, MD]) for (const t of ["(young:1.3)", "(teen:1.4)", "(baby face:1.3)", "(see-through clothes:1.3)"]) assert.ok(fitStyle(st, "walking, 1girl", "walking").neg.includes(t), t);
 });
+const walkWorks = (d) => readdirSync(d, { withFileTypes: true }).flatMap((e) => e.isDirectory() ? walkWorks(join(d, e.name)) : e.name === "work.js" ? [join(d, e.name)] : []);
+test("출연진 태그는 손을 묶지 않음: 손에 든 물건·손의 표시는 모든 칸의 자세를 정해 행동 코드와 부딪힘(fd85 → fd88)", async () => {
+  let n = 0;
+  for (const file of walkWorks(fileURLToPath(new URL("../../content", import.meta.url)))) {
+    const c = (await import(pathToFileURL(file).href)).default;
+    for (const m of c.cast || [{ name: c.name, tags: c.lookTags }]) {
+      n++;
+      assert.ok(!/\bholding\b|\bon hands?\b/.test(m.tags || ""), m.name + ": " + m.tags);
+    }
+  }
+  assert.ok(n >= 40, "출연진 수 " + n);
+});
 test("남성향 일상: 얼굴 모양은 화풍이 아니라 인물 태그가 정함", async () => {
   // 화풍이 눈매·눈썹·턱선을 정하면 옷과 머리색만 다른 한 얼굴이 됨(fd81)
   for (const p of [MD.prompt, MD.coolPrompt]) for (const t of ["upturned eyes", "almond eyes", "arched eyebrows", "thin eyebrows", "v-shaped jawline", "sharp facial features", "defined cheekbones", "narrow face"]) assert.ok(!p.includes(t), t);
-  const walk = (d) => readdirSync(d, { withFileTypes: true }).flatMap((e) => e.isDirectory() ? walk(join(d, e.name)) : e.name === "work.js" ? [join(d, e.name)] : []);
   let n = 0;
-  for (const file of walk(fileURLToPath(new URL("../../content/m", import.meta.url)))) {
+  for (const file of walkWorks(fileURLToPath(new URL("../../content/m", import.meta.url)))) {
     const c = (await import(pathToFileURL(file).href)).default;
     const people = c.cast ? c.cast.map((m) => ({ name: m.name, look: m.look, tags: m.tags })) : [{ name: c.name, look: c.persona, tags: c.lookTags }];
     for (const m of people) {

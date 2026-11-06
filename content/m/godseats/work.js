@@ -47,9 +47,9 @@ export default {
     { code: "p3", name: "류건", look: "29세 남성, 짧은 머리, 넓은 어깨, 그을린 방화복, 버스 문짝 방패", tags: "black hair, very short hair, broad shoulders, scorched firefighter jacket, improvised shield, bus door shield" },
     { code: "p4", name: "세레나 바이스", look: "27세 여성, 은발 웨이브, 삼각모, 붉은 코트, 쌍권총", tags: "silver hair, wavy hair, side-swept bangs, upturned eyes, arched eyebrows, beauty mark, tricorne, red coat, pirate, dual wielding, pistols" },
     { code: "p5", name: "연화", look: "25세 여성, 검은 땋은 머리, 무림 객잔 점소이 복장, 소매 속 비수", tags: "black hair, single braid, narrow eyes, upturned eyes, thin eyebrows, hanfu, chinese clothes, inn servant, hidden dagger" },
-    { code: "p6", name: "윤채이", look: "30세 여성, 둥근 안경, 낡은 트렌치코트, 커피 텀블러", tags: "black hair, parted bangs, narrow eyes, thin eyebrows, round eyewear, glasses, worn trench coat, holding tumbler, journalist" },
+    { code: "p6", name: "윤채이", look: "30세 여성, 둥근 안경, 낡은 트렌치코트, 커피 텀블러", tags: "black hair, parted bangs, narrow eyes, thin eyebrows, round eyewear, glasses, worn trench coat, journalist" },
     { code: "p7", name: "카일 노스", look: "26세 남성, 모래색 머리, 판초, 턱의 흉터, 리볼버", tags: "sandy blonde hair, brown poncho, white shirt, scar on chin, cowboy, revolver" },
-    { code: "p8", name: "백여울", look: "25세 여성, 붉은 댕기, 개량 한복 점퍼, 손에 든 부적", tags: "black hair, long braid, red hair ribbon, round eyes, straight eyebrows, mole under eye, modernized hanbok, hanbok jacket, holding talisman, ofuda" }
+    { code: "p8", name: "백여울", look: "25세 여성, 붉은 댕기, 개량 한복 점퍼, 손에 든 부적", tags: "black hair, long braid, red hair ribbon, round eyes, straight eyebrows, mole under eye, modernized hanbok, hanbok jacket" }
   ],
   openings: [
     { title: "😊 이지 모드 · 든든한 첫 파티", directive: "이지 모드. 초기 파티: 한서윤, 도하린, 류건. 셋 모두 유저에게 우호적이다. 전투 난이도는 낮게, 보상은 넉넉하게.",
