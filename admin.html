@@ -6615,7 +6615,7 @@ async function koTags(t, adult = false) {
            src/js/images/codes.js { keyOf, parseCodes, splitDims }
            src/js/images/situations.js { sitDef }
            src/js/images/tags.js { ponyTags }
-   내보냄: coverPrompt, SIT_PONY_TAGS, baseSit, baseSitDefault, splitTags, lookIsMale, buildPonyPrompt, asTag, savedParts, hasSavedTags, saveCastTags, clearCastTags, groupsPrompt, partsTags, lorePrompt
+   내보냄: coverPrompt, SIT_PONY_TAGS, baseSit, baseSitDefault, splitTags, lookIsMale, buildPonyPrompt, asTag, savedParts, hasSavedTags, saveCastTags, clearCastTags, groupsPrompt, partsTags, poseTags, lorePrompt
    쓰는 곳: src/js/images/runware.js, src/js/admin/gen-sheet.js, src/js/admin/image-codes.js, src/js/admin/image-run.js, src/js/admin/motion-run.js, src/js/admin/sit-sheets.js, src/js/admin/image-studio.js, src/js/admin/worldart.js, src/js/admin/tools.js, src/js/admin/auto-images.js, src/js/admin/studio.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 이미지 프롬프트 조립: 장면·인물·의상·배경 묶음(조합 키), 인물별 저장 태그, 표지·세계관 프롬프트 */
@@ -6760,6 +6760,8 @@ async function partsTags(parts, adult) {
   if (adult && minorHint(parts.flatMap((g) => g.tags.map((x) => asTag(x).t)).join(", "))) throw { code: "minor_block" };
   return groupsPrompt(parts, adult);
 }
+/* 장면·추가 묶음만 영문으로 — 화풍이 행동·시선을 정한 칸을 가리는 데 씀(runwareImage의 scene, style-fit.js sceneMoves). 인물·옷 태그가 섞이면 모든 칸이 행동으로 보임. 번역은 partsTags와 같은 글이라 캐시에서 나옴 */
+const poseTags = (parts, adult) => groupsPrompt(parts.filter((g) => g.key === "scene" || g.key === "extra"), adult);
 /* 세계관 일러스트 구도: 키워드북 항목의 종류(kind — ui/worldart.js LORE_KINDS)마다. 인물은 상반신 초상, 동물·괴물은 그 존재, 장소는 사람 없는 풍경, 물건은 정물 클로즈업, 사건·세력·설정은 장면 */
 const LORE_SHOT = {
   person: "upper body, portrait, detailed background",
@@ -6805,7 +6807,7 @@ async function assertAdmin() {
 }
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/images/style-fit.js
-   내보냄: dropNegConflicts, weighTags, fitStyle
+   내보냄: dropNegConflicts, weighTags, sceneMoves, fitStyle
    쓰는 곳: src/js/images/runware.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 내장 화풍을 그릴 내용(인물·장면 태그)에 맞추기: 머리색으로 피부·색조 문구 고르기, 앞머리 없는 인물은 앞머리 태그 빼기, 내용에 있는 것은 네거티브에서 빼기. 순수 함수 — tests/unit/style-fit.test.mjs */
@@ -6845,10 +6847,18 @@ function weighTags(tags, w, ew) {
     return `(${t}:${w})`;
   }).join(", ");
 }
-/* 그림체 {prompt, coolPrompt?, blackTag?, paleTag?, bangs?, bangsNeg?, fits?, neg?}와 내용 태그 → 실제로 쓸 {prompt, neg}.
+/* 장면이 행동이나 시선을 정했는가: 장면·추가 묶음(인물·옷 태그는 넘기지 않음 — prompt.js poseTags)에 표정·구도가 아닌 태그가 하나라도 있으면 참.
+   직접 만든 코드의 행동 낱말을 다 적을 수 없어서 표정·구도 쪽을 목록으로 둠 — 모르는 낱말은 행동으로 봄. 잘못 짚어도 그 칸만 고개가 조금 돌아감.
+   EXPRESSION_RE는 시선(looking to the side·side glance)과 입을 가리는 손(hand over own mouth)도 표정으로 치므로 먼저 봄. 부상 자국·빛은 자세가 아니라 표정 칸으로 침 */
+const GAZE_RE = /^looking (?!at viewer$)|(?:side|sideways) glance$|averted (?:gaze|eyes)$|\bhands?\b/i;
+const STILL_RE = /^(?:upper body|portrait|close-up|bust shot|waist up|cowboy shot|full body|looking at viewer|facing viewer|straight-on|front view|soft light(?:ing)?|bandages?|bruises?)$/i;
+function sceneMoves(scene) {
+  return splitTop(scene).some((x) => { const b = bare(x); return GAZE_RE.test(b) || !(STILL_RE.test(b) || NO_WEIGHT_RE.test(b) || EXPRESSION_RE.test(b)); });
+}
+/* 그림체 {prompt, coolPrompt?, blackTag?, paleTag?, bangs?, bangsNeg?, fits?, neg?}와 내용 태그 → 실제로 쓸 {prompt, neg}. scene은 장면 묶음만의 글 — 없으면(표지·직접 쓴 프롬프트) fits의 moves 조건은 걸리지 않음.
    차가운 머리색(검정·은발·회색·흰색)은 피부를 더 하얗게 하는 coolPrompt, 그중 검정만 blackTag로 머리색을 진하게(은발이 검어지지 않게) */
-function fitStyle(st, tags) {
-  const t = String(tags || "");
+function fitStyle(st, tags, scene) {
+  const t = String(tags || ""), moves = sceneMoves(scene);
   let prompt = st.prompt || "", neg = st.neg || "";
   if (st.coolPrompt) {
     if (BLACK_HAIR_RE.test(t)) prompt = st.coolPrompt + (st.blackTag ? ", " + st.blackTag : "");
@@ -6856,9 +6866,9 @@ function fitStyle(st, tags) {
   }
   if (st.bangs && NO_BANGS_RE.test(t)) { prompt = prompt.replace(st.bangs + ", ", ""); neg = splitTop(neg).filter((n) => !splitTop(st.bangsNeg).includes(n)).join(", "); }
   if (DARK_SKIN_RE.test(t)) prompt = splitTop(prompt).filter((x) => !/(?:pale|fair|white) skin/.test(x)).join(", ");
-  // 화풍이 정한 조건(st.fits): 내용이 when에 맞으면 태그 묶음을 빼거나(drop) 바꾸고(swap) 앞에 더하고(put) 네거티브를 뺌(negDrop) — 내용이 정한 머리 모양·표정·구도를 화풍이 덮지 않게
+  // 화풍이 정한 조건(st.fits): 내용이 when에 맞거나 moves인데 장면이 행동·시선을 정했으면 태그 묶음을 빼거나(drop) 바꾸고(swap) 앞에 더하고(put) 네거티브를 뺌(negDrop) — 내용이 정한 머리 모양·표정·구도를 화풍이 덮지 않게
   for (const r of st.fits || []) {
-    if (!r.when.test(t)) continue;
+    if (!(r.when && r.when.test(t)) && !(r.moves && moves)) continue;
     for (const block of r.drop || []) prompt = prompt.includes(block + ", ") ? prompt.replace(block + ", ", "") : prompt.replace(", " + block, "");
     if (r.swap) prompt = prompt.replace(r.swap[0], r.swap[1]);
     if (r.put) prompt = r.put + ", " + prompt;
@@ -6889,7 +6899,7 @@ function fitStyle(st, tags) {
    soft brush strokes → 손에 붓 / shoulder-length hair → 들쭉날쭉 / ponytail만 쓰면 낮게 처짐(high ponytail·hair bun을 씀). 눈 색 네거티브(purple·green eyes)는 다른 눈을 빨갛게 만들어 안 씀.
    인물의 옷이 설정과 달라지면 작품 태그에 색과 옷을 쉬운 낱말로 더하면 잡힘(fd47·fd49·fd50): black three-piece suit만으로는 흰 정장 → black suit, white shirt / black military uniform만으로는 진녹색 → black jacket / feather-trimmed coat·black robe는 가슴이 드러남 → black shirt·high collar, closed robe(closed robe만으로는 안 닫힘 — 백연·노엘은 셔츠까지 — 근육질 태그 때문에 옷이 느슨하면 가슴이 드러남, 카일 노스의 판초도 흰 셔츠를 더함, fd55·fd76). 고개가 조금 돌아가면 태그보다 시드를 바꿈(네거티브에 from side·head tilt를 더해도 나아지지 않음, fd61).
    알려진 한계: 실내 장면에 액자가 자주 걸림(painted background·soft painting은 원인이 아니었음), 눈가 붉은 기(참고 그림 일부에도 있음), 회색 머리는 다른 색보다 어려 보이기 쉬워 만든 그림을 보고 고를 것, 티셔츠·후드의 글자 무늬, 눈 색을 안 정한 인물은 파란 눈이 되기도 함, 두 번째 시드 배경의 얼룩, 넘긴 머리는 일부만 넘어감 */
-/* 정면(사용자 요청 — 사선이면 표정이 잘 안 보임). 장면이 다른 각도를 정하면 뺌(FRONT_WHEN, 남성향 일상도 씀 — styles.js). 정장·넘긴 머리는 몇몇 시드에서 그래도 조금 돌아감(fd72) — 태그를 더 올려도 나아지지 않아 시드를 바꿈 */
+/* 정면(사용자 요청 — 사선이면 표정이 잘 안 보임). 장면이 다른 각도를 정하거나(FRONT_WHEN, 남성향 일상도 씀 — styles.js) 행동·시선을 정하면(moves — style-fit.js sceneMoves, 자세가 마네킹처럼 굳고 옆을 보는 코드와 부딪힘) 뺌. 정장·넘긴 머리는 몇몇 시드에서 그래도 조금 돌아감(fd72) — 태그를 더 올려도 나아지지 않아 시드를 바꿈 */
 const FRONT_WHEN = /(^|[^a-z])(?:from behind|from above|from below|from side|three-quarter view|profile|lying|sleeping)\b/i;
 const FD_FRONT = "(facing viewer:1.7), (straight-on:1.6), (front view:1.4), (head straight:1.3)";
 const FD_NECK = "(thick neck:1.4), (trapezius:1.25)";
@@ -6918,7 +6928,9 @@ const FD_FITS = [
   { when: /(^|[^a-z])(?:very short hair|buzz cut|crew cut)\b/i, put: "(very short hair:1.5)" },
   // 구도·각도를 정한 장면은 그대로
   { when: /(^|[^a-z])(?:close-up|portrait|upper body|waist up|full body|lower body|cowboy shot|lying|sleeping|action pose)\b/i, drop: [FD_SHOT] },
-  { when: FRONT_WHEN, drop: [FD_FRONT] }
+  { when: FRONT_WHEN, moves: true, drop: [FD_FRONT] },
+  // 표정 칸에서 손이 튀어나오지 않게 둔 네거티브 — 행동 칸에서는 손을 쓰는 자세를 막음
+  { moves: true, negDrop: ["(outstretched hand:1.3)"] }
 ];
 
 const FDAILY = {
@@ -6998,7 +7010,7 @@ const SEMI = "korean, semi-realistic, 2.5d, realistic proportions, glossy hair, 
    검은 머리는 피부를 더 하얗게(coolPrompt, 사용자 요청 — 차가운 머리색에는 흰 피부), 태그만으로는 안 먹어 색조까지 차갑게. 'jet black hair'는 비행기가 그려져 안 씀.
    전체 흐림과 밝기는 태그로 안 움직여 후처리(post, images/runware.js stylePost). 옷의 글자·무늬는 네거티브로도 다 막지 못함(알려진 한계) */
 const MD_BANGS = "(full bangs:1.3), dense bangs, long bangs, bangs reaching eyes, bangs covering forehead, hair between eyes";
-/* 2026-11-06 정리(사용자 요청 — 표정이 굳고 인위적, 정면으로): 고정 표정(pouty lips·half-closed eyes·light blush·sharp eyes·cat eyes)과 짙은 눈가·입술(eyeshadow·thin winged eyeliner)을 빼고 표정은 코드에 맡김, 같은 뜻 태그를 줄여 프롬프트 1171 → 약 900자, 맨 앞에 정면(MD_FRONT — 여성향보다 약하게: 1.6이면 얼굴이 인형처럼 대칭이 됨, fd63 → fd72. 각도를 정한 장면은 뺌). 내용 가중치 1.2 — 없으면 옷·올려 묶은 머리가 묻힘. 정면 + 빽빽한 앞머리는 어려 보여(fd73) 성숙 태그를 올리고 큰 눈·moe를 막음 — 코드의 half-lidded eyes와 함께 성인으로 읽힘(fd74) */
+/* 2026-11-06 정리(사용자 요청 — 표정이 굳고 인위적, 정면으로): 고정 표정(pouty lips·half-closed eyes·light blush·sharp eyes·cat eyes)과 짙은 눈가·입술(eyeshadow·thin winged eyeliner)을 빼고 표정은 코드에 맡김, 같은 뜻 태그를 줄여 프롬프트 1171 → 약 900자, 맨 앞에 정면(MD_FRONT — 여성향보다 약하게: 1.6이면 얼굴이 인형처럼 대칭이 됨, fd63 → fd72. 각도·행동·시선을 정한 장면은 뺌, style-fit.js sceneMoves). 내용 가중치 1.2 — 없으면 옷·올려 묶은 머리가 묻힘. 정면 + 빽빽한 앞머리는 어려 보여(fd73) 성숙 태그를 올리고 큰 눈·moe를 막음 — 코드의 half-lidded eyes와 함께 성인으로 읽힘(fd74) */
 const MD_FRONT = "(facing viewer:1.35), (straight-on:1.25), (front view:1.1)";
 const MD_HEAD = "source_anime, (digital illustration:1.4), (anime illustration:1.3), (thin outlines:1.2), korean, 2.5d, soft gradient shading, smooth skin, soft bloom, soft focus";
 /* 얼굴 모양은 인물 태그가 정함(사용자 요청 — 다 비슷한 얼굴로 나옴, fd81·fd82): 화풍이 눈매·눈썹·턱선까지 정하고 빽빽한 앞머리가 이마·눈썹을 가리면 옷과 머리색만 다른 한 얼굴이 됨. 그래서 여기엔 성인 인상과 작은 코·입만 두고, 작품의 인물 tags에 눈매(narrow·sharp·droopy·round·upturned eyes)·눈썹(thin·thick·straight·arched·soft eyebrows)·앞머리(parted·side-swept·curtain bangs, forehead — NO_BANGS_RE가 빽빽한 앞머리를 풂)·점을 넣음 */
@@ -7012,7 +7024,7 @@ const BUILTIN_SETS = [
     desc: "참고 그림 프롬1(남성향 일상)에 맞춘 화풍 — 2.5D 일러스트, 정면, 가늘고 풍성한 머리 가닥과 빽빽한 앞머리(인물이 앞머리를 정했으면 그것을 따름), 성숙한 인상, 차분한 색과 전체적인 흐림. 눈매·눈썹은 인물 태그가, 표정은 코드가 정함. 검은 머리는 피부를 더 하얗게. 남성향 작품(여성 인물)의 인물 그림 기본값",
     prompt: mdPrompt("warm", "(pale skin:1.15), (fair skin:1.05)"),
     coolPrompt: mdPrompt("cool", "(pale skin:1.2), (fair skin:1.15)", ", cool lighting"), blackTag: "(black hair:1.3)",
-    bangs: MD_BANGS, bangsNeg: MD_BANGS_NEG, fits: [{ when: FRONT_WHEN, drop: [MD_FRONT] }], contentWeight: 1.2, exprWeight: 1.1,
+    bangs: MD_BANGS, bangsNeg: MD_BANGS_NEG, fits: [{ when: FRONT_WHEN, moves: true, drop: [MD_FRONT] }, { moves: true, negDrop: ["(outstretched hand:1.3)", "(raised hands:1.2)", "(index finger raised:1.3)", "pointing"] }], contentWeight: 1.2, exprWeight: 1.1,
     neg: `(3d, cgi, plastic skin, doll:1.2), high contrast, harsh shadows, underexposed, glowing eyes, vivid eye color, hime cut, hairband, headband, hair ornament, earrings, (see-through clothes:1.3), hair over one eye, windblown hair, thin hair, clumped hair, (baby face:1.3), (childish face:1.2), round face, chubby cheeks, ${MD_BANGS_NEG}, (graphic print:1.3), (text on clothes:1.3), emblem, (pendant:1.2), (cross necklace:1.2), brooch, badge, tanned skin, dark skin, (realistic:1.3), photo, (photorealistic:1.3), skin pores, skin texture, nose shadow, source_cartoon, monochrome, greyscale, (twintails:1.3), (hair bun:1.2), updo, animal ears, (red eyeshadow:1.3), (eyeshadow:1.3), eye makeup, (heavy makeup:1.2), (red lips:1.2), (eye bags:1.3), (red eyelids:1.2), (under-eye shadow:1.2), (framed picture:1.5), (picture frame:1.5), (ornate frame:1.5), (gold frame:1.4), (painting (object):1.4), (wall art:1.3), (framed:1.4), border, poster, (outstretched hand:1.3), (raised hands:1.2), (index finger raised:1.3), pointing, (large eyes:1.3), big eyes, (moe:1.3), (cute:1.2), (youthful:1.3), (teen:1.4), (young:1.3)`,
     lora: [{ model: "civitai:390892@1286572", weight: 0.3 }, { model: "civitai:690861@773211", weight: 0.3 }],
     gen: { cfg: 5, steps: 35, scheduler: "DPM++ 2M Karras", modelNeg: false },
@@ -7248,8 +7260,8 @@ function fixSubject(tags, subj) {
   return out.join(", ");
 }
 /* Runware 이미지 생성 → Blob (IMG.put에 그대로 넣을 수 있음). 그림은 dataURI로 받아 두 번째 요청·CORS 문제를 피하고, URL로 오면 내려받음.
-   style은 styleFor(ctx)가 고른 {prompt, model} — 없으면 설정의 그림체 그대로(styleFor()) */
-async function runwareImage(prompt, { aspect = "4:5", rating = imgRating(), signal, style: styleOpt } = {}) {
+   style은 styleFor(ctx)가 고른 {prompt, model} — 없으면 설정의 그림체 그대로(styleFor()). scene은 장면 묶음만의 영문 태그(prompt.js poseTags) — 화풍이 행동·시선을 정한 칸을 가릴 때 씀 */
+async function runwareImage(prompt, { aspect = "4:5", rating = imgRating(), signal, style: styleOpt, scene } = {}) {
   await assertAdmin(); // 관리자 계정만(images/gen-guard.js) — 키를 확인하기 전에
   if (!hasRunwareKey()) throw { code: "no_key" };
   rating = imgRating(rating);
@@ -7257,7 +7269,7 @@ async function runwareImage(prompt, { aspect = "4:5", rating = imgRating(), sign
   if (adult && minorHint(prompt)) throw { code: "minor_block" };
   const rawTags = await ponyTags(prompt, adult), subj = imgSubject(rawTags), Sb = SUBJ[subj] || {};
   // 사람 없는 그림은 화풍이 따로 정한 모델·문구로 — 인물 위주 화풍은 고양이만 시켜도 사람을 함께 그림(2026-11-05, 남성향 일상). 후처리는 같게
-  const st = subj === "none" && st0.noHumans ? { ...st0.noHumans, post: st0.post } : st0, fit = fitStyle(st, rawTags), rawStyle = await ponyTags(fit.prompt, adult), G = st.gen || {};
+  const st = subj === "none" && st0.noHumans ? { ...st0.noHumans, post: st0.post } : st0, fit = fitStyle(st, rawTags, scene), rawStyle = await ponyTags(fit.prompt, adult), G = st.gen || {};
   if (adult && minorHint(rawTags + ", " + rawStyle)) throw { code: "minor_block" };
   // 사람 없는 그림은 no humans를 강하게 — 인물 위주 모델·화풍은 고양이만 시켜도 사람을 함께 그림(2026-11-05)
   const tags = weighTags(fixSubject(rawTags, subj).replace(/(^|, )no humans(?=,|$)/, subj === "none" ? "$1(no humans:1.4)" : "$1no humans"), st.contentWeight, st.exprWeight), style = splitTags(rawStyle).filter((t) => !(Sb.strip && Sb.strip.test(t))).join(", ");
@@ -7476,7 +7488,7 @@ function crc32(bytes) {
            src/js/core/state.js { S, hasOpenRouterKey, hasRunwareKey }
            src/js/core/util.js { $, $$, esc, toast }
            src/js/images/gen-guard.js { assertAdmin }
-           src/js/images/prompt.js { asTag, clearCastTags, groupsPrompt, hasSavedTags, saveCastTags, savedParts, splitTags }
+           src/js/images/prompt.js { asTag, clearCastTags, groupsPrompt, hasSavedTags, poseTags, saveCastTags, savedParts, splitTags }
            src/js/images/rating.js { imgRating, ratingFieldHTML }
            src/js/images/runware.js { genErr, runwareImage }
            src/js/images/styles.js { imgModelInfo, styleFor }
@@ -7544,7 +7556,7 @@ function genImageSheet({ title = "AI로 이미지 만들기", prompt = "", parts
     try {
       await assertAdmin(); // 태그 번역(사용자 키로 요금이 듦)보다 먼저
       if (adult && minorHint(groups.flatMap((g) => g.tags.map((x) => x.t)).join(", "))) throw { code: "minor_block" };
-      blob = await runwareImage(await buildPrompt(adult), { aspect, rating: rt, signal: ctl.signal, style: st });
+      blob = await runwareImage(await buildPrompt(adult), { aspect, rating: rt, signal: ctl.signal, style: st, scene: parts ? await poseTags(groups, adult) : undefined }); // 직접 쓴 프롬프트는 묶음이 없어 넘기지 않음
       url && URL.revokeObjectURL(url); url = URL.createObjectURL(blob);
       pv.innerHTML = `<img src="${url}" alt="생성된 이미지">`; use.disabled = false; mk.textContent = "다시 생성";
     } catch (e) { if (!ov.isConnected) return; blob = null; pv.innerHTML = `<span class="note">${esc(genErr(e))}</span>`; }
@@ -7674,7 +7686,7 @@ function rowHTML(d, on, s, del) {
            src/js/images/codes.js { keyOf, parseCodes }
            src/js/images/gen-guard.js { assertAdmin }
            src/js/images/pick.js { putCastImage }
-           src/js/images/prompt.js { lookIsMale, partsTags, savedParts }
+           src/js/images/prompt.js { lookIsMale, partsTags, poseTags, savedParts }
            src/js/images/rating.js { RATINGS, imgRating }
            src/js/images/runware.js { genErr, runwareImage }
            src/js/images/situations.js { codeRating, keyName, knownCodes, slotNums }
@@ -7720,8 +7732,8 @@ const promptText = (c, cast, key) => savedParts(c, cast, key).filter((p) => p.ta
 async function draw(c, cast, key) {
   await assertAdmin(); // 태그 번역(사용자 키로 요금이 듦)보다 먼저 — runwareImage의 확인은 번역 뒤에 옴
   const rt = keyRating(c, key), st = pickStyle(c, cast), t0 = Date.now();
-  const tags = await partsTags(savedParts(c, cast, key), rt !== "safe");
-  const blob = await runwareImage(tags, { aspect: ISTATE.aspect, rating: rt, style: st });
+  const parts = savedParts(c, cast, key), adult = rt !== "safe", tags = await partsTags(parts, adult);
+  const blob = await runwareImage(tags, { aspect: ISTATE.aspect, rating: rt, style: st, scene: await poseTags(parts, adult) });
   return { id: uid("is"), url: URL.createObjectURL(blob), blob, key, name: keyName(key), rating: rt, style: st.name, tags, sec: ((Date.now() - t0) / 1000).toFixed(1), c, code: cast.code, castName: cast.name, saved: false };
 }
 /* 결과를 그 인물의 그림 칸에 저장(같은 키의 예전 그림은 바뀜) */
@@ -8670,7 +8682,7 @@ async function exportWorkToast(c) {
            src/js/images/gen-guard.js { genAccess }
            src/js/images/motion.js { motionOf }
            src/js/images/pick.js { hasImg, pickKey, putCastImage }
-           src/js/images/prompt.js { lookIsMale, partsTags, savedParts }
+           src/js/images/prompt.js { lookIsMale, partsTags, poseTags, savedParts }
            src/js/images/rating.js { imgRating }
            src/js/images/runware.js { genErr, runwareImage }
            src/js/images/situations.js { codeRating }
@@ -8737,7 +8749,7 @@ async function autoImages(r, body) {
     try {
       const rt = imgRating(codeRating(j.codes, c)), adult = rt !== "safe";
       const style = styleFor({ kind: "daily", aud: audOf(c), male: lookIsMale(castLook(j.cast, c)) }); // 기본 화풍(자동): 작품 성향 → 인물 성별
-      const ref = await IMG.put(await runwareImage(await partsTags(savedParts(c, j.cast, j.key), adult), { aspect: "4:5", rating: rt, style }));
+      const parts = savedParts(c, j.cast, j.key), ref = await IMG.put(await runwareImage(await partsTags(parts, adult), { aspect: "4:5", rating: rt, style, scene: await poseTags(parts, adult) }));
       putCastImage(c, j.cast.code, j.key, ref);
       figsOf(j.cast.code, j.key).forEach((f) => { f.innerHTML = figInner(c, j.cast, j.key, ref); IMG.hydrate(f); $$("img", f).forEach((im) => im.onclick = () => lightbox(im.src)); });
     } catch (e) { err = e; }

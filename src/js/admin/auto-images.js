@@ -15,7 +15,7 @@ import { imgTags, parseCodes } from "../images/codes.js";
 import { genAccess } from "../images/gen-guard.js";
 import { motionOf } from "../images/motion.js";
 import { hasImg, pickKey, putCastImage } from "../images/pick.js";
-import { lookIsMale, partsTags, savedParts } from "../images/prompt.js";
+import { lookIsMale, partsTags, poseTags, savedParts } from "../images/prompt.js";
 import { imgRating } from "../images/rating.js";
 import { genErr, runwareImage } from "../images/runware.js";
 import { codeRating } from "../images/situations.js";
@@ -52,7 +52,7 @@ export async function autoImages(r, body) {
     try {
       const rt = imgRating(codeRating(j.codes, c)), adult = rt !== "safe";
       const style = styleFor({ kind: "daily", aud: audOf(c), male: lookIsMale(castLook(j.cast, c)) }); // 기본 화풍(자동): 작품 성향 → 인물 성별
-      const ref = await IMG.put(await runwareImage(await partsTags(savedParts(c, j.cast, j.key), adult), { aspect: "4:5", rating: rt, style }));
+      const parts = savedParts(c, j.cast, j.key), ref = await IMG.put(await runwareImage(await partsTags(parts, adult), { aspect: "4:5", rating: rt, style, scene: await poseTags(parts, adult) }));
       putCastImage(c, j.cast.code, j.key, ref);
       figsOf(j.cast.code, j.key).forEach((f) => { f.innerHTML = figInner(c, j.cast, j.key, ref); IMG.hydrate(f); $$("img", f).forEach((im) => im.onclick = () => lightbox(im.src)); });
     } catch (e) { err = e; }

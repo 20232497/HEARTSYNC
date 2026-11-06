@@ -8,7 +8,7 @@ import { esc, toast, uid } from "../core/util.js";
 import { keyOf, parseCodes } from "../images/codes.js";
 import { assertAdmin } from "../images/gen-guard.js";
 import { putCastImage } from "../images/pick.js";
-import { lookIsMale, partsTags, savedParts } from "../images/prompt.js";
+import { lookIsMale, partsTags, poseTags, savedParts } from "../images/prompt.js";
 import { RATINGS, imgRating } from "../images/rating.js";
 import { genErr, runwareImage } from "../images/runware.js";
 import { codeRating, keyName, knownCodes, slotNums } from "../images/situations.js";
@@ -35,8 +35,8 @@ export const promptText = (c, cast, key) => savedParts(c, cast, key).filter((p) 
 async function draw(c, cast, key) {
   await assertAdmin(); // 태그 번역(사용자 키로 요금이 듦)보다 먼저 — runwareImage의 확인은 번역 뒤에 옴
   const rt = keyRating(c, key), st = pickStyle(c, cast), t0 = Date.now();
-  const tags = await partsTags(savedParts(c, cast, key), rt !== "safe");
-  const blob = await runwareImage(tags, { aspect: ISTATE.aspect, rating: rt, style: st });
+  const parts = savedParts(c, cast, key), adult = rt !== "safe", tags = await partsTags(parts, adult);
+  const blob = await runwareImage(tags, { aspect: ISTATE.aspect, rating: rt, style: st, scene: await poseTags(parts, adult) });
   return { id: uid("is"), url: URL.createObjectURL(blob), blob, key, name: keyName(key), rating: rt, style: st.name, tags, sec: ((Date.now() - t0) / 1000).toFixed(1), c, code: cast.code, castName: cast.name, saved: false };
 }
 /* 결과를 그 인물의 그림 칸에 저장(같은 키의 예전 그림은 바뀜) */

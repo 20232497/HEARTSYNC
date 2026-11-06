@@ -199,7 +199,7 @@
  * @property {string} model 이미지 모델 AIR id
  * @property {string} [overrides] 덮어쓰는 내장 기본 화풍 id
  */
-/** @typedef {{ id: string, name: string, prompt: string, model: string, coolPrompt?: string, blackTag?: string, paleTag?: string, bangs?: string, bangsNeg?: string, fits?: {when: RegExp, drop?: string[], swap?: string[], put?: string, negDrop?: string[]}[], contentWeight?: number, exprWeight?: number, neg?: string, lora?: {model: string, weight: number}[], gen?: {cfg?: number, steps?: number, scheduler?: string, modelNeg?: boolean}, post?: {lift?: string, soft?: number, blurK?: number, blurA?: number, veil?: {center: number, edge: number, mul: string, a: number, color: string}}, noHumans?: {model: string, prompt: string} }} StyleInfo styleFor()가 고른 그림체 — prompt·model 말고는 내장 화풍만 씀(images/style-fit.js·runware.js) */
+/** @typedef {{ id: string, name: string, prompt: string, model: string, coolPrompt?: string, blackTag?: string, paleTag?: string, bangs?: string, bangsNeg?: string, fits?: {when?: RegExp, moves?: boolean, drop?: string[], swap?: string[], put?: string, negDrop?: string[]}[], contentWeight?: number, exprWeight?: number, neg?: string, lora?: {model: string, weight: number}[], gen?: {cfg?: number, steps?: number, scheduler?: string, modelNeg?: boolean}, post?: {lift?: string, soft?: number, blurK?: number, blurA?: number, veil?: {center: number, edge: number, mul: string, a: number, color: string}}, noHumans?: {model: string, prompt: string} }} StyleInfo styleFor()가 고른 그림체 — prompt·model 말고는 내장 화풍만 씀(images/style-fit.js·runware.js) */
 /**
  * 설정(S.settings, localStorage hv1_settings). 키 칸(apiKey·runwareKey·openRouterKey)은 계정에는 암호화된 금고(vault)로만 올라감.
  * @typedef {Object} Settings

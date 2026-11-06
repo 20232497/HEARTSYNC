@@ -83,8 +83,8 @@ function fixSubject(tags, subj) {
   return out.join(", ");
 }
 /* Runware 이미지 생성 → Blob (IMG.put에 그대로 넣을 수 있음). 그림은 dataURI로 받아 두 번째 요청·CORS 문제를 피하고, URL로 오면 내려받음.
-   style은 styleFor(ctx)가 고른 {prompt, model} — 없으면 설정의 그림체 그대로(styleFor()) */
-export async function runwareImage(prompt, { aspect = "4:5", rating = imgRating(), signal, style: styleOpt } = {}) {
+   style은 styleFor(ctx)가 고른 {prompt, model} — 없으면 설정의 그림체 그대로(styleFor()). scene은 장면 묶음만의 영문 태그(prompt.js poseTags) — 화풍이 행동·시선을 정한 칸을 가릴 때 씀 */
+export async function runwareImage(prompt, { aspect = "4:5", rating = imgRating(), signal, style: styleOpt, scene } = {}) {
   await assertAdmin(); // 관리자 계정만(images/gen-guard.js) — 키를 확인하기 전에
   if (!hasRunwareKey()) throw { code: "no_key" };
   rating = imgRating(rating);
@@ -92,7 +92,7 @@ export async function runwareImage(prompt, { aspect = "4:5", rating = imgRating(
   if (adult && minorHint(prompt)) throw { code: "minor_block" };
   const rawTags = await ponyTags(prompt, adult), subj = imgSubject(rawTags), Sb = SUBJ[subj] || {};
   // 사람 없는 그림은 화풍이 따로 정한 모델·문구로 — 인물 위주 화풍은 고양이만 시켜도 사람을 함께 그림(2026-11-05, 남성향 일상). 후처리는 같게
-  const st = subj === "none" && st0.noHumans ? { ...st0.noHumans, post: st0.post } : st0, fit = fitStyle(st, rawTags), rawStyle = await ponyTags(fit.prompt, adult), G = st.gen || {};
+  const st = subj === "none" && st0.noHumans ? { ...st0.noHumans, post: st0.post } : st0, fit = fitStyle(st, rawTags, scene), rawStyle = await ponyTags(fit.prompt, adult), G = st.gen || {};
   if (adult && minorHint(rawTags + ", " + rawStyle)) throw { code: "minor_block" };
   // 사람 없는 그림은 no humans를 강하게 — 인물 위주 모델·화풍은 고양이만 시켜도 사람을 함께 그림(2026-11-05)
   const tags = weighTags(fixSubject(rawTags, subj).replace(/(^|, )no humans(?=,|$)/, subj === "none" ? "$1(no humans:1.4)" : "$1no humans"), st.contentWeight, st.exprWeight), style = splitTags(rawStyle).filter((t) => !(Sb.strip && Sb.strip.test(t))).join(", ");

@@ -35,10 +35,18 @@ export function weighTags(tags, w, ew) {
     return `(${t}:${w})`;
   }).join(", ");
 }
-/* 그림체 {prompt, coolPrompt?, blackTag?, paleTag?, bangs?, bangsNeg?, fits?, neg?}와 내용 태그 → 실제로 쓸 {prompt, neg}.
+/* 장면이 행동이나 시선을 정했는가: 장면·추가 묶음(인물·옷 태그는 넘기지 않음 — prompt.js poseTags)에 표정·구도가 아닌 태그가 하나라도 있으면 참.
+   직접 만든 코드의 행동 낱말을 다 적을 수 없어서 표정·구도 쪽을 목록으로 둠 — 모르는 낱말은 행동으로 봄. 잘못 짚어도 그 칸만 고개가 조금 돌아감.
+   EXPRESSION_RE는 시선(looking to the side·side glance)과 입을 가리는 손(hand over own mouth)도 표정으로 치므로 먼저 봄. 부상 자국·빛은 자세가 아니라 표정 칸으로 침 */
+const GAZE_RE = /^looking (?!at viewer$)|(?:side|sideways) glance$|averted (?:gaze|eyes)$|\bhands?\b/i;
+const STILL_RE = /^(?:upper body|portrait|close-up|bust shot|waist up|cowboy shot|full body|looking at viewer|facing viewer|straight-on|front view|soft light(?:ing)?|bandages?|bruises?)$/i;
+export function sceneMoves(scene) {
+  return splitTop(scene).some((x) => { const b = bare(x); return GAZE_RE.test(b) || !(STILL_RE.test(b) || NO_WEIGHT_RE.test(b) || EXPRESSION_RE.test(b)); });
+}
+/* 그림체 {prompt, coolPrompt?, blackTag?, paleTag?, bangs?, bangsNeg?, fits?, neg?}와 내용 태그 → 실제로 쓸 {prompt, neg}. scene은 장면 묶음만의 글 — 없으면(표지·직접 쓴 프롬프트) fits의 moves 조건은 걸리지 않음.
    차가운 머리색(검정·은발·회색·흰색)은 피부를 더 하얗게 하는 coolPrompt, 그중 검정만 blackTag로 머리색을 진하게(은발이 검어지지 않게) */
-export function fitStyle(st, tags) {
-  const t = String(tags || "");
+export function fitStyle(st, tags, scene) {
+  const t = String(tags || ""), moves = sceneMoves(scene);
   let prompt = st.prompt || "", neg = st.neg || "";
   if (st.coolPrompt) {
     if (BLACK_HAIR_RE.test(t)) prompt = st.coolPrompt + (st.blackTag ? ", " + st.blackTag : "");
@@ -46,9 +54,9 @@ export function fitStyle(st, tags) {
   }
   if (st.bangs && NO_BANGS_RE.test(t)) { prompt = prompt.replace(st.bangs + ", ", ""); neg = splitTop(neg).filter((n) => !splitTop(st.bangsNeg).includes(n)).join(", "); }
   if (DARK_SKIN_RE.test(t)) prompt = splitTop(prompt).filter((x) => !/(?:pale|fair|white) skin/.test(x)).join(", ");
-  // 화풍이 정한 조건(st.fits): 내용이 when에 맞으면 태그 묶음을 빼거나(drop) 바꾸고(swap) 앞에 더하고(put) 네거티브를 뺌(negDrop) — 내용이 정한 머리 모양·표정·구도를 화풍이 덮지 않게
+  // 화풍이 정한 조건(st.fits): 내용이 when에 맞거나 moves인데 장면이 행동·시선을 정했으면 태그 묶음을 빼거나(drop) 바꾸고(swap) 앞에 더하고(put) 네거티브를 뺌(negDrop) — 내용이 정한 머리 모양·표정·구도를 화풍이 덮지 않게
   for (const r of st.fits || []) {
-    if (!r.when.test(t)) continue;
+    if (!(r.when && r.when.test(t)) && !(r.moves && moves)) continue;
     for (const block of r.drop || []) prompt = prompt.includes(block + ", ") ? prompt.replace(block + ", ", "") : prompt.replace(", " + block, "");
     if (r.swap) prompt = prompt.replace(r.swap[0], r.swap[1]);
     if (r.put) prompt = r.put + ", " + prompt;

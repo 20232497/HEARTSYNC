@@ -140,6 +140,8 @@ export async function partsTags(parts, adult) {
   if (adult && minorHint(parts.flatMap((g) => g.tags.map((x) => asTag(x).t)).join(", "))) throw { code: "minor_block" };
   return groupsPrompt(parts, adult);
 }
+/* 장면·추가 묶음만 영문으로 — 화풍이 행동·시선을 정한 칸을 가리는 데 씀(runwareImage의 scene, style-fit.js sceneMoves). 인물·옷 태그가 섞이면 모든 칸이 행동으로 보임. 번역은 partsTags와 같은 글이라 캐시에서 나옴 */
+export const poseTags = (parts, adult) => groupsPrompt(parts.filter((g) => g.key === "scene" || g.key === "extra"), adult);
 /* 세계관 일러스트 구도: 키워드북 항목의 종류(kind — ui/worldart.js LORE_KINDS)마다. 인물은 상반신 초상, 동물·괴물은 그 존재, 장소는 사람 없는 풍경, 물건은 정물 클로즈업, 사건·세력·설정은 장면 */
 const LORE_SHOT = {
   person: "upper body, portrait, detailed background",

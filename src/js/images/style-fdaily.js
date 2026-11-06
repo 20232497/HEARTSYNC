@@ -16,7 +16,7 @@
    soft brush strokes → 손에 붓 / shoulder-length hair → 들쭉날쭉 / ponytail만 쓰면 낮게 처짐(high ponytail·hair bun을 씀). 눈 색 네거티브(purple·green eyes)는 다른 눈을 빨갛게 만들어 안 씀.
    인물의 옷이 설정과 달라지면 작품 태그에 색과 옷을 쉬운 낱말로 더하면 잡힘(fd47·fd49·fd50): black three-piece suit만으로는 흰 정장 → black suit, white shirt / black military uniform만으로는 진녹색 → black jacket / feather-trimmed coat·black robe는 가슴이 드러남 → black shirt·high collar, closed robe(closed robe만으로는 안 닫힘 — 백연·노엘은 셔츠까지 — 근육질 태그 때문에 옷이 느슨하면 가슴이 드러남, 카일 노스의 판초도 흰 셔츠를 더함, fd55·fd76). 고개가 조금 돌아가면 태그보다 시드를 바꿈(네거티브에 from side·head tilt를 더해도 나아지지 않음, fd61).
    알려진 한계: 실내 장면에 액자가 자주 걸림(painted background·soft painting은 원인이 아니었음), 눈가 붉은 기(참고 그림 일부에도 있음), 회색 머리는 다른 색보다 어려 보이기 쉬워 만든 그림을 보고 고를 것, 티셔츠·후드의 글자 무늬, 눈 색을 안 정한 인물은 파란 눈이 되기도 함, 두 번째 시드 배경의 얼룩, 넘긴 머리는 일부만 넘어감 */
-/* 정면(사용자 요청 — 사선이면 표정이 잘 안 보임). 장면이 다른 각도를 정하면 뺌(FRONT_WHEN, 남성향 일상도 씀 — styles.js). 정장·넘긴 머리는 몇몇 시드에서 그래도 조금 돌아감(fd72) — 태그를 더 올려도 나아지지 않아 시드를 바꿈 */
+/* 정면(사용자 요청 — 사선이면 표정이 잘 안 보임). 장면이 다른 각도를 정하거나(FRONT_WHEN, 남성향 일상도 씀 — styles.js) 행동·시선을 정하면(moves — style-fit.js sceneMoves, 자세가 마네킹처럼 굳고 옆을 보는 코드와 부딪힘) 뺌. 정장·넘긴 머리는 몇몇 시드에서 그래도 조금 돌아감(fd72) — 태그를 더 올려도 나아지지 않아 시드를 바꿈 */
 export const FRONT_WHEN = /(^|[^a-z])(?:from behind|from above|from below|from side|three-quarter view|profile|lying|sleeping)\b/i;
 const FD_FRONT = "(facing viewer:1.7), (straight-on:1.6), (front view:1.4), (head straight:1.3)";
 const FD_NECK = "(thick neck:1.4), (trapezius:1.25)";
@@ -45,7 +45,9 @@ const FD_FITS = [
   { when: /(^|[^a-z])(?:very short hair|buzz cut|crew cut)\b/i, put: "(very short hair:1.5)" },
   // 구도·각도를 정한 장면은 그대로
   { when: /(^|[^a-z])(?:close-up|portrait|upper body|waist up|full body|lower body|cowboy shot|lying|sleeping|action pose)\b/i, drop: [FD_SHOT] },
-  { when: FRONT_WHEN, drop: [FD_FRONT] }
+  { when: FRONT_WHEN, moves: true, drop: [FD_FRONT] },
+  // 표정 칸에서 손이 튀어나오지 않게 둔 네거티브 — 행동 칸에서는 손을 쓰는 자세를 막음
+  { moves: true, negDrop: ["(outstretched hand:1.3)"] }
 ];
 
 export const FDAILY = {

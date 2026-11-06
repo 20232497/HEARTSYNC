@@ -3,7 +3,7 @@ import { minorHint } from "../core/safety.js";
 import { S, hasOpenRouterKey, hasRunwareKey } from "../core/state.js";
 import { $, $$, esc, toast } from "../core/util.js";
 import { assertAdmin } from "../images/gen-guard.js";
-import { asTag, clearCastTags, groupsPrompt, hasSavedTags, saveCastTags, savedParts, splitTags } from "../images/prompt.js";
+import { asTag, clearCastTags, groupsPrompt, hasSavedTags, poseTags, saveCastTags, savedParts, splitTags } from "../images/prompt.js";
 import { imgRating, ratingFieldHTML } from "../images/rating.js";
 import { genErr, runwareImage } from "../images/runware.js";
 import { imgModelInfo, styleFor } from "../images/styles.js";
@@ -58,7 +58,7 @@ export function genImageSheet({ title = "AI로 이미지 만들기", prompt = ""
     try {
       await assertAdmin(); // 태그 번역(사용자 키로 요금이 듦)보다 먼저
       if (adult && minorHint(groups.flatMap((g) => g.tags.map((x) => x.t)).join(", "))) throw { code: "minor_block" };
-      blob = await runwareImage(await buildPrompt(adult), { aspect, rating: rt, signal: ctl.signal, style: st });
+      blob = await runwareImage(await buildPrompt(adult), { aspect, rating: rt, signal: ctl.signal, style: st, scene: parts ? await poseTags(groups, adult) : undefined }); // 직접 쓴 프롬프트는 묶음이 없어 넘기지 않음
       url && URL.revokeObjectURL(url); url = URL.createObjectURL(blob);
       pv.innerHTML = `<img src="${url}" alt="생성된 이미지">`; use.disabled = false; mk.textContent = "다시 생성";
     } catch (e) { if (!ov.isConnected) return; blob = null; pv.innerHTML = `<span class="note">${esc(genErr(e))}</span>`; }

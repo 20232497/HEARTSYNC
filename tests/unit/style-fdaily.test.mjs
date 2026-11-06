@@ -12,7 +12,7 @@ globalThis.addEventListener = globalThis.removeEventListener = () => {};
 globalThis.localStorage = { getItem: (k) => (mem.has(k) ? mem.get(k) : null), setItem: (k, v) => mem.set(k, String(v)), removeItem: (k) => mem.delete(k), key: () => null, length: 0 };
 globalThis.location = { protocol: "https:", hostname: "20232497.github.io" };
 const { FDAILY } = await import("../../src/js/images/style-fdaily.js");
-const { fitStyle, weighTags } = await import("../../src/js/images/style-fit.js");
+const { fitStyle, sceneMoves, weighTags } = await import("../../src/js/images/style-fit.js");
 const { IMG_NEG, NEG_MINOR, SUBJ } = await import("../../src/js/images/runware.js");
 const { RATINGS } = await import("../../src/js/images/rating.js");
 const { ARCH, autoSetId, builtinSet } = await import("../../src/js/images/styles.js");
@@ -160,6 +160,37 @@ test("남성향 일상: 맨 앞이 정면, 각도를 정한 장면은 뺌, 네�
   for (const t of ["(mature female:1.45)", "(adult woman:1.45)", "mature face"]) assert.ok(MD.prompt.includes(t), t);
   for (const t of ["(young:1.3)", "(teen:1.4)", "(moe:1.3)"]) assert.ok(MD.neg.includes(t), t);
   assert.equal(builtinSet("mdaily").contentWeight, 1.2);
+});
+test("장면 가리기: 표정·구도뿐이면 거짓, 행동·시선을 정했으면 참", () => {
+  const still = [0, 1, 2, 4, 5, 6, 8, 9, 10, 14], moving = [3, 7, 12, 13];
+  for (const n of still) assert.equal(sceneMoves(SIT_PONY_TAGS[n]), false, "기본 " + n + ": " + SIT_PONY_TAGS[n]);
+  for (const n of moving) assert.equal(sceneMoves(SIT_PONY_TAGS[n]), true, "기본 " + n + ": " + SIT_PONY_TAGS[n]);
+  const stillRows = [101, 102, 105, 106, 112, 116, 117, 138, 139];
+  for (const [n, row] of Object.entries(MotionPrompts)) assert.equal(sceneMoves(row.base_prompt), !stillRows.includes(+n), n + ": " + row.base_prompt);
+  // 직접 만든 코드 — 목록에 없는 낱말은 행동으로 봄
+  for (const s of ["turning head, looking back", "leaning forward, hand on table", "walking, hands in pockets", "hugging, arms around another", "sitting, crossed legs"]) assert.equal(sceneMoves(s), true, s);
+  // 번역이 덧붙이는 인원·성별 태그, 강조 괄호는 행동이 아님
+  assert.equal(sceneMoves("1girl, solo, (smile:1.3), looking at viewer"), false);
+  assert.equal(sceneMoves("looking to the side, smile"), true);
+  assert.equal(sceneMoves(""), false); assert.equal(sceneMoves(undefined), false);
+});
+test("정면 고정: 표정 칸은 유지하고 행동·시선을 정한 칸에서는 풂", () => {
+  const body = "black hair, black suit";
+  for (const [st, front, name] of [[FDAILY, ANGLE, "여성향"], [MD, MD_ANGLE, "남성향"]]) {
+    const on = (scene) => fitStyle(st, scene + ", 1girl, solo, " + body, scene);
+    assert.ok(on(SIT_PONY_TAGS[2]).prompt.includes(front), name + " 표정 칸");
+    for (const n of [3, 7, 12]) { const p = on(SIT_PONY_TAGS[n]).prompt; assert.ok(!p.includes(front), name + " 기본 " + n); assert.ok(!/^,|,\s*,/.test(p), name + " 쉼표"); }
+    assert.ok(!on("walking, hands in pockets").prompt.includes(front), name + " 직접 만든 행동");
+    // 인물·옷 태그는 행동으로 치지 않음, 장면을 안 주면(표지·직접 쓴 프롬프트) 예전 그대로
+    assert.ok(fitStyle(st, "1girl, solo, " + body, "smile").prompt.includes(front), name + " 옷");
+    assert.ok(fitStyle(st, "walking, 1girl, solo").prompt.includes(front), name + " 장면 없음");
+    assert.ok(!fitStyle(st, "from behind, 1girl, solo").prompt.includes(front), name + " 각도");
+    // 표정 칸에서 손을 막은 네거티브는 행동 칸에서 풂
+    assert.ok(on(SIT_PONY_TAGS[2]).neg.includes("(outstretched hand:1.3)"), name + " 표정 칸 손");
+    assert.ok(!on("stretching, arms up").neg.includes("(outstretched hand:1.3)"), name + " 행동 칸 손");
+  }
+  // 안전 태그는 행동 칸에서도 그대로
+  for (const st of [FDAILY, MD]) for (const t of ["(young:1.3)", "(teen:1.4)", "(baby face:1.3)", "(see-through clothes:1.3)"]) assert.ok(fitStyle(st, "walking, 1girl", "walking").neg.includes(t), t);
 });
 test("남성향 일상: 얼굴 모양은 화풍이 아니라 인물 태그가 정함", async () => {
   // 화풍이 눈매·눈썹·턱선을 정하면 옷과 머리색만 다른 한 얼굴이 됨(fd81)
