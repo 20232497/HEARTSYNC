@@ -13,7 +13,7 @@
 - 배포: GitHub Pages https://20232497.github.io/HEARTSYNC/ (main 브랜치 루트, 병합하면 자동 갱신) · 관리자 도구 …/HEARTSYNC/admin.html. claude.ai 아티팩트 https://claude.ai/artifact/3sfDYFeJ13dHrkWwBFj1YG 는 예전 배포(지금은 publish하지 않음 — 메모리). 저장소는 공개라 키·개인 데이터·성인 수위 표를 파일에 넣지 않기
 - 이름: HEART SYNC(대문자·띄어쓰기). 저장소·웹 주소는 HEARTSYNC(Pages 경로는 대소문자 구분, 예전 주소 /HeartSync/·/HeartVerse/는 404 — 주소를 바꾸면 Supabase URL Configuration·Google 브랜딩·네이버 서비스 URL도). 내부 이름은 데이터 호환 때문에 그대로: localStorage hv1_ 접두사, IndexedDB "heartverse", window.HEARTVERSE_CONFIG
 - 아이콘: icons/(favicon-32 가운데 하트만, icon-192, apple-touch-icon 180). 화면 로고 LOGO(ui/shell.js)
-- 개인정보처리방침 privacy.html·이용약관 terms.html(**법률 검토 전 초안**) — 스크립트 없는 정적 페이지. 로그인 화면 맨 아래와 MY → 약관 및 정책에 링크, 파일로 열면 docUrl()(ui/help.js)이 웹 주소로. 수집 항목·저장 위치·AI 전송 대상·결제·성인 이용이 바뀌면 같이 고치고 시행일을 바꾸기(지금 시행일 11-13, 위쪽 '변경 안내' 문단은 시행일이 지나면 지우기). 정리로 OpenRouter·Runware에 보내는 일이 없어졌지만 문서는 아직 그대로(고치려면 시행일 고지 — 사용자 결정)
+- 개인정보처리방침 privacy.html·이용약관 terms.html(**법률 검토 전 초안**) — 스크립트 없는 정적 페이지. 로그인 화면 맨 아래와 MY → 약관 및 정책에 링크, 파일로 열면 docUrl()(ui/help.js)이 웹 주소로. 수집 항목·저장 위치·AI 전송 대상·결제·성인 이용이 바뀌면 같이 고치고 시행일을 바꾸기(지금 시행일 11-16 — 2026-11-08 정리에 맞춰 고침: Anthropic만, 그림 생성·키 금고·성인 모드·본인인증·커뮤니티 없음, 예전 기능의 계정 데이터는 #old 항목. 11-13 시행 예정안은 시행 전에 바뀜. 위쪽 '변경 안내' 문단은 시행일이 지나면 지우기)
 - 관리자 도구 비밀번호 관문 admin/gate.js: 웹 주소에서만 SHA-256 해시 비교, 맞으면 localStorage hv1_admin, MY의 '관리자 잠그기'로 해제. localhost·127.0.0.1·file://은 묻지 않음. 클라이언트 관문이라 무심코 들어오는 것만 막음 — 비밀번호를 바꾸려면 gate.js의 HASH
 
 ## 두 빌드
