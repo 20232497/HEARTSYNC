@@ -32,7 +32,7 @@ export const TARGETS = {
 /* 폴더 이름이 곧 작품의 aud(관심있는 대화) 값 */
 export const AUD_DIRS = { f: "여성향(남성 캐릭터와의 대화)", m: "남성향(여성 캐릭터와의 대화)", all: "전체(남녀가 섞임)" };
 /* 빌드 검사에 쓰는 앱 규칙 — src/js에서 같은 코드를 꺼내 쓴다(규칙이 두 군데로 갈라지지 않게) */
-const APP_RULES = ["SIT", "CODE_RE", "SERIES", "PALETTES", "MOTIFS", "CATS", "guessAud", "personaWho", "personaLook", "castLook", "minorFlags", "minorHint", "settingHint", "LORE_KINDS"];
+const APP_RULES = ["SIT", "CODE_RE", "SERIES", "codebook", "APP_COMMANDS", "PALETTES", "MOTIFS", "CATS", "guessAud", "personaWho", "personaLook", "castLook", "minorFlags", "minorHint", "settingHint", "LORE_KINDS"];
 /* 오래된 iOS(13 이하)·인앱 브라우저에서 문법 오류가 나는 것들 */
 const OLD_IOS = [[/\|\|=|&&=|\?\?=/, "논리 할당(||= &&= ??=)"], [/\.at\(/, "Array.at()"], [/\(\?<[=!]/, "정규식 lookbehind"],
   [/\bstructuredClone\b/, "structuredClone"], [/\.findLast(?:Index)?\(/, "findLast()"], [/\bObject\.hasOwn\(/, "Object.hasOwn()"]];
@@ -366,14 +366,14 @@ ${rows.map((r) => "  " + JSON.stringify({ key: r.key, title: r.title, sub: r.sub
 }
 
 /* 그림 코드(글자 + 번호)가 이 작품에서 맞는지 검사하는 함수를 만듦 — 틀리면 이유 글, 맞으면 "".
-   인물 코드는 cast의 대문자 코드 그대로에 번호 0~14(SIT), MP<n>은 places의 n번째, EV<n>은 cuts의 n번째(1부터). 앱의 images/codes.js와 같은 규칙 */
+   앱과 같은 코드 사전(images/codes.js codebook)으로: 인물 코드는 cast의 대문자 코드에 번호 0~14, MP<n>은 places의 n번째, EV<n>은 cuts의 n번째(1부터) */
 function codeRange(c, R) {
-  const cast = new Set((c.cast || [{ code: "C" }]).map((x) => x.code)), places = (c.places || []).length, cuts = (c.cuts || []).length;
+  const book = R.codebook({ ...c, cast: c.cast || [{ code: "C", name: c.name }] });
   return (code, n) => {
-    if (R.SERIES[code] === "place") return !places ? "MP 코드를 쓰려면 work.js에 places(장소 목록)를 적어 주세요" : n >= 1 && n <= places ? "" : `MP${n} — 장소는 places의 1~${places}번이에요`;
-    if (R.SERIES[code] === "cut") return !cuts ? "EV 코드를 쓰려면 work.js에 cuts(컷씬 목록)를 적어 주세요" : n >= 1 && n <= cuts ? "" : `EV${n} — 컷씬은 cuts의 1~${cuts}번이에요`;
-    if (!cast.has(code)) return cast.has(code.toUpperCase()) ? `인물 코드는 대문자로 — ${code.toUpperCase()}${n}` : `인물 코드 "${code}"가 cast에 없어요`;
-    if (n >= R.SIT.length) return `번호 ${n} — 그림 칸은 기본 감정 0~${R.SIT.length - 1}번이에요`;
+    const e = book[code];
+    if (!e) return book[code.toUpperCase()] ? `코드는 대문자로 — ${code.toUpperCase()}${n}` : `코드 "${code}"가 cast에 없어요(장소는 MP, 컷씬은 EV)`;
+    if (e.kind !== "cast" && !e.max) return `${code} 코드를 쓰려면 work.js에 ${e.field}(${e.label} 목록)를 적어 주세요`;
+    if (n < e.min || n > e.max) return e.kind === "cast" ? `번호 ${n} — 그림 칸은 기본 감정 ${e.min}~${e.max}번이에요` : `${code}${n} — ${e.label}은 ${e.field}의 ${e.min}~${e.max}번이에요`;
     return "";
   };
 }
@@ -454,6 +454,7 @@ function checkWork(mod, { aud, row, id, wrel, R, errors, warnings }) {
     if (codes.has(x.code)) e(`cast 코드 "${x.code}"가 겹쳐요`);
     codes.add(x.code);
     if (x.look !== undefined && typeof x.look !== "string") e(`cast[${i}].look은 글이어야 해요`);
+    if (x.desc !== undefined && typeof x.desc !== "string") e(`cast[${i}].desc(도감 소개)는 글이어야 해요`);
     if (x.tags !== undefined && (typeof x.tags !== "string" || /[가-힣]/.test(x.tags))) e(`cast[${i}].tags는 영문 Danbooru 태그 글이어야 해요(한국어 외모는 look에)`);
   });
   // 다른 모습(폼): of는 같은 출연진의 본체 코드 — 폼의 폼은 안 됨
@@ -469,6 +470,19 @@ function checkWork(mod, { aud, row, id, wrel, R, errors, warnings }) {
     e('places(장소)는 [{ name: "장소 이름", desc?: "설명", tags?: "영문 태그" }, …] — 순서대로 MP1, MP2…');
   if (c.cuts !== undefined && (!Array.isArray(c.cuts) || c.cuts.some((x) => !isObj(x) || !str(x.title) || (x.when !== undefined && typeof x.when !== "string") || !engOk(x.tags))))
     e('cuts(컷씬)는 [{ title: "제목", when?: "나오는 조건", tags?: "영문 태그" }, …] — 순서대로 EV1, EV2…');
+  // 작품 명령어(선택): 대화방에서 !cmd를 치면 prompt가 AI에 연출 지시로 감(core/commands.js). 앱 명령어 이름·별칭(APP_COMMANDS)과 겹치면 안 됨
+  if (c.commands !== undefined) {
+    const reserved = new Set(R.APP_COMMANDS.flatMap((x) => [x.cmd, ...x.alias]).map((s) => s.toLowerCase())), seenCmd = new Set();
+    if (!Array.isArray(c.commands)) e('commands(명령어)는 [{ cmd: "이름", title: "제목", desc?: "설명", prompt: "AI 지시" }, …]');
+    else c.commands.forEach((x, i) => {
+      if (!isObj(x) || !str(x.cmd) || !str(x.title) || !str(x.prompt) || (x.desc !== undefined && typeof x.desc !== "string")) return e(`commands[${i}]: { cmd, title, desc?, prompt } 모양이어야 해요(cmd·title·prompt는 글)`);
+      if (!/^[^\s!！/]+$/.test(x.cmd)) e(`commands[${i}].cmd "${x.cmd}" — 공백·!·/ 없이 이름만 적어요(예: "퀘스트" → 대화에서 !퀘스트)`);
+      const k = x.cmd.toLowerCase();
+      if (reserved.has(k)) e(`commands[${i}].cmd "${x.cmd}"는 앱 명령어 이름이에요(${[...reserved].join("·")}) — 다른 이름으로`);
+      if (seenCmd.has(k)) e(`commands[${i}].cmd "${x.cmd}"가 겹쳐요`);
+      seenCmd.add(k);
+    });
+  }
   if (c.lookTags !== undefined && (typeof c.lookTags !== "string" || /[가-힣]/.test(c.lookTags))) e("lookTags는 영문 Danbooru 태그 글이어야 해요");
   if (c.lookTags !== undefined && c.cast !== undefined) w("cast가 있으면 lookTags는 쓰이지 않아요 — cast[].tags에 적어 주세요");
   if (c.lore !== undefined && (!Array.isArray(c.lore) || c.lore.some((x) => !isObj(x) || !Array.isArray(x.keys) || !x.keys.length || x.keys.some((k) => !str(k)) || !str(x.text) || (x.tags !== undefined && typeof x.tags !== "string"))))

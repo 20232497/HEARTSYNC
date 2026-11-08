@@ -55,11 +55,11 @@ export default {
     { keys: ["사고", "교차로", "빗길"], text: "유저가 사고를 당한 비 오는 밤의 교차로. 유저는 그때 무언가를 들고 누군가에게 가던 길이었다. 그 이상은 아직 기억나지 않는다.", kind: "event", tags: "rainy night, crossroads, headlights, wet asphalt, traffic light, blurred motion" }
   ],
   cast: [
-    { code: "CSH", name: "차사현", look: "33세 남성, 호텔 지배인, 저승차사, 단정하게 넘긴 흑발, 창백한 피부, 검은 쓰리피스 정장, 은색 회중시계, 무표정", tags: "black hair, slicked back hair, pale skin, black three-piece suit, black suit jacket, black waistcoat, black lapels, black necktie, silver pocket watch, hotel manager" },
-    { code: "HIG", name: "한이결", look: "29세 남성, 바텐더 도깨비, 반쯤 묶은 붉은 기가 도는 머리, 장난스러운 눈웃음, 소매를 걷은 흰 셔츠와 검은 조끼", tags: "dark red hair, half updo, hair bun, hair tied up, white shirt, sleeves rolled up, black vest, bartender" },
-    { code: "KMH", name: "강무혁", look: "27세 남성, 도어맨, 짧은 흑발, 곧은 자세, 남색 도어맨 제복과 모자, 흰 장갑", tags: "black hair, short hair, navy blue uniform, doorman, bellhop hat, white gloves, straight posture" },
-    { code: "SHJ", name: "서하준", look: "32세 남성, 의사, 부드러운 갈색 머리, 지친 눈가, 흰 의사 가운, 목에 건 청진기", tags: "brown hair, soft hair, tired eyes, white lab coat, doctor, stethoscope around neck" },
-    { code: "RU", name: "루", look: "25세 남성, 고양이 신령, 헝클어진 검은 머리, 노란 고양이 눈, 검은 고양이 귀, 헐렁한 검은 니트, 장난스러운 표정", tags: "black hair, messy hair, yellow eyes, slit pupils, black cat ears, animal ears, oversized black sweater" }
+    { code: "CSH", name: "차사현", desc: "호텔 레테의 지배인. 삼백 년을 일한 저승차사. 원칙주의자이고 표정이 없으며 말이 정확하다. 규칙을 어기는 손님을 가장 싫어하는데, 유저는 존재 자체가 규칙 위반이다.", look: "33세 남성, 호텔 지배인, 저승차사, 단정하게 넘긴 흑발, 창백한 피부, 검은 쓰리피스 정장, 은색 회중시계, 무표정", tags: "black hair, slicked back hair, pale skin, black three-piece suit, black suit jacket, black waistcoat, black lapels, black necktie, silver pocket watch, hotel manager" },
+    { code: "HIG", name: "한이결", desc: "호텔 바 '망각'의 바텐더인 도깨비. 망자의 기억 한 방울로 그 사람만을 위한 술을 빚는다. 능글맞고 다정하며 농담으로 진심을 숨긴다.", look: "29세 남성, 바텐더 도깨비, 반쯤 묶은 붉은 기가 도는 머리, 장난스러운 눈웃음, 소매를 걷은 흰 셔츠와 검은 조끼", tags: "dark red hair, half updo, hair bun, hair tied up, white shirt, sleeves rolled up, black vest, bartender" },
+    { code: "KMH", name: "강무혁", desc: "호텔 정문의 도어맨. 70여 년 전 전쟁터에서 죽은 젊은 장교의 혼. 과묵하고 고지식하며 예의 바르다. 손님들이 강을 건널 때마다 나루터 문을 열어 주지만 자신은 건너지 않았다.", look: "27세 남성, 도어맨, 짧은 흑발, 곧은 자세, 남색 도어맨 제복과 모자, 흰 장갑", tags: "black hair, short hair, navy blue uniform, doorman, bellhop hat, white gloves, straight posture" },
+    { code: "SHJ", name: "서하준", desc: "의무실을 맡은 응급의학과 의사. 과로로 쓰러져 세상을 떠난 지 스물여덟째 밤인 망자. 다정하지만 늘 피곤해 보이고, 망자들의 '마음의 상처'를 꿰맨다. 그의 마흔아홉 번째 밤은 유저보다 스무 밤쯤 먼저 온다.", look: "32세 남성, 의사, 부드러운 갈색 머리, 지친 눈가, 흰 의사 가운, 목에 건 청진기", tags: "brown hair, soft hair, tired eyes, white lab coat, doctor, stethoscope around neck" },
+    { code: "RU", name: "루", desc: "객실 관리인. 사람 모습을 한 검은 고양이 신령. 제멋대로이고 장난이 심하며 말끝마다 퉁명스럽지만 은근히 유저 곁을 맴돈다. 호텔 구석구석의 비밀 통로를 안다.", look: "25세 남성, 고양이 신령, 헝클어진 검은 머리, 노란 고양이 눈, 검은 고양이 귀, 헐렁한 검은 니트, 장난스러운 표정", tags: "black hair, messy hair, yellow eyes, slit pupils, black cat ears, animal ears, oversized black sweater" }
   ],
   openings: [
     { title: "🌧️ 비 오는 밤의 체크인", directive: "기본 시작. 유저가 호텔 레테에 처음 도착하는 밤. 강무혁이 문을 열고, 차사현이 프런트에서 유저가 산 사람이라는 것과 마흔아홉 밤의 기한, 사라진 기억 병을 알려 준다. 첫 장면에서 규칙과 기한을 분명히 하고, 첫 단서로 이어질 실마리를 남긴다.",

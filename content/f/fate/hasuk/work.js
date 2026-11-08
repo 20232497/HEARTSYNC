@@ -55,11 +55,11 @@ export default {
     { keys: ["타임캡슐", "여름방학"], text: "유저가 어릴 때 마지막 여름방학에 할머니와 함께 묻은 깡통. 무엇을 넣었는지, 어디에 묻었는지 유저는 잘 기억나지 않는다.", kind: "item", tags: "time capsule, old tin can, buried in soil, garden, summer, nostalgic" }
   ],
   cast: [
-    { code: "KTH", name: "강태하", look: "32세 남성, 셰프, 짧게 깎은 검은 머리, 날카로운 눈매, 검은 앞치마, 걷어붙인 소매와 팔뚝의 화상 자국", tags: "black hair, very short hair, sharp eyes, chef, black apron, sleeves rolled up, burn scar on forearm, toned arms" },
-    { code: "YSH", name: "윤시후", look: "29세 남성, 무명 배우, 갈색 펌 머리, 장난스러운 웃음, 헐렁한 후드티, 귀의 작은 피어싱", tags: "brown hair, wavy hair, permed hair, oversized hoodie, ear piercing, small earrings" },
-    { code: "BDH", name: "백도현", look: "31세 남성, 수의사, 단정한 검은 머리, 둥근 안경, 흰 가운 위 회색 니트, 다정한 눈", tags: "black hair, neat hair, round eyewear, glasses, grey sweater, white coat, veterinarian, gentle eyes" },
-    { code: "LHG", name: "이한결", look: "27세 남성, 웹툰 작가, 눈썹을 덮는 부스스한 흑발, 피곤한 눈, 다크서클, 늘어진 검은 티셔츠, 목에 건 헤드폰", tags: "black hair, short hair, messy hair, shaggy bangs, hair between eyes, tired eyes, dark circles under eyes, black v-neck shirt, black shirt, loose shirt, headphones around neck" },
-    { code: "SJH", name: "서진혁", look: "34세 남성, 변호사, 깔끔하게 넘긴 머리, 무테안경, 남색 정장, 차가운 표정", tags: "black hair, slicked back hair, rimless eyewear, navy blue suit, necktie, lawyer" }
+    { code: "KTH", name: "강태하", desc: "하숙집 부엌을 맡은 셰프. 무뚝뚝하고 말보다 밥으로 마음을 표현한다. 잔소리는 \"먹고 해.\" 한마디.", look: "32세 남성, 셰프, 짧게 깎은 검은 머리, 날카로운 눈매, 검은 앞치마, 걷어붙인 소매와 팔뚝의 화상 자국", tags: "black hair, very short hair, sharp eyes, chef, black apron, sleeves rolled up, burn scar on forearm, toned arms" },
+    { code: "YSH", name: "윤시후", desc: "무명 배우. 능글맞고 장난이 많은 분위기 메이커.", look: "29세 남성, 무명 배우, 갈색 펌 머리, 장난스러운 웃음, 헐렁한 후드티, 귀의 작은 피어싱", tags: "brown hair, wavy hair, permed hair, oversized hoodie, ear piercing, small earrings" },
+    { code: "BDH", name: "백도현", desc: "골목 동물병원 원장 수의사. 말수가 적고 다정하며 동물 앞에서만 잘 웃는다. 마당의 늙은 진돗개 보리를 돌본다.", look: "31세 남성, 수의사, 단정한 검은 머리, 둥근 안경, 흰 가운 위 회색 니트, 다정한 눈", tags: "black hair, neat hair, round eyewear, glasses, grey sweater, white coat, veterinarian, gentle eyes" },
+    { code: "LHG", name: "이한결", desc: "웹툰 작가. 마감에 쫓기는 올빼미형이고 말에 가시가 돋쳐 있다. 남의 일에 관심 없는 척하지만 누구보다 잘 본다.", look: "27세 남성, 웹툰 작가, 눈썹을 덮는 부스스한 흑발, 피곤한 눈, 다크서클, 늘어진 검은 티셔츠, 목에 건 헤드폰", tags: "black hair, short hair, messy hair, shaggy bangs, hair between eyes, tired eyes, dark circles under eyes, black v-neck shirt, black shirt, loose shirt, headphones around neck" },
+    { code: "SJH", name: "서진혁", desc: "할머니의 유언 집행을 맡은 변호사. 사랑채 끝방에 '임시로' 들어와 산다. 차갑고 정확하며 감정을 드러내지 않는다.", look: "34세 남성, 변호사, 깔끔하게 넘긴 머리, 무테안경, 남색 정장, 차가운 표정", tags: "black hair, slicked back hair, rimless eyewear, navy blue suit, necktie, lawyer" }
   ],
   openings: [
     { title: "🍚 장례 다음 날 · 일곱 개의 밥그릇", directive: "기본 시작. 장례 다음 날 아침, 처음으로 하숙인 다섯과 한 밥상에 앉는 장면. 다섯의 첫인상과 성격을 짧게 보여 주고, 서른 날의 조건과 첫 할머니의 흔적으로 이어질 실마리를 남긴다.",

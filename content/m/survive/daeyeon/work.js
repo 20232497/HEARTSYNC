@@ -54,11 +54,11 @@ export default {
     { keys: ["통로", "비밀 통로"], text: "궁 지하에는 선대 왕이 만든 비밀 통로가 있다. 국무당 단비만 지도를 안다. 동궁, 수라간 뒤뜰, 대비전 담 아래로 이어진다.", kind: "place", tags: "secret underground passage, stone tunnel, torch, joseon palace, darkness" }
   ],
   cast: [
-    { code: "IHW", name: "이화", look: "22세 여성, 상복 차림의 공주, 흰 비단 당의, 올림머리에 은비녀, 차가운 눈매", tags: "black hair, hair up, silver hairpin, forehead, parted bangs, narrow eyes, thin eyebrows, mole under eye, binyeo, white hanbok, korean clothes, jeogori, goreum, long sleeves, white chima skirt, joseon princess" },
-    { code: "SRY", name: "설련", look: "24세 여성, 포도청 다모 복장, 질끈 묶은 머리, 쇠도리깨, 뺨의 작은 흉터", tags: "black hair, tied hair, side-swept bangs, sharp eyes, thick eyebrows, korean clothes, hanbok, dark blue jeogori, joseon dynasty, iron baton, small scar on cheek" },
-    { code: "JOK", name: "정옥", look: "23세 여성, 내의원 의녀, 연두색 저고리, 단정한 쪽머리, 약초 바구니", tags: "black hair, neat chignon, forehead, parted bangs, droopy eyes, soft eyebrows, light green jeogori, hanbok, herb basket, physician" },
-    { code: "WLH", name: "월하", look: "27세 여성, 기방 행수, 짙은 남색 치마, 화려한 떨잠, 접부채, 웃는 눈", tags: "black hair, elaborate updo, ornate hair ornament, forehead, upturned eyes, arched eyebrows, beauty mark, dark navy chima, hanbok, folding fan, gisaeng" },
-    { code: "DNB", name: "단비", look: "25세 여성, 국무당, 붉은 무복과 갓, 방울과 부채, 겁먹은 큰 눈", tags: "black hair, round eyes, straight eyebrows, red shaman robe, gat, korean hat, hanbok, bells, fan, shaman" }
+    { code: "IHW", name: "이화", desc: "세자의 누나 화령공주. 냉정하고 영리하다. 동생을 살리는 것만이 목적이라 유저를 도구로 쓴다.", look: "22세 여성, 상복 차림의 공주, 흰 비단 당의, 올림머리에 은비녀, 차가운 눈매", tags: "black hair, hair up, silver hairpin, forehead, parted bangs, narrow eyes, thin eyebrows, mole under eye, binyeo, white hanbok, korean clothes, jeogori, goreum, long sleeves, white chima skirt, joseon princess" },
+    { code: "SRY", name: "설련", desc: "포도청 다모(여자 수사관). 유저 감시 담당. 거칠고 곧다. 쇠도리깨의 달인.", look: "24세 여성, 포도청 다모 복장, 질끈 묶은 머리, 쇠도리깨, 뺨의 작은 흉터", tags: "black hair, tied hair, side-swept bangs, sharp eyes, thick eyebrows, korean clothes, hanbok, dark blue jeogori, joseon dynasty, iron baton, small scar on cheek" },
+    { code: "JOK", name: "정옥", desc: "내의원 의녀. 약초와 독에 밝고, 유저의 '이상한 의술'에 매혹된다. 조용하고 집요하다.", look: "23세 여성, 내의원 의녀, 연두색 저고리, 단정한 쪽머리, 약초 바구니", tags: "black hair, neat chignon, forehead, parted bangs, droopy eyes, soft eyebrows, light green jeogori, hanbok, herb basket, physician" },
+    { code: "WLH", name: "월하", desc: "도성 최고 기방 '청월루'의 행수. 정보를 사고파는 여우. 외척과 영원군 양쪽에 줄을 대고 있다.", look: "27세 여성, 기방 행수, 짙은 남색 치마, 화려한 떨잠, 접부채, 웃는 눈", tags: "black hair, elaborate updo, ornate hair ornament, forehead, upturned eyes, arched eyebrows, beauty mark, dark navy chima, hanbok, folding fan, gisaeng" },
+    { code: "DNB", name: "단비", desc: "국무당. 예지몽을 꾸고 궁의 비밀 통로를 안다. 겁이 많지만 사람의 거짓말을 귀신같이 가려낸다.", look: "25세 여성, 국무당, 붉은 무복과 갓, 방울과 부채, 겁먹은 큰 눈", tags: "black hair, round eyes, straight eyebrows, red shaman robe, gat, korean hat, hanbok, bells, fan, shaman" }
   ],
   openings: [
     { title: "⚖️ 참형까지 이레 · 옥사에서", directive: "기본 시작. 이화와 설련이 옥사로 찾아온다. 첫 장면에서 사건 개요와 7일 기한을 분명히 하고, 첫 단서로 이어질 실마리를 하나 남긴다.",

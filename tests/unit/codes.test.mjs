@@ -1,13 +1,24 @@
 // 그림 코드 체계(src/js/images/codes.js)·감정 칸 낱말 점수(src/js/images/situations.js) 단위 테스트 — 둘 다 순수 모듈이라 Node가 바로 import
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { CODE_RE, SERIES, codeKind, fallbackSits, imgTag, imgTags, sitOf } from "../../src/js/images/codes.js";
+import { CODE_RE, SERIES, codeKind, codebook, fallbackSits, imgTag, imgTags, sitOf } from "../../src/js/images/codes.js";
 import { sitHints, sitName, sitScores } from "../../src/js/images/situations.js";
 
-test("CODE_RE: 인물 코드는 영문 대문자 1~4자(숫자·소문자 안 됨), MP·EV는 예약", () => {
+test("CODE_RE: 인물 코드는 영문 대문자 1~4자(숫자·소문자 안 됨), MP·EV는 예약 시리즈", () => {
   for (const ok of ["HSY", "C", "KAEL", "RU"]) assert.ok(CODE_RE.test(ok), ok);
   for (const bad of ["hsy", "p1", "HSY3", "ABCDE", ""]) assert.ok(!CODE_RE.test(bad), bad);
-  assert.deepEqual(SERIES, { MP: "place", EV: "cut" });
+  assert.deepEqual(Object.keys(SERIES), ["MP", "EV"]);
+  assert.deepEqual([SERIES.MP.kind, SERIES.MP.field, SERIES.EV.kind, SERIES.EV.field], ["place", "places", "cut", "cuts"]);
+});
+test("codebook: 인물 코드는 0~14(폼은 of), MP·EV는 목록 길이만큼 1부터(목록이 없으면 max 0) — 해석의 단일 출처", () => {
+  const c = { cast: [{ code: "HSY", name: "한서윤" }, { code: "HSYA", name: "각성한 한서윤", of: "HSY" }], places: [{ name: "광장", desc: "첫 전장" }] };
+  const b = codebook(c);
+  assert.deepEqual([b.HSY.kind, b.HSY.min, b.HSY.max, b.HSY.name, b.HSY.of], ["cast", 0, 14, "한서윤", ""]);
+  assert.equal(b.HSYA.of, "HSY");
+  assert.deepEqual([b.MP.kind, b.MP.min, b.MP.max, b.MP.items[0].name, b.MP.label], ["place", 1, 1, "광장", "장소"]);
+  assert.deepEqual([b.EV.kind, b.EV.max, b.EV.items], ["cut", 0, []]);
+  assert.equal(codebook(null).MP.kind, "place");
+  assert.equal(codebook({}).HSY, undefined);
 });
 test("sitOf(예전 태그): 0~14 번호는 그대로, 조합·세 자리 코드는 처음 나오는 0~14 번호, 없으면 1", () => {
   assert.equal(sitOf("3"), 3);

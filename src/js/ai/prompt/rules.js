@@ -2,6 +2,7 @@
 import { LEN } from "../models.js";
 import { multiPairs } from "../parse.js";
 import { usedOpeners } from "./input.js";
+import { getChar } from "../../core/character.js";
 import { MARK, SIT } from "../../core/constants.js";
 import { curText } from "../../core/rooms.js";
 import { imgTags } from "../../images/codes.js";
@@ -35,9 +36,10 @@ export function rulesPrompt(r, lore = [], hist = r.msgs) {
   const sn = (name) => SIT.indexOf(name) + " " + name;
   // 인물별로 그림이 들어 있는 칸 번호(준비된 그림 안에서 고르게)
   const ready = cast.map((x) => { const m = imagesOf(c)[x.code] || {}; const ns = Object.keys(m).filter((k) => validRef(m[k])).map(Number).filter((n) => n >= 0 && n < SIT.length).sort((a, b) => a - b); return ns.length ? `${x.name} ${ns.join("·")}` : ""; }).filter(Boolean);
-  // 장소(MP<n>)·컷씬(EV<n>) 코드 — 작품에 적혀 있을 때만
-  const places = (c.places || []).map((p, i) => `MP${i + 1}=${p.name}`).join(", ");
-  const cuts = (c.cuts || []).map((e, i) => cutsUsed.has(i + 1) ? "" : `EV${i + 1}=${e.title}${e.when ? "(" + e.when + ")" : ""}`).filter(Boolean).join(", ");
+  // 장소(MP<n>)·컷씬(EV<n>) 코드 — 최신 작품(getChar)에 적혀 있을 때만(작품을 고치면 열린 방에도 바로)
+  const live = getChar(c.id) || c;
+  const places = (live.places || []).map((p, i) => `MP${i + 1}=${p.name}`).join(", ");
+  const cuts = (live.cuts || []).map((e, i) => cutsUsed.has(i + 1) ? "" : `EV${i + 1}=${e.title}${e.when ? "(" + e.when + ")" : ""}`).filter(Boolean).join(", ");
   return `너는 한국어 캐릭터 롤플레이 플랫폼의 연기 엔진이다. 아래 설정의 ${c.world_mode ? "세계관 내레이터로서 모든 인물과 세계를" : "캐릭터 「" + c.name + "」를"} 연기하며 유저와 함께 이야기를 만든다.
 
 [작품] ${c.title}

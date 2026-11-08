@@ -1,5 +1,7 @@
 /* 대화방 화면 뼈대·입력창·게이지 */
 import { MODELS } from "../../ai/models.js";
+import { getChar } from "../../core/character.js";
+import { commandHelp, findCommand, parseCommand } from "../../core/commands.js";
 import { migrateRoom, roomKey } from "../../core/rooms.js";
 import { S, gen, room, setRoom } from "../../core/state.js";
 import { KV } from "../../core/storage.js";
@@ -80,13 +82,13 @@ export async function viewChat(id) {
   bindStick($("#log"));
   renderLog(true); updateMeter(); updateComposer();
 }
-/* !명령어 — AI를 부르지 않고 앱이 바로 처리(하트·턴을 쓰지 않음): !상태창 · !갤러리(!도감) · !지도(!장소) · !도움말. 모르는 !글은 그대로 AI에 보냄 */
-const COMMANDS = { "상태창": "status", "상태": "status", "갤러리": "gallery", "도감": "gallery", "지도": "places", "장소": "places" };
+/* !명령어(core/commands.js): 앱 명령어(!상태창·!갤러리·!지도·!도움말)는 AI를 부르지 않고 드로어를 엶(하트·턴을 쓰지 않음).
+   작품 명령어(work.js commands)와 모르는 !글은 false → 그대로 AI에 보냄(작품 명령어는 buildInput이 연출 지시로 바꿈) */
 function runCommand(t) {
-  const m = t.match(/^[!！]\s*(\S+)$/); if (!m) return false;
-  if (/^(도움말|명령어|help)$/i.test(m[1])) { flashHint("명령어: !상태창 · !갤러리 · !지도 — AI를 부르지 않아요. // 로 시작하면 연출 지시"); return true; }
-  const view = COMMANDS[m[1]]; if (!view) return false;
-  openRoomDrawer(view); return true;
+  const live = getChar(room.char.id) || room.char, f = findCommand(parseCommand(t), live);
+  if (!f || !f.app) return false;
+  if (f.app.view === "help") { flashHint("명령어: " + commandHelp(live) + " — // 로 시작하면 연출 지시"); return true; }
+  openRoomDrawer(f.app.view); return true;
 }
 let hintTimer = null;
 export function flashHint(msg) {

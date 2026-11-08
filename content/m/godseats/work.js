@@ -42,14 +42,20 @@ export default {
   secret: "탑을 만든 것은 신들이 아니라 '이름 없는 관객'이며, 30층의 커튼콜은 관람석의 신들까지 무대 위로 끌어내리는 의식이다.",
   fields: ["📅 날짜", "📍 위치", "Lv", "S 코인", "EXP", "HP", "MP", "스탯", "📜 기록", "⚡ 스킬", "✨ 계약", "💎 정수", "🧪 회복", "❤️ 호감도", "퀘스트", "보상"], gauge: "HP",
   cast: [
-    { code: "HSY", name: "한서윤", look: "26세 여성, 높게 묶은 흑발 포니테일, 날카로운 눈매, 찢어진 흰 펜싱 재킷, 레이피어", tags: "black hair, high ponytail, side-swept bangs, arched eyebrows, sharp eyes, white fencing uniform, high collar, rapier" },
-    { code: "DHR", name: "도하린", look: "27세 여성, 헝클어진 갈색 단발, 피 묻은 수술복 위 회색 카디건", tags: "brown hair, messy bob cut, parted bangs, droopy eyes, thick eyebrows, bloodstained scrubs, grey cardigan" },
-    { code: "RGN", name: "류건", look: "29세 남성, 짧은 머리, 넓은 어깨, 그을린 방화복, 버스 문짝 방패", tags: "black hair, very short hair, broad shoulders, scorched firefighter jacket, improvised shield, rectangular metal shield" },
-    { code: "SRN", name: "세레나 바이스", look: "27세 여성, 은발 웨이브, 삼각모, 붉은 코트, 쌍권총", tags: "silver hair, wavy hair, side-swept bangs, upturned eyes, arched eyebrows, beauty mark, pirate hat, red coat, pirate, dual wielding, pistols" },
-    { code: "YNH", name: "연화", look: "25세 여성, 검은 땋은 머리, 무림 객잔 점소이 복장, 소매 속 비수", tags: "black hair, single braid, narrow eyes, upturned eyes, thin eyebrows, hanfu, chinese clothes, inn servant, hidden dagger" },
-    { code: "YCI", name: "윤채이", look: "30세 여성, 둥근 안경, 낡은 트렌치코트, 커피 텀블러", tags: "black hair, parted bangs, narrow eyes, thin eyebrows, round eyewear, glasses, worn trench coat, journalist" },
-    { code: "KYL", name: "카일 노스", look: "26세 남성, 모래색 머리, 판초, 턱의 흉터, 리볼버", tags: "sandy blonde hair, brown cape, cloak, white shirt, brown vest, small chin scar, revolver, gunslinger" },
-    { code: "BYU", name: "백여울", look: "25세 여성, 붉은 댕기, 개량 한복 점퍼, 손에 든 부적", tags: "black hair, long braid, red ribbon on braid, round eyes, straight eyebrows, mole under eye, modern hanbok, korean clothes, cropped jacket" }
+    { code: "HSY", name: "한서윤", desc: "전 펜싱 국가대표. 레이피어 딜러. 냉정하고 자존심이 세지만 칭찬에 약하다. 높게 묶은 흑발 포니테일, 날카로운 눈매, 찢어진 흰 펜싱 재킷.", look: "26세 여성, 높게 묶은 흑발 포니테일, 날카로운 눈매, 찢어진 흰 펜싱 재킷, 레이피어", tags: "black hair, high ponytail, side-swept bangs, arched eyebrows, sharp eyes, white fencing uniform, high collar, rapier" },
+    { code: "DHR", name: "도하린", desc: "응급의학과 레지던트, 치유 각성. 다정한데 입이 험하다. 헝클어진 갈색 단발, 피 묻은 수술복 위 회색 카디건.", look: "27세 여성, 헝클어진 갈색 단발, 피 묻은 수술복 위 회색 카디건", tags: "brown hair, messy bob cut, parted bangs, droopy eyes, thick eyebrows, bloodstained scrubs, grey cardigan" },
+    { code: "RGN", name: "류건", desc: "전직 소방관, 방패 탱커. 우직하고 말수가 적다. 짧은 머리, 넓은 어깨, 그을린 방화복.", look: "29세 남성, 짧은 머리, 넓은 어깨, 그을린 방화복, 버스 문짝 방패", tags: "black hair, very short hair, broad shoulders, scorched firefighter jacket, improvised shield, rectangular metal shield" },
+    { code: "SRN", name: "세레나 바이스", desc: "3층 해적 군도 출신 항해사, '무대 사고'로 1층에 떨어졌다. 쌍권총. 능청스럽고 도박을 좋아한다. 은발 웨이브, 삼각모, 붉은 코트.", look: "27세 여성, 은발 웨이브, 삼각모, 붉은 코트, 쌍권총", tags: "silver hair, wavy hair, side-swept bangs, upturned eyes, arched eyebrows, beauty mark, pirate hat, red coat, pirate, dual wielding, pistols" },
+    { code: "YNH", name: "연화", desc: "2층 무림 객잔의 점소이, 실은 마교의 첩자. 암기와 독. 웃는 얼굴로 거짓말한다. 검은 땋은 머리, 소매 속 비수.", look: "25세 여성, 검은 땋은 머리, 무림 객잔 점소이 복장, 소매 속 비수", tags: "black hair, single braid, narrow eyes, upturned eyes, thin eyebrows, hanfu, chinese clothes, inn servant, hidden dagger" },
+    { code: "YCI", name: "윤채이", desc: "범죄심리 프로파일러. 분석·약점 간파. 냉소적이고 커피 중독. 둥근 안경, 낡은 트렌치코트.", look: "30세 여성, 둥근 안경, 낡은 트렌치코트, 커피 텀블러", tags: "black hair, parted bangs, narrow eyes, thin eyebrows, round eyewear, glasses, worn trench coat, journalist" },
+    { code: "KYL", name: "카일 노스", desc: "4층 황야 출신 현상금 사냥꾼, 리볼버. 과묵하고 의리가 있다. 모래색 머리, 판초, 턱의 흉터.", look: "26세 남성, 모래색 머리, 판초, 턱의 흉터, 리볼버", tags: "sandy blonde hair, brown cape, cloak, white shirt, brown vest, small chin scar, revolver, gunslinger" },
+    { code: "BYU", name: "백여울", desc: "무당 집안 막내. 부적·퇴마·소환. 겁이 많지만 귀신 앞에선 단호하다. 붉은 댕기, 개량 한복 점퍼.", look: "25세 여성, 붉은 댕기, 개량 한복 점퍼, 손에 든 부적", tags: "black hair, long braid, red ribbon on braid, round eyes, straight eyebrows, mole under eye, modern hanbok, korean clothes, cropped jacket" }
+  ],
+  // 작품 명령어(!이름) — 상세 페이지 명령어 카드에 보이고, 대화방에서 치면 prompt가 AI에 연출 지시로 감(core/commands.js). 앱 명령어(!상태창·!갤러리·!지도·!도움말)와 다른 이름으로
+  commands: [
+    { cmd: "퀘스트", title: "퀘스트 정리", desc: "지금 층의 퀘스트 단계·목표·보상과 남은 적을 정리해 보여 줘요.", prompt: "장면을 진행하지 말고, 현재 층의 퀘스트 단계(n/5)·목표·보상·남은 적을 시스템 메시지 [대괄호]로 정리한 뒤 유저가 고를 다음 행동 셋을 제시한다." },
+    { cmd: "관람석", title: "관람석 중계", desc: "하늘의 관람신들이 지금까지의 활약을 두고 떠드는 장면을 봐요.", prompt: "유저의 최근 행동을 두고 관람신 3~4명이 관람석에서 수다·훈수·내기를 하는 시스템 메시지 장면을 쓴다. 후원(S 코인)이 있으면 금액을 적고 상태창에 반영한다. 무대 위 장면은 진행하지 않는다." },
+    { cmd: "쉼터", title: "막간의 쉼터", desc: "안전지대로 가서 휴식·상점·파티원 대화를 해요(3층 클리어 뒤부터).", prompt: "3층을 클리어했으면 파티를 막간의 쉼터로 옮겨 휴식·상점·파티원 대화 장면을 연다. 아직이면 시스템 메시지로 조건을 알리고 지금 장면은 그대로 둔다." }
   ],
   openings: [
     { title: "😊 이지 모드 · 든든한 첫 파티", directive: "이지 모드. 초기 파티: 한서윤, 도하린, 류건. 셋 모두 유저에게 우호적이다. 전투 난이도는 낮게, 보상은 넉넉하게.",

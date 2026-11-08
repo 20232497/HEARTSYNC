@@ -1,7 +1,8 @@
 /* 표지·장면 그림 HTML(coverHTML·figHTML·portraitHTML·artHTML — 그림이 없으면 색 카드), 그림 태그 해석(tagInfo), 라이트박스 */
-import { MOTIFS, PALETTES, SIT, SIT_TINT } from "../core/constants.js";
+import { getChar } from "../core/character.js";
+import { MOTIFS, PALETTES, SIT_TINT } from "../core/constants.js";
 import { esc } from "../core/util.js";
-import { codeKind } from "../images/codes.js";
+import { codebook } from "../images/codes.js";
 import { pickImg } from "../images/pick.js";
 import { sitName } from "../images/situations.js";
 import { IMG } from "../services/images.js";
@@ -24,14 +25,16 @@ export function artHTML(c, cast, sit, label) {
  * @returns {{kind: "cast"|"place"|"cut", code: string, sit: number, name: string, label: string, ref: string|null}|null}
  */
 export function tagInfo(c, t) {
-  const kind = codeKind(t.code, c);
-  if (kind === "cast") {
-    const x = c.cast.find((y) => y.code === t.code), sit = t.sit < SIT.length ? t.sit : 1;
-    return { kind, code: t.code, sit, name: x.name, label: sitName(sit), ref: pickImg(c, t.code, sit) };
+  // 인물은 방 안의 작품 사본(예전 방도 그 인물로 그림), 장소·컷씬 목록은 최신 작품에서(작품을 고치면 열린 방에도 바로)
+  const live = getChar(c.id), e = codebook(live ? { ...c, places: live.places, cuts: live.cuts } : c)[t.code];
+  if (!e) return null;
+  if (e.kind === "cast") {
+    const sit = t.sit <= e.max ? t.sit : 1;
+    return { kind: e.kind, code: t.code, sit, name: e.name, label: sitName(sit), ref: pickImg(c, t.code, sit) };
   }
-  const item = kind === "place" ? (c.places || [])[t.sit - 1] : kind === "cut" ? (c.cuts || [])[t.sit - 1] : null;
+  const item = (e.items || [])[t.sit - 1];
   if (!item) return null;
-  return { kind, code: t.code, sit: t.sit, name: item.name || item.title || t.code + t.sit, label: kind === "place" ? "장소" : "컷씬", ref: pickImg(c, t.code, t.sit) };
+  return { kind: e.kind, code: t.code, sit: t.sit, name: item[e.nameKey] || t.code + t.sit, label: e.label, ref: pickImg(c, t.code, t.sit) };
 }
 /* 본문 태그 [[코드번호]]의 그림: 인물은 그 칸 → 1 → 0 순으로 있는 그림, 장소·컷씬은 그 번호의 그림, 없으면 아트 카드. 작품에 없는 코드는 빈 문자열 */
 export function figHTML(c, t) {

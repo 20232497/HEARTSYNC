@@ -71,10 +71,11 @@ export default {
   secret: "숨은 설정",
   fields: ["📅 날짜", "📍 장소", "❤️ 호감도"], gauge: "❤️ 호감도",
   lore: [ { keys: ["키워드", "별칭"], text: "대화에 키워드가 나오면 AI에 전달할 설명", kind: "place", tags: "ruined cathedral, stained glass, moonlight" } ],
-  cast: [ { code: "KAS", name: "카시안", look: "29세 남성, 흑발, …", tags: "black hair, golden eyes, black military uniform, …" },
+  cast: [ { code: "KAS", name: "카시안", desc: "독자에게 보이는 소개(비밀은 persona에만)", look: "29세 남성, 흑발, …", tags: "black hair, golden eyes, black military uniform, …" },
           { code: "KASD", name: "카시안(용의 모습)", of: "KAS", look: "…", tags: "…" } ],   // 다른 모습(폼)은 별도 코드 — 선택
   places: [ { name: "루벨리아 황궁 알현실", desc: "…", tags: "throne room, gothic, …" } ],   // 장소 → MP1, MP2… — 선택
   cuts: [ { title: "첫 입맞춤", when: "카시안이 처음으로 먼저 입을 맞추는 순간", tags: "…" } ],   // 컷씬 → EV1, EV2… — 선택
+  commands: [ { cmd: "알현", title: "황제 알현", desc: "독자용 설명", prompt: "AI에게 주는 지시 — 장면을 알현실로 옮기고 …" } ],   // 대화방 !알현 — 선택
   openings: [ { title: "시작 상황 이름", directive: "AI에게만 주는 지시", status: { "📅 날짜": "1일차" }, text: "첫 장면 …\n\n[[KAS0]]\n\n카시안: \"…\"" } ]
 };
 ```
@@ -85,9 +86,10 @@ export default {
 | `pal`·`motif`·`glyph` | 표지 색(0~7)·무늬(rain·city·stars·glow·petals·ash·curtain)·가운데 한 글자 |
 | `world_mode` | 여러 인물이 나오는 군상극(세계관). 1:1 캐릭터면 빼요 |
 | `fields`·`gauge` | 상태창 칸 이름(3글자 안팎)과 관계 게이지 칸. 시작 상황 `status`의 칸은 `fields`에 있어야 해요 |
-| `cast` | 출연진. `code`는 **인물 코드 — 영문 대문자 1~4자**(한서윤 → `HSY`, 카시안 → `KAS`; 숫자는 안 되고 `MP`·`EV`는 예약). 그림 코드는 인물 코드 바로 뒤에 감정·행동 번호를 붙인 한 토큰이에요: 본문 태그 `[[HSY3]]`, 그림 파일 `HSY3.webp`(번호는 기본 감정 0~14 — `src/js/core/constants.js`의 `SIT`, 아래 '그림 코드 체계'). `of`(선택)는 다른 모습(폼)일 때 본체 인물의 코드 — 폼은 별도 코드로 그림을 갖고 AI는 '그 모습일 때만' 그 코드를 써요. `look`은 한국어 외모(AI가 읽고, 성별로 작품의 aud를 짐작). `tags`(선택)는 그 인물의 외모를 영문 Danbooru 태그로 적은 글 — 앱은 쓰지 않고, **앱 밖에서 그림을 만들 때** 같은 인물을 매번 같은 생김새로 맞추는 기준이에요(한국어는 넣지 않기 — 빌드가 막음). 그림을 위한 메모: 옷·머리만 적으면 인물끼리 얼굴이 같아지니 눈매(`narrow eyes`·`droopy eyes`·`round eyes` 등)·눈썹·앞머리(`parted bangs`·`side-swept bangs`·`forehead`)·점·주근깨도 적고, `big eyes`처럼 어려 보이는 낱말과 손에 든 물건(`holding …`)은 넣지 않기. 무기는 검 길이 이하를 기본으로(긴 막대 끝에 날이 달린 무기는 세로 그림에서 잘려요). 색이나 옷이 번지는 낱말도 조심하기 — `red hair ribbon`은 머리칼을 붉게, `white dress shirt`는 치마를, `mourning dress`는 서양 드레스를, `police`는 현대 경찰복을 불러요. 1:1 캐릭터도 `cast` 한 명을 적어요(`f/kael` → `KAEL`). 빼면 앱이 설정의 `외모:` 줄로 한 명(코드 `C`)을 만들고 그때는 맨 위 `lookTags`가 `tags` 자리 |
+| `cast` | 출연진. `code`는 **인물 코드 — 영문 대문자 1~4자**(한서윤 → `HSY`, 카시안 → `KAS`; 숫자는 안 되고 `MP`·`EV`는 예약). 그림 코드는 인물 코드 바로 뒤에 감정·행동 번호를 붙인 한 토큰이에요: 본문 태그 `[[HSY3]]`, 그림 파일 `HSY3.webp`(번호는 기본 감정 0~14 — `src/js/core/constants.js`의 `SIT`, 아래 '그림 코드 체계'). `of`(선택)는 다른 모습(폼)일 때 본체 인물의 코드 — 폼은 별도 코드로 그림을 갖고 AI는 '그 모습일 때만' 그 코드를 써요. `desc`(선택)는 상세 페이지 인물 시트(도감)에 보이는 독자용 소개 — 비밀·진상은 `persona`에만 적어요. `look`은 한국어 외모(AI가 읽고, 성별로 작품의 aud를 짐작). `tags`(선택)는 그 인물의 외모를 영문 Danbooru 태그로 적은 글 — 앱은 쓰지 않고, **앱 밖에서 그림을 만들 때** 같은 인물을 매번 같은 생김새로 맞추는 기준이에요(한국어는 넣지 않기 — 빌드가 막음). 그림을 위한 메모: 옷·머리만 적으면 인물끼리 얼굴이 같아지니 눈매(`narrow eyes`·`droopy eyes`·`round eyes` 등)·눈썹·앞머리(`parted bangs`·`side-swept bangs`·`forehead`)·점·주근깨도 적고, `big eyes`처럼 어려 보이는 낱말과 손에 든 물건(`holding …`)은 넣지 않기. 무기는 검 길이 이하를 기본으로(긴 막대 끝에 날이 달린 무기는 세로 그림에서 잘려요). 색이나 옷이 번지는 낱말도 조심하기 — `red hair ribbon`은 머리칼을 붉게, `white dress shirt`는 치마를, `mourning dress`는 서양 드레스를, `police`는 현대 경찰복을 불러요. 1:1 캐릭터도 `cast` 한 명을 적어요(`f/kael` → `KAEL`). 빼면 앱이 설정의 `외모:` 줄로 한 명(코드 `C`)을 만들고 그때는 맨 위 `lookTags`가 `tags` 자리 |
 | `places` | 장소 목록(선택) `[{ name, desc, tags }]`. 순서가 곧 코드 — 첫 항목이 `MP1`, 둘째가 `MP2`…. AI는 장면의 장소가 바뀔 때 본문 첫 줄에 `[[MP1]]`을 넣고, 대화방의 `!지도` 명령어가 목록을 보여 줘요. 그림은 `images/MP1.webp`. `tags`는 그 장소를 그릴 영문 낱말(앱 밖에서) |
 | `cuts` | 컷씬 목록(선택) `[{ title, when, tags }]`. 순서가 곧 코드 — `EV1`, `EV2`…. `when`(나오는 조건)이 처음 이루어지는 순간 AI가 `[[EV1]]`을 한 번 넣어요. 그림은 `images/EV1.webp` |
+| `commands` | 작품 명령어(선택) `[{ cmd, title, desc, prompt }]`. 상세 페이지 '명령어' 카드에 보이고, 대화방 입력창에 `!cmd`를 치면 말풍선은 그대로 두고 AI에는 `prompt`가 `//` 연출 지시로 가요(예: `m/godseats`의 `!퀘스트`·`!관람석`·`!쉼터`). 앱 명령어 이름(`상태창`·`상태`·`갤러리`·`도감`·`지도`·`장소`·`도움말`·`명령어`·`help`)은 쓸 수 없어요(빌드 검사) |
 | `lore` | 키워드북 `[{ keys, text, kind, tags }]`. 대화에 `keys`가 나오면 `text`를 AI에 전달해요. `kind`는 항목 종류 — `person` 인물 · `creature` 동물·존재 · `place` 장소 · `item` 물건 · `event` 사건 · `group` 세력 · `concept` 설정(앱의 `LORE_KINDS`, 상세 페이지 세계관 카드의 머리표). `tags`는 그 항목을 그릴 영문 낱말(앱 밖에서 `lore-<n>` 그림을 만들 때). 둘 다 빠지면 빌드 경고 |
 | `artTags` | 그 세계관의 영문 낱말(시대·장소·조명·분위기, 예: `joseon dynasty, korean royal palace, paper lanterns, night`). 앱 밖에서 표지·세계관 일러스트를 만들 때 붙여 작품마다 분위기를 맞춰요 |
 | `openings` | 시작 상황(게임 모드). 인물이 처음 등장하는 줄 위에 `[[코드0]]`(예: `[[KAS0]]` — 코드가 `cast`에 있고 번호가 0~14인지 빌드가 검사). 예전 `[[img:코드:번호]]` 모양은 더 쓰지 않아요 |
@@ -106,7 +108,9 @@ export default {
 
 - 감정·행동 번호(`src/js/core/constants.js`의 `SIT`): 0 프로필 · 1 기본 · 2 웃음 · 3 부끄러움 · 4 슬픔 · 5 놀람 · 6 분노 · 7 삐침 · 8 공포 · 9 부상 · 10 회복 · 11 휴식 · 12 공격(맨손·무기 모두) · 13 각성 · 14 설렘. 모든 인물이 같은 표를 써요
 - 다른 모습(폼)은 번호가 아니라 **다른 인물 코드**예요(`cast`에 `of: "본체 코드"`로 한 명 더) — 어린 모습·짐승 모습·가면처럼 생김새가 통째로 바뀔 때. 감정이 바뀌는 건 번호로
-- 본문에서는 `[[HSY3]]`처럼 대괄호 둘로 감싸요(AI가 쓰고, 앱이 그림으로 바꿈). 대화방 입력의 `!상태창`·`!갤러리`·`!지도`·`!도움말`은 AI를 부르지 않고 앱이 바로 처리하는 명령어예요
+- 본문에서는 `[[HSY3]]`처럼 대괄호 둘로 감싸요(AI가 쓰고, 앱이 그림으로 바꿈). 코드를 해석하는 곳(프롬프트·렌더러·갤러리·빌드 검사·도감)은 모두 `src/js/images/codes.js`의 `codebook(작품)` 하나를 써요 — 시리즈를 더하려면 `SERIES`에 한 줄
+- 명령어는 두 층이에요. **앱 명령어** `!상태창`·`!갤러리`·`!지도`·`!도움말`(`src/js/core/commands.js` APP_COMMANDS)은 어느 작품에서나 AI를 부르지 않고 앱이 처리하고, **작품 명령어**(`commands`)는 그 작품의 이야기 장치로 AI에 연출 지시를 보내요. 둘 다 상세 페이지 '명령어' 카드에 보여요
+- 상세 페이지의 인물 카드를 누르면 **인물 시트**(도감)가 열려요 — 코드·외형·소개·다른 모습 칩·감정 칸 0~14 칩(그림이 준비된 칸은 ●, 누르면 미리보기). 장소·컷씬이 있으면 그 칸도 코드와 함께 보여요(`src/js/ui/codex.js`)
 - 예전 체계(`[[img:p1:3]]`·`p1-3.webp`·조합 `3,404,501`)는 더 쓰지 않아요. 예전 대화방은 열 때 앱이 새 코드로 바꿔요(`core/rooms.js` migrateRoom — 같은 이름의 인물을 지금 작품에서 찾음)
 
 ## 그림 싣기 — `images/`
@@ -135,7 +139,7 @@ content/<f|m|all>/[<줄>/]<id>/images/
 - **출연진 성별과 폴더**: 출연진 외모가 모두 여성인데 `f/`에, 모두 남성인데 `m/`에 있으면 실패(남녀가 섞인 작품은 그대로 둠 — 앱의 `guessAud`와 같은 규칙)
 - **미성년 인물**: 출연진 외모·설정 첫머리에 19세 미만 나이나 학생 신분이 있으면 실패(앱의 `minorFlags`와 같은 코드)
 - 필수 칸(`name`·`title`·`oneLiner`·`desc`·`persona`·`openings`), `cat`·`pal`·`motif` 값
-- `cast[].code`가 영문 대문자 1~4자(숫자 없이, `MP`·`EV` 아님)이고 겹치지 않는지, `of`가 본체 인물의 코드인지(폼의 폼은 안 됨), `places`·`cuts` 모양
+- `cast[].code`가 영문 대문자 1~4자(숫자 없이, `MP`·`EV` 아님)이고 겹치지 않는지, `of`가 본체 인물의 코드인지(폼의 폼은 안 됨), `desc`가 글인지, `places`·`cuts` 모양, `commands`의 `cmd`가 공백·`!` 없이 겹치지 않고 앱 명령어 이름이 아닌지
 - 시작 상황의 `[[코드번호]]`: 코드가 `cast`(또는 `MP`·`EV`)에 있고 번호가 범위 안인지. 예전 `[[img:…]]` 모양은 실패
 - `images/`: 파일 이름이 `<코드><번호>`·`cover`·`lore-<n>`인지, 코드와 번호가 위 규칙에 맞는지, 같은 그림·표지가 둘인지, `lore-<n>`이 키워드북 범위 안인지
 - 키워드북 `kind`가 `LORE_KINDS`에 없거나, `cast[].tags`·`lookTags`·키워드북 `tags`·`artTags`에 한글이 있으면 실패

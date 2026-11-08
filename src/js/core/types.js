@@ -16,6 +16,7 @@
  * @property {string} code 영문 대문자 1~4자(CODE_RE — 숫자 없이, MP·EV는 예약)
  * @property {string} name
  * @property {string} [of] 다른 모습(폼)이면 본체 인물의 code — 폼은 별도 코드로 그림을 갖고, 프롬프트에 '그 모습일 때만'으로 안내
+ * @property {string} [desc] 도감(상세 페이지 인물 시트)에 보이는 소개 — 독자용이라 비밀·진상은 persona에만 적음
  * @property {string} [look] 한국어 외모(성별·나이 포함 — AI가 읽고, guessAud가 성별을 봄)
  * @property {string} [tags] 영문 Danbooru 외모 태그 — 앱은 쓰지 않음. 앱 밖에서 그림을 만들 때 같은 인물을 맞추는 기준(빌드가 한글을 막음)
  */
@@ -49,6 +50,14 @@
  * @property {string} [when] 나오는 조건(AI가 읽음)
  * @property {string} [tags] 영문 태그 — 앱은 쓰지 않음
  */
+/**
+ * 작품 명령어(core/commands.js). 대화방에서 !cmd를 치면 말풍선은 그대로, AI에는 prompt가 // 연출 지시로 감. 앱 명령어(APP_COMMANDS)의 이름·별칭은 못 씀.
+ * @typedef {Object} Command
+ * @property {string} cmd 이름(공백·!·/ 없이) — 대화에서 !이름
+ * @property {string} title 도감 카드 제목
+ * @property {string} [desc] 도감 카드 설명(독자용)
+ * @property {string} prompt AI에게 주는 지시
+ */
 /** @typedef {Record<string, Record<string, ImageRef>>} ImagesMap 코드 글자 부분(인물 코드·MP·EV) → 번호(인물은 감정 칸 "0"~"14", MP·EV는 "1"부터) → 그림 참조 */
 /**
  * 작품(캐릭터·세계관). 오리지널은 content/…/work.js(빌드가 aud·row·images·img·loreImages를 더함).
@@ -75,6 +84,7 @@
  * @property {CastMember[]} [cast] 없으면 content/index.js·normalizeChar가 한 명(code "C")을 만듦
  * @property {Place[]} [places] 장소 목록 — 순서대로 MP1, MP2…
  * @property {Cut[]} [cuts] 컷씬 목록 — 순서대로 EV1, EV2…
+ * @property {Command[]} [commands] 작품 명령어(!이름) — 상세 페이지 명령어 카드, 대화방에서 치면 AI 연출 지시
  * @property {string} [lookTags] cast가 없는 1:1 작품의 영문 외모 태그 — 앱은 쓰지 않음(앱 밖에서 그림을 만들 때)
  * @property {string} [artTags] 그 세계관의 영문 낱말(시대·장소·분위기) — 앱은 쓰지 않음(앱 밖에서 표지·세계관 일러스트를 만들 때)
  * @property {Opening[]} openings

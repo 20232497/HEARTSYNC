@@ -182,8 +182,8 @@ export function openRoomDrawer(view = "main") {
     $$("[data-g]", body).forEach((b) => b.onclick = () => { const it = items[+b.dataset.g], im = $("img", b); if (im && im.src) lightbox(im.src); else { ov.remove(); jumpTo(it.id); } });
   }
   else if (view === "places") {
-    // 작품의 장소(places → 코드 MP1…) — !지도 명령어로도 열림. 그림은 작품 폴더 images/MP<n>.webp
-    const list = c.places || [];
+    // 작품의 장소(places → 코드 MP1…) — !지도 명령어로도 열림. 그림은 작품 폴더 images/MP<n>.webp. 목록은 최신 작품에서
+    const list = (getChar(c.id) || c).places || [];
     body.innerHTML = list.length ? `<p class="note" style="margin-bottom:10px">이 작품의 장소 ${list.length}곳. 대화에서는 [[MP번호]] 코드로 나와요.</p><div class="gallery">${list.map((p, i) => {
       const ref = pickImg(c, "MP", i + 1);
       return `<button data-p="${i}" title="MP${i + 1} · ${esc(p.name)}">${ref ? IMG.tag(ref) : artHTML(c, { name: p.name }, i + 1, "장소")}</button>`; }).join("")}</div>

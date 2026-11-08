@@ -256,6 +256,31 @@ h2.sec small, h1.sec small { font-family:var(--sans); font-size:12.5px; color:va
 .wcard figcaption span { color:var(--muted); }
 .wkind { font-size:11px; font-weight:600; color:var(--accent); background:var(--accent-soft); border-radius:6px; padding:1px 6px; }
 
+/* ── 도감(코드 안내): 인물 시트·장소·컷씬·명령어 카드(ui/codex.js) */
+.code-chip { font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:.78em; font-weight:700; letter-spacing:.04em; background:var(--accent-soft); color:var(--accent); border-radius:6px; padding:1px 6px; vertical-align:middle; }
+.box h3 small { font-weight:400; margin-left:6px; }
+.codex-pv { max-width:240px; margin:2px auto 12px; cursor:zoom-in; }
+.codex-pv .scene-img { margin:0; max-width:100%; }
+.codex-meta p { margin:0 0 6px; font-size:14px; line-height:1.6; }
+.codex-meta b { color:var(--muted); font-weight:600; font-size:12.5px; margin-right:7px; }
+.codex-h { margin:14px 0 8px; font-size:13px; color:var(--muted); font-weight:600; letter-spacing:.04em; }
+.codex-h small { font-weight:400; margin-left:6px; }
+.codex-chips { display:flex; flex-wrap:wrap; gap:6px; }
+.codex-chips .chip { padding:5px 10px; font-size:12.5px; display:inline-flex; align-items:center; gap:6px; cursor:pointer; }
+.codex-chips .chip code { font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:11.5px; font-weight:700; }
+.codex-chips .chip.ready::after { content:"●"; font-size:8px; color:var(--ok); }
+.codex-chips .chip.on { background:var(--accent-soft); color:var(--accent); border-color:var(--accent); }
+.codex-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(170px, 1fr)); gap:10px; align-items:start; }
+.codex-grid .wcard figcaption b { gap:6px; }
+.cmd-list { display:grid; gap:8px; }
+.cmd-card { display:grid; grid-template-columns:auto auto 1fr auto; grid-template-areas:"cmd pill title copy" "cmd pill desc copy"; align-items:center; gap:2px 10px; border:1px solid var(--line); border-radius:12px; padding:10px 12px; background:var(--bg); }
+.cmd-card .cmd { grid-area:cmd; font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-weight:700; font-size:14px; color:var(--accent); }
+.cmd-card .pill { grid-area:pill; }
+.cmd-card b { grid-area:title; font-size:14px; }
+.cmd-card > span:not(.pill) { grid-area:desc; color:var(--muted); font-size:12.5px; }
+.cmd-card .btn { grid-area:copy; }
+@media (max-width:560px) { .cmd-card { grid-template-columns:auto 1fr auto; grid-template-areas:"cmd title copy" "pill desc copy"; } }
+
 /* ── 장면 이미지 */
 .scene-img { margin:4px 0 8px; max-width:min(380px, 100%); border-radius:16px; overflow:hidden; background:var(--surface2); position:relative; }
 .scene-img img { display:block; width:100%; height:auto; max-height:520px; object-fit:cover; cursor:zoom-in; }
@@ -617,7 +642,7 @@ const CFG = Object.assign({ anthropicUrl: ANTHROPIC_URL, serverKeys: false,
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/core/constants.js
    내보냄: MARK, FREE_DAILY, WELCOME, PLUS_MONTHLY, TIMEOUT, SIT, SIT_TINT, PALETTES, MOTIFS, CATS
-   쓰는 곳: src/js/ai/models.js, src/js/core/wallet.js, src/js/services/supabase.js, src/js/images/codes.js, src/js/images/situations.js, src/js/ai/parse.js, src/js/ai/llm.js, src/js/ai/prompt/rules.js, src/js/ui/cover.js, src/js/ui/home.js, src/js/app.js
+   쓰는 곳: src/js/ai/models.js, src/js/core/wallet.js, src/js/services/supabase.js, src/js/images/codes.js, src/js/images/situations.js, src/js/ai/parse.js, src/js/ai/llm.js, src/js/ai/prompt/rules.js, src/js/ui/cover.js, src/js/ui/home.js, src/js/ui/codex.js, src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 순수 상수: 응답 구분자(MARK), 상황 이름(SIT)·표지 색·무늬·장르, 요금 상수 — 다른 모듈을 import하지 않음 */
 const MARK = "===STATE===";
@@ -636,7 +661,7 @@ const CATS = ["로맨스", "판타지", "RPG", "미스터리", "일상", "시뮬
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/core/util.js
    내보냄: $, $$, esc, uid, clamp, today, won, num, ago, timeoutSignal, abortCode, toast
-   쓰는 곳: src/js/core/storage.js, src/js/core/state.js, src/js/core/wallet.js, src/js/core/rooms.js, src/js/services/images.js, src/js/services/cloud.js, src/js/services/supabase.js, src/js/ai/parse.js, src/js/ai/llm.js, src/js/ai/prompt/memory.js, src/js/ui/sheet.js, src/js/ui/chat/suggest.js, src/js/ui/cover.js, src/js/ui/account.js, src/js/ui/store.js, src/js/ui/faq.js, src/js/ui/help.js, src/js/ui/home.js, src/js/ui/me.js, src/js/ui/pay.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/chat/render.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/ui/shell.js, src/js/ui/worldart.js, src/js/ui/detail.js, src/js/ui/chats.js, src/js/ui/login.js, src/js/app.js, src/js/admin/support.js, src/js/admin/gate.js, src/js/core/migrate.js, src/js/boot.js
+   쓰는 곳: src/js/core/storage.js, src/js/core/state.js, src/js/core/wallet.js, src/js/core/rooms.js, src/js/services/images.js, src/js/services/cloud.js, src/js/services/supabase.js, src/js/ai/parse.js, src/js/ai/llm.js, src/js/ai/prompt/memory.js, src/js/ui/sheet.js, src/js/ui/chat/suggest.js, src/js/ui/cover.js, src/js/ui/account.js, src/js/ui/store.js, src/js/ui/faq.js, src/js/ui/help.js, src/js/ui/home.js, src/js/ui/me.js, src/js/ui/pay.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/chat/render.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/ui/shell.js, src/js/ui/codex.js, src/js/ui/worldart.js, src/js/ui/detail.js, src/js/ui/chats.js, src/js/ui/login.js, src/js/app.js, src/js/admin/support.js, src/js/admin/gate.js, src/js/core/migrate.js, src/js/boot.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* DOM·문자열·숫자 유틸, toast, 예상 못 한 오류 기록(reportError) */
 /** @typedef {import("./types.js").TimeoutSignal} TimeoutSignal */
@@ -992,11 +1017,11 @@ const ORIGINALS = [
     {"keys":["에반스","빚","백작가"],"text":"유저의 가문 에반스 백작가. 선대 백작이 흉작 때 영지민에게 곡물을 풀다 진 빚으로 몰락했다. 빚 문서는 여러 손을 거쳐 지금은 이름 모를 채권자 한 명이 모두 쥐고 있다.","kind":"group","tags":"ruined noble manor, debt documents, wax seal, faded family crest, empty hall, dust"}
   ],
   "cast": [
-    {"code":"KAS","name":"카시안","look":"29세 남성, 황제, 흑발, 차가운 금빛 눈, 검은 군복풍 황제 예복, 어깨에 걸친 망토","tags":"black hair, golden eyes, emperor, black military uniform, black jacket, gold trim, epaulettes, cape over shoulders"},
-    {"code":"LEO","name":"레온하르트","look":"27세 남성, 대공, 부드럽게 웨이브진 금발, 초록 눈, 풀어 헤친 흰 셔츠와 자수 재킷, 나른한 미소","tags":"blonde hair, wavy hair, green eyes, open collar, white shirt, embroidered jacket, aristocrat"},
-    {"code":"LUK","name":"루카스","look":"26세 남성, 호위기사, 짧은 갈색 머리, 단단한 체격, 은빛 기사 갑옷, 허리에 찬 장검, 무뚝뚝한 표정","tags":"brown hair, short hair, muscular, silver armor, knight armor, knight, sword at hip"},
-    {"code":"NOL","name":"노엘","look":"28세 남성, 마탑주, 하나로 묶은 긴 은발, 보랏빛 눈, 검은 로브, 외알 안경","tags":"silver hair, high ponytail, hair up, hair tied up, purple eyes, black robe, black shirt, high collar, closed robe, monocle, mage"},
-    {"code":"RYL","name":"라일","look":"30세 남성, 정보상, 헝클어진 검은 머리, 여우 같은 눈웃음, 깃털 장식 코트, 한쪽 귀걸이","tags":"black hair, messy hair, narrow eyes, feather-trimmed coat, black shirt, single earring, rogue"}
+    {"code":"KAS","name":"카시안","desc":"루벨리아의 황제. 냉혹하고 계산적이며 말이 짧다. 사람을 믿지 않는다. 유저를 '쓸모 있는 패'로 대하지만 약속은 반드시 지킨다.","look":"29세 남성, 황제, 흑발, 차가운 금빛 눈, 검은 군복풍 황제 예복, 어깨에 걸친 망토","tags":"black hair, golden eyes, emperor, black military uniform, black jacket, gold trim, epaulettes, cape over shoulders"},
+    {"code":"LEO","name":"레온하르트","desc":"황제의 이복동생인 대공. 나른한 미소의 바람둥이로 알려져 있고 황위를 노린다는 소문이 돈다. 실은 다정하고 눈치가 빠르다.","look":"27세 남성, 대공, 부드럽게 웨이브진 금발, 초록 눈, 풀어 헤친 흰 셔츠와 자수 재킷, 나른한 미소","tags":"blonde hair, wavy hair, green eyes, open collar, white shirt, embroidered jacket, aristocrat"},
+    {"code":"LUK","name":"루카스","desc":"황제가 유저에게 붙인 호위기사. 평민 출신의 기사단 부단장. 과묵하고 고지식하며 명령에 충실하다. 칭찬을 들으면 귀가 빨개진다.","look":"26세 남성, 호위기사, 짧은 갈색 머리, 단단한 체격, 은빛 기사 갑옷, 허리에 찬 장검, 무뚝뚝한 표정","tags":"brown hair, short hair, muscular, silver armor, knight armor, knight, sword at hip"},
+    {"code":"NOL","name":"노엘","desc":"최연소 마탑주. 천재이고 독설가이며 사람보다 마법진을 좋아한다. 유저의 '문서 보는 눈'에 흥미를 느낀다.","look":"28세 남성, 마탑주, 하나로 묶은 긴 은발, 보랏빛 눈, 검은 로브, 외알 안경","tags":"silver hair, high ponytail, hair up, hair tied up, purple eyes, black robe, black shirt, high collar, closed robe, monocle, mage"},
+    {"code":"RYL","name":"라일","desc":"수도 뒷골목 정보 길드 '검은 깃털'의 주인. 여우 같은 눈웃음과 능청스러운 말솜씨. 돈이 되면 무엇이든 판다고 말한다.","look":"30세 남성, 정보상, 헝클어진 검은 머리, 여우 같은 눈웃음, 깃털 장식 코트, 한쪽 귀걸이","tags":"black hair, messy hair, narrow eyes, feather-trimmed coat, black shirt, single earring, rogue"}
   ],
   "openings": [
     {"title":"👑 혼인식 다음 날 · 계약서","directive":"기본 시작. 혼인식 다음 날 아침, 카시안이 황후궁으로 찾아와 계약을 다시 확인하고 루카스를 호위로 붙인다. 첫 장면에서 계약 조건과 백 일 기한을 분명히 하고, 첫 단서(잠긴 장미 온실)로 이어질 실마리를 남긴다.","status":{"📅 계약":"1일차 · 아침 (남은 날 100일)","📍 장소":"황후궁 침실","🗝️ 단서":"없음","🔍 용의자":"없음","⚠️ 위험도":30,"❤️ 호감도":"카시안 5 · 레온하르트 0 · 루카스 0 · 노엘 0 · 라일 0","💭 속마음":"카시안: 울지도 않는군. 쓸 만하다."},"text":"*혼인식 다음 날 아침. 커튼 사이로 들어온 햇빛이 지나치게 화려한 천장을 비췄다. 어젯밤 이 넓은 침대에서 혼자 잤다. 신랑은 오지 않았다. 계약서에 적힌 대로였다.*\n\n*문이 두 번 울리더니, 대답도 듣기 전에 열렸다.*\n\n[[KAS0]]\n\n카시안: \"일어나 있었군. 다행이다. 깨우는 데 쓸 시간은 없으니까.\"\n\n*검은 예복의 황제가 창가로 걸어가 커튼을 걷었다. 그는 당신을 한 번도 똑바로 보지 않고 창밖의 유리 온실만 내려다봤다.*\n\n카시안: \"다시 말해 두지. 기한은 오늘부터 백 일. 엘리제를 죽인 자를 찾아내면 에반스가의 빚은 내가 갚고, 너는 이 궁에서 걸어 나간다. 못 찾으면—\"\n\n*그가 처음으로 고개를 돌렸다. 금빛 눈이 차갑게 가라앉아 있었다.*\n\n카시안: \"그때는 네가 이 침실에서 두 번째로 죽은 황후가 될 수도 있다. 이 궁은 그런 곳이다.\"\n\n*그의 뒤로 은빛 갑옷의 기사가 들어와 한쪽 무릎을 꿇었다.*\n\n[[LUK0]]\n\n루카스: \"기사단 부단장 루카스. 오늘부터 황후 폐하의 호위를 맡습니다.\"\n\n카시안: \"루카스는 내 명령만 듣는다. 네가 어딜 가든, 누굴 만나든 내게 보고될 거다. 불만 있나?\"\n\n*대답을 기다리지도 않고 황제는 문으로 향했다. 문턱에서 그가 잠깐 멈췄다.*\n\n카시안: \"아, 그리고. 저 온실에는 들어가지 마라. 엘리제가 아끼던 곳이다.\"\n\n*문이 닫히자 루카스가 일어섰다. 그는 한참 망설이다가, 창밖의 온실을 힐끗 보고 낮게 말했다.*\n\n루카스: \"…온실 열쇠는 시녀장 마르타가 갖고 있습니다. 폐하께서는 그 사실을 모르십니다.\""},
@@ -1039,11 +1064,11 @@ const ORIGINALS = [
     {"keys":["타임캡슐","여름방학"],"text":"유저가 어릴 때 마지막 여름방학에 할머니와 함께 묻은 깡통. 무엇을 넣었는지, 어디에 묻었는지 유저는 잘 기억나지 않는다.","kind":"item","tags":"time capsule, old tin can, buried in soil, garden, summer, nostalgic"}
   ],
   "cast": [
-    {"code":"KTH","name":"강태하","look":"32세 남성, 셰프, 짧게 깎은 검은 머리, 날카로운 눈매, 검은 앞치마, 걷어붙인 소매와 팔뚝의 화상 자국","tags":"black hair, very short hair, sharp eyes, chef, black apron, sleeves rolled up, burn scar on forearm, toned arms"},
-    {"code":"YSH","name":"윤시후","look":"29세 남성, 무명 배우, 갈색 펌 머리, 장난스러운 웃음, 헐렁한 후드티, 귀의 작은 피어싱","tags":"brown hair, wavy hair, permed hair, oversized hoodie, ear piercing, small earrings"},
-    {"code":"BDH","name":"백도현","look":"31세 남성, 수의사, 단정한 검은 머리, 둥근 안경, 흰 가운 위 회색 니트, 다정한 눈","tags":"black hair, neat hair, round eyewear, glasses, grey sweater, white coat, veterinarian, gentle eyes"},
-    {"code":"LHG","name":"이한결","look":"27세 남성, 웹툰 작가, 눈썹을 덮는 부스스한 흑발, 피곤한 눈, 다크서클, 늘어진 검은 티셔츠, 목에 건 헤드폰","tags":"black hair, short hair, messy hair, shaggy bangs, hair between eyes, tired eyes, dark circles under eyes, black v-neck shirt, black shirt, loose shirt, headphones around neck"},
-    {"code":"SJH","name":"서진혁","look":"34세 남성, 변호사, 깔끔하게 넘긴 머리, 무테안경, 남색 정장, 차가운 표정","tags":"black hair, slicked back hair, rimless eyewear, navy blue suit, necktie, lawyer"}
+    {"code":"KTH","name":"강태하","desc":"하숙집 부엌을 맡은 셰프. 무뚝뚝하고 말보다 밥으로 마음을 표현한다. 잔소리는 \"먹고 해.\" 한마디.","look":"32세 남성, 셰프, 짧게 깎은 검은 머리, 날카로운 눈매, 검은 앞치마, 걷어붙인 소매와 팔뚝의 화상 자국","tags":"black hair, very short hair, sharp eyes, chef, black apron, sleeves rolled up, burn scar on forearm, toned arms"},
+    {"code":"YSH","name":"윤시후","desc":"무명 배우. 능글맞고 장난이 많은 분위기 메이커.","look":"29세 남성, 무명 배우, 갈색 펌 머리, 장난스러운 웃음, 헐렁한 후드티, 귀의 작은 피어싱","tags":"brown hair, wavy hair, permed hair, oversized hoodie, ear piercing, small earrings"},
+    {"code":"BDH","name":"백도현","desc":"골목 동물병원 원장 수의사. 말수가 적고 다정하며 동물 앞에서만 잘 웃는다. 마당의 늙은 진돗개 보리를 돌본다.","look":"31세 남성, 수의사, 단정한 검은 머리, 둥근 안경, 흰 가운 위 회색 니트, 다정한 눈","tags":"black hair, neat hair, round eyewear, glasses, grey sweater, white coat, veterinarian, gentle eyes"},
+    {"code":"LHG","name":"이한결","desc":"웹툰 작가. 마감에 쫓기는 올빼미형이고 말에 가시가 돋쳐 있다. 남의 일에 관심 없는 척하지만 누구보다 잘 본다.","look":"27세 남성, 웹툰 작가, 눈썹을 덮는 부스스한 흑발, 피곤한 눈, 다크서클, 늘어진 검은 티셔츠, 목에 건 헤드폰","tags":"black hair, short hair, messy hair, shaggy bangs, hair between eyes, tired eyes, dark circles under eyes, black v-neck shirt, black shirt, loose shirt, headphones around neck"},
+    {"code":"SJH","name":"서진혁","desc":"할머니의 유언 집행을 맡은 변호사. 사랑채 끝방에 '임시로' 들어와 산다. 차갑고 정확하며 감정을 드러내지 않는다.","look":"34세 남성, 변호사, 깔끔하게 넘긴 머리, 무테안경, 남색 정장, 차가운 표정","tags":"black hair, slicked back hair, rimless eyewear, navy blue suit, necktie, lawyer"}
   ],
   "openings": [
     {"title":"🍚 장례 다음 날 · 일곱 개의 밥그릇","directive":"기본 시작. 장례 다음 날 아침, 처음으로 하숙인 다섯과 한 밥상에 앉는 장면. 다섯의 첫인상과 성격을 짧게 보여 주고, 서른 날의 조건과 첫 할머니의 흔적으로 이어질 실마리를 남긴다.","status":{"📅 날짜":"1일차 · 아침 (남은 날 30일)","📍 장소":"오월 하숙집 마루","🍚 밥상":"아욱된장국 · 계란말이 · 갓 지은 밥","📮 흔적":"없음","🏠 재개발":40,"❤️ 호감도":"강태하 5 · 윤시후 10 · 백도현 5 · 이한결 0 · 서진혁 0","💭 속마음":"강태하: 할머니가 말하던 손주. 생각보다 마른 얼굴이네."},"text":"*새벽에 눈을 뜬 건 어릴 때 듣던 소리 때문이었다. 도마 위에서 칼이 일정하게 움직이는 소리, 뚝배기 끓는 소리, 마당에서 개가 물그릇을 핥는 소리. 잠깐, 할머니가 부엌에 있는 줄 알았다.*\n\n*마루로 나가자 밥상이 차려져 있었다. 밥그릇이 일곱 개. 아무도 앉지 않은 상 끝자리에도 수저가 놓여 있었다.*\n\n[[KTH0]]\n\n강태하: \"일어났네. 앉아. 국 식는다.\"\n\n*검은 앞치마를 두른 남자가 뚝배기를 상 가운데 내려놓았다. 인사도, 위로도 없이. 그 뒤로 사랑채 문들이 하나씩 열리며 사람들이 나왔다.*\n\n[[YSH0]]\n\n윤시후: \"와, 진짜 왔다. 할머니 손주님! 사진보다 실물이 낫네. 아, 저 윤시후요. 사랑채 둘째 방. 하숙비는… 그건 나중에 얘기해요.\"\n\n이한결: \"아침부터 시끄러워. 밥이나 먹어.\"\n\n*부스스한 머리의 남자가 헤드폰을 목에 건 채 앉았고, 안경 쓴 남자가 조용히 고개를 숙였다. 마지막으로 정장 차림의 남자가 서류 봉투를 들고 상 맨 끝에 앉았다.*\n\n[[SJH0]]\n\n서진혁: \"식사 끝나고 유언장 내용을 다시 설명드리겠습니다. 그 전에 하나만. 고인께서는 '첫날 아침은 꼭 다 같이 먹게 하라'고 하셨습니다.\"\n\n*아무도 앉지 않은 자리의 수저를 보다가, 백도현이 작게 말했다.*\n\n백도현: \"…할머니 자리예요. 다들 아직 못 치웠어요.\"\n\n*마당에서 보리가 한 번 짖었다. 대문 밖에 검은 승용차 한 대가 멈춰 서 있었다.*"},
@@ -1086,11 +1111,11 @@ const ORIGINALS = [
     {"keys":["사고","교차로","빗길"],"text":"유저가 사고를 당한 비 오는 밤의 교차로. 유저는 그때 무언가를 들고 누군가에게 가던 길이었다. 그 이상은 아직 기억나지 않는다.","kind":"event","tags":"rainy night, crossroads, headlights, wet asphalt, traffic light, blurred motion"}
   ],
   "cast": [
-    {"code":"CSH","name":"차사현","look":"33세 남성, 호텔 지배인, 저승차사, 단정하게 넘긴 흑발, 창백한 피부, 검은 쓰리피스 정장, 은색 회중시계, 무표정","tags":"black hair, slicked back hair, pale skin, black three-piece suit, black suit jacket, black waistcoat, black lapels, black necktie, silver pocket watch, hotel manager"},
-    {"code":"HIG","name":"한이결","look":"29세 남성, 바텐더 도깨비, 반쯤 묶은 붉은 기가 도는 머리, 장난스러운 눈웃음, 소매를 걷은 흰 셔츠와 검은 조끼","tags":"dark red hair, half updo, hair bun, hair tied up, white shirt, sleeves rolled up, black vest, bartender"},
-    {"code":"KMH","name":"강무혁","look":"27세 남성, 도어맨, 짧은 흑발, 곧은 자세, 남색 도어맨 제복과 모자, 흰 장갑","tags":"black hair, short hair, navy blue uniform, doorman, bellhop hat, white gloves, straight posture"},
-    {"code":"SHJ","name":"서하준","look":"32세 남성, 의사, 부드러운 갈색 머리, 지친 눈가, 흰 의사 가운, 목에 건 청진기","tags":"brown hair, soft hair, tired eyes, white lab coat, doctor, stethoscope around neck"},
-    {"code":"RU","name":"루","look":"25세 남성, 고양이 신령, 헝클어진 검은 머리, 노란 고양이 눈, 검은 고양이 귀, 헐렁한 검은 니트, 장난스러운 표정","tags":"black hair, messy hair, yellow eyes, slit pupils, black cat ears, animal ears, oversized black sweater"}
+    {"code":"CSH","name":"차사현","desc":"호텔 레테의 지배인. 삼백 년을 일한 저승차사. 원칙주의자이고 표정이 없으며 말이 정확하다. 규칙을 어기는 손님을 가장 싫어하는데, 유저는 존재 자체가 규칙 위반이다.","look":"33세 남성, 호텔 지배인, 저승차사, 단정하게 넘긴 흑발, 창백한 피부, 검은 쓰리피스 정장, 은색 회중시계, 무표정","tags":"black hair, slicked back hair, pale skin, black three-piece suit, black suit jacket, black waistcoat, black lapels, black necktie, silver pocket watch, hotel manager"},
+    {"code":"HIG","name":"한이결","desc":"호텔 바 '망각'의 바텐더인 도깨비. 망자의 기억 한 방울로 그 사람만을 위한 술을 빚는다. 능글맞고 다정하며 농담으로 진심을 숨긴다.","look":"29세 남성, 바텐더 도깨비, 반쯤 묶은 붉은 기가 도는 머리, 장난스러운 눈웃음, 소매를 걷은 흰 셔츠와 검은 조끼","tags":"dark red hair, half updo, hair bun, hair tied up, white shirt, sleeves rolled up, black vest, bartender"},
+    {"code":"KMH","name":"강무혁","desc":"호텔 정문의 도어맨. 70여 년 전 전쟁터에서 죽은 젊은 장교의 혼. 과묵하고 고지식하며 예의 바르다. 손님들이 강을 건널 때마다 나루터 문을 열어 주지만 자신은 건너지 않았다.","look":"27세 남성, 도어맨, 짧은 흑발, 곧은 자세, 남색 도어맨 제복과 모자, 흰 장갑","tags":"black hair, short hair, navy blue uniform, doorman, bellhop hat, white gloves, straight posture"},
+    {"code":"SHJ","name":"서하준","desc":"의무실을 맡은 응급의학과 의사. 과로로 쓰러져 세상을 떠난 지 스물여덟째 밤인 망자. 다정하지만 늘 피곤해 보이고, 망자들의 '마음의 상처'를 꿰맨다. 그의 마흔아홉 번째 밤은 유저보다 스무 밤쯤 먼저 온다.","look":"32세 남성, 의사, 부드러운 갈색 머리, 지친 눈가, 흰 의사 가운, 목에 건 청진기","tags":"brown hair, soft hair, tired eyes, white lab coat, doctor, stethoscope around neck"},
+    {"code":"RU","name":"루","desc":"객실 관리인. 사람 모습을 한 검은 고양이 신령. 제멋대로이고 장난이 심하며 말끝마다 퉁명스럽지만 은근히 유저 곁을 맴돈다. 호텔 구석구석의 비밀 통로를 안다.","look":"25세 남성, 고양이 신령, 헝클어진 검은 머리, 노란 고양이 눈, 검은 고양이 귀, 헐렁한 검은 니트, 장난스러운 표정","tags":"black hair, messy hair, yellow eyes, slit pupils, black cat ears, animal ears, oversized black sweater"}
   ],
   "openings": [
     {"title":"🌧️ 비 오는 밤의 체크인","directive":"기본 시작. 유저가 호텔 레테에 처음 도착하는 밤. 강무혁이 문을 열고, 차사현이 프런트에서 유저가 산 사람이라는 것과 마흔아홉 밤의 기한, 사라진 기억 병을 알려 준다. 첫 장면에서 규칙과 기한을 분명히 하고, 첫 단서로 이어질 실마리를 남긴다.","status":{"📅 남은 밤":"1일째 · 밤 (남은 밤 49)","📍 장소":"호텔 레테 로비","🕯️ 기억":"없음","🔍 단서":"없음","🌫️ 혼의 끈":80,"❤️ 호감도":"차사현 0 · 한이결 5 · 강무혁 10 · 서하준 5 · 루 15","💭 속마음":"차사현: 명부의 그 이름. 결국 왔군."},"text":"*빗소리가 멎었다. 아니, 빗소리만 남고 다른 모든 소리가 멎었다. 자동차 경적도, 누군가의 비명도, 타이어가 미끄러지던 소리도. 눈을 뜨자 젖은 아스팔트 대신 붉은 카펫이 깔린 계단이 보였다.*\n\n*계단 위 회전문 앞에 남색 제복의 남자가 서 있었다. 그는 흰 장갑을 낀 손으로 문을 밀어 주며 고개를 숙였다.*\n\n[[KMH0]]\n\n강무혁: \"어서 오십시오, 호텔 레테입니다. 비가 많이 오는 밤입니다. …춥지 않으십니까.\"\n\n*로비는 이상할 만큼 따뜻했다. 샹들리에 아래로 하나도 젖지 않은 사람들이 조용히 줄을 서 있었다. 모두 어딘가 멍한 얼굴이었다. 프런트에서 검은 정장의 남자가 장부를 넘기다 멈췄다.*\n\n[[CSH0]]\n\n차사현: \"손님. 성함을 확인하겠습니다. …역시.\"\n\n*그는 은색 회중시계를 열어 보더니 아주 잠깐 미간을 찌푸렸다.*\n\n차사현: \"결론부터 말씀드리죠. 이곳은 망자가 마흔아홉 밤을 묵어 가는 곳입니다. 그리고 손님은 아직 죽지 않았습니다. 병원에서 숨을 쉬고 계시니까요.\"\n\n*줄을 서 있던 사람들이 일제히 당신을 돌아봤다.*\n\n차사현: \"돌아가실 문은 있습니다. 다만 그 문을 열려면 손님이 도착하실 때 맡기신 '마지막 기억'이 필요한데… 조금 전, 그 기억 병이 보관실에서 사라졌습니다.\"\n\n*발치에서 무언가 부드러운 것이 스쳤다. 검은 고양이 한 마리가 당신의 다리에 몸을 비비더니, 노란 눈으로 올려다보며 사람처럼 혀를 찼다.*"},
@@ -1133,11 +1158,11 @@ const ORIGINALS = [
     {"keys":["통로","비밀 통로"],"text":"궁 지하에는 선대 왕이 만든 비밀 통로가 있다. 국무당 단비만 지도를 안다. 동궁, 수라간 뒤뜰, 대비전 담 아래로 이어진다.","kind":"place","tags":"secret underground passage, stone tunnel, torch, joseon palace, darkness"}
   ],
   "cast": [
-    {"code":"IHW","name":"이화","look":"22세 여성, 상복 차림의 공주, 흰 비단 당의, 올림머리에 은비녀, 차가운 눈매","tags":"black hair, hair up, silver hairpin, forehead, parted bangs, narrow eyes, thin eyebrows, mole under eye, binyeo, white hanbok, korean clothes, jeogori, goreum, long sleeves, white chima skirt, joseon princess"},
-    {"code":"SRY","name":"설련","look":"24세 여성, 포도청 다모 복장, 질끈 묶은 머리, 쇠도리깨, 뺨의 작은 흉터","tags":"black hair, tied hair, side-swept bangs, sharp eyes, thick eyebrows, korean clothes, hanbok, dark blue jeogori, joseon dynasty, iron baton, small scar on cheek"},
-    {"code":"JOK","name":"정옥","look":"23세 여성, 내의원 의녀, 연두색 저고리, 단정한 쪽머리, 약초 바구니","tags":"black hair, neat chignon, forehead, parted bangs, droopy eyes, soft eyebrows, light green jeogori, hanbok, herb basket, physician"},
-    {"code":"WLH","name":"월하","look":"27세 여성, 기방 행수, 짙은 남색 치마, 화려한 떨잠, 접부채, 웃는 눈","tags":"black hair, elaborate updo, ornate hair ornament, forehead, upturned eyes, arched eyebrows, beauty mark, dark navy chima, hanbok, folding fan, gisaeng"},
-    {"code":"DNB","name":"단비","look":"25세 여성, 국무당, 붉은 무복과 갓, 방울과 부채, 겁먹은 큰 눈","tags":"black hair, round eyes, straight eyebrows, red shaman robe, gat, korean hat, hanbok, bells, fan, shaman"}
+    {"code":"IHW","name":"이화","desc":"세자의 누나 화령공주. 냉정하고 영리하다. 동생을 살리는 것만이 목적이라 유저를 도구로 쓴다.","look":"22세 여성, 상복 차림의 공주, 흰 비단 당의, 올림머리에 은비녀, 차가운 눈매","tags":"black hair, hair up, silver hairpin, forehead, parted bangs, narrow eyes, thin eyebrows, mole under eye, binyeo, white hanbok, korean clothes, jeogori, goreum, long sleeves, white chima skirt, joseon princess"},
+    {"code":"SRY","name":"설련","desc":"포도청 다모(여자 수사관). 유저 감시 담당. 거칠고 곧다. 쇠도리깨의 달인.","look":"24세 여성, 포도청 다모 복장, 질끈 묶은 머리, 쇠도리깨, 뺨의 작은 흉터","tags":"black hair, tied hair, side-swept bangs, sharp eyes, thick eyebrows, korean clothes, hanbok, dark blue jeogori, joseon dynasty, iron baton, small scar on cheek"},
+    {"code":"JOK","name":"정옥","desc":"내의원 의녀. 약초와 독에 밝고, 유저의 '이상한 의술'에 매혹된다. 조용하고 집요하다.","look":"23세 여성, 내의원 의녀, 연두색 저고리, 단정한 쪽머리, 약초 바구니","tags":"black hair, neat chignon, forehead, parted bangs, droopy eyes, soft eyebrows, light green jeogori, hanbok, herb basket, physician"},
+    {"code":"WLH","name":"월하","desc":"도성 최고 기방 '청월루'의 행수. 정보를 사고파는 여우. 외척과 영원군 양쪽에 줄을 대고 있다.","look":"27세 여성, 기방 행수, 짙은 남색 치마, 화려한 떨잠, 접부채, 웃는 눈","tags":"black hair, elaborate updo, ornate hair ornament, forehead, upturned eyes, arched eyebrows, beauty mark, dark navy chima, hanbok, folding fan, gisaeng"},
+    {"code":"DNB","name":"단비","desc":"국무당. 예지몽을 꾸고 궁의 비밀 통로를 안다. 겁이 많지만 사람의 거짓말을 귀신같이 가려낸다.","look":"25세 여성, 국무당, 붉은 무복과 갓, 방울과 부채, 겁먹은 큰 눈","tags":"black hair, round eyes, straight eyebrows, red shaman robe, gat, korean hat, hanbok, bells, fan, shaman"}
   ],
   "openings": [
     {"title":"⚖️ 참형까지 이레 · 옥사에서","directive":"기본 시작. 이화와 설련이 옥사로 찾아온다. 첫 장면에서 사건 개요와 7일 기한을 분명히 하고, 첫 단서로 이어질 실마리를 하나 남긴다.","status":{"📅 기한":"1일차 · 밤 (참형까지 7일)","📍 장소":"의금부 옥사","🧪 증거":"없음","🔍 용의자":"없음","⚠️ 위험도":40,"❤️ 호감도":"이화 5 · 설련 0 · 정옥 0 · 월하 0 · 단비 0","💭 속마음":"이화: 이자가 마지막 패다."},"text":"*눅눅한 짚 냄새와 쇠 냄새. 눈을 뜨자 손목에 채워진 차꼬가 먼저 보였다. 낯선 몸, 낯선 손. 머릿속에서 두 개의 기억이 엉켜 있다. 부검대의 차가운 조명과, 은비녀를 국그릇에 담그던 떨리는 손.*\n\n*횃불이 흔들리며 옥사 문이 열렸다. 흰 상복 차림의 여인이 들어서고, 그 뒤로 쇠도리깨를 든 다모가 따라 들어왔다.*\n\n이화: \"네가 세자의 수라를 검사한 검시관이냐.\"\n\n*공주의 목소리는 얼음처럼 낮았다. 그는 옥사 바닥의 더러움 따위는 보이지 않는다는 듯 당신 앞에 섰다.*\n\n이화: \"대비마마께서 이레를 주셨다. 이레 안에 내 아우에게 독을 먹인 자를 찾아라. 찾으면 너는 산다. 못 찾으면… 저잣거리에서 네 목을 내가 직접 보겠다.\"\n\n설련: \"도망칠 생각은 접어. 지금부터 넌 내 그림자 안에서만 숨 쉰다.\"\n\n*설련이 차꼬를 풀며 당신의 손바닥을 힐끗 봤다. 손끝이 까맣게 물들어 있다. 은비녀를 쥐었던 자국이다.*\n\n설련: \"…이상하네. 독을 넣은 놈이라면 은비녀가 검게 변하는 걸 보고도 가만있었을 리가 없잖아.\""},
@@ -1180,11 +1205,11 @@ const ORIGINALS = [
     {"keys":["첫 겨울","13년 전","대동결"],"text":"13년 전 '대동결'. 하늘이 회색 재로 덮이고 한 달 만에 기온이 40도 떨어졌다. 열차에 오르지 못한 사람들은 그해 겨울을 넘기지 못했다.","kind":"event","tags":"great freeze, ash-covered sky, frozen city, snow, apocalypse, desolate"}
   ],
   "cast": [
-    {"code":"SHJ","name":"서하진","look":"28세 여성, 기름 묻은 방한 작업복, 짧게 친 흑발, 고글을 이마에 올림, 화상 흉터가 있는 손","tags":"black hair, very short hair, side-swept bangs, narrow eyes, thick eyebrows, oil-stained winter work overalls, goggles on head, mechanic"},
-    {"code":"HRN","name":"홍레나","look":"24세 여성, 흰 모피 코트, 금빛 통행증 목걸이, 길게 땋은 금갈색 머리, 오만한 표정","tags":"golden brown hair, long braid, curtain bangs, upturned eyes, arched eyebrows, mole under mouth, white fur coat, gold pendant, necklace, elegant"},
-    {"code":"CYR","name":"차유리","look":"26세 여성, 회색 위장 방한복, 긴 저격총, 짧은 은회색 머리, 왼뺨의 동상 자국","tags":"silver grey hair, short hair, side-swept bangs, narrow eyes, straight eyebrows, grey camouflage winter jacket, frostbite scar on cheek, sniper rifle"},
-    {"code":"MSO","name":"미소","look":"23세 여성, 흰 사제복과 기어 문양 목걸이, 밝은 갈색 양 갈래 머리, 해맑은 미소","tags":"light brown hair, twin braids, round eyes, thin eyebrows, freckles, white priestess robe, nun habit, gear pendant, necklace, bright eyes"},
-    {"code":"YDG","name":"윤도경","look":"30세 여성, 낡은 흰 가운 위 군용 외투, 흐트러진 묶음 머리, 손에 든 술병, 피곤한 눈","tags":"black hair, messy bun, parted bangs, droopy eyes, thin eyebrows, worn white lab coat, military coat, tired eyes, doctor"}
+    {"code":"SHJ","name":"서하진","desc":"수석 기관사. 무뚝뚝하고 기계 말고는 믿지 않는다. 엔진 정지를 홀로 짊어지고 있다.","look":"28세 여성, 기름 묻은 방한 작업복, 짧게 친 흑발, 고글을 이마에 올림, 화상 흉터가 있는 손","tags":"black hair, very short hair, side-swept bangs, narrow eyes, thick eyebrows, oil-stained winter work overalls, goggles on head, mechanic"},
+    {"code":"HRN","name":"홍레나","desc":"의장의 딸. 오만한 앞칸 귀족처럼 굴지만 몰래 꼬리칸에 약을 빼돌린다.","look":"24세 여성, 흰 모피 코트, 금빛 통행증 목걸이, 길게 땋은 금갈색 머리, 오만한 표정","tags":"golden brown hair, long braid, curtain bangs, upturned eyes, arched eyebrows, mole under mouth, white fur coat, gold pendant, necklace, elegant"},
+    {"code":"CYR","name":"차유리","desc":"열차 경비대 저격수. 약탈단 '늑대 썰매' 출신 배신자. 과묵하고 귀가 밝다.","look":"26세 여성, 회색 위장 방한복, 긴 저격총, 짧은 은회색 머리, 왼뺨의 동상 자국","tags":"silver grey hair, short hair, side-swept bangs, narrow eyes, straight eyebrows, grey camouflage winter jacket, frostbite scar on cheek, sniper rifle"},
+    {"code":"MSO","name":"미소","desc":"엔진교의 성녀. 엔진 소리를 신탁으로 해석하는 척하며 기관실 정보를 교단에 넘긴다. 실은 교단을 안에서 무너뜨리려 한다. 밝고 맹한 연기가 특기.","look":"23세 여성, 흰 사제복과 기어 문양 목걸이, 밝은 갈색 양 갈래 머리, 해맑은 미소","tags":"light brown hair, twin braids, round eyes, thin eyebrows, freckles, white priestess robe, nun habit, gear pendant, necklace, bright eyes"},
+    {"code":"YDG","name":"윤도경","desc":"꼬리칸 의사. 냉소적이고 술을 달고 산다. 실력은 열차 최고, 꼬리칸 연대의 숨은 브레인.","look":"30세 여성, 낡은 흰 가운 위 군용 외투, 흐트러진 묶음 머리, 손에 든 술병, 피곤한 눈","tags":"black hair, messy bun, parted bangs, droopy eyes, thin eyebrows, worn white lab coat, military coat, tired eyes, doctor"}
   ],
   "openings": [
     {"title":"❄️ 설원에서 주워 온 사람","directive":"기본 시작. 유저가 꼬리칸 의무실에서 깨어난다. 윤도경과 차유리가 곁에 있다. 지도 조각의 존재가 곧 열차에 소문으로 퍼질 것임을 암시한다.","status":{"📅 날짜":"13년차 · 1일 (엔진 정지 D-90)","📍 칸":"40칸 꼬리칸 의무실","🌡️ 바깥":"−52℃","🔥 엔진 수명":64,"🍞 식량":"열차 전체 41일분","⚖️ 세력":"의회 경계 · 연대 중립 · 엔진교 중립 · 썰매단 모름","❤️ 호감도":"서하진 0 · 홍레나 0 · 차유리 5 · 미소 0 · 윤도경 10","💭 속마음":"윤도경: 이 사람, 설원에서 혼자 몇 주를 버텼다고?"},"text":"*쇠바퀴가 이음매를 넘을 때마다 등 밑에서 둔한 진동이 올라왔다. 덜컹. 덜컹. 숨을 쉴 때마다 폐 속이 칼로 긁히는 것 같다.*\n\n*눈을 뜨자 녹슨 천장에 매달린 전구 하나가 흔들리고 있었다. 소독약 냄새와 싸구려 술 냄새.*\n\n윤도경: \"깼네. 손가락 열 개 다 붙어 있어. 운이 좋은 거야, 그 온도에서.\"\n\n*흰 가운 위에 군용 외투를 걸친 여자가 술병을 내려놓고 당신의 눈꺼풀을 뒤집어 보았다. 그 뒤, 문가에 기대 선 다른 여자가 긴 총을 품에 안은 채 당신을 보고 있다.*\n\n차유리: \"정차역 남쪽 3킬로. 눈 속에 반쯤 묻혀 있었어. 발자국이 없었어. 걸어온 게 아니라 거기서 버틴 거야.\"\n\n*유리의 시선이 당신의 외투 안주머니로 향했다. 당신은 그제야 그 안이 비어 있다는 걸 깨달았다.*\n\n윤도경: \"찾는 거, 이거?\"\n\n*도경이 손가락 사이에 낡은 종이 한 장을 끼워 흔들었다. 등고선과 붉은 표시, 그리고 손글씨 한 줄 — '온천. 여기서부터 남쪽.'*\n\n윤도경: \"이게 진짜면, 이 열차에서 당신 목숨값이 제일 비싸. 누가 알기 전에 대답해. 남쪽에 뭐가 있지?\""},
@@ -1228,11 +1253,11 @@ const ORIGINALS = [
     {"keys":["단전","봉인","주화입마"],"text":"유저의 단전은 막혀 있다. 억지로 내공을 끌어올리면 가슴에 낯선 구결이 떠오르며 피를 토한다. 다룰 수 있게 되면 봉인이 풀리지만, 급하면 주화입마에 빠진다.","kind":"concept","tags":"glowing seal on chest, meridians, inner energy, qi aura, glowing runes"}
   ],
   "cast": [
-    {"code":"NGS","name":"남궁설","look":"24세 여성, 흰 무복에 푸른 띠, 높게 묶은 흑발, 장검, 차가운 눈빛","tags":"black hair, high ponytail, side-swept bangs, narrow eyes, straight eyebrows, white martial arts uniform, blue sash, hanfu, longsword"},
-    {"code":"DSS","name":"당소소","look":"22세 여성, 보라색 무복, 손목의 암기 팔찌, 짧은 단발, 장난스러운 미소","tags":"black hair, short bob cut, round eyes, upturned eyes, thin eyebrows, purple martial arts uniform, hanfu, bracelet, poison dagger"},
-    {"code":"HWN","name":"혜원","look":"25세 여성, 회색 아미파 무복, 반쯤 묶은 긴 머리, 약상자, 단정한 얼굴","tags":"black hair, long hair, half updo, curtain bangs, droopy eyes, soft eyebrows, grey martial arts robe, hanfu, medicine box"},
-    {"code":"MKR","name":"묵란","look":"26세 여성, 검은 무복 위 화산파 외문제자 외투, 길게 늘어뜨린 흑발, 붉은 입술, 냉소","tags":"black hair, very long hair, forehead, parted bangs, upturned eyes, arched eyebrows, black martial arts uniform, red-trimmed outer robe, hanfu, red lips"},
-    {"code":"HRN","name":"화린","look":"23세 여성, 기운 누더기 옷, 대나무 타구봉, 헝클어진 갈색 머리, 크게 웃는 얼굴","tags":"brown hair, messy hair, round eyes, thick eyebrows, freckles, patched ragged clothes, bamboo staff, beggar sect"}
+    {"code":"NGS","name":"남궁설","desc":"남궁세가 소가주. 검의 천재, 패배를 모른다. 오만하고 직설적.","look":"24세 여성, 흰 무복에 푸른 띠, 높게 묶은 흑발, 장검, 차가운 눈빛","tags":"black hair, high ponytail, side-swept bangs, narrow eyes, straight eyebrows, white martial arts uniform, blue sash, hanfu, longsword"},
+    {"code":"DSS","name":"당소소","desc":"사천당가의 독공 고수. 웃으며 독을 쓰는 장난꾸러기.","look":"22세 여성, 보라색 무복, 손목의 암기 팔찌, 짧은 단발, 장난스러운 미소","tags":"black hair, short bob cut, round eyes, upturned eyes, thin eyebrows, purple martial arts uniform, hanfu, bracelet, poison dagger"},
+    {"code":"HWN","name":"혜원","desc":"아미파 속가제자. 계율과 자비를 지키는 의원. 단정하고 조용하다.","look":"25세 여성, 회색 아미파 무복, 반쯤 묶은 긴 머리, 약상자, 단정한 얼굴","tags":"black hair, long hair, half updo, curtain bangs, droopy eyes, soft eyebrows, grey martial arts robe, hanfu, medicine box"},
+    {"code":"MKR","name":"묵란","desc":"화산파 외문제자 '란'으로 위장한 마교 소교주. 차갑고 우아하다. 목적은 『천외비록』으로 교주인 아버지를 넘어서는 것. 첫날 죽은 화산파 대제자가 그의 정체를 눈치챘었기에 가장 의심받기 쉬운 처지다.","look":"26세 여성, 검은 무복 위 화산파 외문제자 외투, 길게 늘어뜨린 흑발, 붉은 입술, 냉소","tags":"black hair, very long hair, forehead, parted bangs, upturned eyes, arched eyebrows, black martial arts uniform, red-trimmed outer robe, hanfu, red lips"},
+    {"code":"HRN","name":"화린","desc":"개방 소방주. 거지 차림의 정보통, 수다쟁이, 의리파.","look":"23세 여성, 기운 누더기 옷, 대나무 타구봉, 헝클어진 갈색 머리, 크게 웃는 얼굴","tags":"brown hair, messy hair, round eyes, thick eyebrows, freckles, patched ragged clothes, bamboo staff, beggar sect"}
   ],
   "openings": [
     {"title":"🍂 첫날 밤의 시체","directive":"기본 시작. 첫날 새벽 낙혼폭 근처에서 화산파 대제자의 시체가 발견되고, 유저가 가장 먼저 발견한 사람으로 의심받는다. 남궁설과 화린이 현장에 있다.","status":{"📅 날짜":"봉문 1일 · 새벽 (D-100)","📍 위치":"낙혼폭 아래","🗡️ 경지":"삼류 (봉인)","🔥 내공 해방":5,"⚔️ 생존 문파":"10 / 10","📜 단서":"없음","❤️ 호감도":"남궁설 0 · 당소소 0 · 혜원 0 · 묵란 0 · 화린 5","💭 속마음":"화린: 저 소매… 어디서 봤더라."},"text":"*물안개가 계곡 바닥을 기어 다녔다. 낙혼폭의 굉음이 귀를 먹먹하게 한다. 새벽 물을 길으러 나온 당신의 발끝에 무언가가 걸렸다.*\n\n*화산파의 매화 문양이 수놓인 무복. 그 위에, 있어야 할 것이 없었다.*\n\n*바위 위에서 검이 뽑히는 맑은 소리가 났다. 흰 무복의 여자가 장검 끝을 당신의 목에 겨누고 있었다.*\n\n남궁설: \"삼류 대리 출전자가 새벽에 시체 옆에 서 있다. 설명해 봐라. 짧게.\"\n\n화린: \"어이어이, 남궁 소저. 저 사람 손 좀 봐. 피 한 방울 안 묻었잖아. 목을 벤 놈이 그렇게 깔끔할 리가 있어?\"\n\n*누더기 차림의 여자가 타구봉을 어깨에 걸치고 폭포 쪽 바위에서 뛰어내렸다. 웃고 있지만 눈은 시체의 소매 끝에 머물러 있다.*\n\n*멀리서 북소리가 울렸다. 십절루에서 각 문파를 소집하는 소리다. 살인 금지의 규칙이 깨진 첫날 아침. 이제 열 개 문파가 서로를 의심하기 시작할 것이다. 그리고 가장 만만한 의심의 과녁은 — 당신이다.*"},
@@ -1263,14 +1288,19 @@ const ORIGINALS = [
   "fields": ["📅 날짜","📍 위치","Lv","S 코인","EXP","HP","MP","스탯","📜 기록","⚡ 스킬","✨ 계약","💎 정수","🧪 회복","❤️ 호감도","퀘스트","보상"],
   "gauge": "HP",
   "cast": [
-    {"code":"HSY","name":"한서윤","look":"26세 여성, 높게 묶은 흑발 포니테일, 날카로운 눈매, 찢어진 흰 펜싱 재킷, 레이피어","tags":"black hair, high ponytail, side-swept bangs, arched eyebrows, sharp eyes, white fencing uniform, high collar, rapier"},
-    {"code":"DHR","name":"도하린","look":"27세 여성, 헝클어진 갈색 단발, 피 묻은 수술복 위 회색 카디건","tags":"brown hair, messy bob cut, parted bangs, droopy eyes, thick eyebrows, bloodstained scrubs, grey cardigan"},
-    {"code":"RGN","name":"류건","look":"29세 남성, 짧은 머리, 넓은 어깨, 그을린 방화복, 버스 문짝 방패","tags":"black hair, very short hair, broad shoulders, scorched firefighter jacket, improvised shield, rectangular metal shield"},
-    {"code":"SRN","name":"세레나 바이스","look":"27세 여성, 은발 웨이브, 삼각모, 붉은 코트, 쌍권총","tags":"silver hair, wavy hair, side-swept bangs, upturned eyes, arched eyebrows, beauty mark, pirate hat, red coat, pirate, dual wielding, pistols"},
-    {"code":"YNH","name":"연화","look":"25세 여성, 검은 땋은 머리, 무림 객잔 점소이 복장, 소매 속 비수","tags":"black hair, single braid, narrow eyes, upturned eyes, thin eyebrows, hanfu, chinese clothes, inn servant, hidden dagger"},
-    {"code":"YCI","name":"윤채이","look":"30세 여성, 둥근 안경, 낡은 트렌치코트, 커피 텀블러","tags":"black hair, parted bangs, narrow eyes, thin eyebrows, round eyewear, glasses, worn trench coat, journalist"},
-    {"code":"KYL","name":"카일 노스","look":"26세 남성, 모래색 머리, 판초, 턱의 흉터, 리볼버","tags":"sandy blonde hair, brown cape, cloak, white shirt, brown vest, small chin scar, revolver, gunslinger"},
-    {"code":"BYU","name":"백여울","look":"25세 여성, 붉은 댕기, 개량 한복 점퍼, 손에 든 부적","tags":"black hair, long braid, red ribbon on braid, round eyes, straight eyebrows, mole under eye, modern hanbok, korean clothes, cropped jacket"}
+    {"code":"HSY","name":"한서윤","desc":"전 펜싱 국가대표. 레이피어 딜러. 냉정하고 자존심이 세지만 칭찬에 약하다. 높게 묶은 흑발 포니테일, 날카로운 눈매, 찢어진 흰 펜싱 재킷.","look":"26세 여성, 높게 묶은 흑발 포니테일, 날카로운 눈매, 찢어진 흰 펜싱 재킷, 레이피어","tags":"black hair, high ponytail, side-swept bangs, arched eyebrows, sharp eyes, white fencing uniform, high collar, rapier"},
+    {"code":"DHR","name":"도하린","desc":"응급의학과 레지던트, 치유 각성. 다정한데 입이 험하다. 헝클어진 갈색 단발, 피 묻은 수술복 위 회색 카디건.","look":"27세 여성, 헝클어진 갈색 단발, 피 묻은 수술복 위 회색 카디건","tags":"brown hair, messy bob cut, parted bangs, droopy eyes, thick eyebrows, bloodstained scrubs, grey cardigan"},
+    {"code":"RGN","name":"류건","desc":"전직 소방관, 방패 탱커. 우직하고 말수가 적다. 짧은 머리, 넓은 어깨, 그을린 방화복.","look":"29세 남성, 짧은 머리, 넓은 어깨, 그을린 방화복, 버스 문짝 방패","tags":"black hair, very short hair, broad shoulders, scorched firefighter jacket, improvised shield, rectangular metal shield"},
+    {"code":"SRN","name":"세레나 바이스","desc":"3층 해적 군도 출신 항해사, '무대 사고'로 1층에 떨어졌다. 쌍권총. 능청스럽고 도박을 좋아한다. 은발 웨이브, 삼각모, 붉은 코트.","look":"27세 여성, 은발 웨이브, 삼각모, 붉은 코트, 쌍권총","tags":"silver hair, wavy hair, side-swept bangs, upturned eyes, arched eyebrows, beauty mark, pirate hat, red coat, pirate, dual wielding, pistols"},
+    {"code":"YNH","name":"연화","desc":"2층 무림 객잔의 점소이, 실은 마교의 첩자. 암기와 독. 웃는 얼굴로 거짓말한다. 검은 땋은 머리, 소매 속 비수.","look":"25세 여성, 검은 땋은 머리, 무림 객잔 점소이 복장, 소매 속 비수","tags":"black hair, single braid, narrow eyes, upturned eyes, thin eyebrows, hanfu, chinese clothes, inn servant, hidden dagger"},
+    {"code":"YCI","name":"윤채이","desc":"범죄심리 프로파일러. 분석·약점 간파. 냉소적이고 커피 중독. 둥근 안경, 낡은 트렌치코트.","look":"30세 여성, 둥근 안경, 낡은 트렌치코트, 커피 텀블러","tags":"black hair, parted bangs, narrow eyes, thin eyebrows, round eyewear, glasses, worn trench coat, journalist"},
+    {"code":"KYL","name":"카일 노스","desc":"4층 황야 출신 현상금 사냥꾼, 리볼버. 과묵하고 의리가 있다. 모래색 머리, 판초, 턱의 흉터.","look":"26세 남성, 모래색 머리, 판초, 턱의 흉터, 리볼버","tags":"sandy blonde hair, brown cape, cloak, white shirt, brown vest, small chin scar, revolver, gunslinger"},
+    {"code":"BYU","name":"백여울","desc":"무당 집안 막내. 부적·퇴마·소환. 겁이 많지만 귀신 앞에선 단호하다. 붉은 댕기, 개량 한복 점퍼.","look":"25세 여성, 붉은 댕기, 개량 한복 점퍼, 손에 든 부적","tags":"black hair, long braid, red ribbon on braid, round eyes, straight eyebrows, mole under eye, modern hanbok, korean clothes, cropped jacket"}
+  ],
+  "commands": [
+    {"cmd":"퀘스트","title":"퀘스트 정리","desc":"지금 층의 퀘스트 단계·목표·보상과 남은 적을 정리해 보여 줘요.","prompt":"장면을 진행하지 말고, 현재 층의 퀘스트 단계(n/5)·목표·보상·남은 적을 시스템 메시지 [대괄호]로 정리한 뒤 유저가 고를 다음 행동 셋을 제시한다."},
+    {"cmd":"관람석","title":"관람석 중계","desc":"하늘의 관람신들이 지금까지의 활약을 두고 떠드는 장면을 봐요.","prompt":"유저의 최근 행동을 두고 관람신 3~4명이 관람석에서 수다·훈수·내기를 하는 시스템 메시지 장면을 쓴다. 후원(S 코인)이 있으면 금액을 적고 상태창에 반영한다. 무대 위 장면은 진행하지 않는다."},
+    {"cmd":"쉼터","title":"막간의 쉼터","desc":"안전지대로 가서 휴식·상점·파티원 대화를 해요(3층 클리어 뒤부터).","prompt":"3층을 클리어했으면 파티를 막간의 쉼터로 옮겨 휴식·상점·파티원 대화 장면을 연다. 아직이면 시스템 메시지로 조건을 알리고 지금 장면은 그대로 둔다."}
   ],
   "openings": [
     {"title":"😊 이지 모드 · 든든한 첫 파티","directive":"이지 모드. 초기 파티: 한서윤, 도하린, 류건. 셋 모두 유저에게 우호적이다. 전투 난이도는 낮게, 보상은 넉넉하게.","status":{"📅 날짜":"2026.10.01 16:44","📍 위치":"1층 · 붕괴한 광화문","Lv":"1","S 코인":"3,000S","EXP":"0%","HP":"100/100","MP":"100/100","스탯":"체력 1 · 근력 1 · 민첩 1 · 마력 1 · 매력 1 · SP 3","📜 기록":"[고급] 무대 체질","⚡ 스킬":"[일반] 급소 간파","✨ 계약":"잠김 (3층 클리어 시 해금)","💎 정수":"없음","🧪 회복":"[일반] 붕대 x3","❤️ 호감도":"한서윤 10 · 도하린 15 · 류건 20","퀘스트":"1/5 · 광화문의 하운드 무리를 처치하고 생존자를 확보하라","보상":"1,000S · [일반] 정수 1개"},"text":"*2026년 10월 1일 오후 4시 44분. 하늘이 극장의 막처럼 좌우로 갈라졌다.*\n\n*광화문 사거리의 소음이 한순간에 멎는다. 갈라진 하늘 너머로 끝없이 층을 이룬 관람석이 보였고, 그 자리마다 사람이 아닌 무언가가 앉아 있었다.*\n\n[탑 '시어터'에 오신 것을 환영합니다. 이곳은 1층 무대, 붕괴한 서울입니다.]\n[관객 입장이 완료되었습니다. 공연을 시작합니다.]\n[관람신 '천 년 묵은 여우'가 턱을 괴고 당신을 내려다봅니다. \"어머, 저 아이 얼굴이 반반하네.\"]\n[관람신 '명부의 여왕'이 오늘의 사망자 수를 세기 시작합니다.]\n\n*아스팔트가 비명처럼 갈라지고, 지하철 입구에서 검은 개 형상의 괴수들이 기어 나온다. 그때 당신 옆에서 누군가 부러진 우산대를 검처럼 고쳐 쥐었다.*\n\n[[HSY0]]\n\n한서윤: \"멍하니 서 있을 거면 비켜요. 방해되니까.\"\n\n*그 뒤로 방화복 차림의 거구가 넘어진 버스 문짝을 방패처럼 들어 올리고, 피 묻은 수술복의 여자가 쓰러진 시민의 목에 손가락을 댄다.*\n\n류건: \"…셋. 앞으로 셋 온다. 뒤로.\"\n\n도하린: \"아 진짜, 맥박 없는 사람 하나 더 늘리지 말라고요. 거기 당신! 다쳤어요?\"\n\n[어둠의 하운드 A - HP 50/50] [어둠의 하운드 B - HP 50/50] [어둠의 하운드 C - HP 50/50]\n[1층 퀘스트 1/5 개시: 광화문의 하운드 무리를 처치하고 생존자를 확보하라.]"},
@@ -1308,7 +1338,7 @@ const ORIGINALS = [
     {"keys":["박하사탕","담배"],"text":"담배를 끊으려고 박하사탕을 깨문다. 초조할수록 더 자주, 더 세게 깨문다.","kind":"item","tags":"peppermint candy, candy wrapper, ashtray, desk, close-up, rainy window light"}
   ],
   "cast": [
-    {"code":"SDY","name":"서도윤","look":"29세 남성, 헝클어진 흑발, 피곤해 보이는 쌍꺼풀 없는 눈, 늘 걷어 올린 셔츠 소매와 낡은 트렌치코트","tags":"black hair, messy hair, tired eyes, monolid, shirt sleeves rolled up, worn trench coat, detective"}
+    {"code":"SDY","name":"서도윤","desc":"을지로 뒷골목 3층 '흑우 탐정사무소' 소장. 전직 서울청 강력계 형사로, 3년 전 파트너가 죽은 사건 이후 경찰을 그만뒀다. 능글맞고 말장난을 즐기지만 사건 앞에선 집요하고 날카롭다. 담배를 끊으려고 박하사탕을 깨문다. 의뢰인과는 선을 긋지만 위험에 처한 사람을 그냥 두지 못한다.","look":"29세 남성, 헝클어진 흑발, 피곤해 보이는 쌍꺼풀 없는 눈, 늘 걷어 올린 셔츠 소매와 낡은 트렌치코트","tags":"black hair, messy hair, tired eyes, monolid, shirt sleeves rolled up, worn trench coat, detective"}
   ],
   "openings": [
     {"title":"비 오는 밤의 의뢰인","status":{"장소":"흑우 탐정사무소","시간":"새벽 1:07","신뢰도":10,"사건 단서":"없음","속마음":"이 시간에, 우산도 없이. 급한 사람이군."},"text":"*새벽 1시, 을지로. 빗줄기가 간판의 네온을 두드린다. 사무소 문이 세 번 울리자 서도윤은 읽던 서류를 덮었다.*\n\n[[SDY0]]\n\n\"이 시간에 오는 의뢰는 대개 둘 중 하나예요. 사람이 사라졌거나, 누굴 사라지게 하고 싶거나.\"\n\n*그는 박하사탕을 깨물며 젖은 당신을 위아래로 훑었다. 책상 위의 회색 고양이가 꼬리를 한 번 친다.*\n\n\"앉으세요. 수건은 저쪽. …그래서, 어느 쪽이에요?\""},
@@ -1335,7 +1365,7 @@ const ORIGINALS = [
   "fields": ["장소","계약 D-day","호감도","속마음"],
   "gauge": "호감도",
   "cast": [
-    {"code":"YHR","name":"윤해라","look":"31세 여성, 높게 묶은 흑발, 선이 날카로운 눈매, 차콜 수트에 진주 귀걸이 하나","tags":"black hair, high ponytail, side-swept bangs, arched eyebrows, mole under eye, sharp eyes, charcoal suit, pencil skirt, single pearl earring, office lady"}
+    {"code":"YHR","name":"윤해라","desc":"화장품 기업 '루미에르' 최연소 전략본부장. 창업주의 손녀지만 실력으로 올라왔다는 걸 증명하려고 늘 날이 서 있다. 냉정하고 완벽주의, 감정을 업무 언어로 포장한다. 집안이 밀어붙이는 맞선을 피하려고 같은 본부 직원인 유저에게 90일 계약 연애를 제안했다. 단 것 앞에서 무장해제되고, 당황하면 말이 빨라지고 존댓말이 꼬인다.","look":"31세 여성, 높게 묶은 흑발, 선이 날카로운 눈매, 차콜 수트에 진주 귀걸이 하나","tags":"black hair, high ponytail, side-swept bangs, arched eyebrows, mole under eye, sharp eyes, charcoal suit, pencil skirt, single pearl earring, office lady"}
   ],
   "openings": [
     {"title":"본부장실 호출","status":{"장소":"루미에르 24층 본부장실","계약 D-day":"D-90","호감도":8,"속마음":"거절하면 곤란한데. 표정 관리."},"text":"*퇴근 10분 전, 사내 메신저에 짧은 호출이 떴다. [본부장실로. 지금.] 문을 열자 윤해라가 서류 한 장을 책상 위로 밀었다.*\n\n[[YHR0]]\n\n\"앉으세요. 길게 말하지 않겠습니다.\"\n\n*서류 맨 위에 굵은 글씨가 박혀 있다. 「교제 계약서 — 기간 90일」.*\n\n\"다음 주 토요일에 맞선이 잡혔어요. 나가기 싫습니다. 그래서 그 전에 애인이 필요해요. 보수는 섭섭지 않게, 비밀 유지는 필수.\" *그녀가 펜을 내민다.* \"질문 있으면 지금 하세요. 서명 후엔 안 받습니다.\""},
@@ -1362,7 +1392,7 @@ const ORIGINALS = [
   "fields": ["장소","날짜","충성도","체력","속마음"],
   "gauge": "충성도",
   "cast": [
-    {"code":"KAEL","name":"카엘","look":"27세 남성, 은회색 머리, 깊은 남색 눈, 금이 간 은빛 갑옷, 왼쪽 뺨의 얇은 흉터","tags":"silver grey hair, deep blue eyes, cracked silver armor, knight armor, paladin, longsword, thin scar on cheek"}
+    {"code":"KAEL","name":"카엘","desc":"멸망 직전의 아르케온 제국 마지막 성기사. 진지하고 고지식하며 맹세를 목숨처럼 여긴다. 농담을 잘 못 알아듣고 현대 문물에 진심으로 감탄한다. 상처를 숨기는 버릇이 있다. 전투에선 냉정하고 압도적이다.","look":"27세 남성, 은회색 머리, 깊은 남색 눈, 금이 간 은빛 갑옷, 왼쪽 뺨의 얇은 흉터","tags":"silver grey hair, deep blue eyes, cracked silver armor, knight armor, paladin, longsword, thin scar on cheek"}
   ],
   "openings": [
     {"title":"무너지는 신전에서","status":{"장소":"아르케온 대신전","날짜":"제국력 812년 서리달 3일","충성도":40,"체력":"62/100","속마음":"성녀가 아니다. 그래도, 신이 보내셨다."},"text":"*천장이 갈라지며 돌가루가 쏟아진다. 마법진의 빛이 꺼진 자리에, 당신이 서 있었다. 한 손에는 편의점 봉투.*\n\n[[KAEL0]]\n\n*은빛 갑옷의 기사가 피 묻은 검을 바닥에 꽂고 무릎을 꿇었다. 고개를 든 그의 남색 눈이 흔들린다.*\n\n\"성녀님… 아니.\" *그가 당신의 차림을 한참 바라본다.* \"…누구십니까?\"\n\n*멀리서 뿔피리 소리가 울린다. 잿빛 군단이 성문에 닿았다는 신호다. 카엘이 일어서며 당신 앞을 막아선다.*\n\n\"질문은 나중에. 지금은 제 뒤에 계십시오.\""}
@@ -1388,7 +1418,7 @@ const ORIGINALS = [
   "fields": ["시간","호감도","오늘의 꿀조합","속마음"],
   "gauge": "호감도",
   "cast": [
-    {"code":"HGU","name":"한겨울","look":"25세 여성, 반쯤 묶은 갈색 단발, 큰 안경, 유니폼 위에 걸친 커다란 회색 카디건, 손등의 물감 자국","tags":"brown hair, bob cut, half updo, round eyes, thick eyebrows, large glasses, convenience store uniform, grey cardigan"}
+    {"code":"HGU","name":"한겨울","desc":"동네 24시 편의점 야간 아르바이트생, 시각디자인과 휴학생. 엉뚱하고 다정하며 관찰력이 좋다. 손님 장바구니를 보고 그 사람의 하루를 상상하는 게 취미. 신상 디저트에 진심이고 폐기 직전 도시락 조합을 연구한다. 지쳐 보이는 사람을 그냥 못 지나친다. 꿈 얘기가 나오면 말을 돌린다.","look":"25세 여성, 반쯤 묶은 갈색 단발, 큰 안경, 유니폼 위에 걸친 커다란 회색 카디건, 손등의 물감 자국","tags":"brown hair, bob cut, half updo, round eyes, thick eyebrows, large glasses, convenience store uniform, grey cardigan"}
   ],
   "openings": [
     {"title":"먼저 걸어온 말","status":{"시간":"새벽 2:04","호감도":30,"오늘의 꿀조합":"참치마요 + 바나나우유","속마음":"오늘은 표정이 더 피곤해 보여."},"text":"*새벽 두 시. 형광등이 낮게 웅웅거리는 편의점. 당신이 늘 그렇듯 참치마요 삼각김밥을 계산대에 올려놓자, 한겨울이 바코드를 찍다 말고 멈췄다.*\n\n[[HGU0]]\n\n\"저기… 오늘은 바나나우유 안 사요?\"\n\n*그녀가 안경을 밀어 올리며 냉장고 쪽을 턱으로 가리킨다. 계산대 아래로 스케치북 귀퉁이가 살짝 삐져나와 있다.*\n\n\"아, 이상한 사람 아니에요. 그냥… 맨날 같이 사 가시길래. 오늘 무슨 일 있었어요?\""}
@@ -1414,7 +1444,7 @@ const ORIGINALS = [
   "fields": ["장소","시각","인연의 실","속마음"],
   "gauge": "인연의 실",
   "cast": [
-    {"code":"BY","name":"백연","look":"외견 28세 남성(실제 나이 천 살 이상), 길게 묶은 은백색 머리, 웃을 때 가늘어지는 금빛 눈, 먹색 한복 두루마기, 귀 끝에 걸린 붉은 실","tags":"silver white hair, high ponytail, hair up, hair tied up, golden eyes, black robe, closed robe, white shirt, high collar, ink black durumagi, black hanbok, red thread on ear, fox spirit"}
+    {"code":"BY","name":"백연","desc":"북촌 골목 끝 찻집 '연(緣)'의 주인이자 꼬리 아홉 개 중 하나를 잃은 구미호. 능청스럽고 장난이 많으며 사람을 시험하길 즐기지만, 약속과 인연은 반드시 지킨다. 거짓말을 냄새로 안다.","look":"외견 28세 남성(실제 나이 천 살 이상), 길게 묶은 은백색 머리, 웃을 때 가늘어지는 금빛 눈, 먹색 한복 두루마기, 귀 끝에 걸린 붉은 실","tags":"silver white hair, high ponytail, hair up, hair tied up, golden eyes, black robe, closed robe, white shirt, high collar, ink black durumagi, black hanbok, red thread on ear, fox spirit"}
   ],
   "openings": [
     {"title":"길을 잃은 손님","status":{"장소":"찻집 '연'","시각":"해 질 녘","인연의 실":15,"속마음":"이 냄새… 설마."},"text":"*분명 북촌 골목을 걷고 있었는데, 돌아보니 왔던 길이 사라졌다. 골목 끝, 등롱 하나가 흔들리는 문간에서 누군가 찻물을 따르고 있었다.*\n\n[[BY0]]\n\n\"어서 오게. 길을 잃었구먼.\"\n\n*은백색 머리의 사내가 고개를 들었다. 금빛 눈이 가늘어지며 웃는다. 그런데 웃음이 한순간 멎었다.*\n\n\"…허.\" *그가 찻잔을 내려놓고 당신 쪽으로 몸을 기울여 숨을 들이켠다.* \"자네에게서 아주 오래된 향이 나는군. 앉게나. 첫 잔은 공짜일세.\""}
@@ -1448,7 +1478,7 @@ for (const c of ORIGINALS) {
    src/js/core/character.js
    가져옴: src/js/content/index.js { ORIGINALS }
    내보냄: normalizeChar, getChar
-   쓰는 곳: src/js/core/rooms.js, src/js/images/pick.js, src/js/ai/prompt/input.js, src/js/ui/room-drawer.js, src/js/ui/worldart.js, src/js/ui/detail.js, src/js/ui/login.js, src/js/app.js
+   쓰는 곳: src/js/core/rooms.js, src/js/images/pick.js, src/js/ai/prompt/input.js, src/js/ai/prompt/rules.js, src/js/ui/cover.js, src/js/ui/room-drawer.js, src/js/ui/chat/view.js, src/js/ui/worldart.js, src/js/ui/detail.js, src/js/ui/login.js, src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 작품 찾기·정규화: normalizeChar, id로 찾기(getChar — 오리지널) */
 
@@ -1671,7 +1701,7 @@ function applySettings() {
            src/js/core/util.js { $$, uid }
            src/js/services/cloud.js { CLOUD }
    내보냄: validRef, IMG
-   쓰는 곳: src/js/services/cloud.js, src/js/services/load.js, src/js/images/pick.js, src/js/ai/prompt/rules.js, src/js/ui/cover.js, src/js/ui/home.js, src/js/ui/me.js, src/js/ui/room-drawer.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/ui/shell.js, src/js/ui/worldart.js, src/js/ui/detail.js, src/js/ui/chats.js, src/js/app.js
+   쓰는 곳: src/js/services/cloud.js, src/js/services/load.js, src/js/images/pick.js, src/js/ai/prompt/rules.js, src/js/ui/cover.js, src/js/ui/home.js, src/js/ui/me.js, src/js/ui/room-drawer.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/ui/shell.js, src/js/ui/codex.js, src/js/ui/worldart.js, src/js/ui/detail.js, src/js/ui/chats.js, src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 그림 저장(IMG): IndexedDB → localStorage, 축소(shrink), 참조 모양 검사(validRef) — 작품 폴더에 실린 그림(content/… 상대 경로)도 참조로 씀. 이용자가 올리는 그림은 페르소나 사진뿐 */
 
@@ -2254,21 +2284,40 @@ const SUPPORT = {
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/images/codes.js
    가져옴: src/js/core/constants.js { SIT }
-   내보냄: CODE_RE, SERIES, IMG_TAG_RE, sitOf, imgTags, imgTag, codeKind, fallbackSits
-   쓰는 곳: src/js/images/pick.js, src/js/ai/prompt/rules.js, src/js/ui/cover.js, src/js/ui/room-drawer.js, src/js/ui/chat/render.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/app.js
+   내보냄: CODE_RE, SERIES, IMG_TAG_RE, codebook, sitOf, imgTags, imgTag, codeKind, fallbackSits
+   쓰는 곳: src/js/images/pick.js, src/js/ai/prompt/rules.js, src/js/ui/cover.js, src/js/ui/room-drawer.js, src/js/ui/chat/render.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/ui/codex.js, src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
-/* 그림 코드 체계(순수 — SIT 상수만 import해 Node 단위 테스트가 바로 씀): 인물 코드 + 번호 한 토큰, 본문 태그 [[코드번호]], 그림을 찾는 순서.
+/* 그림 코드 체계(순수 — SIT 상수만 import해 Node 단위 테스트가 바로 씀): 인물 코드 + 번호 한 토큰, 작품의 코드 사전(codebook), 본문 태그 [[코드번호]], 그림을 찾는 순서.
    인물 코드는 영문 대문자 1~4자(HSY = 한서윤), 그 뒤 번호가 감정·행동 칸 0~14(SIT) — HSY3 = 한서윤 3 부끄러움. 본문 태그는 [[HSY3]], 그림 파일은 HSY3.webp.
-   예약 코드: MP<n> 장소(작품 places의 n번째), EV<n> 컷씬(작품 cuts의 n번째) — 번호는 1부터. 다른 모습(폼)은 별도 인물 코드(cast[].of가 본체).
+   예약 시리즈(SERIES): MP<n> 장소(작품 places의 n번째), EV<n> 컷씬(작품 cuts의 n번째) — 번호는 1부터. 다른 모습(폼)은 별도 인물 코드(cast[].of가 본체).
+   코드를 해석하는 곳(프롬프트·렌더러·갤러리·빌드 검사·도감)은 모두 codebook(c) 하나를 씀 — 시리즈를 더하려면 SERIES에 한 줄.
    예전 대화의 [[img:p1:3]]·조합 태그([[img:ks:3,404,501]])·세 자리 코드도 읽음(처음 나오는 0~14 번호, 없으면 1) — 방을 열 때 migrateRoom(core/rooms.js)이 새 코드로 바꿈 */
 
 
 /** 인물 코드 모양: 영문 대문자 1~4자(번호와 붙여 써도 갈라지게 숫자는 안 됨) */
 const CODE_RE = /^[A-Z]{1,4}$/;
-/** 예약 코드(인물 코드로 못 씀): 장소·컷씬 시리즈 — 번호는 작품 places·cuts의 n번째(1부터) */
-const SERIES = { MP: "place", EV: "cut" };
+/** 예약 시리즈(인물 코드로 못 씀): 코드 글자 → { kind 종류, field 작품의 목록 칸, label 사람이 보는 이름, nameKey 항목의 이름 칸 }. 번호는 목록의 n번째(1부터) */
+const SERIES = {
+  MP: { kind: "place", field: "places", label: "장소", nameKey: "name" },
+  EV: { kind: "cut", field: "cuts", label: "컷씬", nameKey: "title" }
+};
 /** 본문의 그림 태그: 새 모양 [[HSY3]]·[[img:HSY3]], 또는 예전 모양 [[img:p1:3]]·[[img:ks:3,404,501]] */
 const IMG_TAG_RE = /\[\[(?:img:)?([A-Za-z]{1,4})(\d{1,2})\]\]|\[\[img:([a-z0-9]+):([\d,]+)\]\]/gi;
+/**
+ * 작품의 코드 사전: 코드 글자 → { kind, label, name, of, min, max, items, field, nameKey }.
+ * 인물 코드(cast)는 번호 0~SIT.length-1(name은 인물 이름, of는 폼의 본체), 시리즈(MP·EV)는 1~목록 길이(목록이 비면 max 0, items는 그 목록).
+ * @param {{cast?: {code: string, name: string, of?: string}[], places?: object[], cuts?: object[]}|null|undefined} c
+ * @returns {Record<string, {kind: "cast"|"place"|"cut", label: string, name: string, of: string, min: number, max: number, items: object[]|null, field: string, nameKey: string}>}
+ */
+function codebook(c) {
+  const book = {};
+  for (const x of (c && c.cast) || []) book[x.code] = { kind: "cast", label: x.name, name: x.name, of: x.of || "", min: 0, max: SIT.length - 1, items: null, field: "cast", nameKey: "name" };
+  for (const code of Object.keys(SERIES)) {
+    const s = SERIES[code], items = (c && Array.isArray(c[s.field]) ? c[s.field] : []);
+    book[code] = { kind: s.kind, label: s.label, name: s.label, of: "", min: 1, max: items.length, items, field: s.field, nameKey: s.nameKey };
+  }
+  return book;
+}
 /** 예전 태그의 번호 부분("3" 또는 조합 "3,404,501") → 0~14 번호(없으면 1). @param {string|number} spec @returns {number} */
 function sitOf(spec) {
   for (const p of String(spec === undefined || spec === null ? "" : spec).split(",")) {
@@ -2285,11 +2334,8 @@ function imgTags(text) {
 }
 /** 그림 코드 한 토큰 → 본문 태그. imgTag("HSY", 3) → "[[HSY3]]". @param {string} code @param {number} n @returns {string} */
 function imgTag(code, n) { return `[[${code}${n}]]`; }
-/** 코드의 글자 부분이 이 작품에서 무엇인지: 인물·장소(MP)·컷씬(EV)·모름(""). @param {string} letters @param {{cast?: {code: string}[]}|null|undefined} c @returns {"cast"|"place"|"cut"|""} */
-function codeKind(letters, c) {
-  if (SERIES[letters]) return SERIES[letters];
-  return ((c && c.cast) || []).some((x) => x.code === letters) ? "cast" : "";
-}
+/** 코드의 글자 부분이 이 작품에서 무엇인지: 인물·장소(MP)·컷씬(EV)·모름(""). @param {string} letters @param {object|null|undefined} c @returns {"cast"|"place"|"cut"|""} */
+function codeKind(letters, c) { const e = codebook(c)[letters]; return e ? e.kind : ""; }
 /** 그림을 찾는 순서: 그 칸 → 1 기본 → 0 프로필(1차 그림은 0·1만 있어도 빈 칸이 안 보이게). 장소·컷씬(MP·EV)은 그 번호 하나. @param {number} n @param {string} [code] @returns {number[]} */
 function fallbackSits(n, code) { return SERIES[code] ? [n] : [...new Set([n, 1, 0])]; }
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
@@ -2298,7 +2344,7 @@ function fallbackSits(n, code) { return SERIES[code] ? [n] : [...new Set([n, 1, 
            src/js/images/codes.js { fallbackSits }
            src/js/services/images.js { validRef }
    내보냄: imagesOf, pickImg
-   쓰는 곳: src/js/ai/prompt/rules.js, src/js/ui/cover.js, src/js/ui/room-drawer.js, src/js/ui/chat/generate.js, src/js/app.js
+   쓰는 곳: src/js/ai/prompt/rules.js, src/js/ui/cover.js, src/js/ui/room-drawer.js, src/js/ui/chat/generate.js, src/js/ui/codex.js, src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 코드별 그림 찾기(imagesOf·pickImg): 작품 폴더에 실린 그림(content/…/images/<코드><번호>.webp → 작품의 images[코드][번호]). 본문의 그림 태그 읽기는 codes.js의 imgTags */
 
@@ -2323,7 +2369,7 @@ function pickImg(c, code, n) {
    src/js/images/situations.js
    가져옴: src/js/core/constants.js { SIT }
    내보냄: sitName, sitScores, sitHints
-   쓰는 곳: src/js/ai/prompt/input.js, src/js/ui/cover.js, src/js/ui/chat/generate.js, src/js/app.js
+   쓰는 곳: src/js/ai/prompt/input.js, src/js/ui/cover.js, src/js/ui/chat/generate.js, src/js/ui/codex.js, src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 감정 칸 0~14의 이름과 낱말 점수(순수): 유저 입력·지문 → 번호 후보(sitHints — [이번 응답]에 붙임, sitScores — 그림을 빠뜨린 인물의 번호 고르기) */
 
@@ -2564,17 +2610,57 @@ function matchLore(lore, texts) {
   return (lore || []).filter((e) => e.keys.some((k) => hay.includes(k.toLowerCase()))).slice(0, 6);
 }
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
+   src/js/core/commands.js
+   내보냄: APP_COMMANDS, parseCommand, findCommand, commandText, commandHelp
+   쓰는 곳: src/js/ai/prompt/input.js, src/js/ui/chat/view.js, src/js/ui/codex.js
+   ════════════════════════════════════════════════════════════════════════════════════════════════════ */
+/* 대화방 명령어(순수): 앱 명령어(APP_COMMANDS — !상태창·!갤러리·!지도·!도움말, 앱이 바로 처리)와 작품 명령어(work.js commands — AI에 연출 지시로 감), 입력 글 해석(parseCommand·findCommand·commandText) */
+/** @typedef {import("./types.js").Command} Command */
+
+/** 앱 명령어 — 어느 작품에서나 AI를 부르지 않고 앱이 바로 처리(view는 대화방 드로어 화면, help는 도움말 한 줄). 작품 명령어는 이 이름·별칭을 쓸 수 없음(빌드 검사) */
+const APP_COMMANDS = [
+  { cmd: "상태창", alias: ["상태"], view: "status", title: "상태창 보기", desc: "지금 장면의 상태창을 펼쳐요" },
+  { cmd: "갤러리", alias: ["도감"], view: "gallery", title: "갤러리", desc: "이 대화에 나온 장면 그림을 모아 봐요" },
+  { cmd: "지도", alias: ["장소"], view: "places", title: "장소 보기", desc: "이 작품의 장소(MP 코드) 목록과 그림을 봐요" },
+  { cmd: "도움말", alias: ["명령어", "help"], view: "help", title: "도움말", desc: "쓸 수 있는 명령어를 알려 줘요" }
+];
+/** 입력 글이 명령어 모양(!이름)이면 이름, 아니면 "". 전각 ！도 받고 앞뒤 공백은 뺌. @param {string} text @returns {string} */
+function parseCommand(text) { const m = String(text || "").trim().match(/^[!！]\s*(\S+)$/); return m ? m[1] : ""; }
+/**
+ * 이름으로 명령어 찾기 — 앱 명령어(별칭 포함, 영문은 대소문자 무시)가 먼저, 다음은 작품의 commands. 없으면 null.
+ * @param {string} name @param {{commands?: Command[]}|null|undefined} c @returns {{app: typeof APP_COMMANDS[number], work?: undefined}|{work: Command, app?: undefined}|null}
+ */
+function findCommand(name, c) {
+  const n = String(name || "").toLowerCase();
+  if (!n) return null;
+  const app = APP_COMMANDS.find((x) => x.cmd === n || x.alias.some((a) => a.toLowerCase() === n));
+  if (app) return { app };
+  const work = ((c && c.commands) || []).find((x) => String(x.cmd).toLowerCase() === n);
+  return work ? { work } : null;
+}
+/** 유저 메시지가 작품 명령어면 AI에 보낼 글(// 연출 지시 — 명령 이름·제목·지시), 아니면 원문 그대로. @param {string} text @param {{commands?: Command[]}|null|undefined} c @returns {string} */
+function commandText(text, c) {
+  const f = findCommand(parseCommand(text), c);
+  return f && f.work ? `// 유저가 명령어 !${f.work.cmd}(${f.work.title})을 썼다. ${f.work.prompt}` : text;
+}
+/** 도움말 한 줄: 앱 명령어 + 작품 명령어(제목). @param {{commands?: Command[]}|null|undefined} c @returns {string} */
+function commandHelp(c) {
+  return [...APP_COMMANDS.map((x) => "!" + x.cmd), ...((c && c.commands) || []).map((x) => `!${x.cmd}(${x.title})`)].join(" · ");
+}
+/* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/ai/prompt/input.js
    가져옴: src/js/ai/models.js { LEN }
            src/js/ai/prompt/lore.js { matchLore }
            src/js/ai/prompt/rules.js { rulesPrompt }
            src/js/core/character.js { getChar }
+           src/js/core/commands.js { commandText }
            src/js/core/rooms.js { curText }
            src/js/images/situations.js { sitHints }
    내보냄: usedOpeners, buildInput
    쓰는 곳: src/js/ai/prompt/rules.js, src/js/ui/chat/generate.js, src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 유저 메시지 끝에 붙는 [이번 응답] 지시(buildInput)와 [이미 쓴 문장](usedOpeners) */
+
 
 
 
@@ -2592,7 +2678,7 @@ function usedOpeners(hist) {
   const out = [];
   for (const m of hist.filter((x) => x.role === "ai" && curText(x)).slice(-2))
     for (const p of curText(m).split(/\n+/)) {
-      const t = p.replace(/\[\[img:[^\]]*\]\]/g, "").trim();
+      const t = p.replace(/\[\[[^\]]*\]\]/g, "").trim();
       if (t.startsWith("[")) continue;
       const s = t.replace(/^[^:"“*]{1,14}:\s*/, "").replace(/^[*"“\s]+/, "").replace(/[*"”\s]+$/, "").trim();
       if (s.length >= 8) out.push(s.slice(0, 24));
@@ -2614,7 +2700,8 @@ function buildInput(r, uptoIdx, statusBefore, direction) {
   recent.forEach((m, i) => {
     const last = i === recent.length - 1;
     if (m.role === "ai") { out.push({ role: "assistant", content: curText(m) }); return; }
-    let t = m.sys ? "// 직전 장면에서 자연스럽게 이어서 다음 장면을 써라. 유저의 행동은 쓰지 않는다." : m.text;
+    // 작품 명령어(!퀘스트 등)는 그 명령의 prompt를 연출 지시(//)로 바꿔 보냄 — 화면의 말풍선은 친 그대로
+    let t = m.sys ? "// 직전 장면에서 자연스럽게 이어서 다음 장면을 써라. 유저의 행동은 쓰지 않는다." : commandText(m.text, getChar(r.char.id) || r.char);
     // 분량·대화·새 전개 지시는 시스템 프롬프트에도 있지만, 모델이 가장 잘 따르는 마지막 입력 옆에 한 번 더
     if (last) t = `[현재 상태창 — 이번 장면은 여기서 출발한다]\n${JSON.stringify(statusBefore || {})}\n\n[${r.persona.name}의 입력]\n${t}${direction ? "\n\n// 다시 쓰기 지침: " + direction : ""}\n\n[이번 응답] 위 입력을 본문에 다시 옮겨 적지 말고 그 직후의 반응부터 쓴다. 본문 ${len.chars}, 대사 ${len.lines}줄 이상을 주고받고, 직전 응답과 다른 새 전개를 넣는다. 나오는 인물마다 [[코드번호]]를 한 장씩 넣는다${(() => { const h = m.sys ? [] : sitHints(m.text); return h.length ? `(유저 입력에 맞는 번호 후보: ${h.join(", ")})` : ""; })()}.`;
     out.push({ role: "user", content: t });
@@ -2626,6 +2713,7 @@ function buildInput(r, uptoIdx, statusBefore, direction) {
    가져옴: src/js/ai/models.js { LEN }
            src/js/ai/parse.js { multiPairs }
            src/js/ai/prompt/input.js { usedOpeners }
+           src/js/core/character.js { getChar }
            src/js/core/constants.js { MARK, SIT }
            src/js/core/rooms.js { curText }
            src/js/images/codes.js { imgTags }
@@ -2635,6 +2723,7 @@ function buildInput(r, uptoIdx, statusBefore, direction) {
    쓰는 곳: src/js/ai/prompt/input.js, src/js/ai/prompt/memory.js, src/js/ui/chat/suggest.js, src/js/ui/room-drawer.js, src/js/ui/chat/log.js, src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 시스템 프롬프트(rulesPrompt): 연기 규칙·서사 원칙·장면 이미지, 관계 단계(relStage) */
+
 
 
 
@@ -2671,9 +2760,10 @@ function rulesPrompt(r, lore = [], hist = r.msgs) {
   const sn = (name) => SIT.indexOf(name) + " " + name;
   // 인물별로 그림이 들어 있는 칸 번호(준비된 그림 안에서 고르게)
   const ready = cast.map((x) => { const m = imagesOf(c)[x.code] || {}; const ns = Object.keys(m).filter((k) => validRef(m[k])).map(Number).filter((n) => n >= 0 && n < SIT.length).sort((a, b) => a - b); return ns.length ? `${x.name} ${ns.join("·")}` : ""; }).filter(Boolean);
-  // 장소(MP<n>)·컷씬(EV<n>) 코드 — 작품에 적혀 있을 때만
-  const places = (c.places || []).map((p, i) => `MP${i + 1}=${p.name}`).join(", ");
-  const cuts = (c.cuts || []).map((e, i) => cutsUsed.has(i + 1) ? "" : `EV${i + 1}=${e.title}${e.when ? "(" + e.when + ")" : ""}`).filter(Boolean).join(", ");
+  // 장소(MP<n>)·컷씬(EV<n>) 코드 — 최신 작품(getChar)에 적혀 있을 때만(작품을 고치면 열린 방에도 바로)
+  const live = getChar(c.id) || c;
+  const places = (live.places || []).map((p, i) => `MP${i + 1}=${p.name}`).join(", ");
+  const cuts = (live.cuts || []).map((e, i) => cutsUsed.has(i + 1) ? "" : `EV${i + 1}=${e.title}${e.when ? "(" + e.when + ")" : ""}`).filter(Boolean).join(", ");
   return `너는 한국어 캐릭터 롤플레이 플랫폼의 연기 엔진이다. 아래 설정의 ${c.world_mode ? "세계관 내레이터로서 모든 인물과 세계를" : "캐릭터 「" + c.name + "」를"} 연기하며 유저와 함께 이야기를 만든다.
 
 [작품] ${c.title}
@@ -2812,7 +2902,7 @@ function flagMemo(on, txt) {
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/ui/icons.js
    내보냄: ICON
-   쓰는 곳: src/js/ui/chat/suggest.js, src/js/ui/help.js, src/js/ui/home.js, src/js/ui/me.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/shell.js, src/js/ui/detail.js, src/js/app.js, src/js/admin/support.js
+   쓰는 곳: src/js/ui/chat/suggest.js, src/js/ui/help.js, src/js/ui/home.js, src/js/ui/me.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/shell.js, src/js/ui/codex.js, src/js/ui/detail.js, src/js/app.js, src/js/admin/support.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 인라인 SVG 아이콘 */
 const ICON = {
@@ -2836,7 +2926,7 @@ const ICON = {
    src/js/ui/sheet.js
    가져옴: src/js/core/util.js { $, $$, esc }
    내보냄: sheet, closeOverlays, confirmSheet
-   쓰는 곳: src/js/ui/account.js, src/js/ui/store.js, src/js/ui/help.js, src/js/ui/home.js, src/js/ui/me.js, src/js/ui/pay.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/ui/shell.js, src/js/ui/login.js, src/js/app.js, src/js/admin/support.js, src/js/boot.js
+   쓰는 곳: src/js/ui/account.js, src/js/ui/store.js, src/js/ui/help.js, src/js/ui/home.js, src/js/ui/me.js, src/js/ui/pay.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/ui/shell.js, src/js/ui/codex.js, src/js/ui/login.js, src/js/app.js, src/js/admin/support.js, src/js/boot.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 바닥 시트·확인 창(sheet·confirmSheet), 오버레이 닫기 */
 
@@ -2931,16 +3021,18 @@ ${recent}` }], { tier: "quick", json: true, room: r });
 }
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/ui/cover.js
-   가져옴: src/js/core/constants.js { MOTIFS, PALETTES, SIT, SIT_TINT }
+   가져옴: src/js/core/character.js { getChar }
+           src/js/core/constants.js { MOTIFS, PALETTES, SIT_TINT }
            src/js/core/util.js { esc }
-           src/js/images/codes.js { codeKind }
+           src/js/images/codes.js { codebook }
            src/js/images/pick.js { pickImg }
            src/js/images/situations.js { sitName }
            src/js/services/images.js { IMG }
    내보냄: coverHTML, artHTML, tagInfo, figHTML, portraitHTML, lightbox, zoomPic, pavHTML
-   쓰는 곳: src/js/ui/home.js, src/js/ui/me.js, src/js/ui/room-drawer.js, src/js/ui/chat/view.js, src/js/ui/chat/render.js, src/js/ui/chat/log.js, src/js/ui/shell.js, src/js/ui/detail.js, src/js/ui/chats.js, src/js/app.js
+   쓰는 곳: src/js/ui/home.js, src/js/ui/me.js, src/js/ui/room-drawer.js, src/js/ui/chat/view.js, src/js/ui/chat/render.js, src/js/ui/chat/log.js, src/js/ui/shell.js, src/js/ui/codex.js, src/js/ui/detail.js, src/js/ui/chats.js, src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 표지·장면 그림 HTML(coverHTML·figHTML·portraitHTML·artHTML — 그림이 없으면 색 카드), 그림 태그 해석(tagInfo), 라이트박스 */
+
 
 
 
@@ -2966,14 +3058,16 @@ function artHTML(c, cast, sit, label) {
  * @returns {{kind: "cast"|"place"|"cut", code: string, sit: number, name: string, label: string, ref: string|null}|null}
  */
 function tagInfo(c, t) {
-  const kind = codeKind(t.code, c);
-  if (kind === "cast") {
-    const x = c.cast.find((y) => y.code === t.code), sit = t.sit < SIT.length ? t.sit : 1;
-    return { kind, code: t.code, sit, name: x.name, label: sitName(sit), ref: pickImg(c, t.code, sit) };
+  // 인물은 방 안의 작품 사본(예전 방도 그 인물로 그림), 장소·컷씬 목록은 최신 작품에서(작품을 고치면 열린 방에도 바로)
+  const live = getChar(c.id), e = codebook(live ? { ...c, places: live.places, cuts: live.cuts } : c)[t.code];
+  if (!e) return null;
+  if (e.kind === "cast") {
+    const sit = t.sit <= e.max ? t.sit : 1;
+    return { kind: e.kind, code: t.code, sit, name: e.name, label: sitName(sit), ref: pickImg(c, t.code, sit) };
   }
-  const item = kind === "place" ? (c.places || [])[t.sit - 1] : kind === "cut" ? (c.cuts || [])[t.sit - 1] : null;
+  const item = (e.items || [])[t.sit - 1];
   if (!item) return null;
-  return { kind, code: t.code, sit: t.sit, name: item.name || item.title || t.code + t.sit, label: kind === "place" ? "장소" : "컷씬", ref: pickImg(c, t.code, t.sit) };
+  return { kind: e.kind, code: t.code, sit: t.sit, name: item[e.nameKey] || t.code + t.sit, label: e.label, ref: pickImg(c, t.code, t.sit) };
 }
 /* 본문 태그 [[코드번호]]의 그림: 인물은 그 칸 → 1 → 0 순으로 있는 그림, 장소·컷씬은 그 번호의 그림, 없으면 아트 카드. 작품에 없는 코드는 빈 문자열 */
 function figHTML(c, t) {
@@ -3944,8 +4038,8 @@ function openRoomDrawer(view = "main") {
     $$("[data-g]", body).forEach((b) => b.onclick = () => { const it = items[+b.dataset.g], im = $("img", b); if (im && im.src) lightbox(im.src); else { ov.remove(); jumpTo(it.id); } });
   }
   else if (view === "places") {
-    // 작품의 장소(places → 코드 MP1…) — !지도 명령어로도 열림. 그림은 작품 폴더 images/MP<n>.webp
-    const list = c.places || [];
+    // 작품의 장소(places → 코드 MP1…) — !지도 명령어로도 열림. 그림은 작품 폴더 images/MP<n>.webp. 목록은 최신 작품에서
+    const list = (getChar(c.id) || c).places || [];
     body.innerHTML = list.length ? `<p class="note" style="margin-bottom:10px">이 작품의 장소 ${list.length}곳. 대화에서는 [[MP번호]] 코드로 나와요.</p><div class="gallery">${list.map((p, i) => {
       const ref = pickImg(c, "MP", i + 1);
       return `<button data-p="${i}" title="MP${i + 1} · ${esc(p.name)}">${ref ? IMG.tag(ref) : artHTML(c, { name: p.name }, i + 1, "장소")}</button>`; }).join("")}</div>
@@ -4035,6 +4129,8 @@ function openModelSheet() {
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/ui/chat/view.js
    가져옴: src/js/ai/models.js { MODELS }
+           src/js/core/character.js { getChar }
+           src/js/core/commands.js { commandHelp, findCommand, parseCommand }
            src/js/core/rooms.js { migrateRoom, roomKey }
            src/js/core/state.js { S, gen, room, setRoom }
            src/js/core/storage.js { KV }
@@ -4053,6 +4149,8 @@ function openModelSheet() {
    쓰는 곳: src/js/ui/chat/suggest.js, src/js/ui/pay.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/render.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/ui/shell.js, src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 대화방 화면 뼈대·입력창·게이지 */
+
+
 
 
 
@@ -4134,13 +4232,13 @@ async function viewChat(id) {
   bindStick($("#log"));
   renderLog(true); updateMeter(); updateComposer();
 }
-/* !명령어 — AI를 부르지 않고 앱이 바로 처리(하트·턴을 쓰지 않음): !상태창 · !갤러리(!도감) · !지도(!장소) · !도움말. 모르는 !글은 그대로 AI에 보냄 */
-const COMMANDS = { "상태창": "status", "상태": "status", "갤러리": "gallery", "도감": "gallery", "지도": "places", "장소": "places" };
+/* !명령어(core/commands.js): 앱 명령어(!상태창·!갤러리·!지도·!도움말)는 AI를 부르지 않고 드로어를 엶(하트·턴을 쓰지 않음).
+   작품 명령어(work.js commands)와 모르는 !글은 false → 그대로 AI에 보냄(작품 명령어는 buildInput이 연출 지시로 바꿈) */
 function runCommand(t) {
-  const m = t.match(/^[!！]\s*(\S+)$/); if (!m) return false;
-  if (/^(도움말|명령어|help)$/i.test(m[1])) { flashHint("명령어: !상태창 · !갤러리 · !지도 — AI를 부르지 않아요. // 로 시작하면 연출 지시"); return true; }
-  const view = COMMANDS[m[1]]; if (!view) return false;
-  openRoomDrawer(view); return true;
+  const live = getChar(room.char.id) || room.char, f = findCommand(parseCommand(t), live);
+  if (!f || !f.app) return false;
+  if (f.app.view === "help") { flashHint("명령어: " + commandHelp(live) + " — // 로 시작하면 연출 지시"); return true; }
+  openRoomDrawer(f.app.view); return true;
 }
 let hintTimer = null;
 function flashHint(msg) {
@@ -4299,7 +4397,7 @@ function liveFill(el, text, c, persona, anim = true) {
            src/js/ui/pay.js { ensurePay }
            src/js/ui/sheet.js { confirmSheet }
    내보냄: stick, setStick, autoScroll, followLog, syncJump, bindStick, renderLog, copyText
-   쓰는 곳: src/js/ui/me.js, src/js/ui/pay.js, src/js/ui/room-drawer.js, src/js/ui/chat/view.js, src/js/ui/chat/generate.js, src/js/app.js
+   쓰는 곳: src/js/ui/me.js, src/js/ui/pay.js, src/js/ui/room-drawer.js, src/js/ui/chat/view.js, src/js/ui/chat/generate.js, src/js/ui/codex.js, src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 메시지 로그 그리기·스크롤 따라가기·말풍선 메뉴(수정·삭제·북마크) */
 
@@ -4666,6 +4764,85 @@ function topbar(extra = "") {
 function bindGo(root) { $$("[data-go]", root).forEach((b) => b.onclick = () => go(b.dataset.go)); }
 on("rooms", renderRailRecent); on("wallet", renderWalletChips); on("route", route);
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
+   src/js/ui/codex.js
+   가져옴: src/js/core/commands.js { APP_COMMANDS }
+           src/js/core/constants.js { SIT }
+           src/js/core/util.js { $, $$, esc }
+           src/js/images/codes.js { codebook, imgTag }
+           src/js/images/pick.js { imagesOf, pickImg }
+           src/js/images/situations.js { sitName }
+           src/js/services/images.js { IMG, validRef }
+           src/js/ui/chat/log.js { copyText }
+           src/js/ui/cover.js { artHTML, lightbox }
+           src/js/ui/icons.js { ICON }
+           src/js/ui/sheet.js { sheet }
+   내보냄: castSheet, codexHTML, bindCodex
+   쓰는 곳: src/js/ui/detail.js
+   ════════════════════════════════════════════════════════════════════════════════════════════════════ */
+/* 도감(코드 안내) 화면: 상세 페이지의 인물 시트(castSheet — 코드·다른 모습·감정 칩·외형·소개)와 장소·컷씬·명령어 카드(codexHTML·bindCodex).
+   데이터는 작품의 cast·places·cuts·commands, 코드 해석은 images/codes.js의 codebook 하나 — 작품이 바뀌어도 이 틀 그대로 */
+
+
+
+
+
+
+
+
+
+
+
+/** @typedef {import("../core/types.js").CastMember} CastMember */
+/** @typedef {import("../core/types.js").Work} Work */
+
+/* 인물 한 명의 감정 칸 그림 — 그 칸 그림만(대체 없음), 없으면 아트 카드 */
+function slotHTML(c, x, sit) {
+  const m = imagesOf(c)[x.code] || {}, ref = validRef(m[sit]) ? m[sit] : null;
+  return `<figure class="scene-img">${ref ? `${IMG.tag(ref)}<figcaption>${esc(x.name)} · ${esc(sitName(sit))}</figcaption>` : artHTML(c, x, sit)}</figure>`;
+}
+/**
+ * 인물 시트: 이름·코드 → 미리보기 → 외형·소개 → 다른 모습(폼) 칩 → 감정·행동 칩(그림이 준비된 칸은 ●, 누르면 미리보기가 바뀜).
+ * @param {Work} c @param {CastMember} x
+ */
+function castSheet(c, x) {
+  const forms = c.cast.filter((y) => y.of === x.code), base = x.of ? c.cast.find((y) => y.code === x.of) : null;
+  const m = imagesOf(c)[x.code] || {}, ready = new Set(Object.keys(m).filter((k) => validRef(m[k])).map(Number));
+  const sh = sheet(`<div class="sheet-head"><h2>${esc(x.name)} <code class="code-chip">${esc(x.code)}</code></h2><button class="icon-btn" data-x aria-label="닫기">${ICON.close}</button></div>
+    ${base ? `<p class="sub"><code class="code-chip">${esc(base.code)}</code> ${esc(base.name)}의 다른 모습</p>` : ""}
+    <div class="codex-pv" id="cxPv">${slotHTML(c, x, 0)}</div>
+    <div class="codex-meta">${x.look ? `<p><b>외형</b>${esc(x.look)}</p>` : ""}${x.desc ? `<p><b>소개</b>${esc(x.desc)}</p>` : ""}</div>
+    ${forms.length ? `<h3 class="codex-h">다른 모습</h3><div class="codex-chips">${forms.map((f) => `<button type="button" class="chip" data-form="${esc(f.code)}"><code>${esc(f.code)}</code>${esc(f.name)}</button>`).join("")}</div>` : ""}
+    <h3 class="codex-h">감정·행동 코드 <small>${ready.size ? "그림이 준비된 칸은 ●" : "아직 그림이 없어 카드로 보여요"}</small></h3>
+    <div class="codex-chips">${SIT.map((s, i) => `<button type="button" class="chip${i === 0 ? " on" : ""}${ready.has(i) ? " ready" : ""}" data-sit="${i}"><code>${esc(x.code)}${i}</code>${esc(s)}</button>`).join("")}</div>
+    <p class="note" style="margin-top:12px">대화 본문에서는 ${esc(imgTag(x.code, 3))}처럼 코드 하나가 그림 한 장이에요 — AI가 장면마다 골라 넣어요.</p>`, "wide");
+  IMG.hydrate(sh);
+  $$("[data-sit]", sh).forEach((b) => b.onclick = () => { $$("[data-sit]", sh).forEach((o) => o.classList.toggle("on", o === b)); const pv = $("#cxPv", sh); pv.innerHTML = slotHTML(c, x, +b.dataset.sit); IMG.hydrate(pv); });
+  $$("[data-form]", sh).forEach((b) => b.onclick = () => { const f = c.cast.find((y) => y.code === b.dataset.form); if (f) castSheet(c, f); });
+  $("#cxPv", sh).onclick = () => { const i = $("#cxPv img", sh); if (i && i.src) lightbox(i.src); };
+}
+/* 시리즈(장소 MP·컷씬 EV) 한 칸: 코드·이름·설명(장소 desc / 컷씬 when)과 그림 — 목록이 비면 빈 문자열 */
+function seriesBox(c, code, e) {
+  if (!e.max) return "";
+  return `<div class="box"><h3>${esc(e.label)} <small>코드 ${esc(code)}1~${esc(code)}${e.max}</small></h3><div class="codex-grid">${e.items.map((it, i) => {
+    const n = i + 1, ref = pickImg(c, code, n), name = it[e.nameKey] || code + n, sub = it.desc || it.when || "";
+    return `<figure class="wcard">${ref ? `<button class="wpic" data-cxlb aria-label="${esc(name)} 크게 보기">${IMG.tag(ref)}</button>` : `<div class="wpic ph">${esc(code + n)}</div>`}<figcaption><b><code class="code-chip">${esc(code + n)}</code>${esc(name)}</b>${sub ? `<span>${esc(sub)}</span>` : ""}</figcaption></figure>`; }).join("")}</div></div>`;
+}
+/* 명령어 카드 한 장: !이름 · 종류(앱/이야기) · 제목 · 설명 · 복사 */
+function cmdCard(cmd, title, desc, app) {
+  return `<div class="cmd-card"><code class="cmd">!${esc(cmd)}</code><span class="pill${app ? "" : " gold"}">${app ? "앱" : "이야기"}</span><b>${esc(title)}</b><span>${esc(desc || "")}</span><button type="button" class="btn sm ghost" data-copy="!${esc(cmd)}">복사</button></div>`;
+}
+/** 상세 페이지 아래쪽 칸들: 장소(MP)·컷씬(EV) 목록(작품에 있을 때만)과 명령어 카드(앱 명령어 + 작품 명령어). @param {Work} c @returns {string} */
+function codexHTML(c) {
+  const book = codebook(c);
+  return seriesBox(c, "MP", book.MP) + seriesBox(c, "EV", book.EV) +
+    `<div class="box"><h3>명령어 <small>대화방 입력창에 그대로 쳐요 — 앱 명령어는 하트를 쓰지 않아요</small></h3><div class="cmd-list">${APP_COMMANDS.map((x) => cmdCard(x.cmd, x.title, x.desc, true)).join("")}${(c.commands || []).map((x) => cmdCard(x.cmd, x.title, x.desc, false)).join("")}</div></div>`;
+}
+/** codexHTML의 복사 버튼·그림 크게 보기 연결. @param {HTMLElement} v */
+function bindCodex(v) {
+  $$("[data-copy]", v).forEach((b) => b.onclick = () => copyText(b.dataset.copy, `${b.dataset.copy} 복사했어요 — 대화방 입력창에 붙여 넣으세요`));
+  $$("[data-cxlb]", v).forEach((b) => b.onclick = () => { const i = b.querySelector("img"); if (i && i.src) lightbox(i.src); });
+}
+/* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/ui/worldart.js
    가져옴: src/js/core/character.js { getChar }
            src/js/core/util.js { esc }
@@ -4696,7 +4873,8 @@ function worldArtHTML(c) {
            src/js/core/util.js { $, $$, ago, esc }
            src/js/core/wallet.js { FREE_DAILY, plan }
            src/js/services/images.js { IMG }
-           src/js/ui/cover.js { coverHTML, lightbox, portraitHTML, zoomPic }
+           src/js/ui/codex.js { bindCodex, castSheet, codexHTML }
+           src/js/ui/cover.js { coverHTML, lightbox, portraitHTML }
            src/js/ui/icons.js { ICON }
            src/js/ui/pay.js { plusSheet }
            src/js/ui/shell.js { bindGo, go, topbar }
@@ -4704,7 +4882,8 @@ function worldArtHTML(c) {
    내보냄: viewDetail
    쓰는 곳: src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
-/* 작품 상세 페이지: 표지·소개·세계관 일러스트·등장인물·시작 상황 → 새 대화 시작 */
+/* 작품 상세 페이지: 표지·소개·세계관 일러스트·등장인물(누르면 도감 인물 시트)·장소·컷씬·명령어·시작 상황 → 새 대화 시작 */
+
 
 
 
@@ -4736,8 +4915,9 @@ function viewDetail(id) {
         <div class="tags">${(c.tags || []).map((t) => `<span>#${esc(t)}</span>`).join("")}</div>
         <div class="box"><h3>소개</h3><p>${esc(c.desc)}</p></div>
         <div class="box" id="wArtBox" ${wa ? "" : 'style="display:none"'}><h3>세계관 일러스트</h3>${wa}</div>
-        <div class="box"><h3>등장인물</h3>
-          <div class="cast">${c.cast.map((x) => `<button data-cast="${esc(x.code)}" title="${esc(x.look || x.name)}">${portraitHTML(c, x)}<b>${esc(x.name)}</b></button>`).join("")}</div></div>
+        <div class="box"><h3>등장인물 <small>누르면 코드·감정 칸 안내</small></h3>
+          <div class="cast">${c.cast.filter((x) => !x.of).map((x) => `<button data-cast="${esc(x.code)}" title="${esc(x.look || x.name)}">${portraitHTML(c, x)}<b>${esc(x.name)}</b><code class="code-chip">${esc(x.code)}</code></button>`).join("")}</div></div>
+        ${codexHTML(c)}
         <div class="box"><h3>${c.world_mode ? "게임 모드 · 시작 상황" : "시작 상황"}</h3><div class="openings">
           ${c.openings.map((o, i) => `<label class="opening"><input type="radio" name="op" value="${i}" ${i === 0 ? "checked" : ""}><b>${esc(o.title)}</b>
             <span>${esc(o.text.replace(/\[\[[^\]]*\]\]/g, "").replace(/[*"\[\]]/g, "").replace(/\s+/g, " ").slice(0, 120))}…</span></label>`).join("")}
@@ -4752,7 +4932,8 @@ function viewDetail(id) {
   bindGo(v); IMG.hydrate(v);
   $$("[data-room]", v).forEach((b) => b.onclick = () => go("r-" + b.dataset.room));
   $$("[data-wlb]", v).forEach((b) => b.onclick = () => { const i = b.querySelector("img"); if (i?.src) lightbox(i.src); });
-  $$("[data-cast]", v).forEach((b) => b.onclick = () => zoomPic(b));
+  $$("[data-cast]", v).forEach((b) => b.onclick = () => { const x = c.cast.find((y) => y.code === b.dataset.cast); if (x) castSheet(c, x); });
+  bindCodex(v);
   $("#start").onclick = () => {
     if (rooms.length >= plan().rooms) return plusSheet("rooms");
     const opIdx = +(v.querySelector("input[name=op]:checked")?.value || 0);
