@@ -1,16 +1,20 @@
-/* 도감(코드 안내) 화면: 상세 페이지의 인물 시트(castSheet — 코드·다른 모습·감정 칩·외형·소개)와 장소·컷씬·명령어 카드(codexHTML·bindCodex).
-   데이터는 작품의 cast·places·cuts·commands, 코드 해석은 images/codes.js의 codebook 하나 — 작품이 바뀌어도 이 틀 그대로 */
+/* 도감(코드 안내): 독립 화면 viewCodex(#codex·#codex-<작품id> — 공통 표·앱 명령어·작품 고르기·인물·장소·컷씬·작품 명령어), 인물 시트(castSheet — 코드·다른 모습·감정 칩·외형·소개),
+   상세 페이지에 끼우는 칸(codexHTML·castGridHTML·bindCodex). 데이터는 작품의 cast·places·cuts·commands, 코드 해석은 images/codes.js의 codebook 하나 — 작품이 바뀌어도 이 틀 그대로 */
+import { ORIGINALS } from "../content/index.js";
+import { AUDS, audOK, audience } from "../core/audience.js";
+import { normalizeChar } from "../core/character.js";
 import { APP_COMMANDS } from "../core/commands.js";
-import { SIT } from "../core/constants.js";
+import { SIT, SIT_TINT } from "../core/constants.js";
 import { $, $$, esc } from "../core/util.js";
 import { codebook, imgTag } from "../images/codes.js";
 import { imagesOf, pickImg } from "../images/pick.js";
 import { sitName } from "../images/situations.js";
 import { IMG, validRef } from "../services/images.js";
 import { copyText } from "./chat/log.js";
-import { artHTML, lightbox } from "./cover.js";
+import { artHTML, coverHTML, lightbox, portraitHTML } from "./cover.js";
 import { ICON } from "./icons.js";
 import { sheet } from "./sheet.js";
+import { bindGo, go, topbar } from "./shell.js";
 /** @typedef {import("../core/types.js").CastMember} CastMember */
 /** @typedef {import("../core/types.js").Work} Work */
 
@@ -39,6 +43,14 @@ export function castSheet(c, x) {
   $$("[data-form]", sh).forEach((b) => b.onclick = () => { const f = c.cast.find((y) => y.code === b.dataset.form); if (f) castSheet(c, f); });
   $("#cxPv", sh).onclick = () => { const i = $("#cxPv img", sh); if (i && i.src) lightbox(i.src); };
 }
+/** 인물 카드 격자(상세 페이지·도감 공용): 본체만(폼은 시트 안 칩), 이름 아래 코드 칩. 누르는 건 bindCast. @param {Work} c @returns {string} */
+export function castGridHTML(c) {
+  return c.cast.filter((x) => !x.of).map((x) => `<button data-cast="${esc(x.code)}" title="${esc(x.look || x.name)}">${portraitHTML(c, x)}<b>${esc(x.name)}</b><code class="code-chip">${esc(x.code)}</code></button>`).join("");
+}
+/** 인물 카드를 누르면 인물 시트. @param {HTMLElement} v @param {Work} c */
+export function bindCast(v, c) {
+  $$("[data-cast]", v).forEach((b) => b.onclick = () => { const x = c.cast.find((y) => y.code === b.dataset.cast); if (x) castSheet(c, x); });
+}
 /* 시리즈(장소 MP·컷씬 EV) 한 칸: 코드·이름·설명(장소 desc / 컷씬 when)과 그림 — 목록이 비면 빈 문자열 */
 function seriesBox(c, code, e) {
   if (!e.max) return "";
@@ -50,14 +62,43 @@ function seriesBox(c, code, e) {
 function cmdCard(cmd, title, desc, app) {
   return `<div class="cmd-card"><code class="cmd">!${esc(cmd)}</code><span class="pill${app ? "" : " gold"}">${app ? "앱" : "이야기"}</span><b>${esc(title)}</b><span>${esc(desc || "")}</span><button type="button" class="btn sm ghost" data-copy="!${esc(cmd)}">복사</button></div>`;
 }
+const cmdList = (list, app) => `<div class="cmd-list">${list.map((x) => cmdCard(x.cmd, x.title, x.desc, app)).join("")}</div>`;
 /** 상세 페이지 아래쪽 칸들: 장소(MP)·컷씬(EV) 목록(작품에 있을 때만)과 명령어 카드(앱 명령어 + 작품 명령어). @param {Work} c @returns {string} */
 export function codexHTML(c) {
   const book = codebook(c);
   return seriesBox(c, "MP", book.MP) + seriesBox(c, "EV", book.EV) +
     `<div class="box"><h3>명령어 <small>대화방 입력창에 그대로 쳐요 — 앱 명령어는 하트를 쓰지 않아요</small></h3><div class="cmd-list">${APP_COMMANDS.map((x) => cmdCard(x.cmd, x.title, x.desc, true)).join("")}${(c.commands || []).map((x) => cmdCard(x.cmd, x.title, x.desc, false)).join("")}</div></div>`;
 }
-/** codexHTML의 복사 버튼·그림 크게 보기 연결. @param {HTMLElement} v */
+/** codexHTML·viewCodex의 복사 버튼·그림 크게 보기 연결. @param {HTMLElement} v */
 export function bindCodex(v) {
   $$("[data-copy]", v).forEach((b) => b.onclick = () => copyText(b.dataset.copy, `${b.dataset.copy} 복사했어요 — 대화방 입력창에 붙여 넣으세요`));
   $$("[data-cxlb]", v).forEach((b) => b.onclick = () => { const i = b.querySelector("img"); if (i && i.src) lightbox(i.src); });
+}
+/* 한 작품의 도감: 작품 머리(표지·제목·상세로) → 인물 카드 → 장소·컷씬 → 작품 명령어 */
+function workCodexHTML(c) {
+  const book = codebook(c), cmds = c.commands || [];
+  return `<div class="codex-work">${coverHTML(c)}<div><b>${esc(c.title)}</b><span class="note">${esc(c.cat)}${c.world_mode ? " · 세계관" : ""} · 인물 ${c.cast.filter((x) => !x.of).length}명</span></div><button class="btn sm ghost" data-go="c-${esc(c.id)}">작품 보기</button></div>
+    <div class="box"><h3>등장인물 <small>누르면 코드·감정 칸·소개</small></h3><div class="cast">${castGridHTML(c)}</div></div>
+    ${seriesBox(c, "MP", book.MP)}${seriesBox(c, "EV", book.EV)}
+    ${cmds.length ? `<div class="box"><h3>이 작품의 명령어 <small>치면 AI가 그 장면을 열어요</small></h3>${cmdList(cmds, false)}</div>` : ""}`;
+}
+/**
+ * 도감 화면(#codex · #codex-<작품id>): 공통 표(그림 코드 읽는 법·감정 칸 0~14·앱 명령어) + 작품 고르기(관심있는 대화로 거름) → 그 작품의 인물·장소·컷씬·작품 명령어.
+ * @param {string} [id] 작품 id(없거나 걸러졌으면 첫 작품)
+ */
+export function viewCodex(id) {
+  const v = $("#view"), pool = ORIGINALS.map(normalizeChar).filter(audOK);
+  const c = pool.find((x) => x.id === id) || pool[0] || null;
+  v.innerHTML = `<div class="page">${topbar()}<h1 class="sec" style="margin-top:4px">도감 <small>인물 코드·감정 칸·장소·컷씬·명령어</small></h1>
+    <div class="box"><h3>그림 코드 읽는 법</h3><p class="codex-how">대화 속 그림 한 장은 코드 한 토큰이에요. <code class="code-chip">HSY3</code>은 인물 코드 <b>HSY</b> + 감정·행동 번호 <b>3</b>(부끄러움). 다른 모습(폼)은 다른 인물 코드로, 장소는 <code class="code-chip">MP1</code>, 컷씬은 <code class="code-chip">EV1</code>처럼 1부터 번호를 매겨요.</p>
+      <div class="sit-table">${SIT.map((s, i) => `<span class="sit-chip" style="--tint:${SIT_TINT[i]}"><i></i><code>${i}</code>${esc(s)}</span>`).join("")}</div></div>
+    <div class="box"><h3>앱 명령어 <small>어느 작품에서나 · 하트를 쓰지 않아요</small></h3>${cmdList(APP_COMMANDS, true)}</div>
+    <h2 class="sec" id="cxWorks">작품 <small>${esc(AUDS[audience()].name)}${audience() !== "all" ? " — MY → 설정에서 바꿀 수 있어요" : ""}</small></h2>
+    ${pool.length ? `<div class="chips" style="margin-bottom:12px">${pool.map((x) => `<button class="chip${c && x.id === c.id ? " on" : ""}" data-work="${esc(x.id)}">${esc(x.title)}</button>`).join("")}</div>` : `<div class="empty">지금 관심있는 대화에 맞는 작품이 없어요. <button class="btn sm" data-go="me">설정 바꾸기</button></div>`}
+    ${c ? workCodexHTML(c) : ""}</div>`;
+  bindGo(v); IMG.hydrate(v); bindCodex(v);
+  $$("[data-work]", v).forEach((b) => b.onclick = () => go("codex-" + b.dataset.work));
+  if (c) bindCast(v, c);
+  // 작품을 지정해 들어왔으면(칩을 눌렀거나 상세의 '도감') 공통 표를 건너뛰고 작품 칸부터 — 라우터(shell.js route)가 새 주소를 맨 위로 올린 다음 틱에 옮김
+  if (id && c) setTimeout(() => { const h = $("#cxWorks", v); if (h && v.contains(h)) h.scrollIntoView({ block: "start" }); }, 0);
 }

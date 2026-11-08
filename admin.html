@@ -280,6 +280,16 @@ h2.sec small, h1.sec small { font-family:var(--sans); font-size:12.5px; color:va
 .cmd-card > span:not(.pill) { grid-area:desc; color:var(--muted); font-size:12.5px; }
 .cmd-card .btn { grid-area:copy; }
 @media (max-width:560px) { .cmd-card { grid-template-columns:auto 1fr auto; grid-template-areas:"cmd title copy" "pill desc copy"; } }
+/* 도감 화면(viewCodex): 코드 읽는 법·감정 칸 표·작품 머리 */
+.box p.codex-how { font-size:14px; line-height:1.7; margin-bottom:10px; }
+.sit-table { display:flex; flex-wrap:wrap; gap:6px; }
+.sit-chip { display:inline-flex; align-items:center; gap:6px; border:1px solid var(--line); border-radius:999px; padding:4px 10px 4px 7px; font-size:12.5px; background:var(--bg); }
+.sit-chip i { width:10px; height:10px; border-radius:50%; background:var(--tint); flex:none; }
+.sit-chip code { font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:11.5px; font-weight:700; color:var(--muted); }
+.codex-work { display:flex; align-items:center; gap:12px; margin:0 0 12px; }
+.codex-work .cover { width:54px; height:72px; border-radius:12px; flex:none; }
+.codex-work > div { flex:1; min-width:0; display:grid; gap:2px; }
+.codex-work b { font-family:var(--display); font-size:17px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 
 /* ── 장면 이미지 */
 .scene-img { margin:4px 0 8px; max-width:min(380px, 100%); border-radius:16px; overflow:hidden; background:var(--surface2); position:relative; }
@@ -847,7 +857,7 @@ function castLook(cast, c) {
    가져옴: src/js/core/cast.js { castLook }
            src/js/core/state.js { S }
    내보냄: AUDS, guessAud, audOf, audience, audOK
-   쓰는 곳: src/js/ui/home.js, src/js/ui/me.js, src/js/app.js
+   쓰는 곳: src/js/ui/home.js, src/js/ui/me.js, src/js/ui/codex.js, src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 관심있는 대화(전체·남성향·여성향): 작품 aud 판정과 필터 */
 
@@ -1461,7 +1471,7 @@ const HOME_ROWS = [
    src/js/content/index.js
    가져옴: src/js/content/generated.js { HOME_ROWS, ORIGINALS }
    내보냄: ORIGINALS, HOME_ROWS
-   쓰는 곳: src/js/core/character.js, src/js/ui/home.js, src/js/ui/detail.js, src/js/app.js
+   쓰는 곳: src/js/core/character.js, src/js/ui/home.js, src/js/ui/codex.js, src/js/ui/detail.js, src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 작품 목록: 빌드가 content/ 폴더로 만든 generated.js(git에 없음)를 읽고, 출연진이 없는 1:1 작품에 cast를 만들어 내보냄.
    ORIGINALS의 images·img·loreImages는 작품 폴더 images/의 그림(content/… 상대 경로) */
@@ -1478,7 +1488,7 @@ for (const c of ORIGINALS) {
    src/js/core/character.js
    가져옴: src/js/content/index.js { ORIGINALS }
    내보냄: normalizeChar, getChar
-   쓰는 곳: src/js/core/rooms.js, src/js/images/pick.js, src/js/ai/prompt/input.js, src/js/ai/prompt/rules.js, src/js/ui/cover.js, src/js/ui/room-drawer.js, src/js/ui/chat/view.js, src/js/ui/worldart.js, src/js/ui/detail.js, src/js/ui/login.js, src/js/app.js
+   쓰는 곳: src/js/core/rooms.js, src/js/images/pick.js, src/js/ai/prompt/input.js, src/js/ai/prompt/rules.js, src/js/ui/cover.js, src/js/ui/room-drawer.js, src/js/ui/chat/view.js, src/js/ui/codex.js, src/js/ui/worldart.js, src/js/ui/detail.js, src/js/ui/login.js, src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 작품 찾기·정규화: normalizeChar, id로 찾기(getChar — 오리지널) */
 
@@ -3318,6 +3328,7 @@ function faqGroups() {
       ["캐릭터가 예전 일을 잊어요.", "출력 설정의 <b>기억력</b>은 AI가 그대로 다시 읽는 최근 턴 수예요. 그보다 오래된 일은 몇 턴마다 자동으로 만드는 <b>장기기억</b> 요약으로 기억해요. 메뉴의 장기기억에서 요약을 보고 직접 고칠 수 있어요."],
       ["대화를 저장하거나 옮길 수 있나요?", "대화방 메뉴의 <b>대화 내보내기</b>로 파일로 받거나 <b>대화 복사</b>로 복사할 수 있어요. 로그인하면 대화가 계정에 저장돼 다른 기기에서 이어져요."],
       ["대화 속 그림을 끄고 싶어요.", "<a href=\"#me\">MY</a> → 채팅 설정의 <b>대화 속 장면 이미지 보기</b>를 끄면 돼요. 글자 크기·줄 간격·지문 글꼴도 거기서 바꿔요."],
+      ["도감과 !명령어는 뭔가요?", "<a href=\"#codex\">도감</a>은 작품마다 인물 코드·감정 칸·장소·컷씬·명령어를 보여 주는 안내예요. 대화 속 그림 한 장은 <b>인물 코드 + 번호</b> 한 토큰(예: HSY3 = 한서윤 · 부끄러움)이고, AI가 장면마다 골라 넣어요. 대화방 입력창에 <b>!상태창</b>·<b>!갤러리</b>·<b>!지도</b>·<b>!도움말</b>을 치면 AI를 부르지 않고 바로 열리고(하트를 쓰지 않아요), 작품에 딸린 명령어(예: !퀘스트)는 그 장면을 AI가 열어요."],
       ["응답이 중간에 끊겼어요.", "연결이 끊기거나 시간이 너무 오래 걸리면 받은 데까지 남기고 멈춰요. 그 메시지의 <b>다시 시도</b>를 누르면 다시 써요."]
     ]],
     ["계정·데이터", [
@@ -4697,7 +4708,7 @@ function stopGen() { if (gen) gen.ctl.abort(); }
            src/js/ui/icons.js { ICON }
            src/js/ui/sheet.js { closeOverlays }
    내보냄: registerViews, setNavs, go, route, LOGO, renderShell, renderRailRecent, renderWalletChips, topbar, bindGo
-   쓰는 곳: src/js/ui/store.js, src/js/ui/help.js, src/js/ui/home.js, src/js/ui/me.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/detail.js, src/js/ui/chats.js, src/js/ui/login.js, src/js/app.js, src/js/admin/support.js, src/js/admin/gate.js, src/js/boot.js, src/js/admin.js
+   쓰는 곳: src/js/ui/store.js, src/js/ui/help.js, src/js/ui/home.js, src/js/ui/me.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/codex.js, src/js/ui/detail.js, src/js/ui/chats.js, src/js/ui/login.js, src/js/app.js, src/js/admin/support.js, src/js/admin/gate.js, src/js/boot.js, src/js/admin.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 라우팅(go·route)·레일·탭바·상단바·지갑 칩. 화면은 진입점(main.js·admin.js)이 registerViews·setNavs로 등록한다 — 셸은 어떤 화면이 있는지 모른다.
    아래층의 "rooms"·"wallet"·"route" 이벤트를 받아 레일·칩·화면을 다시 그림 */
@@ -4765,22 +4776,30 @@ function bindGo(root) { $$("[data-go]", root).forEach((b) => b.onclick = () => g
 on("rooms", renderRailRecent); on("wallet", renderWalletChips); on("route", route);
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/ui/codex.js
-   가져옴: src/js/core/commands.js { APP_COMMANDS }
-           src/js/core/constants.js { SIT }
+   가져옴: src/js/content/index.js { ORIGINALS }
+           src/js/core/audience.js { AUDS, audOK, audience }
+           src/js/core/character.js { normalizeChar }
+           src/js/core/commands.js { APP_COMMANDS }
+           src/js/core/constants.js { SIT, SIT_TINT }
            src/js/core/util.js { $, $$, esc }
            src/js/images/codes.js { codebook, imgTag }
            src/js/images/pick.js { imagesOf, pickImg }
            src/js/images/situations.js { sitName }
            src/js/services/images.js { IMG, validRef }
            src/js/ui/chat/log.js { copyText }
-           src/js/ui/cover.js { artHTML, lightbox }
+           src/js/ui/cover.js { artHTML, coverHTML, lightbox, portraitHTML }
            src/js/ui/icons.js { ICON }
            src/js/ui/sheet.js { sheet }
-   내보냄: castSheet, codexHTML, bindCodex
-   쓰는 곳: src/js/ui/detail.js
+           src/js/ui/shell.js { bindGo, go, topbar }
+   내보냄: castSheet, castGridHTML, bindCast, codexHTML, bindCodex, viewCodex
+   쓰는 곳: src/js/ui/detail.js, src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
-/* 도감(코드 안내) 화면: 상세 페이지의 인물 시트(castSheet — 코드·다른 모습·감정 칩·외형·소개)와 장소·컷씬·명령어 카드(codexHTML·bindCodex).
-   데이터는 작품의 cast·places·cuts·commands, 코드 해석은 images/codes.js의 codebook 하나 — 작품이 바뀌어도 이 틀 그대로 */
+/* 도감(코드 안내): 독립 화면 viewCodex(#codex·#codex-<작품id> — 공통 표·앱 명령어·작품 고르기·인물·장소·컷씬·작품 명령어), 인물 시트(castSheet — 코드·다른 모습·감정 칩·외형·소개),
+   상세 페이지에 끼우는 칸(codexHTML·castGridHTML·bindCodex). 데이터는 작품의 cast·places·cuts·commands, 코드 해석은 images/codes.js의 codebook 하나 — 작품이 바뀌어도 이 틀 그대로 */
+
+
+
+
 
 
 
@@ -4820,6 +4839,14 @@ function castSheet(c, x) {
   $$("[data-form]", sh).forEach((b) => b.onclick = () => { const f = c.cast.find((y) => y.code === b.dataset.form); if (f) castSheet(c, f); });
   $("#cxPv", sh).onclick = () => { const i = $("#cxPv img", sh); if (i && i.src) lightbox(i.src); };
 }
+/** 인물 카드 격자(상세 페이지·도감 공용): 본체만(폼은 시트 안 칩), 이름 아래 코드 칩. 누르는 건 bindCast. @param {Work} c @returns {string} */
+function castGridHTML(c) {
+  return c.cast.filter((x) => !x.of).map((x) => `<button data-cast="${esc(x.code)}" title="${esc(x.look || x.name)}">${portraitHTML(c, x)}<b>${esc(x.name)}</b><code class="code-chip">${esc(x.code)}</code></button>`).join("");
+}
+/** 인물 카드를 누르면 인물 시트. @param {HTMLElement} v @param {Work} c */
+function bindCast(v, c) {
+  $$("[data-cast]", v).forEach((b) => b.onclick = () => { const x = c.cast.find((y) => y.code === b.dataset.cast); if (x) castSheet(c, x); });
+}
 /* 시리즈(장소 MP·컷씬 EV) 한 칸: 코드·이름·설명(장소 desc / 컷씬 when)과 그림 — 목록이 비면 빈 문자열 */
 function seriesBox(c, code, e) {
   if (!e.max) return "";
@@ -4831,16 +4858,45 @@ function seriesBox(c, code, e) {
 function cmdCard(cmd, title, desc, app) {
   return `<div class="cmd-card"><code class="cmd">!${esc(cmd)}</code><span class="pill${app ? "" : " gold"}">${app ? "앱" : "이야기"}</span><b>${esc(title)}</b><span>${esc(desc || "")}</span><button type="button" class="btn sm ghost" data-copy="!${esc(cmd)}">복사</button></div>`;
 }
+const cmdList = (list, app) => `<div class="cmd-list">${list.map((x) => cmdCard(x.cmd, x.title, x.desc, app)).join("")}</div>`;
 /** 상세 페이지 아래쪽 칸들: 장소(MP)·컷씬(EV) 목록(작품에 있을 때만)과 명령어 카드(앱 명령어 + 작품 명령어). @param {Work} c @returns {string} */
 function codexHTML(c) {
   const book = codebook(c);
   return seriesBox(c, "MP", book.MP) + seriesBox(c, "EV", book.EV) +
     `<div class="box"><h3>명령어 <small>대화방 입력창에 그대로 쳐요 — 앱 명령어는 하트를 쓰지 않아요</small></h3><div class="cmd-list">${APP_COMMANDS.map((x) => cmdCard(x.cmd, x.title, x.desc, true)).join("")}${(c.commands || []).map((x) => cmdCard(x.cmd, x.title, x.desc, false)).join("")}</div></div>`;
 }
-/** codexHTML의 복사 버튼·그림 크게 보기 연결. @param {HTMLElement} v */
+/** codexHTML·viewCodex의 복사 버튼·그림 크게 보기 연결. @param {HTMLElement} v */
 function bindCodex(v) {
   $$("[data-copy]", v).forEach((b) => b.onclick = () => copyText(b.dataset.copy, `${b.dataset.copy} 복사했어요 — 대화방 입력창에 붙여 넣으세요`));
   $$("[data-cxlb]", v).forEach((b) => b.onclick = () => { const i = b.querySelector("img"); if (i && i.src) lightbox(i.src); });
+}
+/* 한 작품의 도감: 작품 머리(표지·제목·상세로) → 인물 카드 → 장소·컷씬 → 작품 명령어 */
+function workCodexHTML(c) {
+  const book = codebook(c), cmds = c.commands || [];
+  return `<div class="codex-work">${coverHTML(c)}<div><b>${esc(c.title)}</b><span class="note">${esc(c.cat)}${c.world_mode ? " · 세계관" : ""} · 인물 ${c.cast.filter((x) => !x.of).length}명</span></div><button class="btn sm ghost" data-go="c-${esc(c.id)}">작품 보기</button></div>
+    <div class="box"><h3>등장인물 <small>누르면 코드·감정 칸·소개</small></h3><div class="cast">${castGridHTML(c)}</div></div>
+    ${seriesBox(c, "MP", book.MP)}${seriesBox(c, "EV", book.EV)}
+    ${cmds.length ? `<div class="box"><h3>이 작품의 명령어 <small>치면 AI가 그 장면을 열어요</small></h3>${cmdList(cmds, false)}</div>` : ""}`;
+}
+/**
+ * 도감 화면(#codex · #codex-<작품id>): 공통 표(그림 코드 읽는 법·감정 칸 0~14·앱 명령어) + 작품 고르기(관심있는 대화로 거름) → 그 작품의 인물·장소·컷씬·작품 명령어.
+ * @param {string} [id] 작품 id(없거나 걸러졌으면 첫 작품)
+ */
+function viewCodex(id) {
+  const v = $("#view"), pool = ORIGINALS.map(normalizeChar).filter(audOK);
+  const c = pool.find((x) => x.id === id) || pool[0] || null;
+  v.innerHTML = `<div class="page">${topbar()}<h1 class="sec" style="margin-top:4px">도감 <small>인물 코드·감정 칸·장소·컷씬·명령어</small></h1>
+    <div class="box"><h3>그림 코드 읽는 법</h3><p class="codex-how">대화 속 그림 한 장은 코드 한 토큰이에요. <code class="code-chip">HSY3</code>은 인물 코드 <b>HSY</b> + 감정·행동 번호 <b>3</b>(부끄러움). 다른 모습(폼)은 다른 인물 코드로, 장소는 <code class="code-chip">MP1</code>, 컷씬은 <code class="code-chip">EV1</code>처럼 1부터 번호를 매겨요.</p>
+      <div class="sit-table">${SIT.map((s, i) => `<span class="sit-chip" style="--tint:${SIT_TINT[i]}"><i></i><code>${i}</code>${esc(s)}</span>`).join("")}</div></div>
+    <div class="box"><h3>앱 명령어 <small>어느 작품에서나 · 하트를 쓰지 않아요</small></h3>${cmdList(APP_COMMANDS, true)}</div>
+    <h2 class="sec" id="cxWorks">작품 <small>${esc(AUDS[audience()].name)}${audience() !== "all" ? " — MY → 설정에서 바꿀 수 있어요" : ""}</small></h2>
+    ${pool.length ? `<div class="chips" style="margin-bottom:12px">${pool.map((x) => `<button class="chip${c && x.id === c.id ? " on" : ""}" data-work="${esc(x.id)}">${esc(x.title)}</button>`).join("")}</div>` : `<div class="empty">지금 관심있는 대화에 맞는 작품이 없어요. <button class="btn sm" data-go="me">설정 바꾸기</button></div>`}
+    ${c ? workCodexHTML(c) : ""}</div>`;
+  bindGo(v); IMG.hydrate(v); bindCodex(v);
+  $$("[data-work]", v).forEach((b) => b.onclick = () => go("codex-" + b.dataset.work));
+  if (c) bindCast(v, c);
+  // 작품을 지정해 들어왔으면(칩을 눌렀거나 상세의 '도감') 공통 표를 건너뛰고 작품 칸부터 — 라우터(shell.js route)가 새 주소를 맨 위로 올린 다음 틱에 옮김
+  if (id && c) setTimeout(() => { const h = $("#cxWorks", v); if (h && v.contains(h)) h.scrollIntoView({ block: "start" }); }, 0);
 }
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/ui/worldart.js
@@ -4873,8 +4929,8 @@ function worldArtHTML(c) {
            src/js/core/util.js { $, $$, ago, esc }
            src/js/core/wallet.js { FREE_DAILY, plan }
            src/js/services/images.js { IMG }
-           src/js/ui/codex.js { bindCodex, castSheet, codexHTML }
-           src/js/ui/cover.js { coverHTML, lightbox, portraitHTML }
+           src/js/ui/codex.js { bindCast, bindCodex, castGridHTML, codexHTML }
+           src/js/ui/cover.js { coverHTML, lightbox }
            src/js/ui/icons.js { ICON }
            src/js/ui/pay.js { plusSheet }
            src/js/ui/shell.js { bindGo, go, topbar }
@@ -4915,8 +4971,8 @@ function viewDetail(id) {
         <div class="tags">${(c.tags || []).map((t) => `<span>#${esc(t)}</span>`).join("")}</div>
         <div class="box"><h3>소개</h3><p>${esc(c.desc)}</p></div>
         <div class="box" id="wArtBox" ${wa ? "" : 'style="display:none"'}><h3>세계관 일러스트</h3>${wa}</div>
-        <div class="box"><h3>등장인물 <small>누르면 코드·감정 칸 안내</small></h3>
-          <div class="cast">${c.cast.filter((x) => !x.of).map((x) => `<button data-cast="${esc(x.code)}" title="${esc(x.look || x.name)}">${portraitHTML(c, x)}<b>${esc(x.name)}</b><code class="code-chip">${esc(x.code)}</code></button>`).join("")}</div></div>
+        <div class="box"><h3>등장인물 <small>누르면 코드·감정 칸 안내</small> <button class="btn sm ghost" data-go="codex-${esc(c.id)}" style="float:right">도감</button></h3>
+          <div class="cast">${castGridHTML(c)}</div></div>
         ${codexHTML(c)}
         <div class="box"><h3>${c.world_mode ? "게임 모드 · 시작 상황" : "시작 상황"}</h3><div class="openings">
           ${c.openings.map((o, i) => `<label class="opening"><input type="radio" name="op" value="${i}" ${i === 0 ? "checked" : ""}><b>${esc(o.title)}</b>
@@ -4932,8 +4988,7 @@ function viewDetail(id) {
   bindGo(v); IMG.hydrate(v);
   $$("[data-room]", v).forEach((b) => b.onclick = () => go("r-" + b.dataset.room));
   $$("[data-wlb]", v).forEach((b) => b.onclick = () => { const i = b.querySelector("img"); if (i?.src) lightbox(i.src); });
-  $$("[data-cast]", v).forEach((b) => b.onclick = () => { const x = c.cast.find((y) => y.code === b.dataset.cast); if (x) castSheet(c, x); });
-  bindCodex(v);
+  bindCast(v, c); bindCodex(v);
   $("#start").onclick = () => {
     if (rooms.length >= plan().rooms) return plusSheet("rooms");
     const opIdx = +(v.querySelector("input[name=op]:checked")?.value || 0);
@@ -5125,6 +5180,7 @@ function newPasswordSheet() {
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/app.js
    가져옴: src/js/ui/home.js { viewHome }
+           src/js/ui/codex.js { viewCodex }
            src/js/ui/detail.js { viewDetail }
            src/js/ui/chat/view.js { viewChat }
            src/js/ui/chats.js { viewChats }
@@ -5188,9 +5244,10 @@ function newPasswordSheet() {
 
 
 
-/* 해시 앞부분 → 화면. 상세(c-<id>)·대화방(r-<id>)·고객센터(help-<탭>)는 "-" 뒤를 인자로 받음 */
-const USER_VIEWS = { home: viewHome, c: viewDetail, r: viewChat, chats: viewChats, notice: viewNotice, store: viewStore, me: viewMe, login: viewLogin, help: viewHelp };
-const USER_NAVS = [["home", "홈", "home"], ["chats", "대화", "chat"], ["notice", "공지", "bell"], ["store", "스토어", "heart"], ["me", "MY", "user"]];
+
+/* 해시 앞부분 → 화면. 상세(c-<id>)·대화방(r-<id>)·도감(codex-<id>)·고객센터(help-<탭>)는 "-" 뒤를 인자로 받음 */
+const USER_VIEWS = { home: viewHome, c: viewDetail, r: viewChat, chats: viewChats, codex: viewCodex, notice: viewNotice, store: viewStore, me: viewMe, login: viewLogin, help: viewHelp };
+const USER_NAVS = [["home", "홈", "home"], ["chats", "대화", "chat"], ["codex", "도감", "book"], ["notice", "공지", "bell"], ["store", "스토어", "heart"], ["me", "MY", "user"]];
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/admin/support.js
    가져옴: src/js/core/util.js { $, $$, esc, toast }

@@ -1,4 +1,4 @@
-// 사용자 사이트(index.html)의 모든 화면·작품·시트가 오류 없이 그려지는지(스모크): 홈·대화·공지·스토어·MY 다섯 화면, 오리지널 작품 전부의 상세 페이지,
+// 사용자 사이트(index.html)의 모든 화면·작품·시트가 오류 없이 그려지는지(스모크): 홈·대화·도감·공지·스토어·MY 여섯 화면, 오리지널 작품 전부의 상세 페이지,
 // 각 작품의 첫 시작 상황으로 연 대화방(오프닝 본문·상태창·입력창), 대화방 드로어·모델 시트·페르소나·관심있는 대화·PLUS·확인 시트.
 // 관리자 도구의 화면·시트(만들기·이미지 슬롯·세계관 일러스트·추천 칸)는 admin.mjs. pageerror와 console error를 모아 errs에 담는다 — 모듈 분리 뒤 어떤 화면에서든 ReferenceError가 나면 여기서 잡힘.
 import { chromium, webkit, devices } from "playwright";
@@ -15,7 +15,7 @@ for (const [dev, engine, opts] of [["Desktop Chrome", chromium, {}], ["iPhone 13
     if (await p.$("#lguest")) { await p.click("#lguest"); await wait(400); }
     await p.evaluate(() => { closeOverlays(); setAudience("all"); });
     // 다섯 화면
-    for (const v of ["home", "chats", "notice", "store", "me"]) {
+    for (const v of ["home", "chats", "codex", "notice", "store", "me"]) {
       await p.evaluate((v) => { location.hash = v; }, v); await wait(500);
       res.views[v] = await p.evaluate(() => $("#view").innerHTML.length);
       if (res.views[v] < 200) errs.push(`${v} 화면이 비어 있음`);

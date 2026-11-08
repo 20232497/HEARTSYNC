@@ -22,3 +22,13 @@
 .cmd-card > span:not(.pill) { grid-area:desc; color:var(--muted); font-size:12.5px; }
 .cmd-card .btn { grid-area:copy; }
 @media (max-width:560px) { .cmd-card { grid-template-columns:auto 1fr auto; grid-template-areas:"cmd title copy" "pill desc copy"; } }
+/* 도감 화면(viewCodex): 코드 읽는 법·감정 칸 표·작품 머리 */
+.box p.codex-how { font-size:14px; line-height:1.7; margin-bottom:10px; }
+.sit-table { display:flex; flex-wrap:wrap; gap:6px; }
+.sit-chip { display:inline-flex; align-items:center; gap:6px; border:1px solid var(--line); border-radius:999px; padding:4px 10px 4px 7px; font-size:12.5px; background:var(--bg); }
+.sit-chip i { width:10px; height:10px; border-radius:50%; background:var(--tint); flex:none; }
+.sit-chip code { font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:11.5px; font-weight:700; color:var(--muted); }
+.codex-work { display:flex; align-items:center; gap:12px; margin:0 0 12px; }
+.codex-work .cover { width:54px; height:72px; border-radius:12px; flex:none; }
+.codex-work > div { flex:1; min-width:0; display:grid; gap:2px; }
+.codex-work b { font-family:var(--display); font-size:17px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }

@@ -6,8 +6,8 @@ import { S, room, setRoom } from "../core/state.js";
 import { $, $$, ago, esc } from "../core/util.js";
 import { FREE_DAILY, plan } from "../core/wallet.js";
 import { IMG } from "../services/images.js";
-import { bindCodex, castSheet, codexHTML } from "./codex.js";
-import { coverHTML, lightbox, portraitHTML } from "./cover.js";
+import { bindCast, bindCodex, castGridHTML, codexHTML } from "./codex.js";
+import { coverHTML, lightbox } from "./cover.js";
 import { ICON } from "./icons.js";
 import { plusSheet } from "./pay.js";
 import { bindGo, go, topbar } from "./shell.js";
@@ -31,8 +31,8 @@ export function viewDetail(id) {
         <div class="tags">${(c.tags || []).map((t) => `<span>#${esc(t)}</span>`).join("")}</div>
         <div class="box"><h3>소개</h3><p>${esc(c.desc)}</p></div>
         <div class="box" id="wArtBox" ${wa ? "" : 'style="display:none"'}><h3>세계관 일러스트</h3>${wa}</div>
-        <div class="box"><h3>등장인물 <small>누르면 코드·감정 칸 안내</small></h3>
-          <div class="cast">${c.cast.filter((x) => !x.of).map((x) => `<button data-cast="${esc(x.code)}" title="${esc(x.look || x.name)}">${portraitHTML(c, x)}<b>${esc(x.name)}</b><code class="code-chip">${esc(x.code)}</code></button>`).join("")}</div></div>
+        <div class="box"><h3>등장인물 <small>누르면 코드·감정 칸 안내</small> <button class="btn sm ghost" data-go="codex-${esc(c.id)}" style="float:right">도감</button></h3>
+          <div class="cast">${castGridHTML(c)}</div></div>
         ${codexHTML(c)}
         <div class="box"><h3>${c.world_mode ? "게임 모드 · 시작 상황" : "시작 상황"}</h3><div class="openings">
           ${c.openings.map((o, i) => `<label class="opening"><input type="radio" name="op" value="${i}" ${i === 0 ? "checked" : ""}><b>${esc(o.title)}</b>
@@ -48,8 +48,7 @@ export function viewDetail(id) {
   bindGo(v); IMG.hydrate(v);
   $$("[data-room]", v).forEach((b) => b.onclick = () => go("r-" + b.dataset.room));
   $$("[data-wlb]", v).forEach((b) => b.onclick = () => { const i = b.querySelector("img"); if (i?.src) lightbox(i.src); });
-  $$("[data-cast]", v).forEach((b) => b.onclick = () => { const x = c.cast.find((y) => y.code === b.dataset.cast); if (x) castSheet(c, x); });
-  bindCodex(v);
+  bindCast(v, c); bindCodex(v);
   $("#start").onclick = () => {
     if (rooms.length >= plan().rooms) return plusSheet("rooms");
     const opIdx = +(v.querySelector("input[name=op]:checked")?.value || 0);
