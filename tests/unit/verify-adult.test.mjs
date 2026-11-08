@@ -1,7 +1,7 @@
-// 휴대폰 성인 인증 Edge Function(docs/edge/verify-adult.ts) 단위 테스트 — 진짜 함수 코드에 가짜 인증 서버·표·PortOne을 끼움(tests/e2e/_idv-fake.mjs)
+// 휴대폰 성인 인증 Edge Function(docs/edge/verify-adult.ts) 단위 테스트 — 진짜 함수 코드에 가짜 인증 서버·표·PortOne을 끼움(tests/unit/_idv-fake.mjs)
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { A, B, PORTONE_SECRET, SECRET, SB_URL, fakeWorld, loadEdge } from "../e2e/_idv-fake.mjs";
+import { A, B, PORTONE_SECRET, SECRET, SB_URL, fakeWorld, loadEdge } from "./_idv-fake.mjs";
 const { handle, isAdultBirth } = await loadEdge();
 
 const NOW = new Date("2026-11-05T03:00:00Z");

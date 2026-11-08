@@ -1,5 +1,4 @@
 /* 대화방 화면 뼈대·입력창·게이지 */
-import { unfilteredRoute } from "../../ai/adult.js";
 import { MODELS } from "../../ai/models.js";
 import { migrateRoom, roomKey } from "../../core/rooms.js";
 import { S, gen, room, setRoom } from "../../core/state.js";
@@ -94,7 +93,7 @@ export function updateComposer() {
   send.innerHTML = `${ICON.send}<small>${qShort(q)}</small>`;
   send.title = q.type === "heart" ? `이번 턴에 하트 ${q.n}개가 사용돼요` : q.type === "free" ? "오늘의 무료 턴으로 보내요" : "PLUS 무제한";
   $("#contBtn").disabled = !!gen; $("#sugBtn").disabled = !!gen;
-  const chip = $("#modelChip"); if (chip) chip.innerHTML = `${m.name}${unfilteredRoute(room) ? ' <span class="adult" title="성인 무검열 모드 · OpenRouter">🔞</span>' : ""} <small>${qShort(q)}/턴</small> ▾`;
+  const chip = $("#modelChip"); if (chip) chip.innerHTML = `${m.name} <small>${qShort(q)}/턴</small> ▾`;
   const fc = $("#freeCount");
   if (fc) {
     const left = freeLeft();

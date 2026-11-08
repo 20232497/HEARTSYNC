@@ -1,6 +1,6 @@
 // 시험 도우미(시험 목록에는 없음): 휴대폰 성인 인증의 서버 쪽. 함수는 진짜 코드(docs/edge/verify-adult.ts)를 그대로 읽어 돌리고,
 // 그 바깥(인증 서버·adult_checks 표·PortOne API)만 메모리로 흉내 낸다 — 표의 규칙은 docs/supabase.sql과 같음(앱은 본인 것 읽기만, 쓰기는 service 키만).
-// 단위 테스트(tests/unit/verify-adult.test.mjs)와 흐름 시험(idv.mjs)이 같이 쓴다. 실제 서버로는 아무것도 안 감.
+// 단위 테스트(tests/unit/verify-adult.test.mjs)가 쓴다. 실제 서버로는 아무것도 안 감.
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";

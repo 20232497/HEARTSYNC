@@ -42,7 +42,7 @@ export function migrateRoom(r) {
     if (Array.isArray(r.facts) && r.facts.length && !r.memory) r.memory = "[이전 버전에서 옮긴 기억]\n" + r.facts.map((f) => "- " + f).join("\n");
     delete r.facts; delete r.memCursor;
   }
-  if (typeof r.set.allowUnfiltered !== "boolean") r.set.allowUnfiltered = false;
+  delete r.set.allowUnfiltered; // 예전 방의 성인 무검열 칸(성인 기능은 서버에 다시 세움 — docs/ROADMAP.md)
   r.msgs.forEach((m) => delete m.editing);
   return r;
 }
@@ -58,7 +58,7 @@ export function newRoom(c, openingIdx, persona) {
   const r = {
     id: uid("r"), v2: true, char: JSON.parse(JSON.stringify(c)), persona: { id: persona.id, name: persona.name, memo: persona.memo || "", desc: persona.desc || "", img: persona.img || "" },
     opening: op.title, directive: op.directive || "", userNote: "", memory: "", memHist: [], sinceMem: 0, turn: 0, status: st, bookmarks: [],
-    set: { model: "lite", len: "mid", mem: 10, rerollAsk: false, allowUnfiltered: false },
+    set: { model: "lite", len: "mid", mem: 10, rerollAsk: false },
     msgs: [{ id: uid("m"), role: "ai", idx: 0, alts: [{ text: op.text, status: st, suggestions: [], opening: true }], statusBefore: st }],
     at: Date.now(), created: Date.now()
   };

@@ -1,4 +1,4 @@
-/* 안전: 미성년 인물 막기(minorFlags·minorHint)·성인 인증 판정(idvPassed) — 순수 함수라 빌드의 작품 검사와 단위 테스트가 그대로 import */
+/* 안전: 미성년 인물 막기(minorFlags·minorHint) — 순수 함수라 빌드의 작품 검사와 단위 테스트가 그대로 import */
 /** @typedef {import("./types.js").CastMember} CastMember */
 /** @typedef {import("./types.js").Work} Work */
 /* 미성년 인물 막기: 출연진 외모나 캐릭터 설정 첫머리("이름(17, 여)")에 19세 미만 나이·학생 신분이 있으면 저장·공개하지 않음 */
@@ -14,12 +14,7 @@ export function minorFlags(c) {
   if (pm && under(+pm[2])) out.push(pm[1]);
   return [...new Set(out)];
 }
-/* 글 속 미성년 암시(19세 미만 나이, 학생·아동 낱말, 그런 Danbooru 태그). 성인 경로·Claude 거절 우회·성인 수위 그림을 막는 데 씀 */
-/**
- * 휴대폰 성인 인증 결과가 지금 유효한지: 성인 판정 + 1년 안 + live 모드면 시험 채널 결과는 인정하지 않음(시험 채널은 통신사 확인 없이 통과함).
- * @param {{ adult: boolean, test: boolean, until: number }|null|undefined} rec @param {string} mode CFG.idv.mode @param {number} [now] @returns {boolean}
- */
-export function idvPassed(rec, mode, now = Date.now()) { return !!rec && rec.adult === true && rec.until > now && (mode !== "live" || rec.test === false); }
+/* 글 속 미성년 암시(19세 미만 나이, 학생·아동 낱말, 그런 Danbooru 태그). 지금은 빌드의 작품 검사·단위 테스트가 쓰고, 성인 기능을 서버에 다시 세울 때 서버 판정이 같은 함수를 씀(docs/ROADMAP.md) */
 /** 글 속 미성년 암시(나이·학생·아동·교복 낱말과 영문 태그). @param {string} t @returns {boolean} */
 export function minorHint(t) {
   t = String(t || "");

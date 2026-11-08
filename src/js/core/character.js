@@ -1,9 +1,7 @@
-/* 작품 찾기·정규화: normalizeChar, 전체 목록(allChars), id로 찾기(getChar) */
+/* 작품 찾기·정규화: normalizeChar, id로 찾기(getChar — 오리지널) */
 import { ORIGINALS } from "../content/index.js";
-import { S } from "./state.js";
 /** @typedef {import("./types.js").Work} Work */
 
-/* ---------------------------------------------------------------- 캐릭터·커버·이미지 */
 /** 빠진 칸(fields·gauge·cast·images·lore)을 기본값으로 제자리 보정. @template {Work|null|undefined} T @param {T} c @returns {T} 같은 객체 */
 export function normalizeChar(c) {
   if (!c) return c;
@@ -14,6 +12,5 @@ export function normalizeChar(c) {
   if (!Array.isArray(c.lore)) c.lore = [];
   return c;
 }
-function allChars() { return [...S.mine, ...ORIGINALS, ...S.community.filter((c) => !S.mine.some((m) => m.id === c.id))]; }
-/** id로 작품 찾기 — 내 작품 → 오리지널 → 커뮤니티. @param {string} id @returns {Work|undefined} */
-export function getChar(id) { return S.mine.find((c) => c.id === id) || ORIGINALS.find((c) => c.id === id) || S.community.find((c) => c.id === id); }
+/** id로 작품 찾기(오리지널). 대화방은 방 안의 작품 사본을 쓰고, 이것은 최신 키워드북·그림을 볼 때. @param {string} id @returns {Work|undefined} */
+export function getChar(id) { return ORIGINALS.find((c) => c.id === id); }

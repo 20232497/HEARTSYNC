@@ -1,5 +1,4 @@
-/* 한 턴 보내기 → 응답 생성(generate)·다시 쓰기·빠진 인물 그림 태그 채우기(addCastImages). 응답이 끝나면 EXT.afterTurn(관리자 빌드의 그림 자동 생성)을 부름 */
-import { unfilteredRoute } from "../../ai/adult.js";
+/* 한 턴 보내기 → 응답 생성(generate)·다시 쓰기·빠진 인물 그림 태그 채우기(addCastImages) */
 import { errCopy, llm } from "../../ai/llm.js";
 import { LEN, MODELS } from "../../ai/models.js";
 import { dropEcho, parseState, splitReply } from "../../ai/parse.js";
@@ -9,15 +8,14 @@ import { curText, saveRoom } from "../../core/rooms.js";
 import { gen, room, setGen } from "../../core/state.js";
 import { $, uid } from "../../core/util.js";
 import { charge, qShort, quote, refund } from "../../core/wallet.js";
-import { applyDims, dimOf, imgTags, lastDims } from "../../images/codes.js";
+import { imgTags } from "../../images/codes.js";
 import { imagesOf } from "../../images/pick.js";
-import { dimPick, sitScores } from "../../images/situations.js";
+import { sitScores } from "../../images/situations.js";
 import { IMG, validRef } from "../../services/images.js";
 import { autoScroll, followLog, renderLog, setStick, stick, syncJump } from "./log.js";
 import { liveFill } from "./render.js";
 import { hideSug } from "./suggest.js";
 import { lastAi, updateComposer, updateMeter } from "./view.js";
-import { runExt } from "../ext.js";
 import { ensurePay } from "../pay.js";
 import { closeOverlays, sheet } from "../sheet.js";
 
@@ -47,12 +45,12 @@ export async function regen(i, direction = "") {
 }
 /* 매 응답, 장면에 나온 인물마다 그림 한 장: AI가 [[img]]를 빠뜨린 인물은 그 인물이 처음 말하거나(이름: …) 지문에 나오는 줄 위에 붙임.
    번호는 처음 등장이면 0, 아니면 그 인물의 대사·지문 낱말(×2)과 유저 입력 낱말(그 인물을 불렀거나, 아무도 안 불렀으면 처음 나온 인물만)로
-   sitScores가 가장 높은 감정/행동 번호(그림이 있는 칸이면 0.5 더함), 없으면 1(기본). 지문·입력에 의상·장소 낱말(dimPick)이 있으면 그 번호도 붙임(applyDims가 이어 감).
+   sitScores가 가장 높은 번호(그림이 있는 칸이면 0.5 더함), 없으면 1(기본).
    출연진이 한 명이면 첫 대사 위(없으면 맨 위) */
 function addCastImages(body, r, prev, said) {
   const c = r.char, cast = (c.cast || []).filter((x) => x.name && x.name !== r.persona.name);
   if (!cast.length || !body.trim()) return body;
-  const lines = body.split("\n"), have = new Set(imgTags(body).map((t) => t.code)), imgs = imagesOf(c), adult = unfilteredRoute(r);
+  const lines = body.split("\n"), have = new Set(imgTags(body).map((t) => t.code)), imgs = imagesOf(c);
   const seen = new Set(); prev.forEach((m) => imgTags(curText(m)).forEach((t) => seen.add(t.code)));
   const keysOf = (x) => { const n = x.name.trim(), k = [n], first = n.split(/\s+/)[0]; if (first !== n && first.length >= 2) k.push(first); if (/^[가-힣]{3,4}$/.test(n)) k.push(n.slice(1)); return k; };
   const said2 = said || "", anyNamed = cast.some((x) => keysOf(x).some((k) => said2.includes(k)));
@@ -70,16 +68,15 @@ function addCastImages(body, r, prev, said) {
   const adds = [];
   found.forEach((f, i) => {
     if (have.has(f.x.code)) return;
-    let sit = 1, extra = [];
+    let sit = 1;
     if (!seen.has(f.x.code)) sit = 0;
     else {
       const mine = !!said2 && (f.keys.some((k) => said2.includes(k)) || (!anyNamed && i === 0)), sc = new Map();
-      sitScores(f.own, adult).forEach((v, k) => { if (dimOf(k) === "act") sc.set(k, v * 2); });
-      if (mine) sitScores(said2, adult).forEach((v, k) => { if (dimOf(k) === "act") sc.set(k, (sc.get(k) || 0) + v); });
+      sitScores(f.own).forEach((v, k) => sc.set(k, v * 2));
+      if (mine) sitScores(said2).forEach((v, k) => sc.set(k, (sc.get(k) || 0) + v));
       let best = 0; sc.forEach((v, k) => { const s = v + (validRef((imgs[f.x.code] || {})[k]) ? 0.5 : 0); if (s > best) { best = s; sit = k; } });
-      const dp = dimPick(f.own + (mine ? "\n" + said2 : ""), adult); extra = [dp.wear, dp.place].filter(Boolean);
     }
-    adds.push({ at: f.at, tag: `[[img:${f.x.code}:${[sit, ...extra].join(",")}]]` });
+    adds.push({ at: f.at, tag: `[[img:${f.x.code}:${sit}]]` });
   });
   adds.slice(0, 5).sort((a, b) => b.at - a.at).forEach((a) => lines.splice(a.at, 0, a.tag, ""));
   return lines.join("\n");
@@ -87,7 +84,7 @@ function addCastImages(body, r, prev, said) {
 /* target 없으면 새 AI 메시지, 있으면 그 메시지에 새 버전(alt) 추가 */
 export async function generate(target, q, direction = "", isEdit = false) {
   const r = room, c = r.char, model = r.set.model;
-  let msg = target, altIdx, done = "";
+  let msg = target, altIdx;
   if (!msg) {
     const prev = lastAi(r);
     const before = prev ? (prev.alts[prev.idx].status || prev.statusBefore) : r.status;
@@ -112,15 +109,13 @@ export async function generate(target, q, direction = "", isEdit = false) {
     else { renderLog(stick && autoScroll()); syncJump(); }
   };
   try {
-    const text = await llm(input, { tier: MODELS[model].tier, signal: ctl.signal, onText: ({ text }) => show(text), maxTokens: (LEN[r.set.len] || LEN.mid).tokens, room: r });
+    const text = await llm(input, { tier: MODELS[model].tier, signal: ctl.signal, onText: ({ text }) => show(text), maxTokens: (LEN[r.set.len] || LEN.mid).tokens });
     show(text);
     const parsed = parseState(text, c, msg.statusBefore), prevMsgs = r.msgs.slice(0, r.msgs.indexOf(msg));
-    // 빠진 인물 그림을 채우고, 태그에 인물별로 이어지는 의상·장소를 입혀 본문에 남김(조합 키가 그대로 저장됨)
-    const bodyText = msg.alts[altIdx].text ? applyDims(addCastImages(msg.alts[altIdx].text, r, prevMsgs, said), lastDims(prevMsgs.map(curText))) : "(빈 응답)";
+    const bodyText = msg.alts[altIdx].text ? addCastImages(msg.alts[altIdx].text, r, prevMsgs, said) : "(빈 응답)";
     Object.assign(msg.alts[altIdx], parsed, { text: bodyText, cost: qShort(q), lore: input.lore });
     r.status = parsed.status;
     if (!target && !isEdit) { r.turn = (r.turn || 0) + 1; r.sinceMem = (r.sinceMem || 0) + 1; }
-    if (msg.alts[altIdx].text) done = bodyText;
   } catch (e) {
     // 사용자가 멈췼거나 스트림이 중간에 끊긴(timeout) 경우: 받은 본문까지 남김(하트 환불 없음). 끊긴 거면 '다시 시도'(= 다시 쓰기) 안내
     const keep = e && e.text ? splitReply(e.text).body.trim() : "";
@@ -140,7 +135,6 @@ export async function generate(target, q, direction = "", isEdit = false) {
       renderLog(stick && autoScroll()); syncJump(); updateComposer(); updateMeter(); $("#inp")?.focus({ preventScroll: true });
     }
     maybeSummarize(r);
-    if (done) runExt("afterTurn", r, done);
   }
 }
 export function stopGen() { if (gen) gen.ctl.abort(); }

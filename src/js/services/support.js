@@ -6,8 +6,8 @@ import { SB } from "./supabase.js";
 /** @typedef {import("../core/types.js").Notice} Notice */
 /** @typedef {import("../core/types.js").Inquiry} Inquiry */
 
-/** 문의 분류 [값, 이름] — docs/supabase.sql inquiries.category 제약과 같은 목록 */
-export const ASK_CATS = [["account", "계정·로그인"], ["pay", "요금·하트"], ["chat", "대화·AI"], ["image", "그림"], ["adult", "성인 모드"], ["bug", "오류 신고"], ["suggest", "제안"], ["etc", "기타"]];
+/** 문의 분류 [값, 이름] — docs/supabase.sql inquiries.category 제약 안의 값. 'adult'(성인 모드)는 예전 문의 때문에 서버 제약에만 남김(화면에선 '기타'로 보임) */
+export const ASK_CATS = [["account", "계정·로그인"], ["pay", "요금·하트"], ["chat", "대화·AI"], ["image", "그림"], ["bug", "오류 신고"], ["suggest", "제안"], ["etc", "기타"]];
 /** 문의 상태 이름 */
 export const ASK_STATUS = { open: "답변 대기", answered: "답변 완료", closed: "종료" };
 /** 앱 밖 문의(로그인하지 않았거나 서버가 없을 때) — privacy.html의 개인정보 보호책임자 이메일과 같음 */

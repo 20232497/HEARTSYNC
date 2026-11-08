@@ -1,5 +1,4 @@
-/* 대화방 관리 드로어(출력 설정·기억·갤러리·내보내기·삭제). 메뉴 끝은 관리자 빌드가 EXT.drawer로 채움(이미지 슬롯) */
-import { ageOK, unfilteredRoute } from "../ai/adult.js";
+/* 대화방 관리 드로어(출력 설정·기억·갤러리·내보내기·삭제) */
 import { engineName } from "../ai/llm.js";
 import { LEN, MODELS } from "../ai/models.js";
 import { maybeSummarize, memCfg, pushHist } from "../ai/prompt/memory.js";
@@ -7,20 +6,19 @@ import { speakerName } from "../ai/prompt/rules.js";
 import { getChar, normalizeChar } from "../core/character.js";
 import { curText, deletedRooms, newRoom, roomKey, saveRoom } from "../core/rooms.js";
 import { saveSettings } from "../core/settings.js";
-import { DOWNLOADS, S, gen, hasOpenRouterKey, room, setRoom } from "../core/state.js";
+import { S, gen, room, setRoom } from "../core/state.js";
 import { KV } from "../core/storage.js";
 import { $, $$, clamp, esc, num, toast } from "../core/util.js";
 import { FREE_DAILY, PLAN, freeLeft, isPro, plan, qShort, quote } from "../core/wallet.js";
-import { imgTags } from "../images/codes.js";
+import { imgTags, sitOf } from "../images/codes.js";
 import { pickImg } from "../images/pick.js";
-import { keyName } from "../images/situations.js";
+import { sitName } from "../images/situations.js";
 import { IMG } from "../services/images.js";
 import { stopGen } from "./chat/generate.js";
 import { copyText, renderLog } from "./chat/log.js";
 import { statusBlock } from "./chat/render.js";
 import { lastAi, updateComposer } from "./chat/view.js";
 import { artHTML, coverHTML, lightbox, pavHTML } from "./cover.js";
-import { runExt } from "./ext.js";
 import { ICON } from "./icons.js";
 import { personaSheet } from "./me.js";
 import { openModelSheet } from "./model-sheet.js";
@@ -64,7 +62,7 @@ export function openRoomDrawer(view = "main") {
         <button data-v="bookmarks">북마크<span class="v">${(r.bookmarks || []).length}개</span></button>
       </div>
       <button class="btn ghost danger block" id="delRoom" style="margin-top:16px">이 대화방 삭제</button>
-      <p class="note" style="margin-top:8px">AI 연결: ${engineName()}${unfilteredRoute(r) ? " · 🔞 성인 모드(OpenRouter)" : ""}</p>`;
+      <p class="note" style="margin-top:8px">AI 연결: ${engineName()}</p>`;
     $$("[data-v]", body).forEach((b) => b.onclick = () => openRoomDrawer(b.dataset.v));
     $("#topup", body).onclick = () => go("store");
     $("#compo", body).onclick = () => go("c-" + c.id);
@@ -75,7 +73,6 @@ export function openRoomDrawer(view = "main") {
       const c0 = normalizeChar(getChar(c.id) || c); if (S.rooms.filter((x) => x.charId === c0.id).length >= plan().rooms) return plusSheet("rooms");
       setRoom(newRoom(c0, Math.max(0, c0.openings.findIndex((o) => o.title === r.opening)), r.persona)); go("r-" + room.id); });
     $("#delRoom", body).onclick = () => confirmSheet("이 대화방을 삭제할까요?", "메시지와 기억이 모두 지워지고 되돌릴 수 없어요.", "삭제", () => deleteRoom(r.id));
-    runExt("drawer", r, body);
   }
   else if (view === "persona") {
     const paint = () => {
@@ -161,14 +158,12 @@ export function openRoomDrawer(view = "main") {
           <div class="seg">${Object.entries(LEN).map(([k, l]) => `<button data-len="${k}" class="${s.len === k ? "on" : ""}">${l.name}<small>${l.chars}</small></button>`).join("")}</div><div class="res">${LEN[s.len].desc}</div></div>
         <div class="setcard"><div class="toggle"><div><h4>리롤 지침</h4><p class="d" style="margin:4px 0 0">다시 쓰기를 누르면 방향을 적는 창을 띄워요.</p></div><input type="checkbox" id="rr" ${s.rerollAsk ? "checked" : ""}></div></div>
         <div class="setcard"><div class="toggle"><div><h4>자동 스크롤</h4><p class="d" style="margin:4px 0 0">켜면 답이 써지는 동안 화면이 맨 아래를 따라 내려가요. 끄면 보낼 때 한 번만 내려가고, 답은 읽는 속도에 맞춰 직접 내려 보면 돼요.</p></div><input type="checkbox" id="as" ${s.autoScroll ? "checked" : ""}></div></div>
-        ${ageOK() ? `<div class="setcard"><div class="toggle"><div><h4>🔞 이 대화방에서 성인 무검열 서사 허용</h4><p class="d" style="margin:4px 0 0">${hasOpenRouterKey() ? "켜면 이 대화방은 OpenRouter 모델로 수위 제한 없이 써요." : "MY → 설정에 OpenRouter API 키를 넣어야 적용돼요."}${!S.settings.contentFilter ? " 지금은 설정에서 기본 수위 제한을 해제해 둬서 모든 대화방에 적용 중이에요." : ""} 미성년 인물·암시가 있는 턴은 수위와 상관없이 보호 모드로 써요.</p></div><input type="checkbox" id="au" ${s.allowUnfiltered ? "checked" : ""}></div></div>` : ""}
         <div class="setcard"><h4>예상 비용</h4><table class="tbl"><tbody>${Object.keys(MODELS).map((k) => { const qq = quote({ ...s, model: k }); return `<tr><td>${MODELS[k].name}${k === s.model ? ' <span class="pill">사용 중</span>' : ""}</td><td class="num">${qq.type === "free" ? "무료 (" + freeLeft() + "턴 남음)" : qq.type === "plus" ? "PLUS 무제한" : "♥" + qq.n + " / 턴"}</td></tr>`; }).join("")}</tbody></table></div>
         <button class="btn pri block" id="oSave" style="margin-top:12px">저장 · 지금 모델 턴당 ${qShort(q2)}</button>`;
       $("#mM", body).onclick = () => { s.mem = Math.max(5, s.mem - 5); paint(); };
       $("#mP", body).onclick = () => { if (s.mem + 5 > maxMem) return plusSheet("mem"); s.mem += 5; paint(); };
       $$("[data-len]", body).forEach((b) => b.onclick = () => { s.len = b.dataset.len; paint(); });
       $("#rr", body).onchange = (e) => { s.rerollAsk = e.target.checked; };
-      const au = $("#au", body); if (au) au.onchange = (e) => { s.allowUnfiltered = e.target.checked; };
       $("#oSave", body).onclick = () => { r.set = { ...r.set, ...s, rerollAsk: $("#rr", body).checked, autoScroll: $("#as", body).checked }; delete r.set.sugAuto; saveRoom(r); updateComposer(); toast("출력 설정을 저장했어요"); openRoomDrawer("main"); };
     };
     paint();
@@ -182,8 +177,8 @@ export function openRoomDrawer(view = "main") {
   else if (view === "gallery") {
     const items = galleryItems(r);
     body.innerHTML = items.length ? `<p class="note" style="margin-bottom:10px">이 대화에 나온 장면 이미지 ${items.length}장. 누르면 크게 보거나 그 장면으로 가요.</p><div class="gallery">${items.map((it, k) => {
-      const cast = c.cast.find((x) => x.code === it.code), ref = pickImg(c, it.code, it.key);
-      return `<button data-g="${k}" title="${esc(cast?.name || "")} · ${esc(keyName(it.key))}">${ref ? IMG.tag(ref) : artHTML(c, cast || { name: "?" }, it.key)}</button>`; }).join("")}</div>`
+      const cast = c.cast.find((x) => x.code === it.code), ref = pickImg(c, it.code, it.sit);
+      return `<button data-g="${k}" title="${esc(cast?.name || "")} · ${esc(sitName(it.sit))}">${ref ? IMG.tag(ref) : artHTML(c, cast || { name: "?" }, it.sit)}</button>`; }).join("")}</div>`
       : `<div class="empty">아직 장면 이미지가 없어요. 대화 중에 인물이 등장하거나 감정이 크게 바뀌면 이미지가 나와요.</div>`;
     IMG.hydrate(body);
     $$("[data-g]", body).forEach((b) => b.onclick = () => { const it = items[+b.dataset.g], im = $("img", b); if (im && im.src) lightbox(im.src); else { ov.remove(); jumpTo(it.id); } });
@@ -197,17 +192,16 @@ export function openRoomDrawer(view = "main") {
 }
 function galleryItems(r) {
   const out = [], seen = new Set();
-  r.msgs.forEach((m) => imgTags(curText(m)).forEach((t) => { const k = t.code + ":" + t.key; if (!seen.has(k) && (r.char.cast || []).some((x) => x.code === t.code)) { seen.add(k); out.push({ ...t, id: m.id }); } }));
+  r.msgs.forEach((m) => imgTags(curText(m)).forEach((t) => { const k = t.code + ":" + t.sit; if (!seen.has(k) && (r.char.cast || []).some((x) => x.code === t.code)) { seen.add(k); out.push({ ...t, id: m.id }); } }));
   return out;
 }
 function jumpTo(id) { const el = $(`.msg[data-id="${id}"]`); if (!el) return; el.scrollIntoView({ block: "center" }); el.classList.add("flash"); setTimeout(() => el.classList.remove("flash"), 1400); }
 function exportText(r) {
   const head = `${r.char.title} — ${r.opening || ""}\n${r.persona.name}(으)로 플레이 · ${new Date().toLocaleString("ko-KR")}\n\n`;
-  return head + r.msgs.filter((m) => curText(m) && !m.sys).map((m) => `${m.role === "ai" ? speakerName(r) : r.persona.name}: ${curText(m).replace(/\[\[img:([a-z0-9]+):([\d,]+)\]\]/gi, (_, a, b) => `[이미지: ${(r.char.cast.find((x) => x.code === a.toLowerCase()) || {}).name || a} · ${keyName(b)}]`)}`).join("\n\n");
+  return head + r.msgs.filter((m) => curText(m) && !m.sys).map((m) => `${m.role === "ai" ? speakerName(r) : r.persona.name}: ${curText(m).replace(/\[\[img:([a-z0-9]+):([\d,]+)\]\]/gi, (_, a, b) => `[이미지: ${(r.char.cast.find((x) => x.code === a.toLowerCase()) || {}).name || a} · ${sitName(sitOf(b))}]`)}`).join("\n\n");
 }
 async function exportRoom(r) {
   const data = exportText(r), filename = `HEART_SYNC_${r.char.title.replace(/[^\w가-힣]+/g, "_")}_${new Date().toISOString().slice(0, 10)}.txt`;
-  if (DOWNLOADS) { try { await DOWNLOADS.save({ filename, data }); } catch (e) { if (e?.code !== "cancelled" && e?.code !== "declined") toast("내보내지 못했어요. 대화 복사를 써 주세요."); } return; }
   try { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([data], { type: "text/plain" })); a.download = filename; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); }
   catch { copyText(data, "내보내기가 막혀 있어서 대신 복사했어요"); }
 }
