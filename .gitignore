@@ -3,7 +3,7 @@ node_modules/
 tests/.shots/
 # 빌드가 content/ 폴더로 만드는 작품 데이터 모듈(소스는 content/**/work.js)
 src/js/content/generated.js
-# 관리자 전용 이미지 코드 표(성인 수위 — 공개 저장소에 두지 않음, 개발 서버에서 관리자 페이지가 런타임에 읽음). 모양은 content/codes.admin.example.json
+# 예전 관리자 전용 이미지 코드 표(성인 수위). 2026-11-08 정리 뒤로 앱은 코드 표를 쓰지 않지만, 이 PC에 남은 표가 실수로 커밋되지 않게 줄은 남겨 둠
 content/codes.admin.json
 # Claude 앱 세션 설정(launch.json·워크트리)
 .claude/

@@ -1,8 +1,18 @@
 # HEART SYNC 로드맵 — 아키텍처 가이드 검토 결과
 
+## 0. 2026-11-08 정리(초기화) — 지금 기준
+
+사용자 요청('불필요한 코드는 싹 지우고 지금 서비스 개발에 필요한 것만')으로 브라우저 쪽 기능을 줄였습니다. 정리 직전 상태는 태그 `archive/before-reset-2026-11-08`(로컬)에 있고, 남성향 일상 화풍은 `archive/style-mdaily/`에 따로 보관했습니다.
+
+- **지운 것**: 브라우저의 그림 생성(Runware·프롬프트·태그 번역·그림체·이미지 스튜디오·움짤·코드 표·조합 코드), 관리자 작품 만들기·내보내기, 성인 모드(OpenRouter·무검열 우회·자기 확인 체크·휴대폰 본인인증 화면), API 키 금고, 커뮤니티·내가 만든 작품, claude.ai 아티팩트 런타임. 아래 1·2장의 해당 내용은 **예전 기록**입니다(지금 코드에 없음).
+- **남은 것**: 오리지널 작품 대화(Anthropic, 사용자 키 또는 프록시), 로그인·계정 저장(Supabase — API 키는 올리지 않음), 고객센터, 데모 지갑·스토어, 작품 폴더에 실린 그림 보기(그림 번호는 기본 감정 0~14만), 관리자 도구(관문·고객센터 관리).
+- **성인 기능은 서버 쪽에 다시 세움**: 판정·모델 선택·성인 콘텐츠는 브라우저가 아니라 서버(Edge Function/BFF)가 맡아야 진짜 관문입니다. 그때 쓸 재료로 `docs/edge/verify-adult.ts`(휴대폰 본인인증 결과 확인 함수, 단위 테스트 있음)와 `docs/supabase.sql`의 `adult_checks` 표, `core/safety.js`의 `minorFlags`·`minorHint`를 남겨 두었습니다. 순서는 변호사 자문·PG 확인 뒤(성인 콘텐츠 투트랙 방침).
+- **그림**: 앱 밖에서 만들어 `content/<…>/images/`에 `<인물코드>-<0~14>.webp`·`cover.webp`·`lore-<n>.webp`로 넣고 빌드(content/README.md). 브라우저는 그림 서비스를 부르지 않습니다(빌드 검사 checkForbidden).
+- **다음에 할 일(권장 순서)**: ① 서버 AI 프록시(BFF) — 사용자 키 없이 대화, 레이트 리밋·모더레이션 ② 서버 원장(하트·무료 턴·PLUS) ③ 첫 경험(로그인 없이 바로 대화해 보기, 작품 고르기 안내) ④ 작품 그림 싣기 ⑤ 운영(오류 수집·고객센터) ⑥ 성인 기능을 서버에. 자세한 계획은 문서 「배포 전 끌어올리기 계획」(https://claude.ai/artifact/7HDkjZCeg5zEzFpq2FZHFp — 그 문서의 C2 '이미지 스튜디오'는 이번 정리로 없어져, 그림은 archive/style-mdaily/의 값으로 앱 밖에서 만듦).
+
 외부에서 받은 「Master Architecture & Refactoring Guide」(Next.js 전면 재작성 + 백엔드 + 성인 모드 제안)를 지금 코드와 대조해, **지금 구조(단일 index.html)에서 바로 고칠 수 있는 것은 고치고**, 서버가 있어야 하는 것은 단계로 정리했습니다.
 
-## 1. 이번에 반영한 것
+## 1. 이번에 반영한 것(예전 기록)
 
 | 가이드 항목 | 실제 문제 | 반영 내용 (index.html) |
 |---|---|---|
@@ -16,7 +26,7 @@
 
 검증: Playwright(file://) 안정화 테스트 46개 + 기존 흐름 테스트 162개 통과.
 
-## 2. 지금 하지 않은 것과 이유
+## 2. 지금 하지 않은 것과 이유(예전 기록 — 그림·성인 모드·본인인증 화면은 2026-11-08에 지움)
 
 - **Next.js/React 전면 재작성(가이드 2-2, 3장, Phase 1·3)** — 배포 형태(claude.ai 아티팩트 단일 파일, 파일로 열어 쓰는 BYOK)가 바뀌어야 합니다. `<script type="module" src>`는 file://에서 막히므로, 나누더라도 **번들러로 다시 단일 index.html을 만드는 방식**이 먼저입니다(CLAUDE.md 원칙). 이번 작업에서는 파서·프롬프트 빌더를 DOM과 상관없는 순수 함수로 유지해, 나중에 `core/`로 옮기기 쉽게 했습니다.
 - **백엔드(인증, 서버 원장, PG, 이미지 스토리지, 서버 측 buildInput — 4·5장, Phase 4·5)** — 서버가 있어야 합니다. 프론트는 프록시 연결 지점만 마련했습니다. **하트·PLUS·무료 턴은 여전히 데모**라 브라우저에서 조작할 수 있으므로, 실제 결제를 붙이기 전에 서버 원장이 반드시 먼저 있어야 합니다.
@@ -40,9 +50,9 @@
 > 상용화 기준으로 다시 정리한 순서(로그인 → 서버 AI·하트 → 결제 → 운영)와 구성은 [COMMERCIALIZATION.md](COMMERCIALIZATION.md)에 있습니다. 아래는 그 전에 세운 기술 단계입니다.
 
 1. **번들 빌드 도입** — 2026-11-03 완료: 소스를 `src/js/` ES 모듈 60개(core·content·services·images·ai·ui)와 `content/`(작품 폴더)로 나누고, `tools/build.mjs`가 import 그래프 순서로 이어 붙여 단일 index.html을 만들며 이름·import/export·초기화 순서를 검사(README '소스 구조와 빌드'). 단위 테스트는 `npm test`(`ai/parse`·`ai/prompt/lore`·`core/safety`), 흐름 시험은 `npm run e2e`. 남은 것: `rulesPrompt`·`buildInput`처럼 `S`에 의존하는 모듈의 테스트(상태를 주입할 수 있게 다듬은 뒤), esbuild 같은 번들러로 바꾸기(main.js를 진입점으로 그대로 쓰면 됨 — 압축·구문 하향이 필요해질 때).
-2. **서버 프록시(BFF)** — `HEARTVERSE_CONFIG`로 연결(`anthropicUrl`·`runwareUrl`·`openRouterUrl`). 키 은닉, 레이트 리밋, 입·출력 모더레이션. 성인 모드를 출시한다면 연령 확인 결과(`adult_verified`)도 서버가 판단해 성인 경로를 열고 닫아야 함.
+2. **서버 프록시(BFF)** — `HEARTVERSE_CONFIG`로 연결(`anthropicUrl`). 키 은닉, 레이트 리밋, 입·출력 모더레이션. 성인 기능을 연다면 연령 확인 결과(`adult_checks`)도 서버가 판단해 성인 경로를 열고 닫아야 함.
 3. **인증 + 서버 원장 + DB** — 하트·무료 턴·PLUS를 서버 트랜잭션으로(가이드 5-1 스키마 참고). 차감·실패 환불을 서버에서.
-4. **이미지 스토리지(R2/S3)** — `IMG` 어댑터에 서버 업로드 경로를 세 번째 참조 형식으로 추가(`kv:`·`/_blob/` 다음).
+4. **이미지 스토리지(R2/S3)** — 지금 그림은 작품 폴더(`content/…`)와 페르소나 사진(`kv:img…`)뿐. 그림이 많아지면 `IMG` 어댑터에 서버 저장 경로를 참조 형식으로 추가.
 5. **PG 결제** — 서버 원장 위에서 웹훅 검증.
 
 ## 4. 서버 프록시 연결 방법
@@ -53,11 +63,10 @@
 <script>
   window.HEARTVERSE_CONFIG = {
     anthropicUrl: "https://api.example.com/claude",  // Anthropic Messages API와 같은 요청·SSE 응답을 중계
-    runwareUrl: "https://api.example.com/runware",    // Runware API(POST, 작업 배열 JSON)를 그대로 중계
-    serverKeys: true                                  // 키는 서버가 붙임 → 사용자 키 없이 대화·이미지 생성
+    serverKeys: true                                  // 키는 서버가 붙임 → 사용자 키 없이 대화
   };
 </script>
 ```
 
 - `serverKeys: true`면 키 헤더(`x-api-key`, `Authorization: Bearer`)를 보내지 않습니다. 사용자가 키를 넣었다면 그 키를 보냅니다.
-- 프록시는 요청 본문과 응답 형식(Anthropic SSE·JSON, Runware JSON)을 그대로 중계해야 지금 파서가 동작합니다. 프록시가 Runware의 `checkNSFW`를 모르면 앱이 그 항목을 빼고 한 번 다시 보냅니다(서버에서 안전 검사를 따로 해야 함).
+- 프록시는 요청 본문과 응답 형식(Anthropic SSE·JSON)을 그대로 중계해야 지금 파서가 동작합니다.

@@ -1,6 +1,6 @@
 # content/ — 작품(세계관·캐릭터) 폴더
 
-HEART SYNC 오리지널 작품은 **작품 하나 = 폴더 하나**예요. 빌드(`npm run build`)가 이 폴더를 모두 찾아 검사한 뒤 `index.html`의 `ORIGINALS`·`HOME_ROWS`로 넣어요. 목록 파일은 없어요 — 폴더를 더하면 그대로 나란히 등록돼요. 작품 폴더의 `images/`와 `content/codes.json`은 관리자 도구(admin.html)가 내보낸 그림·이미지 코드 표고, 빌드가 함께 실어요(아래 '그림과 코드 표 싣기').
+HEART SYNC 오리지널 작품은 **작품 하나 = 폴더 하나**예요. 빌드(`npm run build`)가 이 폴더를 모두 찾아 검사한 뒤 `index.html`의 `ORIGINALS`·`HOME_ROWS`로 넣어요. 목록 파일은 없어요 — 폴더를 더하면 그대로 나란히 등록돼요. 작품 폴더의 `images/`에 앱 밖에서 만든 그림을 이름 규칙대로 넣으면 빌드가 함께 실어요(아래 '그림 싣기').
 
 ## 맨 위 폴더 = 관심있는 대화(aud)
 
@@ -21,7 +21,7 @@ content/
 │  │  ├─ _row.json            줄 제목·부제·순서
 │  │  ├─ hwanghu/             계약 황후의 백 일
 │  │  │  ├─ work.js
-│  │  │  └─ images/           관리자 도구가 내보낸 그림(선택): <인물코드>-<번호>.webp · cover.webp · lore-1.webp …
+│  │  │  └─ images/           그림(선택): <인물코드>-<0~14>.webp · cover.webp · lore-1.webp …
 │  │  ├─ hasuk/work.js        서촌 오월 하숙집
 │  │  └─ lethe/work.js        호텔 레테: 마흔아홉 번째 밤
 │  ├─ seodoyun/work.js        흑우 탐정사무소 (줄 없는 단독 작품)
@@ -62,7 +62,7 @@ export const order = 40; // 홈·오리지널 목록 순서(작을수록 앞)
 export default {
   id: "newworld", name: "작품 이름", title: "작품 제목", glyph: "字", cat: "로맨스", pal: 1, motif: "petals", world_mode: true, isNew: true,
   oneLiner: "카드에 보이는 한 줄 소개",
-  artTags: "dark fantasy, ruined cathedral, candlelight, …",   // 세계관 영문 낱말(그림용)
+  artTags: "dark fantasy, ruined cathedral, candlelight, …",   // 세계관 영문 낱말(앱 밖에서 그림을 만들 때)
   tags: ["태그", "…"],
   desc: "상세 페이지 소개",
   persona: `AI에게 주는 인물·진상 설정 …`,
@@ -82,33 +82,28 @@ export default {
 | `pal`·`motif`·`glyph` | 표지 색(0~7)·무늬(rain·city·stars·glow·petals·ash·curtain)·가운데 한 글자 |
 | `world_mode` | 여러 인물이 나오는 군상극(세계관). 1:1 캐릭터면 빼요 |
 | `fields`·`gauge` | 상태창 칸 이름(3글자 안팎)과 관계 게이지 칸. 시작 상황 `status`의 칸은 `fields`에 있어야 해요 |
-| `cast` | 출연진. `code`는 그림 태그 `[[img:코드:번호]]`에 써요(번호는 0~14 기본 감정, 또는 내장 코드 1xx 감정·4xx 의상·5xx 장소를 쉼표로 조합 — 앱의 '코드 표'). `tags`(선택)는 그 인물의 외모를 영문 Danbooru 태그로 적은 글 — 있으면 그림 프롬프트의 인물 묶음에 번역 없이 그대로 들어가 같은 인물이 매번 같은 생김새로 그려져요(성별·인원 태그는 `look`에서 자동, 한국어는 넣지 않기). 옷·머리만 적으면 인물끼리 얼굴이 같아지니 눈매(`narrow eyes`·`sharp eyes`·`droopy eyes`·`round eyes`·`upturned eyes`)와 눈썹(`thin eyebrows`·`thick eyebrows`·`straight eyebrows`·`arched eyebrows`·`soft eyebrows`), 앞머리(`parted bangs`·`side-swept bangs`·`curtain bangs`·`forehead`), 점·주근깨도 적어 주세요. `big eyes`처럼 어려 보이는 낱말은 쓰지 않기. 손에 든 물건(`holding …`)이나 손의 표시(`… on hand`)도 넣지 않기 — 모든 칸의 손 자세를 묶어 행동 코드와 부딪혀요. 소지품은 이야기 글 `look`에 두면 돼요. 무기만은 예외 — `tags`나 `look`에 무기 낱말(`longsword`, 장검, `battle axe`, `whip`, `longbow` 등)이 있으면 12 공격에서 그 무기를 쥐고(없으면 맨손, 총은 낱말대로 나뉘어요 — `pistol`·권총은 자동권총, `revolver`·리볼버는 회전 탄창, `pistols`·쌍권총은 두 자루, `sniper rifle`·저격총은 망원경 달린 소총), 싸우는 칸(0·9·12·13)이 아니면 그림에서 저절로 빠져요. 무기를 고를 때는 긴 막대 끝에 날이 달린 것을 피하기 — 세로 그림에서 날이 위로 잘려요. 검 길이 이하를 기본으로 하고, 길어도 소총·활·도끼·채찍·봉은 잘 나와요. 창·긴 낫(`scythe`)·미늘창·망치는 시드에 따라 잘리고, 언월도는 막대만, 석궁은 총처럼, 산탄총은 소총처럼 나와요. 창이 꼭 필요한 인물은 글(`look`·`persona`)에 창을 두고 `tags`에는 잘 그려지는 무기를 적어요(설련: 글은 쇠도리깨, 그림은 `iron baton`) — `tags`에 무기가 없으면 공격 칸이 맨손이에요. 색이나 옷이 번지는 낱말도 조심하기 — `red hair ribbon`은 머리칼을 붉게 물들이고(`red ribbon on braid`로), `white dress shirt`는 치마를, `mourning dress`는 서양 드레스를, `police`는 현대 경찰복을 불러요. 1:1 캐릭터는 `cast`를 빼면 앱이 설정의 `외모:` 줄로 한 명(`c`)을 만들어요 — 그때는 맨 위 `lookTags`가 같은 역할 |
-| `lore` | 키워드북 `[{ keys, text, kind, tags }]`. `kind`는 항목 종류 — `person` 인물 · `creature` 동물·존재 · `place` 장소 · `item` 물건 · `event` 사건 · `group` 세력 · `concept` 설정(앱의 `LORE_KINDS`). 세계관 일러스트의 구도가 이것으로 정해져요(인물은 초상, 동물은 `no humans`, 장소는 풍경, 물건은 정물…). `tags`는 그 항목을 그릴 영문 낱말(없으면 `text`를 번역해서 씀). 둘 다 빠지면 빌드 경고 |
-| `artTags` | 그 세계관의 영문 낱말(시대·장소·조명·분위기, 예: `joseon dynasty, korean royal palace, paper lanterns, night`). 표지와 모든 세계관 일러스트 프롬프트에 붙어 작품마다 분위기가 나게 해요(없으면 `oneLiner`) |
-| `openings` | 시작 상황(게임 모드). 군상극은 인물 첫 등장마다 `[[img:코드:0]]` |
+| `cast` | 출연진. `code`는 그림 태그 `[[img:코드:번호]]`와 그림 파일 이름에 써요(번호는 기본 감정 0~14 — `src/js/core/constants.js`의 `SIT`). `look`은 한국어 외모(AI가 읽고, 성별로 작품의 aud를 짐작). `tags`(선택)는 그 인물의 외모를 영문 Danbooru 태그로 적은 글 — 앱은 쓰지 않고, **앱 밖에서 그림을 만들 때** 같은 인물을 매번 같은 생김새로 맞추는 기준이에요(한국어는 넣지 않기 — 빌드가 막음). 그림을 위한 메모: 옷·머리만 적으면 인물끼리 얼굴이 같아지니 눈매(`narrow eyes`·`droopy eyes`·`round eyes` 등)·눈썹·앞머리(`parted bangs`·`side-swept bangs`·`forehead`)·점·주근깨도 적고, `big eyes`처럼 어려 보이는 낱말과 손에 든 물건(`holding …`)은 넣지 않기. 무기는 검 길이 이하를 기본으로(긴 막대 끝에 날이 달린 무기는 세로 그림에서 잘려요). 색이나 옷이 번지는 낱말도 조심하기 — `red hair ribbon`은 머리칼을 붉게, `white dress shirt`는 치마를, `mourning dress`는 서양 드레스를, `police`는 현대 경찰복을 불러요. 1:1 캐릭터는 `cast`를 빼면 앱이 설정의 `외모:` 줄로 한 명(`c`)을 만들어요 — 그때는 맨 위 `lookTags`가 `tags` 자리 |
+| `lore` | 키워드북 `[{ keys, text, kind, tags }]`. 대화에 `keys`가 나오면 `text`를 AI에 전달해요. `kind`는 항목 종류 — `person` 인물 · `creature` 동물·존재 · `place` 장소 · `item` 물건 · `event` 사건 · `group` 세력 · `concept` 설정(앱의 `LORE_KINDS`, 상세 페이지 세계관 카드의 머리표). `tags`는 그 항목을 그릴 영문 낱말(앱 밖에서 `lore-<n>` 그림을 만들 때). 둘 다 빠지면 빌드 경고 |
+| `artTags` | 그 세계관의 영문 낱말(시대·장소·조명·분위기, 예: `joseon dynasty, korean royal palace, paper lanterns, night`). 앱 밖에서 표지·세계관 일러스트를 만들 때 붙여 작품마다 분위기를 맞춰요 |
+| `openings` | 시작 상황(게임 모드). 군상극은 인물 첫 등장마다 `[[img:코드:0]]`(번호는 0~14 하나 — 빌드가 검사) |
 
 `work.js` 안에서는 `const`로 같이 쓸 값을 만들거나(`m/godseats/work.js`의 상태창), 다른 파일을 `import`해도 돼요(예: 키워드북이 길면 `lore.js`로 빼서 `import lore from "./lore.js"`). 빌드가 Node에서 실행한 **결과 값**만 `index.html`에 넣어요 — 그래서 함수 같은 건 넣을 수 없고 글·숫자·참거짓·배열·객체만 돼요.
 
-## 그림과 코드 표 싣기 — `images/`·`codes.json` (2026-11-04)
+## 그림 싣기 — `images/`
 
-사용자는 그림을 만들지 않아요. 관리자 도구(`admin.html` — `npm run build`가 함께 만듦, git에 없음)에서 Runware로 만들거나 올린 그림을 **작품 폴더에 저장**(상세·작품 화면)으로 저장소의 `content/`에 쓰고, 다시 `npm run build`하면 사용자 사이트에 실려요. Chrome·Edge는 `content` 폴더를 고르면 바로 쓰고, 그 밖의 브라우저는 같은 구조의 ZIP을 내려받아 풀어 넣어요.
+앱은 그림을 만들지 않아요(2026-11-08 정리 때 그림 생성 코드를 걷어 냄 — 예전 코드는 태그 `archive/before-reset-2026-11-08`). 그림은 앱 밖에서 만들고(남성향 일상 화풍의 설정·완성 프롬프트는 [`archive/style-mdaily/`](../archive/style-mdaily/)), 작품 폴더의 `images/`에 아래 이름으로 넣은 뒤 `npm run build`하면 사용자 사이트에 실려요.
 
 ```
 content/<f|m|all>/[<줄>/]<id>/images/
-  <인물코드>-<번호>.webp            그 인물의 감정 번호 그림 (예: ks-0.webp 프로필, ks-3.webp 부끄러움)
-  <인물코드>-<번호>-<의상>-<장소>.webp 조합 그림 — 조합 키 "3,404,501"의 쉼표를 -로 (예: ks-3-404-501.webp)
-  cover.webp                         대표 일러스트(표지, 3:4)
-  lore-<n>.webp                      키워드북 n번째 항목의 세계관 일러스트(16:9, 1부터)
-  <인물코드>-<번호…>.mp4             그 칸의 움짤(같은 이름의 사진 위에 겹쳐 반복 재생, 예: ks-0.mp4) — webm도 됨
-content/codes.json                   이미지 코드 표 [{ "n": 15, "name": "식사", "prompt": "eating, …", "rating": "safe", "keys": "식사|밥", "motion": "eating slowly" }, …]
+  <인물코드>-<번호>.webp    그 인물의 감정 칸 그림, 번호는 0~14 (예: ks-0.webp 프로필, ks-3.webp 부끄러움)
+  cover.webp                대표 일러스트(표지, 3:4)
+  lore-<n>.webp             키워드북 n번째 항목의 세계관 일러스트(16:9, 1부터)
 ```
 
-- 확장자는 webp·png·jpg. 파일 이름의 번호는 기본 감정(0~14)·내장 코드(1xx·4xx·5xx)·`codes.json`의 코드만 — 다른 번호면 빌드 실패. 조합 키 순서(감정 오름차순 → 의상 → 장소)와 다르게 적으면 바른 키로 등록하고 경고
-- 빌드가 `ORIGINALS`의 `images`(인물 코드 → 조합 키 → `content/…` 상대 경로)·`img`·`loreImages`에 넣고, 앱은 그 경로를 `<img src>`로 그대로 써요(GitHub Pages·file:// 모두 같은 폴더 구조). claude.ai에 올릴 땐 `content/**/images/`도 함께 올려야 해요
-- 사용자가 로그인한 계정의 그림(imgpacks — 예전에 만든 것)이 있으면 그것이 실린 그림을 덮어요
-- 움짤(`.mp4`·`.webm`, 2026-11-05)은 그림 칸 이름으로만 — 빌드가 `motions`(인물 코드 → 조합 키 → 경로)로 싣고 앱은 켜진 움짤로 봐요(이미지 스튜디오의 ⟳로 끈 움짤은 **작품 폴더에 저장**이 쓰지 않아요). 같은 이름의 사진이 없으면 보이지 않으니 경고, 표지·세계관 이름(cover·lore-n)의 움짤은 지나쳐요. 몇 초짜리라도 그림보다 훨씬 크니(480p 5초 ≈ 0.5~1MB) 꼭 필요한 칸만
-- `codes.json`은 관리자 도구의 **코드 표 내보내기**가 써요(실린 코드 + 그 브라우저에서 만든 칸 가운데 **전체이용가만**). 번호는 15~599(400·500 제외), `rating`은 safe·questionable·explicit, 성인 수위 코드의 이름·프롬프트에 미성년으로 보이는 표현이 있으면 실패. 앱에서는 `CONTENT_CODES`로 들어가 모든 사용자의 코드 표(대화 규칙의 번호 목록·조합 이름)에 쓰이고, 같은 번호의 내 칸이 있으면 내 칸이 덮어요. `motion`(선택, 영어 움직임 문장)은 관리자 도구의 움짤에 쓰이고 전체이용가 코드에만 받아요(아니면 경고하고 뺌). 성인 수위 코드를 여기 두면 공개 저장소와 사용자 사이트에 그대로 실리니 빌드가 경고해요
-- **`codes.admin.json`(관리자 전용, git에 없음)**: 성인 수위 행동 코드(2xx 스킨십·3xx 체위·406·408 같은 것)처럼 **관리자 도구에서만** 쓸 코드 표. 모양은 `codes.json`과 같아요(예: [`codes.admin.example.json`](codes.admin.example.json)). 빌드에는 넣지 않고(admin.html도 배포되니까) **개발 서버(`npm run dev`)로 연 관리자 페이지가 런타임에 읽어요** — 웹 주소나 file://에서는 비어 있어요. 웹 관리자 도구에서 쓰려면 코드 표 시트의 **목록으로 추가**에 원본 표(.txt)를 한 번 들여오면 내 칸으로 계정에 저장돼 어느 기기에서나 보여요. 어느 쪽이든 성인 수위 코드는 '코드 표 내보내기'·'작품 폴더에 저장'에서 빠져 사용자 사이트로 흘러가지 않아요
+- 확장자는 webp·png·jpg. 칸 번호는 `src/js/core/constants.js`의 `SIT`(0 프로필 · 1 기본 · 2 웃음 · 3 부끄러움 · 4 슬픔 · 5 놀람 · 6 분노 · 7 삐침 · 8 공포 · 9 부상 · 10 회복 · 11 휴식 · 12 공격 · 13 각성 · 14 설렘) — 15 이상은 빌드 실패. 의상·장소 조합(`3-404-501`), 코드 표(`codes.json`), 움짤(`.mp4`)은 더 쓰지 않아요
+- 대화에서 그 칸 그림이 없으면 1 기본 → 0 프로필 순으로 대신 보여 주고, 그것도 없으면 글자 카드예요. 그러니 인물마다 0·1부터 채우면 빈 칸이 안 보여요
+- 빌드가 `ORIGINALS`의 `images`(인물 코드 → 번호 → `content/…` 상대 경로)·`img`·`loreImages`에 넣고, 앱은 그 경로를 `<img src>`로 그대로 써요(GitHub Pages·file:// 모두 같은 폴더 구조). claude.ai에 올릴 땐 `content/**/images/`도 함께 올려야 해요
+- 그림도 공개 저장소에 들어가요 — 모든 그림은 전체이용가로
 
 ## 빌드가 검사하는 것
 
@@ -117,7 +112,7 @@ content/codes.json                   이미지 코드 표 [{ "n": 15, "name": "�
 - `aud`·`row`를 적었다면 폴더와 같은지
 - **출연진 성별과 폴더**: 출연진 외모가 모두 여성인데 `f/`에, 모두 남성인데 `m/`에 있으면 실패(남녀가 섞인 작품은 그대로 둠 — 앱의 `guessAud`와 같은 규칙)
 - **미성년 인물**: 출연진 외모·설정 첫머리에 19세 미만 나이나 학생 신분이 있으면 실패(앱의 `minorFlags`와 같은 코드)
-- 필수 칸(`name`·`title`·`oneLiner`·`desc`·`persona`·`openings`), `cat`·`pal`·`motif` 값, 시작 상황의 `[[img:코드:번호]]`가 `cast`에 있는 코드이고 번호가 0~14 또는 내장 코드(1xx·4xx·5xx, `src/js/images/codes.js`의 DIMS)인지
-- `images/`: 인물 코드가 `cast`에 있는지, 번호가 기본·내장·`codes.json` 코드인지, 같은 그림이 둘인지, `lore-<n>`이 키워드북 범위 안인지(움짤 .mp4·.webm도 같은 규칙) / `codes.json`: 모양·번호 범위·중복·수위·미성년 표현
-- 키워드북 `kind`가 `LORE_KINDS`에 없거나, `tags`·`artTags`에 한글이 있으면 실패
-- 경고만: 키워드북 항목에 `kind`·`tags`가 없음, `gauge`가 `fields`에 없음, 시작 상황 `status`의 칸이 `fields`에 없음, 작품이 없는 줄, `images/`의 모르는 파일 이름·사진 없는 움짤, 조합 키 순서가 다른 파일 이름
+- 필수 칸(`name`·`title`·`oneLiner`·`desc`·`persona`·`openings`), `cat`·`pal`·`motif` 값, 시작 상황의 `[[img:코드:번호]]`가 `cast`에 있는 코드이고 번호가 0~14 하나인지
+- `images/`: 인물 코드가 `cast`에 있는지, 번호가 0~14인지, 같은 그림·표지가 둘인지, `lore-<n>`이 키워드북 범위 안인지
+- 키워드북 `kind`가 `LORE_KINDS`에 없거나, `cast[].tags`·`lookTags`·키워드북 `tags`·`artTags`에 한글이 있으면 실패
+- 경고만: 키워드북 항목에 `kind`·`tags`가 없음, `gauge`가 `fields`에 없음, 시작 상황 `status`의 칸이 `fields`에 없음, `cast`가 있는데 `lookTags`를 씀, 작품이 없는 줄, `images/`의 그림이 아닌 파일·모르는 파일 이름, 남아 있는 `content/codes.json`

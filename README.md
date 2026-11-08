@@ -39,7 +39,7 @@
 </div>
 
 > [!NOTE]
-> 대화에는 내 Anthropic API 키가 필요해요. **MY → AI 연결**에 넣으면 이 브라우저에 저장되고, 로그인했을 때 계정 저장을 켜 두면 비밀번호로 암호화한 금고로만 올라가요.
+> 대화에는 내 Anthropic API 키가 필요해요. **MY → AI 연결**에 넣으면 이 브라우저에만 저장되고, 로그인해도 계정에는 올라가지 않아요(다른 기기에서는 한 번 더 넣어요).
 
 ## 📚 작품
 
@@ -109,17 +109,17 @@
   <tr>
     <td valign="top" width="33%">💬 <b>작품과 대화</b><br>시작 상황 선택, 지문·대사 서식, 상태창, 다시 쓰기·버전·수정·북마크, AI 추천 답변</td>
     <td valign="top" width="33%">🧠 <b>이어지는 기억</b><br>장기기억 자동 요약과 키워드북으로 긴 대화에서도 설정을 유지해요</td>
-    <td valign="top" width="33%">🖼️ <b>장면 그림</b><br>응답마다 감정·의상·장소에 맞는 그림이나 움짤을 보여 줘요. 그림은 관리자 계정이 만들어 싣고 사용자는 보기만 해요</td>
+    <td valign="top" width="33%">🖼️ <b>장면 그림</b><br>응답마다 인물의 감정(0~14번 칸)에 맞는 그림을 보여 줘요. 그림은 앱 밖에서 만들어 작품 폴더에 싣고, 앱은 보여 주기만 해요</td>
   </tr>
   <tr>
-    <td valign="top">🔐 <b>로그인과 계정 저장</b><br>이메일·카카오·네이버·Google 로그인. 대화·작품·설정·그림이 PC와 휴대폰에서 이어져요</td>
+    <td valign="top">🔐 <b>로그인과 계정 저장</b><br>이메일·카카오·네이버·Google 로그인. 대화·페르소나(사진 포함)·설정이 PC와 휴대폰에서 이어져요</td>
     <td valign="top">🎯 <b>관심있는 대화</b><br>전체·남성향·여성향을 고르면 홈에 그쪽 작품만 보여요</td>
     <td valign="top">🛟 <b>고객센터</b><br>공지사항, 자주 묻는 질문, 문의하기</td>
   </tr>
   <tr>
     <td valign="top">💎 <b>요금(데모)</b><br>라이트 모델 하루 10턴 무료. 하트와 PLUS는 시연용이라 실제로 청구되지 않아요</td>
-    <td valign="top">🛠️ <b>관리자 도구</b><br>작품 만들기, 이미지 스튜디오(그림·움짤 생성), 코드 표, <code>content/</code>로 내보내기</td>
-    <td valign="top">🔞 <b>성인 모드(시험 단계)</b><br>성인 확인과 OpenRouter 키가 있을 때만 켜져요. 미성년 인물의 성적 묘사와 그림은 어떤 설정에서도 막는 것이 원칙이에요. 출시 조건은 <a href="docs/ROADMAP.md">로드맵</a>에 있어요</td>
+    <td valign="top">🛠️ <b>관리자 도구</b><br>사용자 사이트 그대로에 고객센터 관리(공지 쓰기·받은 문의 답변)를 더한 페이지. 웹 주소에서는 비밀번호로 잠겨 있어요</td>
+    <td valign="top">🛡️ <b>수위</b><br>모든 인물은 성인이고, 성적인 장면은 장면 전환으로 넘겨요. 미성년 인물의 성적 묘사는 어떤 경우에도 막아요. 성인 기능은 서버에서 다시 세울 예정이에요(<a href="docs/ROADMAP.md">로드맵</a>)</td>
   </tr>
 </table>
 
@@ -137,15 +137,12 @@ flowchart LR
   A --> P
 ```
 
-그림은 관리자가 미리 만들어 싣고, 사용자 빌드에는 생성 코드가 들어가지 않아요. 들어가면 빌드가 실패해요.
+그림은 앱 밖에서 만들어 작품 폴더 `content/…/images/`에 이름 규칙대로 넣으면 빌드가 실어요(`<인물코드>-<0~14>.webp`, `cover.webp`, `lore-<n>.webp` — [content/README.md](content/README.md)). 남성향 일상 화풍의 프롬프트·설정은 [archive/style-mdaily/](archive/style-mdaily/)에 보관돼 있어요. 브라우저는 Anthropic 말고 다른 AI·그림 서비스를 부르지 않고, 결과에 그런 주소가 들어가면 빌드가 실패해요.
 
-```mermaid
-flowchart LR
-  G["관리자 계정<br/>이미지 스튜디오"] --> F["작품 폴더에 저장<br/>content/…/images"]
-  F --> V["사용자 사이트<br/>보기만 함"]
-```
+관리자 도구는 웹 주소에서 비밀번호로 잠겨 있고, 공지 쓰기·문의 답변은 Supabase `admins` 표에 등록된 계정만 할 수 있어요. 자세한 층 규칙은 [ARCHITECTURE.md](docs/ARCHITECTURE.md)에 있어요.
 
-관리자 도구는 비밀번호로 잠겨 있고, 웹에서 그림을 만들려면 Supabase `admins` 표에 등록된 계정으로 로그인해야 해요. 자세한 층 규칙은 [ARCHITECTURE.md](docs/ARCHITECTURE.md)에 있어요.
+> [!NOTE]
+> 2026-11-08에 지금 개발에 필요한 부분만 남기고 정리했어요(그림 생성·이미지 스튜디오·움짤·코드 표·성인 모드·API 키 금고·커뮤니티를 걷어 냄). 정리 전 코드는 git 태그 `archive/before-reset-2026-11-08`에 그대로 있어요.
 
 ## 💻 개발
 
@@ -166,7 +163,7 @@ http://localhost:5173 (관리자 도구는 `/admin.html`)에서 열리고, 저�
 | `npm run build` | `index.html`과 `admin.html`을 만들어요(모듈·문법·작품 폴더 검사 포함) |
 | `npm run check` | 두 결과 파일이 지금 소스와 같은지 확인해요. PR과 main마다 GitHub Actions가 실행해요 |
 | `npm test` | 단위 테스트(1초 안팎) |
-| `npm run e2e` | Playwright 흐름 시험(5~8분). 처음엔 `npx playwright install webkit chromium` |
+| `npm run e2e` | Playwright 흐름 시험(4~5분). 처음엔 `npx playwright install webkit chromium` |
 
 > [!IMPORTANT]
 > - **`index.html`·`admin.html`은 빌드 결과물이에요.** 직접 고치지 말고 `src/`·`content/`를 고친 뒤 빌드해서 함께 커밋해요.
@@ -181,12 +178,11 @@ src/page.html · src/admin.html   뼈대(사용자 · 관리자)
 src/css/                          화면별 CSS, css/admin/은 관리자 전용
 src/js/                           core → content → services · images · ai → ui → admin → boot
                                   아래층은 윗층을 몰라요. 진입점은 main.js · admin.js
-content/<f|m|all>/…/work.js       작품 폴더(그림은 images/, 코드 표는 codes.json)
+content/<f|m|all>/…/work.js       작품 폴더(그림은 images/)
 tools/                            빌드 · 개발 서버
 tests/                            단위 · 흐름 시험
 docs/                             설계 · 운영 문서, docs/assets/는 README 그림
-styles/                           화풍 견본(앱이 씀)
-archive/                          초기 버전 보관
+archive/style-mdaily/             남성향 일상 화풍 보관본(앱이 쓰지 않음)
 ```
 
 </details>
@@ -195,9 +191,9 @@ archive/                          초기 버전 보관
 
 | 문서 | 내용 |
 |---|---|
-| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | 층 규칙, 두 빌드, 그림이 사용자에게 가는 흐름, 주석 정책, 점검 기록 |
-| [SETUP.md](docs/SETUP.md) | 배포 주소, 관리자 계정, Supabase·소셜 로그인, 고객센터, 휴대폰 인증, Vercel |
-| [content/README.md](content/README.md) | 작품 폴더 만드는 법, 그림·코드 표 싣기 |
+| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | 층 규칙, 두 빌드, 그림을 싣는 길, 주석 정책 |
+| [SETUP.md](docs/SETUP.md) | 배포 주소, 관리자 계정, Supabase·소셜 로그인, 고객센터, Vercel |
+| [content/README.md](content/README.md) | 작품 폴더 만드는 법, 그림 싣기 |
 | [tests/README.md](tests/README.md) | 시험 목록과 돌리는 법 |
 | [ROADMAP.md](docs/ROADMAP.md) | 남은 기술 과제 |
 | [COMMERCIALIZATION.md](docs/COMMERCIALIZATION.md) | 상용화 단계, 원가, 법·약관 체크리스트, 이미지 모델 라이선스 |
@@ -210,9 +206,9 @@ archive/                          초기 버전 보관
 |---|---|---|
 | **AI 호출** | 사용자 API 키로 브라우저에서 직접 호출 | 서버가 회사 키로 호출 |
 | **하트·PLUS** | 시연용(브라우저 안의 값) | 서버 원장과 실제 결제 |
-| **장면 그림** | 만드는 도구는 준비됐고, `content/`에 실린 그림은 아직 없음 | 작품별 그림 제작 |
-| **이미지 모델** | 개발 단계에서 사용 중 | 남성향 일상 화풍(Pony 계열)의 허가 또는 교체, 이미지 판매가 안 되는 YabaL Mix를 쓰는 화풍 교체 |
-| **성인 모드** | 시험 단계. 휴대폰 본인인증은 시험 모드까지 구현 | 실제 본인인증, 서버 판정, 법률 검토 |
+| **장면 그림** | 싣는 길(`content/…/images/`)만 있고, 실린 그림은 아직 없음 | 앱 밖에서 작품별 그림 제작 |
+| **이미지 모델** | 남성향 일상 화풍(Pony 계열)을 보관해 둠 | 그 화풍으로 그림을 팔려면 허가 또는 다른 모델로 교체 |
+| **성인 기능** | 없음(2026-11-08 정리 때 걷어 냄) | 서버 판정·실제 본인인증으로 다시 세우기, 법률 검토 |
 | **호스팅·약관** | GitHub Pages, 약관은 법률 검토 전 초안 | 상업 이용이 되는 호스팅으로 이전, 법률 검토 |
 
 자세한 순서는 [상용화 계획](docs/COMMERCIALIZATION.md)에 있어요.
