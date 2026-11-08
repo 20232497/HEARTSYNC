@@ -40,7 +40,7 @@
 - 시험(tests/README.md): npm test = 단위(node:test, tests/unit/ — images/codes·situations, ai/parse·prompt/lore, core/safety·util, docs/edge/verify-adult(도우미 _idv-fake.mjs)). npm run e2e = 흐름 시험 12종(tests/run.mjs가 정적 서버를 띄움 — gate·admin(admin.html)·social·cloud2·help·audience·firstvisit·chatflow·mobile·file·views·scroll), 결과 JSON의 fail·error·errors·errs·pageerror 칸으로 판정, 스크린샷 tests/.shots/. Supabase는 page.route로 흉내 — 실제 계정·서버는 안 건드림. 처음엔 npx playwright install webkit chromium. 컴퓨터가 잠들면 시험이 '5분 시간 초과'로 실패하니 다시 돌려 볼 것
 - vercel.json: Vercel PR 미리보기 연동(사용자가 유지) — outputDirectory "."를 지우면 PR 체크 실패
 - 작업 사본 줄바꿈은 CRLF일 수 있음 — 빌드는 LF로 읽고 씀
-- 코드 지식 그래프(선택, 이 PC): graphify(PyPI graphifyy)가 깔려 있으면 graphify-out/(gitignore)에 지도가 있고 .claude/settings.json(gitignore) 훅이 코드 위치 질문에 `graphify query "…"`를 먼저 권함 — 코드를 고친 뒤 `graphify update .`(LLM 호출 없음, 10초). 없는 환경에서는 그냥 grep·Read
+- 코드 지식 그래프(선택, 이 PC): graphify(PyPI graphifyy)가 깔려 있으면 graphify-out/(gitignore)에 지도가 있고 .git/hooks가 커밋·브랜치 전환 뒤 뒤에서 다시 만듦(LLM 호출 없음, 약 10초). 위치가 헷갈릴 때만 `graphify query "…"`로 직접 물음 — 클로드 훅·스킬은 도구 호출마다 0.5초씩 느려져 뺌. 없는 환경에서는 그냥 grep·Read
 
 ## 앱 구조
 - ORIGINALS: 오리지널 12작품(content/) — f/fate 줄(계약 황후의 백 일·서촌 오월 하숙집·호텔 레테, 남주 5인 군상극) · m/survive 줄(대연궁 검시록·백야호·십절곡, 히로인 5인 군상극) · 그 밖 1:1과 godseats(「신님들, 관전 매너 좀」). 군상극은 world_mode, 시작 상황 3개, [진상] 블록, 키워드북, "❤️ 호감도" 다인원 칸("이름 n · …")
