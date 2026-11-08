@@ -69,7 +69,7 @@ button { cursor:pointer; }
   .rail { display:none; }
   #view { height:calc(100% - 60px - env(safe-area-inset-bottom,0px)); }
   .tabbar { display:flex; position:fixed; left:0; right:0; bottom:0; height:calc(60px + env(safe-area-inset-bottom,0px)); padding:0 max(6px, env(safe-area-inset-right,0px)) env(safe-area-inset-bottom,0px) max(6px, env(safe-area-inset-left,0px)); background:var(--surface); border-top:1px solid var(--line); z-index:20; }
-  .tabbar button { flex:1; border:0; background:none; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; font-size:11px; color:var(--muted); }
+  .tabbar button { flex:1; min-width:0; padding:0; white-space:nowrap; border:0; background:none; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; font-size:11px; color:var(--muted); }
   .tabbar button.on { color:var(--accent); font-weight:600; }
   .tabbar svg { width:21px; height:21px; }
   body.in-chat .tabbar { display:none; }
@@ -570,7 +570,7 @@ body.gated .app { grid-template-columns:1fr; }
 
 /* ── 고객센터 관리(관리자 도구): 관리자 안내·공지 고치기 줄·받은 문의의 답변 칸 */
 .adm-note { margin:0 0 10px; font-size:13.5px; }
-.adm-note pre { white-space:pre-wrap; overflow-wrap:anywhere; user-select:all; -webkit-user-select:all; font-size:12.5px; background:var(--bg); border:1px solid var(--line); padding:8px 10px; border-radius:8px; margin:8px 0 0; }
+.adm-note .cta-row { margin:10px 0 0; }
 .adm-bar { margin:0 0 10px; }
 .adm-ask { padding:12px 16px 14px; border-top:1px dashed var(--line); }
 .adm-ask .note { margin:0 0 4px; overflow-wrap:anywhere; }
@@ -772,7 +772,7 @@ const KV = {
    가져옴: src/js/core/config.js { CFG }
            src/js/core/util.js { today }
    내보냄: hasClaudeKey, S, room, gen, setGen, setRoom
-   쓰는 곳: src/js/core/audience.js, src/js/core/wallet.js, src/js/core/rooms.js, src/js/core/settings.js, src/js/services/cloud.js, src/js/services/load.js, src/js/services/sync.js, src/js/ai/llm.js, src/js/ai/prompt/memory.js, src/js/ui/chat/suggest.js, src/js/ui/account.js, src/js/ui/store.js, src/js/ui/help.js, src/js/ui/home.js, src/js/ui/me.js, src/js/ui/pay.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/ui/shell.js, src/js/ui/detail.js, src/js/ui/chats.js, src/js/ui/login.js, src/js/app.js, src/js/core/migrate.js, src/js/boot.js
+   쓰는 곳: src/js/core/audience.js, src/js/core/wallet.js, src/js/core/rooms.js, src/js/core/settings.js, src/js/services/cloud.js, src/js/services/load.js, src/js/services/sync.js, src/js/ai/llm.js, src/js/ai/prompt/memory.js, src/js/ui/chat/suggest.js, src/js/ui/account.js, src/js/ui/store.js, src/js/ui/help.js, src/js/ui/home.js, src/js/ui/me.js, src/js/ui/pay.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/ui/shell.js, src/js/ui/detail.js, src/js/ui/chats.js, src/js/app.js, src/js/core/migrate.js, src/js/boot.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 전역 상태 S(지갑·페르소나·대화방·설정), 현재 대화방·진행 중 생성(다른 모듈은 set…()로만 바꿈), API 키 유무(hasClaudeKey — S와 CFG.serverKeys를 함께 봄) */
 
@@ -822,7 +822,7 @@ function castLook(cast, c) {
    가져옴: src/js/core/cast.js { castLook }
            src/js/core/state.js { S }
    내보냄: AUDS, guessAud, audOf, audience, audOK
-   쓰는 곳: src/js/ui/home.js, src/js/ui/me.js, src/js/ui/login.js, src/js/app.js, src/js/boot.js
+   쓰는 곳: src/js/ui/home.js, src/js/ui/me.js, src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 관심있는 대화(전체·남성향·여성향): 작품 aud 판정과 필터 */
 
@@ -1438,7 +1438,7 @@ for (const c of ORIGINALS) {
    src/js/core/character.js
    가져옴: src/js/content/index.js { ORIGINALS }
    내보냄: normalizeChar, getChar
-   쓰는 곳: src/js/core/rooms.js, src/js/images/pick.js, src/js/ai/prompt/input.js, src/js/ui/room-drawer.js, src/js/ui/worldart.js, src/js/ui/detail.js, src/js/app.js
+   쓰는 곳: src/js/core/rooms.js, src/js/images/pick.js, src/js/ai/prompt/input.js, src/js/ui/room-drawer.js, src/js/ui/worldart.js, src/js/ui/detail.js, src/js/ui/login.js, src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 작품 찾기·정규화: normalizeChar, id로 찾기(getChar — 오리지널) */
 
@@ -1458,32 +1458,77 @@ function normalizeChar(c) {
 function getChar(id) { return ORIGINALS.find((c) => c.id === id); }
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/core/safety.js
-   내보냄: minorFlags, minorHint
+   내보냄: minorFlags, minorHint, settingHint, roomMinorHint
    쓰는 곳: src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
-/* 안전: 미성년 인물 막기(minorFlags·minorHint) — 순수 함수라 빌드의 작품 검사와 단위 테스트가 그대로 import */
+/* 안전: 미성년 인물 막기(minorFlags·minorHint·settingHint·roomMinorHint) — 순수 함수라 빌드의 작품 검사와 단위 테스트가 그대로 import */
 /** @typedef {import("./types.js").CastMember} CastMember */
+/** @typedef {import("./types.js").LoreEntry} LoreEntry */
+/** @typedef {import("./types.js").Room} Room */
 /** @typedef {import("./types.js").Work} Work */
 /* 미성년 인물 막기: 출연진 외모나 캐릭터 설정 첫머리("이름(17, 여)")에 19세 미만 나이·학생 신분이 있으면 저장·공개하지 않음 */
 /** 19세 미만·학생으로 보이는 인물 이름들(비면 통과). 저장·공개·빌드 검사가 같은 함수를 씀. @param {Work|{ cast?: CastMember[], persona?: string }} c @returns {string[]} */
 function minorFlags(c) {
-  const out = [], under = (n) => n > 0 && n < 19;
-  for (const x of c.cast || []) {
-    const t = String(x.look || ""), m = t.match(/(\d{1,2})\s*(?:세|살)/);
-    if ((m && under(+m[1])) || /초등학생|중학생|고등학생|여고생|남고생|미성년/.test(t)) out.push(x.name || x.code);
-  }
-  // 설정 첫머리의 첫 "이름(나이" 만 본다(뒤에 나오는 가족·과거 인물 언급은 막지 않음)
-  const pm = String(c.persona || "").slice(0, 120).match(/([가-힣A-Za-z]{1,10})\s*\((\d{1,2})\s*[,，)]/);
-  if (pm && under(+pm[2])) out.push(pm[1]);
+  const out = [];
+  for (const x of c.cast || []) if (minorHint([x.look, x.tags].join("\n"))) out.push(x.name || x.code);
+  // 설정은 첫머리만 본다(뒤에 나오는 가족·과거 인물 언급은 막지 않음): 첫 "이름(나이", 그 밖의 첫머리 글
+  const head = String(c.persona || "").slice(0, 120), pm = head.match(/([가-힣A-Za-z]{1,10})\s*\((\d{1,2}|열[가-힣]{1,2})\s*[,，)]/);
+  if (pm && minorHint(pm[2] + "살")) out.push(pm[1]);
+  else if (settingHint(head)) out.push(c.name || c.title || "설정");
   return [...new Set(out)];
 }
-/* 글 속 미성년 암시(19세 미만 나이, 학생·아동 낱말, 그런 Danbooru 태그). 지금은 빌드의 작품 검사·단위 테스트가 쓰고, 성인 기능을 서버에 다시 세울 때 서버 판정이 같은 함수를 씀(docs/ROADMAP.md) */
-/** 글 속 미성년 암시(나이·학생·아동·교복 낱말과 영문 태그). @param {string} t @returns {boolean} */
+/**
+ * 글 속 미성년 암시(나이·학년·학생·아동·교복 낱말과 영문 태그). 지금은 minorFlags(빌드의 작품 검사)와 단위 테스트가 쓰고,
+ * 성인 기능을 서버에 다시 세울 때 서버 판정이 같은 함수를 씀(docs/ROADMAP.md).
+ * 글자로 찾는 것이라 모든 표현을 잡지는 못함 — 애매하면 막는 쪽으로 둠.
+ * 여학생·남학생은 보지 않음: 대학생에게도 흔히 쓰는 말이라(2026-11-06 사용자 결정). 나이·학년·교복 같은 다른 표현과 함께 쓰면 그쪽이 잡고, 성적 장면은 지금 모델 규칙이 암전으로 넘김.
+ * @param {string} t @returns {boolean}
+ */
 function minorHint(t) {
-  t = String(t || "");
-  if ([...t.matchAll(/(\d{1,2})\s*(?:세|살|years?[\s-]*old|yo\b)/gi)].some((m) => +m[1] > 0 && +m[1] < 19)) return true;
-  return /미성년|초등학생|중학생|고등학생|여고생|남고생|여중생|남중생|초딩|중딩|고딩|교복|어린이|아동|유아|로리|쇼타/.test(t)
-    || /\b(?:child|children|kids?|loli|lolita|shota|toddler|underage|teen|teens|teenager|schoolgirl|schoolboy|school uniform|elementary school|middle school|high school|little girl|little boy|young girl|young boy|aged down)\b/i.test(t);
+  // 글자만 겹치는 말을 먼저 지움: 칼로리·쇼타임 / 재벌 3세·2세 계획·중2병 / 군주 이름(헨리 8세·황제 레온 3세 — 뒤에 소녀·소년·성별이 오면 나이로 봄) / 15세 관람가 / 나이 차이(두 살 위) / 살아·살림·살인 사건 / 18세기·세상·세대
+  // N세로 쓴 나이 자체는 지우지 않음: 인물 소개의 기본 표기(오리지널 작품의 출연진도 모두 N세)라, 빼면 '17살'은 막히고 '17세'는 통과함
+  t = String(t || "").normalize("NFKC");
+  const under = (re) => [...t.matchAll(re)].some((m) => +m[1] > 0 && +m[1] < 19);
+  // 숫자 바로 뒤에 붙은 '살'은 뒤에 어떤 글자가 와도 나이(17살을·17살아) — 낱말을 지우기 전에 봄. 17살차이처럼 붙여 쓴 나이 차이만 뺌
+  if (under(/(?:^|\D)(\d{1,2})[ \t]*살(?=[가-힣])(?!차이?|연상|연하|위|아래|밑|많|적[은다어]|어리|어린|더|터울)/g)) return true;
+  t = t.replace(/칼로리|글로리|플로리|쇼타임|유아독존|세 살 버릇|중2병|청소년[ \t]*(?:관람[ \t]*)?불가|(?:재벌|오너|창업주|교포|이민|그룹|한인|재일|재미)[ \t]*\d세|2세[ \t]*(?:계획|소식|준비)|(?:루이[ \t]*1[0-8]|베네딕토[ \t]*16|엘리자베스[ \t]*[12]|(?:루이|헨리|찰스|조지|에드워드|제임스|윌리엄|리처드|나폴레옹|프리드리히|빌헬름|카를|표트르|니콜라이|알렉산드르|이반|람세스|앙리|필리프|펠리페)[ \t]*[1-9]|교황[ \t]+[가-힣]{1,8}[ \t]*\d{1,2}|(?:황제|선황|국왕|선왕|여왕)[ \t]+(?!나이|당시|올해|겨우|고작|아직|이제)[가-힣]{1,8}[ \t]*[1-9])세(?![ \t]*(?:소녀|소년|아이|여아|남아|여성|남성|여자|남자|[,，)/][ \t]*(?:여|남)))|\d{1,2}세[ \t]*(?:이상[ \t]*)?(?:관람가|이용가|등급)|(?:살|세)[ \t]*(?:차이?|연상|연하|위|아래|밑|많|적[은다어]|어리|어린(?![ \t]*(?:소녀|소년|아이|애|여자|남자|여아|남아))|더|터울)|살(?:아|았|려|리|린|릴|림|해|기|짝|결|점|갗|피|펴|폈|구(?!나)|벌|금|찌|쪘|찐|빼|빠|붙|덩|얼|며|랑)|살을(?=[ \t]*(?:빼|뺐|뺀|찌|쪘|찐|만지|만졌|만진|베|벴|벤|파고|꼬집|에는|도려|태|섞|맞대|비비|부비|뜯|물|깎|깍|떨|꼬))|살인[ \t]*(?:사건|범|마|자|귀|청부|미수|현장|죄|혐의|용의|동기|은|이|을|의|도|과)|세(?:기|대|트|계|상|력|월|자|금|수)/g, " ");
+  // 숫자로 쓴 나이: 17세·17-year-old·17 y/o, 나이 17·연령 17·age 17 (앞에 숫자가 더 있으면 117살처럼 다른 수)
+  if (under(/(?:^|\D)(\d{1,2})[ \t-]*(?:세|살|years?[ \t-]*olds?\b|yrs?[ \t-]*olds?\b|y[ \t]*[/.][ \t]*o\b|yo\b)/gi)
+    || under(/(?:\baged?[ \t]*[:=]?|(?:나이|연령)[ \t]*(?:[:=]|은|는|이|가|도)?)[ \t]*(\d{1,2})(?!\d|[ \t]*(?:배|년|개|번|차))/gi)) return true;
+  // 한글로 쓴 나이: 열일곱 살·일곱 살. 스물 넘으면·열아홉은 통과, '살'만 있으면 나이가 아님
+  for (const m of t.matchAll(/(?:(스물|서른|마흔|쉰|예순|일흔|여든|아흔|백|천)[ \t]*)?(열[ \t]*)?(한|두|세|네|다섯|여섯|일곱|여덟|아홉)?[ \t]*(살|세)/g)) {
+    const [, big, ten, one, unit] = m, n = (ten ? "열" : "") + (one || "");
+    if (big || !n || n === "열아홉" || n === "한") continue; // '한 살'은 '한 살이라도'·'한 살 먹다' 같은 관용구가 대부분
+    if (unit === "세" && !(ten && one)) continue; // 세는 '열일곱 세'만(네 세·두 세는 대개 다른 말)
+    if (n.length === 1 && /[가-힣]/.test(t[m.index - 1] || "")) continue; // '위한 살인'·'그네 살'처럼 앞말의 끝 글자
+    return true;
+  }
+  return /미성년|초등학생|초등생|중학생|고등학생|고교생|중고생|여고생|남고생|여중생|남중생|청소년|초딩|중딩|고딩|잼민이|교복|어린이|아동|유아|로리|쇼타/.test(t)
+    // 학년: 고2·중3·초6, 고등학교 2학년, 2학년 3반 ('2학년'만은 대학생도 쓰니 보지 않음)
+    || /(?:^|[^가-힣A-Za-z0-9])(?:고[1-3]|중[1-3]|초[1-6])(?![0-9A-Za-z])/.test(t)
+    || /(?:고등학교|고교|여고|남고|중학교|여중|남중|초등학교|국민학교)[ \t]*(?:[1-6]|일|이|삼|사|오|육)[ \t]*학년|[1-6][ \t]*학년[ \t]*\d{1,2}[ \t]*반/.test(t)
+    // 단위 없이 쓴 나이: 열일곱 소녀·나이 열일곱·열일곱이다, 십칠 세(이십 세·수십 세는 아님), 10대 소녀·10대 후반(50대·10대 기업은 아님)
+    || /열(?:한|두|세|네|다섯|여섯|일곱|여덟)의?[ \t]*(?:소녀|소년)|(?:나이|연령)[ \t]*(?:[:=]|은|는|이|가|도)?[ \t]*열(?:한|두|세|네|다섯|여섯|일곱|여덟)|열(?:다섯|여섯|일곱|여덟)(?:이다|이야|이에요|이예요|입니다|이었|이던|이라|인[ \t])/.test(t)
+    || /(?:^|[^이삼사오육칠팔구수몇백천])십[ \t]*[일이삼사오육칠팔]?[ \t]*(?:세|살)/.test(t)
+    || /(?:(?:^|\D)10|(?:^|[^이삼사오육칠팔구수몇백천])십)[ \t]*대[ \t]*(?:소녀|소년|여자|남자|여성|남성|아이|초반|중반|후반)/.test(t)
+    || /\b(?:child|children|kids?|loli|lolita|shota|toddler|underaged?|teens?|teenagers?|teenaged?|pre-?teens?|schoolgirls?|schoolboys?|school uniform|elementary school|middle school(?:ers?)?|junior high|high ?school(?:ers?)?|little girl|little boy|young girl|young boy|aged down|(?:ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen)[ \t-]*years?[ \t-]*old)\b/i.test(t);
+}
+/** 설정·장기기억처럼 오래 남는 글의 미성년 암시 — 어른 인물의 과거 이야기('중학생 때'·'열일곱 살 시절')는 빼고 본다. @param {string} t @returns {boolean} */
+function settingHint(t) { return minorHint(String(t || "").replace(/[^\s,.]+[ \t]*(?:때(?!문|리|렸|려)|시절|무렵)/g, " ")); }
+/**
+ * 대화방에 미성년 암시가 있는지 — 성인 경로를 서버에 다시 세울 때 대화방을 막는 기준(지금 앱은 부르지 않고 단위 테스트가 지킴). 세 겹으로 본다:
+ * ① 작품의 인물(minorFlags) ② 모델이 이번 턴에 그대로 읽는 글(유저노트·상태창·기억력만큼의 대화)은 그대로
+ * ③ 오래 남는 글(작품 설정·키워드북·유저 캐릭터·장기기억)과 유저가 예전에 쓴 말은 과거 이야기를 빼고 — 기억력 밖으로 밀어내 넘기지 못하게. 기억력 밖의 AI 글은 모델이 읽지 않아 보지 않음.
+ * 키워드북의 동물 항목(kind creature)은 나이가 있어도 사람이 아니라 뺌.
+ * @param {Room} r @param {LoreEntry[]} [lore] 지금 쓰는 키워드북(원본 작품의 최신 것) @returns {boolean}
+ */
+function roomMinorHint(r, lore = r.char?.lore) {
+  const c = r.char || {}, text = (m) => (m.role === "ai" ? m.alts?.[m.idx]?.text : m.text) || "";
+  const msgs = (r.msgs || []).filter(text);
+  if (minorFlags(c).length) return true;
+  if (minorHint([r.userNote, ...Object.entries(r.status || {}).map(([k, v]) => k + ": " + v), ...msgs.slice(-((r.set?.mem || 10) * 2 + 1)).map(text)].join("\n"))) return true;
+  return settingHint([c.title, c.oneLiner, c.desc, ...(c.tags || []), c.persona, c.world, c.speech, c.secret, r.directive, r.persona?.memo, r.persona?.desc, r.memory,
+    ...(lore || []).filter((e) => e.kind !== "creature").flatMap((e) => [...(e.keys || []), e.text]), ...msgs.filter((m) => m.role === "user").map(text)].join("\n"));
 }
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/core/rooms.js
@@ -2106,7 +2151,7 @@ function supportErr(e) {
 }
 
 /**
- * 고객센터 REST. notices() 공지 목록(고정 먼저·최신순) · saveNotice/dropNotice(관리자) · ask() 문의 남기기 · mine() 내 문의 · inbox()/answer()/dropAsk() 받은 문의(관리자) · amAdmin()
+ * 고객센터 REST. notices() 공지 목록(고정 먼저·최신순) · saveNotice/dropNotice(관리자) · ask() 문의 남기기 · mine() 내 문의 · inbox()/answer()/dropAsk() 받은 문의(관리자) · amAdmin()/adminStatus()
  */
 const SUPPORT = {
   admin: null, // amAdmin() 결과(계정마다) { uid, yes }
@@ -2159,14 +2204,22 @@ const SUPPORT = {
     if (!Array.isArray(j) || !j.length) throw { code: "denied" };
     return j[0];
   },
-  /** 이 계정이 관리자인지(admins 표에 자기 행이 보이는지). '맞음'만 기억 — SQL Editor로 admins에 넣은 뒤 새로 고침 없이 바로 반영되게. @returns {Promise<boolean>} */
-  async amAdmin() {
+  /**
+   * 이 계정이 관리자인지(admins 표에 자기 행이 보이는지) — '모름'을 따로 돌려줌. 관리 화면을 바로 열지는 서버가 '예'라고 답했을 때만 정하도록.
+   * 모름: 연결 실패·표가 없음·권한 오류·응답이 목록이 아님·묻는 사이 로그인이 풀리거나 계정이 바뀜(그 답은 물어본 계정에 대한 답이 아님).
+   * '맞음'만 기억 — SQL Editor로 admins에 넣은 뒤 새로 고침 없이 바로 반영되게.
+   * @returns {Promise<boolean|null>} 참·거짓은 서버의 답(로그인 안 했으면 거짓), null은 모름
+   */
+  async adminStatus() {
     const u = uidOf(); if (!u) return false;
     if (this.admin && this.admin.uid === u && this.admin.yes) return true;
-    try { const j = await call(`/rest/v1/admins?select=user_id&user_id=eq.${encodeURIComponent(u)}`); this.admin = { uid: u, yes: Array.isArray(j) && j.length > 0 }; }
-    catch { return false; } // 표가 없거나 연결 실패 — 기억하지 않고 다음에 다시 물음
+    let j; try { j = await call(`/rest/v1/admins?select=user_id&user_id=eq.${encodeURIComponent(u)}`); } catch { return null; }
+    if (!Array.isArray(j) || uidOf() !== u) return null;
+    this.admin = { uid: u, yes: j.length > 0 };
     return this.admin.yes;
-  }
+  },
+  /** 이 계정이 관리자라고 확인됐는지(모르면 거짓). @returns {Promise<boolean>} */
+  async amAdmin() { return (await this.adminStatus()) === true; }
 };
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/images/codes.js
@@ -2714,6 +2767,7 @@ const ICON = {
   plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="5"/><path d="M12 8v8M8 12h8"/></svg>',
   heart: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 20s-7-4.4-9-9a4.8 4.8 0 0 1 9-3 4.8 4.8 0 0 1 9 3c-2 4.6-9 9-9 9z"/></svg>',
   user: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>',
+  bell: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 10a6 6 0 0 1 12 0c0 5.5 2.5 7 2.5 7h-17S6 15.5 6 10z"/><path d="M10 20.5a2.2 2.2 0 0 0 4 0"/></svg>',
   back: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 5l-7 7 7 7"/></svg>',
   book: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 21a2 2 0 0 1 2-2h13M8 7h7"/></svg>',
   menu: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>',
@@ -3133,11 +3187,11 @@ function faqGroups() {
            src/js/ui/icons.js { ICON }
            src/js/ui/sheet.js { confirmSheet }
            src/js/ui/shell.js { bindGo, go, topbar }
-   내보냄: docUrl, hasNewNotice, checkNotices, viewHelp, askHTML
+   내보냄: docUrl, hasNewNotice, checkNotices, viewHelp, viewNotice, askHTML
    쓰는 곳: src/js/ui/me.js, src/js/ui/login.js, src/js/app.js, src/js/admin/support.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
-/* 고객센터 화면(#help): 공지사항 · 자주 묻는 질문 · 문의하기 탭(#help-notice·#help-faq·#help-ask로 바로). MY의 고객센터 칸에서 들어옴.
-   공지·문의는 Supabase(services/support.js), FAQ는 ui/faq.js의 고정 글. 관리자 빌드는 탭을 그린 뒤 EXT.help(tab, box, list)로 공지 쓰기·받은 문의를 더함(admin/support.js).
+/* 공지 화면(#notice)과 고객센터 화면(#help — 자주 묻는 질문·문의하기). 공지는 홈·대화처럼 메뉴에서 바로 들어오고, 고객센터는 MY의 칸에서 들어옴(#help-faq·#help-ask로 바로, 예전 주소 #help-notice는 #notice로 넘김).
+   공지·문의는 Supabase(services/support.js), FAQ는 ui/faq.js의 고정 글. 관리자 빌드는 그린 뒤 EXT.help(tab, box, list)로 공지 쓰기·받은 문의를 더함(admin/support.js) — 관리자 계정이면 누를 것 없이 바로 관리 화면.
    서버 설정이 없으면(SB.on() 거짓) 공지는 마지막으로 받은 것만, 문의는 이메일 안내만 */
 
 
@@ -3152,7 +3206,7 @@ function faqGroups() {
 /** @typedef {import("../core/types.js").Notice} Notice */
 /** @typedef {import("../core/types.js").Inquiry} Inquiry */
 
-const TABS = [["notice", "공지사항"], ["faq", "자주 묻는 질문"], ["ask", "문의하기"]];
+const TABS = [["faq", "자주 묻는 질문"], ["ask", "문의하기"]];
 const SITE = "https://20232497.github.io/HEARTSYNC/";
 const SEEN = "hv1_notice_seen"; // 마지막으로 본 공지 id(가장 큰 것) — MY의 '새 공지' 표시
 /** 정적 문서(terms.html·privacy.html) 주소 — 파일로 열었으면 같은 폴더에 문서가 없을 수 있으니 웹 주소로. @param {string} f @returns {string} */
@@ -3172,7 +3226,8 @@ function checkNotices() {
 }
 
 function viewHelp(arg) {
-  const tab = TABS.some((t) => t[0] === arg) ? arg : "notice", v = $("#view");
+  if (arg === "notice") { location.replace("#notice"); return; } // 예전 주소
+  const tab = TABS.some((t) => t[0] === arg) ? arg : "faq", v = $("#view");
   v.innerHTML = `<div class="page help-page">${topbar()}
     <div class="help-head"><button class="icon-btn" data-go="me" aria-label="MY로 돌아가기">${ICON.back}</button><h1 class="sec">고객센터</h1></div>
     <div class="tabs" role="tablist">${TABS.map(([k, l]) => `<button type="button" role="tab" data-htab="${k}" aria-selected="${k === tab}" class="${k === tab ? "on" : ""}">${l}</button>`).join("")}</div>
@@ -3180,16 +3235,22 @@ function viewHelp(arg) {
   bindGo(v);
   $$("[data-htab]", v).forEach((b) => b.onclick = () => go("help-" + b.dataset.htab));
   const box = $("#helpBody", v);
-  if (tab === "faq") faqTab(box); else if (tab === "ask") askTab(box); else noticeTab(box);
+  if (tab === "ask") askTab(box); else faqTab(box);
 }
 
-/* ---------------------------------------------------------------- 공지사항 */
+/* ---------------------------------------------------------------- 공지(메뉴 화면) */
+function viewNotice() {
+  const v = $("#view");
+  v.innerHTML = `<div class="page help-page">${topbar()}<h1 class="sec" style="margin-top:4px">공지</h1><div id="helpBody"></div></div>`;
+  bindGo(v);
+  noticeBody($("#helpBody", v));
+}
 /** 공지 한 개(접힘). @param {Notice} n @param {boolean} open @returns {string} */
 function noticeHTML(n, open) {
   return `<details class="notice" data-nid="${+n.id}" ${open ? "open" : ""}><summary><span class="t">${n.pinned ? `<span class="pill">고정</span>` : ""}${n.published === false ? `<span class="pill gold">비공개</span>` : ""}<b>${esc(n.title)}</b></span><span class="d">${day(n.created_at)}</span></summary>
     <div class="nbody">${rich(n.body)}</div></details>`;
 }
-async function noticeTab(box) {
+async function noticeBody(box) {
   const seen = seenId();
   const paint = (list, msg) => {
     box.innerHTML = (msg ? `<p class="note help-msg">${esc(msg)}</p>` : "") +
@@ -3299,7 +3360,7 @@ async function loadMine(box) {
            src/js/ui/icons.js { ICON }
            src/js/ui/sheet.js { closeOverlays, sheet }
            src/js/ui/shell.js { bindGo, go, topbar }
-   내보냄: cardHTML, audSegHTML, setAudience, audSheet, viewHome
+   내보냄: cardHTML, audSegHTML, setAudience, audSheet, askAud, viewHome
    쓰는 곳: src/js/ui/me.js, src/js/ui/login.js, src/js/app.js, src/js/boot.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 홈: 대표 작품·가로 줄·둘러보기, 관심있는 대화 고르기 */
@@ -3332,6 +3393,12 @@ function audSheet(first) {
   $$("[data-aud]", ov).forEach((b) => b.onclick = () => { setAudience(b.dataset.aud); closeOverlays(); if ((location.hash.slice(1) || "home") === "home") viewHome(); toast(`${AUDS[audience()].name} 작품을 보여 드릴게요`); });
   if (first) setAudience(audience()); // 닫기만 해도 다시 묻지 않게 '전체'로 정해 둠
 }
+// 처음 시작할 때 묻기. 작품·대화방·공지 주소로 바로 들어왔으면 그 화면을 가리지 않고 홈에 처음 갈 때 묻는다(시트는 홈에 보일 작품을 고르는 것)
+let audLater = false;
+function askAud() {
+  if (AUDS[S.settings.audience]) return;
+  if (/^#(?:[cr]-|notice$)/.test(location.hash)) audLater = true; else audSheet(true);
+}
 function viewHome() {
   const v = $("#view");
   const match = (c) => (S.cat === "전체" || c.cat === S.cat) && (!S.q || [c.name, c.title, c.oneLiner, ...(c.tags || [])].join(" ").toLowerCase().includes(S.q.toLowerCase()));
@@ -3362,6 +3429,7 @@ function viewHome() {
   $$("[data-aud]", v).forEach((b) => b.onclick = () => { setAudience(b.dataset.aud); viewHome(); });
   const q = $("#q"); q.oninput = () => { S.q = q.value; const pos = q.selectionStart; viewHome(); const n = $("#q"); n.focus(); n.setSelectionRange(pos, pos); };
   bindGo(v); IMG.hydrate(v);
+  if (audLater) { audLater = false; askAud(); }
 }
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/ui/me.js
@@ -3448,7 +3516,7 @@ function viewMe() {
     <p class="note">API 키는 이 브라우저에만 저장돼요. 로그인하면 대화·페르소나·설정은 계정에도 저장돼요.</p>
     <h2 class="sec">고객센터</h2>
     <div class="box"><div class="menu-list" id="helpMenu">
-      <button data-go="help-notice">공지사항<span class="v" id="noticeNew">${hasNewNotice() ? "새 공지" : ""}</span></button>
+      <button data-go="notice">공지사항<span class="v" id="noticeNew">${hasNewNotice() ? "새 공지" : ""}</span></button>
       <button data-go="help-faq">자주 묻는 질문</button>
       <button data-go="help-ask">문의하기</button></div></div>
     <h2 class="sec">약관 및 정책</h2>
@@ -4462,15 +4530,21 @@ let NAVS = [];    // 레일·탭바 메뉴 [해시, 이름, ICON 키]
 function registerViews(map) { Object.assign(VIEWS, map); }
 function setNavs(list) { NAVS = list; }
 function go(hash) { if (location.hash === "#" + hash) route(); else location.hash = hash; }
+// #view는 안의 화면이 바뀌어도 스크롤이 남음 — 주소가 바뀔 때만 옮김(같은 주소를 다시 그리면 계정 동기화·스토어 완료처럼 보던 자리 그대로)
+let routed = null, homeY = 0; // 마지막으로 그린 주소 · 홈을 떠날 때의 스크롤
 function route() {
-  const h = location.hash.slice(1) || "home";
+  const h = location.hash.slice(1) || "home", v = $("#view"), moved = h !== routed;
+  if (moved && routed === "home") homeY = v.scrollTop;
+  routed = h;
   closeOverlays();
   if (gen && !h.startsWith("r-")) stopGen();
   document.body.classList.toggle("in-chat", h.startsWith("r-"));
   const [base, ...rest] = h.split("-"); const arg = rest.join("-");
   const view = VIEWS[base] || VIEWS.home;
   setNav(base === "c" ? "home" : base === "r" ? "chats" : base === "login" || base === "help" ? "me" : VIEWS[base] ? base : "home");
-  return view ? view(arg) : undefined;
+  const out = view ? view(arg) : undefined;
+  if (moved) v.scrollTop = h === "home" ? homeY : 0; // 새 화면은 맨 위부터, 긴 홈은 작품을 보고 돌아오면 보던 자리
+  return out;
 }
 const LOGO = `<div class="logo"><span class="mark" aria-hidden="true"></span><span>HEART <i>SYNC</i></span></div>`;
 function renderShell() {
@@ -4624,21 +4698,20 @@ function viewChats() {
 }
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/ui/login.js
-   가져옴: src/js/core/audience.js { AUDS }
-           src/js/core/state.js { S }
+   가져옴: src/js/core/character.js { getChar }
            src/js/core/util.js { $, $$, esc, toast }
            src/js/services/cloud.js { CLOUD }
            src/js/services/supabase.js { OAUTH_ICONS, PROVIDERS, SB, acctName, provName }
            src/js/services/sync.js { reloadFromCloud }
            src/js/ui/account.js { firstSync }
            src/js/ui/help.js { docUrl }
-           src/js/ui/home.js { audSheet }
+           src/js/ui/home.js { askAud }
            src/js/ui/sheet.js { sheet }
            src/js/ui/shell.js { LOGO, bindGo, go }
-   내보냄: viewLogin, afterLogin, newPasswordSheet
+   내보냄: bootBack, viewLogin, afterLogin, newPasswordSheet
    쓰는 곳: src/js/app.js, src/js/boot.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
-/* 로그인·가입·비밀번호 찾기·소셜 로그인 화면, 새 비밀번호 시트 */
+/* 로그인·가입·비밀번호 찾기·소셜 로그인 화면, 로그인 뒤 돌아갈 작품, 새 비밀번호 시트 */
 
 
 
@@ -4650,6 +4723,31 @@ function viewChats() {
 
 
 
+/* ---------------------------------------------------------------- 로그인 뒤 돌아갈 곳(작품·공지)
+   처음 방문한 사람이 작품 주소(#c-<id>)나 공지(#notice)로 들어오면 부팅이 주소를 #login-c-<id>·#login-notice로 바꾼다 — 주소가 갈 곳을 들고 있어 새로 고침해도 남고, 메뉴로 나가면 저절로 사라진다.
+   소셜 로그인·인증 메일은 redirect_to에 주소를 실을 수 없어 사이트 첫 화면으로 돌아오므로, 떠나기 전에 hv1_back에 적어 둔다.
+   인증 메일은 새 탭으로 열리니 sessionStorage가 아니라 localStorage, 메일 링크가 유효한 1시간만 */
+const BACK_KEY = "hv1_back", BACK_MS = 3600000;
+const backHash = (h) => /^c-./.test(h) || h === "notice" ? h : ""; // 돌아갈 수 있는 곳은 작품 주소와 공지뿐
+const canBack = (h) => h === "notice" || !!getChar(h.slice(2));
+const loginBack = () => { const h = location.hash.slice(1); return h.startsWith("login-") ? backHash(h.slice(6)) : ""; };
+const setHash = (h) => { try { history.replaceState(null, "", location.pathname + location.search + "#" + h); } catch {} };
+function saveBack() { const to = loginBack(); if (to) { try { localStorage.setItem(BACK_KEY, JSON.stringify({ to, at: Date.now() })); } catch {} } }
+function takeBack() {
+  try { const v = localStorage.getItem(BACK_KEY); localStorage.removeItem(BACK_KEY); const b = JSON.parse(v); return b && Date.now() - b.at < BACK_MS ? backHash(b.to) : ""; } catch { return ""; }
+}
+/* 부팅 때 첫 주소를 정함. 작품은 모두 content/에서 오므로(계정에만 있는 작품 없음) 지금 못 찾으면 홈 */
+function bootBack(askLogin) {
+  const h = location.hash.slice(1), saved = takeBack(), to = !h ? saved : loginBack() || (askLogin ? backHash(h) : "");
+  if (askLogin) { setHash(to ? "login-" + to : "login"); return; }
+  if (to) setHash(canBack(to) ? to : "home");
+}
+/* 로그인·둘러보기를 마치고 나감: 돌아갈 곳이 있으면 그리로(로그인 화면은 방문 기록에서 빠짐), 없는 작품이면 홈 */
+function leaveLogin() {
+  const to = loginBack(); takeBack();
+  $("#view").scrollTop = 0; window.scrollTo(0, 0); // 폼을 내려 누른 자리가 다음 화면에 이어지면 작품 제목이 잘림
+  if (to && canBack(to)) location.replace("#" + to); else go("home");
+}
 
 /* ---------------------------------------------------------------- 로그인·계정 (Supabase, 계정 저장은 CLOUD) */
 function viewLogin() {
@@ -4700,6 +4798,7 @@ function viewLogin() {
       if (mode === "in") { await SB.signIn(email, pw); return loggedIn(); }
       const st = await SB.signUp(email, pw);
       if (st === "in") return loggedIn();
+      saveBack();
       say("인증 메일을 보냈어요. 메일의 링크를 누르면 바로 로그인돼요. 메일이 안 보이면 스팸함도 확인해 주세요.", true);
     } catch (x) { say((x && x.msg) || "로그인하지 못했어요."); }
     go2.disabled = false; go2.textContent = mode === "up" ? "회원가입" : "로그인";
@@ -4707,27 +4806,28 @@ function viewLogin() {
   $("#lforgot").onclick = async () => {
     const email = $("#lmail").value.trim();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return say("비밀번호를 다시 정할 이메일을 먼저 적어 주세요.");
-    try { await SB.recover(email); say("비밀번호 재설정 메일을 보냈어요. 메일의 링크를 눌러 새 비밀번호를 정해 주세요.", true); }
+    try { await SB.recover(email); saveBack(); say("비밀번호 재설정 메일을 보냈어요. 메일의 링크를 눌러 새 비밀번호를 정해 주세요.", true); }
     catch (x) { say((x && x.msg) || "메일을 보내지 못했어요."); }
   };
-  $("#lguest").onclick = () => { try { localStorage.setItem("hv1_guest", "1"); } catch {} go("home"); setTimeout(() => { if (!AUDS[S.settings.audience]) audSheet(true); }, 80); };
+  $("#lguest").onclick = () => { try { localStorage.setItem("hv1_guest", "1"); } catch {} leaveLogin(); setTimeout(askAud, 80); };
   // 소셜 로그인 = 가입(처음이면 계정이 저절로 만들어짐). 대시보드에서 아직 안 켠 공급자는 안내만
   const obs = $$("[data-oauth]", v), lock = (on) => obs.forEach((x) => { x.disabled = on; });
   obs.forEach((b) => b.onclick = async () => {
     const oerr = $("#loerr");
     lock(true); say(""); oerr.textContent = "";
+    saveBack();
     const ok = await SB.oauth(b.dataset.oauth);
-    if (!ok) oerr.textContent = provName(b.dataset.oauth) + " 로그인은 아직 준비 중이에요. 이메일이나 다른 방법으로 시작해 주세요.";
+    if (!ok) { takeBack(); oerr.textContent = provName(b.dataset.oauth) + " 로그인은 아직 준비 중이에요. 이메일이나 다른 방법으로 시작해 주세요."; }
     setTimeout(() => lock(false), ok ? 4000 : 0); // 넘어갔다가 뒤로 돌아와도 다시 누를 수 있게
   });
 }
 async function loggedIn() {
   try { localStorage.removeItem("hv1_guest"); } catch {}
   toast("로그인했어요");
-  go("home");
+  leaveLogin();
   await new Promise((r) => setTimeout(r, 80));
   await afterLogin(true);
-  if (!AUDS[S.settings.audience]) audSheet(true);
+  askAud();
 }
 /* 로그인 직후(fresh)는 계정과 이 기기를 맞추고, 그 밖에는 바뀐 것만 받아 옴 */
 async function afterLogin(fresh) {
@@ -4760,7 +4860,7 @@ function newPasswordSheet() {
            src/js/ui/store.js { viewStore }
            src/js/ui/login.js { viewLogin }
            src/js/ui/me.js { viewMe }
-           src/js/ui/help.js { viewHelp }
+           src/js/ui/help.js { viewHelp, viewNotice }
    내보냄: USER_VIEWS, USER_NAVS
    쓰는 곳: src/js/admin.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
@@ -4818,23 +4918,24 @@ function newPasswordSheet() {
 
 
 /* 해시 앞부분 → 화면. 상세(c-<id>)·대화방(r-<id>)·고객센터(help-<탭>)는 "-" 뒤를 인자로 받음 */
-const USER_VIEWS = { home: viewHome, c: viewDetail, r: viewChat, chats: viewChats, store: viewStore, me: viewMe, login: viewLogin, help: viewHelp };
-const USER_NAVS = [["home", "홈", "home"], ["chats", "대화", "chat"], ["store", "스토어", "heart"], ["me", "MY", "user"]];
+const USER_VIEWS = { home: viewHome, c: viewDetail, r: viewChat, chats: viewChats, notice: viewNotice, store: viewStore, me: viewMe, login: viewLogin, help: viewHelp };
+const USER_NAVS = [["home", "홈", "home"], ["chats", "대화", "chat"], ["notice", "공지", "bell"], ["store", "스토어", "heart"], ["me", "MY", "user"]];
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/admin/support.js
    가져옴: src/js/core/util.js { $, $$, esc, toast }
-           src/js/services/supabase.js { SB }
+           src/js/services/supabase.js { SB, acctName }
            src/js/services/support.js { ASK_STATUS, SUPPORT, supportErr }
            src/js/ui/ext.js { EXT }
-           src/js/ui/help.js { askHTML, viewHelp }
+           src/js/ui/help.js { askHTML, viewNotice }
            src/js/ui/icons.js { ICON }
            src/js/ui/sheet.js { confirmSheet, sheet }
-           src/js/ui/shell.js { go }
+           src/js/ui/shell.js { bindGo, go }
    쓰는 곳: src/js/admin.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
-/* 고객센터 관리(관리자 빌드만 — EXT.help·EXT.me에 꽂음): 공지사항 탭에 '새 공지'와 공지마다 고치기·삭제, 문의하기 탭 아래에 받은 문의(상태별 — 답변·상태·삭제), MY에 답변 대기 수.
-   쓰기 권한은 서버가 정한다 — Supabase admins 표에 이 계정 id가 있어야 하고(docs/supabase.sql 맨 아래), 아니면 그 방법과 내 계정 id를 보여 줌.
-   사용자 화면(ui/help.js)이 탭을 그릴 때마다 불리므로(공지는 기기 사본 → 서버 목록으로 두 번) 이미 넣었으면 다시 넣지 않고, 기다리는 사이 화면이 바뀌었으면 그만둔다 */
+/* 공지·고객센터 관리(관리자 빌드만 — EXT.help·EXT.me에 꽂음): 공지 화면에 '새 공지'와 공지마다 고치기·삭제, 문의하기 탭 아래에 받은 문의(상태별 — 답변·상태·삭제), MY에 답변 대기 수.
+   관리자 계정으로 로그인돼 있으면 누를 것 없이 바로 관리 화면이 된다(2026-11-06 사용자 요청). 그 밖의 계정은 로그인 안내와 함께 읽기만.
+   실제 쓰기 권한은 서버가 정한다(RLS — admins 표, docs/SETUP.md '관리자 계정 고정'). 비밀번호 관문(admin/gate.js)은 브라우저 안의 검사라 소스를 보면 우회할 수 있어 서버 권한을 줄 수 없음.
+   사용자 화면(ui/help.js)이 그릴 때마다 불리므로(공지는 기기 사본 → 서버 목록으로 두 번) 이미 넣었으면 다시 넣지 않고, 기다리는 사이 화면이 바뀌었으면 그만둔다 */
 
 
 
@@ -4852,13 +4953,18 @@ let inboxStatus = "open"; // 받은 문의 거르기(세션 동안 남음)
 // 이 계정이 관리자인지 — 아니면 이유를 box 맨 위에 한 번 적음. stale()이 참이면(기다리는 사이 화면이 바뀜) 아무것도 안 함
 async function adminOK(box, what, stale) {
   if (!SB.on()) return false;
-  if (!SB.s) { if (!stale()) note(box, `${what} 관리자 계정으로 로그인해 주세요.`); return false; }
+  if (!SB.s) { if (!stale()) note(box, `${what} 관리자 계정으로 로그인해 주세요.`, "login", "로그인"); return false; }
   const yes = await SUPPORT.amAdmin();
   if (stale()) return false;
-  if (!yes) note(box, `이 계정은 고객센터 관리자가 아니에요. Supabase 대시보드 → SQL Editor에서 아래 한 줄을 실행하면 관리자가 돼요(docs/supabase.sql을 먼저 실행).<pre>insert into public.admins (user_id) values ('${esc(SB.s.user.id)}');</pre>`);
+  if (!yes) note(box, `지금 계정(<b>${esc(acctName())}</b>)은 관리자로 확인되지 않았어요. ${what} 관리자 계정으로 로그인해 주세요.`, "me", "계정 바꾸기");
   return yes;
 }
-function note(box, html) { if (!$(".adm-note", box)) box.insertAdjacentHTML("afterbegin", `<div class="box adm-note"><span class="pill">관리자</span> ${html}</div>`); }
+// 안내와 이동 버튼 하나를 box 맨 위에 한 번 적음
+function note(box, html, to, label) {
+  if ($(".adm-note", box)) return;
+  box.insertAdjacentHTML("afterbegin", `<div class="box adm-note"><span class="pill">관리자</span> ${html}<div class="cta-row"><span class="spacer"></span><button type="button" class="btn sm pri" data-go="${to}">${label}</button></div></div>`);
+  bindGo(box);
+}
 // 기다리기 전의 첫 자식을 기억해 화면이 다시 그려졌는지 봄
 const watch = (box) => { const first = box.firstElementChild; return () => !box.isConnected || box.firstElementChild !== first; };
 
@@ -4875,7 +4981,7 @@ EXT.help.push(async (tab, box, list) => {
       d.insertAdjacentHTML("beforeend", `<div class="cta-row nadm"><span class="spacer"></span><button type="button" class="btn sm danger" data-ndel>삭제</button><button type="button" class="btn sm" data-ned>고치기</button></div>`);
       $("[data-ned]", d).onclick = () => noticeSheet(n);
       $("[data-ndel]", d).onclick = () => confirmSheet("이 공지를 지울까요?", `‘${n.title}’ 공지가 모든 사용자에게서 사라져요. 되돌릴 수 없어요.`, "삭제", async () => {
-        try { await SUPPORT.dropNotice(n.id); toast("공지를 지웠어요"); viewHelp("notice"); } catch (e) { toast(supportErr(e)); }
+        try { await SUPPORT.dropNotice(n.id); toast("공지를 지웠어요"); viewNotice(); } catch (e) { toast(supportErr(e)); }
       });
     });
   }
@@ -4935,7 +5041,7 @@ function noticeSheet(n) {
     e.target.disabled = true;
     try {
       await SUPPORT.saveNotice({ id: n ? n.id : undefined, title, body: $("#ntB", ov).value.trim(), pinned: $("#ntP", ov).checked, published: $("#ntV", ov).checked });
-      ov.remove(); toast(n ? "공지를 고쳤어요" : "공지를 올렸어요"); viewHelp("notice");
+      ov.remove(); toast(n ? "공지를 고쳤어요" : "공지를 올렸어요"); viewNotice();
     } catch (x) { $("#ntE", ov).textContent = supportErr(x); e.target.disabled = false; }
   };
 }
@@ -4944,7 +5050,7 @@ function noticeSheet(n) {
 EXT.me.push((v) => {
   const box = $("#meExt", v); if (!box || !SB.on() || !SB.s) return;
   box.insertAdjacentHTML("beforeend", `<h2 class="sec">고객센터 관리 <small>관리자 도구</small></h2>
-    <div class="box"><div class="menu-list"><button data-hgo="help-ask">받은 문의<span class="v" id="inOpen">확인 중…</span></button><button data-hgo="help-notice">공지 쓰기·고치기</button></div></div>`);
+    <div class="box"><div class="menu-list"><button data-hgo="help-ask">받은 문의<span class="v" id="inOpen">확인 중…</span></button><button data-hgo="notice">공지 쓰기·고치기</button></div></div>`);
   $$("[data-hgo]", box).forEach((b) => b.onclick = () => go(b.dataset.hgo));
   const out = (t) => { const el = $("#inOpen", box); if (el) el.textContent = t; };
   SUPPORT.amAdmin().then((yes) => yes ? SUPPORT.inbox("open").then((l) => out(l.length ? `답변 대기 ${l.length}건` : "대기 없음")) : out("관리자 계정 아님"))
@@ -5028,25 +5134,23 @@ function migrateSettings() {
 }
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/boot.js
-   가져옴: src/js/core/audience.js { AUDS }
-           src/js/core/migrate.js { migrateSettings }
+   가져옴: src/js/core/migrate.js { migrateSettings }
            src/js/core/settings.js { applySettings }
-           src/js/core/state.js { S, gen }
+           src/js/core/state.js { gen }
            src/js/core/util.js { $ }
            src/js/services/cloud.js { CLOUD }
            src/js/services/load.js { loadAll }
            src/js/services/supabase.js { SB }
            src/js/services/sync.js { reloadFromCloud }
            src/js/ui/chat/generate.js { stopGen }
-           src/js/ui/home.js { audSheet }
-           src/js/ui/login.js { afterLogin, newPasswordSheet }
+           src/js/ui/home.js { askAud }
+           src/js/ui/login.js { afterLogin, bootBack, newPasswordSheet }
            src/js/ui/sheet.js { closeOverlays }
            src/js/ui/shell.js { renderShell, route }
    내보냄: boot
    쓰는 곳: src/js/admin.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 부팅(boot): 설정 이전 → 저장 데이터 읽기 → 셸·첫 화면 → 계정 연결. 진입점(main.js·admin.js)이 부른다 */
-
 
 
 
@@ -5071,11 +5175,11 @@ async function boot() {
   renderShell();
   // 처음 시작: 로그인 페이지(계정 서버가 있고, 로그인도 둘러보기도 안 했을 때) → 관심있는 대화 고르기
   const askLogin = SB.on() && !SB.s && !localStorage.getItem("hv1_guest") && !location.hash.startsWith("#r-");
-  if (askLogin) { try { history.replaceState(null, "", location.pathname + location.search + "#login"); } catch {} }
+  bootBack(askLogin); // 작품 주소로 처음 들어왔으면 로그인·둘러보기 뒤 그 작품으로
   route();
   window.addEventListener("hashchange", route);
-  if (SB.s) afterLogin(!!authType).then(() => { if (authType === "recovery") newPasswordSheet(); else if (!AUDS[S.settings.audience] && !location.hash.startsWith("#r-")) audSheet(true); });
-  else if (!askLogin && !AUDS[S.settings.audience] && !location.hash.startsWith("#r-")) audSheet(true);
+  if (SB.s) afterLogin(!!authType).then(() => { if (authType === "recovery") newPasswordSheet(); else askAud(); });
+  else if (!askLogin) askAud();
   // 다른 기기에서 바꾼 것: 이 탭으로 돌아올 때 받아 오고, 떠날 때 못 올린 것을 올림
   document.addEventListener("visibilitychange", () => {
     if (!CLOUD.on) return;

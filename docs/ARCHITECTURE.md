@@ -35,7 +35,7 @@ boot.js → app.js(USER_VIEWS · USER_NAVS) → main.js | admin.js
 - ★ 상대 경로의 이름 있는 import만, 다른 모듈의 `let`은 그 모듈의 `set…()`으로, 전체에서 같은 이름 두 번 선언 금지, 맨 윗단에서 뒤 모듈의 const 사용 금지(순환 의존).
 - **아래층은 윗층을 import하지 않는다.** core·services가 화면을 갱신해야 하면 `core/events.js`의 `emit("rooms"|"wallet"|"settings"|"cloud"|"route"|"session")`를 부르고, ui가 `on()`으로 받는다(shell: rooms·wallet·route, account: cloud — settings는 services/cloud가 받아 계정에 올림, session은 지금 받는 곳 없음). `core/storage.js`는 `KV.remote` 고리로 CLOUD에 연결한다.
 - **셸은 화면을 모른다.** `ui/shell.js`는 `registerViews({ home: viewHome, c: viewDetail, … })`·`setNavs([...])`로 등록된 것만 라우팅한다. 진입점(main.js·admin.js)이 `app.js`의 USER_VIEWS·USER_NAVS를 등록한다.
-- **관리자 기능은 EXT 고리에 꽂는다.** `ui/ext.js`의 `EXT = { me: [], help: [] }` — `me(v)`는 MY의 `#meExt` 자리(관문의 잠그기 버튼, 답변 대기 문의 수), `help(tab, box, list)`는 고객센터 탭(공지 쓰기·받은 문의). 사용자 화면 모듈은 자리만 두고 `runExt(...)`를 부른다. 사용자 빌드에는 꽂는 모듈이 없어 비어 있다.
+- **관리자 기능은 EXT 고리에 꽂는다.** `ui/ext.js`의 `EXT = { me: [], help: [] }` — `me(v)`는 MY의 `#meExt` 자리(관문의 잠그기 버튼, 답변 대기 문의 수), `help(tab, box, list)`는 공지 메뉴(`#notice`, 공지 쓰기 — 관리자 계정이면 바로 관리 화면)와 고객센터 탭(받은 문의). 사용자 화면 모듈은 자리만 두고 `runExt(...)`를 부른다. 사용자 빌드에는 꽂는 모듈이 없어 비어 있다.
 - 설정 이전은 `core/migrate.js` 하나(`boot()`가 부름). 예전 그림·성인 설정 칸은 지우지 않고 그대로 둔다(쓰지 않을 뿐, 데이터 손실 없음).
 - `core/target.js`의 `isAdmin()`은 문구·배지 같은 작은 차이에만 쓴다(기능 분기는 EXT·화면 등록으로).
 

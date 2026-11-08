@@ -1,8 +1,8 @@
-// 고객센터 시험: Supabase를 page.route로 흉내 냄(실제 서버로는 아무것도 안 감 — docs/supabase.sql의 RLS·열 권한·트리거와 같은 규칙을 메모리로).
-// 사용자 사이트(index.html): MY의 고객센터·약관 칸과 '새 공지' → 공지사항(공개만·고정 먼저) → 자주 묻는 질문 찾기 → 둘러보기면 로그인 안내 →
+// 공지·고객센터 시험: Supabase를 page.route로 흉내 냄(실제 서버로는 아무것도 안 감 — docs/supabase.sql의 RLS·열 권한·트리거와 같은 규칙을 메모리로).
+// 사용자 사이트(index.html): MY의 고객센터·약관 칸과 '새 공지' → 공지 메뉴(공개만·고정 먼저·메뉴 표시·예전 주소 #help-notice) → 자주 묻는 질문 찾기 → 둘러보기면 로그인 안내 →
 //   로그인한 사람의 문의 남기기(보내는 칸은 열 권한 안의 것만)·하루 5건 제한·지우기 → 관리자 기능이 없음. 휴대폰(iPhone 13 WebKit)에서 가로 넘침 없음.
-// 관리자 도구(admin.html, 같은 서버의 /admin.html): 관리자가 아닌 계정은 안내(SQL 한 줄) → 관리자 계정으로 비공개 공지 보기·새 공지·고치기·지우기 →
-//   받은 문의에 답 → 답변 완료로 바뀜 → 사용자 화면의 '내 문의'에 답이 보임 → MY의 답변 대기 수.
+// 관리자 도구(admin.html, 같은 서버의 /admin.html): 로그인 안 함·관리자가 아닌 계정은 공지를 읽기만 하고 로그인 안내(SQL·계정 id는 안 보임) → 관리자 계정은 공지 메뉴를 누르면 바로 비공개 공지·새 공지·고치기·지우기 →
+//   받은 문의에 답 → 답변 완료로 바뀜 → 사용자 화면의 '내 문의'에 답이 보임 → MY의 답변 대기 수 → 휴대폰 탭바 넘침 없음.
 import { chromium, webkit, devices } from "playwright";
 const [, , url, out] = process.argv;
 const site = url.replace(/[^/]*$/, ""); // 저장소 루트(…/index.html이면 그 폴더)
@@ -88,17 +88,24 @@ try {
   const G = await open(chromium, "Desktop Chrome", "index.html", null);
   await hash(G, "me", 900);
   res.me = await G.evaluate(() => ({ help: [...document.querySelectorAll("#helpMenu [data-go]")].map((b) => b.dataset.go), docs: [...document.querySelectorAll(".menu-list a")].map((a) => a.getAttribute("href")), newNotice: (document.querySelector("#noticeNew") || {}).textContent, nav: (document.querySelector("[data-nav].on") || {}).dataset?.nav }));
-  expect(res.me.help.join() === "help-notice,help-faq,help-ask", "MY 고객센터 칸");
+  expect(res.me.help.join() === "notice,help-faq,help-ask", "MY 고객센터 칸");
   expect(res.me.docs.includes("terms.html") && res.me.docs.includes("privacy.html"), "MY 약관 및 정책 링크");
   expect(res.me.newNotice === "새 공지", "MY 새 공지 표시");
-  await hash(G, "help-notice", 900);
-  res.notice = await G.evaluate(() => ({ titles: [...document.querySelectorAll("details.notice b")].map((b) => b.textContent), pinned: !!document.querySelector("details.notice .pill"), firstOpen: document.querySelector("details.notice").open, link: (document.querySelector("details.notice .nbody a") || {}).href, nav: (document.querySelector("[data-nav].on") || {}).dataset?.nav, admin: !!document.querySelector("#nNew, .adm-note") }));
+  await G.click("#rail [data-nav=notice]"); await G.waitForTimeout(900);
+  res.notice = await G.evaluate(() => ({ hash: location.hash, h1: (document.querySelector("#view h1") || {}).textContent, back: !!document.querySelector("#view [aria-label='MY로 돌아가기']"), titles: [...document.querySelectorAll("details.notice b")].map((b) => b.textContent), pinned: !!document.querySelector("details.notice .pill"), firstOpen: document.querySelector("details.notice").open, link: (document.querySelector("details.notice .nbody a") || {}).href, nav: (document.querySelector("[data-nav].on") || {}).dataset?.nav, admin: !!document.querySelector("#nNew, .adm-note") }));
   expect(res.notice.titles.join("|") === "점검 공지(고정)|서비스 오픈 안내", "공지: 공개만·고정 먼저 " + res.notice.titles.join("|"));
   expect(res.notice.link === "https://example.test/a?x=1&y=2", "공지 본문 주소 링크");
-  expect(res.notice.nav === "me" && !res.notice.admin, "공지: 메뉴 MY·관리자 버튼 없음");
+  expect(res.notice.hash === "#notice" && res.notice.h1 === "공지" && !res.notice.back, "공지: 메뉴 화면(뒤로 버튼 없음) " + JSON.stringify([res.notice.hash, res.notice.h1, res.notice.back]));
+  expect(res.notice.nav === "notice" && !res.notice.admin, "공지: 메뉴 표시·관리자 버튼 없음");
   await hash(G, "me", 500);
   res.meAfter = await G.evaluate(() => (document.querySelector("#noticeNew") || {}).textContent);
   expect(res.meAfter === "", "공지를 본 뒤 새 공지 표시가 사라짐");
+  await hash(G, "help-notice", 700);
+  res.oldNotice = await G.evaluate(() => ({ hash: location.hash, titles: document.querySelectorAll("details.notice").length, nav: (document.querySelector("[data-nav].on") || {}).dataset?.nav }));
+  expect(res.oldNotice.hash === "#notice" && res.oldNotice.titles === 2 && res.oldNotice.nav === "notice", "예전 주소 #help-notice → #notice");
+  await hash(G, "help", 400);
+  res.helpTabs = await G.evaluate(() => ({ tabs: [...document.querySelectorAll("[data-htab]")].map((b) => b.dataset.htab), on: (document.querySelector("[data-htab].on") || {}).dataset?.htab, nav: (document.querySelector("[data-nav].on") || {}).dataset?.nav }));
+  expect(res.helpTabs.tabs.join() === "faq,ask" && res.helpTabs.on === "faq" && res.helpTabs.nav === "me", "고객센터 탭: 자주 묻는 질문·문의하기");
   await hash(G, "help-faq", 400);
   res.faq = await G.evaluate(async () => {
     const all = document.querySelectorAll("details.faq").length, q = document.querySelector("#faqQ");
@@ -143,16 +150,27 @@ try {
   res.hiddenNotice = await A.evaluate(async () => (await SUPPORT.notices()).some((n) => !n.published));
   expect(!res.hiddenNotice, "일반 계정에 비공개 공지 안 보임");
 
-  // ---------- 관리자 도구: 관리자가 아닌 계정(A)
+  // ---------- 관리자 도구: 로그인 안 함 · 관리자가 아닌 계정(A) — 공지는 읽기만, 로그인 안내(SQL·계정 id 없음)
+  const adminView = (pg) => pg.evaluate(() => { const n = document.querySelector(".adm-note"); return { note: n ? n.textContent : "", go: n ? (n.querySelector("[data-go]") || {}).dataset?.go : null, sql: !!document.querySelector(".adm-note pre"), newBtn: !!document.querySelector("#nNew"), edit: document.querySelectorAll(".nadm").length, titles: document.querySelectorAll("details.notice").length }; });
+  const AG = await open(chromium, "Desktop Chrome", "admin.html", null);
+  await hash(AG, "notice", 1000);
+  res.adminGuest = await adminView(AG);
+  expect(res.adminGuest.note.includes("관리자 계정으로 로그인") && res.adminGuest.go === "login" && !res.adminGuest.newBtn && res.adminGuest.titles === 2, "관리자 도구·로그인 안 함: 안내와 읽기만 " + JSON.stringify(res.adminGuest));
+  await AG.click(".adm-note [data-go]"); await AG.waitForTimeout(300);
+  expect((await AG.evaluate(() => location.hash)) === "#login", "로그인 안내 버튼 → 로그인 화면");
   const AA = await open(chromium, "Desktop Chrome", "admin.html", "tokA");
-  await hash(AA, "help-notice", 1000);
-  res.adminNotAdmin = await AA.evaluate(() => ({ note: (document.querySelector(".adm-note") || {}).textContent || "", newBtn: !!document.querySelector("#nNew") }));
-  expect(res.adminNotAdmin.note.includes("insert into public.admins") && res.adminNotAdmin.note.includes("aaaaaaaa-0000") && !res.adminNotAdmin.newBtn, "관리자 아님 안내");
+  await hash(AA, "notice", 1000);
+  res.adminNotAdmin = await adminView(AA);
+  expect(res.adminNotAdmin.note.includes("관리자 계정으로 로그인") && res.adminNotAdmin.note.includes("user@example.test") && res.adminNotAdmin.go === "me", "관리자 아님 안내: " + res.adminNotAdmin.note);
+  expect(!res.adminNotAdmin.sql && !res.adminNotAdmin.note.includes("insert into") && !res.adminNotAdmin.note.includes("aaaaaaaa-0000"), "관리자 아님 안내에 SQL·계정 id 없음");
+  expect(!res.adminNotAdmin.newBtn && !res.adminNotAdmin.edit && res.adminNotAdmin.titles === 2, "관리자 아님: 공지는 읽기만");
 
-  // ---------- 관리자 도구: 관리자 계정(B)
+  // ---------- 관리자 도구: 관리자 계정(B) — 메뉴를 누르면 누를 것 없이 바로 관리 화면
   const B = await open(chromium, "Desktop Chrome", "admin.html", "tokB");
-  await hash(B, "help-notice", 1100);
-  res.adminNotice = await B.evaluate(() => ({ titles: [...document.querySelectorAll("details.notice b")].map((b) => b.textContent), hiddenPill: !!document.querySelector("details.notice .pill.gold"), edit: document.querySelectorAll(".nadm").length, newBtn: !!document.querySelector("#nNew") }));
+  res.adminNavs = await B.evaluate(() => [...document.querySelectorAll("#rail [data-nav]")].map((b) => b.dataset.nav));
+  await B.click("#rail [data-nav=notice]"); await B.waitForTimeout(1100);
+  res.adminNotice = await B.evaluate(() => ({ hash: location.hash, note: !!document.querySelector(".adm-note"), nav: (document.querySelector("[data-nav].on") || {}).dataset?.nav, titles: [...document.querySelectorAll("details.notice b")].map((b) => b.textContent), hiddenPill: !!document.querySelector("details.notice .pill.gold"), edit: document.querySelectorAll(".nadm").length, newBtn: !!document.querySelector("#nNew") }));
+  expect(res.adminNotice.hash === "#notice" && res.adminNotice.nav === "notice" && !res.adminNotice.note, "관리자: 공지 메뉴로 들어옴·안내 없음");
   expect(res.adminNotice.titles.length === 3 && res.adminNotice.hiddenPill && res.adminNotice.edit === 3 && res.adminNotice.newBtn, "관리자: 비공개 공지·고치기 버튼");
   await B.click("#nNew"); await B.waitForTimeout(200);
   await B.click("#ntS"); await B.waitForTimeout(150);
@@ -180,18 +198,40 @@ try {
   if (out) await B.screenshot({ path: `${out}/help_admin_me.png` });
 
   // ---------- 사용자 A: 답이 보임 · 휴대폰 가로 넘침
-  await hash(A, "help-notice", 300); await hash(A, "help-ask", 900);
+  await hash(A, "notice", 300); await hash(A, "help-ask", 900);
   res.userSees = await A.evaluate(() => { const d = [...document.querySelectorAll("#askList details.ask")].find((x) => x.textContent.includes("대화방이 안 열려요")); return d && { answer: (d.querySelector(".answer") || {}).textContent || "", pill: d.querySelector(".pill").textContent }; });
   expect(res.userSees && res.userSees.answer.includes("브라우저 이름") && res.userSees.pill === "답변 완료", "사용자에게 답변이 보임");
   const P = await open(webkit, "iPhone 13", "index.html", "tokA");
   res.mobile = {};
-  for (const h of ["help-notice", "help-faq", "help-ask", "me"]) {
+  for (const h of ["notice", "help-faq", "help-ask", "me"]) {
     await hash(P, h, 900);
     res.mobile[h] = await P.evaluate(() => document.documentElement.scrollWidth - innerWidth);
     expect(res.mobile[h] <= 0, `휴대폰 ${h} 가로 넘침 ${res.mobile[h]}px`);
   }
   await hash(P, "help-ask", 600);
   if (out) await P.screenshot({ path: `${out}/help_ask_iphone.png`, fullPage: true });
+  await hash(P, "notice", 700);
+  if (out) await P.screenshot({ path: `${out}/notice_user_iphone.png` });
+  // 휴대폰 탭바: 사용자·관리자 모두 5칸(홈·대화·공지·스토어·MY) — 좁은 폭(320px)에서도 글자가 한 줄로 칸 안에 들어옴(wrapped: 이미/지처럼 꺾인 칸)
+  const tabFit = (pg) => pg.evaluate(() => {
+    const t = document.querySelector("#tabbar"), bs = [...t.querySelectorAll("button")];
+    const lines = (b) => { const r = document.createRange(); r.selectNodeContents(b.querySelector("span")); return r.getClientRects().length; };
+    return { n: bs.length, over: t.scrollWidth - t.clientWidth, clipped: bs.filter((b) => b.scrollWidth > b.clientWidth).map((b) => b.textContent), wrapped: bs.filter((b) => lines(b) > 1).map((b) => b.textContent), page: document.documentElement.scrollWidth - innerWidth };
+  });
+  res.tabUser = await tabFit(P);
+  expect(res.tabUser.n === 5 && res.tabUser.over <= 0 && !res.tabUser.clipped.length && !res.tabUser.wrapped.length, "사용자 탭바 5칸 " + JSON.stringify(res.tabUser));
+  const PA = await open(webkit, "iPhone 13", "admin.html", "tokB");
+  await hash(PA, "notice", 1000);
+  res.tabAdmin = await tabFit(PA);
+  expect(res.tabAdmin.n === 5 && res.tabAdmin.over <= 0 && !res.tabAdmin.clipped.length && !res.tabAdmin.wrapped.length && res.tabAdmin.page <= 0, "관리자 탭바 5칸 " + JSON.stringify(res.tabAdmin));
+  if (out) await PA.screenshot({ path: `${out}/notice_admin_iphone.png` });
+  await PA.setViewportSize({ width: 320, height: 640 }); await PA.waitForTimeout(250);
+  res.tabAdmin320 = await tabFit(PA);
+  expect(res.tabAdmin320.over <= 0 && !res.tabAdmin320.clipped.length && !res.tabAdmin320.wrapped.length && res.tabAdmin320.page <= 0, "관리자 탭바 320px " + JSON.stringify(res.tabAdmin320));
+  if (out) await PA.screenshot({ path: `${out}/notice_admin_320.png` });
+  await hash(B, "notice", 800);
+  if (out) await B.screenshot({ path: `${out}/notice_admin_desktop.png` });
+  if (out) await AA.screenshot({ path: `${out}/notice_notadmin_desktop.png` });
 } catch (e) { errs.push("script: " + (e && e.stack || e).toString().slice(0, 400)); }
 for (const b of browsers) await b.close().catch(() => {});
 res.fail = fail; res.errs = errs;

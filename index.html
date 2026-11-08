@@ -64,7 +64,7 @@ button { cursor:pointer; }
   .rail { display:none; }
   #view { height:calc(100% - 60px - env(safe-area-inset-bottom,0px)); }
   .tabbar { display:flex; position:fixed; left:0; right:0; bottom:0; height:calc(60px + env(safe-area-inset-bottom,0px)); padding:0 max(6px, env(safe-area-inset-right,0px)) env(safe-area-inset-bottom,0px) max(6px, env(safe-area-inset-left,0px)); background:var(--surface); border-top:1px solid var(--line); z-index:20; }
-  .tabbar button { flex:1; border:0; background:none; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; font-size:11px; color:var(--muted); }
+  .tabbar button { flex:1; min-width:0; padding:0; white-space:nowrap; border:0; background:none; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; font-size:11px; color:var(--muted); }
   .tabbar button.on { color:var(--accent); font-weight:600; }
   .tabbar svg { width:21px; height:21px; }
   body.in-chat .tabbar { display:none; }
@@ -1211,22 +1211,45 @@ function normalizeChar(c) {
   return c;
 }
 function getChar(id) { return ORIGINALS.find((c) => c.id === id); }
-/* ── src/js/core/safety.js — 안전: 미성년 인물 막기(minorFlags·minorHint) — 순수 함수라 빌드의 작품 검사와 단위 테스트가 그대로 import */
+/* ── src/js/core/safety.js — 안전: 미성년 인물 막기(minorFlags·minorHint·settingHint·roomMinorHint) — 순수 함수라 빌드의 작품 검사와 단위 테스트가 그대로 import */
 function minorFlags(c) {
-  const out = [], under = (n) => n > 0 && n < 19;
-  for (const x of c.cast || []) {
-    const t = String(x.look || ""), m = t.match(/(\d{1,2})\s*(?:세|살)/);
-    if ((m && under(+m[1])) || /초등학생|중학생|고등학생|여고생|남고생|미성년/.test(t)) out.push(x.name || x.code);
-  }
-  const pm = String(c.persona || "").slice(0, 120).match(/([가-힣A-Za-z]{1,10})\s*\((\d{1,2})\s*[,，)]/);
-  if (pm && under(+pm[2])) out.push(pm[1]);
+  const out = [];
+  for (const x of c.cast || []) if (minorHint([x.look, x.tags].join("\n"))) out.push(x.name || x.code);
+  const head = String(c.persona || "").slice(0, 120), pm = head.match(/([가-힣A-Za-z]{1,10})\s*\((\d{1,2}|열[가-힣]{1,2})\s*[,，)]/);
+  if (pm && minorHint(pm[2] + "살")) out.push(pm[1]);
+  else if (settingHint(head)) out.push(c.name || c.title || "설정");
   return [...new Set(out)];
 }
 function minorHint(t) {
-  t = String(t || "");
-  if ([...t.matchAll(/(\d{1,2})\s*(?:세|살|years?[\s-]*old|yo\b)/gi)].some((m) => +m[1] > 0 && +m[1] < 19)) return true;
-  return /미성년|초등학생|중학생|고등학생|여고생|남고생|여중생|남중생|초딩|중딩|고딩|교복|어린이|아동|유아|로리|쇼타/.test(t)
-    || /\b(?:child|children|kids?|loli|lolita|shota|toddler|underage|teen|teens|teenager|schoolgirl|schoolboy|school uniform|elementary school|middle school|high school|little girl|little boy|young girl|young boy|aged down)\b/i.test(t);
+  t = String(t || "").normalize("NFKC");
+  const under = (re) => [...t.matchAll(re)].some((m) => +m[1] > 0 && +m[1] < 19);
+  if (under(/(?:^|\D)(\d{1,2})[ \t]*살(?=[가-힣])(?!차이?|연상|연하|위|아래|밑|많|적[은다어]|어리|어린|더|터울)/g)) return true;
+  t = t.replace(/칼로리|글로리|플로리|쇼타임|유아독존|세 살 버릇|중2병|청소년[ \t]*(?:관람[ \t]*)?불가|(?:재벌|오너|창업주|교포|이민|그룹|한인|재일|재미)[ \t]*\d세|2세[ \t]*(?:계획|소식|준비)|(?:루이[ \t]*1[0-8]|베네딕토[ \t]*16|엘리자베스[ \t]*[12]|(?:루이|헨리|찰스|조지|에드워드|제임스|윌리엄|리처드|나폴레옹|프리드리히|빌헬름|카를|표트르|니콜라이|알렉산드르|이반|람세스|앙리|필리프|펠리페)[ \t]*[1-9]|교황[ \t]+[가-힣]{1,8}[ \t]*\d{1,2}|(?:황제|선황|국왕|선왕|여왕)[ \t]+(?!나이|당시|올해|겨우|고작|아직|이제)[가-힣]{1,8}[ \t]*[1-9])세(?![ \t]*(?:소녀|소년|아이|여아|남아|여성|남성|여자|남자|[,，)/][ \t]*(?:여|남)))|\d{1,2}세[ \t]*(?:이상[ \t]*)?(?:관람가|이용가|등급)|(?:살|세)[ \t]*(?:차이?|연상|연하|위|아래|밑|많|적[은다어]|어리|어린(?![ \t]*(?:소녀|소년|아이|애|여자|남자|여아|남아))|더|터울)|살(?:아|았|려|리|린|릴|림|해|기|짝|결|점|갗|피|펴|폈|구(?!나)|벌|금|찌|쪘|찐|빼|빠|붙|덩|얼|며|랑)|살을(?=[ \t]*(?:빼|뺐|뺀|찌|쪘|찐|만지|만졌|만진|베|벴|벤|파고|꼬집|에는|도려|태|섞|맞대|비비|부비|뜯|물|깎|깍|떨|꼬))|살인[ \t]*(?:사건|범|마|자|귀|청부|미수|현장|죄|혐의|용의|동기|은|이|을|의|도|과)|세(?:기|대|트|계|상|력|월|자|금|수)/g, " ");
+  if (under(/(?:^|\D)(\d{1,2})[ \t-]*(?:세|살|years?[ \t-]*olds?\b|yrs?[ \t-]*olds?\b|y[ \t]*[/.][ \t]*o\b|yo\b)/gi)
+    || under(/(?:\baged?[ \t]*[:=]?|(?:나이|연령)[ \t]*(?:[:=]|은|는|이|가|도)?)[ \t]*(\d{1,2})(?!\d|[ \t]*(?:배|년|개|번|차))/gi)) return true;
+  for (const m of t.matchAll(/(?:(스물|서른|마흔|쉰|예순|일흔|여든|아흔|백|천)[ \t]*)?(열[ \t]*)?(한|두|세|네|다섯|여섯|일곱|여덟|아홉)?[ \t]*(살|세)/g)) {
+    const [, big, ten, one, unit] = m, n = (ten ? "열" : "") + (one || "");
+    if (big || !n || n === "열아홉" || n === "한") continue;
+    if (unit === "세" && !(ten && one)) continue;
+    if (n.length === 1 && /[가-힣]/.test(t[m.index - 1] || "")) continue;
+    return true;
+  }
+  return /미성년|초등학생|초등생|중학생|고등학생|고교생|중고생|여고생|남고생|여중생|남중생|청소년|초딩|중딩|고딩|잼민이|교복|어린이|아동|유아|로리|쇼타/.test(t)
+    || /(?:^|[^가-힣A-Za-z0-9])(?:고[1-3]|중[1-3]|초[1-6])(?![0-9A-Za-z])/.test(t)
+    || /(?:고등학교|고교|여고|남고|중학교|여중|남중|초등학교|국민학교)[ \t]*(?:[1-6]|일|이|삼|사|오|육)[ \t]*학년|[1-6][ \t]*학년[ \t]*\d{1,2}[ \t]*반/.test(t)
+    || /열(?:한|두|세|네|다섯|여섯|일곱|여덟)의?[ \t]*(?:소녀|소년)|(?:나이|연령)[ \t]*(?:[:=]|은|는|이|가|도)?[ \t]*열(?:한|두|세|네|다섯|여섯|일곱|여덟)|열(?:다섯|여섯|일곱|여덟)(?:이다|이야|이에요|이예요|입니다|이었|이던|이라|인[ \t])/.test(t)
+    || /(?:^|[^이삼사오육칠팔구수몇백천])십[ \t]*[일이삼사오육칠팔]?[ \t]*(?:세|살)/.test(t)
+    || /(?:(?:^|\D)10|(?:^|[^이삼사오육칠팔구수몇백천])십)[ \t]*대[ \t]*(?:소녀|소년|여자|남자|여성|남성|아이|초반|중반|후반)/.test(t)
+    || /\b(?:child|children|kids?|loli|lolita|shota|toddler|underaged?|teens?|teenagers?|teenaged?|pre-?teens?|schoolgirls?|schoolboys?|school uniform|elementary school|middle school(?:ers?)?|junior high|high ?school(?:ers?)?|little girl|little boy|young girl|young boy|aged down|(?:ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen)[ \t-]*years?[ \t-]*old)\b/i.test(t);
+}
+function settingHint(t) { return minorHint(String(t || "").replace(/[^\s,.]+[ \t]*(?:때(?!문|리|렸|려)|시절|무렵)/g, " ")); }
+function roomMinorHint(r, lore = r.char?.lore) {
+  const c = r.char || {}, text = (m) => (m.role === "ai" ? m.alts?.[m.idx]?.text : m.text) || "";
+  const msgs = (r.msgs || []).filter(text);
+  if (minorFlags(c).length) return true;
+  if (minorHint([r.userNote, ...Object.entries(r.status || {}).map(([k, v]) => k + ": " + v), ...msgs.slice(-((r.set?.mem || 10) * 2 + 1)).map(text)].join("\n"))) return true;
+  return settingHint([c.title, c.oneLiner, c.desc, ...(c.tags || []), c.persona, c.world, c.speech, c.secret, r.directive, r.persona?.memo, r.persona?.desc, r.memory,
+    ...(lore || []).filter((e) => e.kind !== "creature").flatMap((e) => [...(e.keys || []), e.text]), ...msgs.filter((m) => m.role === "user").map(text)].join("\n"));
 }
 /* ── src/js/core/rooms.js — 대화방 저장·목록·이전(migrateRoom)·새 방 만들기, 메시지의 현재 버전 글(curText) */
 function curText(m) { return m.role === "ai" ? (m.alts[m.idx] || {}).text || "" : m.text; }
@@ -1691,13 +1714,15 @@ const SUPPORT = {
     if (!Array.isArray(j) || !j.length) throw { code: "denied" };
     return j[0];
   },
-  async amAdmin() {
+  async adminStatus() {
     const u = uidOf(); if (!u) return false;
     if (this.admin && this.admin.uid === u && this.admin.yes) return true;
-    try { const j = await call(`/rest/v1/admins?select=user_id&user_id=eq.${encodeURIComponent(u)}`); this.admin = { uid: u, yes: Array.isArray(j) && j.length > 0 }; }
-    catch { return false; }
+    let j; try { j = await call(`/rest/v1/admins?select=user_id&user_id=eq.${encodeURIComponent(u)}`); } catch { return null; }
+    if (!Array.isArray(j) || uidOf() !== u) return null;
+    this.admin = { uid: u, yes: j.length > 0 };
     return this.admin.yes;
-  }
+  },
+  async amAdmin() { return (await this.adminStatus()) === true; }
 };
 /* ── src/js/images/codes.js — 그림 태그 읽기(순수 — SIT 상수만 import해 Node 단위 테스트가 바로 씀): 본문 태그 [[img:인물코드:번호]]와 그림을 찾는 순서 */
 const IMG_TAG_RE = /\[\[img:([a-z0-9]+):([\d,]+)\]\]/gi;
@@ -2036,6 +2061,7 @@ const ICON = {
   plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="5"/><path d="M12 8v8M8 12h8"/></svg>',
   heart: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 20s-7-4.4-9-9a4.8 4.8 0 0 1 9-3 4.8 4.8 0 0 1 9 3c-2 4.6-9 9-9 9z"/></svg>',
   user: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>',
+  bell: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 10a6 6 0 0 1 12 0c0 5.5 2.5 7 2.5 7h-17S6 15.5 6 10z"/><path d="M10 20.5a2.2 2.2 0 0 0 4 0"/></svg>',
   back: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 5l-7 7 7 7"/></svg>',
   book: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 21a2 2 0 0 1 2-2h13M8 7h7"/></svg>',
   menu: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>',
@@ -2317,8 +2343,8 @@ function faqGroups() {
     ]]
   ];
 }
-/* ── src/js/ui/help.js — 고객센터 화면(#help): 공지사항 · 자주 묻는 질문 · 문의하기 탭(#help-notice·#help-faq·#help-ask로 바로) */
-const TABS = [["notice", "공지사항"], ["faq", "자주 묻는 질문"], ["ask", "문의하기"]];
+/* ── src/js/ui/help.js — 공지 화면(#notice)과 고객센터 화면(#help — 자주 묻는 질문·문의하기) */
+const TABS = [["faq", "자주 묻는 질문"], ["ask", "문의하기"]];
 const SITE = "https://20232497.github.io/HEARTSYNC/";
 const SEEN = "hv1_notice_seen";
 function docUrl(f) { return location.protocol === "file:" ? SITE + f : f; }
@@ -2333,7 +2359,8 @@ function checkNotices() {
   SUPPORT.notices().then(() => { const el = $("#noticeNew"); if (el) el.textContent = hasNewNotice() ? "새 공지" : ""; }).catch(() => {});
 }
 function viewHelp(arg) {
-  const tab = TABS.some((t) => t[0] === arg) ? arg : "notice", v = $("#view");
+  if (arg === "notice") { location.replace("#notice"); return; }
+  const tab = TABS.some((t) => t[0] === arg) ? arg : "faq", v = $("#view");
   v.innerHTML = `<div class="page help-page">${topbar()}
     <div class="help-head"><button class="icon-btn" data-go="me" aria-label="MY로 돌아가기">${ICON.back}</button><h1 class="sec">고객센터</h1></div>
     <div class="tabs" role="tablist">${TABS.map(([k, l]) => `<button type="button" role="tab" data-htab="${k}" aria-selected="${k === tab}" class="${k === tab ? "on" : ""}">${l}</button>`).join("")}</div>
@@ -2341,13 +2368,19 @@ function viewHelp(arg) {
   bindGo(v);
   $$("[data-htab]", v).forEach((b) => b.onclick = () => go("help-" + b.dataset.htab));
   const box = $("#helpBody", v);
-  if (tab === "faq") faqTab(box); else if (tab === "ask") askTab(box); else noticeTab(box);
+  if (tab === "ask") askTab(box); else faqTab(box);
+}
+function viewNotice() {
+  const v = $("#view");
+  v.innerHTML = `<div class="page help-page">${topbar()}<h1 class="sec" style="margin-top:4px">공지</h1><div id="helpBody"></div></div>`;
+  bindGo(v);
+  noticeBody($("#helpBody", v));
 }
 function noticeHTML(n, open) {
   return `<details class="notice" data-nid="${+n.id}" ${open ? "open" : ""}><summary><span class="t">${n.pinned ? `<span class="pill">고정</span>` : ""}${n.published === false ? `<span class="pill gold">비공개</span>` : ""}<b>${esc(n.title)}</b></span><span class="d">${day(n.created_at)}</span></summary>
     <div class="nbody">${rich(n.body)}</div></details>`;
 }
-async function noticeTab(box) {
+async function noticeBody(box) {
   const seen = seenId();
   const paint = (list, msg) => {
     box.innerHTML = (msg ? `<p class="note help-msg">${esc(msg)}</p>` : "") +
@@ -2455,6 +2488,11 @@ function audSheet(first) {
   $$("[data-aud]", ov).forEach((b) => b.onclick = () => { setAudience(b.dataset.aud); closeOverlays(); if ((location.hash.slice(1) || "home") === "home") viewHome(); toast(`${AUDS[audience()].name} 작품을 보여 드릴게요`); });
   if (first) setAudience(audience());
 }
+let audLater = false;
+function askAud() {
+  if (AUDS[S.settings.audience]) return;
+  if (/^#(?:[cr]-|notice$)/.test(location.hash)) audLater = true; else audSheet(true);
+}
 function viewHome() {
   const v = $("#view");
   const match = (c) => (S.cat === "전체" || c.cat === S.cat) && (!S.q || [c.name, c.title, c.oneLiner, ...(c.tags || [])].join(" ").toLowerCase().includes(S.q.toLowerCase()));
@@ -2484,6 +2522,7 @@ function viewHome() {
   $$("[data-aud]", v).forEach((b) => b.onclick = () => { setAudience(b.dataset.aud); viewHome(); });
   const q = $("#q"); q.oninput = () => { S.q = q.value; const pos = q.selectionStart; viewHome(); const n = $("#q"); n.focus(); n.setSelectionRange(pos, pos); };
   bindGo(v); IMG.hydrate(v);
+  if (audLater) { audLater = false; askAud(); }
 }
 /* ── src/js/ui/me.js — MY: 페르소나·관심있는 대화·채팅 설정·AI 연결·계정·고객센터·약관 및 정책 */
 function viewMe() {
@@ -2526,7 +2565,7 @@ function viewMe() {
     <p class="note">API 키는 이 브라우저에만 저장돼요. 로그인하면 대화·페르소나·설정은 계정에도 저장돼요.</p>
     <h2 class="sec">고객센터</h2>
     <div class="box"><div class="menu-list" id="helpMenu">
-      <button data-go="help-notice">공지사항<span class="v" id="noticeNew">${hasNewNotice() ? "새 공지" : ""}</span></button>
+      <button data-go="notice">공지사항<span class="v" id="noticeNew">${hasNewNotice() ? "새 공지" : ""}</span></button>
       <button data-go="help-faq">자주 묻는 질문</button>
       <button data-go="help-ask">문의하기</button></div></div>
     <h2 class="sec">약관 및 정책</h2>
@@ -3260,15 +3299,20 @@ let NAVS = [];
 function registerViews(map) { Object.assign(VIEWS, map); }
 function setNavs(list) { NAVS = list; }
 function go(hash) { if (location.hash === "#" + hash) route(); else location.hash = hash; }
+let routed = null, homeY = 0;
 function route() {
-  const h = location.hash.slice(1) || "home";
+  const h = location.hash.slice(1) || "home", v = $("#view"), moved = h !== routed;
+  if (moved && routed === "home") homeY = v.scrollTop;
+  routed = h;
   closeOverlays();
   if (gen && !h.startsWith("r-")) stopGen();
   document.body.classList.toggle("in-chat", h.startsWith("r-"));
   const [base, ...rest] = h.split("-"); const arg = rest.join("-");
   const view = VIEWS[base] || VIEWS.home;
   setNav(base === "c" ? "home" : base === "r" ? "chats" : base === "login" || base === "help" ? "me" : VIEWS[base] ? base : "home");
-  return view ? view(arg) : undefined;
+  const out = view ? view(arg) : undefined;
+  if (moved) v.scrollTop = h === "home" ? homeY : 0;
+  return out;
 }
 const LOGO = `<div class="logo"><span class="mark" aria-hidden="true"></span><span>HEART <i>SYNC</i></span></div>`;
 function renderShell() {
@@ -3360,7 +3404,26 @@ function viewChats() {
   bindGo(v); IMG.hydrate(v);
   $$("[data-room]", v).forEach((b) => b.onclick = () => go("r-" + b.dataset.room));
 }
-/* ── src/js/ui/login.js — 로그인·가입·비밀번호 찾기·소셜 로그인 화면, 새 비밀번호 시트 */
+/* ── src/js/ui/login.js — 로그인·가입·비밀번호 찾기·소셜 로그인 화면, 로그인 뒤 돌아갈 작품, 새 비밀번호 시트 */
+const BACK_KEY = "hv1_back", BACK_MS = 3600000;
+const backHash = (h) => /^c-./.test(h) || h === "notice" ? h : "";
+const canBack = (h) => h === "notice" || !!getChar(h.slice(2));
+const loginBack = () => { const h = location.hash.slice(1); return h.startsWith("login-") ? backHash(h.slice(6)) : ""; };
+const setHash = (h) => { try { history.replaceState(null, "", location.pathname + location.search + "#" + h); } catch {} };
+function saveBack() { const to = loginBack(); if (to) { try { localStorage.setItem(BACK_KEY, JSON.stringify({ to, at: Date.now() })); } catch {} } }
+function takeBack() {
+  try { const v = localStorage.getItem(BACK_KEY); localStorage.removeItem(BACK_KEY); const b = JSON.parse(v); return b && Date.now() - b.at < BACK_MS ? backHash(b.to) : ""; } catch { return ""; }
+}
+function bootBack(askLogin) {
+  const h = location.hash.slice(1), saved = takeBack(), to = !h ? saved : loginBack() || (askLogin ? backHash(h) : "");
+  if (askLogin) { setHash(to ? "login-" + to : "login"); return; }
+  if (to) setHash(canBack(to) ? to : "home");
+}
+function leaveLogin() {
+  const to = loginBack(); takeBack();
+  $("#view").scrollTop = 0; window.scrollTo(0, 0);
+  if (to && canBack(to)) location.replace("#" + to); else go("home");
+}
 function viewLogin() {
   const v = $("#view");
   if (!SB.on() || SB.s) {
@@ -3408,6 +3471,7 @@ function viewLogin() {
       if (mode === "in") { await SB.signIn(email, pw); return loggedIn(); }
       const st = await SB.signUp(email, pw);
       if (st === "in") return loggedIn();
+      saveBack();
       say("인증 메일을 보냈어요. 메일의 링크를 누르면 바로 로그인돼요. 메일이 안 보이면 스팸함도 확인해 주세요.", true);
     } catch (x) { say((x && x.msg) || "로그인하지 못했어요."); }
     go2.disabled = false; go2.textContent = mode === "up" ? "회원가입" : "로그인";
@@ -3415,26 +3479,27 @@ function viewLogin() {
   $("#lforgot").onclick = async () => {
     const email = $("#lmail").value.trim();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return say("비밀번호를 다시 정할 이메일을 먼저 적어 주세요.");
-    try { await SB.recover(email); say("비밀번호 재설정 메일을 보냈어요. 메일의 링크를 눌러 새 비밀번호를 정해 주세요.", true); }
+    try { await SB.recover(email); saveBack(); say("비밀번호 재설정 메일을 보냈어요. 메일의 링크를 눌러 새 비밀번호를 정해 주세요.", true); }
     catch (x) { say((x && x.msg) || "메일을 보내지 못했어요."); }
   };
-  $("#lguest").onclick = () => { try { localStorage.setItem("hv1_guest", "1"); } catch {} go("home"); setTimeout(() => { if (!AUDS[S.settings.audience]) audSheet(true); }, 80); };
+  $("#lguest").onclick = () => { try { localStorage.setItem("hv1_guest", "1"); } catch {} leaveLogin(); setTimeout(askAud, 80); };
   const obs = $$("[data-oauth]", v), lock = (on) => obs.forEach((x) => { x.disabled = on; });
   obs.forEach((b) => b.onclick = async () => {
     const oerr = $("#loerr");
     lock(true); say(""); oerr.textContent = "";
+    saveBack();
     const ok = await SB.oauth(b.dataset.oauth);
-    if (!ok) oerr.textContent = provName(b.dataset.oauth) + " 로그인은 아직 준비 중이에요. 이메일이나 다른 방법으로 시작해 주세요.";
+    if (!ok) { takeBack(); oerr.textContent = provName(b.dataset.oauth) + " 로그인은 아직 준비 중이에요. 이메일이나 다른 방법으로 시작해 주세요."; }
     setTimeout(() => lock(false), ok ? 4000 : 0);
   });
 }
 async function loggedIn() {
   try { localStorage.removeItem("hv1_guest"); } catch {}
   toast("로그인했어요");
-  go("home");
+  leaveLogin();
   await new Promise((r) => setTimeout(r, 80));
   await afterLogin(true);
-  if (!AUDS[S.settings.audience]) audSheet(true);
+  askAud();
 }
 async function afterLogin(fresh) {
   CLOUD.start();
@@ -3458,8 +3523,8 @@ function newPasswordSheet() {
   };
 }
 /* ── src/js/app.js — 사용자 사이트의 모듈 묶음: 층 순서(core → content → services·images·ai → ui)로 모듈을 불러 모으고 화면… */
-const USER_VIEWS = { home: viewHome, c: viewDetail, r: viewChat, chats: viewChats, store: viewStore, me: viewMe, login: viewLogin, help: viewHelp };
-const USER_NAVS = [["home", "홈", "home"], ["chats", "대화", "chat"], ["store", "스토어", "heart"], ["me", "MY", "user"]];
+const USER_VIEWS = { home: viewHome, c: viewDetail, r: viewChat, chats: viewChats, notice: viewNotice, store: viewStore, me: viewMe, login: viewLogin, help: viewHelp };
+const USER_NAVS = [["home", "홈", "home"], ["chats", "대화", "chat"], ["notice", "공지", "bell"], ["store", "스토어", "heart"], ["me", "MY", "user"]];
 /* ── src/js/core/migrate.js — 설정 이전(migrateSettings): localStorage의 예전 설정을 지금 모양으로 — 없앤 설정 지우기, 값 범위 */
 function migrateSettings() {
   let s = null;
@@ -3482,11 +3547,11 @@ async function boot() {
   await loadAll();
   renderShell();
   const askLogin = SB.on() && !SB.s && !localStorage.getItem("hv1_guest") && !location.hash.startsWith("#r-");
-  if (askLogin) { try { history.replaceState(null, "", location.pathname + location.search + "#login"); } catch {} }
+  bootBack(askLogin);
   route();
   window.addEventListener("hashchange", route);
-  if (SB.s) afterLogin(!!authType).then(() => { if (authType === "recovery") newPasswordSheet(); else if (!AUDS[S.settings.audience] && !location.hash.startsWith("#r-")) audSheet(true); });
-  else if (!askLogin && !AUDS[S.settings.audience] && !location.hash.startsWith("#r-")) audSheet(true);
+  if (SB.s) afterLogin(!!authType).then(() => { if (authType === "recovery") newPasswordSheet(); else askAud(); });
+  else if (!askLogin) askAud();
   document.addEventListener("visibilitychange", () => {
     if (!CLOUD.on) return;
     if (document.hidden) CLOUD.flush();

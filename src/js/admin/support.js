@@ -1,14 +1,15 @@
-/* 고객센터 관리(관리자 빌드만 — EXT.help·EXT.me에 꽂음): 공지사항 탭에 '새 공지'와 공지마다 고치기·삭제, 문의하기 탭 아래에 받은 문의(상태별 — 답변·상태·삭제), MY에 답변 대기 수.
-   쓰기 권한은 서버가 정한다 — Supabase admins 표에 이 계정 id가 있어야 하고(docs/supabase.sql 맨 아래), 아니면 그 방법과 내 계정 id를 보여 줌.
-   사용자 화면(ui/help.js)이 탭을 그릴 때마다 불리므로(공지는 기기 사본 → 서버 목록으로 두 번) 이미 넣었으면 다시 넣지 않고, 기다리는 사이 화면이 바뀌었으면 그만둔다 */
+/* 공지·고객센터 관리(관리자 빌드만 — EXT.help·EXT.me에 꽂음): 공지 화면에 '새 공지'와 공지마다 고치기·삭제, 문의하기 탭 아래에 받은 문의(상태별 — 답변·상태·삭제), MY에 답변 대기 수.
+   관리자 계정으로 로그인돼 있으면 누를 것 없이 바로 관리 화면이 된다(2026-11-06 사용자 요청). 그 밖의 계정은 로그인 안내와 함께 읽기만.
+   실제 쓰기 권한은 서버가 정한다(RLS — admins 표, docs/SETUP.md '관리자 계정 고정'). 비밀번호 관문(admin/gate.js)은 브라우저 안의 검사라 소스를 보면 우회할 수 있어 서버 권한을 줄 수 없음.
+   사용자 화면(ui/help.js)이 그릴 때마다 불리므로(공지는 기기 사본 → 서버 목록으로 두 번) 이미 넣었으면 다시 넣지 않고, 기다리는 사이 화면이 바뀌었으면 그만둔다 */
 import { $, $$, esc, toast } from "../core/util.js";
-import { SB } from "../services/supabase.js";
+import { SB, acctName } from "../services/supabase.js";
 import { ASK_STATUS, SUPPORT, supportErr } from "../services/support.js";
 import { EXT } from "../ui/ext.js";
-import { askHTML, viewHelp } from "../ui/help.js";
+import { askHTML, viewNotice } from "../ui/help.js";
 import { ICON } from "../ui/icons.js";
 import { confirmSheet, sheet } from "../ui/sheet.js";
-import { go } from "../ui/shell.js";
+import { bindGo, go } from "../ui/shell.js";
 /** @typedef {import("../core/types.js").Notice} Notice */
 /** @typedef {import("../core/types.js").Inquiry} Inquiry */
 
@@ -18,13 +19,18 @@ let inboxStatus = "open"; // 받은 문의 거르기(세션 동안 남음)
 // 이 계정이 관리자인지 — 아니면 이유를 box 맨 위에 한 번 적음. stale()이 참이면(기다리는 사이 화면이 바뀜) 아무것도 안 함
 async function adminOK(box, what, stale) {
   if (!SB.on()) return false;
-  if (!SB.s) { if (!stale()) note(box, `${what} 관리자 계정으로 로그인해 주세요.`); return false; }
+  if (!SB.s) { if (!stale()) note(box, `${what} 관리자 계정으로 로그인해 주세요.`, "login", "로그인"); return false; }
   const yes = await SUPPORT.amAdmin();
   if (stale()) return false;
-  if (!yes) note(box, `이 계정은 고객센터 관리자가 아니에요. Supabase 대시보드 → SQL Editor에서 아래 한 줄을 실행하면 관리자가 돼요(docs/supabase.sql을 먼저 실행).<pre>insert into public.admins (user_id) values ('${esc(SB.s.user.id)}');</pre>`);
+  if (!yes) note(box, `지금 계정(<b>${esc(acctName())}</b>)은 관리자로 확인되지 않았어요. ${what} 관리자 계정으로 로그인해 주세요.`, "me", "계정 바꾸기");
   return yes;
 }
-function note(box, html) { if (!$(".adm-note", box)) box.insertAdjacentHTML("afterbegin", `<div class="box adm-note"><span class="pill">관리자</span> ${html}</div>`); }
+// 안내와 이동 버튼 하나를 box 맨 위에 한 번 적음
+function note(box, html, to, label) {
+  if ($(".adm-note", box)) return;
+  box.insertAdjacentHTML("afterbegin", `<div class="box adm-note"><span class="pill">관리자</span> ${html}<div class="cta-row"><span class="spacer"></span><button type="button" class="btn sm pri" data-go="${to}">${label}</button></div></div>`);
+  bindGo(box);
+}
 // 기다리기 전의 첫 자식을 기억해 화면이 다시 그려졌는지 봄
 const watch = (box) => { const first = box.firstElementChild; return () => !box.isConnected || box.firstElementChild !== first; };
 
@@ -41,7 +47,7 @@ EXT.help.push(async (tab, box, list) => {
       d.insertAdjacentHTML("beforeend", `<div class="cta-row nadm"><span class="spacer"></span><button type="button" class="btn sm danger" data-ndel>삭제</button><button type="button" class="btn sm" data-ned>고치기</button></div>`);
       $("[data-ned]", d).onclick = () => noticeSheet(n);
       $("[data-ndel]", d).onclick = () => confirmSheet("이 공지를 지울까요?", `‘${n.title}’ 공지가 모든 사용자에게서 사라져요. 되돌릴 수 없어요.`, "삭제", async () => {
-        try { await SUPPORT.dropNotice(n.id); toast("공지를 지웠어요"); viewHelp("notice"); } catch (e) { toast(supportErr(e)); }
+        try { await SUPPORT.dropNotice(n.id); toast("공지를 지웠어요"); viewNotice(); } catch (e) { toast(supportErr(e)); }
       });
     });
   }
@@ -101,7 +107,7 @@ function noticeSheet(n) {
     e.target.disabled = true;
     try {
       await SUPPORT.saveNotice({ id: n ? n.id : undefined, title, body: $("#ntB", ov).value.trim(), pinned: $("#ntP", ov).checked, published: $("#ntV", ov).checked });
-      ov.remove(); toast(n ? "공지를 고쳤어요" : "공지를 올렸어요"); viewHelp("notice");
+      ov.remove(); toast(n ? "공지를 고쳤어요" : "공지를 올렸어요"); viewNotice();
     } catch (x) { $("#ntE", ov).textContent = supportErr(x); e.target.disabled = false; }
   };
 }
@@ -110,7 +116,7 @@ function noticeSheet(n) {
 EXT.me.push((v) => {
   const box = $("#meExt", v); if (!box || !SB.on() || !SB.s) return;
   box.insertAdjacentHTML("beforeend", `<h2 class="sec">고객센터 관리 <small>관리자 도구</small></h2>
-    <div class="box"><div class="menu-list"><button data-hgo="help-ask">받은 문의<span class="v" id="inOpen">확인 중…</span></button><button data-hgo="help-notice">공지 쓰기·고치기</button></div></div>`);
+    <div class="box"><div class="menu-list"><button data-hgo="help-ask">받은 문의<span class="v" id="inOpen">확인 중…</span></button><button data-hgo="notice">공지 쓰기·고치기</button></div></div>`);
   $$("[data-hgo]", box).forEach((b) => b.onclick = () => go(b.dataset.hgo));
   const out = (t) => { const el = $("#inOpen", box); if (el) el.textContent = t; };
   SUPPORT.amAdmin().then((yes) => yes ? SUPPORT.inbox("open").then((l) => out(l.length ? `답변 대기 ${l.length}건` : "대기 없음")) : out("관리자 계정 아님"))

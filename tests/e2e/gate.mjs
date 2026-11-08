@@ -29,7 +29,7 @@ try {
     await p.fill("#gatePw", process.env.HS_ADMIN_PW); await p.press("#gatePw", "Enter"); await wait(1500);
     if (await p.$("#lguest")) { await p.click("#lguest"); await wait(400); }
     res.right = await p.evaluate(() => ({ gated: document.body.classList.contains("gated"), navs: $$("#rail .nav").length, remembered: localStorage.getItem("hv1_admin") === HASH }));
-    if (res.right.gated || res.right.navs !== 4 || !res.right.remembered) errs.push("맞는 비밀번호: " + JSON.stringify(res.right));
+    if (res.right.gated || res.right.navs !== 5 || !res.right.remembered) errs.push("맞는 비밀번호: " + JSON.stringify(res.right));
   } else {
     await p.evaluate(() => localStorage.setItem("hv1_admin", HASH));
     res.right = "HS_ADMIN_PW 없음 — 기억만 심어 확인";
@@ -38,7 +38,7 @@ try {
   await p.goto(HOST + "/admin.html", { waitUntil: "load" }); await wait(1200);
   if (await p.$("#lguest")) { await p.click("#lguest"); await wait(400); }
   res.again = await p.evaluate(() => ({ gated: document.body.classList.contains("gated"), navs: $$("#rail .nav").length }));
-  if (res.again.gated || res.again.navs !== 4) errs.push("기억 뒤 부팅: " + JSON.stringify(res.again));
+  if (res.again.gated || res.again.navs !== 5) errs.push("기억 뒤 부팅: " + JSON.stringify(res.again));
   // 웹 주소의 관리자 도구 MY에는 잠그기 버튼이 있고, 누르면 기억이 지워져 다시 관문이 섬
   await p.evaluate(() => { location.hash = "me"; }); await p.waitForTimeout(500);
   res.lock = await p.evaluate(() => !!$("#adminLock"));
