@@ -73,11 +73,20 @@ export async function viewChat(id) {
     e.preventDefault();
     if (gen) return;
     const t = inp.value.trim(); if (!t) return;
+    if (runCommand(t)) { inp.value = ""; inp.oninput(); return; }
     const ok = await sendTurn(t);
     if (ok && inp.value.trim() === t) { inp.value = ""; inp.oninput(); }
   };
   bindStick($("#log"));
   renderLog(true); updateMeter(); updateComposer();
+}
+/* !명령어 — AI를 부르지 않고 앱이 바로 처리(하트·턴을 쓰지 않음): !상태창 · !갤러리(!도감) · !지도(!장소) · !도움말. 모르는 !글은 그대로 AI에 보냄 */
+const COMMANDS = { "상태창": "status", "상태": "status", "갤러리": "gallery", "도감": "gallery", "지도": "places", "장소": "places" };
+function runCommand(t) {
+  const m = t.match(/^[!！]\s*(\S+)$/); if (!m) return false;
+  if (/^(도움말|명령어|help)$/i.test(m[1])) { flashHint("명령어: !상태창 · !갤러리 · !지도 — AI를 부르지 않아요. // 로 시작하면 연출 지시"); return true; }
+  const view = COMMANDS[m[1]]; if (!view) return false;
+  openRoomDrawer(view); return true;
 }
 let hintTimer = null;
 export function flashHint(msg) {
@@ -104,7 +113,7 @@ export function updateComposer() {
   if (h && !hintTimer) {
     if (gen) h.textContent = "응답을 쓰는 중이에요 · 다음 입력은 미리 써 둘 수 있어요 · Esc 또는 ■ 중지";
     else if (q.type === "free" && freeLeft() <= 3) h.textContent = `오늘 무료 턴이 ${freeLeft()}번 남았어요. 다 쓰면 라이트 모델은 턴당 ♥${listPrice("lite", room.set.len, room.set.mem)}이에요.`;
-    else h.textContent = (S.settings.enterSend !== false ? "Enter 전송 · Shift+Enter 줄바꿈" : "Ctrl+Enter 전송 · Enter 줄바꿈") + " · // 로 시작하면 연출 지시";
+    else h.textContent = (S.settings.enterSend !== false ? "Enter 전송 · Shift+Enter 줄바꿈" : "Ctrl+Enter 전송 · Enter 줄바꿈") + " · // 연출 지시 · !도움말";
   }
 }
 export function lastAi(r) { for (let i = r.msgs.length - 1; i >= 0; i--) if (r.msgs[i].role === "ai") return r.msgs[i]; return null; }

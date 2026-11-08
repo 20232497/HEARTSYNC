@@ -10,15 +10,14 @@ import { S, gen, room, setRoom } from "../core/state.js";
 import { KV } from "../core/storage.js";
 import { $, $$, clamp, esc, num, toast } from "../core/util.js";
 import { FREE_DAILY, PLAN, freeLeft, isPro, plan, qShort, quote } from "../core/wallet.js";
-import { imgTags, sitOf } from "../images/codes.js";
+import { IMG_TAG_RE, imgTags } from "../images/codes.js";
 import { pickImg } from "../images/pick.js";
-import { sitName } from "../images/situations.js";
 import { IMG } from "../services/images.js";
 import { stopGen } from "./chat/generate.js";
 import { copyText, renderLog } from "./chat/log.js";
 import { statusBlock } from "./chat/render.js";
 import { lastAi, updateComposer } from "./chat/view.js";
-import { artHTML, coverHTML, lightbox, pavHTML } from "./cover.js";
+import { artHTML, coverHTML, lightbox, pavHTML, tagInfo } from "./cover.js";
 import { ICON } from "./icons.js";
 import { personaSheet } from "./me.js";
 import { openModelSheet } from "./model-sheet.js";
@@ -31,7 +30,7 @@ export function openRoomDrawer(view = "main") {
   closeOverlays();
   const r = room, c = r.char;
   const ov = document.createElement("div"); ov.className = "overlay drawer-ov";
-  const titles = { main: "대화방 관리", persona: "내 페르소나", memory: "장기기억", note: "유저노트", output: "출력 설정", status: "상태창", gallery: "갤러리", bookmarks: "북마크" };
+  const titles = { main: "대화방 관리", persona: "내 페르소나", memory: "장기기억", note: "유저노트", output: "출력 설정", status: "상태창", gallery: "갤러리", places: "장소", bookmarks: "북마크" };
   ov.innerHTML = `<aside class="drawer" role="dialog" aria-label="${titles[view]}"><div class="sheet-head">${view !== "main" ? `<button class="icon-btn" id="dBack" aria-label="뒤로">${ICON.back}</button>` : ""}<h2>${titles[view]}</h2><button class="icon-btn" data-x aria-label="닫기">${ICON.close}</button></div><div id="dBody"></div></aside>`;
   document.body.append(ov);
   ov.addEventListener("click", (e) => { if (e.target === ov || e.target.closest("[data-x]")) ov.remove(); });
@@ -176,29 +175,40 @@ export function openRoomDrawer(view = "main") {
   }
   else if (view === "gallery") {
     const items = galleryItems(r);
-    body.innerHTML = items.length ? `<p class="note" style="margin-bottom:10px">이 대화에 나온 장면 이미지 ${items.length}장. 누르면 크게 보거나 그 장면으로 가요.</p><div class="gallery">${items.map((it, k) => {
-      const cast = c.cast.find((x) => x.code === it.code), ref = pickImg(c, it.code, it.sit);
-      return `<button data-g="${k}" title="${esc(cast?.name || "")} · ${esc(sitName(it.sit))}">${ref ? IMG.tag(ref) : artHTML(c, cast || { name: "?" }, it.sit)}</button>`; }).join("")}</div>`
+    body.innerHTML = items.length ? `<p class="note" style="margin-bottom:10px">이 대화에 나온 장면 이미지 ${items.length}장. 누르면 크게 보거나 그 장면으로 가요.</p><div class="gallery">${items.map((it, k) =>
+      `<button data-g="${k}" title="${esc(it.name)} · ${esc(it.label)}">${it.ref ? IMG.tag(it.ref) : artHTML(c, { name: it.name }, it.sit, it.kind === "cast" ? "" : it.label)}</button>`).join("")}</div>`
       : `<div class="empty">아직 장면 이미지가 없어요. 대화 중에 인물이 등장하거나 감정이 크게 바뀌면 이미지가 나와요.</div>`;
     IMG.hydrate(body);
     $$("[data-g]", body).forEach((b) => b.onclick = () => { const it = items[+b.dataset.g], im = $("img", b); if (im && im.src) lightbox(im.src); else { ov.remove(); jumpTo(it.id); } });
   }
+  else if (view === "places") {
+    // 작품의 장소(places → 코드 MP1…) — !지도 명령어로도 열림. 그림은 작품 폴더 images/MP<n>.webp
+    const list = c.places || [];
+    body.innerHTML = list.length ? `<p class="note" style="margin-bottom:10px">이 작품의 장소 ${list.length}곳. 대화에서는 [[MP번호]] 코드로 나와요.</p><div class="gallery">${list.map((p, i) => {
+      const ref = pickImg(c, "MP", i + 1);
+      return `<button data-p="${i}" title="MP${i + 1} · ${esc(p.name)}">${ref ? IMG.tag(ref) : artHTML(c, { name: p.name }, i + 1, "장소")}</button>`; }).join("")}</div>
+      <div class="box" style="margin-top:12px">${list.map((p, i) => `<p><b>MP${i + 1} ${esc(p.name)}</b>${p.desc ? " — " + esc(p.desc) : ""}</p>`).join("")}</div>`
+      : `<div class="empty">이 작품에는 장소 그림이 없어요.</div>`;
+    IMG.hydrate(body);
+    $$("[data-p]", body).forEach((b) => b.onclick = () => { const im = $("img", b); if (im && im.src) lightbox(im.src); });
+  }
   else if (view === "bookmarks") {
     const list = (r.bookmarks || []).map((id) => r.msgs.find((m) => m.id === id)).filter(Boolean);
-    body.innerHTML = list.length ? list.map((m) => `<button class="bm" data-j="${m.id}"><b>${m.role === "ai" ? esc(speakerName(r)) : esc(r.persona.name)}</b>${esc(curText(m).replace(/\[\[img:[^\]]*\]\]/g, "").replace(/[*"]/g, "").replace(/\s+/g, " ").slice(0, 120))}…</button>`).join("")
+    body.innerHTML = list.length ? list.map((m) => `<button class="bm" data-j="${m.id}"><b>${m.role === "ai" ? esc(speakerName(r)) : esc(r.persona.name)}</b>${esc(curText(m).replace(IMG_TAG_RE, "").replace(/[*"]/g, "").replace(/\s+/g, " ").slice(0, 120))}…</button>`).join("")
       : `<div class="empty">북마크한 장면이 없어요. 메시지 아래 ☆ 북마크를 눌러 담아 두세요.</div>`;
     $$("[data-j]", body).forEach((b) => b.onclick = () => { ov.remove(); jumpTo(b.dataset.j); });
   }
 }
+/* 대화에 나온 그림 태그를 처음 나온 순서로(같은 코드번호는 한 번) — 인물·장소·컷씬 모두, 작품에 없는 코드는 뺌 */
 function galleryItems(r) {
   const out = [], seen = new Set();
-  r.msgs.forEach((m) => imgTags(curText(m)).forEach((t) => { const k = t.code + ":" + t.sit; if (!seen.has(k) && (r.char.cast || []).some((x) => x.code === t.code)) { seen.add(k); out.push({ ...t, id: m.id }); } }));
+  r.msgs.forEach((m) => imgTags(curText(m)).forEach((t) => { const k = t.code + t.sit; if (seen.has(k)) return; const i = tagInfo(r.char, t); if (i) { seen.add(k); out.push({ ...i, id: m.id }); } }));
   return out;
 }
 function jumpTo(id) { const el = $(`.msg[data-id="${id}"]`); if (!el) return; el.scrollIntoView({ block: "center" }); el.classList.add("flash"); setTimeout(() => el.classList.remove("flash"), 1400); }
 function exportText(r) {
   const head = `${r.char.title} — ${r.opening || ""}\n${r.persona.name}(으)로 플레이 · ${new Date().toLocaleString("ko-KR")}\n\n`;
-  return head + r.msgs.filter((m) => curText(m) && !m.sys).map((m) => `${m.role === "ai" ? speakerName(r) : r.persona.name}: ${curText(m).replace(/\[\[img:([a-z0-9]+):([\d,]+)\]\]/gi, (_, a, b) => `[이미지: ${(r.char.cast.find((x) => x.code === a.toLowerCase()) || {}).name || a} · ${sitName(sitOf(b))}]`)}`).join("\n\n");
+  return head + r.msgs.filter((m) => curText(m) && !m.sys).map((m) => `${m.role === "ai" ? speakerName(r) : r.persona.name}: ${curText(m).replace(IMG_TAG_RE, (raw) => { const t = imgTags(raw)[0], i = t && tagInfo(r.char, t); return i ? `[이미지: ${i.name} · ${i.label}]` : ""; })}`).join("\n\n");
 }
 async function exportRoom(r) {
   const data = exportText(r), filename = `HEART_SYNC_${r.char.title.replace(/[^\w가-힣]+/g, "_")}_${new Date().toISOString().slice(0, 10)}.txt`;

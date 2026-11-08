@@ -7,7 +7,7 @@ export function normalizeChar(c) {
   if (!c) return c;
   if (!Array.isArray(c.fields) || !c.fields.length) c.fields = ["호감도", "속마음"];
   if (!c.gauge) c.gauge = c.fields[0];
-  if (!Array.isArray(c.cast) || !c.cast.length) c.cast = [{ code: "c", name: c.name, look: "" }];
+  if (!Array.isArray(c.cast) || !c.cast.length) c.cast = [{ code: "C", name: c.name, look: "" }];
   if (!c.images || typeof c.images !== "object") c.images = {};
   if (!Array.isArray(c.lore)) c.lore = [];
   return c;

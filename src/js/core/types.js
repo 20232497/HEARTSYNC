@@ -11,10 +11,11 @@
 /** @typedef {Record<string, string|number>} StatusMap 상태창 { "칸 이름": 값 } — 게이지 칸은 0~100 숫자, 다인원 칸은 "이름 n · 이름 n" 문자열 */
 
 /**
- * 출연진 한 명. code는 그림 태그 [[img:code:번호]]와 images의 키.
+ * 출연진 한 명. code는 그림 코드의 글자 부분 — 본문 태그 [[HSY3]](코드+감정 번호 한 토큰)·그림 파일 HSY3.webp·images의 키(images/codes.js).
  * @typedef {Object} CastMember
- * @property {string} code 영문 소문자·숫자
+ * @property {string} code 영문 대문자 1~4자(CODE_RE — 숫자 없이, MP·EV는 예약)
  * @property {string} name
+ * @property {string} [of] 다른 모습(폼)이면 본체 인물의 code — 폼은 별도 코드로 그림을 갖고, 프롬프트에 '그 모습일 때만'으로 안내
  * @property {string} [look] 한국어 외모(성별·나이 포함 — AI가 읽고, guessAud가 성별을 봄)
  * @property {string} [tags] 영문 Danbooru 외모 태그 — 앱은 쓰지 않음. 앱 밖에서 그림을 만들 때 같은 인물을 맞추는 기준(빌드가 한글을 막음)
  */
@@ -30,11 +31,25 @@
  * 시작 상황(오프닝).
  * @typedef {Object} Opening
  * @property {string} title
- * @property {string} text 첫 장면 본문([[img:코드:0]] 포함 가능 — 번호는 0~14)
+ * @property {string} text 첫 장면 본문([[HSY0]] 같은 그림 태그 포함 가능 — 인물 코드 + 감정 번호 0~14)
  * @property {string} [directive] AI에게만 주는 지시
  * @property {StatusMap} [status] 시작 상태창
  */
-/** @typedef {Record<string, Record<string, ImageRef>>} ImagesMap 인물 코드 → 감정 칸 번호("0"~"14", core/constants.js SIT) → 그림 참조 */
+/**
+ * 장소(코드 MP<n>, places의 n번째 — 1부터). 그림은 images/MP<n>.*
+ * @typedef {Object} Place
+ * @property {string} name
+ * @property {string} [desc]
+ * @property {string} [tags] 영문 태그 — 앱은 쓰지 않음(앱 밖에서 그림을 만들 때)
+ */
+/**
+ * 컷씬(코드 EV<n>, cuts의 n번째 — 1부터). when이 처음 이루어지는 순간 한 번. 그림은 images/EV<n>.*
+ * @typedef {Object} Cut
+ * @property {string} title
+ * @property {string} [when] 나오는 조건(AI가 읽음)
+ * @property {string} [tags] 영문 태그 — 앱은 쓰지 않음
+ */
+/** @typedef {Record<string, Record<string, ImageRef>>} ImagesMap 코드 글자 부분(인물 코드·MP·EV) → 번호(인물은 감정 칸 "0"~"14", MP·EV는 "1"부터) → 그림 참조 */
 /**
  * 작품(캐릭터·세계관). 오리지널은 content/…/work.js(빌드가 aud·row·images·img·loreImages를 더함).
  * @typedef {Object} Work
@@ -57,7 +72,9 @@
  * @property {string[]} fields 상태창 칸 이름
  * @property {string} [gauge] 관계 게이지 칸(fields 중 하나)
  * @property {LoreEntry[]} [lore]
- * @property {CastMember[]} [cast] 없으면 content/index.js·normalizeChar가 한 명(code "c")을 만듦
+ * @property {CastMember[]} [cast] 없으면 content/index.js·normalizeChar가 한 명(code "C")을 만듦
+ * @property {Place[]} [places] 장소 목록 — 순서대로 MP1, MP2…
+ * @property {Cut[]} [cuts] 컷씬 목록 — 순서대로 EV1, EV2…
  * @property {string} [lookTags] cast가 없는 1:1 작품의 영문 외모 태그 — 앱은 쓰지 않음(앱 밖에서 그림을 만들 때)
  * @property {string} [artTags] 그 세계관의 영문 낱말(시대·장소·분위기) — 앱은 쓰지 않음(앱 밖에서 표지·세계관 일러스트를 만들 때)
  * @property {Opening[]} openings
@@ -90,7 +107,7 @@
 /**
  * AI 응답 한 버전(다시 쓰기마다 하나).
  * @typedef {Object} Alt
- * @property {string} text 본문([[img:…]] 태그 포함)
+ * @property {string} text 본문([[HSY3]] 그림 태그 포함 — 예전 방의 [[img:…]]는 migrateRoom이 바꿈)
  * @property {StatusMap} [status] 이 응답 뒤의 상태창
  * @property {string[]} [suggestions] 추천 답변(✦ AI 추천을 눌렀을 때만 보여 줌)
  * @property {string} [cost] "무료"·"PLUS"·"♥n"

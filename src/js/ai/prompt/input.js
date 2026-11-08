@@ -40,7 +40,7 @@ export function buildInput(r, uptoIdx, statusBefore, direction) {
     if (m.role === "ai") { out.push({ role: "assistant", content: curText(m) }); return; }
     let t = m.sys ? "// 직전 장면에서 자연스럽게 이어서 다음 장면을 써라. 유저의 행동은 쓰지 않는다." : m.text;
     // 분량·대화·새 전개 지시는 시스템 프롬프트에도 있지만, 모델이 가장 잘 따르는 마지막 입력 옆에 한 번 더
-    if (last) t = `[현재 상태창 — 이번 장면은 여기서 출발한다]\n${JSON.stringify(statusBefore || {})}\n\n[${r.persona.name}의 입력]\n${t}${direction ? "\n\n// 다시 쓰기 지침: " + direction : ""}\n\n[이번 응답] 위 입력을 본문에 다시 옮겨 적지 말고 그 직후의 반응부터 쓴다. 본문 ${len.chars}, 대사 ${len.lines}줄 이상을 주고받고, 직전 응답과 다른 새 전개를 넣는다. 나오는 인물마다 [[img:코드:번호]]를 한 장씩 넣는다${(() => { const h = m.sys ? [] : sitHints(m.text); return h.length ? `(유저 입력에 맞는 번호 후보: ${h.join(", ")})` : ""; })()}.`;
+    if (last) t = `[현재 상태창 — 이번 장면은 여기서 출발한다]\n${JSON.stringify(statusBefore || {})}\n\n[${r.persona.name}의 입력]\n${t}${direction ? "\n\n// 다시 쓰기 지침: " + direction : ""}\n\n[이번 응답] 위 입력을 본문에 다시 옮겨 적지 말고 그 직후의 반응부터 쓴다. 본문 ${len.chars}, 대사 ${len.lines}줄 이상을 주고받고, 직전 응답과 다른 새 전개를 넣는다. 나오는 인물마다 [[코드번호]]를 한 장씩 넣는다${(() => { const h = m.sys ? [] : sitHints(m.text); return h.length ? `(유저 입력에 맞는 번호 후보: ${h.join(", ")})` : ""; })()}.`;
     out.push({ role: "user", content: t });
   });
   return out;

@@ -43,13 +43,13 @@ boot.js → app.js(USER_VIEWS · USER_NAVS) → main.js | admin.js
 
 ```
 앱 밖에서 그림 만들기(남성향 일상 화풍은 archive/style-mdaily/의 프롬프트)
-   └─▶ content/<aud>/[줄/]<id>/images/<인물코드>-<0~14>.webp · cover.* · lore-<n>.*
+   └─▶ content/<aud>/[줄/]<id>/images/<인물코드><0~14>.webp(HSY3) · MP<n>.webp · EV<n>.webp · cover.* · lore-<n>.*
          npm run build (scanImages)
            └─▶ ORIGINALS[].images · img · loreImages  (content/… 상대 경로)
                  imagesOf · coverHTML · loreImg가 그대로 <img src>로 그림
 ```
 
-- 칸은 기본 감정 0~14(`core/constants.js`의 SIT)뿐이다. 본문 태그 `[[img:인물코드:번호]]`의 번호가 그 칸이고, 그림이 없으면 1 기본 → 0 프로필 순으로 찾고, 그것도 없으면 글자 카드(`ui/cover.js` artHTML). 예전 대화의 조합 태그(`3,404,501`)·세 자리 코드는 처음 나오는 0~14 번호로 읽는다(`images/codes.js` sitOf).
+- 그림 하나 = 코드 한 토큰(`images/codes.js`): 인물 코드(영문 대문자 1~4자, `cast[].code`) 뒤에 감정 칸 번호 0~14(`core/constants.js`의 SIT) — `HSY3`. 본문 태그는 `[[HSY3]]`, 그림 파일은 `HSY3.webp`. 예약 시리즈 `MP<n>`(장소, 작품 `places`)·`EV<n>`(컷씬, `cuts`). 그림이 없으면 인물은 1 기본 → 0 프로필 순으로 찾고, 그것도 없으면 글자 카드(`ui/cover.js` artHTML). 예전 대화의 `[[img:ks:3,404,501]]`은 읽을 수 있고(sitOf — 처음 나오는 0~14 번호), 방을 열 때 `core/rooms.js` migrateRoom이 새 코드로 바꾼다.
 - 참조 모양(`services/images.js`의 `validRef`): `kv:img…` · `data:image/…` · `content/…/images/x.webp|png|jpg`. content/ 경로는 index.html 기준 상대 경로라 GitHub Pages·file:// 모두 같은 폴더 구조면 보인다.
 - 이용자가 올리는 그림은 페르소나 사진뿐이다(`IMG.put` → IndexedDB, 로그인했으면 계정에도 `img…` 행으로).
 

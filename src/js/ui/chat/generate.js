@@ -8,7 +8,7 @@ import { curText, saveRoom } from "../../core/rooms.js";
 import { gen, room, setGen } from "../../core/state.js";
 import { $, uid } from "../../core/util.js";
 import { charge, qShort, quote, refund } from "../../core/wallet.js";
-import { imgTags } from "../../images/codes.js";
+import { imgTag, imgTags } from "../../images/codes.js";
 import { imagesOf } from "../../images/pick.js";
 import { sitScores } from "../../images/situations.js";
 import { IMG, validRef } from "../../services/images.js";
@@ -43,15 +43,16 @@ export async function regen(i, direction = "") {
   room.msgs = room.msgs.slice(0, i + 1);
   generate(room.msgs[i], q, direction);
 }
-/* 매 응답, 장면에 나온 인물마다 그림 한 장: AI가 [[img]]를 빠뜨린 인물은 그 인물이 처음 말하거나(이름: …) 지문에 나오는 줄 위에 붙임.
+/* 매 응답, 장면에 나온 인물마다 그림 한 장: AI가 [[코드번호]]를 빠뜨린 인물은 그 인물이 처음 말하거나(이름: …) 지문에 나오는 줄 위에 붙임.
    번호는 처음 등장이면 0, 아니면 그 인물의 대사·지문 낱말(×2)과 유저 입력 낱말(그 인물을 불렀거나, 아무도 안 불렀으면 처음 나온 인물만)로
    sitScores가 가장 높은 번호(그림이 있는 칸이면 0.5 더함), 없으면 1(기본).
-   출연진이 한 명이면 첫 대사 위(없으면 맨 위) */
+   다른 모습(폼, cast[].of)은 본체와 한 사람 — 어느 쪽 태그든 있으면 넘어가고, 빠졌을 땐 본체 코드로 붙임. 출연진이 한 명이면 첫 대사 위(없으면 맨 위) */
 function addCastImages(body, r, prev, said) {
-  const c = r.char, cast = (c.cast || []).filter((x) => x.name && x.name !== r.persona.name);
+  const c = r.char, all = c.cast || [], baseOf = (code) => { const f = all.find((x) => x.code === code); return f && f.of ? f.of : code; };
+  const cast = all.filter((x) => x.name && !x.of && x.name !== r.persona.name);
   if (!cast.length || !body.trim()) return body;
-  const lines = body.split("\n"), have = new Set(imgTags(body).map((t) => t.code)), imgs = imagesOf(c);
-  const seen = new Set(); prev.forEach((m) => imgTags(curText(m)).forEach((t) => seen.add(t.code)));
+  const lines = body.split("\n"), have = new Set(imgTags(body).map((t) => baseOf(t.code))), imgs = imagesOf(c);
+  const seen = new Set(); prev.forEach((m) => imgTags(curText(m)).forEach((t) => seen.add(baseOf(t.code))));
   const keysOf = (x) => { const n = x.name.trim(), k = [n], first = n.split(/\s+/)[0]; if (first !== n && first.length >= 2) k.push(first); if (/^[가-힣]{3,4}$/.test(n)) k.push(n.slice(1)); return k; };
   const said2 = said || "", anyNamed = cast.some((x) => keysOf(x).some((k) => said2.includes(k)));
   const found = [];
@@ -76,7 +77,7 @@ function addCastImages(body, r, prev, said) {
       if (mine) sitScores(said2).forEach((v, k) => sc.set(k, (sc.get(k) || 0) + v));
       let best = 0; sc.forEach((v, k) => { const s = v + (validRef((imgs[f.x.code] || {})[k]) ? 0.5 : 0); if (s > best) { best = s; sit = k; } });
     }
-    adds.push({ at: f.at, tag: `[[img:${f.x.code}:${sit}]]` });
+    adds.push({ at: f.at, tag: imgTag(f.x.code, sit) });
   });
   adds.slice(0, 5).sort((a, b) => b.at - a.at).forEach((a) => lines.splice(a.at, 0, a.tag, ""));
   return lines.join("\n");

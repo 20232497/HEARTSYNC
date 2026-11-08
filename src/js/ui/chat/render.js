@@ -1,8 +1,11 @@
 /* 본문 서식(fmt·fmtLine)·상태창(statusBlock)·스트리밍 표시(liveFill) */
 import { clamp, esc, num } from "../../core/util.js";
-import { imgTags } from "../../images/codes.js";
+import { IMG_TAG_RE, imgTags } from "../../images/codes.js";
 import { gaugeView } from "./view.js";
 import { figHTML } from "../cover.js";
+
+/* 본문을 그림 태그 앞뒤로 가르는 정규식 — IMG_TAG_RE의 안쪽 묶음을 비캡처로 바꾸고 전체를 한 묶음으로(split이 태그를 조각으로 남기게) */
+const TAG_SPLIT = new RegExp("(" + IMG_TAG_RE.source.replace(/\((?!\?)/g, "(?:") + ")", "i");
 
 export function barPct(v) {
   if (typeof v === "number") return clamp(v, 0, 100);
@@ -52,9 +55,9 @@ export function fmt(text, c, persona) {
   for (const raw of String(text).split(/\n+/)) {
     const line = raw.trim(); if (!line) continue;
     let buf = "";
-    for (const part of line.split(/(\[\[img:[a-z0-9]+:[\d,]+\]\])/i)) {
-      const m = part.match(/^\[\[img:([a-z0-9]+):([\d,]+)\]\]$/i);
-      if (m) { if (buf.trim()) { flush(); out.push(fmtLine(buf.trim(), names)); buf = ""; } const f = figHTML(c, m[1].toLowerCase(), m[2]); if (f) row.push(f); }
+    for (const part of line.split(TAG_SPLIT)) {
+      const t = /^\[\[/.test(part) ? imgTags(part)[0] : null;
+      if (t && t.raw === part) { if (buf.trim()) { flush(); out.push(fmtLine(buf.trim(), names)); buf = ""; } const f = figHTML(c, t); if (f) row.push(f); }
       else buf += part;
     }
     if (buf.trim()) { flush(); out.push(fmtLine(buf.trim(), names)); }

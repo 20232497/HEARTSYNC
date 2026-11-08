@@ -26,11 +26,18 @@ function relStage(c, s) {
 export function rulesPrompt(r, lore = [], hist = r.msgs) {
   const c = r.char, p = r.persona, len = LEN[r.set.len] || LEN.mid;
   const fields = c.fields.map((f) => `"${f}":${f === c.gauge && typeof r.status?.[f] === "number" ? "0~100 정수" : '"짧은 값"'}`).join(",");
-  const seen = new Set(); hist.forEach((m) => imgTags(curText(m)).forEach((t) => seen.add(t.code)));
-  const castLine = (c.cast || []).map((x) => `${x.code}=${x.name}`).join(", ");
+  const cast = c.cast || [], byCode = (code) => cast.find((x) => x.code === code);
+  // 이미 등장한 인물(폼 태그는 본체도 등장한 것으로)·이미 나온 컷씬 번호
+  const seen = new Set(), cutsUsed = new Set();
+  hist.forEach((m) => imgTags(curText(m)).forEach((t) => { if (t.code === "EV") cutsUsed.add(t.sit); else { seen.add(t.code); const f = byCode(t.code); if (f && f.of) seen.add(f.of); } }));
+  const castLine = cast.map((x) => `${x.code}=${x.name}${x.of ? `(${(byCode(x.of) || {}).name || x.of}의 다른 모습 — 그 모습일 때만 이 코드)` : ""}`).join(", ");
+  const ex = cast[0] || { code: "HSY", name: "한서윤" };
   const sn = (name) => SIT.indexOf(name) + " " + name;
   // 인물별로 그림이 들어 있는 칸 번호(준비된 그림 안에서 고르게)
-  const ready = (c.cast || []).map((x) => { const m = imagesOf(c)[x.code] || {}; const ns = Object.keys(m).filter((k) => validRef(m[k])).map(Number).filter((n) => n >= 0 && n < SIT.length).sort((a, b) => a - b); return ns.length ? `${x.name} ${ns.join("·")}` : ""; }).filter(Boolean);
+  const ready = cast.map((x) => { const m = imagesOf(c)[x.code] || {}; const ns = Object.keys(m).filter((k) => validRef(m[k])).map(Number).filter((n) => n >= 0 && n < SIT.length).sort((a, b) => a - b); return ns.length ? `${x.name} ${ns.join("·")}` : ""; }).filter(Boolean);
+  // 장소(MP<n>)·컷씬(EV<n>) 코드 — 작품에 적혀 있을 때만
+  const places = (c.places || []).map((p, i) => `MP${i + 1}=${p.name}`).join(", ");
+  const cuts = (c.cuts || []).map((e, i) => cutsUsed.has(i + 1) ? "" : `EV${i + 1}=${e.title}${e.when ? "(" + e.when + ")" : ""}`).filter(Boolean).join(", ");
   return `너는 한국어 캐릭터 롤플레이 플랫폼의 연기 엔진이다. 아래 설정의 ${c.world_mode ? "세계관 내레이터로서 모든 인물과 세계를" : "캐릭터 「" + c.name + "」를"} 연기하며 유저와 함께 이야기를 만든다.
 
 [작품] ${c.title}
@@ -76,12 +83,12 @@ ${lore.length ? "\n[키워드북 — 이번 장면에 나온 키워드의 설정
 
 ${(() => { const used = usedOpeners(hist); return used.length ? `\n[이미 쓴 문장 — 이렇게 시작하거나 같은 묘사를 되풀이하지 않는다]\n${used.map((s) => "- " + s + "…").join("\n")}\n` : ""; })()}
 [장면 이미지 — 매 응답 필수]
-- 이번 응답에 나오는(말하거나 움직이는) 인물마다 그림을 한 장씩 넣는다. 그 인물이 처음 말하거나 등장하는 줄 바로 위에 별도 줄로 [[img:코드:번호]] 만 쓴다. 설명을 덧붙이지 않는다.
+- 이번 응답에 나오는(말하거나 움직이는) 인물마다 그림을 한 장씩 넣는다. 그 인물이 처음 말하거나 등장하는 줄 바로 위에 별도 줄로 [[코드번호]] 만 쓴다 — 인물 코드 바로 뒤에 감정·행동 번호를 붙인 한 토큰(예: [[${ex.code}3]] = ${ex.name} ${sn("부끄러움")}). 설명을 덧붙이지 않는다.
 - 인물 코드: ${castLine}
 - 감정·행동 번호: ${SIT.map((s, i) => i + " " + s).join(", ")}
 - 번호는 그 순간 그 인물의 표정·상황으로 고르고, 유저의 말과 행동에 대한 반응을 먼저 본다: 놀림·짓궂은 장난 → ${sn("부끄러움")}·${sn("삐침")}, 칭찬·농담 → ${sn("웃음")}, 고백·스킨십 → ${sn("설렘")}·${sn("부끄러움")}, 무례·배신 → ${sn("분노")}, 위협·괴물 → ${sn("공포")}·${sn("놀람")}, 싸움·무기를 겨눔 → ${sn("공격")}(맨손·무기 모두), 다침 → ${sn("부상")}.
 - 인물이 이야기에 처음 등장하는 순간은 0번(프로필). 이미 등장한 인물: ${[...seen].join(", ") || "없음"}${ready.length ? `\n- 그림이 준비된 번호(되도록 이 안에서 고른다): ${ready.join(" / ")}` : ""}
-- 같은 인물은 한 응답에 한 장(감정이 크게 뒤집히면 두 장까지). 감정이 이어지면 직전과 같은 번호를 써도 된다.
+- 같은 인물은 한 응답에 한 장(감정이 크게 뒤집히면 두 장까지). 감정이 이어지면 직전과 같은 번호를 써도 된다.${places ? `\n- 장소 코드(장면의 장소가 바뀌거나 처음 보일 때 본문 첫 줄에 한 장, 그 장소에 있는 동안은 다시 쓰지 않는다): ${places}` : ""}${cuts ? `\n- 컷씬 코드(괄호의 조건이 처음 이루어지는 순간 그 줄 위에 한 장, 이야기 전체에서 한 번만): ${cuts}` : ""}
 
 [출력 형식 — 반드시 이 순서]
 1) 장면 본문
