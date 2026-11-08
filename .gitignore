@@ -7,3 +7,5 @@ src/js/content/generated.js
 content/codes.admin.json
 # Claude 앱 세션 설정(launch.json·워크트리)
 .claude/
+# 그래피파이(graphify)가 이 PC에서 만드는 코드 지식 그래프 — 개발 보조용, 배포·커밋하지 않음
+graphify-out/
