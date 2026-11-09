@@ -219,11 +219,11 @@ try {
     return { n: bs.length, over: t.scrollWidth - t.clientWidth, clipped: bs.filter((b) => b.scrollWidth > b.clientWidth).map((b) => b.textContent), wrapped: bs.filter((b) => lines(b) > 1).map((b) => b.textContent), page: document.documentElement.scrollWidth - innerWidth };
   });
   res.tabUser = await tabFit(P);
-  expect(res.tabUser.n === 5 && res.tabUser.over <= 0 && !res.tabUser.clipped.length && !res.tabUser.wrapped.length, "사용자 탭바 5칸 " + JSON.stringify(res.tabUser));
+  expect(res.tabUser.n === 6 && res.tabUser.over <= 0 && !res.tabUser.clipped.length && !res.tabUser.wrapped.length, "사용자 탭바 6칸 " + JSON.stringify(res.tabUser));
   const PA = await open(webkit, "iPhone 13", "admin.html", "tokB");
   await hash(PA, "notice", 1000);
   res.tabAdmin = await tabFit(PA);
-  expect(res.tabAdmin.n === 5 && res.tabAdmin.over <= 0 && !res.tabAdmin.clipped.length && !res.tabAdmin.wrapped.length && res.tabAdmin.page <= 0, "관리자 탭바 5칸 " + JSON.stringify(res.tabAdmin));
+  expect(res.tabAdmin.n === 6 && res.tabAdmin.over <= 0 && !res.tabAdmin.clipped.length && !res.tabAdmin.wrapped.length && res.tabAdmin.page <= 0, "관리자 탭바 6칸 " + JSON.stringify(res.tabAdmin));
   if (out) await PA.screenshot({ path: `${out}/notice_admin_iphone.png` });
   await PA.setViewportSize({ width: 320, height: 640 }); await PA.waitForTimeout(250);
   res.tabAdmin320 = await tabFit(PA);

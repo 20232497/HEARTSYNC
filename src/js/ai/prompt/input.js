@@ -44,7 +44,7 @@ export function buildInput(r, uptoIdx, statusBefore, direction) {
   recent.forEach((m, i) => {
     const last = i === recent.length - 1;
     if (m.role === "ai") { out.push({ role: "assistant", content: curText(m) + (m === lastAi ? stateTail(m) : "") }); return; }
-    // 작품 명령어(!퀘스트 등)는 그 명령의 prompt를 연출 지시(//)로 바꿔 보냄 — 화면의 말풍선은 친 그대로
+    // 앱 연출형 명령어(!시간경과 등)·작품 명령어(!퀘스트 등)는 그 명령의 prompt를 연출 지시(//)로 바꿔 보냄 — 화면의 말풍선은 친 그대로
     let t = m.sys ? "// 직전 장면에서 자연스럽게 이어서 다음 장면을 써라. 유저의 행동은 쓰지 않는다." : commandText(m.text, getChar(r.char.id) || r.char);
     // 분량·대화·새 전개 지시는 시스템 프롬프트에도 있지만, 모델이 가장 잘 따르는 마지막 입력 옆에 한 번 더
     if (last) t = `[현재 상태창 — 이번 장면은 여기서 출발한다]\n${JSON.stringify(statusBefore || {})}\n\n[${r.persona.name}의 입력]\n${t}${direction ? "\n\n// 다시 쓰기 지침: " + direction : ""}\n\n[이번 응답] 위 입력을 본문에 다시 옮겨 적지 말고 그 직후의 반응부터 쓴다. 본문 ${len.chars}, 대사 ${len.lines}줄 이상을 주고받고, 직전 응답과 다른 새 전개를 넣는다. 나오는 인물마다 [[코드번호]]를 한 장씩 넣는다${(() => { const h = m.sys ? [] : sitHints(m.text); return h.length ? `(유저 입력에 맞는 번호 후보: ${h.join(", ")})` : ""; })()}. 본문이 끝나면 한 줄에 ${MARK}를 쓰고 그 아래 상태 JSON 한 개로 응답을 마친다(빠뜨리지 않는다).`;

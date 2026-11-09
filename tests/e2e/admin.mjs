@@ -15,7 +15,7 @@ for (const [dev, engine, opts] of [["Desktop Chrome", chromium, {}], ["iPhone 13
   try {
     await open(url);
     res.navs = await p.evaluate(() => [...document.querySelectorAll("#rail [data-nav]")].map((b) => b.dataset.nav));
-    if (res.navs.join() !== "home,chats,notice,store,me") errs.push("관리자 메뉴가 다름: " + res.navs.join());
+    if (res.navs.join() !== "home,chats,codex,notice,store,me") errs.push("관리자 메뉴가 다름: " + res.navs.join());
     for (const v of VIEWS) {
       await p.evaluate((v) => { location.hash = v; }, v); await wait(500);
       res.views[v] = await p.evaluate(() => $("#view").innerHTML.length);
@@ -37,7 +37,7 @@ for (const [dev, engine, opts] of [["Desktop Chrome", chromium, {}], ["iPhone 13
     await p.evaluate(() => { location.hash = "me"; }); await wait(500);
     u.me = await p.evaluate(() => ({ key: !!$("#key"), save: !!$("#setSave"), ext: ($("#meExt")?.innerHTML || "").length }));
     res.user = u;
-    if (u.navs.join() !== "home,chats,notice,store,me") errs.push("사용자 메뉴가 다름: " + u.navs.join());
+    if (u.navs.join() !== "home,chats,codex,notice,store,me") errs.push("사용자 메뉴가 다름: " + u.navs.join());
     if (Object.values(u.fns).some((t) => t !== "undefined")) errs.push("사용자 빌드에 관리자 함수가 있음: " + JSON.stringify(u.fns));
     if (!u.me.key || !u.me.save || u.me.ext) errs.push("사용자 MY: " + JSON.stringify(u.me));
   } catch (e) { res.fail = String(e).slice(0, 400); }

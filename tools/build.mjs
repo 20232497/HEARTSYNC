@@ -32,7 +32,7 @@ export const TARGETS = {
 /* 폴더 이름이 곧 작품의 aud(관심있는 대화) 값 */
 export const AUD_DIRS = { f: "여성향(남성 캐릭터와의 대화)", m: "남성향(여성 캐릭터와의 대화)", all: "전체(남녀가 섞임)" };
 /* 빌드 검사에 쓰는 앱 규칙 — src/js에서 같은 코드를 꺼내 쓴다(규칙이 두 군데로 갈라지지 않게) */
-const APP_RULES = ["SIT", "CODE_RE", "SERIES", "codebook", "APP_COMMANDS", "PALETTES", "MOTIFS", "CATS", "guessAud", "personaWho", "personaLook", "castLook", "minorFlags", "minorHint", "settingHint", "LORE_KINDS"];
+const APP_RULES = ["SIT", "CODE_RE", "SERIES", "codebook", "APP_COMMANDS", "PALETTES", "MOTIFS", "CATS", "LIMITS", "FREE_DAILY", "MODELS", "guessAud", "personaWho", "personaLook", "castLook", "minorFlags", "minorHint", "settingHint", "LORE_KINDS"];
 /* 오래된 iOS(13 이하)·인앱 브라우저에서 문법 오류가 나는 것들 */
 const OLD_IOS = [[/\|\|=|&&=|\?\?=/, "논리 할당(||= &&= ??=)"], [/\.at\(/, "Array.at()"], [/\(\?<[=!]/, "정규식 lookbehind"],
   [/\bstructuredClone\b/, "structuredClone"], [/\.findLast(?:Index)?\(/, "findLast()"], [/\bObject\.hasOwn\(/, "Object.hasOwn()"]];
@@ -456,6 +456,15 @@ function checkWork(mod, { aud, row, id, wrel, R, errors, warnings }) {
     if (x.look !== undefined && typeof x.look !== "string") e(`cast[${i}].look은 글이어야 해요`);
     if (x.desc !== undefined && typeof x.desc !== "string") e(`cast[${i}].desc(도감 소개)는 글이어야 해요`);
     if (x.tags !== undefined && (typeof x.tags !== "string" || /[가-힣]/.test(x.tags))) e(`cast[${i}].tags는 영문 Danbooru 태그 글이어야 해요(한국어 외모는 look에)`);
+    // 비공개(스포일러) 감정 칸: 도감·상세에서 가리고 대화에 나온 방에서만 보임(images/codes.js codebook의 hidden). 0 프로필은 인물 카드라 숨길 수 없음
+    if (x.hidden !== undefined) {
+      const max = R.SIT.length - 1;
+      if (!Array.isArray(x.hidden) || x.hidden.some((n) => !Number.isInteger(n) || n < 0 || n > max)) e(`cast[${i}](${x.name}).hidden은 숨길 감정 번호 배열이에요(1~${max} 정수, 예: [13])`);
+      else {
+        if (new Set(x.hidden).size !== x.hidden.length) e(`cast[${i}](${x.name}).hidden에 같은 번호가 두 번 있어요`);
+        if (x.hidden.includes(0)) e(`cast[${i}](${x.name}).hidden — 0(프로필)은 숨길 수 없어요(인물 카드에 쓰는 그림)`);
+      }
+    }
   });
   // 다른 모습(폼): of는 같은 출연진의 본체 코드 — 폼의 폼은 안 됨
   cast.forEach((x, i) => {
@@ -465,11 +474,11 @@ function checkWork(mod, { aud, row, id, wrel, R, errors, warnings }) {
     else if (base.of !== undefined) e(`cast[${i}](${x.name}).of "${x.of}" — 폼의 폼은 둘 수 없어요(본체 코드로)`);
   });
   // 장소·컷씬 목록(선택): 순서가 곧 코드 번호 — places[0]이 MP1, cuts[0]이 EV1
-  const engOk = (t) => t === undefined || (typeof t === "string" && !/[가-힣]/.test(t));
-  if (c.places !== undefined && (!Array.isArray(c.places) || c.places.some((p) => !isObj(p) || !str(p.name) || (p.desc !== undefined && typeof p.desc !== "string") || !engOk(p.tags))))
-    e('places(장소)는 [{ name: "장소 이름", desc?: "설명", tags?: "영문 태그" }, …] — 순서대로 MP1, MP2…');
-  if (c.cuts !== undefined && (!Array.isArray(c.cuts) || c.cuts.some((x) => !isObj(x) || !str(x.title) || (x.when !== undefined && typeof x.when !== "string") || !engOk(x.tags))))
-    e('cuts(컷씬)는 [{ title: "제목", when?: "나오는 조건", tags?: "영문 태그" }, …] — 순서대로 EV1, EV2…');
+  const engOk = (t) => t === undefined || (typeof t === "string" && !/[가-힣]/.test(t)), boolOk = (v) => v === undefined || typeof v === "boolean";
+  if (c.places !== undefined && (!Array.isArray(c.places) || c.places.some((p) => !isObj(p) || !str(p.name) || (p.desc !== undefined && typeof p.desc !== "string") || !engOk(p.tags) || !boolOk(p.hidden))))
+    e('places(장소)는 [{ name: "장소 이름", desc?: "설명", tags?: "영문 태그", hidden?: true(비공개) }, …] — 순서대로 MP1, MP2…');
+  if (c.cuts !== undefined && (!Array.isArray(c.cuts) || c.cuts.some((x) => !isObj(x) || !str(x.title) || (x.when !== undefined && typeof x.when !== "string") || !engOk(x.tags) || !boolOk(x.hidden))))
+    e('cuts(컷씬)는 [{ title: "제목", when?: "나오는 조건", tags?: "영문 태그", hidden?: true(비공개) }, …] — 순서대로 EV1, EV2…');
   // 작품 명령어(선택): 대화방에서 !cmd를 치면 prompt가 AI에 연출 지시로 감(core/commands.js). 앱 명령어 이름·별칭(APP_COMMANDS)과 겹치면 안 됨
   if (c.commands !== undefined) {
     const reserved = new Set(R.APP_COMMANDS.flatMap((x) => [x.cmd, ...x.alias]).map((s) => s.toLowerCase())), seenCmd = new Set();
@@ -483,6 +492,19 @@ function checkWork(mod, { aud, row, id, wrel, R, errors, warnings }) {
       seenCmd.add(k);
     });
   }
+  // 작품 메타(선택): 제작자 이름·독점 여부·공개일 — 상세 페이지 머리와 도감 작품 칸에 보임(ui/codex.js metaHTML)
+  if (c.creator !== undefined && !str(c.creator)) e("creator(제작자 이름)는 비어 있지 않은 글이어야 해요");
+  if (c.exclusive !== undefined && typeof c.exclusive !== "boolean") e("exclusive(독점 여부)는 참거짓(true·false)이어야 해요");
+  if (c.publishedAt !== undefined) {
+    const d = typeof c.publishedAt === "string" && /^\d{4}-\d{2}-\d{2}$/.test(c.publishedAt) ? new Date(c.publishedAt + "T00:00:00Z") : null;
+    if (!d || isNaN(d) || d.toISOString().slice(0, 10) !== c.publishedAt) e(`publishedAt("${c.publishedAt}")은 "YYYY-MM-DD" 모양의 실제 날짜여야 해요(공개일)`);
+  }
+  // 권장 모델(선택): 모델 선택 시트의 '권장' 배지 — ai/models.js MODELS의 키(없으면 앱이 RECOMMEND_DEFAULT)
+  if (c.recommend !== undefined && !Object.prototype.hasOwnProperty.call(R.MODELS, c.recommend)) e(`recommend("${c.recommend}")는 ${Object.keys(R.MODELS).join("·")} 중 하나(권장 모델)`);
+  // 플레이 가이드(선택): 제작자가 독자에게 주는 안내문 — 상세·도감·대화방 드로어에 줄바꿈 그대로 보임(마크다운 없음)
+  if (c.guide !== undefined && (!str(c.guide) || c.guide.length > R.LIMITS.guide)) e(`guide(플레이 가이드)는 ${R.LIMITS.guide}자 이내의 글이어야 해요${typeof c.guide === "string" ? `(지금 ${c.guide.length}자)` : ""}`);
+  // 유저노트 양식(선택): 대화방 유저노트의 '이 작품의 양식 넣기'가 넣는 글 — 유저노트 한도 안이어야
+  if (c.noteTemplate !== undefined && (!str(c.noteTemplate) || c.noteTemplate.length > R.LIMITS.userNote)) e(`noteTemplate(유저노트 양식)는 ${R.LIMITS.userNote}자 이내의 글이어야 해요${typeof c.noteTemplate === "string" ? `(지금 ${c.noteTemplate.length}자)` : ""}`);
   if (c.lookTags !== undefined && (typeof c.lookTags !== "string" || /[가-힣]/.test(c.lookTags))) e("lookTags는 영문 Danbooru 태그 글이어야 해요");
   if (c.lookTags !== undefined && c.cast !== undefined) w("cast가 있으면 lookTags는 쓰이지 않아요 — cast[].tags에 적어 주세요");
   if (c.lore !== undefined && (!Array.isArray(c.lore) || c.lore.some((x) => !isObj(x) || !Array.isArray(x.keys) || !x.keys.length || x.keys.some((k) => !str(k)) || !str(x.text) || (x.tags !== undefined && typeof x.tags !== "string"))))

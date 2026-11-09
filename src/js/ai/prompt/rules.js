@@ -2,10 +2,10 @@
 import { LEN, trackOf } from "../models.js";
 import { multiPairs } from "../parse.js";
 import { usedOpeners } from "./input.js";
-import { getChar } from "../../core/character.js";
+import { exampleCast, getChar } from "../../core/character.js";
 import { MARK, SIT } from "../../core/constants.js";
 import { curText } from "../../core/rooms.js";
-import { imgTags } from "../../images/codes.js";
+import { imgTags, seriesCode } from "../../images/codes.js";
 import { imagesOf } from "../../images/pick.js";
 import { validRef } from "../../services/images.js";
 /** @typedef {import("../../core/types.js").LoreEntry} LoreEntry */
@@ -29,17 +29,17 @@ export function rulesPrompt(r, lore = [], hist = r.msgs) {
   const fields = c.fields.map((f) => `"${f}":${f === c.gauge && typeof r.status?.[f] === "number" ? "0~100 정수" : '"짧은 값"'}`).join(",");
   const cast = c.cast || [], byCode = (code) => cast.find((x) => x.code === code);
   // 이미 등장한 인물(폼 태그는 본체도 등장한 것으로)·이미 나온 컷씬 번호
-  const seen = new Set(), cutsUsed = new Set();
-  hist.forEach((m) => imgTags(curText(m)).forEach((t) => { if (t.code === "EV") cutsUsed.add(t.sit); else { seen.add(t.code); const f = byCode(t.code); if (f && f.of) seen.add(f.of); } }));
+  const seen = new Set(), cutsUsed = new Set(), PLACE = seriesCode("place"), CUT = seriesCode("cut"); // 예약 시리즈 코드(MP·EV)는 codes.js SERIES에서
+  hist.forEach((m) => imgTags(curText(m)).forEach((t) => { if (t.code === CUT) cutsUsed.add(t.sit); else { seen.add(t.code); const f = byCode(t.code); if (f && f.of) seen.add(f.of); } }));
   const castLine = cast.map((x) => `${x.code}=${x.name}${x.of ? `(${(byCode(x.of) || {}).name || x.of}의 다른 모습 — 그 모습일 때만 이 코드)` : ""}`).join(", ");
-  const ex = cast[0] || { code: "HSY", name: "한서윤" };
+  const ex = exampleCast(c); // 예시 태그에 쓸 인물 — 이 작품의 첫 인물
   const sn = (name) => SIT.indexOf(name) + " " + name;
   // 인물별로 그림이 들어 있는 칸 번호(준비된 그림 안에서 고르게)
   const ready = cast.map((x) => { const m = imagesOf(c)[x.code] || {}; const ns = Object.keys(m).filter((k) => validRef(m[k])).map(Number).filter((n) => n >= 0 && n < SIT.length).sort((a, b) => a - b); return ns.length ? `${x.name} ${ns.join("·")}` : ""; }).filter(Boolean);
   // 장소(MP<n>)·컷씬(EV<n>) 코드 — 최신 작품(getChar)에 적혀 있을 때만(작품을 고치면 열린 방에도 바로)
   const live = getChar(c.id) || c;
-  const places = (live.places || []).map((p, i) => `MP${i + 1}=${p.name}`).join(", ");
-  const cuts = (live.cuts || []).map((e, i) => cutsUsed.has(i + 1) ? "" : `EV${i + 1}=${e.title}${e.when ? "(" + e.when + ")" : ""}`).filter(Boolean).join(", ");
+  const places = (live.places || []).map((p, i) => `${PLACE}${i + 1}=${p.name}`).join(", ");
+  const cuts = (live.cuts || []).map((e, i) => cutsUsed.has(i + 1) ? "" : `${CUT}${i + 1}=${e.title}${e.when ? "(" + e.when + ")" : ""}`).filter(Boolean).join(", ");
   return `너는 한국어 캐릭터 롤플레이 플랫폼의 연기 엔진이다. 아래 설정의 ${c.world_mode ? "세계관 내레이터로서 모든 인물과 세계를" : "캐릭터 「" + c.name + "」를"} 연기하며 유저와 함께 이야기를 만든다.
 
 [작품] ${c.title}

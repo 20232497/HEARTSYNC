@@ -8,6 +8,7 @@ import { KV } from "../../core/storage.js";
 import { $, esc, num } from "../../core/util.js";
 import { FREE_DAILY, freeLeft, isPro, listPrice, qShort, quote } from "../../core/wallet.js";
 import { sendTurn, stopGen } from "./generate.js";
+import { cmdKey, updateCmdList } from "./cmdlist.js";
 import { bindStick, renderLog } from "./log.js";
 import { barPct } from "./render.js";
 import { toggleSug } from "./suggest.js";
@@ -45,6 +46,7 @@ export async function viewChat(id) {
         <button class="chip" id="contBtn">이어서 쓰기</button>
         <span class="spacer"></span><span class="freecount" id="freeCount"></span>
       </div>
+      <div class="cmd-panel" id="cmdPanel" role="listbox" aria-label="명령어" hidden></div>
       <form class="inputrow" id="form">
         <label class="sr" for="inp">메시지</label>
         <textarea id="inp" rows="1" maxlength="1500" placeholder="${esc(room.persona.name)}의 행동·대사 입력 (지문은 *별표* 사이에)"></textarea>
@@ -61,8 +63,9 @@ export async function viewChat(id) {
   $("#sugBtn").onclick = () => toggleSug();
   $("#stopBtn").onclick = () => stopGen();
   const inp = $("#inp");
-  inp.oninput = () => { inp.style.height = "auto"; inp.style.height = Math.min(160, inp.scrollHeight) + "px"; };
+  inp.oninput = () => { inp.style.height = "auto"; inp.style.height = Math.min(160, inp.scrollHeight) + "px"; updateCmdList(inp); };
   inp.onkeydown = (e) => {
+    if (cmdKey(e, inp)) return; // ! 명령어 목록이 떠 있으면 ↑↓·Enter·Esc는 목록이 먼저 받음
     // Enter로 보내기(기본) 또는 Ctrl+Enter로 보내기 — 채팅 설정의 enterSend
     const send = S.settings.enterSend !== false ? !e.shiftKey : e.ctrlKey || e.metaKey;
     if (e.key === "Enter" && send && !e.isComposing && e.keyCode !== 229) {
@@ -82,11 +85,11 @@ export async function viewChat(id) {
   bindStick($("#log"));
   renderLog(true); updateMeter(); updateComposer();
 }
-/* !명령어(core/commands.js): 앱 명령어(!상태창·!갤러리·!지도·!도움말)는 AI를 부르지 않고 드로어를 엶(하트·턴을 쓰지 않음).
-   작품 명령어(work.js commands)와 모르는 !글은 false → 그대로 AI에 보냄(작품 명령어는 buildInput이 연출 지시로 바꿈) */
+/* !명령어(core/commands.js): 앱 화면형 명령어(view가 있는 것 — !상태창·!갤러리·!지도·!도움말)는 AI를 부르지 않고 드로어를 엶(하트·턴을 쓰지 않음).
+   앱 연출형(prompt — !시간경과 등)·작품 명령어(work.js commands)·모르는 !글은 false → 그대로 AI에 보냄(연출 지시로 바꾸는 건 buildInput의 commandText) */
 function runCommand(t) {
   const live = getChar(room.char.id) || room.char, f = findCommand(parseCommand(t), live);
-  if (!f || !f.app) return false;
+  if (!f || !f.app || !f.app.view) return false;
   if (f.app.view === "help") { flashHint("명령어: " + commandHelp(live) + " — // 로 시작하면 연출 지시"); return true; }
   openRoomDrawer(f.app.view); return true;
 }
@@ -104,7 +107,7 @@ export function updateComposer() {
   send.innerHTML = `${ICON.send}<small>${qShort(q)}</small>`;
   send.title = q.type === "heart" ? `이번 턴에 하트 ${q.n}개가 사용돼요` : q.type === "free" ? "오늘의 무료 턴으로 보내요" : "PLUS 무제한";
   $("#contBtn").disabled = !!gen; $("#sugBtn").disabled = !!gen;
-  const chip = $("#modelChip"); if (chip) chip.innerHTML = `${m.name} <small>${qShort(q)}/턴</small> ▾`;
+  const chip = $("#modelChip"); if (chip) chip.innerHTML = `${m.name} <small>${qShort(q)}/턴</small> ▾`; // 좁은 화면에서는 이름만(CSS) — 가격은 보내기 버튼에
   const fc = $("#freeCount");
   if (fc) {
     const left = freeLeft();
@@ -115,7 +118,7 @@ export function updateComposer() {
   if (h && !hintTimer) {
     if (gen) h.textContent = "응답을 쓰는 중이에요 · 다음 입력은 미리 써 둘 수 있어요 · Esc 또는 ■ 중지";
     else if (q.type === "free" && freeLeft() <= 3) h.textContent = `오늘 무료 턴이 ${freeLeft()}번 남았어요. 다 쓰면 라이트 모델은 턴당 ♥${listPrice("lite", room.set.len, room.set.mem)}이에요.`;
-    else h.textContent = (S.settings.enterSend !== false ? "Enter 전송 · Shift+Enter 줄바꿈" : "Ctrl+Enter 전송 · Enter 줄바꿈") + " · // 연출 지시 · !도움말";
+    else h.textContent = (S.settings.enterSend !== false ? "Enter 전송 · Shift+Enter 줄바꿈" : "Ctrl+Enter 전송 · Enter 줄바꿈") + " · // 연출 지시 · ! 명령어";
   }
 }
 export function lastAi(r) { for (let i = r.msgs.length - 1; i >= 0; i--) if (r.msgs[i].role === "ai") return r.msgs[i]; return null; }

@@ -19,6 +19,7 @@
  * @property {string} [desc] 도감(상세 페이지 인물 시트)에 보이는 소개 — 독자용이라 비밀·진상은 persona에만 적음
  * @property {string} [look] 한국어 외모(성별·나이 포함 — AI가 읽고, guessAud가 성별을 봄)
  * @property {string} [tags] 영문 Danbooru 외모 태그 — 앱은 쓰지 않음. 앱 밖에서 그림을 만들 때 같은 인물을 맞추는 기준(빌드가 한글을 막음)
+ * @property {number[]} [hidden] 비공개(스포일러) 감정 번호들(1~14, 0 프로필은 안 됨) — 도감·상세에서 그 칸 그림을 가리고, 대화에 그 코드가 나온 방에서만 보임(codebook의 hidden)
  */
 /**
  * 키워드북 항목. 대화에 keys 중 하나가 나오면 text를 AI에 전달.
@@ -42,6 +43,7 @@
  * @property {string} name
  * @property {string} [desc]
  * @property {string} [tags] 영문 태그 — 앱은 쓰지 않음(앱 밖에서 그림을 만들 때)
+ * @property {boolean} [hidden] 비공개(스포일러) — 도감·상세·장소 목록에서 이름·그림을 가리고, 대화에 [[MP<n>]]이 나온 방에서만 보임
  */
 /**
  * 컷씬(코드 EV<n>, cuts의 n번째 — 1부터). when이 처음 이루어지는 순간 한 번. 그림은 images/EV<n>.*
@@ -49,6 +51,17 @@
  * @property {string} title
  * @property {string} [when] 나오는 조건(AI가 읽음)
  * @property {string} [tags] 영문 태그 — 앱은 쓰지 않음
+ * @property {boolean} [hidden] 비공개(스포일러) — 도감·상세에서 제목·조건·그림을 가림(대화에 나오면 그 방의 갤러리에서 보임)
+ */
+/**
+ * 앱 명령어(core/commands.js APP_COMMANDS) — 어느 작품에서나 쓰는 공통 명령어. view와 prompt 중 하나를 가짐.
+ * @typedef {Object} AppCommand
+ * @property {string} cmd 이름 — 대화에서 !이름
+ * @property {string[]} alias 별칭(영문은 대소문자 무시)
+ * @property {string} [view] 화면형: AI를 부르지 않고 여는 대화방 드로어 화면(status·gallery·places, help는 도움말 한 줄)
+ * @property {string} [prompt] 연출형: AI에게 주는 지시(작품 명령어처럼 // 연출 지시로 감 — 한 턴을 씀)
+ * @property {string} title 도감 카드·입력창 목록의 제목
+ * @property {string} desc 독자용 설명
  */
 /**
  * 작품 명령어(core/commands.js). 대화방에서 !cmd를 치면 말풍선은 그대로, AI에는 prompt가 // 연출 지시로 감. 앱 명령어(APP_COMMANDS)의 이름·별칭은 못 씀.
@@ -74,6 +87,9 @@
  * @property {string} oneLiner
  * @property {string[]} tags
  * @property {string} desc
+ * @property {string} [guide] 플레이 가이드 — 제작자가 독자에게 주는 안내문(줄바꿈만, LIMITS.guide자 이내). 상세 페이지·도감·대화방 드로어에 보임(AI에는 보내지 않음)
+ * @property {string} [noteTemplate] 유저노트 양식 — 대화방 유저노트의 '이 작품의 양식 넣기'가 넣는 글(LIMITS.userNote자 이내). 있을 때만 버튼이 뜸
+ * @property {ModelKey} [recommend] 권장 모델 — 모델 선택 시트의 '권장' 배지(없으면 ai/models.js RECOMMEND_DEFAULT "story"). 방의 기본 모델은 바꾸지 않음
  * @property {string} persona AI에게 주는 인물·진상 설정
  * @property {string} [world]
  * @property {string} [speech]
@@ -94,7 +110,9 @@
  * @property {ImagesMap} [images] 작품 폴더 images/의 그림
  * @property {ImageRef} [img] 대표 일러스트(표지, images/cover.*)
  * @property {Record<string, ImageRef>} [loreImages] 키워드북 첫 키워드 → 세계관 일러스트(images/lore-<n>.*)
- * @property {string} [creator] 예전 커뮤니티 작품의 크리에이터 이름(그 작품으로 연 방의 작품 사본에만 남아 있을 수 있음 — ui/detail.js)
+ * @property {string} [creator] 제작자 이름 — 없으면 core/constants.js DEFAULT_CREATOR. 상세 페이지 머리·도감 작품 칸(ui/codex.js metaHTML)
+ * @property {boolean} [exclusive] 독점 작품이면 true — '독점' 배지(지금은 표시만; 보상 가산은 서버 원장이 생긴 뒤 — docs/ROADMAP.md)
+ * @property {string} [publishedAt] 공개일 "YYYY-MM-DD"(빌드가 실제 날짜인지 검사)
  */
 /**
  * 내 페르소나(대화에서 내가 연기하는 인물).
@@ -102,7 +120,7 @@
  * @property {string} id
  * @property {string} name
  * @property {string} memo 목록에 보이는 한 줄
- * @property {string} desc AI가 보는 상세 정보
+ * @property {string} desc AI가 보는 상세 정보(core/constants.js LIMITS.personaDesc자까지)
  * @property {ImageRef|""} img
  * @property {boolean} [def] 기본 페르소나
  */
@@ -124,6 +142,7 @@
  * @property {string} [cost] "무료"·"PLUS"·"♥n"
  * @property {string[]} [lore] 이 응답에 반영된 키워드
  * @property {boolean} [opening] 시작 상황 본문이면 true
+ * @property {1|-1|0} [fb] 독자 피드백: 1 좋아요 · -1 아쉬워요 · 0(또는 없음) 없음 — 이 기기·계정에 저장만, 프롬프트에는 쓰지 않음
  */
 /**
  * AI 메시지. alts[idx]가 현재 보이는 버전.
@@ -155,8 +174,8 @@
  * @property {{ id: string, name: string, memo: string, desc: string, img: ImageRef|"" }} persona
  * @property {string} opening 시작 상황 제목
  * @property {string} directive
- * @property {string} userNote
- * @property {string} memory 장기기억
+ * @property {string} userNote 유저노트(LIMITS.userNote자까지 — 방마다 하나)
+ * @property {string} memory 장기기억(memCfg().limit자를 넘으면 압축 — 기본 LIMITS.memory, 요금제 memoMax까지)
  * @property {MemHist[]} memHist
  * @property {number} sinceMem 마지막 요약 뒤 지난 턴
  * @property {number} turn
@@ -167,6 +186,7 @@
  * @property {number} at 마지막 저장 시각
  * @property {number} created
  * @property {string} [lastErr] 마지막 오류 안내(대화방 아래 오류 줄 + 다시 시도)
+ * @property {{ roomId: string, msgId: string }} [forkedFrom] 분기한 방이면 원래 방과 갈라진 메시지(core/rooms.js forkRoom) — opening 끝에 ' (분기)'
  */
 /**
  * 대화방 목록 항목(S.rooms, core/rooms.js indexRoom이 만듦) — 표지를 그릴 수 있게 작품 정보 일부를 복사해 둠.
@@ -181,6 +201,7 @@
  * @property {ImageRef|""} img
  * @property {number} at
  * @property {string} last 마지막 줄 미리보기
+ * @property {boolean} [fork] 분기한 방(대화 목록 카드의 '분기' 표시)
  */
 /** @typedef {{ at: number, d: number, label: string }} LedgerItem 하트 장부 한 줄(d는 변화량) */
 /**

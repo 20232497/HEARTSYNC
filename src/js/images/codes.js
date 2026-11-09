@@ -12,20 +12,23 @@ export const SERIES = {
   MP: { kind: "place", field: "places", label: "장소", nameKey: "name" },
   EV: { kind: "cut", field: "cuts", label: "컷씬", nameKey: "title" }
 };
+/** 종류로 예약 시리즈의 코드 글자 찾기 — seriesCode("place") → "MP", seriesCode("cut") → "EV"(없으면 ""). 'MP'·'EV'를 다른 모듈에 직접 쓰지 않게. @param {string} kind @returns {string} */
+export function seriesCode(kind) { return Object.keys(SERIES).find((k) => SERIES[k].kind === kind) || ""; }
 /** 본문의 그림 태그: 새 모양 [[HSY3]]·[[img:HSY3]], 또는 예전 모양 [[img:p1:3]]·[[img:ks:3,404,501]] */
 export const IMG_TAG_RE = /\[\[(?:img:)?([A-Za-z]{1,4})(\d{1,2})\]\]|\[\[img:([a-z0-9]+):([\d,]+)\]\]/gi;
 /**
- * 작품의 코드 사전: 코드 글자 → { kind, label, name, of, min, max, items, field, nameKey }.
+ * 작품의 코드 사전: 코드 글자 → { kind, label, name, of, min, max, items, field, nameKey, hidden }.
  * 인물 코드(cast)는 번호 0~SIT.length-1(name은 인물 이름, of는 폼의 본체), 시리즈(MP·EV)는 1~목록 길이(목록이 비면 max 0, items는 그 목록).
- * @param {{cast?: {code: string, name: string, of?: string}[], places?: object[], cuts?: object[]}|null|undefined} c
- * @returns {Record<string, {kind: "cast"|"place"|"cut", label: string, name: string, of: string, min: number, max: number, items: object[]|null, field: string, nameKey: string}>}
+ * hidden은 비공개(스포일러) 번호들 — 인물은 cast[].hidden의 감정 번호, 시리즈는 hidden: true인 항목의 번호(1부터). 도감·상세·장소 목록은 이 번호의 그림을 가리고, 대화에 그 코드가 나온 방에서만 보임.
+ * @param {{cast?: {code: string, name: string, of?: string, hidden?: number[]}[], places?: object[], cuts?: object[]}|null|undefined} c
+ * @returns {Record<string, {kind: "cast"|"place"|"cut", label: string, name: string, of: string, min: number, max: number, items: object[]|null, field: string, nameKey: string, hidden: number[]}>}
  */
 export function codebook(c) {
   const book = {};
-  for (const x of (c && c.cast) || []) book[x.code] = { kind: "cast", label: x.name, name: x.name, of: x.of || "", min: 0, max: SIT.length - 1, items: null, field: "cast", nameKey: "name" };
+  for (const x of (c && c.cast) || []) book[x.code] = { kind: "cast", label: x.name, name: x.name, of: x.of || "", min: 0, max: SIT.length - 1, items: null, field: "cast", nameKey: "name", hidden: Array.isArray(x.hidden) ? x.hidden : [] };
   for (const code of Object.keys(SERIES)) {
     const s = SERIES[code], items = (c && Array.isArray(c[s.field]) ? c[s.field] : []);
-    book[code] = { kind: s.kind, label: s.label, name: s.label, of: "", min: 1, max: items.length, items, field: s.field, nameKey: s.nameKey };
+    book[code] = { kind: s.kind, label: s.label, name: s.label, of: "", min: 1, max: items.length, items, field: s.field, nameKey: s.nameKey, hidden: items.map((it, i) => (it && it.hidden ? i + 1 : 0)).filter(Boolean) };
   }
   return book;
 }

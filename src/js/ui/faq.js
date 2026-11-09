@@ -1,14 +1,20 @@
 /* 자주 묻는 질문: 고객센터(#help-faq)의 묶음별 질문·답(고정 글). 요금·턴 수는 상수에서 읽어 앱과 어긋나지 않게 한다.
    답은 앱의 실제 동작(CLAUDE.md)을 근거로 쓴다 — 무료 턴·하트·PLUS·계정 저장·API 키·수위가 바뀌면 여기도 같이 고치기.
    답 글은 운영자가 쓴 고정 HTML이라 esc()를 거치지 않음(사용자 데이터를 넣지 않기) */
-import { PLAN, FREE_DAILY, PLUS_MONTHLY, WELCOME } from "../core/wallet.js";
-import { num, won } from "../core/util.js";
+import { LEN, MODELS } from "../ai/models.js";
+import { allCommands } from "../core/commands.js";
+import { exampleCast } from "../core/character.js";
+import { EXAMPLE_SIT, LIMITS, SIT } from "../core/constants.js";
+import { PLAN, FREE_DAILY, PLUS_MONTHLY, WELCOME, listPrice } from "../core/wallet.js";
+import { esc, num, won } from "../core/util.js";
 import { SUPPORT_MAIL } from "../services/support.js";
 import { PLUS } from "./store.js";
 
 /** 묶음 [이름, [[질문, 답 HTML], …]] — 함수라서 부를 때의 상수 값으로 그림 @returns {Array<[string, Array<[string, string]>]>} */
 export function faqGroups() {
-  const plus = won(PLUS.price);
+  const plus = won(PLUS.price), ex = exampleCast(); // 그림 코드 예시는 관심있는 대화에 맞는 첫 작품의 인물로
+  // 공통 명령어 이름은 앱의 표(core/commands.js)에서 읽음 — 운영자가 쓴 고정 글이라 esc 없이
+  const cmds = (kind) => allCommands(null).filter((x) => x.kind === kind).map((x) => `<b>!${x.cmd}</b>`).join("·");
   return [
     ["시작하기", [
       ["HEART SYNC는 어떤 서비스인가요?", "캐릭터와 대화하며 이야기를 만들어 가는 대화형 에피소드 앱이에요. 홈에서 작품을 고르고 시작 상황을 정하면 대화방이 열리고, AI가 캐릭터를 연기해요. 대화가 이어질수록 상태창(호감도 등)이 바뀌고 장면마다 캐릭터 그림이 붙어요."],
@@ -19,15 +25,18 @@ export function faqGroups() {
     ["요금·하트", [
       ["무료로 얼마나 쓸 수 있나요?", `라이트 모델은 <b>매일 ${FREE_DAILY}턴 무료</b>예요. 자정에 다시 채워져요. 처음 방문하면 하트 ${WELCOME}개를 드려요.`],
       ["하트는 어디에 쓰나요?", "무료 턴을 다 쓴 뒤의 라이트 모델과, 스토리·마스터 모델 대화에 써요. 보내기 버튼에 이번 턴 비용이 항상 표시되고, 응답이 실패하면 자동으로 환불돼요. 장기기억 요약·AI 추천 답변은 무료예요."],
+      ["모델마다 한 턴에 하트가 얼마나 드나요?", `출력량 ${LEN.mid.name}·기억력 10턴 기준으로 ${Object.keys(MODELS).map((k) => `<b>${MODELS[k].name}</b> ♥${listPrice(k, "mid", 10)}`).join(" · ")}예요(라이트는 무료 턴을 다 쓴 뒤). 출력량과 기억력을 올리면 조금씩 늘어나요. 대화방 위쪽의 모델 이름을 누르면 지금 설정에서의 턴당 하트와, 그 작품의 <b>권장</b> 모델을 볼 수 있어요.`],
       ["PLUS는 무엇인가요?", `월 ${plus} 멤버십이에요. 라이트 모델 무제한, 스토리·마스터 50% 할인, 매달 하트 ${num(PLUS_MONTHLY)}개, 장기기억 ${num(PLAN.free.memoMax)}자 → ${num(PLAN.pro.memoMax)}자, 기억력 ${PLAN.free.memTurns}턴 → ${PLAN.pro.memTurns}턴으로 늘어나요.`],
       ["결제하면 실제로 돈이 나가나요?", "지금 스토어는 결제 흐름을 보여 주는 <b>시연(데모)</b>이라 실제로 청구되지 않고, 하트와 멤버십은 체험용으로만 지급돼요. 다만 내 API 키로 쓰는 AI 대화 요금은 그 키를 발급한 Anthropic이 따로 청구해요."]
     ]],
     ["대화", [
       ["답이 너무 짧아요(길어요).", "대화방 오른쪽 위 메뉴(☰) → <b>출력 설정</b>에서 출력량(적게·보통·많게)을 바꿀 수 있어요. 모델을 스토리·마스터로 올리면 묘사가 더 풍부해져요."],
       ["캐릭터가 예전 일을 잊어요.", "출력 설정의 <b>기억력</b>은 AI가 그대로 다시 읽는 최근 턴 수예요. 그보다 오래된 일은 몇 턴마다 자동으로 만드는 <b>장기기억</b> 요약으로 기억해요. 메뉴의 장기기억에서 요약을 보고 직접 고칠 수 있어요."],
+      ["설정은 얼마나 길게 쓸 수 있나요?", `<b>페르소나</b> 상세 정보는 ${num(LIMITS.personaDesc)}자, <b>유저노트</b>는 대화방마다 하나씩 ${num(LIMITS.userNote)}자, <b>장기기억</b>은 ${num(PLAN.free.memoMax)}자(PLUS ${num(PLAN.pro.memoMax)}자)까지예요. 장기기억이 한도를 넘으면 자동으로 압축하고 압축 전 내용은 히스토리에 보관해요. 답의 분량은 설정에 적기보다 메뉴의 <b>출력 설정</b>에서 고르는 편이 잘 지켜져요.`],
       ["대화를 저장하거나 옮길 수 있나요?", "대화방 메뉴의 <b>대화 내보내기</b>로 파일로 받거나 <b>대화 복사</b>로 복사할 수 있어요. 로그인하면 대화가 계정에 저장돼 다른 기기에서 이어져요."],
       ["대화 속 그림을 끄고 싶어요.", "<a href=\"#me\">MY</a> → 채팅 설정의 <b>대화 속 장면 이미지 보기</b>를 끄면 돼요. 글자 크기·줄 간격·지문 글꼴도 거기서 바꿔요."],
-      ["도감과 !명령어는 뭔가요?", "<a href=\"#codex\">도감</a>은 작품마다 인물 코드·감정 칸·장소·컷씬·명령어를 보여 주는 안내예요. 대화 속 그림 한 장은 <b>인물 코드 + 번호</b> 한 토큰(예: HSY3 = 한서윤 · 부끄러움)이고, AI가 장면마다 골라 넣어요. 대화방 입력창에 <b>!상태창</b>·<b>!갤러리</b>·<b>!지도</b>·<b>!도움말</b>을 치면 AI를 부르지 않고 바로 열리고(하트를 쓰지 않아요), 작품에 딸린 명령어(예: !퀘스트)는 그 장면을 AI가 열어요."],
+      ["도감과 !명령어는 뭔가요?", `<a href="#codex">도감</a>은 작품마다 인물 코드·감정 칸·장소·컷씬·명령어를 보여 주는 안내예요. 대화 속 그림 한 장은 <b>인물 코드 + 번호</b> 한 토큰(예: ${esc(ex.code)}${EXAMPLE_SIT} = ${esc(ex.name)} · ${SIT[EXAMPLE_SIT]})이고, AI가 장면마다 골라 넣어요. 대화방 입력창에 <b>!</b>를 치면 쓸 수 있는 명령어 목록이 떠요.`],
+      ["!명령어에는 어떤 것이 있나요?", `세 가지예요. ① <b>앱 명령어</b> ${cmds("view")} — AI를 부르지 않고 바로 열려요(하트를 쓰지 않아요). ② <b>연출 명령어</b> ${cmds("direct")} — 어느 작품에서나 AI에게 장면 연출을 부탁해요(한 턴을 써요). ③ <b>작품 명령어</b> — 그 작품에만 있는 이야기 장치예요(도감의 작품 칸에서 확인). 직접 지시하고 싶으면 <b>//</b>로 시작해 적어도 돼요.`],
       ["응답이 중간에 끊겼어요.", "연결이 끊기거나 시간이 너무 오래 걸리면 받은 데까지 남기고 멈춰요. 그 메시지의 <b>다시 시도</b>를 누르면 다시 써요."]
     ]],
     ["계정·데이터", [

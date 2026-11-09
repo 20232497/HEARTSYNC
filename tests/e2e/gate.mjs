@@ -28,8 +28,8 @@ try {
   if (process.env.HS_ADMIN_PW) {
     await p.fill("#gatePw", process.env.HS_ADMIN_PW); await p.press("#gatePw", "Enter"); await wait(1500);
     if (await p.$("#lguest")) { await p.click("#lguest"); await wait(400); }
-    res.right = await p.evaluate(() => ({ gated: document.body.classList.contains("gated"), navs: $$("#rail .nav").length, remembered: localStorage.getItem("hv1_admin") === HASH }));
-    if (res.right.gated || res.right.navs !== 5 || !res.right.remembered) errs.push("맞는 비밀번호: " + JSON.stringify(res.right));
+    res.right = await p.evaluate(() => ({ gated: document.body.classList.contains("gated"), navs: $$("#rail .nav").length, want: USER_NAVS.length, remembered: localStorage.getItem("hv1_admin") === HASH }));
+    if (res.right.gated || res.right.navs !== res.right.want || !res.right.remembered) errs.push("맞는 비밀번호: " + JSON.stringify(res.right));
   } else {
     await p.evaluate(() => localStorage.setItem("hv1_admin", HASH));
     res.right = "HS_ADMIN_PW 없음 — 기억만 심어 확인";
@@ -37,8 +37,8 @@ try {
   // 기억이 있으면 다시 열어도 바로 부팅
   await p.goto(HOST + "/admin.html", { waitUntil: "load" }); await wait(1200);
   if (await p.$("#lguest")) { await p.click("#lguest"); await wait(400); }
-  res.again = await p.evaluate(() => ({ gated: document.body.classList.contains("gated"), navs: $$("#rail .nav").length }));
-  if (res.again.gated || res.again.navs !== 5) errs.push("기억 뒤 부팅: " + JSON.stringify(res.again));
+  res.again = await p.evaluate(() => ({ gated: document.body.classList.contains("gated"), navs: $$("#rail .nav").length, want: USER_NAVS.length })); // 메뉴 수는 앱의 표(USER_NAVS)에서 — 메뉴를 더해도 시험을 안 고쳐도 되게
+  if (res.again.gated || res.again.navs !== res.again.want) errs.push("기억 뒤 부팅: " + JSON.stringify(res.again));
   // 웹 주소의 관리자 도구 MY에는 잠그기 버튼이 있고, 누르면 기억이 지워져 다시 관문이 섬
   await p.evaluate(() => { location.hash = "me"; }); await p.waitForTimeout(500);
   res.lock = await p.evaluate(() => !!$("#adminLock"));
