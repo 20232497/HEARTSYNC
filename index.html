@@ -201,6 +201,10 @@ h2.sec small, h1.sec small { font-family:var(--sans); font-size:12.5px; color:va
 .detail h1 { font-family:var(--display); font-size:30px; line-height:1.2; margin:4px 0 6px; text-wrap:balance; }
 .detail .lead { font-size:15.5px; margin:0 0 12px; }
 .detail .tags { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:14px; }
+.like-btn { margin-bottom:14px; gap:6px; }
+.like-btn svg { width:15px; height:15px; }
+.like-btn[aria-pressed="true"] { color:var(--accent); border-color:var(--accent); background:var(--accent-soft); }
+.like-btn[aria-pressed="true"] svg { fill:currentColor; }
 .detail .tags span { font-size:12.5px; background:var(--surface2); border-radius:7px; padding:2px 9px; color:var(--muted); }
 .box { background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:16px; }
 .box + .box { margin-top:12px; }
@@ -616,6 +620,7 @@ const MOTIFS = { rain: "비", city: "도시", stars: "별", glow: "불빛", peta
 const CATS = ["로맨스", "판타지", "RPG", "미스터리", "일상", "시뮬레이션"];
 const LORE = { scan: 3, max: 8, budget: 2500 };
 const EXAMPLE_CAST = { code: "ABC", name: "주인공" }, EXAMPLE_SIT = 3;
+const SHELF = { recent: 12, syncFrom: "2026-11-23" };
 const DEFAULT_CREATOR = "HEART SYNC 스튜디오";
 const LIMITS = { guide: 1000, personaDesc: 1000, userNote: 2000, memory: 2000, pin: 200, reply: 1000, suggestion: 40, lead: 500, leadTurns: 20 };
 /* ── src/js/core/util.js — DOM·문자열·숫자 유틸, toast, 예상 못 한 오류 기록(reportError) */
@@ -711,6 +716,7 @@ const S = {
   wallet: { hearts: 0, freeDay: today(), freeUsed: 0, pro: null, history: [], ledger: [], ack: {} },
   personas: [{ id: "p1", name: "유저", memo: "", desc: "", img: "", def: true }],
   rooms: [],
+  shelf: { likes: {}, unlikes: {}, recent: {}, seen: {} },
   settings: { fs: 15.5, chatLh: 1.8, narrFont: "serif", enterSend: true, sceneImg: true, apiKey: "", memCfg: { auto: true, every: 5, limit: LIMITS.memory, guide: "auto", custom: "" } },
   cat: "전체", q: ""
 };
@@ -1441,6 +1447,42 @@ function applySettings() {
   root.style.setProperty("--narr-font", s.narrFont === "sans" ? "var(--sans)" : "var(--serif)");
   root.classList.toggle("no-scene-img", s.sceneImg === false);
 }
+/* ── src/js/core/shelf.js — 내 서재(S.shelf): 찜한 작품·최근 본 작품·대화에서 본 그림 코드(수집 기록) */
+const obj = (v) => (v && typeof v === "object" && !Array.isArray(v) ? v : {});
+const sorted = (o) => { const out = {}; Object.keys(o).sort().forEach((k) => { out[k] = o[k]; }); return out; };
+function later(a, b) {
+  const out = {};
+  [obj(a), obj(b)].forEach((o) => Object.keys(o).forEach((k) => { const t = +o[k] || 0; if (t > (out[k] || 0)) out[k] = t; }));
+  return out;
+}
+function mergeShelf(a, b) {
+  const x = obj(a), y = obj(b), all = later(x.recent, y.recent), recent = {}, seen = {};
+  Object.keys(all).sort((p, q) => all[q] - all[p] || (p < q ? -1 : 1)).slice(0, SHELF.recent).forEach((k) => { recent[k] = all[k]; });
+  [obj(x.seen), obj(y.seen)].forEach((o) => Object.keys(o).forEach((id) => {
+    seen[id] = Array.from(new Set((seen[id] || []).concat(Array.isArray(o[id]) ? o[id].map(String) : []))).sort();
+  }));
+  return { likes: sorted(later(x.likes, y.likes)), unlikes: sorted(later(x.unlikes, y.unlikes)), recent: sorted(recent), seen: sorted(seen) };
+}
+function shelfSyncOn(now) {
+  const p = SHELF.syncFrom.split("-").map(Number);
+  return (now || new Date()) >= new Date(p[0], p[1] - 1, p[2]);
+}
+const liked = (id) => (S.shelf.likes[id] || 0) > (S.shelf.unlikes[id] || 0);
+const newestFirst = (o) => Object.keys(o).sort((p, q) => o[q] - o[p]);
+const likedIds = () => newestFirst(S.shelf.likes).filter(liked);
+const recentIds = () => newestFirst(S.shelf.recent);
+function save() { S.shelf = mergeShelf(S.shelf); KV.set("shelf", S.shelf); }
+function toggleLike(id) {
+  const on = !liked(id);
+  (on ? S.shelf.likes : S.shelf.unlikes)[id] = Math.max(Date.now(), (S.shelf.likes[id] || 0) + 1, (S.shelf.unlikes[id] || 0) + 1);
+  save();
+  return on;
+}
+function touchRecent(id) {
+  if (recentIds()[0] === id) return;
+  S.shelf.recent[id] = Date.now(); save();
+}
+function resetShelf() { S.shelf = mergeShelf(); KV.setLocal("shelf", undefined); }
 /* ── src/js/services/images.js — 그림 저장(IMG): IndexedDB → localStorage, 축소(shrink), 참조 모양 검사(validRef) — 작품 폴더에 실린 그림(content/… 상대… */
 function validRef(ref) {
   return typeof ref === "string" && (/^kv:img[a-z0-9]{6,30}$/.test(ref) || /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(ref)
@@ -1514,15 +1556,17 @@ function shrink(file, max, q) {
 const DEVICE_SETTINGS = ["fs", "enterSend"];
 const KEY_FIELDS = ["apiKey", "runwareKey", "openRouterKey"];
 const SYNCED_RE = /^(wallet|personas|rooms|memcfg|room-.+)$/;
+const SHELF_KEY = "shelf";
+const synced = (k) => SYNCED_RE.test(k) || (k === SHELF_KEY && shelfSyncOn());
 const IMG_KEY_RE = /^img[a-z0-9]{6,30}$/;
 const CLOUD = {
-  on: false, uid: null, pending: {}, timer: null, state: "", at: 0, pulledAt: 0, noTable: false,
+  on: false, uid: null, pending: {}, timer: null, state: "", at: 0, pulledAt: 0, noTable: false, shelfUp: false,
   lastKey() { return "hv1_cloudlast_" + this.uid; },
-  start() { this.on = SB.on() && !!(SB.s && SB.s.user && SB.s.user.id); this.uid = this.on ? SB.s.user.id : null; this.noTable = false; },
+  start() { this.on = SB.on() && !!(SB.s && SB.s.user && SB.s.user.id); this.uid = this.on ? SB.s.user.id : null; this.noTable = false; this.shelfUp = false; },
   stop() { this.on = false; this.uid = null; this.pending = {}; clearTimeout(this.timer); this.setState(""); },
   setState(s) { this.state = s; if (s === "ok") this.at = Date.now(); emit("cloud"); },
   put(k, v) {
-    if (!this.on || this.noTable || !(k === "settings" || SYNCED_RE.test(k) || IMG_KEY_RE.test(k))) return;
+    if (!this.on || this.noTable || !(k === "settings" || synced(k) || IMG_KEY_RE.test(k))) return;
     this.pending[k] = v === undefined ? null : { v };
     clearTimeout(this.timer); this.timer = setTimeout(() => this.flush(), 800);
   },
@@ -1578,6 +1622,7 @@ const CLOUD = {
     const open = room && location.hash === "#r-" + room.id ? roomKey(room.id) : "";
     rows.forEach((x) => {
       if (x.updated_at && x.updated_at > (localStorage.getItem(this.lastKey()) || "")) try { localStorage.setItem(this.lastKey(), x.updated_at); } catch {}
+      if (x.key === SHELF_KEY) { if (shelfSyncOn() && this.takeShelf(x.value)) n++; return; }
       if (x.key in this.pending || x.key === open) return;
       if (x.key === "settings") { mergeCloudSettings(x.value); n++; return; }
       if (!SYNCED_RE.test(x.key)) return;
@@ -1586,7 +1631,18 @@ const CLOUD = {
     this.pulledAt = Date.now();
     return n;
   },
-  async pull() { return this.apply(await this.rows(localStorage.getItem(this.lastKey()) || "")); },
+  takeShelf(remote) {
+    const local = KV.getLocal(SHELF_KEY), m = mergeShelf(local, remote), s = JSON.stringify(m);
+    if (s !== JSON.stringify(mergeShelf(remote))) this.put(SHELF_KEY, m);
+    if (s === JSON.stringify(mergeShelf(local))) return false;
+    KV.setLocal(SHELF_KEY, m); S.shelf = m;
+    return true;
+  },
+  async pull() {
+    let n = this.apply(await this.rows(localStorage.getItem(this.lastKey()) || ""));
+    if (!this.shelfUp && shelfSyncOn()) { this.shelfUp = true; if (this.takeShelf(await this.getOne(SHELF_KEY))) n++; }
+    return n;
+  },
   async pushAll(keys) {
     (keys || localKVKeys()).forEach((k) => { const v = KV.getLocal(k); if (v !== undefined) this.pending[k] = { v }; });
     this.pending.settings = { v: cloudSettings() };
@@ -1616,7 +1672,7 @@ function chunkBy(items, max) {
 KV.remote = (k, v) => CLOUD.put(k, v);
 on("settings", () => CLOUD.put("settings", cloudSettings()));
 function localKVKeys() {
-  try { return Object.keys(localStorage).filter((k) => k.indexOf("hv1_") === 0).map((k) => k.slice(4)).filter((k) => SYNCED_RE.test(k)); } catch { return []; }
+  try { return Object.keys(localStorage).filter((k) => k.indexOf("hv1_") === 0).map((k) => k.slice(4)).filter(synced); } catch { return []; }
 }
 function cloudSettings() {
   const s = Object.assign({}, S.settings);
@@ -1738,13 +1794,14 @@ const OAUTH_ICONS = {
 };
 function provName(p) { const x = PROVIDERS.find((y) => y[0] === p || y[0] === "custom:" + p); return x ? x[1] : ""; }
 function acctName() { const u = SB.s && SB.s.user; if (!u) return ""; return u.email || (provName(u.provider) || "소셜") + " 계정"; }
-/* ── src/js/services/load.js — 저장된 데이터를 S에 읽어 들임(loadAll): 지갑·페르소나·대화방 목록·요약 설정 */
+/* ── src/js/services/load.js — 저장된 데이터를 S에 읽어 들임(loadAll): 지갑·페르소나·대화방 목록·요약 설정·내 서재 */
 async function loadAll() {
-  const [w, p, rooms, mc] = await Promise.all(["wallet", "personas", "rooms", "memcfg"].map((k) => KV.get(k)));
+  const [w, p, rooms, mc, shelf] = await Promise.all(["wallet", "personas", "rooms", "memcfg", "shelf"].map((k) => KV.get(k)));
   if (w && typeof w === "object") S.wallet = { ...S.wallet, ...w, history: Array.isArray(w.history) ? w.history : [], ledger: Array.isArray(w.ledger) ? w.ledger : [], ack: w.ack && typeof w.ack === "object" ? w.ack : {} };
   else if (!S.wallet.welcomed) { S.wallet.hearts = WELCOME; S.wallet.welcomed = true; ledger(WELCOME, "첫 방문 보너스"); KV.set("wallet", S.wallet); }
   if (Array.isArray(p) && p.length) S.personas = p.map((x) => ({ memo: "", img: "", ...x }));
   if (Array.isArray(rooms)) S.rooms = rooms;
+  S.shelf = mergeShelf(shelf);
   IMG.migrate().catch(() => {});
   if (mc && typeof mc === "object") S.settings.memCfg = { ...S.settings.memCfg, ...mc };
   refreshFree();
@@ -2348,6 +2405,7 @@ const ICON = {
   user: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>',
   bell: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 10a6 6 0 0 1 12 0c0 5.5 2.5 7 2.5 7h-17S6 15.5 6 10z"/><path d="M10 20.5a2.2 2.2 0 0 0 4 0"/></svg>',
   back: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 5l-7 7 7 7"/></svg>',
+  mark: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M6 3h12v18l-6-4.5L6 21z"/></svg>',
   book: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 21a2 2 0 0 1 2-2h13M8 7h7"/></svg>',
   menu: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>',
   search: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>',
@@ -2576,7 +2634,7 @@ async function firstSync() {
   return new Promise((res) => {
     let done = false;
     const pick = async (merge) => { if (done) return; done = true; ov.remove(); await use(merge); res(); };
-    $("#mYes", ov).onclick = () => pick(true); $("#mNo", ov).onclick = () => pick(false);
+    $("#mYes", ov).onclick = () => pick(true); $("#mNo", ov).onclick = () => { resetShelf(); pick(false); };
     ov.addEventListener("click", (e) => { if (e.target === ov) pick(true); });
   });
 }
@@ -2735,7 +2793,7 @@ function faqGroups() {
     ]],
     ["계정·데이터", [
       ["로그인하지 않아도 되나요?", "네, <b>로그인 없이 둘러보기</b>로 쓸 수 있어요. 다만 이때 데이터는 이 브라우저에만 저장돼, 브라우저 데이터를 지우면 사라지고 다른 기기와 이어지지 않아요."],
-      ["로그인하면 무엇이 저장되나요?", "대화·페르소나(사진 포함)·설정이 계정에 저장돼 PC와 휴대폰에서 이어져요. 처음 로그인할 때 이 기기에만 있던 대화를 계정에 합칠 수 있어요. 이메일이 없어도 카카오·네이버·Google 계정으로 가입할 수 있어요."],
+      ["로그인하면 무엇이 저장되나요?", `대화·페르소나(사진 포함)·설정이 계정에 저장돼 PC와 휴대폰에서 이어져요. 처음 로그인할 때 이 기기에만 있던 대화를 계정에 합칠 수 있어요. 찜한 작품·최근 본 작품·도감에 모은 그림 기록은 ${SHELF.syncFrom}부터 계정에도 저장돼요(그 전에는 이 기기에만 — 그날 자동으로 올라가고, 여러 기기의 기록은 합쳐져요). 이메일이 없어도 카카오·네이버·Google 계정으로 가입할 수 있어요.`],
       ["API 키도 계정에 저장되나요?", "아니요. API 키는 이 기기의 브라우저에만 두고 계정·서버로 보내지 않아요. 다른 기기에서는 키를 한 번 더 넣어 주세요."],
       ["비밀번호를 잊었어요.", "로그인 화면의 <b>비밀번호를 잊었어요</b>로 재설정 메일을 받아 새 비밀번호를 정해요."],
       ["계정을 삭제하려면요?", "<a href=\"#me\">MY</a> → 계정의 <b>계정 삭제</b>를 누르면 계정과 계정에 저장된 데이터, 남긴 문의가 바로 지워져요. 이 기기에 남은 데이터는 MY의 <b>모든 데이터 초기화</b>로 지울 수 있어요."]
@@ -2878,7 +2936,7 @@ async function loadMine(box) {
   }));
   runExt("help", "ask", box, list);
 }
-/* ── src/js/ui/home.js — 홈: 대표 작품·가로 줄·둘러보기, 관심있는 대화 고르기 */
+/* ── src/js/ui/home.js — 홈: 대표 작품·이어서 대화하기·내 서재 줄(찜한 작품·최근 본 작품)·가로 줄·둘러보기, 관심있는 대화 고르기 */
 function cardHTML(c) {
   const info = c.world_mode && (c.cast || []).length > 1 ? `<span class="cast-n">👥 ${c.cast.length}인 · 🎬 ${(c.openings || []).length}</span>` : "";
   const aud = audience() === "all" && audOf(c) !== "all" ? `<span class="aud-tag">${AUDS[audOf(c)].name}</span>` : "";
@@ -2900,11 +2958,15 @@ function askAud() {
   if (AUDS[S.settings.audience]) return;
   if (/^#(?:[cr]-|notice$)/.test(location.hash)) audLater = true; else audSheet(true);
 }
+function rowHTML(title, sub, list, id) {
+  return list.length ? `<h2 class="sec"${id ? ` id="${id}"` : ""}>${esc(title)}${sub ? ` <small>${esc(sub)}</small>` : ""}</h2><div class="row-scroll">${list.map(cardHTML).join("")}</div>` : "";
+}
 function viewHome() {
   const v = $("#view");
   const match = (c) => (S.cat === "전체" || c.cat === S.cat) && (!S.q || [c.name, c.title, c.oneLiner, ...(c.tags || [])].join(" ").toLowerCase().includes(S.q.toLowerCase()));
   const pool = ORIGINALS.filter(audOK), originals = pool.filter(match);
   const hidden = audience() !== "all" && (ORIGINALS.length > pool.length);
+  const shelfRow = (ids) => ids.map((id) => pool.find((c) => c.id === id)).filter(Boolean);
   const hero = audience() !== "all" ? pool.slice(0, 4) : (() => { const f = pool.filter((c) => audOf(c) === "f"), m = pool.filter((c) => audOf(c) !== "f"), out = [];
     for (let i = 0; out.length < 4 && (i < f.length || i < m.length); i++) { if (f[i]) out.push(f[i]); if (m[i] && out.length < 4) out.push(m[i]); } return out; })();
   v.innerHTML = `<div class="page">
@@ -2916,7 +2978,8 @@ function viewHome() {
         <span class="who">${c.world_mode ? "세계관 입장하기" : esc(c.name) + "와 대화하기"} →</span></div></button>`).join("")}</div>` : ""}
     ${S.rooms.length && !S.q ? `<h2 class="sec">이어서 대화하기</h2><div class="cont">${S.rooms.slice(0, 4).map((r) => `
       <button data-room="${esc(r.id)}">${coverHTML(r)}<span class="x"><b>${esc(r.name)}</b><span>${esc(r.last)}</span></span><span class="note">${ago(r.at)}</span></button>`).join("")}</div>` : ""}
-    ${!S.q && S.cat === "전체" ? HOME_ROWS.map((w) => { const sv = pool.filter((c) => c.row === w.key); return sv.length ? `<h2 class="sec">${esc(w.title)} <small>${esc(w.sub)}</small></h2><div class="row-scroll">${sv.map(cardHTML).join("")}</div>` : ""; }).join("") : ""}
+    ${!S.q && S.cat === "전체" ? rowHTML("찜한 작품", "", shelfRow(likedIds()), "rowLikes") + rowHTML("최근 본 작품", "", shelfRow(recentIds()), "rowRecent")
+      + HOME_ROWS.map((w) => rowHTML(w.title, w.sub, pool.filter((c) => c.row === w.key))).join("") : ""}
     <h2 class="sec">둘러보기 <small>관심있는 대화</small></h2>
     ${audSegHTML()}
     <div class="chips" style="margin-top:10px">${["전체", ...CATS].map((c) => `<button class="chip ${S.cat === c ? "on" : ""}" data-cat="${c}">${c}</button>`).join("")}</div>
@@ -3004,7 +3067,7 @@ function viewMe() {
   };
   $("#reset").onclick = () => confirmSheet("모든 데이터를 지울까요?", "대화방, 하트, 페르소나와 페르소나 사진이 모두 지워져요." + (CLOUD.on ? " 로그인되어 있어서 계정에 저장된 데이터도 지워져요." : "") + " 되돌릴 수 없어요.", "전부 삭제", () => {
     S.rooms.forEach((r) => KV.set(roomKey(r.id), undefined));
-    ["rooms", "mine", "wallet", "personas", "profile", "imgpacks", "motionpacks", "coverpacks", "lorepacks", "tagpacks", "ponytags"].forEach((k) => KV.set(k, undefined));
+    ["rooms", "mine", "wallet", "personas", "shelf", "profile", "imgpacks", "motionpacks", "coverpacks", "lorepacks", "tagpacks", "ponytags"].forEach((k) => KV.set(k, undefined));
     IDB.clear(); try { Object.keys(localStorage).filter((k) => /^hv1_img[a-z0-9]{10,30}$/.test(k)).forEach((k) => localStorage.removeItem(k)); } catch {}
     (CLOUD.on ? CLOUD.wipe().catch(() => {}) : Promise.resolve()).then(() => setTimeout(() => location.reload(), 400));
   });
@@ -3839,7 +3902,7 @@ function worldArtHTML(c) {
   if (!lore.length) return "";
   return `<div class="wgal">${lore.map((e) => { const ref = loreImg(c, e.keys[0]), kind = LORE_KINDS[e.kind] || ""; return `<figure class="wcard">${ref ? `<button class="wpic" data-wlb="${esc(e.keys[0])}" aria-label="${esc(e.keys[0])} 크게 보기">${IMG.tag(ref)}</button>` : `<div class="wpic ph">${esc(e.keys[0])}</div>`}<figcaption><b>${kind ? `<small class="wkind">${kind}</small>` : ""}${esc(e.keys[0])}</b><span>${esc(e.text)}</span></figcaption></figure>`; }).join("")}</div>`;
 }
-/* ── src/js/ui/detail.js — 작품 상세 페이지: 표지·소개·플레이 가이드·세계관 일러스트·등장인물(누르면 도감 인물 시트)·장소·컷씬·명령어·시작 상황 → 새 대화 시작 */
+/* ── src/js/ui/detail.js — 작품 상세 페이지: 표지·소개·찜·플레이 가이드·세계관 일러스트·등장인물(누르면 도감 인물 시트)·장소·컷씬·명령어·시작 상황 → 새 대화 시작, 아래에 같은 줄의 다른 작품 */
 function viewDetail(id) {
   const c = normalizeChar(getChar(id)), v = $("#view");
   if (!c) { v.innerHTML = `<div class="page">${topbar()}<div class="empty">캐릭터를 찾을 수 없어요. 삭제됐거나 아직 불러오는 중일 수 있어요.<br><button class="btn sm" data-go="home">홈으로</button></div></div>`; bindGo(v); return; }
@@ -3847,6 +3910,9 @@ function viewDetail(id) {
   const persona = S.personas.find((p) => p.def) || S.personas[0];
   const wa = worldArtHTML(c);
   const set0 = defaultSet(c), q0 = quote(set0);
+  const row = HOME_ROWS.find((w) => w.key === c.row), near = row ? ORIGINALS.filter((x) => x.row === c.row && x.id !== c.id && audOK(x)) : [];
+  const likeHTML = (on) => `${ICON.mark}<span>${on ? "찜한 작품" : "찜하기"}</span>`;
+  touchRecent(c.id);
   v.innerHTML = `<div class="page">
     ${topbar(`<button class="icon-btn" data-go="home" aria-label="뒤로">${ICON.back}</button>`)}
     <div class="detail">
@@ -3856,6 +3922,7 @@ function viewDetail(id) {
         <h1>${esc(c.title)}</h1>
         <p class="lead">${esc(c.oneLiner)}</p>
         <div class="tags">${(c.tags || []).map((t) => `<span>#${esc(t)}</span>`).join("")}</div>
+        <button class="btn sm ghost like-btn" id="like" aria-pressed="${liked(c.id)}">${likeHTML(liked(c.id))}</button>
         <div class="box"><h3>소개</h3><p>${esc(c.desc)}</p></div>
         ${guideHTML(c)}
         <div class="box" id="wArtBox" ${wa ? "" : 'style="display:none"'}><h3>세계관 일러스트</h3>${wa}</div>
@@ -3872,8 +3939,11 @@ function viewDetail(id) {
         </div>
         ${rooms.length ? `<div class="box"><h3>내 대화방</h3><div class="cont">${rooms.map((r) => `<button data-room="${esc(r.id)}">${coverHTML(r)}<span class="x"><b>${esc(r.name)}</b><span>${esc(r.last)}</span></span><span class="note">${ago(r.at)}</span></button>`).join("")}</div></div>` : ""}
       </div>
-    </div></div>`;
+    </div>
+    ${rowHTML("같은 줄의 다른 작품", row ? row.title : "", near, "rowNear")}</div>`;
   bindGo(v); IMG.hydrate(v);
+  $$("[data-char]", v).forEach((b) => b.onclick = () => go("c-" + b.dataset.char));
+  $("#like").onclick = (e) => { const b = e.currentTarget, on = toggleLike(c.id); b.setAttribute("aria-pressed", on); b.innerHTML = likeHTML(on); toast(on ? "찜했어요 — 홈의 '찜한 작품'에서 볼 수 있어요" : "찜을 풀었어요"); };
   $$("[data-room]", v).forEach((b) => b.onclick = () => go("r-" + b.dataset.room));
   $$("[data-wlb]", v).forEach((b) => b.onclick = () => { const i = b.querySelector("img"); if (i?.src) lightbox(i.src); });
   bindCast(v, c); bindCodex(v);

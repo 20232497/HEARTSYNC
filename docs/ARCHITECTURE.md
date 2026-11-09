@@ -21,7 +21,7 @@
 ## 2. 층과 규칙
 
 ```
-core      config(잎) · constants · util · events · storage · state · target · cast · audience · wallet · character · safety · rooms · settings · migrate · commands(순수)  (types.js는 문서만 — 번들에 안 들어감)
+core      config(잎) · constants · util · events · storage · state · shelf(내 서재 — 찜·최근 본·수집 기록) · target · cast · audience · wallet · character · safety · rooms · settings · migrate · commands(순수)  (types.js는 문서만 — 번들에 안 들어감)
 content   index.js — 빌드가 만든 generated.js(ORIGINALS · HOME_ROWS)
 services  supabase · cloud · sync · load · images · support
 images    codes(그림 태그 읽기 — 순수) · situations(감정 칸 0~14 이름·낱말 점수 — 순수) · pick(인물·칸별 그림 찾기)

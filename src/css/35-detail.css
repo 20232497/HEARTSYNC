@@ -6,6 +6,10 @@
 .detail h1 { font-family:var(--display); font-size:30px; line-height:1.2; margin:4px 0 6px; text-wrap:balance; }
 .detail .lead { font-size:15.5px; margin:0 0 12px; }
 .detail .tags { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:14px; }
+.like-btn { margin-bottom:14px; gap:6px; }
+.like-btn svg { width:15px; height:15px; }
+.like-btn[aria-pressed="true"] { color:var(--accent); border-color:var(--accent); background:var(--accent-soft); }
+.like-btn[aria-pressed="true"] svg { fill:currentColor; }
 .detail .tags span { font-size:12.5px; background:var(--surface2); border-radius:7px; padding:2px 9px; color:var(--muted); }
 .box { background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:16px; }
 .box + .box { margin-top:12px; }

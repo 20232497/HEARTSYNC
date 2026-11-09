@@ -4,7 +4,7 @@
 import { LEN, MODELS, RECOMMEND_DEFAULT } from "../ai/models.js";
 import { allCommands } from "../core/commands.js";
 import { exampleCast } from "../core/character.js";
-import { EXAMPLE_SIT, LIMITS, SIT } from "../core/constants.js";
+import { EXAMPLE_SIT, LIMITS, SHELF, SIT } from "../core/constants.js";
 import { PLAN, FREE_DAILY, PLUS_MONTHLY, WELCOME, listPrice } from "../core/wallet.js";
 import { esc, num, won } from "../core/util.js";
 import { SUPPORT_MAIL } from "../services/support.js";
@@ -41,7 +41,7 @@ export function faqGroups() {
     ]],
     ["계정·데이터", [
       ["로그인하지 않아도 되나요?", "네, <b>로그인 없이 둘러보기</b>로 쓸 수 있어요. 다만 이때 데이터는 이 브라우저에만 저장돼, 브라우저 데이터를 지우면 사라지고 다른 기기와 이어지지 않아요."],
-      ["로그인하면 무엇이 저장되나요?", "대화·페르소나(사진 포함)·설정이 계정에 저장돼 PC와 휴대폰에서 이어져요. 처음 로그인할 때 이 기기에만 있던 대화를 계정에 합칠 수 있어요. 이메일이 없어도 카카오·네이버·Google 계정으로 가입할 수 있어요."],
+      ["로그인하면 무엇이 저장되나요?", `대화·페르소나(사진 포함)·설정이 계정에 저장돼 PC와 휴대폰에서 이어져요. 처음 로그인할 때 이 기기에만 있던 대화를 계정에 합칠 수 있어요. 찜한 작품·최근 본 작품·도감에 모은 그림 기록은 ${SHELF.syncFrom}부터 계정에도 저장돼요(그 전에는 이 기기에만 — 그날 자동으로 올라가고, 여러 기기의 기록은 합쳐져요). 이메일이 없어도 카카오·네이버·Google 계정으로 가입할 수 있어요.`],
       ["API 키도 계정에 저장되나요?", "아니요. API 키는 이 기기의 브라우저에만 두고 계정·서버로 보내지 않아요. 다른 기기에서는 키를 한 번 더 넣어 주세요."],
       ["비밀번호를 잊었어요.", "로그인 화면의 <b>비밀번호를 잊었어요</b>로 재설정 메일을 받아 새 비밀번호를 정해요."],
       ["계정을 삭제하려면요?", "<a href=\"#me\">MY</a> → 계정의 <b>계정 삭제</b>를 누르면 계정과 계정에 저장된 데이터, 남긴 문의가 바로 지워져요. 이 기기에 남은 데이터는 MY의 <b>모든 데이터 초기화</b>로 지울 수 있어요."]

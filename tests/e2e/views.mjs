@@ -101,6 +101,24 @@ for (const [dev, engine, opts] of [["Desktop Chrome", chromium, {}], ["iPhone 13
       return { pd, pc, nt, nc, mem: PLAN.free.memoMax, want: LIMITS, end: [" / " + num(LIMITS.personaDesc), " / " + num(LIMITS.userNote)] };
     });
     { const l = res.limits; if (l.pd !== l.want.personaDesc || l.nt !== l.want.userNote || l.mem !== l.want.memory || l.pc.slice(-l.end[0].length) !== l.end[0] || l.nc.slice(-l.end[1].length) !== l.end[1]) errs.push("설정 상한이 상수와 다름: " + JSON.stringify(l)); }
+    // 내 서재 — 상세의 찜 버튼 → 홈의 '찜한 작품' 줄, 상세를 열면 '최근 본 작품' 줄, 같은 홈 줄의 다른 작품(줄이 있는 작품만), 관심있는 대화로 거름, 찜을 풀면 줄이 사라짐
+    res.shelf = await p.evaluate(async () => {
+      const nap = (ms) => new Promise((r) => setTimeout(r, ms)), was = { hash: location.hash, shelf: JSON.stringify(S.shelf), aud: S.settings.audience };
+      const c = ORIGINALS.find((x) => x.row), solo = ORIGINALS.find((x) => !x.row), ids = (sel) => { const h = document.querySelector(sel); return h ? [...h.nextElementSibling.querySelectorAll("[data-char]")].map((b) => b.dataset.char) : null; };
+      S.shelf = mergeShelf(); S.settings.audience = "all"; S.cat = "전체"; S.q = "";
+      location.hash = "c-" + solo.id; await nap(300); const soloNear = !!document.querySelector("#rowNear");
+      location.hash = "c-" + c.id; await nap(300);
+      const near = ids("#rowNear"), wantNear = ORIGINALS.filter((x) => x.row === c.row && x.id !== c.id).map((x) => x.id), off = $("#like").getAttribute("aria-pressed");
+      $("#like").click(); const on = $("#like").getAttribute("aria-pressed"), label = $("#like").textContent, saved = !!(KV.getLocal("shelf") || { likes: {} }).likes[c.id];
+      location.hash = "home"; await nap(300); const likes = ids("#rowLikes"), recent = ids("#rowRecent");
+      S.settings.audience = audOf(c) === "f" ? "m" : "f"; viewHome(); const other = [ids("#rowLikes"), (ids("#rowRecent") || []).includes(c.id)];
+      S.settings.audience = "all"; location.hash = "c-" + c.id; await nap(300); const still = $("#like").getAttribute("aria-pressed"); $("#like").click();
+      location.hash = "home"; await nap(300); const gone = ids("#rowLikes");
+      S.settings.audience = was.aud; location.hash = was.hash; await nap(400); S.shelf = JSON.parse(was.shelf); KV.setLocal("shelf", S.shelf); // 돌아간 화면이 상세면 최근 본에 적히므로 그 뒤에 되돌림
+      return { soloNear, near, wantNear, off, on, label, saved, likes, recent, want: [c.id, solo.id], other, still, gone };
+    });
+    { const s = res.shelf; if (s.soloNear || JSON.stringify(s.near) !== JSON.stringify(s.wantNear) || !s.wantNear.length || s.off !== "false" || s.on !== "true" || s.label !== "찜한 작품" || !s.saved || JSON.stringify(s.likes) !== JSON.stringify([s.want[0]])
+      || JSON.stringify(s.recent) !== JSON.stringify(s.want) || s.other[0] !== null || s.other[1] || s.still !== "true" || s.gone !== null) errs.push("내 서재(찜·최근 본·같은 줄)가 다름: " + JSON.stringify(s)); }
     // 작품 메타 한 줄 — 가짜 데이터로 틀만: 제작자 기본값, 공개일·독점 배지
     res.meta = await p.evaluate(() => ({ def: metaHTML({}) === esc(DEFAULT_CREATOR), full: metaHTML({ creator: "시험 <제작자>", exclusive: true, publishedAt: "2026-11-09" }) }));
     if (!res.meta.def || res.meta.full.indexOf("시험 &lt;제작자&gt; · ") !== 0 || !res.meta.full.includes("2026.11.09 공개") || !res.meta.full.includes('<span class="pill gold">독점</span>')) errs.push("작품 메타 줄이 다름: " + JSON.stringify(res.meta));

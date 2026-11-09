@@ -1,5 +1,6 @@
 /* MY → 계정 칸: 처음 로그인 합치기(firstSync), 동기화 상태·로그아웃·계정 삭제 */
 import { on } from "../core/events.js";
+import { resetShelf } from "../core/shelf.js";
 import { S } from "../core/state.js";
 import { $, esc, toast } from "../core/util.js";
 import { CLOUD, cloudStateText } from "../services/cloud.js";
@@ -29,7 +30,7 @@ export async function firstSync() {
   return new Promise((res) => {
     let done = false;
     const pick = async (merge) => { if (done) return; done = true; ov.remove(); await use(merge); res(); };
-    $("#mYes", ov).onclick = () => pick(true); $("#mNo", ov).onclick = () => pick(false);
+    $("#mYes", ov).onclick = () => pick(true); $("#mNo", ov).onclick = () => { resetShelf(); pick(false); }; // 이 기기의 찜·최근 본도 합치지 않음
     ov.addEventListener("click", (e) => { if (e.target === ov) pick(true); }); // 그냥 닫으면 아무것도 잃지 않게 합침
   });
 }

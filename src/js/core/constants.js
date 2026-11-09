@@ -25,6 +25,8 @@ export const LORE = { scan: 3, max: 8, budget: 2500 };
 /* 화면 예시 문구의 기본값 — 예시는 보고 있는 작품의 인물로 만들고(core/character.js exampleCast), 작품이 하나도 없을 때만 이 값. EXAMPLE_SIT은 예시에 쓰는 감정 번호 */
 export const EXAMPLE_CAST = { code: "ABC", name: "주인공" }, EXAMPLE_SIT = 3;
 /* 작품이 제작자(work.js creator)를 적지 않았을 때 보이는 이름 */
+/** 내 서재(찜·최근 본·수집 기록, core/shelf.js): recent 최근 본 작품을 몇 개까지 · syncFrom 계정에도 올리기 시작하는 날(개인정보처리방침 시행일과 같은 날 — 미루려면 이 날짜와 privacy.html의 시행일을 같이) */
+export const SHELF = { recent: 12, syncFrom: "2026-11-23" };
 export const DEFAULT_CREATOR = "HEART SYNC 스튜디오";
 /* 글자 수 상한 — 작품 데이터는 빌드가 검사하고(APP_RULES), 화면의 입력 칸은 maxlength와 "n / 한도"에 씀.
    guide 작품의 플레이 가이드(work.js guide) · personaDesc 페르소나 상세 정보 · userNote 유저노트(대화방마다 하나) ·

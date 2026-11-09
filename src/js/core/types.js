@@ -244,11 +244,20 @@
  * @property {Aud} [audience]
  */
 /**
+ * 내 서재(core/shelf.js, KV "shelf") — 시각은 Date.now() 값. 여러 기기의 값은 mergeShelf로 합침(작품마다 더 늦은 시각, seen은 합집합).
+ * @typedef {Object} Shelf
+ * @property {Record<string, number>} likes 작품 id → 찜한 시각
+ * @property {Record<string, number>} unlikes 작품 id → 찜을 푼 시각(likes보다 늦으면 찜이 아님 — 다른 기기에도 전해지게 남겨 둠)
+ * @property {Record<string, number>} recent 작품 id → 상세 페이지를 마지막으로 본 시각(SHELF.recent개까지)
+ * @property {Record<string, string[]>} seen 작품 id → 대화에서 본 그림 코드("HSY3"·"MP1"·"EV2") — 도감의 수집 기록
+ */
+/**
  * 전역 상태 S(core/state.js). 저장은 KV — 바꾼 모듈이 save…()로 씀.
  * @typedef {Object} State
  * @property {Wallet} wallet
  * @property {Persona[]} personas
  * @property {RoomIndex[]} rooms
+ * @property {Shelf} shelf
  * @property {Settings} settings
  * @property {string} cat 홈 장르 필터(ui/home.js)
  * @property {string} q 홈 검색어

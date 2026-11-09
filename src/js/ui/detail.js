@@ -1,13 +1,17 @@
-/* 작품 상세 페이지: 표지·소개·플레이 가이드·세계관 일러스트·등장인물(누르면 도감 인물 시트)·장소·컷씬·명령어·시작 상황 → 새 대화 시작 */
+/* 작품 상세 페이지: 표지·소개·찜·플레이 가이드·세계관 일러스트·등장인물(누르면 도감 인물 시트)·장소·컷씬·명령어·시작 상황 → 새 대화 시작, 아래에 같은 줄의 다른 작품 */
 import { MODELS } from "../ai/models.js";
+import { HOME_ROWS, ORIGINALS } from "../content/index.js";
+import { audOK } from "../core/audience.js";
 import { getChar, normalizeChar } from "../core/character.js";
 import { defaultSet, newRoom } from "../core/rooms.js";
+import { liked, toggleLike, touchRecent } from "../core/shelf.js";
 import { S, room, setRoom } from "../core/state.js";
-import { $, $$, ago, esc } from "../core/util.js";
+import { $, $$, ago, esc, toast } from "../core/util.js";
 import { FREE_DAILY, plan, qShort, quote } from "../core/wallet.js";
 import { IMG } from "../services/images.js";
 import { bindCast, bindCodex, castGridHTML, codexHTML, guideHTML, metaHTML } from "./codex.js";
 import { coverHTML, lightbox } from "./cover.js";
+import { rowHTML } from "./home.js";
 import { ICON } from "./icons.js";
 import { plusSheet } from "./pay.js";
 import { bindGo, go, topbar } from "./shell.js";
@@ -20,6 +24,9 @@ export function viewDetail(id) {
   const persona = S.personas.find((p) => p.def) || S.personas[0];
   const wa = worldArtHTML(c); // 키워드북이 없으면 칸을 숨김
   const set0 = defaultSet(c), q0 = quote(set0); // 새 대화방이 시작하는 모델(작품의 권장 모델)과 그 턴당 비용
+  const row = HOME_ROWS.find((w) => w.key === c.row), near = row ? ORIGINALS.filter((x) => x.row === c.row && x.id !== c.id && audOK(x)) : []; // 같은 홈 줄의 다른 작품(줄이 없는 작품은 칸을 숨김)
+  const likeHTML = (on) => `${ICON.mark}<span>${on ? "찜한 작품" : "찜하기"}</span>`;
+  touchRecent(c.id);
   v.innerHTML = `<div class="page">
     ${topbar(`<button class="icon-btn" data-go="home" aria-label="뒤로">${ICON.back}</button>`)}
     <div class="detail">
@@ -29,6 +36,7 @@ export function viewDetail(id) {
         <h1>${esc(c.title)}</h1>
         <p class="lead">${esc(c.oneLiner)}</p>
         <div class="tags">${(c.tags || []).map((t) => `<span>#${esc(t)}</span>`).join("")}</div>
+        <button class="btn sm ghost like-btn" id="like" aria-pressed="${liked(c.id)}">${likeHTML(liked(c.id))}</button>
         <div class="box"><h3>소개</h3><p>${esc(c.desc)}</p></div>
         ${guideHTML(c)}
         <div class="box" id="wArtBox" ${wa ? "" : 'style="display:none"'}><h3>세계관 일러스트</h3>${wa}</div>
@@ -45,8 +53,11 @@ export function viewDetail(id) {
         </div>
         ${rooms.length ? `<div class="box"><h3>내 대화방</h3><div class="cont">${rooms.map((r) => `<button data-room="${esc(r.id)}">${coverHTML(r)}<span class="x"><b>${esc(r.name)}</b><span>${esc(r.last)}</span></span><span class="note">${ago(r.at)}</span></button>`).join("")}</div></div>` : ""}
       </div>
-    </div></div>`;
+    </div>
+    ${rowHTML("같은 줄의 다른 작품", row ? row.title : "", near, "rowNear")}</div>`;
   bindGo(v); IMG.hydrate(v);
+  $$("[data-char]", v).forEach((b) => b.onclick = () => go("c-" + b.dataset.char));
+  $("#like").onclick = (e) => { const b = e.currentTarget, on = toggleLike(c.id); b.setAttribute("aria-pressed", on); b.innerHTML = likeHTML(on); toast(on ? "찜했어요 — 홈의 '찜한 작품'에서 볼 수 있어요" : "찜을 풀었어요"); };
   $$("[data-room]", v).forEach((b) => b.onclick = () => go("r-" + b.dataset.room));
   $$("[data-wlb]", v).forEach((b) => b.onclick = () => { const i = b.querySelector("img"); if (i?.src) lightbox(i.src); });
   bindCast(v, c); bindCodex(v);
