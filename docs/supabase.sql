@@ -272,23 +272,24 @@ grant select on public.adult_checks to authenticated;
 grant all on public.adult_checks to service_role;
 
 -- 대화 관문의 하루 한도(2026-11-09): 위와 같이 SQL Editor에서 한 번 실행(여러 번 실행해도 됨). Edge Function(docs/edge/chat.ts)만 쓴다.
--- 성인 트랙 대화는 회사 키로 모델을 부르므로 계정마다 하루(한국 날짜) 호출 수를 센다. 대화 내용은 저장하지 않는다 — 계정·날짜·횟수뿐. 계정을 지우면 함께 지워진다.
+-- 관문을 지나는 대화(성인 트랙, 일반 트랙의 무료 길)는 회사 키로 모델을 부르므로 계정마다 트랙별로 하루(한국 날짜) 호출 수를 센다. 대화 내용은 저장하지 않는다 — 계정·날짜·트랙·횟수뿐. 계정을 지우면 함께 지워진다.
 create table if not exists public.chat_usage (
   user_id uuid not null references auth.users (id) on delete cascade,
   day date not null,
+  track text not null check (track in ('general', 'adult')),
   n integer not null default 0,
-  primary key (user_id, day)
+  primary key (user_id, day, track)
 );
 alter table public.chat_usage enable row level security;
 -- 정책·권한 없음: 앱(로그인한 사람 포함)은 읽지도 쓰지도 못한다(service_role을 쓰는 함수만)
 revoke all on public.chat_usage from anon, authenticated;
 grant all on public.chat_usage to service_role;
 -- 오늘 횟수를 하나 올리고 올린 뒤의 값을 돌려줌(한 문장이라 동시에 불려도 빠지지 않음)
-create or replace function public.bump_chat_usage(uid uuid) returns integer
+create or replace function public.bump_chat_usage(uid uuid, tr text) returns integer
 language sql security definer set search_path = '' as $$
-  insert into public.chat_usage (user_id, day, n) values (uid, (now() at time zone 'Asia/Seoul')::date, 1)
-  on conflict (user_id, day) do update set n = public.chat_usage.n + 1
+  insert into public.chat_usage (user_id, day, track, n) values (uid, (now() at time zone 'Asia/Seoul')::date, tr, 1)
+  on conflict (user_id, day, track) do update set n = public.chat_usage.n + 1
   returning n;
 $$;
-revoke all on function public.bump_chat_usage(uuid) from public, anon, authenticated;
-grant execute on function public.bump_chat_usage(uuid) to service_role;
+revoke all on function public.bump_chat_usage(uuid, text) from public, anon, authenticated;
+grant execute on function public.bump_chat_usage(uuid, text) to service_role;

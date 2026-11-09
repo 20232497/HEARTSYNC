@@ -18,10 +18,11 @@ import { SB } from "../services/supabase.js";
 export function engineName() { return !hasClaudeKey() ? "연결 안 됨" : S.settings.apiKey ? "API 키" : "HEART SYNC 서버"; }
 const MODEL_OF = { quick: "claude-haiku-5-5", default: "claude-sonnet-5-5", complex: "claude-opus-5-5" };
 /** 서버 대화 관문이 돌려주는 오류 코드 중 그대로 안내하는 것(나머지는 upstream_error). */
-const GATE_CODES = ["login", "adult_required", "minor_blocked", "too_many", "rate_limited", "not_configured"];
+const GATE_CODES = ["login", "need_key", "adult_required", "minor_blocked", "too_many", "rate_limited", "not_configured"];
 /**
  * AI 호출 하나. 경로는 방의 트랙(ai/models.js trackOf)이 정함 — 본문·요약·추천 모두 room을 넘겨야 같은 경로로 감.
- * 일반 트랙: api.anthropic.com 스트리밍(키는 S.settings.apiKey, CFG.serverKeys면 프록시가 붙임). 성인 트랙: 서버 대화 관문(CFG.chatUrl)만 — Anthropic으로는 보내지 않음.
+ * 일반 트랙: api.anthropic.com 스트리밍(키는 S.settings.apiKey, CFG.serverKeys면 프록시가 붙임) — 내 키가 없고 관문(CFG.chatUrl)이 있으면 관문의 무료 길(로그인 필요, 서버가 정한 등급만).
+ * 성인 트랙: 서버 대화 관문만 — Anthropic으로는 보내지 않음.
  * @param {LLMMessage[]} messages 첫 메시지 = 시스템
  * @param {LLMOptions} [o]
  * @returns {Promise<string|unknown>} json이면 파싱한 값, 아니면 본문 글(상태 JSON 포함 — ai/parse.js로 나눔)
@@ -29,7 +30,8 @@ const GATE_CODES = ["login", "adult_required", "minor_blocked", "too_many", "rat
  */
 export async function llm(messages, { tier = "quick", onText, signal, json = false, maxTokens = 2000, room = null } = {}) {
   const adult = trackOf(room) === "adult";
-  if (!adult && !hasClaudeKey()) throw { code: "no_engine" };
+  const gate = adult || (!S.settings.apiKey && !CFG.serverKeys && !!CFG.chatUrl);
+  if (!gate && !hasClaudeKey()) throw { code: "no_engine" };
   const sys = messages[0].content, rest = [];
   for (const m of messages.slice(1)) {
     const last = rest[rest.length - 1];
@@ -37,7 +39,7 @@ export async function llm(messages, { tier = "quick", onText, signal, json = fal
   }
   if (!rest.length || rest[0].role !== "user") rest.unshift({ role: "user", content: "(시작)" });
   const req = { sys, rest, tier, onText, signal, maxTokens };
-  const text = adult ? await viaGateway(req, room) : await viaAnthropic(req);
+  const text = gate ? await viaGateway(req, room, adult) : await viaAnthropic(req);
   if (json) { const v = looseJSON(text); if (v === undefined) throw { code: "invalid_json", text }; return v; }
   return text;
 }
@@ -66,25 +68,27 @@ async function viaAnthropic({ sys, rest, tier, onText, signal, maxTokens }) {
 /* 성인 트랙 — 서버 대화 관문(Supabase Edge Function "chat", docs/edge/chat.ts). 관문이 로그인·성인 인증·미성년 암시·하루 한도를 판정하고,
    모델을 골라 OpenAI 호환 스트림으로 중계함. 여기서 미리 보는 것(관문 주소·로그인·roomMinorHint)은 헛걸음을 줄일 뿐이고 판정은 서버가 함.
    실패해도 Anthropic으로 돌리지 않음(대체 경로 없음) */
-async function viaGateway({ sys, rest, tier, onText, signal, maxTokens }, r) {
+/* 일반 트랙의 무료 길도 같은 관문 — 성인 인증·미성년 판정 없이 로그인과 하루 한도만 보고 회사 키의 Claude로 감(스트림은 Anthropic 모양). 서버에 없는 등급은 need_key */
+async function viaGateway({ sys, rest, tier, onText, signal, maxTokens }, r, adult) {
   if (!CFG.chatUrl) throw { code: "no_gateway" };
   if (SB.s) await SB.fresh();
-  if (!SB.s) throw { code: "login" };
-  if (roomMinorHint(r, (getChar(r.char.id) || r.char).lore)) throw { code: "minor_blocked" };
+  if (!SB.s) throw { code: adult ? "login" : "login_free" };
+  if (adult && roomMinorHint(r, (getChar(r.char.id) || r.char).lore)) throw { code: "minor_blocked" };
   const T = timeoutSignal(TIMEOUT.connect, signal); let res;
   try {
     res = await fetch(CFG.chatUrl, {
       method: "POST", signal: T.signal,
       headers: { "content-type": "application/json", apikey: SB.key, authorization: "Bearer " + SB.s.access_token },
-      body: JSON.stringify({ track: "adult", tier, max_tokens: maxTokens, messages: [{ role: "system", content: sys }].concat(rest) })
+      body: JSON.stringify({ track: adult ? "adult" : "general", tier, max_tokens: maxTokens, messages: [{ role: "system", content: sys }].concat(rest) })
     });
   } catch (e) { T.clear(); throw { code: abortCode(e, T, "upstream_error") }; }
   if (!res.ok) {
     T.clear();
     const j = await res.json().catch(() => ({}));
-    throw { code: GATE_CODES.includes(j && j.code) ? j.code : res.status === 429 ? "rate_limited" : "upstream_error" };
+    const code = GATE_CODES.includes(j && j.code) ? j.code : res.status === 429 ? "rate_limited" : "upstream_error";
+    throw { code: !adult && code === "not_configured" ? "no_engine" : code }; // 무료 길을 켜지 않은 서버(성인 트랙만) — 키를 넣으라는 안내로
   }
-  return pump(res, T, openaiEvent, onText, TIMEOUT.think);
+  return adult ? pump(res, T, openaiEvent, onText, TIMEOUT.think) : pump(res, T, anthropicEvent, onText);
 }
 /* 스트림을 끝까지 읽어 본문을 모음 — 조각 사이 stall 시간 제한(첫 글자 전에는 firstMs), 끊기면 받은 데까지를 text에 실어 던짐. parse는 공급자별 조각 해석(ai/stream.js).
    시간 제한은 data 줄이 올 때만 다시 셈(readSSE) — 주석 줄만 보내며 연결을 붙드는 스트림은 끝내 timeout */
@@ -119,6 +123,8 @@ export function errCopy(e) {
     case "timeout": return "응답이 너무 오래 걸려 멈췄어요. 네트워크를 확인하고 다시 시도해 주세요. 하트는 돌려드렸어요.";
     case "session_expired": return "로그인이 만료됐어요. 페이지를 새로고침해 주세요.";
     case "no_gateway": case "not_configured": return "이 작품의 대화는 아직 준비 중이에요. 하트는 돌려드렸어요.";
+    case "login_free": return "로그인하면 API 키 없이 라이트 모델로 대화할 수 있어요. MY → 계정에서 로그인하거나, MY → AI 연결에 Anthropic API 키를 넣어 주세요.";
+    case "need_key": return "이 모델은 아직 Anthropic API 키가 있어야 쓸 수 있어요(MY → AI 연결). 라이트 모델은 키 없이 쓸 수 있어요. 하트는 돌려드렸어요.";
     case "login": return "이 작품은 로그인한 뒤에 대화할 수 있어요. MY → 계정에서 로그인해 주세요.";
     case "adult_required": return "성인 인증이 확인된 계정만 이 작품과 대화할 수 있어요.";
     case "minor_blocked": return "미성년으로 보이는 인물·표현이 있어 이어 쓸 수 없어요. 유저노트·설정·최근 대화를 확인해 주세요.";
