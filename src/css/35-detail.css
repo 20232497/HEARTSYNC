@@ -43,3 +43,8 @@
 .wcard figcaption b { font-size:13.5px; display:flex; align-items:center; gap:6px; }
 .wcard figcaption span { color:var(--muted); }
 .wkind { font-size:11px; font-weight:600; color:var(--accent); background:var(--accent-soft); border-radius:6px; padding:1px 6px; }
+/* 세계관 수첩(대화방 드로어): 한 줄에 한 장, 아직 대화에 안 나온 항목은 점선·흐린 글자 */
+.lore-book { grid-template-columns:1fr; }
+.wcard.locked { border-style:dashed; background:var(--surface2); }
+.wcard.locked figcaption b, .wcard.locked figcaption span { color:var(--muted); }
+.wcard.locked .wkind { color:var(--muted); background:var(--bg); }
