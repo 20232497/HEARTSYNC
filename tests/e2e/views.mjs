@@ -145,7 +145,8 @@ for (const [dev, engine, opts] of [["Desktop Chrome", chromium, {}], ["iPhone 13
     });
     await wait(250); if (out) await p.screenshot({ path: `${out}/${tag}_views_lorebook.png` });
     res.lorebook.plain = await p.evaluate(() => {
-      closeOverlays(); const w = ORIGINALS.find((c) => !(c.lore || []).length); setRoom(newRoom(normalizeChar(getChar(w.id)), 0, S.personas[0]));
+      // 키워드북 없는 작품은 가짜 사본으로 — 지금 오리지널은 모두 키워드북이 있음(없는 id라 getChar가 이 사본을 씀)
+      closeOverlays(); setRoom(newRoom({ ...normalizeChar(getChar(ORIGINALS[0].id)), id: "zz-plain", lore: [] }, 0, S.personas[0]));
       openRoomDrawer("main"); const has = !!$('[data-v="lore"]'); closeOverlays(); return has;
     });
     { const l = res.lorebook; if (!l.menu.includes(`1 / ${l.n}`) || l.cards !== l.n || l.locked !== l.n - 1 || !l.open || l.leak.length || l.plain) errs.push("세계관 수첩이 다름: " + JSON.stringify(l)); }
