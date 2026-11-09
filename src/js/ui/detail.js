@@ -1,4 +1,4 @@
-/* 작품 상세 페이지: 표지·소개·세계관 일러스트·등장인물(누르면 도감 인물 시트)·장소·컷씬·명령어·시작 상황 → 새 대화 시작 */
+/* 작품 상세 페이지: 표지·소개·플레이 가이드·세계관 일러스트·등장인물(누르면 도감 인물 시트)·장소·컷씬·명령어·시작 상황 → 새 대화 시작 */
 import { ORIGINALS } from "../content/index.js";
 import { getChar, normalizeChar } from "../core/character.js";
 import { newRoom } from "../core/rooms.js";
@@ -6,7 +6,7 @@ import { S, room, setRoom } from "../core/state.js";
 import { $, $$, ago, esc } from "../core/util.js";
 import { FREE_DAILY, plan } from "../core/wallet.js";
 import { IMG } from "../services/images.js";
-import { bindCast, bindCodex, castGridHTML, codexHTML } from "./codex.js";
+import { bindCast, bindCodex, castGridHTML, codexHTML, guideHTML } from "./codex.js";
 import { coverHTML, lightbox } from "./cover.js";
 import { ICON } from "./icons.js";
 import { plusSheet } from "./pay.js";
@@ -30,6 +30,7 @@ export function viewDetail(id) {
         <p class="lead">${esc(c.oneLiner)}</p>
         <div class="tags">${(c.tags || []).map((t) => `<span>#${esc(t)}</span>`).join("")}</div>
         <div class="box"><h3>소개</h3><p>${esc(c.desc)}</p></div>
+        ${guideHTML(c)}
         <div class="box" id="wArtBox" ${wa ? "" : 'style="display:none"'}><h3>세계관 일러스트</h3>${wa}</div>
         <div class="box"><h3>등장인물 <small>누르면 코드·감정 칸 안내</small> <button class="btn sm ghost" data-go="codex-${esc(c.id)}" style="float:right">도감</button></h3>
           <div class="cast">${castGridHTML(c)}</div></div>

@@ -87,6 +87,7 @@
  * @property {string} oneLiner
  * @property {string[]} tags
  * @property {string} desc
+ * @property {string} [guide] 플레이 가이드 — 제작자가 독자에게 주는 안내문(줄바꿈만, LIMITS.guide자 이내). 상세 페이지·도감·대화방 드로어에 보임(AI에는 보내지 않음)
  * @property {string} persona AI에게 주는 인물·진상 설정
  * @property {string} [world]
  * @property {string} [speech]

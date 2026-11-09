@@ -26,6 +26,8 @@ for (const [dev, engine, opts] of [["Desktop Chrome", chromium, {}], ["iPhone 13
       await p.evaluate((id) => { location.hash = "c-" + id; }, id); await wait(350);
       const ok = await p.evaluate((id) => $("#view").textContent.includes(getChar(id).title), id);
       if (!ok) { errs.push(`상세 ${id}가 안 그려짐`); continue; }
+      // 플레이 가이드 칸은 작품에 guide가 있을 때만
+      if (await p.evaluate((id) => !!getChar(id).guide !== !!$("#view p.guide"), id)) errs.push(`상세 ${id}: 플레이 가이드 칸이 데이터와 다름`);
       res.works++;
       await p.evaluate((id) => { const r = newRoom(normalizeChar(getChar(id)), 0, S.personas[0]); location.hash = "r-" + r.id; }, id); await wait(700);
       const chk = await p.evaluate(() => ({ log: ($("#log")?.innerText || "").length, status: !!$(".status"), composer: !!$("textarea, #input, #composer textarea"), figs: document.querySelectorAll("#log figure, #log .scene-img").length }));

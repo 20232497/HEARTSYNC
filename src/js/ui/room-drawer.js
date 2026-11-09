@@ -15,6 +15,7 @@ import { IMG } from "../services/images.js";
 import { copyText, renderLog } from "./chat/log.js";
 import { statusBlock } from "./chat/render.js";
 import { lastAi, updateComposer } from "./chat/view.js";
+import { guideSheet } from "./codex.js";
 import { artHTML, coverHTML, lightbox, pavHTML } from "./cover.js";
 import { ICON } from "./icons.js";
 import { personaSheet } from "./me.js";
@@ -37,6 +38,7 @@ export function openRoomDrawer(view = "main") {
   const body = $("#dBody", ov), cfg = memCfg(), q = quote(r.set);
   if (view === "main") {
     const src = r.forkedFrom && S.rooms.some((x) => x.id === r.forkedFrom.roomId); // 분기한 방이고 원래 방이 아직 있으면 '원래 대화방' 버튼
+    const liveWork = getChar(c.id) || c, guide = liveWork.guide; // 플레이 가이드는 최신 작품에서(예전 방의 사본에는 없을 수 있음)
     body.innerHTML = `<div class="quick">
         <button id="qCopy">${ICON.copy}대화 복사</button><button id="qExport">${ICON.down}대화 내보내기</button><button id="qNew">${ICON.redo}처음부터</button></div>
       <div class="sheet-head"><h3 class="lbl" style="flex:1;margin:0">내 재화</h3><button class="btn sm pri" id="topup">충전</button></div>
@@ -60,6 +62,7 @@ export function openRoomDrawer(view = "main") {
         <button data-v="status">상태창</button>
         <button data-v="gallery">갤러리<span class="v">${galleryItems(r).length}장</span></button>
         <button data-v="bookmarks">북마크<span class="v">${(r.bookmarks || []).length}개</span></button>
+        ${guide ? `<div class="grp"></div><button id="mGuide">플레이 가이드<span class="v">제작자의 안내</span></button>` : ""}
       </div>
       <button class="btn ghost danger block" id="delRoom" style="margin-top:16px">이 대화방 삭제</button>
       <p class="note" style="margin-top:8px">AI 연결: ${engineName()}</p>`;
@@ -67,6 +70,7 @@ export function openRoomDrawer(view = "main") {
     $("#topup", body).onclick = () => go("store");
     $("#compo", body).onclick = () => go("c-" + c.id);
     if (src) $("#forkSrc", body).onclick = () => go("r-" + r.forkedFrom.roomId);
+    if (guide) $("#mGuide", body).onclick = () => guideSheet(liveWork);
     $("#mModel", body).onclick = () => openModelSheet();
     $("#qCopy", body).onclick = () => copyText(exportText(r), "대화 전체를 복사했어요");
     $("#qExport", body).onclick = () => exportRoom(r);

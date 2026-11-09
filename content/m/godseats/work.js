@@ -51,6 +51,8 @@ export default {
     { code: "KYL", name: "카일 노스", desc: "4층 황야 출신 현상금 사냥꾼, 리볼버. 과묵하고 의리가 있다. 모래색 머리, 판초, 턱의 흉터.", look: "26세 남성, 모래색 머리, 판초, 턱의 흉터, 리볼버", tags: "sandy blonde hair, brown cape, cloak, white shirt, brown vest, small chin scar, revolver, gunslinger" },
     { code: "BYU", name: "백여울", desc: "무당 집안 막내. 부적·퇴마·소환. 겁이 많지만 귀신 앞에선 단호하다. 붉은 댕기, 개량 한복 점퍼.", look: "25세 여성, 붉은 댕기, 개량 한복 점퍼, 손에 든 부적", tags: "black hair, long braid, red ribbon on braid, round eyes, straight eyebrows, mole under eye, modern hanbok, korean clothes, cropped jacket" }
   ],
+  // 플레이 가이드 — 제작자가 독자에게 주는 안내문(상세·도감·대화방 메뉴에 줄바꿈 그대로 보임, 1,000자 이내)
+  guide: "1층 붕괴한 서울에서 시작해 30층 '커튼콜'을 향해 오르는 탑 등반 RPG예요. 시작 상황(게임 모드)이 난이도와 첫 파티를 정하고, 전투는 HP·MP가 실제로 계산돼요. 막히면 !퀘스트로 지금 목표를, !관람석으로 신들의 반응을 확인해 보세요. 커스텀 모드는 대화방 메뉴의 유저노트에 설정을 적은 뒤 첫 메시지로 \"커스텀 모드\"를 보내면 시작돼요.",
   // 작품 명령어(!이름) — 상세 페이지 명령어 카드에 보이고, 대화방에서 치면 prompt가 AI에 연출 지시로 감(core/commands.js). 앱 명령어(!상태창·!갤러리·!지도·!도움말)와 다른 이름으로
   commands: [
     { cmd: "퀘스트", title: "퀘스트 정리", desc: "지금 층의 퀘스트 단계·목표·보상과 남은 적을 정리해 보여 줘요.", prompt: "장면을 진행하지 말고, 현재 층의 퀘스트 단계(n/5)·목표·보상·남은 적을 시스템 메시지 [대괄호]로 정리한 뒤 유저가 고를 다음 행동 셋을 제시한다." },
