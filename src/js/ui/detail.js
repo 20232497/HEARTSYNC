@@ -1,9 +1,10 @@
 /* 작품 상세 페이지: 표지·소개·플레이 가이드·세계관 일러스트·등장인물(누르면 도감 인물 시트)·장소·컷씬·명령어·시작 상황 → 새 대화 시작 */
+import { MODELS } from "../ai/models.js";
 import { getChar, normalizeChar } from "../core/character.js";
-import { newRoom } from "../core/rooms.js";
+import { defaultSet, newRoom } from "../core/rooms.js";
 import { S, room, setRoom } from "../core/state.js";
 import { $, $$, ago, esc } from "../core/util.js";
-import { FREE_DAILY, plan } from "../core/wallet.js";
+import { FREE_DAILY, plan, qShort, quote } from "../core/wallet.js";
 import { IMG } from "../services/images.js";
 import { bindCast, bindCodex, castGridHTML, codexHTML, guideHTML, metaHTML } from "./codex.js";
 import { coverHTML, lightbox } from "./cover.js";
@@ -18,6 +19,7 @@ export function viewDetail(id) {
   const rooms = S.rooms.filter((r) => r.charId === c.id);
   const persona = S.personas.find((p) => p.def) || S.personas[0];
   const wa = worldArtHTML(c); // 키워드북이 없으면 칸을 숨김
+  const set0 = defaultSet(c), q0 = quote(set0); // 새 대화방이 시작하는 모델(작품의 권장 모델)과 그 턴당 비용
   v.innerHTML = `<div class="page">
     ${topbar(`<button class="icon-btn" data-go="home" aria-label="뒤로">${ICON.back}</button>`)}
     <div class="detail">
@@ -39,7 +41,7 @@ export function viewDetail(id) {
         </div>
         <div class="field"><label for="pp">대화할 내 페르소나</label><select id="pp">${S.personas.map((p) => `<option value="${esc(p.id)}" ${p === persona ? "selected" : ""}>${esc(p.name)}${p.memo ? " · " + esc(p.memo) : ""}</option>`).join("")}</select></div>
         <div class="cta-row"><button class="btn pri big" id="start">새 대화 시작</button><button class="btn ghost sm" data-go="me">페르소나 관리</button></div>
-        <p class="note" style="margin-top:8px">라이트 모델은 하루 ${FREE_DAILY}턴 무료. 상태창: ${c.fields.slice(0, 8).map(esc).join(" · ")}${c.fields.length > 8 ? " 외" : ""}</p>
+        <p class="note" style="margin-top:8px">새 대화는 ${esc(MODELS[set0.model].name)} 모델(${q0.type === "heart" ? "턴당 ♥" + q0.n : qShort(q0)})로 시작해요 — 대화방에서 바꿀 수 있어요. 라이트 모델은 하루 ${FREE_DAILY}턴 무료. 상태창: ${c.fields.slice(0, 8).map(esc).join(" · ")}${c.fields.length > 8 ? " 외" : ""}</p>
         </div>
         ${rooms.length ? `<div class="box"><h3>내 대화방</h3><div class="cont">${rooms.map((r) => `<button data-room="${esc(r.id)}">${coverHTML(r)}<span class="x"><b>${esc(r.name)}</b><span>${esc(r.last)}</span></span><span class="note">${ago(r.at)}</span></button>`).join("")}</div></div>` : ""}
       </div>

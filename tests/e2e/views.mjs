@@ -61,14 +61,15 @@ for (const [dev, engine, opts] of [["Desktop Chrome", chromium, {}], ["iPhone 13
       res.sheets[name] = r;
       if (typeof r !== "number" || r < 10) errs.push(`시트 ${name}: ${r}`);
     }
-    // 비공개(스포일러) 플래그 — 가짜 데이터로 틀만 확인: 인물의 hidden 칸은 잠긴 칩, hidden 장소는 도감 칸에서 이름을 가림
+    // 비공개(스포일러) 플래그 — 가짜 데이터로 틀만 확인: 인물의 hidden 칸은 잠긴 칩, hidden 장소는 도감 칸에서 그림만 가림(이름은 보임)
     res.hidden = await p.evaluate(() => {
-      const c = { ...normalizeChar(getChar(ORIGINALS[0].id)), cast: [{ code: "T", name: "시험", hidden: [3] }], places: [{ name: "비밀의 방", hidden: true }, { name: "광장" }] };
+      const c = { ...normalizeChar(getChar(ORIGINALS[0].id)), id: "zz-test", cast: [{ code: "T", name: "시험", hidden: [3] }], places: [{ name: "비밀의 방", hidden: true }, { name: "광장" }],
+        images: { MP: { 1: "content/zz/images/MP1.webp", 2: "content/zz/images/MP2.webp" } } }; // 없는 작품 id라 이 가짜 그림 경로가 그대로 쓰임(글만 만들고 화면에 넣지는 않음)
       castSheet(c, c.cast[0]); const locked = $$(".overlay .chip.locked").length; closeOverlays();
       const html = codexHTML(c);
-      return { locked, placeHidden: !html.includes("비밀의 방") && html.includes("광장") };
+      return { locked, names: html.includes("비밀의 방") && html.includes("광장"), picHidden: !html.includes("MP1.webp") && html.includes("MP2.webp"), cards: (html.match(/wcard locked/g) || []).length };
     });
-    if (res.hidden.locked !== 1 || !res.hidden.placeHidden) errs.push("비공개 칸이 가려지지 않음: " + JSON.stringify(res.hidden));
+    if (res.hidden.locked !== 1 || !res.hidden.names || !res.hidden.picHidden || res.hidden.cards !== 1) errs.push("비공개 칸이 가려지지 않음: " + JSON.stringify(res.hidden));
     // 예시 문구는 데이터에서: 도감 '코드 읽는 법'은 고른 작품의 첫 인물 코드, MY 채팅 미리보기는 관심있는 대화에 맞는 첫 작품의 인물(전체 → 여성향으로 바꾸면 달라짐)
     res.example = await p.evaluate(async () => {
       const nap = (ms) => new Promise((r) => setTimeout(r, ms)), last = ORIGINALS[ORIGINALS.length - 1], want = exampleCast(normalizeChar(last));
@@ -89,14 +90,18 @@ for (const [dev, engine, opts] of [["Desktop Chrome", chromium, {}], ["iPhone 13
     // 작품 메타 한 줄 — 가짜 데이터로 틀만: 제작자 기본값, 공개일·독점 배지
     res.meta = await p.evaluate(() => ({ def: metaHTML({}) === esc(DEFAULT_CREATOR), full: metaHTML({ creator: "시험 <제작자>", exclusive: true, publishedAt: "2026-11-09" }) }));
     if (!res.meta.def || res.meta.full.indexOf("시험 &lt;제작자&gt; · ") !== 0 || !res.meta.full.includes("2026.11.09 공개") || !res.meta.full.includes('<span class="pill gold">독점</span>')) errs.push("작품 메타 줄이 다름: " + JSON.stringify(res.meta));
-    // 권장 모델 배지 — 작품이 recommend를 적지 않으면 기본(story), 적으면 그 모델 카드에
+    // 모델 배지와 새 방의 시작 모델 — '추천'은 늘 앱 기본 추천 모델에, '권장'은 작품이 recommend를 적었을 때만 그 모델에. 새 방은 권장(없으면 기본 추천) 모델로 시작
     res.rec = await p.evaluate(() => {
-      const live = getChar(room.char.id), keep = live.recommend, at = () => { openModelSheet(); const b = document.querySelector(".model-card .pill.ok"), k = b && b.closest("[data-m]").dataset.m; closeOverlays(); return k; };
+      const live = getChar(room.char.id), keep = live.recommend, at = () => {
+        openModelSheet(); const b = document.querySelector(".model-card .pill.ok"), rec = b ? b.closest("[data-m]").dataset.m : "";
+        const pick = [...document.querySelectorAll(".model-card")].filter((x) => x.querySelector(".k").textContent === MODELS[RECOMMEND_DEFAULT].badge).map((x) => x.dataset.m).join();
+        closeOverlays(); return { rec, pick, start: defaultSet(live).model };
+      };
       delete live.recommend; const def = at(); live.recommend = "master"; const set = at();
       if (keep === undefined) delete live.recommend; else live.recommend = keep;
-      return { def, want: RECOMMEND_DEFAULT, set };
+      return { def, set, want: RECOMMEND_DEFAULT };
     });
-    if (res.rec.def !== res.rec.want || res.rec.set !== "master") errs.push("권장 모델 배지가 다름: " + JSON.stringify(res.rec));
+    if (res.rec.def.rec !== "" || res.rec.def.pick !== res.rec.want || res.rec.def.start !== res.rec.want || res.rec.set.rec !== "master" || res.rec.set.pick !== res.rec.want || res.rec.set.start !== "master") errs.push("권장 모델 배지가 다름: " + JSON.stringify(res.rec));
     if (out) { await p.evaluate(() => openRoomDrawer("main")); await wait(300); await p.screenshot({ path: `${out}/${tag}_views_drawer.png` }); await p.evaluate(() => closeOverlays()); }
   } catch (e) { res.fail = String(e).slice(0, 400); }
   res.errs = [...new Set(errs)];

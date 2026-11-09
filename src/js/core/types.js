@@ -43,7 +43,7 @@
  * @property {string} name
  * @property {string} [desc]
  * @property {string} [tags] 영문 태그 — 앱은 쓰지 않음(앱 밖에서 그림을 만들 때)
- * @property {boolean} [hidden] 비공개(스포일러) — 도감·상세·장소 목록에서 이름·그림을 가리고, 대화에 [[MP<n>]]이 나온 방에서만 보임
+ * @property {boolean} [hidden] 비공개(스포일러) — 도감·상세·장소 목록에서 그림을 가림(이름·설명은 보임). 대화에 [[MP<n>]]이 나온 방에서는 그림도 보임
  */
 /**
  * 컷씬(코드 EV<n>, cuts의 n번째 — 1부터). when이 처음 이루어지는 순간 한 번. 그림은 images/EV<n>.*
@@ -51,7 +51,7 @@
  * @property {string} title
  * @property {string} [when] 나오는 조건(AI가 읽음)
  * @property {string} [tags] 영문 태그 — 앱은 쓰지 않음
- * @property {boolean} [hidden] 비공개(스포일러) — 도감·상세에서 제목·조건·그림을 가림(대화에 나오면 그 방의 갤러리에서 보임)
+ * @property {boolean} [hidden] 비공개(스포일러) — 도감·상세에서 그림을 가림(제목·조건은 보임 — 제목이 스포일러면 에둘러 적기). 대화에 나오면 그 방의 갤러리에서 보임
  */
 /**
  * 앱 명령어(core/commands.js APP_COMMANDS) — 어느 작품에서나 쓰는 공통 명령어. view와 prompt 중 하나를 가짐.
@@ -89,7 +89,7 @@
  * @property {string} desc
  * @property {string} [guide] 플레이 가이드 — 제작자가 독자에게 주는 안내문(줄바꿈만, LIMITS.guide자 이내). 상세 페이지·도감·대화방 드로어에 보임(AI에는 보내지 않음)
  * @property {string} [noteTemplate] 유저노트 양식 — 대화방 유저노트의 '이 작품의 양식 넣기'가 넣는 글(LIMITS.userNote자 이내). 있을 때만 버튼이 뜸
- * @property {ModelKey} [recommend] 권장 모델 — 모델 선택 시트의 '권장' 배지(없으면 ai/models.js RECOMMEND_DEFAULT "story"). 방의 기본 모델은 바꾸지 않음
+ * @property {ModelKey} [recommend] 권장 모델 — 새 대화방이 이 모델로 시작하고(core/rooms.js defaultSet), 모델 선택 시트에서 '권장' 배지가 붙음. 없으면 앱 기본 추천(ai/models.js RECOMMEND_DEFAULT "story")으로 시작하고 배지는 없음
  * @property {string} persona AI에게 주는 인물·진상 설정
  * @property {string} [world]
  * @property {string} [speech]

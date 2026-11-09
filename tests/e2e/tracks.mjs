@@ -40,7 +40,8 @@ for (const [dev, engine] of [["iPhone 13", webkit], ["Galaxy S9+", chromium]]) {
     }, GATE);
     const open = (track) => p.evaluate((track) => {
       const c = normalizeChar(JSON.parse(JSON.stringify(ORIGINALS.find((x) => x.id === "godseats")))); if (track) c.track = track;
-      const r = newRoom(c, 0, S.personas[0]); location.hash = "r-" + r.id; return r.char.track || "";
+      const r = newRoom(c, 0, S.personas[0]); r.set.model = "lite"; saveRoom(r); // 새 방의 기본은 권장 모델 — 이 시험은 경로만 보므로 라이트(무료 턴·quick)로 맞춤
+      location.hash = "r-" + r.id; return r.char.track || "";
     }, track);
     const turn = (text) => p.evaluate(async (text) => {
       const free = S.wallet.freeUsed;

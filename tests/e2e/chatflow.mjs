@@ -44,18 +44,21 @@ for (const [dev, engine] of targets) {
     res.off = await turn("첫 번째 입력");
     await p.evaluate(() => { room.set.autoScroll = true; saveRoom(room); });
     res.on = await turn("두 번째 입력");
-    // 좋아요 토글과 분기: 첫 응답(msgs[2])의 '분기' → 확인 → 방 수 +1·새 방으로 이동·메시지 수는 그 메시지까지·원래 방은 그대로·좋아요도 따라옴
+    // 좋아요 토글과 분기: 첫 응답(msgs[2])의 '분기' → 확인 → 방 수 +1·새 방으로 이동·메시지 수는 그 메시지까지·원래 방은 그대로·좋아요도 따라옴.
+    // 장기기억은 분기한 턴(1턴)보다 뒤에 시작하는 구간([2-2턴])을 빼고 복사
     res.fork = await p.evaluate(async () => {
       const nap = (ms) => new Promise((r) => setTimeout(r, ms)), before = S.rooms.length, src = room.id, n0 = room.msgs.length, i = 2; // [오프닝, 유저, AI, 유저, AI]
+      const head = memoryMark(1, 1) + " 앞\n첫 요약"; room.memory = head + "\n\n" + memoryMark(2, 2) + " 뒤\n둘째 요약"; saveRoom(room);
       document.querySelector(`[data-act="up"][data-i="${i}"]`).click();
       const fb = room.msgs[i].alts[room.msgs[i].idx].fb;
       document.querySelector(`[data-act="fork"][data-i="${i}"]`).click(); await nap(150);
       document.querySelector(".overlay #ok").click(); await nap(600);
       const kept = await KV.get(roomKey(src));
       return { rooms: S.rooms.length - before, moved: room.id !== src && location.hash === "#r-" + room.id, msgs: room.msgs.length, want: i + 1, from: !!room.forkedFrom && room.forkedFrom.roomId === src, fb, fbCopied: room.msgs[i].alts[room.msgs[i].idx].fb,
-        srcMsgs: kept.msgs.length, n0, mark: / \(분기\)$/.test(room.opening), base: baseOpening(room) === kept.opening, index: S.rooms.find((x) => x.id === room.id).fork === true, drawn: $$("#logInner .msg").length };
+        srcMsgs: kept.msgs.length, n0, mark: / \(분기\)$/.test(room.opening), base: baseOpening(room) === kept.opening, index: S.rooms.find((x) => x.id === room.id).fork === true, drawn: $$("#logInner .msg").length,
+        mem: room.memory === head, turn: room.turn, srcTurn: kept.turn, srcMem: kept.memory.includes(memoryMark(2, 2)) };
     });
-    { const f = res.fork; if (f.rooms !== 1 || !f.moved || f.msgs !== f.want || !f.from || f.fb !== 1 || f.fbCopied !== 1 || f.srcMsgs !== f.n0 || !f.mark || !f.base || !f.index || f.drawn !== f.want) errs.push("분기가 다름: " + JSON.stringify(f)); }
+    { const f = res.fork; if (f.rooms !== 1 || !f.moved || f.msgs !== f.want || !f.from || f.fb !== 1 || f.fbCopied !== 1 || f.srcMsgs !== f.n0 || !f.mark || !f.base || !f.index || f.drawn !== f.want || !f.mem || f.turn !== 1 || f.srcTurn !== 2 || !f.srcMem) errs.push("분기가 다름: " + JSON.stringify(f)); }
     res.sugClick = await p.evaluate(async () => { $("#sugBtn").click(); await new Promise((r) => setTimeout(r, 200)); return $$("#sugPanel [data-s]").length; });
     await p.evaluate(() => { hideSug(); openRoomDrawer("output"); }); await p.waitForTimeout(400);
     res.drawer = await p.evaluate(() => { const as = document.querySelector("#as"); return { has: !!as, checked: as && as.checked, oldSug: !!document.querySelector("#sa"), overflowX: document.documentElement.scrollWidth - innerWidth }; });

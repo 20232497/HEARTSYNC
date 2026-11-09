@@ -55,14 +55,13 @@ export function bindCast(v, c) {
 }
 /* 코드 글자의 비공개 번호들(codebook의 hidden) — 작품에 없는 코드는 빈 배열 */
 function hiddenOf(c, code) { const e = codebook(c)[code]; return e ? e.hidden : []; }
-/* 시리즈(장소 MP·컷씬 EV) 한 칸: 코드·이름·설명(장소 desc / 컷씬 when)과 그림 — 목록이 비면 빈 문자열. 비공개 항목은 코드만 남긴 잠긴 카드(이름·설명·그림 모두 가림) */
+/* 시리즈(장소 MP·컷씬 EV) 한 칸: 코드·이름·설명(장소 desc / 컷씬 when)과 그림 — 목록이 비면 빈 문자열.
+   비공개 항목은 그림만 🔒로 가림 — 이름·설명은 보임(2026-11-09 사용자 결정: 무엇을 모으는지는 알 수 있게. 제목이 스포일러면 제작자가 에둘러 적음) */
 function seriesBox(c, code, e) {
   if (!e.max) return "";
   return `<div class="box"><h3>${esc(e.label)} <small>코드 ${esc(code)}1~${esc(code)}${e.max}</small></h3><div class="codex-grid">${e.items.map((it, i) => {
-    const n = i + 1;
-    if (e.hidden.includes(n)) return `<figure class="wcard locked"><div class="wpic ph">🔒</div><figcaption><b><code class="code-chip">${esc(code + n)}</code>숨겨진 ${esc(e.label)}</b><span>${LOCK_NOTE}</span></figcaption></figure>`;
-    const ref = pickImg(c, code, n), name = it[e.nameKey] || code + n, sub = it.desc || it.when || "";
-    return `<figure class="wcard">${ref ? `<button class="wpic" data-cxlb aria-label="${esc(name)} 크게 보기">${IMG.tag(ref)}</button>` : `<div class="wpic ph">${esc(code + n)}</div>`}<figcaption><b><code class="code-chip">${esc(code + n)}</code>${esc(name)}</b>${sub ? `<span>${esc(sub)}</span>` : ""}</figcaption></figure>`; }).join("")}</div></div>`;
+    const n = i + 1, lock = e.hidden.includes(n), ref = lock ? null : pickImg(c, code, n), name = it[e.nameKey] || code + n, sub = it.desc || it.when || "";
+    return `<figure class="wcard${lock ? " locked" : ""}">${ref ? `<button class="wpic" data-cxlb aria-label="${esc(name)} 크게 보기">${IMG.tag(ref)}</button>` : `<div class="wpic ph"${lock ? ` title="${LOCK_NOTE}"` : ""}>${lock ? "🔒" : esc(code + n)}</div>`}<figcaption><b><code class="code-chip">${esc(code + n)}</code>${esc(name)}</b>${sub ? `<span>${esc(sub)}</span>` : ""}${lock ? `<span>🔒 그림은 ${LOCK_NOTE}</span>` : ""}</figcaption></figure>`; }).join("")}</div></div>`;
 }
 /* 예약 시리즈(SERIES — 장소·컷씬…) 칸 전부. 시리즈를 더하면 도감에 그대로 나옴 */
 const seriesHTML = (c, book) => Object.keys(SERIES).map((k) => seriesBox(c, k, book[k])).join("");
