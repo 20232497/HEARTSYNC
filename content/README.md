@@ -23,7 +23,8 @@ content/
 │  │  │  ├─ work.js
 │  │  │  └─ images/           그림(선택): KAS0.webp(인물 코드+감정 번호) · MP1.webp(장소) · EV1.webp(컷씬) · cover.webp · lore-1.webp …
 │  │  ├─ hasuk/work.js        서촌 오월 하숙집
-│  │  └─ lethe/work.js        호텔 레테: 마흔아홉 번째 밤
+│  │  ├─ lethe/work.js        호텔 레테: 마흔아홉 번째 밤
+│  │  └─ geumseo/work.js      금서고의 사서 — 책 하나 = 장소 하나, 인물마다 '먹빛 모습' 폼
 │  ├─ seodoyun/work.js        흑우 탐정사무소 (줄 없는 단독 작품)
 │  ├─ kael/work.js
 │  └─ baekyeon/work.js
@@ -161,6 +162,7 @@ content/<f|m|all>/[<줄>/]<id>/images/
 | hwanghu 계약 황후의 백 일 | KAS 카시안 · LEO 레온하르트 · LUK 루카스 · NOL 노엘 · RYL 라일 |
 | hasuk 서촌 오월 하숙집 | KTH 강태하 · YSH 윤시후 · BDH 백도현 · LHG 이한결 · SJH 서진혁 |
 | lethe 호텔 레테 | CSH 차사현 · HIG 한이결 · KMH 강무혁 · SHJ 서하준 · RU 루 |
+| geumseo 금서고의 사서 | ADL 아델 · GRT 가렛 · NOX 녹스 · TEO 테오도르 · LNX 레녹스(먹빛 모습 폼: ADLI · GRTI · NOXI · TEOI) |
 | godseats 신님들, 관전 매너 좀 | HSY 한서윤 · DHR 도하린 · RGN 류건 · SRN 세레나 바이스 · YNH 연화 · YCI 윤채이 · KYL 카일 노스 · BYU 백여울 |
 | daeyeon 대연궁 검시록 | IHW 이화 · SRY 설련 · JOK 정옥 · WLH 월하 · DNB 단비 |
 | baekya 백야호 | SHJ 서하진 · HRN 홍레나 · CYR 차유리 · MSO 미소 · YDG 윤도경 |

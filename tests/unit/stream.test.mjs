@@ -22,6 +22,25 @@ test("anthropicEvent: 글 조각·끝난 이유·거절 분류", () => {
   assert.deepEqual(anthropicEvent({ type: "message_delta", delta: { stop_reason: "end_turn" } }), { stop: "end_turn", category: null });
   assert.deepEqual(anthropicEvent({ type: "message_delta", delta: { stop_reason: "refusal", stop_details: { category: "cyber" } } }), { stop: "refusal", category: "cyber" });
   assert.deepEqual(anthropicEvent({ type: "ping" }), {});
+  assert.deepEqual(anthropicEvent({ type: "error", error: { type: "overloaded_error", message: "Overloaded" } }), { failed: true });
+});
+
+test("llm: 끝난 이유가 온 스트림만 답 — 중간의 오류 조각·끝난 이유 없이 닫힌 스트림은 upstream_error(받은 글은 text에)", async () => {
+  const { llm } = await import("../../src/js/ai/llm.js");
+  const { S } = await import("../../src/js/core/state.js");
+  S.settings.apiKey = "sk-ant-test";
+  const d = (o) => "data: " + JSON.stringify(o) + "\n\n", delta = (t) => d({ type: "content_block_delta", delta: { type: "text_delta", text: t } });
+  let sent = null;
+  const run = (body) => { globalThis.fetch = async (u, o) => { sent = JSON.parse(o.body); return new Response(stream([body])); }; return llm([{ role: "system", content: "s" }, { role: "user", content: "u" }], { tier: "quick", maxTokens: 3200 }); };
+  try {
+    assert.equal(await run(delta("안녕") + d({ type: "message_delta", delta: { stop_reason: "end_turn" } })), "안녕");
+    // 생각 토큰이 본문 몫을 먹지 않게: effort low + 출력 한도에 생각 몫(THINKING.room)
+    const { THINKING } = await import("../../src/js/ai/llm.js");
+    assert.deepEqual(sent.output_config, { effort: THINKING.effort });
+    assert.equal(sent.max_tokens, 3200 + THINKING.room);
+    await assert.rejects(run(delta("삼백… 년.") + d({ type: "error", error: { type: "overloaded_error" } })), (e) => e.code === "upstream_error" && e.text === "삼백… 년.");
+    await assert.rejects(run(delta("*한 번")), (e) => e.code === "upstream_error" && e.text === "*한 번");
+  } finally { delete globalThis.fetch; S.settings.apiKey = ""; }
 });
 
 test("openaiEvent: 글 조각·끝·내용 필터는 거절·오류", () => {
