@@ -13,7 +13,7 @@
 .meter { display:flex; align-items:center; gap:7px; font-size:12px; color:var(--muted); font-variant-numeric:tabular-nums; white-space:nowrap; }
 .meter i { width:64px; height:6px; border-radius:3px; background:var(--surface2); overflow:hidden; display:block; }
 .meter i b { display:block; height:100%; background:var(--accent); border-radius:3px; transition:width .6s; }
-@media (max-width:560px) { .meter { display:none; } .model-chip small { display:none; } }
+@media (max-width:560px) { .meter { display:none; } .model-chip { padding:0 10px; } .model-chip .per { display:none; } }
 .chat-log { position:relative; z-index:1; flex:1; overflow-y:auto; overflow-x:hidden; padding-block:18px 12px; padding-left:max(14px, env(safe-area-inset-left,0px)); padding-right:max(14px, env(safe-area-inset-right,0px)); }
 .log-inner { max-width:760px; margin:0 auto; display:flex; flex-direction:column; gap:16px; }
 .scene-card { text-align:center; padding:6px 0 4px; }

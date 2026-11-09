@@ -62,6 +62,14 @@ for (const [dev, engine, opts] of [["Desktop Chrome", chromium, {}], ["iPhone 13
       return { locked, placeHidden: !html.includes("비밀의 방") && html.includes("광장") };
     });
     if (res.hidden.locked !== 1 || !res.hidden.placeHidden) errs.push("비공개 칸이 가려지지 않음: " + JSON.stringify(res.hidden));
+    // 권장 모델 배지 — 작품이 recommend를 적지 않으면 기본(story), 적으면 그 모델 카드에
+    res.rec = await p.evaluate(() => {
+      const live = getChar(room.char.id), keep = live.recommend, at = () => { openModelSheet(); const b = document.querySelector(".model-card .pill.ok"), k = b && b.closest("[data-m]").dataset.m; closeOverlays(); return k; };
+      delete live.recommend; const def = at(); live.recommend = "master"; const set = at();
+      if (keep === undefined) delete live.recommend; else live.recommend = keep;
+      return { def, want: RECOMMEND_DEFAULT, set };
+    });
+    if (res.rec.def !== res.rec.want || res.rec.set !== "master") errs.push("권장 모델 배지가 다름: " + JSON.stringify(res.rec));
     if (out) { await p.evaluate(() => openRoomDrawer("main")); await wait(300); await p.screenshot({ path: `${out}/${tag}_views_drawer.png` }); await p.evaluate(() => closeOverlays()); }
   } catch (e) { res.fail = String(e).slice(0, 400); }
   res.errs = [...new Set(errs)];

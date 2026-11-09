@@ -66,6 +66,7 @@ export default {
   tags: ["태그", "…"],
   desc: "상세 페이지 소개",
   guide: "플레이 가이드 — 독자에게 주는 안내문(선택, 줄바꿈만, 1,000자 이내)",
+  recommend: "story",   // 권장 모델(선택) — lite·story·master, 빼면 story
   persona: `AI에게 주는 인물·진상 설정 …`,
   world: `세계관 규칙 …`,
   speech: `문체·말투 예시 …`,
@@ -86,6 +87,7 @@ export default {
 | `cat` | 로맨스·판타지·RPG·미스터리·일상·시뮬레이션 중 하나 |
 | `pal`·`motif`·`glyph` | 표지 색(0~7)·무늬(rain·city·stars·glow·petals·ash·curtain)·가운데 한 글자 |
 | `world_mode` | 여러 인물이 나오는 군상극(세계관). 1:1 캐릭터면 빼요 |
+| `recommend` | 권장 모델(선택) — `lite`·`story`·`master` 중 하나(`src/js/ai/models.js` MODELS의 키), 빼면 `story`. 대화방의 모델 선택 시트에서 그 모델에 '권장' 배지가 붙어요(방의 기본 모델은 바뀌지 않아요 — 새 방은 무료 턴이 있는 라이트로 시작) |
 | `guide` | 플레이 가이드(선택) — 제작자가 **독자에게** 주는 안내문(어떻게 시작하면 좋은지·쓸 만한 명령어·주의할 점). 마크다운 없이 줄바꿈만, 1,000자 이내(`src/js/core/constants.js` LIMITS.guide). 상세 페이지 소개 아래·도감 작품 칸·대화방 메뉴의 '플레이 가이드'에 보이고 AI에는 보내지 않아요(AI 지시는 `persona`·`world`에). 예: `m/godseats` |
 | `fields`·`gauge` | 상태창 칸 이름(3글자 안팎)과 관계 게이지 칸. 시작 상황 `status`의 칸은 `fields`에 있어야 해요 |
 | `cast` | 출연진. `code`는 **인물 코드 — 영문 대문자 1~4자**(한서윤 → `HSY`, 카시안 → `KAS`; 숫자는 안 되고 `MP`·`EV`는 예약). 그림 코드는 인물 코드 바로 뒤에 감정·행동 번호를 붙인 한 토큰이에요: 본문 태그 `[[HSY3]]`, 그림 파일 `HSY3.webp`(번호는 기본 감정 0~14 — `src/js/core/constants.js`의 `SIT`, 아래 '그림 코드 체계'). `of`(선택)는 다른 모습(폼)일 때 본체 인물의 코드 — 폼은 별도 코드로 그림을 갖고 AI는 '그 모습일 때만' 그 코드를 써요. `desc`(선택)는 상세 페이지 인물 시트(도감)에 보이는 독자용 소개 — 비밀·진상은 `persona`에만 적어요. `look`은 한국어 외모(AI가 읽고, 성별로 작품의 aud를 짐작). `tags`(선택)는 그 인물의 외모를 영문 Danbooru 태그로 적은 글 — 앱은 쓰지 않고, **앱 밖에서 그림을 만들 때** 같은 인물을 매번 같은 생김새로 맞추는 기준이에요(한국어는 넣지 않기 — 빌드가 막음). 그림을 위한 메모: 옷·머리만 적으면 인물끼리 얼굴이 같아지니 눈매(`narrow eyes`·`droopy eyes`·`round eyes` 등)·눈썹·앞머리(`parted bangs`·`side-swept bangs`·`forehead`)·점·주근깨도 적고, `big eyes`처럼 어려 보이는 낱말과 손에 든 물건(`holding …`)은 넣지 않기. 무기는 검 길이 이하를 기본으로(긴 막대 끝에 날이 달린 무기는 세로 그림에서 잘려요). 색이나 옷이 번지는 낱말도 조심하기 — `red hair ribbon`은 머리칼을 붉게, `white dress shirt`는 치마를, `mourning dress`는 서양 드레스를, `police`는 현대 경찰복을 불러요. `hidden`(선택)은 **비공개(스포일러) 감정 번호 배열**(예: `[13]` — 1~14, 0 프로필은 안 됨) — 그 칸 그림은 도감·상세의 미리보기에서 🔒 카드로 가리고, 대화에 그 코드가 실제로 나온 방(본문·갤러리)에서만 보여요. 1:1 캐릭터도 `cast` 한 명을 적어요(`f/kael` → `KAEL`). 빼면 앱이 설정의 `외모:` 줄로 한 명(코드 `C`)을 만들고 그때는 맨 위 `lookTags`가 `tags` 자리 |
@@ -140,7 +142,7 @@ content/<f|m|all>/[<줄>/]<id>/images/
 - `aud`·`row`를 적었다면 폴더와 같은지
 - **출연진 성별과 폴더**: 출연진 외모가 모두 여성인데 `f/`에, 모두 남성인데 `m/`에 있으면 실패(남녀가 섞인 작품은 그대로 둠 — 앱의 `guessAud`와 같은 규칙)
 - **미성년 인물**: 출연진 외모·설정 첫머리에 19세 미만 나이나 학생 신분이 있으면 실패(앱의 `minorFlags`와 같은 코드)
-- 필수 칸(`name`·`title`·`oneLiner`·`desc`·`persona`·`openings`), `cat`·`pal`·`motif` 값, `guide`(플레이 가이드)가 1,000자 이내의 글인지
+- 필수 칸(`name`·`title`·`oneLiner`·`desc`·`persona`·`openings`), `cat`·`pal`·`motif` 값, `guide`(플레이 가이드)가 1,000자 이내의 글인지, `recommend`(권장 모델)가 `lite`·`story`·`master` 중 하나인지
 - `cast[].code`가 영문 대문자 1~4자(숫자 없이, `MP`·`EV` 아님)이고 겹치지 않는지, `of`가 본체 인물의 코드인지(폼의 폼은 안 됨), `desc`가 글인지, `hidden`(비공개 감정 번호)이 1~14 정수 배열이고 겹치지 않는지(0 프로필은 실패), `places`·`cuts` 모양(`hidden`은 참거짓), `commands`의 `cmd`가 공백·`!` 없이 겹치지 않고 앱 명령어 이름이 아닌지
 - 시작 상황의 `[[코드번호]]`: 코드가 `cast`(또는 `MP`·`EV`)에 있고 번호가 범위 안인지. 예전 `[[img:…]]` 모양은 실패
 - `images/`: 파일 이름이 `<코드><번호>`·`cover`·`lore-<n>`인지, 코드와 번호가 위 규칙에 맞는지, 같은 그림·표지가 둘인지, `lore-<n>`이 키워드북 범위 안인지

@@ -1,8 +1,9 @@
 /* 자주 묻는 질문: 고객센터(#help-faq)의 묶음별 질문·답(고정 글). 요금·턴 수는 상수에서 읽어 앱과 어긋나지 않게 한다.
    답은 앱의 실제 동작(CLAUDE.md)을 근거로 쓴다 — 무료 턴·하트·PLUS·계정 저장·API 키·수위가 바뀌면 여기도 같이 고치기.
    답 글은 운영자가 쓴 고정 HTML이라 esc()를 거치지 않음(사용자 데이터를 넣지 않기) */
+import { LEN, MODELS } from "../ai/models.js";
 import { allCommands } from "../core/commands.js";
-import { PLAN, FREE_DAILY, PLUS_MONTHLY, WELCOME } from "../core/wallet.js";
+import { PLAN, FREE_DAILY, PLUS_MONTHLY, WELCOME, listPrice } from "../core/wallet.js";
 import { num, won } from "../core/util.js";
 import { SUPPORT_MAIL } from "../services/support.js";
 import { PLUS } from "./store.js";
@@ -22,6 +23,7 @@ export function faqGroups() {
     ["요금·하트", [
       ["무료로 얼마나 쓸 수 있나요?", `라이트 모델은 <b>매일 ${FREE_DAILY}턴 무료</b>예요. 자정에 다시 채워져요. 처음 방문하면 하트 ${WELCOME}개를 드려요.`],
       ["하트는 어디에 쓰나요?", "무료 턴을 다 쓴 뒤의 라이트 모델과, 스토리·마스터 모델 대화에 써요. 보내기 버튼에 이번 턴 비용이 항상 표시되고, 응답이 실패하면 자동으로 환불돼요. 장기기억 요약·AI 추천 답변은 무료예요."],
+      ["모델마다 한 턴에 하트가 얼마나 드나요?", `출력량 ${LEN.mid.name}·기억력 10턴 기준으로 ${Object.keys(MODELS).map((k) => `<b>${MODELS[k].name}</b> ♥${listPrice(k, "mid", 10)}`).join(" · ")}예요(라이트는 무료 턴을 다 쓴 뒤). 출력량과 기억력을 올리면 조금씩 늘어나요. 대화방 위쪽의 모델 이름을 누르면 지금 설정에서의 턴당 하트와, 그 작품의 <b>권장</b> 모델을 볼 수 있어요.`],
       ["PLUS는 무엇인가요?", `월 ${plus} 멤버십이에요. 라이트 모델 무제한, 스토리·마스터 50% 할인, 매달 하트 ${num(PLUS_MONTHLY)}개, 장기기억 ${num(PLAN.free.memoMax)}자 → ${num(PLAN.pro.memoMax)}자, 기억력 ${PLAN.free.memTurns}턴 → ${PLAN.pro.memTurns}턴으로 늘어나요.`],
       ["결제하면 실제로 돈이 나가나요?", "지금 스토어는 결제 흐름을 보여 주는 <b>시연(데모)</b>이라 실제로 청구되지 않고, 하트와 멤버십은 체험용으로만 지급돼요. 다만 내 API 키로 쓰는 AI 대화 요금은 그 키를 발급한 Anthropic이 따로 청구해요."]
     ]],

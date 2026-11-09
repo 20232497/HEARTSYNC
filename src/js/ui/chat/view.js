@@ -107,7 +107,7 @@ export function updateComposer() {
   send.innerHTML = `${ICON.send}<small>${qShort(q)}</small>`;
   send.title = q.type === "heart" ? `이번 턴에 하트 ${q.n}개가 사용돼요` : q.type === "free" ? "오늘의 무료 턴으로 보내요" : "PLUS 무제한";
   $("#contBtn").disabled = !!gen; $("#sugBtn").disabled = !!gen;
-  const chip = $("#modelChip"); if (chip) chip.innerHTML = `${m.name} <small>${qShort(q)}/턴</small> ▾`;
+  const chip = $("#modelChip"); if (chip) chip.innerHTML = `${m.name} <small>${qShort(q)}<span class="per">/턴</span></small> ▾`; // 좁은 화면에서는 가격만(무료·PLUS·♥n)
   const fc = $("#freeCount");
   if (fc) {
     const left = freeLeft();
