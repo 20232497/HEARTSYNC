@@ -5,7 +5,7 @@ import { hasClaudeKey } from "../core/state.js";
 import { TARGET } from "../core/target.js";
 import { $, $$, ago, esc, toast } from "../core/util.js";
 import { SB, acctName } from "../services/supabase.js";
-import { ASK_CATS, ASK_DAILY, ASK_STATUS, SUPPORT, SUPPORT_MAIL, isReport, supportErr } from "../services/support.js";
+import { ASK_CATS, ASK_DAILY, ASK_STATUS, SUPPORT, SUPPORT_MAIL, isReport, supportErr, urgentReport } from "../services/support.js";
 import { runExt } from "./ext.js";
 import { faqGroups } from "./faq.js";
 import { ICON } from "./icons.js";
@@ -97,7 +97,7 @@ function faqTab(box) {
 /** 내 문의 한 개. @param {Inquiry} a @returns {string} */
 export function askHTML(a, extra = "") {
   const cat = (ASK_CATS.find((c) => c[0] === a.category) || ["", "기타"])[1];
-  return `<details class="ask" data-aid="${+a.id}"><summary><span class="t"><span class="pill ${a.status === "open" ? "" : "ok"}">${ASK_STATUS[a.status] || esc(a.status)}</span>${isReport(a) ? '<span class="pill gold">신고</span>' : ""}<b>${esc(a.title)}</b></span><span class="d">${esc(cat)} · ${day(a.created_at)}</span></summary>
+  return `<details class="ask" data-aid="${+a.id}"><summary><span class="t"><span class="pill ${a.status === "open" ? "" : "ok"}">${ASK_STATUS[a.status] || esc(a.status)}</span>${urgentReport(a) ? '<span class="pill err">우선 신고</span>' : isReport(a) ? '<span class="pill gold">신고</span>' : ""}<b>${esc(a.title)}</b></span><span class="d">${esc(cat)} · ${day(a.created_at)}</span></summary>
     <div class="nbody">${rich(a.body)}</div>
     ${a.answer ? `<div class="answer"><b>운영자 답변</b><span class="d">${day(a.answered_at)}</span><div>${rich(a.answer)}</div></div>` : ""}${extra}</details>`;
 }

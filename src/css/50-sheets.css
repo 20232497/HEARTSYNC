@@ -48,6 +48,7 @@
 .setcard h4 { margin:0; font-size:14.5px; }
 .setcard .d { color:var(--muted); font-size:12.5px; margin-top:-4px; }
 .setcard .res { color:var(--accent); font-size:12.5px; font-weight:600; }
+.rp-why { display:flex; flex-wrap:wrap; gap:7px; } /* 신고 사유 칩 — 일곱 개라 가로로 넘기지 않고 줄바꿈 */
 .rp-quote { margin:10px 0 0; padding:10px 12px; border-left:3px solid var(--line); background:var(--surface2); border-radius:0 9px 9px 0; font-size:13px; color:var(--muted); max-height:96px; overflow:auto; overflow-wrap:anywhere; } /* 신고 시트 — 함께 보낼 메시지 앞부분 */
 .toggle { display:flex; align-items:center; justify-content:space-between; gap:12px; }
 .toggle input { width:40px; height:22px; accent-color:var(--accent); }

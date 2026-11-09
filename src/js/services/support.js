@@ -8,11 +8,16 @@ import { SB } from "./supabase.js";
 
 /** 문의 분류 [값, 이름] — docs/supabase.sql inquiries.category 제약 안의 값. 'adult'(성인 모드)는 예전 문의 때문에 서버 제약에만 남김(화면에선 '기타'로 보임). 'report'는 메시지 신고(REPORT_CAT — 말풍선 메뉴에서 접수, 문의 폼에서도 고를 수 있음) */
 export const ASK_CATS = [["account", "계정·로그인"], ["pay", "요금·하트"], ["chat", "대화·AI"], ["image", "그림"], ["bug", "오류 신고"], ["suggest", "제안"], ["report", "신고"], ["etc", "기타"]];
-/** 메시지 신고의 분류 값과 사유 [값, 이름](ui/report.js의 신고 시트) */
+/** 메시지 신고의 분류 값 */
 export const REPORT_CAT = "report";
-export const REPORT_REASONS = [["bad", "부적절한 내용"], ["error", "오류·이상한 응답"], ["etc", "기타"]];
+/** 신고 사유 [값, 이름, 우선] — 운영정책 등급에 맞춘 출시판 목록(법률 초안 docs/legal/ui-copy.md §8, 2026-11-10 사용자 결정). 우선(true)인 사유는 가장 급하게 처리할 것: 받은 문의 목록 맨 위에 따로 보임 */
+export const REPORT_REASONS = [["minor", "미성년자 관련 성적 내용", true], ["selfharm", "자해·자살 조장", true], ["hate", "혐오·괴롭힘"], ["illegal", "불법 정보"], ["privacy", "개인정보 노출"], ["error", "오류·이상한 응답"], ["etc", "기타"]];
+/** 신고 제목 "[신고] 사유 — 작품"(100자) — 제목의 사유로 우선 신고를 가려내므로(urgentReport) 만드는 곳과 읽는 곳을 한데 둠. @param {string} reason 사유 이름 @param {string} work 작품 이름 @returns {string} */
+export const reportTitle = (reason, work) => `[신고] ${reason} — ${work}`.slice(0, 100);
 /** 신고인지(분류가 신고이거나, 서버 제약을 고치기 전에 '기타'로 받은 [신고] 제목) — 목록의 배지에. @param {{category?: string, title?: string}} a @returns {boolean} */
 export const isReport = (a) => !!a && (a.category === REPORT_CAT || /^\[신고\]/.test(a.title || ""));
+/** 우선 처리할 신고인지 — 사유가 우선 등급(미성년자 관련·자해·자살 조장). @param {{category?: string, title?: string}} a @returns {boolean} */
+export const urgentReport = (a) => isReport(a) && REPORT_REASONS.some((r) => r[2] && String(a.title || "").indexOf(reportTitle(r[1], "")) === 0);
 /** 문의 상태 이름 */
 export const ASK_STATUS = { open: "답변 대기", answered: "답변 완료", closed: "종료" };
 /** 앱 밖 문의(로그인하지 않았거나 서버가 없을 때) — privacy.html의 개인정보 보호책임자 이메일과 같음 */
