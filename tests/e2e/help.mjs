@@ -246,6 +246,10 @@ try {
     return { title: (document.querySelector(".overlay h2") || {}).textContent, checked: q ? q.checked : null, pv: pv ? pv.textContent : null, text: document.querySelector(".overlay").textContent.replace(/\s+/g, " ").slice(0, 200), login: !!document.querySelector(".overlay [data-go=login]"), mail: !!document.querySelector('.overlay a[href^="mailto:"]') };
   });
   const sheet1 = await reportOpen(C), n0 = db.inquiries.length, p0 = db.posts.length;
+  // 사유는 미리 골라 두지 않음 — 고르지 않고 보내면 안내만 하고 서버로 가지 않음. 사유는 일곱 가지(REPORT_REASONS)
+  await C.click("#rpSend"); await C.waitForTimeout(200);
+  res.reportNoReason = await C.evaluate(() => ({ err: document.querySelector("#rpErr").textContent, chips: document.querySelectorAll("#rpWhy [data-why]").length, on: document.querySelectorAll("#rpWhy .on").length, want: REPORT_REASONS.length }));
+  expect(/사유를 골라/.test(res.reportNoReason.err) && db.posts.length === p0 && res.reportNoReason.chips === res.reportNoReason.want && res.reportNoReason.chips === 7 && res.reportNoReason.on === 0, "사유를 고르지 않으면 보내지 않음·사유 일곱 가지 " + JSON.stringify(res.reportNoReason));
   await C.click('.overlay [data-why="error"]'); await C.fill("#rpNote", "같은 말을 되풀이해요"); await C.click("#rpSend"); await C.waitForTimeout(900);
   const first = db.inquiries[db.inquiries.length - 1] || {};
   res.reportOld = { sheet: { title: sheet1.title, checked: sheet1.checked, pvLen: (sheet1.pv || "").length, tag: /\[\[/.test(sheet1.pv || "") }, added: db.inquiries.length - n0, tries: db.posts.length - p0, category: first.category, title: first.title, body: first.body, closed: await C.evaluate(() => !document.querySelector("#rpSend")) };
@@ -255,16 +259,21 @@ try {
   db.cats.push("report"); // docs/SETUP.md '메시지 신고 분류'의 SQL을 실행한 뒤
   await reportOpen(C); await C.uncheck("#rpQuote");
   const pvHidden = await C.evaluate(() => document.querySelector("#rpPv").hidden);
-  await C.click("#rpSend"); await C.waitForTimeout(900);
+  await C.click('.overlay [data-why="minor"]'); await C.click("#rpSend"); await C.waitForTimeout(900);
   const second = db.inquiries[db.inquiries.length - 1] || {};
   res.reportNew = { category: second.category, title: second.title, quote: (second.body || "").includes("[신고한 메시지 앞부분]"), pvHidden };
-  expect(second.category === "report" && /^\[신고\] 부적절한 내용 — /.test(second.title || "") && !res.reportNew.quote && pvHidden, "SQL 실행 뒤에는 '신고' 분류·끄면 메시지 앞부분은 안 감 " + JSON.stringify(res.reportNew));
+  expect(second.category === "report" && /^\[신고\] 미성년자 관련 성적 내용 — /.test(second.title || "") && !res.reportNew.quote && pvHidden, "SQL 실행 뒤에는 '신고' 분류·끄면 메시지 앞부분은 안 감 " + JSON.stringify(res.reportNew));
   await hash(C, "help-ask", 900);
-  res.reportMine = await C.evaluate(() => [...document.querySelectorAll("#askList details.ask")].map((d) => !!d.querySelector(".pill.gold")));
-  expect(res.reportMine.length === 2 && res.reportMine.every(Boolean), "내 문의에 신고 2건(배지) " + JSON.stringify(res.reportMine));
+  res.reportMine = await C.evaluate(() => [...document.querySelectorAll("#askList details.ask")].map((d) => (d.querySelector(".pill.err") ? "우선" : d.querySelector(".pill.gold") ? "신고" : "")));
+  expect(res.reportMine.length === 2 && res.reportMine.slice().sort().join() === "신고,우선", "내 문의에 신고 2건(배지 — 하나는 우선 신고) " + JSON.stringify(res.reportMine));
   await hash(B, "help-faq", 200); await hash(B, "help-ask", 1200);
-  res.reportInbox = await B.evaluate(() => [...document.querySelectorAll("#inbox details.ask")].filter((d) => d.querySelector(".pill.gold")).map((d) => d.querySelector("b").textContent.slice(0, 4)));
-  expect(res.reportInbox.length === 2 && res.reportInbox.every((t) => t === "[신고]"), "관리자의 받은 문의에 신고 배지 2건 " + JSON.stringify(res.reportInbox));
+  // 관리자의 받은 문의: 우선 처리할 신고(미성년자 관련·자해·자살 조장)는 맨 위에 따로, 그 밖의 신고는 받은 순서 자리에 '신고' 배지
+  res.reportInbox = await B.evaluate(() => { const ds = [...document.querySelectorAll("#inbox details.ask")], kind = (d) => (d.querySelector(".pill.err") ? "우선" : d.querySelector(".pill.gold") ? "신고" : "");
+    return { first: kind(ds[0]), firstTitle: ds[0].querySelector("b").textContent.slice(0, 18), head: (document.querySelector("#inUrgent") || {}).textContent || "", headFirst: document.querySelector("#inbox").firstElementChild.id, kinds: ds.map(kind).filter(Boolean) }; });
+  expect(res.reportInbox.first === "우선" && res.reportInbox.firstTitle === "[신고] 미성년자 관련 성적 내용" && /우선 처리할 신고 1건/.test(res.reportInbox.head) && res.reportInbox.headFirst === "inUrgent" && res.reportInbox.kinds.slice().sort().join() === "신고,우선", "관리자의 받은 문의: 우선 신고가 맨 위에 따로 " + JSON.stringify(res.reportInbox));
+  await hash(B, "me", 1200);
+  res.reportAdminMe = await B.evaluate(() => (document.querySelector("#inOpen") || {}).textContent);
+  expect(/우선 신고 1건/.test(res.reportAdminMe || ""), "MY의 답변 대기 수에 우선 신고 수: " + res.reportAdminMe);
   const GR = await open(chromium, "Desktop Chrome", "index.html", null);
   const guest = await reportOpen(GR);
   res.reportGuest = { title: guest.title, form: guest.checked !== null, login: guest.login, mail: guest.mail };
