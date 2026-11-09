@@ -34,6 +34,13 @@ for (const [dev, engine, opts] of [["Desktop Chrome", chromium, {}], ["iPhone 13
       if (chk.log < 50) errs.push(`대화방 ${id}: 오프닝 본문이 비어 있음`); else res.rooms++;
       if (!chk.status) errs.push(`대화방 ${id}: 상태창이 없음`);
       if (!chk.composer) errs.push(`대화방 ${id}: 입력창이 없음`);
+      // 유저노트 양식: 작품에 noteTemplate이 있을 때만 '양식 넣기' 버튼이 뜨고 그 글을 넣음. 입력 칸 예시는 이 작품의 인물 이름으로
+      const note = await p.evaluate((id) => {
+        openRoomDrawer("note"); const want = getChar(id).noteTemplate, btn = $("#tpl"), ph = $("#noteTa").placeholder;
+        if (btn) btn.click(); const filled = $("#noteTa").value; closeOverlays();
+        return { ok: !!btn === !!want && (!want || filled === want), ph: ph.includes(exampleCast(room.char).name) };
+      }, id);
+      if (!note.ok || !note.ph) errs.push(`대화방 ${id}: 유저노트 양식·예시가 데이터와 다름 ${JSON.stringify(note)}`);
     }
     if (out) await p.screenshot({ path: `${out}/${tag}_views_room.png` });
     // 시트·드로어: 대화방 안에서 열고 닫기
@@ -62,6 +69,16 @@ for (const [dev, engine, opts] of [["Desktop Chrome", chromium, {}], ["iPhone 13
       return { locked, placeHidden: !html.includes("비밀의 방") && html.includes("광장") };
     });
     if (res.hidden.locked !== 1 || !res.hidden.placeHidden) errs.push("비공개 칸이 가려지지 않음: " + JSON.stringify(res.hidden));
+    // 예시 문구는 데이터에서: 도감 '코드 읽는 법'은 고른 작품의 첫 인물 코드, MY 채팅 미리보기는 관심있는 대화에 맞는 첫 작품의 인물(전체 → 여성향으로 바꾸면 달라짐)
+    res.example = await p.evaluate(async () => {
+      const nap = (ms) => new Promise((r) => setTimeout(r, ms)), last = ORIGINALS[ORIGINALS.length - 1], want = exampleCast(normalizeChar(last));
+      location.hash = "codex-" + last.id; await nap(400);
+      const how = $(".codex-how").textContent.includes(want.code + EXAMPLE_SIT) && $(".codex-how").textContent.includes(want.name);
+      const spk = async (aud) => { setAudience(aud); location.hash = "home"; await nap(200); location.hash = "me"; await nap(400); return [$(".chat-pv .spk").textContent, exampleCast().name]; };
+      const all = await spk("all"), f = await spk("f"), m = await spk("m"); setAudience("all");
+      return { how, all, f, m };
+    });
+    { const x = res.example; if (!x.how || x.all[0] !== x.all[1] || x.f[0] !== x.f[1] || x.m[0] !== x.m[1] || x.f[0] === x.m[0]) errs.push("예시 문구가 데이터와 다름: " + JSON.stringify(x)); }
     // 유저 설정 상한 — 페르소나 상세·유저노트 입력 칸의 maxlength와 "n / 한도" 카운터가 상수(LIMITS)를 따름, 장기기억 기본 한도도
     res.limits = await p.evaluate(() => {
       personaSheet(S.personas[0]); const pd = $("#pd").maxLength, pc = $("#pdCnt").textContent; closeOverlays();

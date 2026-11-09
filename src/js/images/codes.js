@@ -12,6 +12,8 @@ export const SERIES = {
   MP: { kind: "place", field: "places", label: "장소", nameKey: "name" },
   EV: { kind: "cut", field: "cuts", label: "컷씬", nameKey: "title" }
 };
+/** 종류로 예약 시리즈의 코드 글자 찾기 — seriesCode("place") → "MP", seriesCode("cut") → "EV"(없으면 ""). 'MP'·'EV'를 다른 모듈에 직접 쓰지 않게. @param {string} kind @returns {string} */
+export function seriesCode(kind) { return Object.keys(SERIES).find((k) => SERIES[k].kind === kind) || ""; }
 /** 본문의 그림 태그: 새 모양 [[HSY3]]·[[img:HSY3]], 또는 예전 모양 [[img:p1:3]]·[[img:ks:3,404,501]] */
 export const IMG_TAG_RE = /\[\[(?:img:)?([A-Za-z]{1,4})(\d{1,2})\]\]|\[\[img:([a-z0-9]+):([\d,]+)\]\]/gi;
 /**

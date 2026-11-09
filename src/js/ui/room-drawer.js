@@ -3,14 +3,14 @@ import { engineName } from "../ai/llm.js";
 import { LEN, MODELS } from "../ai/models.js";
 import { maybeSummarize, memCfg, pushHist } from "../ai/prompt/memory.js";
 import { speakerName } from "../ai/prompt/rules.js";
-import { getChar, normalizeChar } from "../core/character.js";
+import { exampleCast, getChar, normalizeChar } from "../core/character.js";
 import { LIMITS } from "../core/constants.js";
 import { baseOpening, curText, newRoom, saveRoom } from "../core/rooms.js";
 import { saveSettings } from "../core/settings.js";
 import { S, room, setRoom } from "../core/state.js";
 import { $, $$, clamp, esc, num, toast } from "../core/util.js";
 import { FREE_DAILY, PLAN, freeLeft, isPro, plan, qShort, quote } from "../core/wallet.js";
-import { IMG_TAG_RE, codebook } from "../images/codes.js";
+import { IMG_TAG_RE, codebook, seriesCode } from "../images/codes.js";
 import { pickImg } from "../images/pick.js";
 import { IMG } from "../services/images.js";
 import { copyText, renderLog } from "./chat/log.js";
@@ -145,12 +145,13 @@ export function openRoomDrawer(view = "main") {
     paint();
   }
   else if (view === "note") {
-    body.innerHTML = `<p class="note">AI가 매 턴 가장 먼저 참고하는 메모예요. 관계 설정, 금지하고 싶은 전개, 커스텀 모드 설정 등을 적어 두세요.</p>
-      <div class="field"><label for="noteTa">유저노트</label><textarea id="noteTa" maxlength="${LIMITS.userNote}" style="min-height:260px" placeholder="예: 서윤과 나는 대학 펜싱부 선후배 사이였다. / 전투는 짧게, 대화 위주로.">${esc(r.userNote || "")}</textarea><div class="memo-count" id="nCnt"></div></div>
-      ${c.world_mode ? `<button class="btn sm ghost" id="tpl" style="margin-top:6px">커스텀 모드 양식 넣기</button>` : ""}
+    const tplText = (getChar(c.id) || c).noteTemplate; // 작품이 준 유저노트 양식(work.js noteTemplate) — 있을 때만 '양식 넣기'
+    body.innerHTML = `<p class="note">AI가 매 턴 가장 먼저 참고하는 메모예요. 관계 설정, 피하고 싶은 전개, 원하는 분위기 등을 적어 두세요.</p>
+      <div class="field"><label for="noteTa">유저노트</label><textarea id="noteTa" maxlength="${LIMITS.userNote}" style="min-height:260px" placeholder="예: 나는 ${esc(exampleCast(c).name)}의 오랜 친구다. / 대화 위주로, 장면 전환은 천천히.">${esc(r.userNote || "")}</textarea><div class="memo-count" id="nCnt"></div></div>
+      ${tplText ? `<button class="btn sm ghost" id="tpl" style="margin-top:6px">이 작품의 양식 넣기</button>` : ""}
       <button class="btn pri block" id="noteSave" style="margin-top:12px">저장</button>`;
     const ta = $("#noteTa", body), cnt = $("#nCnt", body); const upd = () => cnt.textContent = num(ta.value.length) + " / " + num(LIMITS.userNote); ta.oninput = upd; upd();
-    const tpl = $("#tpl", body); if (tpl) tpl.onclick = () => { ta.value = (ta.value ? ta.value + "\n\n" : "") + "## 커스텀 모드\n- 시작 위치: 1층 붕괴한 서울\n- 초기 파티: \n- 상황: \n- 파티원과의 관계: \n- 특전: "; upd(); ta.focus(); };
+    const tpl = $("#tpl", body); if (tpl) tpl.onclick = () => { ta.value = ((ta.value ? ta.value + "\n\n" : "") + tplText).slice(0, LIMITS.userNote); upd(); ta.focus(); };
     $("#noteSave", body).onclick = () => { r.userNote = ta.value.trim().slice(0, LIMITS.userNote); saveRoom(r); toast("유저노트를 저장했어요"); openRoomDrawer("main"); };
   }
   else if (view === "output") {
@@ -189,14 +190,14 @@ export function openRoomDrawer(view = "main") {
     $$("[data-g]", body).forEach((b) => b.onclick = () => { const it = items[+b.dataset.g], im = $("img", b); if (im && im.src) lightbox(im.src); else { ov.remove(); jumpTo(it.id); } });
   }
   else if (view === "places") {
-    // 작품의 장소(places → 코드 MP1…) — !지도 명령어로도 열림. 그림은 작품 폴더 images/MP<n>.webp. 목록은 최신 작품에서
+    // 작품의 장소(places → 예약 시리즈 코드 MP1…, 코드 글자는 codes.js SERIES에서) — !지도 명령어로도 열림. 그림은 작품 폴더 images/MP<n>.webp. 목록은 최신 작품에서
     // 비공개(hidden) 장소는 이 대화에 그 코드가 나오기 전까지 이름·그림을 가린 카드로(codebook의 hidden)
-    const live = getChar(c.id) || c, list = live.places || [], hid = codebook(live).MP.hidden, seen = new Set(galleryItems(r).map((it) => it.code + it.sit));
-    const lock = (i) => hid.includes(i + 1) && !seen.has("MP" + (i + 1));
-    body.innerHTML = list.length ? `<p class="note" style="margin-bottom:10px">이 작품의 장소 ${list.length}곳. 대화에서는 [[MP번호]] 코드로 나와요.</p><div class="gallery">${list.map((p, i) => {
-      const ref = lock(i) ? null : pickImg(c, "MP", i + 1), name = lock(i) ? "🔒" : p.name;
-      return `<button data-p="${i}" title="MP${i + 1} · ${esc(name)}">${ref ? IMG.tag(ref) : artHTML(c, { name }, i + 1, "장소")}</button>`; }).join("")}</div>
-      <div class="box" style="margin-top:12px">${list.map((p, i) => lock(i) ? `<p><b>MP${i + 1} 🔒</b> — 대화에서 나오면 보여요</p>` : `<p><b>MP${i + 1} ${esc(p.name)}</b>${p.desc ? " — " + esc(p.desc) : ""}</p>`).join("")}</div>`
+    const live = getChar(c.id) || c, list = live.places || [], MP = seriesCode("place"), book = codebook(live)[MP], hid = book.hidden, seen = new Set(galleryItems(r).map((it) => it.code + it.sit));
+    const lock = (i) => hid.includes(i + 1) && !seen.has(MP + (i + 1));
+    body.innerHTML = list.length ? `<p class="note" style="margin-bottom:10px">이 작품의 장소 ${list.length}곳. 대화에서는 [[${MP}번호]] 코드로 나와요.</p><div class="gallery">${list.map((p, i) => {
+      const ref = lock(i) ? null : pickImg(c, MP, i + 1), name = lock(i) ? "🔒" : p.name;
+      return `<button data-p="${i}" title="${MP}${i + 1} · ${esc(name)}">${ref ? IMG.tag(ref) : artHTML(c, { name }, i + 1, book.label)}</button>`; }).join("")}</div>
+      <div class="box" style="margin-top:12px">${list.map((p, i) => lock(i) ? `<p><b>${MP}${i + 1} 🔒</b> — 대화에서 나오면 보여요</p>` : `<p><b>${MP}${i + 1} ${esc(p.name)}</b>${p.desc ? " — " + esc(p.desc) : ""}</p>`).join("")}</div>`
       : `<div class="empty">이 작품에는 장소 그림이 없어요.</div>`;
     IMG.hydrate(body);
     $$("[data-p]", body).forEach((b) => b.onclick = () => { const im = $("img", b); if (im && im.src) lightbox(im.src); });

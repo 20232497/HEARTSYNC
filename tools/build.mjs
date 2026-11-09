@@ -503,6 +503,8 @@ function checkWork(mod, { aud, row, id, wrel, R, errors, warnings }) {
   if (c.recommend !== undefined && !Object.prototype.hasOwnProperty.call(R.MODELS, c.recommend)) e(`recommend("${c.recommend}")는 ${Object.keys(R.MODELS).join("·")} 중 하나(권장 모델)`);
   // 플레이 가이드(선택): 제작자가 독자에게 주는 안내문 — 상세·도감·대화방 드로어에 줄바꿈 그대로 보임(마크다운 없음)
   if (c.guide !== undefined && (!str(c.guide) || c.guide.length > R.LIMITS.guide)) e(`guide(플레이 가이드)는 ${R.LIMITS.guide}자 이내의 글이어야 해요${typeof c.guide === "string" ? `(지금 ${c.guide.length}자)` : ""}`);
+  // 유저노트 양식(선택): 대화방 유저노트의 '이 작품의 양식 넣기'가 넣는 글 — 유저노트 한도 안이어야
+  if (c.noteTemplate !== undefined && (!str(c.noteTemplate) || c.noteTemplate.length > R.LIMITS.userNote)) e(`noteTemplate(유저노트 양식)는 ${R.LIMITS.userNote}자 이내의 글이어야 해요${typeof c.noteTemplate === "string" ? `(지금 ${c.noteTemplate.length}자)` : ""}`);
   if (c.lookTags !== undefined && (typeof c.lookTags !== "string" || /[가-힣]/.test(c.lookTags))) e("lookTags는 영문 Danbooru 태그 글이어야 해요");
   if (c.lookTags !== undefined && c.cast !== undefined) w("cast가 있으면 lookTags는 쓰이지 않아요 — cast[].tags에 적어 주세요");
   if (c.lore !== undefined && (!Array.isArray(c.lore) || c.lore.some((x) => !isObj(x) || !Array.isArray(x.keys) || !x.keys.length || x.keys.some((k) => !str(k)) || !str(x.text) || (x.tags !== undefined && typeof x.tags !== "string"))))

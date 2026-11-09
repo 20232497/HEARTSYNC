@@ -12,6 +12,8 @@ export const PALETTES = [
 ];
 export const MOTIFS = { rain: "비", city: "도시", stars: "별", glow: "불빛", petals: "꽃잎", ash: "잿빛", curtain: "무대" };
 export const CATS = ["로맨스", "판타지", "RPG", "미스터리", "일상", "시뮬레이션"];
+/* 화면 예시 문구의 기본값 — 예시는 보고 있는 작품의 인물로 만들고(core/character.js exampleCast), 작품이 하나도 없을 때만 이 값. EXAMPLE_SIT은 예시에 쓰는 감정 번호 */
+export const EXAMPLE_CAST = { code: "ABC", name: "주인공" }, EXAMPLE_SIT = 3;
 /* 작품이 제작자(work.js creator)를 적지 않았을 때 보이는 이름 */
 export const DEFAULT_CREATOR = "HEART SYNC 스튜디오";
 /* 글자 수 상한 — 작품 데이터는 빌드가 검사하고(APP_RULES), 화면의 입력 칸은 maxlength와 "n / 한도"에 씀.

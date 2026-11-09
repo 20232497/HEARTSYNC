@@ -4,9 +4,10 @@ import { LEN, MODELS } from "../../ai/models.js";
 import { dropEcho, parseState, splitReply } from "../../ai/parse.js";
 import { buildInput } from "../../ai/prompt/input.js";
 import { maybeSummarize } from "../../ai/prompt/memory.js";
+import { exampleCast } from "../../core/character.js";
 import { curText, saveRoom } from "../../core/rooms.js";
 import { gen, room, setGen } from "../../core/state.js";
-import { $, uid } from "../../core/util.js";
+import { $, esc, uid } from "../../core/util.js";
 import { charge, qShort, quote, refund } from "../../core/wallet.js";
 import { imgTag, imgTags } from "../../images/codes.js";
 import { imagesOf } from "../../images/pick.js";
@@ -32,7 +33,7 @@ export function regenAsk(i) {
   if (!room.set.rerollAsk) return regen(i);
   const q = quote(room.set);
   const sh = sheet(`<h2>다시 쓰기</h2><p class="sub">어떤 방향으로 다시 쓸지 적으면 반영해요. 비워 두면 그냥 새로 써요.</p>
-    <div class="field"><label for="dir">다시 쓸 방향 (선택)</label><textarea id="dir" maxlength="300" placeholder="예: 서윤이 좀 더 솔직하게 반응하도록 / 전투를 더 길게"></textarea></div>
+    <div class="field"><label for="dir">다시 쓸 방향 (선택)</label><textarea id="dir" maxlength="300" placeholder="예: ${esc(exampleCast(room.char).name)}의 반응을 더 솔직하게 / 장면을 더 길게"></textarea></div>
     <div class="cta-row"><button class="btn ghost" data-x>취소</button><span class="spacer"></span><button class="btn pri" id="go">다시 쓰기 · ${qShort(q)}</button></div>`);
   $("#dir", sh).focus();
   $("#go", sh).onclick = () => { const d = $("#dir", sh).value.trim(); closeOverlays(); regen(i, d); };

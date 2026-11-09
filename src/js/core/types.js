@@ -88,6 +88,7 @@
  * @property {string[]} tags
  * @property {string} desc
  * @property {string} [guide] 플레이 가이드 — 제작자가 독자에게 주는 안내문(줄바꿈만, LIMITS.guide자 이내). 상세 페이지·도감·대화방 드로어에 보임(AI에는 보내지 않음)
+ * @property {string} [noteTemplate] 유저노트 양식 — 대화방 유저노트의 '이 작품의 양식 넣기'가 넣는 글(LIMITS.userNote자 이내). 있을 때만 버튼이 뜸
  * @property {ModelKey} [recommend] 권장 모델 — 모델 선택 시트의 '권장' 배지(없으면 ai/models.js RECOMMEND_DEFAULT "story"). 방의 기본 모델은 바꾸지 않음
  * @property {string} persona AI에게 주는 인물·진상 설정
  * @property {string} [world]

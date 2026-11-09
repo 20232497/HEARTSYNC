@@ -334,7 +334,6 @@ img.img-miss { background:var(--surface2); }
 .chat-head .who span { display:block; font-size:12px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .model-chip { border:1px solid var(--line); background:var(--surface2); border-radius:999px; height:32px; padding:0 12px; font-size:12.5px; font-weight:700; white-space:nowrap; display:flex; align-items:center; gap:5px; }
 .model-chip small { color:var(--muted); font-weight:500; }
-.model-chip .adult { font-size:13px; line-height:1; }
 .meter { display:flex; align-items:center; gap:7px; font-size:12px; color:var(--muted); font-variant-numeric:tabular-nums; white-space:nowrap; }
 .meter i { width:64px; height:6px; border-radius:3px; background:var(--surface2); overflow:hidden; display:block; }
 .meter i b { display:block; height:100%; background:var(--accent); border-radius:3px; transition:width .6s; }
@@ -661,8 +660,8 @@ const CFG = Object.assign({ anthropicUrl: ANTHROPIC_URL, serverKeys: false,
   typeof window !== "undefined" && window.HEARTVERSE_CONFIG && typeof window.HEARTVERSE_CONFIG === "object" ? window.HEARTVERSE_CONFIG : {});
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/core/constants.js
-   내보냄: MARK, FREE_DAILY, WELCOME, PLUS_MONTHLY, TIMEOUT, SIT, SIT_TINT, PALETTES, MOTIFS, CATS, DEFAULT_CREATOR, LIMITS
-   쓰는 곳: src/js/core/state.js, src/js/ai/models.js, src/js/core/wallet.js, src/js/services/supabase.js, src/js/images/codes.js, src/js/images/situations.js, src/js/ai/parse.js, src/js/ai/llm.js, src/js/ai/prompt/rules.js, src/js/ui/cover.js, src/js/ui/codex.js, src/js/ui/faq.js, src/js/ui/home.js, src/js/ui/me.js, src/js/ui/room-drawer.js, src/js/app.js
+   내보냄: MARK, FREE_DAILY, WELCOME, PLUS_MONTHLY, TIMEOUT, SIT, SIT_TINT, PALETTES, MOTIFS, CATS, EXAMPLE_CAST, EXAMPLE_SIT, DEFAULT_CREATOR, LIMITS
+   쓰는 곳: src/js/core/state.js, src/js/ai/models.js, src/js/core/wallet.js, src/js/core/character.js, src/js/services/supabase.js, src/js/images/codes.js, src/js/images/situations.js, src/js/ai/parse.js, src/js/ai/llm.js, src/js/ai/prompt/rules.js, src/js/ui/cover.js, src/js/ui/codex.js, src/js/ui/faq.js, src/js/ui/home.js, src/js/ui/me.js, src/js/ui/room-drawer.js, src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 순수 상수: 응답 구분자(MARK), 상황 이름(SIT)·표지 색·무늬·장르, 요금 상수 — 다른 모듈을 import하지 않음 */
 const MARK = "===STATE===";
@@ -678,6 +677,8 @@ const PALETTES = [
 ];
 const MOTIFS = { rain: "비", city: "도시", stars: "별", glow: "불빛", petals: "꽃잎", ash: "잿빛", curtain: "무대" };
 const CATS = ["로맨스", "판타지", "RPG", "미스터리", "일상", "시뮬레이션"];
+/* 화면 예시 문구의 기본값 — 예시는 보고 있는 작품의 인물로 만들고(core/character.js exampleCast), 작품이 하나도 없을 때만 이 값. EXAMPLE_SIT은 예시에 쓰는 감정 번호 */
+const EXAMPLE_CAST = { code: "ABC", name: "주인공" }, EXAMPLE_SIT = 3;
 /* 작품이 제작자(work.js creator)를 적지 않았을 때 보이는 이름 */
 const DEFAULT_CREATOR = "HEART SYNC 스튜디오";
 /* 글자 수 상한 — 작품 데이터는 빌드가 검사하고(APP_RULES), 화면의 입력 칸은 maxlength와 "n / 한도"에 씀.
@@ -875,7 +876,7 @@ function castLook(cast, c) {
    가져옴: src/js/core/cast.js { castLook }
            src/js/core/state.js { S }
    내보냄: AUDS, guessAud, audOf, audience, audOK
-   쓰는 곳: src/js/ui/codex.js, src/js/ui/home.js, src/js/ui/me.js, src/js/app.js
+   쓰는 곳: src/js/core/character.js, src/js/ui/codex.js, src/js/ui/home.js, src/js/ui/me.js, src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 관심있는 대화(전체·남성향·여성향): 작품 aud 판정과 필터 */
 
@@ -1330,6 +1331,7 @@ const ORIGINALS = [
     {"code":"BYU","name":"백여울","desc":"무당 집안 막내. 부적·퇴마·소환. 겁이 많지만 귀신 앞에선 단호하다. 붉은 댕기, 개량 한복 점퍼.","look":"25세 여성, 붉은 댕기, 개량 한복 점퍼, 손에 든 부적","tags":"black hair, long braid, red ribbon on braid, round eyes, straight eyebrows, mole under eye, modern hanbok, korean clothes, cropped jacket"}
   ],
   "guide": "1층 붕괴한 서울에서 시작해 30층 '커튼콜'을 향해 오르는 탑 등반 RPG예요. 시작 상황(게임 모드)이 난이도와 첫 파티를 정하고, 전투는 HP·MP가 실제로 계산돼요. 막히면 !퀘스트로 지금 목표를, !관람석으로 신들의 반응을 확인해 보세요. 커스텀 모드는 대화방 메뉴의 유저노트에 설정을 적은 뒤 첫 메시지로 \"커스텀 모드\"를 보내면 시작돼요.",
+  "noteTemplate": "## 커스텀 모드\n- 시작 위치: 1층 붕괴한 서울\n- 초기 파티: \n- 상황: \n- 파티원과의 관계: \n- 특전: ",
   "commands": [
     {"cmd":"퀘스트","title":"퀘스트 정리","desc":"지금 층의 퀘스트 단계·목표·보상과 남은 적을 정리해 보여 줘요.","prompt":"장면을 진행하지 말고, 현재 층의 퀘스트 단계(n/5)·목표·보상·남은 적을 시스템 메시지 [대괄호]로 정리한 뒤 유저가 고를 다음 행동 셋을 제시한다."},
     {"cmd":"관람석","title":"관람석 중계","desc":"하늘의 관람신들이 지금까지의 활약을 두고 떠드는 장면을 봐요.","prompt":"유저의 최근 행동을 두고 관람신 3~4명이 관람석에서 수다·훈수·내기를 하는 시스템 메시지 장면을 쓴다. 후원(S 코인)이 있으면 금액을 적고 상태창에 반영한다. 무대 위 장면은 진행하지 않는다."},
@@ -1510,10 +1512,14 @@ for (const c of ORIGINALS) {
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/core/character.js
    가져옴: src/js/content/index.js { ORIGINALS }
-   내보냄: normalizeChar, getChar
-   쓰는 곳: src/js/core/rooms.js, src/js/images/pick.js, src/js/ai/prompt/input.js, src/js/ai/prompt/rules.js, src/js/ui/chat/cmdlist.js, src/js/ui/cover.js, src/js/ui/codex.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/worldart.js, src/js/ui/detail.js, src/js/ui/login.js, src/js/app.js
+           src/js/core/audience.js { audOK }
+           src/js/core/constants.js { EXAMPLE_CAST }
+   내보냄: normalizeChar, getChar, exampleCast
+   쓰는 곳: src/js/core/rooms.js, src/js/images/pick.js, src/js/ai/prompt/input.js, src/js/ai/prompt/rules.js, src/js/ui/chat/cmdlist.js, src/js/ui/cover.js, src/js/ui/codex.js, src/js/ui/faq.js, src/js/ui/me.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/chat/generate.js, src/js/ui/worldart.js, src/js/ui/detail.js, src/js/ui/login.js, src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
-/* 작품 찾기·정규화: normalizeChar, id로 찾기(getChar — 오리지널) */
+/* 작품 찾기·정규화: normalizeChar, id로 찾기(getChar — 오리지널), 화면 예시 문구에 쓸 인물(exampleCast) */
+
+
 
 /** @typedef {import("./types.js").Work} Work */
 
@@ -1529,6 +1535,15 @@ function normalizeChar(c) {
 }
 /** id로 작품 찾기(오리지널). 대화방은 방 안의 작품 사본을 쓰고, 이것은 최신 키워드북·그림을 볼 때. @param {string} id @returns {Work|undefined} */
 function getChar(id) { return ORIGINALS.find((c) => c.id === id); }
+/**
+ * 화면 예시 문구(도감 '코드 읽는 법'·FAQ·MY 미리보기·입력 칸 예시·프롬프트 예시)에 쓸 인물 — 특정 작품 이름을 코드에 박지 않으려고 데이터에서 뽑음.
+ * 작품을 주면 그 작품의 첫 인물(폼이 아닌 본체), 안 주면 관심있는 대화에 맞는 첫 작품의 첫 인물, 그것도 없으면 EXAMPLE_CAST.
+ * @param {Work|null} [c] @returns {{ code: string, name: string }}
+ */
+function exampleCast(c) {
+  const w = c || ORIGINALS.find(audOK), cast = (w && Array.isArray(w.cast) && w.cast) || [], x = cast.find((y) => !y.of) || cast[0];
+  return x ? { code: x.code, name: x.name } : EXAMPLE_CAST;
+}
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/core/safety.js
    내보냄: minorFlags, minorHint, settingHint, roomMinorHint
@@ -2337,7 +2352,7 @@ const SUPPORT = {
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/images/codes.js
    가져옴: src/js/core/constants.js { SIT }
-   내보냄: CODE_RE, SERIES, IMG_TAG_RE, codebook, sitOf, imgTags, imgTag, codeKind, fallbackSits
+   내보냄: CODE_RE, SERIES, seriesCode, IMG_TAG_RE, codebook, sitOf, imgTags, imgTag, codeKind, fallbackSits
    쓰는 곳: src/js/images/pick.js, src/js/ai/prompt/rules.js, src/js/ui/cover.js, src/js/ui/codex.js, src/js/ui/room-tools.js, src/js/ui/room-drawer.js, src/js/ui/chat/render.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 그림 코드 체계(순수 — SIT 상수만 import해 Node 단위 테스트가 바로 씀): 인물 코드 + 번호 한 토큰, 작품의 코드 사전(codebook), 본문 태그 [[코드번호]], 그림을 찾는 순서.
@@ -2354,6 +2369,8 @@ const SERIES = {
   MP: { kind: "place", field: "places", label: "장소", nameKey: "name" },
   EV: { kind: "cut", field: "cuts", label: "컷씬", nameKey: "title" }
 };
+/** 종류로 예약 시리즈의 코드 글자 찾기 — seriesCode("place") → "MP", seriesCode("cut") → "EV"(없으면 ""). 'MP'·'EV'를 다른 모듈에 직접 쓰지 않게. @param {string} kind @returns {string} */
+function seriesCode(kind) { return Object.keys(SERIES).find((k) => SERIES[k].kind === kind) || ""; }
 /** 본문의 그림 태그: 새 모양 [[HSY3]]·[[img:HSY3]], 또는 예전 모양 [[img:p1:3]]·[[img:ks:3,404,501]] */
 const IMG_TAG_RE = /\[\[(?:img:)?([A-Za-z]{1,4})(\d{1,2})\]\]|\[\[img:([a-z0-9]+):([\d,]+)\]\]/gi;
 /**
@@ -2803,10 +2820,10 @@ function buildInput(r, uptoIdx, statusBefore, direction) {
    가져옴: src/js/ai/models.js { LEN }
            src/js/ai/parse.js { multiPairs }
            src/js/ai/prompt/input.js { usedOpeners }
-           src/js/core/character.js { getChar }
+           src/js/core/character.js { exampleCast, getChar }
            src/js/core/constants.js { MARK, SIT }
            src/js/core/rooms.js { curText }
-           src/js/images/codes.js { imgTags }
+           src/js/images/codes.js { imgTags, seriesCode }
            src/js/images/pick.js { imagesOf }
            src/js/services/images.js { validRef }
    내보냄: speakerName, rulesPrompt
@@ -2843,17 +2860,17 @@ function rulesPrompt(r, lore = [], hist = r.msgs) {
   const fields = c.fields.map((f) => `"${f}":${f === c.gauge && typeof r.status?.[f] === "number" ? "0~100 정수" : '"짧은 값"'}`).join(",");
   const cast = c.cast || [], byCode = (code) => cast.find((x) => x.code === code);
   // 이미 등장한 인물(폼 태그는 본체도 등장한 것으로)·이미 나온 컷씬 번호
-  const seen = new Set(), cutsUsed = new Set();
-  hist.forEach((m) => imgTags(curText(m)).forEach((t) => { if (t.code === "EV") cutsUsed.add(t.sit); else { seen.add(t.code); const f = byCode(t.code); if (f && f.of) seen.add(f.of); } }));
+  const seen = new Set(), cutsUsed = new Set(), PLACE = seriesCode("place"), CUT = seriesCode("cut"); // 예약 시리즈 코드(MP·EV)는 codes.js SERIES에서
+  hist.forEach((m) => imgTags(curText(m)).forEach((t) => { if (t.code === CUT) cutsUsed.add(t.sit); else { seen.add(t.code); const f = byCode(t.code); if (f && f.of) seen.add(f.of); } }));
   const castLine = cast.map((x) => `${x.code}=${x.name}${x.of ? `(${(byCode(x.of) || {}).name || x.of}의 다른 모습 — 그 모습일 때만 이 코드)` : ""}`).join(", ");
-  const ex = cast[0] || { code: "HSY", name: "한서윤" };
+  const ex = exampleCast(c); // 예시 태그에 쓸 인물 — 이 작품의 첫 인물
   const sn = (name) => SIT.indexOf(name) + " " + name;
   // 인물별로 그림이 들어 있는 칸 번호(준비된 그림 안에서 고르게)
   const ready = cast.map((x) => { const m = imagesOf(c)[x.code] || {}; const ns = Object.keys(m).filter((k) => validRef(m[k])).map(Number).filter((n) => n >= 0 && n < SIT.length).sort((a, b) => a - b); return ns.length ? `${x.name} ${ns.join("·")}` : ""; }).filter(Boolean);
   // 장소(MP<n>)·컷씬(EV<n>) 코드 — 최신 작품(getChar)에 적혀 있을 때만(작품을 고치면 열린 방에도 바로)
   const live = getChar(c.id) || c;
-  const places = (live.places || []).map((p, i) => `MP${i + 1}=${p.name}`).join(", ");
-  const cuts = (live.cuts || []).map((e, i) => cutsUsed.has(i + 1) ? "" : `EV${i + 1}=${e.title}${e.when ? "(" + e.when + ")" : ""}`).filter(Boolean).join(", ");
+  const places = (live.places || []).map((p, i) => `${PLACE}${i + 1}=${p.name}`).join(", ");
+  const cuts = (live.cuts || []).map((e, i) => cutsUsed.has(i + 1) ? "" : `${CUT}${i + 1}=${e.title}${e.when ? "(" + e.when + ")" : ""}`).filter(Boolean).join(", ");
   return `너는 한국어 캐릭터 롤플레이 플랫폼의 연기 엔진이다. 아래 설정의 ${c.world_mode ? "세계관 내레이터로서 모든 인물과 세계를" : "캐릭터 「" + c.name + "」를"} 연기하며 유저와 함께 이야기를 만든다.
 
 [작품] ${c.title}
@@ -3224,11 +3241,11 @@ function pavHTML(p) { const img = IMG.tag(p.img); return `<div class="pav">${img
    src/js/ui/codex.js
    가져옴: src/js/content/index.js { ORIGINALS }
            src/js/core/audience.js { AUDS, audOK, audience }
-           src/js/core/character.js { normalizeChar }
+           src/js/core/character.js { exampleCast, normalizeChar }
            src/js/core/commands.js { COMMAND_KINDS, allCommands }
-           src/js/core/constants.js { DEFAULT_CREATOR, SIT, SIT_TINT }
+           src/js/core/constants.js { DEFAULT_CREATOR, EXAMPLE_SIT, SIT, SIT_TINT }
            src/js/core/util.js { $, $$, esc }
-           src/js/images/codes.js { codebook, imgTag }
+           src/js/images/codes.js { SERIES, codebook, imgTag }
            src/js/images/pick.js { imagesOf, pickImg }
            src/js/images/situations.js { sitName }
            src/js/services/images.js { IMG, validRef }
@@ -3281,7 +3298,7 @@ function castSheet(c, x) {
     ${forms.length ? `<h3 class="codex-h">다른 모습</h3><div class="codex-chips">${forms.map((f) => `<button type="button" class="chip" data-form="${esc(f.code)}"><code>${esc(f.code)}</code>${esc(f.name)}</button>`).join("")}</div>` : ""}
     <h3 class="codex-h">감정·행동 코드 <small>${ready.size ? "그림이 준비된 칸은 ●" : "아직 그림이 없어 카드로 보여요"}${hid.size ? ` · 🔒는 ${LOCK_NOTE}` : ""}</small></h3>
     <div class="codex-chips">${SIT.map((s, i) => `<button type="button" class="chip${i === 0 ? " on" : ""}${hid.has(i) ? " locked" : ready.has(i) ? " ready" : ""}" data-sit="${i}"${hid.has(i) ? ` title="${LOCK_NOTE}"` : ""}><code>${esc(x.code)}${i}</code>${esc(s)}</button>`).join("")}</div>
-    <p class="note" style="margin-top:12px">대화 본문에서는 ${esc(imgTag(x.code, 3))}처럼 코드 하나가 그림 한 장이에요 — AI가 장면마다 골라 넣어요.</p>`, "wide");
+    <p class="note" style="margin-top:12px">대화 본문에서는 ${esc(imgTag(x.code, EXAMPLE_SIT))}처럼 코드 하나가 그림 한 장이에요 — AI가 장면마다 골라 넣어요.</p>`, "wide");
   IMG.hydrate(sh);
   $$("[data-sit]", sh).forEach((b) => b.onclick = () => { $$("[data-sit]", sh).forEach((o) => o.classList.toggle("on", o === b)); const pv = $("#cxPv", sh); pv.innerHTML = slotHTML(c, x, +b.dataset.sit); IMG.hydrate(pv); });
   $$("[data-form]", sh).forEach((b) => b.onclick = () => { const f = c.cast.find((y) => y.code === b.dataset.form); if (f) castSheet(c, f); });
@@ -3306,6 +3323,8 @@ function seriesBox(c, code, e) {
     const ref = pickImg(c, code, n), name = it[e.nameKey] || code + n, sub = it.desc || it.when || "";
     return `<figure class="wcard">${ref ? `<button class="wpic" data-cxlb aria-label="${esc(name)} 크게 보기">${IMG.tag(ref)}</button>` : `<div class="wpic ph">${esc(code + n)}</div>`}<figcaption><b><code class="code-chip">${esc(code + n)}</code>${esc(name)}</b>${sub ? `<span>${esc(sub)}</span>` : ""}</figcaption></figure>`; }).join("")}</div></div>`;
 }
+/* 예약 시리즈(SERIES — 장소·컷씬…) 칸 전부. 시리즈를 더하면 도감에 그대로 나옴 */
+const seriesHTML = (c, book) => Object.keys(SERIES).map((k) => seriesBox(c, k, book[k])).join("");
 /* 명령어 카드 한 장: !이름 · 종류 배지(COMMAND_KINDS — 앱·연출·이야기) · 제목 · 설명 · 복사. x는 allCommands의 한 항목 */
 function cmdCard(x) {
   const k = COMMAND_KINDS[x.kind];
@@ -3316,7 +3335,7 @@ const KIND_LEGEND = Object.keys(COMMAND_KINDS).map((k) => `'${COMMAND_KINDS[k].n
 /** 상세 페이지 아래쪽 칸들: 장소(MP)·컷씬(EV) 목록(작품에 있을 때만)과 명령어 카드(allCommands — 앱·연출·이야기). @param {Work} c @returns {string} */
 function codexHTML(c) {
   const book = codebook(c);
-  return seriesBox(c, "MP", book.MP) + seriesBox(c, "EV", book.EV) +
+  return seriesHTML(c, book) +
     `<div class="box"><h3>명령어 <small>대화방 입력창에 !를 치면 목록이 떠요</small></h3>${cmdList(allCommands(c))}<p class="note" style="margin-top:8px">${esc(KIND_LEGEND)}</p></div>`;
 }
 /** codexHTML·viewCodex의 복사 버튼·그림 크게 보기 연결. @param {HTMLElement} v */
@@ -3340,7 +3359,7 @@ function workCodexHTML(c) {
   return `<div class="codex-work">${coverHTML(c)}<div><b>${esc(c.title)}</b><span class="note">${esc(c.cat)}${c.world_mode ? " · 세계관" : ""} · 인물 ${c.cast.filter((x) => !x.of).length}명 · ${metaHTML(c)}</span></div><button class="btn sm ghost" data-go="c-${esc(c.id)}">작품 보기</button></div>
     ${guideHTML(c)}
     <div class="box"><h3>등장인물 <small>누르면 코드·감정 칸·소개</small></h3><div class="cast">${castGridHTML(c)}</div></div>
-    ${seriesBox(c, "MP", book.MP)}${seriesBox(c, "EV", book.EV)}
+    ${seriesHTML(c, book)}
     ${cmds.length ? `<div class="box"><h3>이 작품의 명령어 <small>치면 AI가 그 장면을 열어요</small></h3>${cmdList(cmds)}</div>` : ""}`;
 }
 /**
@@ -3349,9 +3368,9 @@ function workCodexHTML(c) {
  */
 function viewCodex(id) {
   const v = $("#view"), pool = ORIGINALS.map(normalizeChar).filter(audOK);
-  const c = pool.find((x) => x.id === id) || pool[0] || null;
+  const c = pool.find((x) => x.id === id) || pool[0] || null, ex = exampleCast(c); // '코드 읽는 법' 예시는 지금 고른 작품의 첫 인물로
   v.innerHTML = `<div class="page">${topbar()}<h1 class="sec" style="margin-top:4px">도감 <small>인물 코드·감정 칸·장소·컷씬·명령어</small></h1>
-    <div class="box"><h3>그림 코드 읽는 법</h3><p class="codex-how">대화 속 그림 한 장은 코드 한 토큰이에요. <code class="code-chip">HSY3</code>은 인물 코드 <b>HSY</b> + 감정·행동 번호 <b>3</b>(부끄러움). 다른 모습(폼)은 다른 인물 코드로, 장소는 <code class="code-chip">MP1</code>, 컷씬은 <code class="code-chip">EV1</code>처럼 1부터 번호를 매겨요.</p>
+    <div class="box"><h3>그림 코드 읽는 법</h3><p class="codex-how">대화 속 그림 한 장은 코드 한 토큰이에요. <code class="code-chip">${esc(ex.code)}${EXAMPLE_SIT}</code> = 인물 코드 <b>${esc(ex.code)}</b>(${esc(ex.name)}) + 감정·행동 번호 <b>${EXAMPLE_SIT}</b>(${esc(SIT[EXAMPLE_SIT])}). 다른 모습(폼)은 다른 인물 코드로, ${Object.keys(SERIES).map((k) => `${esc(SERIES[k].label)} <code class="code-chip">${k}1</code>`).join(" · ")}처럼 1부터 번호를 매겨요.</p>
       <div class="sit-table">${SIT.map((s, i) => `<span class="sit-chip" style="--tint:${SIT_TINT[i]}"><i></i><code>${i}</code>${esc(s)}</span>`).join("")}</div></div>
     <div class="box"><h3>공통 명령어 <small>어느 작품에서나 · 대화방 입력창에 !를 치면 목록이 떠요</small></h3>${cmdList(allCommands(null))}<p class="note" style="margin-top:8px">${esc(KIND_LEGEND)}</p></div>
     <h2 class="sec" id="cxWorks">작품 <small>${esc(AUDS[audience()].name)}${audience() !== "all" ? " — MY → 설정에서 바꿀 수 있어요" : ""}</small></h2>
@@ -3560,9 +3579,10 @@ function checkout(item, after) {
    src/js/ui/faq.js
    가져옴: src/js/ai/models.js { LEN, MODELS }
            src/js/core/commands.js { allCommands }
-           src/js/core/constants.js { LIMITS }
+           src/js/core/character.js { exampleCast }
+           src/js/core/constants.js { EXAMPLE_SIT, LIMITS, SIT }
            src/js/core/wallet.js { PLAN, FREE_DAILY, PLUS_MONTHLY, WELCOME, listPrice }
-           src/js/core/util.js { num, won }
+           src/js/core/util.js { esc, num, won }
            src/js/services/support.js { SUPPORT_MAIL }
            src/js/ui/store.js { PLUS }
    내보냄: faqGroups
@@ -3579,9 +3599,10 @@ function checkout(item, after) {
 
 
 
+
 /** 묶음 [이름, [[질문, 답 HTML], …]] — 함수라서 부를 때의 상수 값으로 그림 @returns {Array<[string, Array<[string, string]>]>} */
 function faqGroups() {
-  const plus = won(PLUS.price);
+  const plus = won(PLUS.price), ex = exampleCast(); // 그림 코드 예시는 관심있는 대화에 맞는 첫 작품의 인물로
   // 공통 명령어 이름은 앱의 표(core/commands.js)에서 읽음 — 운영자가 쓴 고정 글이라 esc 없이
   const cmds = (kind) => allCommands(null).filter((x) => x.kind === kind).map((x) => `<b>!${x.cmd}</b>`).join("·");
   return [
@@ -3604,7 +3625,7 @@ function faqGroups() {
       ["설정은 얼마나 길게 쓸 수 있나요?", `<b>페르소나</b> 상세 정보는 ${num(LIMITS.personaDesc)}자, <b>유저노트</b>는 대화방마다 하나씩 ${num(LIMITS.userNote)}자, <b>장기기억</b>은 ${num(PLAN.free.memoMax)}자(PLUS ${num(PLAN.pro.memoMax)}자)까지예요. 장기기억이 한도를 넘으면 자동으로 압축하고 압축 전 내용은 히스토리에 보관해요. 답의 분량은 설정에 적기보다 메뉴의 <b>출력 설정</b>에서 고르는 편이 잘 지켜져요.`],
       ["대화를 저장하거나 옮길 수 있나요?", "대화방 메뉴의 <b>대화 내보내기</b>로 파일로 받거나 <b>대화 복사</b>로 복사할 수 있어요. 로그인하면 대화가 계정에 저장돼 다른 기기에서 이어져요."],
       ["대화 속 그림을 끄고 싶어요.", "<a href=\"#me\">MY</a> → 채팅 설정의 <b>대화 속 장면 이미지 보기</b>를 끄면 돼요. 글자 크기·줄 간격·지문 글꼴도 거기서 바꿔요."],
-      ["도감과 !명령어는 뭔가요?", "<a href=\"#codex\">도감</a>은 작품마다 인물 코드·감정 칸·장소·컷씬·명령어를 보여 주는 안내예요. 대화 속 그림 한 장은 <b>인물 코드 + 번호</b> 한 토큰(예: HSY3 = 한서윤 · 부끄러움)이고, AI가 장면마다 골라 넣어요. 대화방 입력창에 <b>!</b>를 치면 쓸 수 있는 명령어 목록이 떠요."],
+      ["도감과 !명령어는 뭔가요?", `<a href="#codex">도감</a>은 작품마다 인물 코드·감정 칸·장소·컷씬·명령어를 보여 주는 안내예요. 대화 속 그림 한 장은 <b>인물 코드 + 번호</b> 한 토큰(예: ${esc(ex.code)}${EXAMPLE_SIT} = ${esc(ex.name)} · ${SIT[EXAMPLE_SIT]})이고, AI가 장면마다 골라 넣어요. 대화방 입력창에 <b>!</b>를 치면 쓸 수 있는 명령어 목록이 떠요.`],
       ["!명령어에는 어떤 것이 있나요?", `세 가지예요. ① <b>앱 명령어</b> ${cmds("view")} — AI를 부르지 않고 바로 열려요(하트를 쓰지 않아요). ② <b>연출 명령어</b> ${cmds("direct")} — 어느 작품에서나 AI에게 장면 연출을 부탁해요(한 턴을 써요). ③ <b>작품 명령어</b> — 그 작품에만 있는 이야기 장치예요(도감의 작품 칸에서 확인). 직접 지시하고 싶으면 <b>//</b>로 시작해 적어도 돼요.`],
       ["응답이 중간에 끊겼어요.", "연결이 끊기거나 시간이 너무 오래 걸리면 받은 데까지 남기고 멈춰요. 그 메시지의 <b>다시 시도</b>를 누르면 다시 써요."]
     ]],
@@ -3885,6 +3906,7 @@ function viewHome() {
    src/js/ui/me.js
    가져옴: src/js/ai/llm.js { engineName }
            src/js/core/audience.js { AUDS, audience }
+           src/js/core/character.js { exampleCast }
            src/js/core/constants.js { LIMITS }
            src/js/core/rooms.js { roomKey, saveRoom }
            src/js/core/settings.js { applySettings, cleanKeys, saveSettings }
@@ -3928,6 +3950,7 @@ function viewHome() {
 
 
 
+
 function viewMe() {
   const v = $("#view"), cur = S.personas.find((p) => p.def) || S.personas[0];
   v.innerHTML = `<div class="page">${topbar()}
@@ -3950,7 +3973,7 @@ function viewMe() {
     <div class="box">${audSegHTML()}<p class="note" style="margin:8px 0 0">남성향은 여성 캐릭터, 여성향은 남성 캐릭터와의 대화만 보여요.</p></div>
     <h2 class="sec">채팅 설정 <small>바꾸면 바로 적용돼요</small></h2>
     <div class="box">
-      <div class="bubble chat-pv" aria-hidden="true"><p class="narr">창밖으로 첫눈이 내리기 시작했다.</p><p><b class="spk">서윤</b><span class="dlg">"오늘은 여기까지 할까요?"</span></p></div>
+      <div class="bubble chat-pv" aria-hidden="true"><p class="narr">창밖으로 첫눈이 내리기 시작했다.</p><p><b class="spk">${esc(exampleCast().name)}</b><span class="dlg">"오늘은 여기까지 할까요?"</span></p></div>
       <div class="field"><label for="cfs" style="display:flex">글자 크기<span class="spacer"></span><output id="cfsV">${S.settings.fs}px</output></label><input type="range" id="cfs" min="13" max="21" step="0.5" value="${S.settings.fs}"></div>
       <div class="two">
         <div class="field"><span class="lbl">줄 간격</span><div class="seg" data-set="chatLh">${[[1.6, "좁게"], [1.8, "보통"], [2.1, "넓게"]].map(([n, l]) => `<button type="button" data-v="${n}" class="${S.settings.chatLh == n ? "on" : ""}">${l}</button>`).join("")}</div></div>
@@ -4177,14 +4200,14 @@ function deleteRoom(id) {
            src/js/ai/models.js { LEN, MODELS }
            src/js/ai/prompt/memory.js { maybeSummarize, memCfg, pushHist }
            src/js/ai/prompt/rules.js { speakerName }
-           src/js/core/character.js { getChar, normalizeChar }
+           src/js/core/character.js { exampleCast, getChar, normalizeChar }
            src/js/core/constants.js { LIMITS }
            src/js/core/rooms.js { baseOpening, curText, newRoom, saveRoom }
            src/js/core/settings.js { saveSettings }
            src/js/core/state.js { S, room, setRoom }
            src/js/core/util.js { $, $$, clamp, esc, num, toast }
            src/js/core/wallet.js { FREE_DAILY, PLAN, freeLeft, isPro, plan, qShort, quote }
-           src/js/images/codes.js { IMG_TAG_RE, codebook }
+           src/js/images/codes.js { IMG_TAG_RE, codebook, seriesCode }
            src/js/images/pick.js { pickImg }
            src/js/services/images.js { IMG }
            src/js/ui/chat/log.js { copyText, renderLog }
@@ -4349,12 +4372,13 @@ function openRoomDrawer(view = "main") {
     paint();
   }
   else if (view === "note") {
-    body.innerHTML = `<p class="note">AI가 매 턴 가장 먼저 참고하는 메모예요. 관계 설정, 금지하고 싶은 전개, 커스텀 모드 설정 등을 적어 두세요.</p>
-      <div class="field"><label for="noteTa">유저노트</label><textarea id="noteTa" maxlength="${LIMITS.userNote}" style="min-height:260px" placeholder="예: 서윤과 나는 대학 펜싱부 선후배 사이였다. / 전투는 짧게, 대화 위주로.">${esc(r.userNote || "")}</textarea><div class="memo-count" id="nCnt"></div></div>
-      ${c.world_mode ? `<button class="btn sm ghost" id="tpl" style="margin-top:6px">커스텀 모드 양식 넣기</button>` : ""}
+    const tplText = (getChar(c.id) || c).noteTemplate; // 작품이 준 유저노트 양식(work.js noteTemplate) — 있을 때만 '양식 넣기'
+    body.innerHTML = `<p class="note">AI가 매 턴 가장 먼저 참고하는 메모예요. 관계 설정, 피하고 싶은 전개, 원하는 분위기 등을 적어 두세요.</p>
+      <div class="field"><label for="noteTa">유저노트</label><textarea id="noteTa" maxlength="${LIMITS.userNote}" style="min-height:260px" placeholder="예: 나는 ${esc(exampleCast(c).name)}의 오랜 친구다. / 대화 위주로, 장면 전환은 천천히.">${esc(r.userNote || "")}</textarea><div class="memo-count" id="nCnt"></div></div>
+      ${tplText ? `<button class="btn sm ghost" id="tpl" style="margin-top:6px">이 작품의 양식 넣기</button>` : ""}
       <button class="btn pri block" id="noteSave" style="margin-top:12px">저장</button>`;
     const ta = $("#noteTa", body), cnt = $("#nCnt", body); const upd = () => cnt.textContent = num(ta.value.length) + " / " + num(LIMITS.userNote); ta.oninput = upd; upd();
-    const tpl = $("#tpl", body); if (tpl) tpl.onclick = () => { ta.value = (ta.value ? ta.value + "\n\n" : "") + "## 커스텀 모드\n- 시작 위치: 1층 붕괴한 서울\n- 초기 파티: \n- 상황: \n- 파티원과의 관계: \n- 특전: "; upd(); ta.focus(); };
+    const tpl = $("#tpl", body); if (tpl) tpl.onclick = () => { ta.value = ((ta.value ? ta.value + "\n\n" : "") + tplText).slice(0, LIMITS.userNote); upd(); ta.focus(); };
     $("#noteSave", body).onclick = () => { r.userNote = ta.value.trim().slice(0, LIMITS.userNote); saveRoom(r); toast("유저노트를 저장했어요"); openRoomDrawer("main"); };
   }
   else if (view === "output") {
@@ -4393,14 +4417,14 @@ function openRoomDrawer(view = "main") {
     $$("[data-g]", body).forEach((b) => b.onclick = () => { const it = items[+b.dataset.g], im = $("img", b); if (im && im.src) lightbox(im.src); else { ov.remove(); jumpTo(it.id); } });
   }
   else if (view === "places") {
-    // 작품의 장소(places → 코드 MP1…) — !지도 명령어로도 열림. 그림은 작품 폴더 images/MP<n>.webp. 목록은 최신 작품에서
+    // 작품의 장소(places → 예약 시리즈 코드 MP1…, 코드 글자는 codes.js SERIES에서) — !지도 명령어로도 열림. 그림은 작품 폴더 images/MP<n>.webp. 목록은 최신 작품에서
     // 비공개(hidden) 장소는 이 대화에 그 코드가 나오기 전까지 이름·그림을 가린 카드로(codebook의 hidden)
-    const live = getChar(c.id) || c, list = live.places || [], hid = codebook(live).MP.hidden, seen = new Set(galleryItems(r).map((it) => it.code + it.sit));
-    const lock = (i) => hid.includes(i + 1) && !seen.has("MP" + (i + 1));
-    body.innerHTML = list.length ? `<p class="note" style="margin-bottom:10px">이 작품의 장소 ${list.length}곳. 대화에서는 [[MP번호]] 코드로 나와요.</p><div class="gallery">${list.map((p, i) => {
-      const ref = lock(i) ? null : pickImg(c, "MP", i + 1), name = lock(i) ? "🔒" : p.name;
-      return `<button data-p="${i}" title="MP${i + 1} · ${esc(name)}">${ref ? IMG.tag(ref) : artHTML(c, { name }, i + 1, "장소")}</button>`; }).join("")}</div>
-      <div class="box" style="margin-top:12px">${list.map((p, i) => lock(i) ? `<p><b>MP${i + 1} 🔒</b> — 대화에서 나오면 보여요</p>` : `<p><b>MP${i + 1} ${esc(p.name)}</b>${p.desc ? " — " + esc(p.desc) : ""}</p>`).join("")}</div>`
+    const live = getChar(c.id) || c, list = live.places || [], MP = seriesCode("place"), book = codebook(live)[MP], hid = book.hidden, seen = new Set(galleryItems(r).map((it) => it.code + it.sit));
+    const lock = (i) => hid.includes(i + 1) && !seen.has(MP + (i + 1));
+    body.innerHTML = list.length ? `<p class="note" style="margin-bottom:10px">이 작품의 장소 ${list.length}곳. 대화에서는 [[${MP}번호]] 코드로 나와요.</p><div class="gallery">${list.map((p, i) => {
+      const ref = lock(i) ? null : pickImg(c, MP, i + 1), name = lock(i) ? "🔒" : p.name;
+      return `<button data-p="${i}" title="${MP}${i + 1} · ${esc(name)}">${ref ? IMG.tag(ref) : artHTML(c, { name }, i + 1, book.label)}</button>`; }).join("")}</div>
+      <div class="box" style="margin-top:12px">${list.map((p, i) => lock(i) ? `<p><b>${MP}${i + 1} 🔒</b> — 대화에서 나오면 보여요</p>` : `<p><b>${MP}${i + 1} ${esc(p.name)}</b>${p.desc ? " — " + esc(p.desc) : ""}</p>`).join("")}</div>`
       : `<div class="empty">이 작품에는 장소 그림이 없어요.</div>`;
     IMG.hydrate(body);
     $$("[data-p]", body).forEach((b) => b.onclick = () => { const im = $("img", b); if (im && im.src) lightbox(im.src); });
@@ -4880,9 +4904,10 @@ function restoreStatus() {
            src/js/ai/parse.js { dropEcho, parseState, splitReply }
            src/js/ai/prompt/input.js { buildInput }
            src/js/ai/prompt/memory.js { maybeSummarize }
+           src/js/core/character.js { exampleCast }
            src/js/core/rooms.js { curText, saveRoom }
            src/js/core/state.js { gen, room, setGen }
-           src/js/core/util.js { $, uid }
+           src/js/core/util.js { $, esc, uid }
            src/js/core/wallet.js { charge, qShort, quote, refund }
            src/js/images/codes.js { imgTag, imgTags }
            src/js/images/pick.js { imagesOf }
@@ -4918,6 +4943,7 @@ function restoreStatus() {
 
 
 
+
 async function sendTurn(text, { cont = false } = {}) {
   if (gen) return false;
   const q = await ensurePay(room); if (!q) return false;
@@ -4931,7 +4957,7 @@ function regenAsk(i) {
   if (!room.set.rerollAsk) return regen(i);
   const q = quote(room.set);
   const sh = sheet(`<h2>다시 쓰기</h2><p class="sub">어떤 방향으로 다시 쓸지 적으면 반영해요. 비워 두면 그냥 새로 써요.</p>
-    <div class="field"><label for="dir">다시 쓸 방향 (선택)</label><textarea id="dir" maxlength="300" placeholder="예: 서윤이 좀 더 솔직하게 반응하도록 / 전투를 더 길게"></textarea></div>
+    <div class="field"><label for="dir">다시 쓸 방향 (선택)</label><textarea id="dir" maxlength="300" placeholder="예: ${esc(exampleCast(room.char).name)}의 반응을 더 솔직하게 / 장면을 더 길게"></textarea></div>
     <div class="cta-row"><button class="btn ghost" data-x>취소</button><span class="spacer"></span><button class="btn pri" id="go">다시 쓰기 · ${qShort(q)}</button></div>`);
   $("#dir", sh).focus();
   $("#go", sh).onclick = () => { const d = $("#dir", sh).value.trim(); closeOverlays(); regen(i, d); };

@@ -1,7 +1,7 @@
 // 그림 코드 체계(src/js/images/codes.js)·감정 칸 낱말 점수(src/js/images/situations.js) 단위 테스트 — 둘 다 순수 모듈이라 Node가 바로 import
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { CODE_RE, SERIES, codeKind, codebook, fallbackSits, imgTag, imgTags, sitOf } from "../../src/js/images/codes.js";
+import { CODE_RE, SERIES, codeKind, codebook, fallbackSits, imgTag, imgTags, seriesCode, sitOf } from "../../src/js/images/codes.js";
 import { sitHints, sitName, sitScores } from "../../src/js/images/situations.js";
 
 test("CODE_RE: 인물 코드는 영문 대문자 1~4자(숫자·소문자 안 됨), MP·EV는 예약 시리즈", () => {
@@ -19,6 +19,12 @@ test("codebook: 인물 코드는 0~14(폼은 of), MP·EV는 목록 길이만큼 
   assert.deepEqual([b.EV.kind, b.EV.max, b.EV.items], ["cut", 0, []]);
   assert.equal(codebook(null).MP.kind, "place");
   assert.equal(codebook({}).HSY, undefined);
+});
+test("seriesCode: 종류로 예약 시리즈의 코드 글자를 찾음(다른 모듈이 'MP'·'EV'를 직접 쓰지 않게), 모르는 종류는 빈 문자열", () => {
+  assert.equal(seriesCode("place"), "MP");
+  assert.equal(seriesCode("cut"), "EV");
+  assert.equal(seriesCode("cast"), "");
+  for (const k of Object.keys(SERIES)) assert.equal(seriesCode(SERIES[k].kind), k);
 });
 test("codebook.hidden: 비공개(스포일러) 번호 — 인물은 cast[].hidden의 감정 번호, 장소·컷씬은 hidden: true인 항목의 번호(1부터), 없으면 빈 배열", () => {
   const b = codebook({ cast: [{ code: "HSY", name: "한서윤", hidden: [13, 9] }, { code: "DHR", name: "도하린" }],
