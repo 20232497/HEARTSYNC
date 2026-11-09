@@ -16,6 +16,7 @@ import { coverHTML } from "../cover.js";
 import { ICON } from "../icons.js";
 import { openModelSheet } from "../model-sheet.js";
 import { openRoomDrawer } from "../room-drawer.js";
+import { collectSeen } from "../room-tools.js";
 import { bindGo, go, topbar } from "../shell.js";
 
 export async function viewChat(id) {
@@ -27,6 +28,7 @@ export async function viewChat(id) {
     if (!r) { v.innerHTML = `<div class="page">${topbar()}<div class="empty">대화방을 찾을 수 없어요.<br><button class="btn sm" data-go="chats">대화 목록</button></div></div>`; bindGo(v); return; }
     setRoom(migrateRoom(r));
   }
+  collectSeen(room); // 이 방에 나온 그림 코드를 수집 기록에(새 방의 첫 장면, 이 기능 전에 만든 방, 다른 기기에서 온 방)
   const c = room.char;
   v.innerHTML = `<div class="chat">
     <div class="chat-bg">${coverHTML(c)}</div>
@@ -101,7 +103,7 @@ function replyNow(t, cmd) {
   const a = lastAi(room), st = a ? (a.alts[a.idx] || {}).status || a.statusBefore : room.status;
   room.lastErr = "";
   room.msgs.push({ id: uid("m"), role: "user", text: t, canned: true }, { id: uid("m"), role: "ai", idx: 0, canned: true, alts: [{ text: cmd.text, status: st, suggestions: [], cost: "무료" }], statusBefore: st });
-  saveRoom(room); hideSug(); renderLog(true);
+  saveRoom(room); collectSeen(room); hideSug(); renderLog(true);
 }
 let hintTimer = null;
 export function flashHint(msg) {

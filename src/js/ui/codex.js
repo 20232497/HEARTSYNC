@@ -5,6 +5,7 @@ import { AUDS, audOK, audience } from "../core/audience.js";
 import { exampleCast, normalizeChar } from "../core/character.js";
 import { COMMAND_KINDS, allCommands } from "../core/commands.js";
 import { DEFAULT_CREATOR, EXAMPLE_SIT, SIT, SIT_TINT } from "../core/constants.js";
+import { seenSet } from "../core/shelf.js";
 import { $, $$, esc } from "../core/util.js";
 import { SERIES, codebook, imgTag } from "../images/codes.js";
 import { imagesOf, pickImg } from "../images/pick.js";
@@ -20,7 +21,7 @@ import { bindGo, go, topbar } from "./shell.js";
 
 /* 비공개(스포일러) 안내 — 감정 칩의 title·잠긴 장소·컷씬 카드에 같이 씀 */
 const LOCK_NOTE = "대화에서 나오면 보여요";
-/* 인물 한 명의 감정 칸 그림 — 그 칸 그림만(대체 없음), 없거나 비공개(codebook의 hidden) 칸이면 아트 카드 */
+/* 인물 한 명의 감정 칸 그림 — 그 칸 그림만(대체 없음), 없거나 아직 잠긴 비공개 칸이면 아트 카드 */
 function slotHTML(c, x, sit) {
   const m = imagesOf(c)[x.code] || {}, lock = hiddenOf(c, x.code).includes(sit), ref = !lock && validRef(m[sit]) ? m[sit] : null;
   return `<figure class="scene-img">${ref ? `${IMG.tag(ref)}<figcaption>${esc(x.name)} · ${esc(sitName(sit))}</figcaption>` : artHTML(c, x, sit)}</figure>`;
@@ -31,14 +32,14 @@ function slotHTML(c, x, sit) {
  */
 export function castSheet(c, x) {
   const forms = c.cast.filter((y) => y.of === x.code), base = x.of ? c.cast.find((y) => y.code === x.of) : null;
-  const m = imagesOf(c)[x.code] || {}, ready = new Set(Object.keys(m).filter((k) => validRef(m[k])).map(Number)), hid = new Set(hiddenOf(c, x.code));
+  const m = imagesOf(c)[x.code] || {}, ready = new Set(Object.keys(m).filter((k) => validRef(m[k])).map(Number)), hid = new Set(hiddenOf(c, x.code)), seen = seenSet(c.id);
   const sh = sheet(`<div class="sheet-head"><h2>${esc(x.name)} <code class="code-chip">${esc(x.code)}</code></h2><button class="icon-btn" data-x aria-label="닫기">${ICON.close}</button></div>
     ${base ? `<p class="sub"><code class="code-chip">${esc(base.code)}</code> ${esc(base.name)}의 다른 모습</p>` : ""}
     <div class="codex-pv" id="cxPv">${slotHTML(c, x, 0)}</div>
     <div class="codex-meta">${x.look ? `<p><b>외형</b>${esc(x.look)}</p>` : ""}${x.desc ? `<p><b>소개</b>${esc(x.desc)}</p>` : ""}</div>
     ${forms.length ? `<h3 class="codex-h">다른 모습</h3><div class="codex-chips">${forms.map((f) => `<button type="button" class="chip" data-form="${esc(f.code)}"><code>${esc(f.code)}</code>${esc(f.name)}</button>`).join("")}</div>` : ""}
-    <h3 class="codex-h">감정·행동 코드 <small>${ready.size ? "그림이 준비된 칸은 ●" : "아직 그림이 없어 카드로 보여요"}${hid.size ? ` · 🔒는 ${LOCK_NOTE}` : ""}</small></h3>
-    <div class="codex-chips">${SIT.map((s, i) => `<button type="button" class="chip${i === 0 ? " on" : ""}${hid.has(i) ? " locked" : ready.has(i) ? " ready" : ""}" data-sit="${i}"${hid.has(i) ? ` title="${LOCK_NOTE}"` : ""}><code>${esc(x.code)}${i}</code>${esc(s)}</button>`).join("")}</div>
+    <h3 class="codex-h">감정·행동 코드 <small>${ready.size ? "그림이 준비된 칸은 ●" : "아직 그림이 없어 카드로 보여요"} · 대화에서 본 칸은 ✓${hid.size ? ` · 🔒는 ${LOCK_NOTE}` : ""}</small></h3>
+    <div class="codex-chips">${SIT.map((s, i) => `<button type="button" class="chip${i === 0 ? " on" : ""}${hid.has(i) ? " locked" : seen.has(x.code + i) ? " seen" : ready.has(i) ? " ready" : ""}" data-sit="${i}"${hid.has(i) ? ` title="${LOCK_NOTE}"` : ""}><code>${esc(x.code)}${i}</code>${esc(s)}</button>`).join("")}</div>
     <p class="note" style="margin-top:12px">대화 본문에서는 ${esc(imgTag(x.code, EXAMPLE_SIT))}처럼 코드 하나가 그림 한 장이에요 — AI가 장면마다 골라 넣어요.</p>`, "wide");
   IMG.hydrate(sh);
   $$("[data-sit]", sh).forEach((b) => b.onclick = () => { $$("[data-sit]", sh).forEach((o) => o.classList.toggle("on", o === b)); const pv = $("#cxPv", sh); pv.innerHTML = slotHTML(c, x, +b.dataset.sit); IMG.hydrate(pv); });
@@ -53,14 +54,24 @@ export function castGridHTML(c) {
 export function bindCast(v, c) {
   $$("[data-cast]", v).forEach((b) => b.onclick = () => { const x = c.cast.find((y) => y.code === b.dataset.cast); if (x) castSheet(c, x); });
 }
-/* 코드 글자의 비공개 번호들(codebook의 hidden) — 작품에 없는 코드는 빈 배열 */
-function hiddenOf(c, code) { const e = codebook(c)[code]; return e ? e.hidden : []; }
+/* 코드 글자의 비공개 번호 가운데 아직 잠긴 것 — codebook의 hidden에서 대화에서 이미 본 번호(내 서재의 수집 기록)를 뺌: 한 번 본 그림은 도감에서도 열림(2026-11-09 사용자 결정). 작품에 없는 코드는 빈 배열 */
+function hiddenOf(c, code) { const e = codebook(c)[code], seen = seenSet(c.id); return e ? e.hidden.filter((n) => !seen.has(code + n)) : []; }
+/**
+ * 수집률 배지 — 이 작품에 실린 그림 가운데 대화에서 본 것: '모은 그림 n / m'(다 모으면 초록). 실린 그림이 없으면 빈 문자열. 상세 페이지·도감의 등장인물 머리에.
+ * @param {Work} c @returns {string}
+ */
+export function collectHTML(c) {
+  const m = imagesOf(c), seen = seenSet(c.id); let all = 0, got = 0;
+  Object.keys(m).forEach((code) => Object.keys(m[code]).forEach((n) => { if (!validRef(m[code][n])) return; all++; if (seen.has(code + n)) got++; }));
+  return all ? ` <span class="pill${got === all ? " ok" : ""}" id="collect" title="대화에서 본 그림 / 이 작품에 실린 그림">모은 그림 ${got} / ${all}</span>` : "";
+}
 /* 시리즈(장소 MP·컷씬 EV) 한 칸: 코드·이름·설명(장소 desc / 컷씬 when)과 그림 — 목록이 비면 빈 문자열.
    비공개 항목은 그림만 🔒로 가림 — 이름·설명은 보임(2026-11-09 사용자 결정: 무엇을 모으는지는 알 수 있게. 제목이 스포일러면 제작자가 에둘러 적음) */
 function seriesBox(c, code, e) {
   if (!e.max) return "";
+  const locked = hiddenOf(c, code);
   return `<div class="box"><h3>${esc(e.label)} <small>코드 ${esc(code)}1~${esc(code)}${e.max}</small></h3><div class="codex-grid">${e.items.map((it, i) => {
-    const n = i + 1, lock = e.hidden.includes(n), ref = lock ? null : pickImg(c, code, n), name = it[e.nameKey] || code + n, sub = it.desc || it.when || "";
+    const n = i + 1, lock = locked.includes(n), ref = lock ? null : pickImg(c, code, n), name = it[e.nameKey] || code + n, sub = it.desc || it.when || "";
     return `<figure class="wcard${lock ? " locked" : ""}">${ref ? `<button class="wpic" data-cxlb aria-label="${esc(name)} 크게 보기">${IMG.tag(ref)}</button>` : `<div class="wpic ph"${lock ? ` title="${LOCK_NOTE}"` : ""}>${lock ? "🔒" : esc(code + n)}</div>`}<figcaption><b><code class="code-chip">${esc(code + n)}</code>${esc(name)}</b>${sub ? `<span>${esc(sub)}</span>` : ""}${lock ? `<span>🔒 그림은 ${LOCK_NOTE}</span>` : ""}</figcaption></figure>`; }).join("")}</div></div>`;
 }
 /* 예약 시리즈(SERIES — 장소·컷씬…) 칸 전부. 시리즈를 더하면 도감에 그대로 나옴 */
@@ -98,7 +109,7 @@ function workCodexHTML(c) {
   const book = codebook(c), cmds = allCommands(c).filter((x) => x.own);
   return `<div class="codex-work">${coverHTML(c)}<div><b>${esc(c.title)}</b><span class="note">${esc(c.cat)}${c.world_mode ? " · 세계관" : ""} · 인물 ${c.cast.filter((x) => !x.of).length}명 · ${metaHTML(c)}</span></div><button class="btn sm ghost" data-go="c-${esc(c.id)}">작품 보기</button></div>
     ${guideHTML(c)}
-    <div class="box"><h3>등장인물 <small>누르면 코드·감정 칸·소개</small></h3><div class="cast">${castGridHTML(c)}</div></div>
+    <div class="box"><h3>등장인물 <small>누르면 코드·감정 칸·소개</small>${collectHTML(c)}</h3><div class="cast">${castGridHTML(c)}</div></div>
     ${seriesHTML(c, book)}
     ${cmds.length ? `<div class="box"><h3>이 작품의 명령어 <small>'이야기'는 AI가 그 장면을 열고, '즉답'은 정해진 글을 바로 보여 줘요</small></h3>${cmdList(cmds)}</div>` : ""}`;
 }

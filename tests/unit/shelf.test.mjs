@@ -2,7 +2,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { SHELF } from "../../src/js/core/constants.js";
-import { liked, likedIds, mergeShelf, recentIds, shelfSyncOn, toggleLike, touchRecent } from "../../src/js/core/shelf.js";
+import { liked, likedIds, markSeen, mergeShelf, recentIds, seenSet, shelfSyncOn, toggleLike, touchRecent } from "../../src/js/core/shelf.js";
 import { S } from "../../src/js/core/state.js";
 
 test("mergeShelf: 작품마다 더 늦은 시각 — 다른 기기에서 찜을 푼 것도 전해지고, 수집 기록은 합집합", () => {
@@ -43,5 +43,14 @@ test("찜 켜고 끄기·최근 본: 방금 누른 쪽이 이기고(같은 순�
   assert.deepEqual(recentIds(), ["y", "x"]);
   touchRecent("y"); assert.equal(S.shelf.recent.y, 2, "이미 맨 앞이면 그대로");
   touchRecent("x"); assert.deepEqual(recentIds(), ["x", "y"]);
+  S.shelf = mergeShelf();
+});
+test("수집 기록: 새 코드가 있을 때만 더하고(작품별), 같은 코드는 한 번만", () => {
+  S.shelf = mergeShelf();
+  assert.equal(markSeen("a", ["HSY3", "MP1", "HSY3"]), true);
+  assert.equal(markSeen("a", ["MP1"]), false, "새 코드가 없으면 저장하지 않음");
+  assert.equal(markSeen("a", ["EV1", "MP1"]), true);
+  assert.deepEqual(S.shelf.seen, { a: ["EV1", "HSY3", "MP1"] });
+  assert.ok(seenSet("a").has("HSY3") && !seenSet("b").has("HSY3"));
   S.shelf = mergeShelf();
 });

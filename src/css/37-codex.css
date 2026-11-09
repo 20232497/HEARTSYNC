@@ -11,6 +11,7 @@
 .codex-chips .chip { padding:5px 10px; font-size:12.5px; display:inline-flex; align-items:center; gap:6px; cursor:pointer; }
 .codex-chips .chip code { font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:11.5px; font-weight:700; }
 .codex-chips .chip.ready::after { content:"●"; font-size:8px; color:var(--ok); }
+.codex-chips .chip.seen::after { content:"✓"; font-size:10px; font-weight:800; color:var(--accent); } /* 대화에서 본 칸 — 내 서재의 수집 기록 */
 .codex-chips .chip.locked::after { content:"🔒"; font-size:10px; } /* 비공개(스포일러) 칸 — cast[].hidden */
 .codex-chips .chip.on { background:var(--accent-soft); color:var(--accent); border-color:var(--accent); }
 .codex-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(170px, 1fr)); gap:10px; align-items:start; }

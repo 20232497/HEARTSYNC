@@ -253,6 +253,7 @@ h2.sec small, h1.sec small { font-family:var(--sans); font-size:12.5px; color:va
 .codex-chips .chip { padding:5px 10px; font-size:12.5px; display:inline-flex; align-items:center; gap:6px; cursor:pointer; }
 .codex-chips .chip code { font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:11.5px; font-weight:700; }
 .codex-chips .chip.ready::after { content:"●"; font-size:8px; color:var(--ok); }
+.codex-chips .chip.seen::after { content:"✓"; font-size:10px; font-weight:800; color:var(--accent); }
 .codex-chips .chip.locked::after { content:"🔒"; font-size:10px; }
 .codex-chips .chip.on { background:var(--accent-soft); color:var(--accent); border-color:var(--accent); }
 .codex-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(170px, 1fr)); gap:10px; align-items:start; }
@@ -1482,6 +1483,13 @@ function touchRecent(id) {
   if (recentIds()[0] === id) return;
   S.shelf.recent[id] = Date.now(); save();
 }
+const seenSet = (id) => new Set(S.shelf.seen[id] || []);
+function markSeen(id, codes) {
+  const have = seenSet(id), add = codes.filter((k) => !have.has(k));
+  if (!add.length) return false;
+  S.shelf.seen[id] = (S.shelf.seen[id] || []).concat(add); save();
+  return true;
+}
 function resetShelf() { S.shelf = mergeShelf(); KV.setLocal("shelf", undefined); }
 /* ── src/js/services/images.js — 그림 저장(IMG): IndexedDB → localStorage, 축소(shrink), 참조 모양 검사(validRef) — 작품 폴더에 실린 그림(content/… 상대… */
 function validRef(ref) {
@@ -2540,14 +2548,14 @@ function slotHTML(c, x, sit) {
 }
 function castSheet(c, x) {
   const forms = c.cast.filter((y) => y.of === x.code), base = x.of ? c.cast.find((y) => y.code === x.of) : null;
-  const m = imagesOf(c)[x.code] || {}, ready = new Set(Object.keys(m).filter((k) => validRef(m[k])).map(Number)), hid = new Set(hiddenOf(c, x.code));
+  const m = imagesOf(c)[x.code] || {}, ready = new Set(Object.keys(m).filter((k) => validRef(m[k])).map(Number)), hid = new Set(hiddenOf(c, x.code)), seen = seenSet(c.id);
   const sh = sheet(`<div class="sheet-head"><h2>${esc(x.name)} <code class="code-chip">${esc(x.code)}</code></h2><button class="icon-btn" data-x aria-label="닫기">${ICON.close}</button></div>
     ${base ? `<p class="sub"><code class="code-chip">${esc(base.code)}</code> ${esc(base.name)}의 다른 모습</p>` : ""}
     <div class="codex-pv" id="cxPv">${slotHTML(c, x, 0)}</div>
     <div class="codex-meta">${x.look ? `<p><b>외형</b>${esc(x.look)}</p>` : ""}${x.desc ? `<p><b>소개</b>${esc(x.desc)}</p>` : ""}</div>
     ${forms.length ? `<h3 class="codex-h">다른 모습</h3><div class="codex-chips">${forms.map((f) => `<button type="button" class="chip" data-form="${esc(f.code)}"><code>${esc(f.code)}</code>${esc(f.name)}</button>`).join("")}</div>` : ""}
-    <h3 class="codex-h">감정·행동 코드 <small>${ready.size ? "그림이 준비된 칸은 ●" : "아직 그림이 없어 카드로 보여요"}${hid.size ? ` · 🔒는 ${LOCK_NOTE}` : ""}</small></h3>
-    <div class="codex-chips">${SIT.map((s, i) => `<button type="button" class="chip${i === 0 ? " on" : ""}${hid.has(i) ? " locked" : ready.has(i) ? " ready" : ""}" data-sit="${i}"${hid.has(i) ? ` title="${LOCK_NOTE}"` : ""}><code>${esc(x.code)}${i}</code>${esc(s)}</button>`).join("")}</div>
+    <h3 class="codex-h">감정·행동 코드 <small>${ready.size ? "그림이 준비된 칸은 ●" : "아직 그림이 없어 카드로 보여요"} · 대화에서 본 칸은 ✓${hid.size ? ` · 🔒는 ${LOCK_NOTE}` : ""}</small></h3>
+    <div class="codex-chips">${SIT.map((s, i) => `<button type="button" class="chip${i === 0 ? " on" : ""}${hid.has(i) ? " locked" : seen.has(x.code + i) ? " seen" : ready.has(i) ? " ready" : ""}" data-sit="${i}"${hid.has(i) ? ` title="${LOCK_NOTE}"` : ""}><code>${esc(x.code)}${i}</code>${esc(s)}</button>`).join("")}</div>
     <p class="note" style="margin-top:12px">대화 본문에서는 ${esc(imgTag(x.code, EXAMPLE_SIT))}처럼 코드 하나가 그림 한 장이에요 — AI가 장면마다 골라 넣어요.</p>`, "wide");
   IMG.hydrate(sh);
   $$("[data-sit]", sh).forEach((b) => b.onclick = () => { $$("[data-sit]", sh).forEach((o) => o.classList.toggle("on", o === b)); const pv = $("#cxPv", sh); pv.innerHTML = slotHTML(c, x, +b.dataset.sit); IMG.hydrate(pv); });
@@ -2560,11 +2568,17 @@ function castGridHTML(c) {
 function bindCast(v, c) {
   $$("[data-cast]", v).forEach((b) => b.onclick = () => { const x = c.cast.find((y) => y.code === b.dataset.cast); if (x) castSheet(c, x); });
 }
-function hiddenOf(c, code) { const e = codebook(c)[code]; return e ? e.hidden : []; }
+function hiddenOf(c, code) { const e = codebook(c)[code], seen = seenSet(c.id); return e ? e.hidden.filter((n) => !seen.has(code + n)) : []; }
+function collectHTML(c) {
+  const m = imagesOf(c), seen = seenSet(c.id); let all = 0, got = 0;
+  Object.keys(m).forEach((code) => Object.keys(m[code]).forEach((n) => { if (!validRef(m[code][n])) return; all++; if (seen.has(code + n)) got++; }));
+  return all ? ` <span class="pill${got === all ? " ok" : ""}" id="collect" title="대화에서 본 그림 / 이 작품에 실린 그림">모은 그림 ${got} / ${all}</span>` : "";
+}
 function seriesBox(c, code, e) {
   if (!e.max) return "";
+  const locked = hiddenOf(c, code);
   return `<div class="box"><h3>${esc(e.label)} <small>코드 ${esc(code)}1~${esc(code)}${e.max}</small></h3><div class="codex-grid">${e.items.map((it, i) => {
-    const n = i + 1, lock = e.hidden.includes(n), ref = lock ? null : pickImg(c, code, n), name = it[e.nameKey] || code + n, sub = it.desc || it.when || "";
+    const n = i + 1, lock = locked.includes(n), ref = lock ? null : pickImg(c, code, n), name = it[e.nameKey] || code + n, sub = it.desc || it.when || "";
     return `<figure class="wcard${lock ? " locked" : ""}">${ref ? `<button class="wpic" data-cxlb aria-label="${esc(name)} 크게 보기">${IMG.tag(ref)}</button>` : `<div class="wpic ph"${lock ? ` title="${LOCK_NOTE}"` : ""}>${lock ? "🔒" : esc(code + n)}</div>`}<figcaption><b><code class="code-chip">${esc(code + n)}</code>${esc(name)}</b>${sub ? `<span>${esc(sub)}</span>` : ""}${lock ? `<span>🔒 그림은 ${LOCK_NOTE}</span>` : ""}</figcaption></figure>`; }).join("")}</div></div>`;
 }
 const seriesHTML = (c, book) => Object.keys(SERIES).map((k) => seriesBox(c, k, book[k])).join("");
@@ -2594,7 +2608,7 @@ function workCodexHTML(c) {
   const book = codebook(c), cmds = allCommands(c).filter((x) => x.own);
   return `<div class="codex-work">${coverHTML(c)}<div><b>${esc(c.title)}</b><span class="note">${esc(c.cat)}${c.world_mode ? " · 세계관" : ""} · 인물 ${c.cast.filter((x) => !x.of).length}명 · ${metaHTML(c)}</span></div><button class="btn sm ghost" data-go="c-${esc(c.id)}">작품 보기</button></div>
     ${guideHTML(c)}
-    <div class="box"><h3>등장인물 <small>누르면 코드·감정 칸·소개</small></h3><div class="cast">${castGridHTML(c)}</div></div>
+    <div class="box"><h3>등장인물 <small>누르면 코드·감정 칸·소개</small>${collectHTML(c)}</h3><div class="cast">${castGridHTML(c)}</div></div>
     ${seriesHTML(c, book)}
     ${cmds.length ? `<div class="box"><h3>이 작품의 명령어 <small>'이야기'는 AI가 그 장면을 열고, '즉답'은 정해진 글을 바로 보여 줘요</small></h3>${cmdList(cmds)}</div>` : ""}`;
 }
@@ -2787,7 +2801,7 @@ function faqGroups() {
       ["설정은 얼마나 길게 쓸 수 있나요?", `<b>페르소나</b> 상세 정보는 ${num(LIMITS.personaDesc)}자, <b>유저노트</b>는 대화방마다 하나씩 ${num(LIMITS.userNote)}자, <b>장기기억</b>은 ${num(PLAN.free.memoMax)}자(PLUS ${num(PLAN.pro.memoMax)}자)까지예요. 장기기억이 한도를 넘으면 자동으로 압축하고 압축 전 내용은 히스토리에 보관해요. 답의 분량은 설정에 적기보다 메뉴의 <b>출력 설정</b>에서 고르는 편이 잘 지켜져요.`],
       ["대화를 저장하거나 옮길 수 있나요?", "대화방 메뉴의 <b>대화 내보내기</b>로 파일로 받거나 <b>대화 복사</b>로 복사할 수 있어요. 로그인하면 대화가 계정에 저장돼 다른 기기에서 이어져요."],
       ["대화 속 그림을 끄고 싶어요.", "<a href=\"#me\">MY</a> → 채팅 설정의 <b>대화 속 장면 이미지 보기</b>를 끄면 돼요. 글자 크기·줄 간격·지문 글꼴도 거기서 바꿔요."],
-      ["도감과 !명령어는 뭔가요?", `<a href="#codex">도감</a>은 작품마다 인물 코드·감정 칸·장소·컷씬·명령어를 보여 주는 안내예요. 대화 속 그림 한 장은 <b>인물 코드 + 번호</b> 한 토큰(예: ${esc(ex.code)}${EXAMPLE_SIT} = ${esc(ex.name)} · ${SIT[EXAMPLE_SIT]})이고, AI가 장면마다 골라 넣어요. 대화방 입력창에 <b>!</b>를 치면 쓸 수 있는 명령어 목록이 떠요.`],
+      ["도감과 !명령어는 뭔가요?", `<a href="#codex">도감</a>은 작품마다 인물 코드·감정 칸·장소·컷씬·명령어를 보여 주는 안내예요. 대화 속 그림 한 장은 <b>인물 코드 + 번호</b> 한 토큰(예: ${esc(ex.code)}${EXAMPLE_SIT} = ${esc(ex.name)} · ${SIT[EXAMPLE_SIT]})이고, AI가 장면마다 골라 넣어요. 대화방 입력창에 <b>!</b>를 치면 쓸 수 있는 명령어 목록이 떠요. 그림이 실린 작품은 대화에서 본 그림이 도감에 <b>모은 그림</b>으로 쌓이고, 🔒로 가려진 그림은 대화에서 한 번 나오면 도감에서도 열려요.`],
       ["!명령어에는 어떤 것이 있나요?", `세 가지예요. ① <b>앱 명령어</b> ${cmds("view")} — AI를 부르지 않고 바로 열려요(하트를 쓰지 않아요). ② <b>연출 명령어</b> ${cmds("direct")} — 어느 작품에서나 AI에게 장면 연출을 부탁해요(한 턴을 써요). ③ <b>작품 명령어</b> — 그 작품에만 있는 장치예요(도감의 작품 칸에서 확인). 배지가 <b>이야기</b>면 AI가 그 장면을 열고(한 턴), <b>즉답</b>이면 작품이 정해 둔 글을 AI 없이 바로 보여 줘요(하트를 쓰지 않아요). 직접 지시하고 싶으면 <b>//</b>로 시작해 적어도 돼요.`],
       ["응답이 중간에 끊겼어요.", "연결이 끊기거나 시간이 너무 오래 걸리면 받은 데까지 남기고 멈춰요. 그 메시지의 <b>다시 시도</b>를 누르면 다시 써요."]
     ]],
@@ -3183,11 +3197,20 @@ function bindPins(body, r, repaint) {
   $$("[data-pined]", body).forEach((b) => b.onclick = () => pinSheet(r, null, repaint, (r.pins || []).find((p) => p.id === b.dataset.pined)));
   $$("[data-pindel]", body).forEach((b) => b.onclick = () => { r.pins = (r.pins || []).filter((p) => p.id !== b.dataset.pindel); saveRoom(r); repaint(); });
 }
-/* ── src/js/ui/room-tools.js — 대화방 도구(드로어가 씀): 대화에 나온 그림 모으기(galleryItems)·그 장면으로 가기(jumpTo)·대화 내보내기(exportText·exportRoom)·대화방… */
+/* ── src/js/ui/room-tools.js — 대화방 도구(드로어가 씀): 대화에 나온 그림 모으기(galleryItems)·수집 기록에 적기(collectSeen)·그 장면으로 가기(jumpTo)·대화… */
 function galleryItems(r) {
   const out = [], seen = new Set();
   r.msgs.forEach((m) => imgTags(curText(m)).forEach((t) => { const k = t.code + t.sit; if (seen.has(k)) return; const i = tagInfo(r.char, t); if (i) { seen.add(k); out.push({ ...i, id: m.id }); } }));
   return out;
+}
+function collectSeen(r) {
+  const imgs = imagesOf(r.char), codes = [];
+  galleryItems(r).forEach((it) => {
+    codes.push(it.code + it.sit);
+    const m = imgs[it.code] || {}, shown = it.ref ? fallbackSits(it.sit, it.code).find((k) => m[k] === it.ref) : undefined;
+    if (shown !== undefined && shown !== it.sit) codes.push(it.code + shown);
+  });
+  markSeen(r.char.id, codes);
 }
 function jumpTo(id) { const el = $(`.msg[data-id="${id}"]`); if (!el) return; el.scrollIntoView({ block: "center" }); el.classList.add("flash"); setTimeout(() => el.classList.remove("flash"), 1400); }
 function exportText(r) {
@@ -3374,7 +3397,7 @@ function openRoomDrawer(view = "main") {
     $$("[data-g]", body).forEach((b) => b.onclick = () => { const it = items[+b.dataset.g], im = $("img", b); if (im && im.src) lightbox(im.src); else { ov.remove(); jumpTo(it.id); } });
   }
   else if (view === "places") {
-    const live = getChar(c.id) || c, list = live.places || [], MP = seriesCode("place"), book = codebook(live)[MP], hid = book.hidden, seen = new Set(galleryItems(r).map((it) => it.code + it.sit));
+    const live = getChar(c.id) || c, list = live.places || [], MP = seriesCode("place"), book = codebook(live)[MP], hid = book.hidden, seen = seenSet(c.id);
     const lock = (i) => hid.includes(i + 1) && !seen.has(MP + (i + 1));
     body.innerHTML = list.length ? `<p class="note" style="margin-bottom:10px">이 작품의 장소 ${list.length}곳. 대화에서는 [[${MP}번호]] 코드로 나와요.</p><div class="gallery">${list.map((p, i) => {
       const ref = lock(i) ? null : pickImg(c, MP, i + 1);
@@ -3422,6 +3445,7 @@ async function viewChat(id) {
     if (!r) { v.innerHTML = `<div class="page">${topbar()}<div class="empty">대화방을 찾을 수 없어요.<br><button class="btn sm" data-go="chats">대화 목록</button></div></div>`; bindGo(v); return; }
     setRoom(migrateRoom(r));
   }
+  collectSeen(room);
   const c = room.char;
   v.innerHTML = `<div class="chat">
     <div class="chat-bg">${coverHTML(c)}</div>
@@ -3490,7 +3514,7 @@ function replyNow(t, cmd) {
   const a = lastAi(room), st = a ? (a.alts[a.idx] || {}).status || a.statusBefore : room.status;
   room.lastErr = "";
   room.msgs.push({ id: uid("m"), role: "user", text: t, canned: true }, { id: uid("m"), role: "ai", idx: 0, canned: true, alts: [{ text: cmd.text, status: st, suggestions: [], cost: "무료" }], statusBefore: st });
-  saveRoom(room); hideSug(); renderLog(true);
+  saveRoom(room); collectSeen(room); hideSug(); renderLog(true);
 }
 let hintTimer = null;
 function flashHint(msg) {
@@ -3836,7 +3860,7 @@ async function generate(target, q, direction = "", isEdit = false) {
     }
   } finally {
     setGen(null);
-    saveRoom(r);
+    saveRoom(r); collectSeen(r);
     if (room === r && $("#logInner")) {
       renderLog(stick && autoScroll()); syncJump(); updateComposer(); updateMeter(); $("#inp")?.focus({ preventScroll: true });
     }
@@ -3926,7 +3950,7 @@ function viewDetail(id) {
         <div class="box"><h3>소개</h3><p>${esc(c.desc)}</p></div>
         ${guideHTML(c)}
         <div class="box" id="wArtBox" ${wa ? "" : 'style="display:none"'}><h3>세계관 일러스트</h3>${wa}</div>
-        <div class="box"><h3>등장인물 <small>누르면 코드·감정 칸 안내</small> <button class="btn sm ghost" data-go="codex-${esc(c.id)}" style="float:right">도감</button></h3>
+        <div class="box"><h3>등장인물 <small>누르면 코드·감정 칸 안내</small>${collectHTML(c)} <button class="btn sm ghost" data-go="codex-${esc(c.id)}" style="float:right">도감</button></h3>
           <div class="cast">${castGridHTML(c)}</div></div>
         ${codexHTML(c)}
         <div class="box"><h3>${c.world_mode ? "게임 모드 · 시작 상황" : "시작 상황"}</h3><div class="openings">

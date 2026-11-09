@@ -51,5 +51,14 @@ export function touchRecent(id) {
   if (recentIds()[0] === id) return;
   S.shelf.recent[id] = Date.now(); save();
 }
+/** 이 작품의 대화에서 본 그림 코드들("HSY3"·"MP1"…) — 도감의 수집 기록. @param {string} id @returns {Set<string>} */
+export const seenSet = (id) => new Set(S.shelf.seen[id] || []);
+/** 대화에 나온 그림 코드를 수집 기록에 더함 — 새 코드가 있을 때만 저장하고 true. @param {string} id @param {string[]} codes @returns {boolean} */
+export function markSeen(id, codes) {
+  const have = seenSet(id), add = codes.filter((k) => !have.has(k));
+  if (!add.length) return false;
+  S.shelf.seen[id] = (S.shelf.seen[id] || []).concat(add); save();
+  return true;
+}
 /** 이 기기의 서재를 비움(계정에는 보내지 않음) — 처음 로그인에서 '계정 것만 쓰기'를 골랐을 때. */
 export function resetShelf() { S.shelf = mergeShelf(); KV.setLocal("shelf", undefined); }

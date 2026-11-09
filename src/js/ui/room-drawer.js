@@ -7,6 +7,7 @@ import { exampleCast, getChar, normalizeChar } from "../core/character.js";
 import { LIMITS } from "../core/constants.js";
 import { baseOpening, curText, newRoom, saveRoom } from "../core/rooms.js";
 import { saveSettings } from "../core/settings.js";
+import { seenSet } from "../core/shelf.js";
 import { S, room, setRoom } from "../core/state.js";
 import { $, $$, clamp, esc, num, toast } from "../core/util.js";
 import { FREE_DAILY, PLAN, freeLeft, isPro, plan, qShort, quote } from "../core/wallet.js";
@@ -195,8 +196,8 @@ export function openRoomDrawer(view = "main") {
   }
   else if (view === "places") {
     // 작품의 장소(places → 예약 시리즈 코드 MP1…, 코드 글자는 codes.js SERIES에서) — !지도 명령어로도 열림. 그림은 작품 폴더 images/MP<n>.webp. 목록은 최신 작품에서
-    // 비공개(hidden) 장소는 이 대화에 그 코드가 나오기 전까지 그림만 가림(이름·설명은 보임 — codebook의 hidden)
-    const live = getChar(c.id) || c, list = live.places || [], MP = seriesCode("place"), book = codebook(live)[MP], hid = book.hidden, seen = new Set(galleryItems(r).map((it) => it.code + it.sit));
+    // 비공개(hidden) 장소는 대화에서 그 코드를 보기 전까지 그림만 가림(이름·설명은 보임 — codebook의 hidden). 본 기록은 내 서재의 수집 기록(이 방 것은 방을 열 때·응답이 끝날 때 적힘)
+    const live = getChar(c.id) || c, list = live.places || [], MP = seriesCode("place"), book = codebook(live)[MP], hid = book.hidden, seen = seenSet(c.id);
     const lock = (i) => hid.includes(i + 1) && !seen.has(MP + (i + 1));
     body.innerHTML = list.length ? `<p class="note" style="margin-bottom:10px">이 작품의 장소 ${list.length}곳. 대화에서는 [[${MP}번호]] 코드로 나와요.</p><div class="gallery">${list.map((p, i) => {
       const ref = lock(i) ? null : pickImg(c, MP, i + 1);

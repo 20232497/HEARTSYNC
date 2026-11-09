@@ -18,6 +18,7 @@ import { liveFill } from "./render.js";
 import { hideSug } from "./suggest.js";
 import { lastAi, updateComposer, updateMeter } from "./view.js";
 import { ensurePay } from "../pay.js";
+import { collectSeen } from "../room-tools.js";
 import { closeOverlays, sheet } from "../sheet.js";
 
 export async function sendTurn(text, { cont = false } = {}) {
@@ -132,7 +133,7 @@ export async function generate(target, q, direction = "", isEdit = false) {
     }
   } finally {
     setGen(null);
-    saveRoom(r);
+    saveRoom(r); collectSeen(r);
     if (room === r && $("#logInner")) {
       renderLog(stick && autoScroll()); syncJump(); updateComposer(); updateMeter(); $("#inp")?.focus({ preventScroll: true });
     }
