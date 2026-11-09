@@ -4,7 +4,7 @@ import { getChar } from "../core/character.js";
 import { saveRoom } from "../core/rooms.js";
 import { S, room } from "../core/state.js";
 import { $, $$, esc, num, toast } from "../core/util.js";
-import { FREE_DAILY, freeLeft, isPro, quote } from "../core/wallet.js";
+import { freeLeft, isPro, quote } from "../core/wallet.js";
 import { updateComposer } from "./chat/view.js";
 import { ICON } from "./icons.js";
 import { openRoomDrawer } from "./room-drawer.js";
@@ -18,7 +18,7 @@ export function openModelSheet() {
   const card = (k) => {
     const m = MODELS[k], q = quote({ ...r.set, model: k }); // q.list = 정가(listPrice), q.n = 지금 낼 하트
     const price = q.type === "free" ? `오늘 무료 ${freeLeft()}턴 남음 · 이후 턴당 ♥${q.list}` : q.type === "plus" ? `PLUS 무제한 <s>턴당 ♥${q.list}</s>` : (isPro() && q.n < q.list ? `턴당 <s>♥${q.list}</s>♥${q.n}` : `턴당 ♥${q.n}`);
-    const free = k === "lite" ? `매일 ${FREE_DAILY}턴 무료 — 자정에 다시 채워져요` : "무료 턴은 라이트 모델에만 있어요";
+    const free = k === "lite" ? "무료 턴은 자정에 다시 채워져요" : "무료 턴은 라이트 모델에만 있어요";
     return `<button class="model-card ${r.set.model === k ? "on" : ""}" data-m="${k}"><span class="k">${esc(m.badge)}</span><b>${m.name}${k === rec ? ' <span class="pill ok">권장</span>' : ""}${isPro() && k !== "lite" ? ' <span class="pill gold">PLUS -50%</span>' : ""}</b><p>${esc(m.desc)}</p><div class="price">${price}<small>${free}</small></div><span class="chk">✓</span></button>`;
   };
   const ov = sheet(`<div class="sheet-head"><h2>AI 모델 선택</h2><button class="icon-btn" data-x aria-label="닫기">${ICON.close}</button></div>

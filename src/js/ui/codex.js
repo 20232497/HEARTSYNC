@@ -1,5 +1,5 @@
-/* 도감(코드 안내): 독립 화면 viewCodex(#codex·#codex-<작품id> — 공통 표·앱 명령어·작품 고르기·인물·장소·컷씬·작품 명령어), 인물 시트(castSheet — 코드·다른 모습·감정 칩·외형·소개),
-   상세 페이지에 끼우는 칸(codexHTML·castGridHTML·bindCodex). 데이터는 작품의 cast·places·cuts·commands, 코드 해석은 images/codes.js의 codebook 하나 — 작품이 바뀌어도 이 틀 그대로 */
+/* 도감(코드 안내): 독립 화면 viewCodex(#codex·#codex-<작품id> — 공통 표·공통 명령어·작품 고르기·플레이 가이드·인물·장소·컷씬·작품 명령어), 인물 시트(castSheet — 코드·다른 모습·감정 칩(비공개 🔒)·외형·소개),
+   상세 페이지에 끼우는 칸(codexHTML·castGridHTML·bindCodex·metaHTML 작품 메타 줄·guideHTML 플레이 가이드). 데이터는 작품의 cast·places·cuts·commands, 코드 해석은 images/codes.js의 codebook 하나 — 작품이 바뀌어도 이 틀 그대로 */
 import { ORIGINALS } from "../content/index.js";
 import { AUDS, audOK, audience } from "../core/audience.js";
 import { normalizeChar } from "../core/character.js";
@@ -71,7 +71,7 @@ function cmdCard(x) {
 }
 const cmdList = (list) => `<div class="cmd-list">${list.map(cmdCard).join("")}</div>`;
 const KIND_LEGEND = Object.keys(COMMAND_KINDS).map((k) => `'${COMMAND_KINDS[k].name}' ${COMMAND_KINDS[k].note}`).join(" · ");
-/** 상세 페이지 아래쪽 칸들: 장소(MP)·컷씬(EV) 목록(작품에 있을 때만)과 명령어 카드(앱 명령어 + 작품 명령어). @param {Work} c @returns {string} */
+/** 상세 페이지 아래쪽 칸들: 장소(MP)·컷씬(EV) 목록(작품에 있을 때만)과 명령어 카드(allCommands — 앱·연출·이야기). @param {Work} c @returns {string} */
 export function codexHTML(c) {
   const book = codebook(c);
   return seriesBox(c, "MP", book.MP) + seriesBox(c, "EV", book.EV) +
@@ -84,7 +84,7 @@ export function bindCodex(v) {
 }
 /** 작품 메타 한 줄(상세 페이지 머리·도감 작품 칸 공용): 제작자(work.js creator, 없으면 DEFAULT_CREATOR) · 공개일(publishedAt) · 독점 배지(exclusive). @param {Work} c @returns {string} */
 export function metaHTML(c) {
-  return `${esc(c.creator || DEFAULT_CREATOR)}${c.publishedAt ? ` · ${esc(String(c.publishedAt).replace(/-/g, "."))} 공개` : ""}${c.exclusive ? ' <span class="pill gold">독점</span>' : ""}`;
+  return `${esc(c.creator || DEFAULT_CREATOR)}${c.publishedAt ? ` · <span style="white-space:nowrap">${esc(String(c.publishedAt).replace(/-/g, "."))} 공개</span>` : ""}${c.exclusive ? ' <span class="pill gold">독점</span>' : ""}`;
 }
 /** 플레이 가이드 칸 — 제작자가 독자에게 주는 안내문(work.js guide, 줄바꿈 그대로). 없으면 빈 문자열. 상세 페이지·도감 공용. @param {Work} c @returns {string} */
 export function guideHTML(c) { return c.guide ? `<div class="box"><h3>플레이 가이드 <small>제작자의 안내</small></h3><p class="guide">${esc(c.guide)}</p></div>` : ""; }
@@ -102,7 +102,7 @@ function workCodexHTML(c) {
     ${cmds.length ? `<div class="box"><h3>이 작품의 명령어 <small>치면 AI가 그 장면을 열어요</small></h3>${cmdList(cmds)}</div>` : ""}`;
 }
 /**
- * 도감 화면(#codex · #codex-<작품id>): 공통 표(그림 코드 읽는 법·감정 칸 0~14·앱 명령어) + 작품 고르기(관심있는 대화로 거름) → 그 작품의 인물·장소·컷씬·작품 명령어.
+ * 도감 화면(#codex · #codex-<작품id>): 공통 표(그림 코드 읽는 법·감정 칸 0~14·공통 명령어) + 작품 고르기(관심있는 대화로 거름) → 그 작품의 인물·장소·컷씬·작품 명령어.
  * @param {string} [id] 작품 id(없거나 걸러졌으면 첫 작품)
  */
 export function viewCodex(id) {

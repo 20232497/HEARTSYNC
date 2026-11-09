@@ -7,7 +7,7 @@ import { FREE_DAILY } from "../core/constants.js";
 /** 모델 등급 표 — tier는 llm()의 모델(quick Haiku · default Sonnet · complex Opus), base는 기본가(하트), memStep은 기억력 10턴마다 더하는 값. @type {Record<ModelKey, { tier: Tier, name: string, badge: string, desc: string, base: number, memStep: number }>} */
 export const MODELS = {
   lite:   { tier: "quick",   name: "라이트", badge: "매일 무료 " + FREE_DAILY + "턴", desc: "빠르고 가벼운 일상 대화", base: 1, memStep: 0 },
-  story:  { tier: "default", name: "스토리", badge: "풍부한 묘사", desc: "풍부한 묘사와 안정적인 캐릭터 연기", base: 4, memStep: 1 },
+  story:  { tier: "default", name: "스토리", badge: "이야기 중심", desc: "풍부한 묘사와 안정적인 캐릭터 연기", base: 4, memStep: 1 },
   master: { tier: "complex", name: "마스터", badge: "최고 품질", desc: "한 편의 소설 같은 몰입감. 복잡한 세계관과 전투 계산에 강해요", base: 8, memStep: 2 }
 };
 /** 작품이 권장 모델(work.js recommend)을 적지 않았을 때의 권장 모델 */

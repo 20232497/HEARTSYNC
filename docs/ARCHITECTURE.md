@@ -21,12 +21,12 @@
 ## 2. 층과 규칙
 
 ```
-core      config(잎) · constants · util · events · storage · state · target · cast · audience · wallet · character · safety · rooms · settings · migrate  (types.js는 문서만 — 번들에 안 들어감)
+core      config(잎) · constants · util · events · storage · state · target · cast · audience · wallet · character · safety · rooms · settings · migrate · commands(순수)  (types.js는 문서만 — 번들에 안 들어감)
 content   index.js — 빌드가 만든 generated.js(ORIGINALS · HOME_ROWS)
 services  supabase · cloud · sync · load · images · support
 images    codes(그림 태그 읽기 — 순수) · situations(감정 칸 0~14 이름·낱말 점수 — 순수) · pick(인물·칸별 그림 찾기)
 ai        models · llm · parse · prompt/{lore,rules,input,memory}
-ui        icons · sheet · ext · shell · cover · home · detail · chat/{render,log,view,generate,suggest} · pay · model-sheet · room-drawer · worldart(보기) · chats · store · login · account · me · help · faq
+ui        icons · sheet · ext · shell · cover · home · detail · codex · chat/{render,log,cmdlist,view,generate,suggest} · pay · model-sheet · room-tools · room-drawer · worldart(보기) · chats · store · login · account · me · help · faq
 admin     gate · support   (관리자 빌드만)
 boot.js → app.js(USER_VIEWS · USER_NAVS) → main.js | admin.js
 ```
@@ -50,7 +50,7 @@ boot.js → app.js(USER_VIEWS · USER_NAVS) → main.js | admin.js
 ```
 
 - 그림 하나 = 코드 한 토큰(`images/codes.js`): 인물 코드(영문 대문자 1~4자, `cast[].code`) 뒤에 감정 칸 번호 0~14(`core/constants.js`의 SIT) — `HSY3`. 본문 태그는 `[[HSY3]]`, 그림 파일은 `HSY3.webp`. 예약 시리즈 `MP<n>`(장소, 작품 `places`)·`EV<n>`(컷씬, `cuts`). 그림이 없으면 인물은 1 기본 → 0 프로필 순으로 찾고, 그것도 없으면 글자 카드(`ui/cover.js` artHTML). 예전 대화의 `[[img:ks:3,404,501]]`은 읽을 수 있고(sitOf — 처음 나오는 0~14 번호), 방을 열 때 `core/rooms.js` migrateRoom이 새 코드로 바꾼다.
-- 코드 해석의 단일 출처는 `images/codes.js`의 `codebook(작품)`이다 — 프롬프트(`ai/prompt/rules.js`)·렌더러(`ui/cover.js` tagInfo)·갤러리·빌드 검사(`tools/build.mjs` APP_RULES)·도감(`ui/codex.js`)이 같은 사전을 읽는다. 작품은 데이터(`cast`·`places`·`cuts`·`commands`)만 적는다. 명령어도 두 층이다: 앱 명령어(`core/commands.js` APP_COMMANDS — 드로어를 엶)와 작품 명령어(`commands` — AI 연출 지시).
+- 코드 해석의 단일 출처는 `images/codes.js`의 `codebook(작품)`이다 — 프롬프트(`ai/prompt/rules.js`)·렌더러(`ui/cover.js` tagInfo)·갤러리·빌드 검사(`tools/build.mjs` APP_RULES)·도감(`ui/codex.js`)이 같은 사전을 읽는다. 작품은 데이터(`cast`·`places`·`cuts`·`commands`)만 적는다. 비공개(스포일러) 플래그(`cast[].hidden` 감정 번호 배열, `places[]`·`cuts[]`의 `hidden` 참거짓)도 `codebook` 항목의 `hidden`(번호 배열) 하나로 해석한다 — 도감·상세·장소 목록이 그 번호를 가리고, 대화에 그 코드가 나온 방에서만 보인다. 명령어도 두 층이다: 앱 명령어(`core/commands.js` APP_COMMANDS — 화면형은 드로어를 열고, 연출형은 AI에 공통 연출 지시)와 작품 명령어(`commands` — AI 연출 지시). 도감 카드·도움말·입력창 `!` 목록(`ui/chat/cmdlist.js`)은 `allCommands(작품)` 한 목록을 같이 쓴다.
 - 참조 모양(`services/images.js`의 `validRef`): `kv:img…` · `data:image/…` · `content/…/images/x.webp|png|jpg`. content/ 경로는 index.html 기준 상대 경로라 GitHub Pages·file:// 모두 같은 폴더 구조면 보인다.
 - 이용자가 올리는 그림은 페르소나 사진뿐이다(`IMG.put` → IndexedDB, 로그인했으면 계정에도 `img…` 행으로).
 

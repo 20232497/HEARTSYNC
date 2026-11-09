@@ -338,7 +338,7 @@ img.img-miss { background:var(--surface2); }
 .meter { display:flex; align-items:center; gap:7px; font-size:12px; color:var(--muted); font-variant-numeric:tabular-nums; white-space:nowrap; }
 .meter i { width:64px; height:6px; border-radius:3px; background:var(--surface2); overflow:hidden; display:block; }
 .meter i b { display:block; height:100%; background:var(--accent); border-radius:3px; transition:width .6s; }
-@media (max-width:560px) { .meter { display:none; } .model-chip { padding:0 10px; } .model-chip .per { display:none; } }
+@media (max-width:560px) { .meter { display:none; } .model-chip small { display:none; } }
 .chat-log { position:relative; z-index:1; flex:1; overflow-y:auto; overflow-x:hidden; padding-block:18px 12px; padding-left:max(14px, env(safe-area-inset-left,0px)); padding-right:max(14px, env(safe-area-inset-right,0px)); }
 .log-inner { max-width:760px; margin:0 auto; display:flex; flex-direction:column; gap:16px; }
 .scene-card { text-align:center; padding:6px 0 4px; }
@@ -916,7 +916,7 @@ const audOK = (c) => audience() === "all" || audOf(c) === audience();
 /** 모델 등급 표 — tier는 llm()의 모델(quick Haiku · default Sonnet · complex Opus), base는 기본가(하트), memStep은 기억력 10턴마다 더하는 값. @type {Record<ModelKey, { tier: Tier, name: string, badge: string, desc: string, base: number, memStep: number }>} */
 const MODELS = {
   lite:   { tier: "quick",   name: "라이트", badge: "매일 무료 " + FREE_DAILY + "턴", desc: "빠르고 가벼운 일상 대화", base: 1, memStep: 0 },
-  story:  { tier: "default", name: "스토리", badge: "풍부한 묘사", desc: "풍부한 묘사와 안정적인 캐릭터 연기", base: 4, memStep: 1 },
+  story:  { tier: "default", name: "스토리", badge: "이야기 중심", desc: "풍부한 묘사와 안정적인 캐릭터 연기", base: 4, memStep: 1 },
   master: { tier: "complex", name: "마스터", badge: "최고 품질", desc: "한 편의 소설 같은 몰입감. 복잡한 세계관과 전투 계산에 강해요", base: 8, memStep: 2 }
 };
 /** 작품이 권장 모델(work.js recommend)을 적지 않았을 때의 권장 모델 */
@@ -3240,8 +3240,8 @@ function pavHTML(p) { const img = IMG.tag(p.img); return `<div class="pav">${img
    내보냄: castSheet, castGridHTML, bindCast, codexHTML, bindCodex, metaHTML, guideHTML, guideSheet, viewCodex
    쓰는 곳: src/js/ui/room-drawer.js, src/js/ui/detail.js, src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
-/* 도감(코드 안내): 독립 화면 viewCodex(#codex·#codex-<작품id> — 공통 표·앱 명령어·작품 고르기·인물·장소·컷씬·작품 명령어), 인물 시트(castSheet — 코드·다른 모습·감정 칩·외형·소개),
-   상세 페이지에 끼우는 칸(codexHTML·castGridHTML·bindCodex). 데이터는 작품의 cast·places·cuts·commands, 코드 해석은 images/codes.js의 codebook 하나 — 작품이 바뀌어도 이 틀 그대로 */
+/* 도감(코드 안내): 독립 화면 viewCodex(#codex·#codex-<작품id> — 공통 표·공통 명령어·작품 고르기·플레이 가이드·인물·장소·컷씬·작품 명령어), 인물 시트(castSheet — 코드·다른 모습·감정 칩(비공개 🔒)·외형·소개),
+   상세 페이지에 끼우는 칸(codexHTML·castGridHTML·bindCodex·metaHTML 작품 메타 줄·guideHTML 플레이 가이드). 데이터는 작품의 cast·places·cuts·commands, 코드 해석은 images/codes.js의 codebook 하나 — 작품이 바뀌어도 이 틀 그대로 */
 
 
 
@@ -3313,7 +3313,7 @@ function cmdCard(x) {
 }
 const cmdList = (list) => `<div class="cmd-list">${list.map(cmdCard).join("")}</div>`;
 const KIND_LEGEND = Object.keys(COMMAND_KINDS).map((k) => `'${COMMAND_KINDS[k].name}' ${COMMAND_KINDS[k].note}`).join(" · ");
-/** 상세 페이지 아래쪽 칸들: 장소(MP)·컷씬(EV) 목록(작품에 있을 때만)과 명령어 카드(앱 명령어 + 작품 명령어). @param {Work} c @returns {string} */
+/** 상세 페이지 아래쪽 칸들: 장소(MP)·컷씬(EV) 목록(작품에 있을 때만)과 명령어 카드(allCommands — 앱·연출·이야기). @param {Work} c @returns {string} */
 function codexHTML(c) {
   const book = codebook(c);
   return seriesBox(c, "MP", book.MP) + seriesBox(c, "EV", book.EV) +
@@ -3326,7 +3326,7 @@ function bindCodex(v) {
 }
 /** 작품 메타 한 줄(상세 페이지 머리·도감 작품 칸 공용): 제작자(work.js creator, 없으면 DEFAULT_CREATOR) · 공개일(publishedAt) · 독점 배지(exclusive). @param {Work} c @returns {string} */
 function metaHTML(c) {
-  return `${esc(c.creator || DEFAULT_CREATOR)}${c.publishedAt ? ` · ${esc(String(c.publishedAt).replace(/-/g, "."))} 공개` : ""}${c.exclusive ? ' <span class="pill gold">독점</span>' : ""}`;
+  return `${esc(c.creator || DEFAULT_CREATOR)}${c.publishedAt ? ` · <span style="white-space:nowrap">${esc(String(c.publishedAt).replace(/-/g, "."))} 공개</span>` : ""}${c.exclusive ? ' <span class="pill gold">독점</span>' : ""}`;
 }
 /** 플레이 가이드 칸 — 제작자가 독자에게 주는 안내문(work.js guide, 줄바꿈 그대로). 없으면 빈 문자열. 상세 페이지·도감 공용. @param {Work} c @returns {string} */
 function guideHTML(c) { return c.guide ? `<div class="box"><h3>플레이 가이드 <small>제작자의 안내</small></h3><p class="guide">${esc(c.guide)}</p></div>` : ""; }
@@ -3344,7 +3344,7 @@ function workCodexHTML(c) {
     ${cmds.length ? `<div class="box"><h3>이 작품의 명령어 <small>치면 AI가 그 장면을 열어요</small></h3>${cmdList(cmds)}</div>` : ""}`;
 }
 /**
- * 도감 화면(#codex · #codex-<작품id>): 공통 표(그림 코드 읽는 법·감정 칸 0~14·앱 명령어) + 작품 고르기(관심있는 대화로 거름) → 그 작품의 인물·장소·컷씬·작품 명령어.
+ * 도감 화면(#codex · #codex-<작품id>): 공통 표(그림 코드 읽는 법·감정 칸 0~14·공통 명령어) + 작품 고르기(관심있는 대화로 거름) → 그 작품의 인물·장소·컷씬·작품 명령어.
  * @param {string} [id] 작품 id(없거나 걸러졌으면 첫 작품)
  */
 function viewCodex(id) {
@@ -4419,7 +4419,7 @@ function openRoomDrawer(view = "main") {
            src/js/core/rooms.js { saveRoom }
            src/js/core/state.js { S, room }
            src/js/core/util.js { $, $$, esc, num, toast }
-           src/js/core/wallet.js { FREE_DAILY, freeLeft, isPro, quote }
+           src/js/core/wallet.js { freeLeft, isPro, quote }
            src/js/ui/chat/view.js { updateComposer }
            src/js/ui/icons.js { ICON }
            src/js/ui/room-drawer.js { openRoomDrawer }
@@ -4448,7 +4448,7 @@ function openModelSheet() {
   const card = (k) => {
     const m = MODELS[k], q = quote({ ...r.set, model: k }); // q.list = 정가(listPrice), q.n = 지금 낼 하트
     const price = q.type === "free" ? `오늘 무료 ${freeLeft()}턴 남음 · 이후 턴당 ♥${q.list}` : q.type === "plus" ? `PLUS 무제한 <s>턴당 ♥${q.list}</s>` : (isPro() && q.n < q.list ? `턴당 <s>♥${q.list}</s>♥${q.n}` : `턴당 ♥${q.n}`);
-    const free = k === "lite" ? `매일 ${FREE_DAILY}턴 무료 — 자정에 다시 채워져요` : "무료 턴은 라이트 모델에만 있어요";
+    const free = k === "lite" ? "무료 턴은 자정에 다시 채워져요" : "무료 턴은 라이트 모델에만 있어요";
     return `<button class="model-card ${r.set.model === k ? "on" : ""}" data-m="${k}"><span class="k">${esc(m.badge)}</span><b>${m.name}${k === rec ? ' <span class="pill ok">권장</span>' : ""}${isPro() && k !== "lite" ? ' <span class="pill gold">PLUS -50%</span>' : ""}</b><p>${esc(m.desc)}</p><div class="price">${price}<small>${free}</small></div><span class="chk">✓</span></button>`;
   };
   const ov = sheet(`<div class="sheet-head"><h2>AI 모델 선택</h2><button class="icon-btn" data-x aria-label="닫기">${ICON.close}</button></div>
@@ -4594,7 +4594,7 @@ function updateComposer() {
   send.innerHTML = `${ICON.send}<small>${qShort(q)}</small>`;
   send.title = q.type === "heart" ? `이번 턴에 하트 ${q.n}개가 사용돼요` : q.type === "free" ? "오늘의 무료 턴으로 보내요" : "PLUS 무제한";
   $("#contBtn").disabled = !!gen; $("#sugBtn").disabled = !!gen;
-  const chip = $("#modelChip"); if (chip) chip.innerHTML = `${m.name} <small>${qShort(q)}<span class="per">/턴</span></small> ▾`; // 좁은 화면에서는 가격만(무료·PLUS·♥n)
+  const chip = $("#modelChip"); if (chip) chip.innerHTML = `${m.name} <small>${qShort(q)}/턴</small> ▾`; // 좁은 화면에서는 이름만(CSS) — 가격은 보내기 버튼에
   const fc = $("#freeCount");
   if (fc) {
     const left = freeLeft();

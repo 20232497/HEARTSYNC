@@ -309,7 +309,7 @@ img.img-miss { background:var(--surface2); }
 .meter { display:flex; align-items:center; gap:7px; font-size:12px; color:var(--muted); font-variant-numeric:tabular-nums; white-space:nowrap; }
 .meter i { width:64px; height:6px; border-radius:3px; background:var(--surface2); overflow:hidden; display:block; }
 .meter i b { display:block; height:100%; background:var(--accent); border-radius:3px; transition:width .6s; }
-@media (max-width:560px) { .meter { display:none; } .model-chip { padding:0 10px; } .model-chip .per { display:none; } }
+@media (max-width:560px) { .meter { display:none; } .model-chip small { display:none; } }
 .chat-log { position:relative; z-index:1; flex:1; overflow-y:auto; overflow-x:hidden; padding-block:18px 12px; padding-left:max(14px, env(safe-area-inset-left,0px)); padding-right:max(14px, env(safe-area-inset-right,0px)); }
 .log-inner { max-width:760px; margin:0 auto; display:flex; flex-direction:column; gap:16px; }
 .scene-card { text-align:center; padding:6px 0 4px; }
@@ -736,7 +736,7 @@ const audOK = (c) => audience() === "all" || audOf(c) === audience();
 /* ── src/js/ai/models.js — AI 모델 등급(MODELS)·출력량(LEN)·작품의 권장 모델(recommendOf) */
 const MODELS = {
   lite:   { tier: "quick",   name: "라이트", badge: "매일 무료 " + FREE_DAILY + "턴", desc: "빠르고 가벼운 일상 대화", base: 1, memStep: 0 },
-  story:  { tier: "default", name: "스토리", badge: "풍부한 묘사", desc: "풍부한 묘사와 안정적인 캐릭터 연기", base: 4, memStep: 1 },
+  story:  { tier: "default", name: "스토리", badge: "이야기 중심", desc: "풍부한 묘사와 안정적인 캐릭터 연기", base: 4, memStep: 1 },
   master: { tier: "complex", name: "마스터", badge: "최고 품질", desc: "한 편의 소설 같은 몰입감. 복잡한 세계관과 전투 계산에 강해요", base: 8, memStep: 2 }
 };
 const RECOMMEND_DEFAULT = "story";
@@ -2346,7 +2346,7 @@ function lightbox(src) {
 }
 function zoomPic(box) { const i = box.querySelector("img"); if (i && i.src) lightbox(i.src); }
 function pavHTML(p) { const img = IMG.tag(p.img); return `<div class="pav">${img || esc((p.name || "?").slice(0, 1))}</div>`; }
-/* ── src/js/ui/codex.js — 도감(코드 안내): 독립 화면 viewCodex(#codex·#codex-<작품id> — 공통 표·앱 명령어·작품 고르기·인물·장소·컷씬·작품 명령어), 인물… */
+/* ── src/js/ui/codex.js — 도감(코드 안내): 독립 화면 viewCodex(#codex·#codex-<작품id> — 공통 표·공통 명령어·작품 고르기·플레이 가이드·인물·장소·컷씬·작품 명령어), 인물… */
 const LOCK_NOTE = "대화에서 나오면 보여요";
 function slotHTML(c, x, sit) {
   const m = imagesOf(c)[x.code] || {}, lock = hiddenOf(c, x.code).includes(sit), ref = !lock && validRef(m[sit]) ? m[sit] : null;
@@ -2399,7 +2399,7 @@ function bindCodex(v) {
   $$("[data-cxlb]", v).forEach((b) => b.onclick = () => { const i = b.querySelector("img"); if (i && i.src) lightbox(i.src); });
 }
 function metaHTML(c) {
-  return `${esc(c.creator || DEFAULT_CREATOR)}${c.publishedAt ? ` · ${esc(String(c.publishedAt).replace(/-/g, "."))} 공개` : ""}${c.exclusive ? ' <span class="pill gold">독점</span>' : ""}`;
+  return `${esc(c.creator || DEFAULT_CREATOR)}${c.publishedAt ? ` · <span style="white-space:nowrap">${esc(String(c.publishedAt).replace(/-/g, "."))} 공개</span>` : ""}${c.exclusive ? ' <span class="pill gold">독점</span>' : ""}`;
 }
 function guideHTML(c) { return c.guide ? `<div class="box"><h3>플레이 가이드 <small>제작자의 안내</small></h3><p class="guide">${esc(c.guide)}</p></div>` : ""; }
 function guideSheet(c) {
@@ -3176,7 +3176,7 @@ function openModelSheet() {
   const card = (k) => {
     const m = MODELS[k], q = quote({ ...r.set, model: k });
     const price = q.type === "free" ? `오늘 무료 ${freeLeft()}턴 남음 · 이후 턴당 ♥${q.list}` : q.type === "plus" ? `PLUS 무제한 <s>턴당 ♥${q.list}</s>` : (isPro() && q.n < q.list ? `턴당 <s>♥${q.list}</s>♥${q.n}` : `턴당 ♥${q.n}`);
-    const free = k === "lite" ? `매일 ${FREE_DAILY}턴 무료 — 자정에 다시 채워져요` : "무료 턴은 라이트 모델에만 있어요";
+    const free = k === "lite" ? "무료 턴은 자정에 다시 채워져요" : "무료 턴은 라이트 모델에만 있어요";
     return `<button class="model-card ${r.set.model === k ? "on" : ""}" data-m="${k}"><span class="k">${esc(m.badge)}</span><b>${m.name}${k === rec ? ' <span class="pill ok">권장</span>' : ""}${isPro() && k !== "lite" ? ' <span class="pill gold">PLUS -50%</span>' : ""}</b><p>${esc(m.desc)}</p><div class="price">${price}<small>${free}</small></div><span class="chk">✓</span></button>`;
   };
   const ov = sheet(`<div class="sheet-head"><h2>AI 모델 선택</h2><button class="icon-btn" data-x aria-label="닫기">${ICON.close}</button></div>
@@ -3277,7 +3277,7 @@ function updateComposer() {
   send.innerHTML = `${ICON.send}<small>${qShort(q)}</small>`;
   send.title = q.type === "heart" ? `이번 턴에 하트 ${q.n}개가 사용돼요` : q.type === "free" ? "오늘의 무료 턴으로 보내요" : "PLUS 무제한";
   $("#contBtn").disabled = !!gen; $("#sugBtn").disabled = !!gen;
-  const chip = $("#modelChip"); if (chip) chip.innerHTML = `${m.name} <small>${qShort(q)}<span class="per">/턴</span></small> ▾`;
+  const chip = $("#modelChip"); if (chip) chip.innerHTML = `${m.name} <small>${qShort(q)}/턴</small> ▾`;
   const fc = $("#freeCount");
   if (fc) {
     const left = freeLeft();
