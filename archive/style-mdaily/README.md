@@ -95,6 +95,14 @@ Pony 계열(Run七八造와 두 LoRA)은 **수익 모델 서비스 안에서 돌
 | WAI · semILust | O | X | |
 | **Animagine XL 4.0** | O | O | **조건이 가장 깔끔**(CreativeML Open RAIL++-M) |
 
+### 남은 일(인계 지침서 §5 기준)
+
+1. 아래 부록의 문의 메일 보내기 — 답이 몇 주 걸릴 수 있어 가장 먼저
+2. 여성향 일상 — YabaL 대체 모델 비교(그림 판매 O 모델만 후보)
+3. 유료 출시 전 — YabaL 쓰는 화풍 모두 교체, Pony 허가 결과에 따라 남성향 일상 유지 또는 교체
+
+남성향 애니 화풍 비교(Hassaku XL·Animagine XL 4.0, 2라운드까지)의 기록은 `docs/style-handoff` 브랜치 `docs/STYLE-HANDOFF.md` §3에 있습니다. 그때 추천은 라이선스가 가장 깔끔한 Animagine XL 4.0이었습니다.
+
 ## 부록. PurpleSmart 문의 메일(보내기 전 서명에 이름·이메일 넣기)
 
 3절은 2026-11-08 정리에 맞춰 '앱 밖 도구'로 고쳤습니다. 그 밖의 내용은 지침서 원문 그대로입니다.
