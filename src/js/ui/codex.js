@@ -18,9 +18,11 @@ import { bindGo, go, topbar } from "./shell.js";
 /** @typedef {import("../core/types.js").CastMember} CastMember */
 /** @typedef {import("../core/types.js").Work} Work */
 
-/* 인물 한 명의 감정 칸 그림 — 그 칸 그림만(대체 없음), 없으면 아트 카드 */
+/* 비공개(스포일러) 안내 — 감정 칩의 title·잠긴 장소·컷씬 카드에 같이 씀 */
+const LOCK_NOTE = "대화에서 나오면 보여요";
+/* 인물 한 명의 감정 칸 그림 — 그 칸 그림만(대체 없음), 없거나 비공개(codebook의 hidden) 칸이면 아트 카드 */
 function slotHTML(c, x, sit) {
-  const m = imagesOf(c)[x.code] || {}, ref = validRef(m[sit]) ? m[sit] : null;
+  const m = imagesOf(c)[x.code] || {}, lock = hiddenOf(c, x.code).includes(sit), ref = !lock && validRef(m[sit]) ? m[sit] : null;
   return `<figure class="scene-img">${ref ? `${IMG.tag(ref)}<figcaption>${esc(x.name)} · ${esc(sitName(sit))}</figcaption>` : artHTML(c, x, sit)}</figure>`;
 }
 /**
@@ -29,14 +31,14 @@ function slotHTML(c, x, sit) {
  */
 export function castSheet(c, x) {
   const forms = c.cast.filter((y) => y.of === x.code), base = x.of ? c.cast.find((y) => y.code === x.of) : null;
-  const m = imagesOf(c)[x.code] || {}, ready = new Set(Object.keys(m).filter((k) => validRef(m[k])).map(Number));
+  const m = imagesOf(c)[x.code] || {}, ready = new Set(Object.keys(m).filter((k) => validRef(m[k])).map(Number)), hid = new Set(hiddenOf(c, x.code));
   const sh = sheet(`<div class="sheet-head"><h2>${esc(x.name)} <code class="code-chip">${esc(x.code)}</code></h2><button class="icon-btn" data-x aria-label="닫기">${ICON.close}</button></div>
     ${base ? `<p class="sub"><code class="code-chip">${esc(base.code)}</code> ${esc(base.name)}의 다른 모습</p>` : ""}
     <div class="codex-pv" id="cxPv">${slotHTML(c, x, 0)}</div>
     <div class="codex-meta">${x.look ? `<p><b>외형</b>${esc(x.look)}</p>` : ""}${x.desc ? `<p><b>소개</b>${esc(x.desc)}</p>` : ""}</div>
     ${forms.length ? `<h3 class="codex-h">다른 모습</h3><div class="codex-chips">${forms.map((f) => `<button type="button" class="chip" data-form="${esc(f.code)}"><code>${esc(f.code)}</code>${esc(f.name)}</button>`).join("")}</div>` : ""}
-    <h3 class="codex-h">감정·행동 코드 <small>${ready.size ? "그림이 준비된 칸은 ●" : "아직 그림이 없어 카드로 보여요"}</small></h3>
-    <div class="codex-chips">${SIT.map((s, i) => `<button type="button" class="chip${i === 0 ? " on" : ""}${ready.has(i) ? " ready" : ""}" data-sit="${i}"><code>${esc(x.code)}${i}</code>${esc(s)}</button>`).join("")}</div>
+    <h3 class="codex-h">감정·행동 코드 <small>${ready.size ? "그림이 준비된 칸은 ●" : "아직 그림이 없어 카드로 보여요"}${hid.size ? ` · 🔒는 ${LOCK_NOTE}` : ""}</small></h3>
+    <div class="codex-chips">${SIT.map((s, i) => `<button type="button" class="chip${i === 0 ? " on" : ""}${hid.has(i) ? " locked" : ready.has(i) ? " ready" : ""}" data-sit="${i}"${hid.has(i) ? ` title="${LOCK_NOTE}"` : ""}><code>${esc(x.code)}${i}</code>${esc(s)}</button>`).join("")}</div>
     <p class="note" style="margin-top:12px">대화 본문에서는 ${esc(imgTag(x.code, 3))}처럼 코드 하나가 그림 한 장이에요 — AI가 장면마다 골라 넣어요.</p>`, "wide");
   IMG.hydrate(sh);
   $$("[data-sit]", sh).forEach((b) => b.onclick = () => { $$("[data-sit]", sh).forEach((o) => o.classList.toggle("on", o === b)); const pv = $("#cxPv", sh); pv.innerHTML = slotHTML(c, x, +b.dataset.sit); IMG.hydrate(pv); });
@@ -51,11 +53,15 @@ export function castGridHTML(c) {
 export function bindCast(v, c) {
   $$("[data-cast]", v).forEach((b) => b.onclick = () => { const x = c.cast.find((y) => y.code === b.dataset.cast); if (x) castSheet(c, x); });
 }
-/* 시리즈(장소 MP·컷씬 EV) 한 칸: 코드·이름·설명(장소 desc / 컷씬 when)과 그림 — 목록이 비면 빈 문자열 */
+/* 코드 글자의 비공개 번호들(codebook의 hidden) — 작품에 없는 코드는 빈 배열 */
+function hiddenOf(c, code) { const e = codebook(c)[code]; return e ? e.hidden : []; }
+/* 시리즈(장소 MP·컷씬 EV) 한 칸: 코드·이름·설명(장소 desc / 컷씬 when)과 그림 — 목록이 비면 빈 문자열. 비공개 항목은 코드만 남긴 잠긴 카드(이름·설명·그림 모두 가림) */
 function seriesBox(c, code, e) {
   if (!e.max) return "";
   return `<div class="box"><h3>${esc(e.label)} <small>코드 ${esc(code)}1~${esc(code)}${e.max}</small></h3><div class="codex-grid">${e.items.map((it, i) => {
-    const n = i + 1, ref = pickImg(c, code, n), name = it[e.nameKey] || code + n, sub = it.desc || it.when || "";
+    const n = i + 1;
+    if (e.hidden.includes(n)) return `<figure class="wcard locked"><div class="wpic ph">🔒</div><figcaption><b><code class="code-chip">${esc(code + n)}</code>숨겨진 ${esc(e.label)}</b><span>${LOCK_NOTE}</span></figcaption></figure>`;
+    const ref = pickImg(c, code, n), name = it[e.nameKey] || code + n, sub = it.desc || it.when || "";
     return `<figure class="wcard">${ref ? `<button class="wpic" data-cxlb aria-label="${esc(name)} 크게 보기">${IMG.tag(ref)}</button>` : `<div class="wpic ph">${esc(code + n)}</div>`}<figcaption><b><code class="code-chip">${esc(code + n)}</code>${esc(name)}</b>${sub ? `<span>${esc(sub)}</span>` : ""}</figcaption></figure>`; }).join("")}</div></div>`;
 }
 /* 명령어 카드 한 장: !이름 · 종류(앱/이야기) · 제목 · 설명 · 복사 */

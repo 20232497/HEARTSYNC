@@ -52,6 +52,14 @@ for (const [dev, engine, opts] of [["Desktop Chrome", chromium, {}], ["iPhone 13
       res.sheets[name] = r;
       if (typeof r !== "number" || r < 10) errs.push(`시트 ${name}: ${r}`);
     }
+    // 비공개(스포일러) 플래그 — 가짜 데이터로 틀만 확인: 인물의 hidden 칸은 잠긴 칩, hidden 장소는 도감 칸에서 이름을 가림
+    res.hidden = await p.evaluate(() => {
+      const c = { ...normalizeChar(getChar(ORIGINALS[0].id)), cast: [{ code: "T", name: "시험", hidden: [3] }], places: [{ name: "비밀의 방", hidden: true }, { name: "광장" }] };
+      castSheet(c, c.cast[0]); const locked = $$(".overlay .chip.locked").length; closeOverlays();
+      const html = codexHTML(c);
+      return { locked, placeHidden: !html.includes("비밀의 방") && html.includes("광장") };
+    });
+    if (res.hidden.locked !== 1 || !res.hidden.placeHidden) errs.push("비공개 칸이 가려지지 않음: " + JSON.stringify(res.hidden));
     if (out) { await p.evaluate(() => openRoomDrawer("main")); await wait(300); await p.screenshot({ path: `${out}/${tag}_views_drawer.png` }); await p.evaluate(() => closeOverlays()); }
   } catch (e) { res.fail = String(e).slice(0, 400); }
   res.errs = [...new Set(errs)];

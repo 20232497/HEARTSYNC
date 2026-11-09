@@ -249,6 +249,7 @@ h2.sec small, h1.sec small { font-family:var(--sans); font-size:12.5px; color:va
 .codex-chips .chip { padding:5px 10px; font-size:12.5px; display:inline-flex; align-items:center; gap:6px; cursor:pointer; }
 .codex-chips .chip code { font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:11.5px; font-weight:700; }
 .codex-chips .chip.ready::after { content:"●"; font-size:8px; color:var(--ok); }
+.codex-chips .chip.locked::after { content:"🔒"; font-size:10px; }
 .codex-chips .chip.on { background:var(--accent-soft); color:var(--accent); border-color:var(--accent); }
 .codex-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(170px, 1fr)); gap:10px; align-items:start; }
 .codex-grid .wcard figcaption b { gap:6px; }
@@ -1797,10 +1798,10 @@ const SERIES = {
 const IMG_TAG_RE = /\[\[(?:img:)?([A-Za-z]{1,4})(\d{1,2})\]\]|\[\[img:([a-z0-9]+):([\d,]+)\]\]/gi;
 function codebook(c) {
   const book = {};
-  for (const x of (c && c.cast) || []) book[x.code] = { kind: "cast", label: x.name, name: x.name, of: x.of || "", min: 0, max: SIT.length - 1, items: null, field: "cast", nameKey: "name" };
+  for (const x of (c && c.cast) || []) book[x.code] = { kind: "cast", label: x.name, name: x.name, of: x.of || "", min: 0, max: SIT.length - 1, items: null, field: "cast", nameKey: "name", hidden: Array.isArray(x.hidden) ? x.hidden : [] };
   for (const code of Object.keys(SERIES)) {
     const s = SERIES[code], items = (c && Array.isArray(c[s.field]) ? c[s.field] : []);
-    book[code] = { kind: s.kind, label: s.label, name: s.label, of: "", min: 1, max: items.length, items, field: s.field, nameKey: s.nameKey };
+    book[code] = { kind: s.kind, label: s.label, name: s.label, of: "", min: 1, max: items.length, items, field: s.field, nameKey: s.nameKey, hidden: items.map((it, i) => (it && it.hidden ? i + 1 : 0)).filter(Boolean) };
   }
   return book;
 }
@@ -2964,11 +2965,12 @@ function openRoomDrawer(view = "main") {
     $$("[data-g]", body).forEach((b) => b.onclick = () => { const it = items[+b.dataset.g], im = $("img", b); if (im && im.src) lightbox(im.src); else { ov.remove(); jumpTo(it.id); } });
   }
   else if (view === "places") {
-    const list = (getChar(c.id) || c).places || [];
+    const live = getChar(c.id) || c, list = live.places || [], hid = codebook(live).MP.hidden, seen = new Set(galleryItems(r).map((it) => it.code + it.sit));
+    const lock = (i) => hid.includes(i + 1) && !seen.has("MP" + (i + 1));
     body.innerHTML = list.length ? `<p class="note" style="margin-bottom:10px">이 작품의 장소 ${list.length}곳. 대화에서는 [[MP번호]] 코드로 나와요.</p><div class="gallery">${list.map((p, i) => {
-      const ref = pickImg(c, "MP", i + 1);
-      return `<button data-p="${i}" title="MP${i + 1} · ${esc(p.name)}">${ref ? IMG.tag(ref) : artHTML(c, { name: p.name }, i + 1, "장소")}</button>`; }).join("")}</div>
-      <div class="box" style="margin-top:12px">${list.map((p, i) => `<p><b>MP${i + 1} ${esc(p.name)}</b>${p.desc ? " — " + esc(p.desc) : ""}</p>`).join("")}</div>`
+      const ref = lock(i) ? null : pickImg(c, "MP", i + 1), name = lock(i) ? "🔒" : p.name;
+      return `<button data-p="${i}" title="MP${i + 1} · ${esc(name)}">${ref ? IMG.tag(ref) : artHTML(c, { name }, i + 1, "장소")}</button>`; }).join("")}</div>
+      <div class="box" style="margin-top:12px">${list.map((p, i) => lock(i) ? `<p><b>MP${i + 1} 🔒</b> — 대화에서 나오면 보여요</p>` : `<p><b>MP${i + 1} ${esc(p.name)}</b>${p.desc ? " — " + esc(p.desc) : ""}</p>`).join("")}</div>`
       : `<div class="empty">이 작품에는 장소 그림이 없어요.</div>`;
     IMG.hydrate(body);
     $$("[data-p]", body).forEach((b) => b.onclick = () => { const im = $("img", b); if (im && im.src) lightbox(im.src); });
@@ -3485,20 +3487,21 @@ function topbar(extra = "") {
 function bindGo(root) { $$("[data-go]", root).forEach((b) => b.onclick = () => go(b.dataset.go)); }
 on("rooms", renderRailRecent); on("wallet", renderWalletChips); on("route", route);
 /* ── src/js/ui/codex.js — 도감(코드 안내): 독립 화면 viewCodex(#codex·#codex-<작품id> — 공통 표·앱 명령어·작품 고르기·인물·장소·컷씬·작품 명령어), 인물… */
+const LOCK_NOTE = "대화에서 나오면 보여요";
 function slotHTML(c, x, sit) {
-  const m = imagesOf(c)[x.code] || {}, ref = validRef(m[sit]) ? m[sit] : null;
+  const m = imagesOf(c)[x.code] || {}, lock = hiddenOf(c, x.code).includes(sit), ref = !lock && validRef(m[sit]) ? m[sit] : null;
   return `<figure class="scene-img">${ref ? `${IMG.tag(ref)}<figcaption>${esc(x.name)} · ${esc(sitName(sit))}</figcaption>` : artHTML(c, x, sit)}</figure>`;
 }
 function castSheet(c, x) {
   const forms = c.cast.filter((y) => y.of === x.code), base = x.of ? c.cast.find((y) => y.code === x.of) : null;
-  const m = imagesOf(c)[x.code] || {}, ready = new Set(Object.keys(m).filter((k) => validRef(m[k])).map(Number));
+  const m = imagesOf(c)[x.code] || {}, ready = new Set(Object.keys(m).filter((k) => validRef(m[k])).map(Number)), hid = new Set(hiddenOf(c, x.code));
   const sh = sheet(`<div class="sheet-head"><h2>${esc(x.name)} <code class="code-chip">${esc(x.code)}</code></h2><button class="icon-btn" data-x aria-label="닫기">${ICON.close}</button></div>
     ${base ? `<p class="sub"><code class="code-chip">${esc(base.code)}</code> ${esc(base.name)}의 다른 모습</p>` : ""}
     <div class="codex-pv" id="cxPv">${slotHTML(c, x, 0)}</div>
     <div class="codex-meta">${x.look ? `<p><b>외형</b>${esc(x.look)}</p>` : ""}${x.desc ? `<p><b>소개</b>${esc(x.desc)}</p>` : ""}</div>
     ${forms.length ? `<h3 class="codex-h">다른 모습</h3><div class="codex-chips">${forms.map((f) => `<button type="button" class="chip" data-form="${esc(f.code)}"><code>${esc(f.code)}</code>${esc(f.name)}</button>`).join("")}</div>` : ""}
-    <h3 class="codex-h">감정·행동 코드 <small>${ready.size ? "그림이 준비된 칸은 ●" : "아직 그림이 없어 카드로 보여요"}</small></h3>
-    <div class="codex-chips">${SIT.map((s, i) => `<button type="button" class="chip${i === 0 ? " on" : ""}${ready.has(i) ? " ready" : ""}" data-sit="${i}"><code>${esc(x.code)}${i}</code>${esc(s)}</button>`).join("")}</div>
+    <h3 class="codex-h">감정·행동 코드 <small>${ready.size ? "그림이 준비된 칸은 ●" : "아직 그림이 없어 카드로 보여요"}${hid.size ? ` · 🔒는 ${LOCK_NOTE}` : ""}</small></h3>
+    <div class="codex-chips">${SIT.map((s, i) => `<button type="button" class="chip${i === 0 ? " on" : ""}${hid.has(i) ? " locked" : ready.has(i) ? " ready" : ""}" data-sit="${i}"${hid.has(i) ? ` title="${LOCK_NOTE}"` : ""}><code>${esc(x.code)}${i}</code>${esc(s)}</button>`).join("")}</div>
     <p class="note" style="margin-top:12px">대화 본문에서는 ${esc(imgTag(x.code, 3))}처럼 코드 하나가 그림 한 장이에요 — AI가 장면마다 골라 넣어요.</p>`, "wide");
   IMG.hydrate(sh);
   $$("[data-sit]", sh).forEach((b) => b.onclick = () => { $$("[data-sit]", sh).forEach((o) => o.classList.toggle("on", o === b)); const pv = $("#cxPv", sh); pv.innerHTML = slotHTML(c, x, +b.dataset.sit); IMG.hydrate(pv); });
@@ -3511,10 +3514,13 @@ function castGridHTML(c) {
 function bindCast(v, c) {
   $$("[data-cast]", v).forEach((b) => b.onclick = () => { const x = c.cast.find((y) => y.code === b.dataset.cast); if (x) castSheet(c, x); });
 }
+function hiddenOf(c, code) { const e = codebook(c)[code]; return e ? e.hidden : []; }
 function seriesBox(c, code, e) {
   if (!e.max) return "";
   return `<div class="box"><h3>${esc(e.label)} <small>코드 ${esc(code)}1~${esc(code)}${e.max}</small></h3><div class="codex-grid">${e.items.map((it, i) => {
-    const n = i + 1, ref = pickImg(c, code, n), name = it[e.nameKey] || code + n, sub = it.desc || it.when || "";
+    const n = i + 1;
+    if (e.hidden.includes(n)) return `<figure class="wcard locked"><div class="wpic ph">🔒</div><figcaption><b><code class="code-chip">${esc(code + n)}</code>숨겨진 ${esc(e.label)}</b><span>${LOCK_NOTE}</span></figcaption></figure>`;
+    const ref = pickImg(c, code, n), name = it[e.nameKey] || code + n, sub = it.desc || it.when || "";
     return `<figure class="wcard">${ref ? `<button class="wpic" data-cxlb aria-label="${esc(name)} 크게 보기">${IMG.tag(ref)}</button>` : `<div class="wpic ph">${esc(code + n)}</div>`}<figcaption><b><code class="code-chip">${esc(code + n)}</code>${esc(name)}</b>${sub ? `<span>${esc(sub)}</span>` : ""}</figcaption></figure>`; }).join("")}</div></div>`;
 }
 function cmdCard(cmd, title, desc, app) {

@@ -19,6 +19,7 @@
  * @property {string} [desc] 도감(상세 페이지 인물 시트)에 보이는 소개 — 독자용이라 비밀·진상은 persona에만 적음
  * @property {string} [look] 한국어 외모(성별·나이 포함 — AI가 읽고, guessAud가 성별을 봄)
  * @property {string} [tags] 영문 Danbooru 외모 태그 — 앱은 쓰지 않음. 앱 밖에서 그림을 만들 때 같은 인물을 맞추는 기준(빌드가 한글을 막음)
+ * @property {number[]} [hidden] 비공개(스포일러) 감정 번호들(1~14, 0 프로필은 안 됨) — 도감·상세에서 그 칸 그림을 가리고, 대화에 그 코드가 나온 방에서만 보임(codebook의 hidden)
  */
 /**
  * 키워드북 항목. 대화에 keys 중 하나가 나오면 text를 AI에 전달.
@@ -42,6 +43,7 @@
  * @property {string} name
  * @property {string} [desc]
  * @property {string} [tags] 영문 태그 — 앱은 쓰지 않음(앱 밖에서 그림을 만들 때)
+ * @property {boolean} [hidden] 비공개(스포일러) — 도감·상세·장소 목록에서 이름·그림을 가리고, 대화에 [[MP<n>]]이 나온 방에서만 보임
  */
 /**
  * 컷씬(코드 EV<n>, cuts의 n번째 — 1부터). when이 처음 이루어지는 순간 한 번. 그림은 images/EV<n>.*
@@ -49,6 +51,7 @@
  * @property {string} title
  * @property {string} [when] 나오는 조건(AI가 읽음)
  * @property {string} [tags] 영문 태그 — 앱은 쓰지 않음
+ * @property {boolean} [hidden] 비공개(스포일러) — 도감·상세에서 제목·조건·그림을 가림(대화에 나오면 그 방의 갤러리에서 보임)
  */
 /**
  * 작품 명령어(core/commands.js). 대화방에서 !cmd를 치면 말풍선은 그대로, AI에는 prompt가 // 연출 지시로 감. 앱 명령어(APP_COMMANDS)의 이름·별칭은 못 씀.

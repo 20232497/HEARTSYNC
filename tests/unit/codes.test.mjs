@@ -20,6 +20,15 @@ test("codebook: 인물 코드는 0~14(폼은 of), MP·EV는 목록 길이만큼 
   assert.equal(codebook(null).MP.kind, "place");
   assert.equal(codebook({}).HSY, undefined);
 });
+test("codebook.hidden: 비공개(스포일러) 번호 — 인물은 cast[].hidden의 감정 번호, 장소·컷씬은 hidden: true인 항목의 번호(1부터), 없으면 빈 배열", () => {
+  const b = codebook({ cast: [{ code: "HSY", name: "한서윤", hidden: [13, 9] }, { code: "DHR", name: "도하린" }],
+    places: [{ name: "광장" }, { name: "숨은 방", hidden: true }], cuts: [{ title: "결말", hidden: true }, { title: "첫 만남", hidden: false }] });
+  assert.deepEqual(b.HSY.hidden, [13, 9]);
+  assert.deepEqual(b.DHR.hidden, []);
+  assert.deepEqual(b.MP.hidden, [2]);
+  assert.deepEqual(b.EV.hidden, [1]);
+  assert.deepEqual(codebook(null).MP.hidden, []);
+});
 test("sitOf(예전 태그): 0~14 번호는 그대로, 조합·세 자리 코드는 처음 나오는 0~14 번호, 없으면 1", () => {
   assert.equal(sitOf("3"), 3);
   assert.equal(sitOf(0), 0);

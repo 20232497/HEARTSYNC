@@ -456,6 +456,15 @@ function checkWork(mod, { aud, row, id, wrel, R, errors, warnings }) {
     if (x.look !== undefined && typeof x.look !== "string") e(`cast[${i}].look은 글이어야 해요`);
     if (x.desc !== undefined && typeof x.desc !== "string") e(`cast[${i}].desc(도감 소개)는 글이어야 해요`);
     if (x.tags !== undefined && (typeof x.tags !== "string" || /[가-힣]/.test(x.tags))) e(`cast[${i}].tags는 영문 Danbooru 태그 글이어야 해요(한국어 외모는 look에)`);
+    // 비공개(스포일러) 감정 칸: 도감·상세에서 가리고 대화에 나온 방에서만 보임(images/codes.js codebook의 hidden). 0 프로필은 인물 카드라 숨길 수 없음
+    if (x.hidden !== undefined) {
+      const max = R.SIT.length - 1;
+      if (!Array.isArray(x.hidden) || x.hidden.some((n) => !Number.isInteger(n) || n < 0 || n > max)) e(`cast[${i}](${x.name}).hidden은 숨길 감정 번호 배열이에요(1~${max} 정수, 예: [13])`);
+      else {
+        if (new Set(x.hidden).size !== x.hidden.length) e(`cast[${i}](${x.name}).hidden에 같은 번호가 두 번 있어요`);
+        if (x.hidden.includes(0)) e(`cast[${i}](${x.name}).hidden — 0(프로필)은 숨길 수 없어요(인물 카드에 쓰는 그림)`);
+      }
+    }
   });
   // 다른 모습(폼): of는 같은 출연진의 본체 코드 — 폼의 폼은 안 됨
   cast.forEach((x, i) => {
@@ -465,11 +474,11 @@ function checkWork(mod, { aud, row, id, wrel, R, errors, warnings }) {
     else if (base.of !== undefined) e(`cast[${i}](${x.name}).of "${x.of}" — 폼의 폼은 둘 수 없어요(본체 코드로)`);
   });
   // 장소·컷씬 목록(선택): 순서가 곧 코드 번호 — places[0]이 MP1, cuts[0]이 EV1
-  const engOk = (t) => t === undefined || (typeof t === "string" && !/[가-힣]/.test(t));
-  if (c.places !== undefined && (!Array.isArray(c.places) || c.places.some((p) => !isObj(p) || !str(p.name) || (p.desc !== undefined && typeof p.desc !== "string") || !engOk(p.tags))))
-    e('places(장소)는 [{ name: "장소 이름", desc?: "설명", tags?: "영문 태그" }, …] — 순서대로 MP1, MP2…');
-  if (c.cuts !== undefined && (!Array.isArray(c.cuts) || c.cuts.some((x) => !isObj(x) || !str(x.title) || (x.when !== undefined && typeof x.when !== "string") || !engOk(x.tags))))
-    e('cuts(컷씬)는 [{ title: "제목", when?: "나오는 조건", tags?: "영문 태그" }, …] — 순서대로 EV1, EV2…');
+  const engOk = (t) => t === undefined || (typeof t === "string" && !/[가-힣]/.test(t)), boolOk = (v) => v === undefined || typeof v === "boolean";
+  if (c.places !== undefined && (!Array.isArray(c.places) || c.places.some((p) => !isObj(p) || !str(p.name) || (p.desc !== undefined && typeof p.desc !== "string") || !engOk(p.tags) || !boolOk(p.hidden))))
+    e('places(장소)는 [{ name: "장소 이름", desc?: "설명", tags?: "영문 태그", hidden?: true(비공개) }, …] — 순서대로 MP1, MP2…');
+  if (c.cuts !== undefined && (!Array.isArray(c.cuts) || c.cuts.some((x) => !isObj(x) || !str(x.title) || (x.when !== undefined && typeof x.when !== "string") || !engOk(x.tags) || !boolOk(x.hidden))))
+    e('cuts(컷씬)는 [{ title: "제목", when?: "나오는 조건", tags?: "영문 태그", hidden?: true(비공개) }, …] — 순서대로 EV1, EV2…');
   // 작품 명령어(선택): 대화방에서 !cmd를 치면 prompt가 AI에 연출 지시로 감(core/commands.js). 앱 명령어 이름·별칭(APP_COMMANDS)과 겹치면 안 됨
   if (c.commands !== undefined) {
     const reserved = new Set(R.APP_COMMANDS.flatMap((x) => [x.cmd, ...x.alias]).map((s) => s.toLowerCase())), seenCmd = new Set();
