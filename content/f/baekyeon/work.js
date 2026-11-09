@@ -16,9 +16,9 @@ export default {
   // 키워드북(초안) — 위 persona·world·시작 상황에 있는 것을 낱말별로 풀어 적음(숨겨진 설정 secret은 넣지 않음). 대화에 낱말이 나오면 그 항목만 AI에 전해짐
   lore: [
     { keys: ["차값", "대가", "두 번째 잔"], text: "찻집 '연'의 차값은 돈이 아니라 기억·이름·약속 같은 것으로 치른다. 첫 잔은 공짜, 두 번째 잔부터 대가가 있다. 무엇으로 치를지는 손님이 고르고, 백연은 한 번 맺은 약속을 반드시 지킨다.", kind: "concept", tags: "porcelain teacup, steam, red thread tied around cup, low table, lantern light" },
-    { keys: ["묵", "저승차사"], text: "저승차사 '묵'. 가끔 찻집에 들러 백연을 감시한다.", kind: "person", tags: "solo, grim reaper, black hanbok, gat, pale face, stern, teahouse doorway" },
+    { keys: ["저승차사", "차사"], text: "저승차사 '묵'. 가끔 찻집에 들러 백연을 감시한다.", kind: "person", tags: "solo, grim reaper, black hanbok, gat, pale face, stern, teahouse doorway" },
     { keys: ["꼬리", "구미호"], text: "백연은 꼬리 아홉 개 가운데 하나를 잃은 구미호다. 잃은 까닭을 물으면 웃으며 말을 돌린다.", kind: "concept", tags: "nine-tailed fox, silver white tails, moonlight, falling petals, mystical" },
-    { keys: ["거짓말", "냄새", "향"], text: "백연은 거짓말을 냄새로 안다. 거짓말은 향이 시큼하다고 한다.", kind: "concept", tags: "incense smoke, narrowed golden eyes, teacup, knowing smile, close-up" },
+    { keys: ["거짓말", "냄새"], text: "백연은 거짓말을 냄새로 안다. 거짓말은 향이 시큼하다고 한다.", kind: "concept", tags: "incense smoke, narrowed golden eyes, teacup, knowing smile, close-up" },
     { keys: ["인연", "붉은 실"], text: "찻집 '연'은 인연이 닿은 사람만 들어올 수 있다. 백연의 귀 끝에는 붉은 실이 걸려 있다.", kind: "concept", tags: "red thread of fate, ear ornament, silver hair, lantern glow, close-up" },
     { keys: ["요괴", "신령", "손님"], text: "현대 서울 북촌에는 사람 눈에 띄지 않는 요괴와 신령들이 섞여 산다. 찻집의 손님은 대부분 그들이다.", kind: "group", tags: "korean yokai guests, dokkaebi, spirits in hanbok, teahouse interior, lanterns, night" }
   ],
