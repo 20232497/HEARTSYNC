@@ -118,6 +118,14 @@ test("일반 무료 길: 성인 인증 없는 계정도 통과 — Anthropic으�
   assert.ok(!c.body.includes(A) && !c.body.includes("tokA") && !c.body.includes("머리말"));
   assert.equal(w.usage[A + "/general"], 1); assert.equal(w.usage[A + "/adult"], undefined);
 });
+test("일반 무료 길의 프롬프트 캐싱: cache_prefix가 시스템 글 안쪽이면 고정부(캐시 표시) + 나머지 블록 둘로, 없거나 범위 밖이면 글 하나 — 성인 트랙은 늘 글 하나", async () => {
+  const sys = MSGS[0].content, n = 5, sentOf = async (over) => { const w = world(FREE); const r = await call(w, { track: "general", tier: "quick", ...over }); assert.equal(r.status, 200); return JSON.parse(w.claudeCalls()[0].body).system; };
+  assert.deepEqual(await sentOf({ cache_prefix: n }), [{ type: "text", text: sys.slice(0, n), cache_control: { type: "ephemeral" } }, { type: "text", text: sys.slice(n) }]);
+  for (const bad of [undefined, 0, -1, sys.length, sys.length + 10, 2.5, "5", null]) assert.equal(await sentOf({ cache_prefix: bad }), sys, String(bad));
+  const w = world(); adult(w);
+  assert.equal((await call(w, { cache_prefix: n })).status, 200);
+  assert.equal(JSON.parse(w.modelCalls()[0].body).messages[0].content, sys); // 성인 트랙(OpenAI 호환)은 그대로 글 하나
+});
 test("일반 무료 길: 서버에 없는 등급은 need_key, 길을 켜지 않았으면 not_configured, 한도는 성인 트랙과 따로", async () => {
   const w = world({ ...FREE, CHAT_FREE_DAILY_LIMIT: "2" }); adult(w);
   assert.deepEqual([(await call(w, { track: "general", tier: "default" })).status, (await call(w, { track: "general", tier: "default" })).body], [403, { code: "need_key" }]);

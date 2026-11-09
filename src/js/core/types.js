@@ -246,7 +246,7 @@
  * @property {string} q 홈 검색어
  */
 /** @typedef {{ anthropicUrl: string, supabaseUrl?: string, supabaseKey?: string, serverKeys?: boolean, chatUrl?: string }} Config window.HEARTVERSE_CONFIG로 덮는 연결 설정 — serverKeys면 프록시가 키를 가짐, chatUrl은 서버 대화 관문(성인 트랙, 그리고 키 없는 로그인 이용자의 일반 무료 길 — 비면 꺼짐) */
-/** @typedef {{ role: "system"|"user"|"assistant", content: string }} LLMMessage AI 요청 메시지(첫 메시지 = 시스템) */
+/** @typedef {{ role: "system"|"user"|"assistant", content: string, cut?: number }} LLMMessage AI 요청 메시지(첫 메시지 = 시스템 — cut은 그 글에서 고정부의 글자 수, 프롬프트 캐시의 경계) */
 /**
  * llm() 옵션.
  * @typedef {Object} LLMOptions

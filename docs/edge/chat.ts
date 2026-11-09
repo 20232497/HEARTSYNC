@@ -6,7 +6,8 @@
 //   성인 트랙: 외부 모델(OpenRouter). 성인 인증·미성년 판정을 브라우저가 하면 콘솔로 넘어갈 수 있어 여기서만 판정
 // 두 길은 서로 넘나들지 않는다 — 성인 트랙 요청을 Anthropic으로, 일반 트랙 요청을 외부 모델로 보내는 길은 없다.
 //
-// 요청(POST, 로그인 토큰 필수): { track: "general"|"adult", tier: "quick"|"default"|"complex", max_tokens, messages: [{ role: "system", … }, { role: "user"|"assistant", … }] }
+// 요청(POST, 로그인 토큰 필수): { track: "general"|"adult", tier: "quick"|"default"|"complex", max_tokens, messages: [{ role: "system", … }, { role: "user"|"assistant", … }], cache_prefix? }
+//   cache_prefix(선택, 일반 트랙만): 시스템 글 앞에서부터 몇 글자가 턴마다 같은 '고정부'인지 — 그 끝에 프롬프트 캐시 표시를 붙여 Anthropic에 블록 둘로 보냄(앱의 ai/llm.js와 같은 모양). 없거나 범위 밖이면 글 하나로
 // 응답: 모델의 스트림(text/event-stream)을 그대로 중계 — 일반은 Anthropic Messages 모양, 성인은 OpenAI 호환 모양. 실패는 JSON { code } —
 //   login · bad_request · need_key · adult_required · minor_blocked · too_many · rate_limited · not_configured · no_table · upstream
 //
@@ -103,8 +104,11 @@ export async function handle(req, get, f = fetch, now = () => new Date(), screen
           body: JSON.stringify({ model, messages: [{ role: "system", content: (pre ? pre + "\n\n" : "") + msgs[0].content }, ...rest], max_tokens: maxTokens, stream: true, reasoning, provider: { data_collection: "deny" } }) });
       } else {
         // 일반 트랙: 앱이 자기 키로 부를 때와 같은 Anthropic Messages 요청(머리말·생각 설정 없음) — 키만 회사 것
+        // 프롬프트 캐싱: cache_prefix가 시스템 글 안쪽을 가리키면 고정부(캐시 표시) + 나머지 블록 둘로
+        const sysText = msgs[0].content, cut = Number.isInteger(body.cache_prefix) && body.cache_prefix > 0 && body.cache_prefix < sysText.length ? body.cache_prefix : 0;
+        const system = cut ? [{ type: "text", text: sysText.slice(0, cut), cache_control: { type: "ephemeral" } }, { type: "text", text: sysText.slice(cut) }] : sysText;
         up = await f(ANTHROPIC, { method: "POST", signal: req.signal, headers: { "x-api-key": modelKey, "anthropic-version": "2023-06-01", "Content-Type": "application/json" },
-          body: JSON.stringify({ model, max_tokens: maxTokens, stream: true, system: msgs[0].content, messages: rest }) });
+          body: JSON.stringify({ model, max_tokens: maxTokens, stream: true, system, messages: rest }) });
       }
     } catch { fail(502, "upstream"); }
     if (up.status === 429) fail(429, "rate_limited");
