@@ -26,7 +26,7 @@
 | `audience.mjs` | 관심있는 대화 첫 시작 창 → 여성향 고르기 → 홈 필터·대표 작품·가로 줄 → 설정 → 신작 대화방 |
 | `firstvisit.mjs` | 첫 방문(Desktop Chrome·iPhone 13, 가짜 Supabase·소셜 왕복): 작품 주소(`#c-<id>`)로 들어와 `#login-c-<id>` → 둘러보기·이메일 로그인·소셜 로그인(취소·안 켠 공급자)·인증 메일과 재설정 링크(새 탭) 뒤 그 작품이 열리고 로그인 화면이 방문 기록에 안 남음, 새로 고침해도 갈 곳이 남음, 없는 작품은 홈, 공지 주소(`#notice` → `#login-notice`)도 둘러보기·로그인 뒤 그리로, 작품·공지가 아닌 주소·꾸민 값·1시간 지난 `hv1_back`은 안 씀, 메뉴로 나가면 갈 곳이 사라짐, 관심있는 대화 시트는 작품·공지를 가리지 않고 홈에 처음 갈 때(계정에 고른 값이 있으면 묻지 않음), `hv1_back`은 계정에 안 올라감. 이 스크립트는 값을 직접 비교해 `errors`에 쌓음 |
 | `chatflow.mjs` | 입력창 `!` 명령어 목록(↓·Enter로 채움), 대화방 스트리밍(가짜 llm), 자동 스크롤 끔/켬, 좋아요 토글·분기(방 수 +1·메시지 수 일치·원래 방 그대로), ✦ AI 추천 수동, 출력 설정 카드, 설정 페이지 |
-| `tracks.mjs` | 트랙별 대화 경로(iPhone 13·Galaxy, 관문·Anthropic을 route로 흉내): 성인 트랙 방(`char.track = "adult"`)의 본문·새 추천·장기기억 요약이 모두 서버 대화 관문으로만 가고 Anthropic으로는 한 번도 안 감, 관문 요청 모양(track·tier·system 첫 메시지·로그인 토큰)과 암전 지시가 빠진 프롬프트, 미성년 암시·로그인 없음·관문 주소 없음은 보내지 않고 안내, 관문의 거절(성인 인증·하루 한도) 안내와 무료 턴 환불, 일반 트랙 방은 Anthropic으로만 |
+| `tracks.mjs` | 트랙별 대화 경로(iPhone 13·Galaxy, 관문·Anthropic을 route로 흉내): 성인 트랙 방(`char.track = "adult"`)의 본문·새 추천·장기기억 요약이 모두 서버 대화 관문으로만 가고 Anthropic으로는 한 번도 안 감, 관문 요청 모양(track·tier·system 첫 메시지·로그인 토큰)과 암전 지시가 빠진 프롬프트, 미성년 암시·로그인 없음·관문 주소 없음은 보내지 않고 안내, 관문의 거절(성인 인증·하루 한도) 안내와 무료 턴 환불, 일반 트랙 방은 내 키가 있으면 Anthropic으로 바로, 키가 없으면 관문의 무료 길(Anthropic 모양 스트림·로그인 없으면 안내·서버에 없는 등급과 무료 길이 없는 서버는 키 안내) |
 | `mobile.mjs` | 휴대폰 셸: 표준 모드 문서, bootMsg 사라짐, 탭바, 가로 넘침 0 |
 | `file.mjs` | 파일(file://)로 열어도 부팅·홈(전체·여성향·남성향 대표 작품 4개씩, 가로 줄)·상세가 그려짐 — 단일 파일 배포(BYOK 모드)가 깨지지 않았는지 |
 | `views.mjs` | 스모크(사용자 사이트, Desktop Chrome·iPhone 13): 홈·대화·도감·공지·스토어·MY, 오리지널 작품 전부의 상세, 각 작품의 첫 시작 상황으로 연 대화방(오프닝 본문·상태창·입력창), 드로어(기본·출력 설정)·모델·페르소나·관심있는 대화·PLUS·확인 시트가 오류 없이 열림. 틀 확인(가짜 데이터): 플레이 가이드 칸이 데이터와 맞는지, 비공개(hidden) 칸이 가려지는지, 작품 메타 줄, 권장 모델 배지, 설정 상한(LIMITS)과 입력 칸. 모듈 분리 뒤 어느 화면에서든 ReferenceError가 나면 여기서 잡힘 |
@@ -43,6 +43,6 @@
 | `safety.test.mjs` | 미성년 인물 막기(`core/safety.js` minorFlags·minorHint) |
 | `util.test.mjs` | 네트워크 시간 제한(`core/util.js` timeoutSignal·abortCode) |
 | `verify-adult.test.mjs` | 서버에 남겨 둔 휴대폰 성인 인증 Edge Function(`docs/edge/verify-adult.ts` — 지금 앱은 부르지 않음). 진짜 함수 코드에 가짜 인증 서버·`adult_checks` 표·PortOne API를 끼움 — 도우미 `_idv-fake.mjs`(시험 목록에는 없음) |
-| `chat-gate.test.mjs` | 성인 트랙의 서버 대화 관문 Edge Function(`docs/edge/chat.ts`). 진짜 함수 코드에 가짜 인증 서버·표·모델 서버(`_idv-fake.mjs`)를 끼워: 통과한 요청의 중계(회사 키·서버 설정의 모델·머리말·계정 정보는 안 보냄), 로그인, 성인 인증(없음·미성년·만료·남의 것·시험 채널), 미성년 암시(판정이 없거나 오류면 막음), 요청 모양, 하루 한도, 설정 누락, 모델 서버 오류 |
+| `chat-gate.test.mjs` | 성인 트랙의 서버 대화 관문 Edge Function(`docs/edge/chat.ts`). 진짜 함수 코드에 가짜 인증 서버·표·모델 서버(`_idv-fake.mjs`)를 끼워: 통과한 요청의 중계(회사 키·서버 설정의 모델·머리말·계정 정보는 안 보냄), 로그인, 성인 인증(없음·미성년·만료·남의 것·시험 채널), 미성년 암시(판정이 없거나 오류면 막음), 요청 모양, 하루 한도, 설정 누락, 모델 서버 오류, 일반 트랙의 무료 길(성인 인증 없이 통과·Anthropic으로만·없는 등급은 need_key·한도는 트랙마다 따로) |
 | `stream.test.mjs` | AI 응답 스트림 읽기(`ai/stream.js` — 조각 사이에서 끊긴 줄·한글, Anthropic·OpenAI 호환 조각 해석, 내용 필터는 거절)와 트랙 고르기(`ai/models.js` trackOf) |
 | `input.test.mjs` | 한 턴의 요청 묶음(`ai/prompt/input.js` buildInput): 직전 응답 하나에만 상태창을 출력 형식 그대로 붙이는지(앱의 파서가 그대로 읽음), 마지막 입력에 상태창으로 마치라는 다짐이 있는지 |

@@ -5,7 +5,8 @@ import { today } from "./util.js";
 /** @typedef {import("./types.js").Room} Room */
 /** @typedef {import("./types.js").State} State */
 
-export const hasClaudeKey = () => !!S.settings.apiKey || !!CFG.serverKeys;
+/** AI에 닿을 길이 있는지: 내 API 키, 서버 프록시(serverKeys), 또는 서버 대화 관문(chatUrl — 키 없는 로그인 이용자의 무료 길). */
+export const hasClaudeKey = () => !!S.settings.apiKey || !!CFG.serverKeys || !!CFG.chatUrl;
 /** 전역 상태 — 모양은 types.js의 State. 바꾼 모듈이 KV.set(또는 save…())으로 저장한다. @type {State} */
 export const S = {
   wallet: { hearts: 0, freeDay: today(), freeUsed: 0, pro: null, history: [], ledger: [], ack: {} },

@@ -241,7 +241,7 @@
  * @property {string} cat 홈 장르 필터(ui/home.js)
  * @property {string} q 홈 검색어
  */
-/** @typedef {{ anthropicUrl: string, supabaseUrl?: string, supabaseKey?: string, serverKeys?: boolean, chatUrl?: string }} Config window.HEARTVERSE_CONFIG로 덮는 연결 설정 — serverKeys면 프록시가 키를 가짐, chatUrl은 성인 트랙의 서버 대화 관문(비면 꺼짐) */
+/** @typedef {{ anthropicUrl: string, supabaseUrl?: string, supabaseKey?: string, serverKeys?: boolean, chatUrl?: string }} Config window.HEARTVERSE_CONFIG로 덮는 연결 설정 — serverKeys면 프록시가 키를 가짐, chatUrl은 서버 대화 관문(성인 트랙, 그리고 키 없는 로그인 이용자의 일반 무료 길 — 비면 꺼짐) */
 /** @typedef {{ role: "system"|"user"|"assistant", content: string }} LLMMessage AI 요청 메시지(첫 메시지 = 시스템) */
 /**
  * llm() 옵션.
@@ -256,7 +256,7 @@
 /**
  * AI 호출이 던지는 오류. code → 안내 문구는 ai/llm.js errCopy.
  * code: cancelled(사용자 취소) · timeout · refused · rate_limited · no_engine · bad_key · upstream_error · invalid_json · session_expired
- * 성인 트랙(서버 대화 관문): no_gateway · not_configured · login · adult_required · minor_blocked · too_many
+ * 서버 대화 관문: no_gateway · not_configured · login · adult_required · minor_blocked · too_many(성인 트랙) · login_free · need_key(일반 트랙의 무료 길)
  * @typedef {Object} LLMError
  * @property {string} code
  * @property {string} [text] 끊기기 전까지 받은 본문

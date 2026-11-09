@@ -1,4 +1,4 @@
-// 트랙별 대화 경로: 성인 트랙 방은 서버 대화 관문으로만(본문·추천·요약 — Anthropic으로 한 번도 안 감), 일반 트랙 방은 Anthropic으로만.
+// 트랙별 대화 경로: 성인 트랙 방은 서버 대화 관문으로만(본문·추천·요약 — Anthropic으로 한 번도 안 감), 일반 트랙 방은 내 키가 있으면 Anthropic으로 바로, 없으면 관문의 무료 길로.
 // 관문·Anthropic은 route로 흉내 — 실제 서버로는 아무것도 안 감. 관문의 판정 자체(성인 인증·미성년·한도)는 단위 테스트 tests/unit/chat-gate.test.mjs
 import { webkit, chromium, devices } from "playwright";
 import { noSupabase } from "./_offline.mjs";
@@ -23,7 +23,8 @@ for (const [dev, engine] of [["iPhone 13", webkit], ["Galaxy S9+", chromium]]) {
     if (q.method() === "OPTIONS") return r.fulfill({ status: 204, headers: CORS });
     const body = q.postDataJSON(); gate.push({ body, auth: q.headers().authorization || "" });
     if (gateFail) return r.fulfill({ status: gateFail.status, headers: CORS, contentType: "application/json", body: JSON.stringify({ code: gateFail.code }) });
-    r.fulfill({ status: 200, headers: CORS, contentType: "text/event-stream", body: sseGate(answer(body.messages[0].content, "관문")) });
+    // 일반 트랙의 무료 길은 Anthropic 모양, 성인 트랙은 OpenAI 호환 모양의 스트림
+    r.fulfill({ status: 200, headers: CORS, contentType: "text/event-stream", body: body.track === "general" ? sseClaude(answer(body.messages[0].content, "무료")) : sseGate(answer(body.messages[0].content, "관문")) });
   });
   await ctx.route("https://api.anthropic.com/**", (r) => {
     const q = r.request();
@@ -91,6 +92,21 @@ for (const [dev, engine] of [["iPhone 13", webkit], ["Galaxy S9+", chromium]]) {
     check("Anthropic 스트림을 본문으로 읽음", /클로드에서 온 대답/.test(c1.text) && c1.shown && !c1.err);
     await p.evaluate(async () => { await maybeSummarize(room, true); });
     check("일반 방의 요약도 Anthropic으로", claude.length === 2 && gate.length === 5);
+    // ⑤ 일반 트랙의 무료 길: 내 키가 없으면 관문으로(로그인 필요), 서버에 없는 등급·무료 길이 없는 서버는 키 안내
+    await p.evaluate(() => { S.settings.apiKey = ""; });
+    check("관문이 있으면 키가 없어도 AI 연결 있음", await p.evaluate(() => hasClaudeKey()));
+    const f1 = await turn("안녕"), fg = gate[gate.length - 1] || { body: { messages: [{}] } };
+    check("키 없는 일반 방은 관문의 무료 길로", gate.length === 6 && claude.length === 2 && fg.body.track === "general" && fg.body.tier === "quick" && /암전/.test(fg.body.messages[0].content));
+    check("무료 길의 Anthropic 모양 스트림을 본문으로 읽음", /무료에서 온 대답/.test(f1.text) && f1.shown && f1.charged === 1 && !f1.err);
+    gateFail = { status: 403, code: "need_key" };
+    const f2 = await turn("계속");
+    check("서버에 없는 등급은 키 안내·환불", /API 키가 있어야/.test(f2.err) && f2.charged === 0);
+    gateFail = { status: 500, code: "not_configured" };
+    check("무료 길이 없는 서버면 키를 넣으라는 안내", /Anthropic API 키를 넣어/.test((await turn("계속")).err));
+    gateFail = null;
+    await p.evaluate(() => { SB.s = null; });
+    const f3 = await turn("계속");
+    check("무료 길도 로그인이 없으면 보내지 않고 안내", gate.length === 8 && claude.length === 2 && /로그인하면/.test(f3.err) && f3.charged === 0);
     res.counts = { gate: gate.length, claude: claude.length };
   } catch (e) { res.fail = String(e).slice(0, 300); }
   if (bad.length) res.fail = (res.fail ? res.fail + " · " : "") + bad.join(" / ");

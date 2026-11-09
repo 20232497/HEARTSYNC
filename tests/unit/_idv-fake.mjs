@@ -23,6 +23,9 @@ export function fakeWorld(envOver = {}) {
     // 대화 관문: 모델 서버가 돌려줄 것({ status, sse } · { throws: true }), 계정별 오늘 호출 수, 한도 함수가 없는 서버 흉내
     upstream: { status: 200, sse: 'data: {"choices":[{"delta":{"content":"안녕"}}]}\n\ndata: [DONE]\n\n' }, usage: {}, noUsage: false,
     modelCalls: () => w.calls.filter((c) => c.url.includes("openrouter.ai")),
+    // 일반 트랙의 무료 길: Anthropic이 돌려줄 것({ status, sse })
+    claude: { status: 200, sse: 'data: {"type":"content_block_delta","delta":{"type":"text_delta","text":"안녕"}}\n\ndata: {"type":"message_delta","delta":{"stop_reason":"end_turn"}}\n\n' },
+    claudeCalls: () => w.calls.filter((c) => c.url.includes("api.anthropic.com")),
     // PortOne이 돌려줄 값: { status, birthDate, type }(type 없으면 channel 칸도 없음) · { http: 숫자 } · { throws: true }
     portone: { status: "VERIFIED", birthDate: "1990-05-05", type: "TEST" },
     env: (k) => env[k],
@@ -45,11 +48,15 @@ export function fakeWorld(envOver = {}) {
         if (w.upstream.status !== 200) return res(w.upstream.status, { error: { message: "x" } });
         return new Response(w.upstream.sse, { status: 200, headers: { "Content-Type": "text/event-stream" } });
       }
+      if (u.host === "api.anthropic.com") {
+        if (w.claude.status !== 200) return res(w.claude.status, { type: "error", error: { message: "x" } });
+        return new Response(w.claude.sse, { status: 200, headers: { "Content-Type": "text/event-stream" } });
+      }
       if (u.pathname === "/rest/v1/rpc/bump_chat_usage") { // service 키만 부를 수 있음(docs/supabase.sql의 grant)
         if (w.noUsage) return res(404, { code: "PGRST202", message: "Could not find the function" });
         if (![SECRET, env.SUPABASE_SERVICE_ROLE_KEY].includes(h.get("apikey")) || w.tokens[bearer]) return res(403, { code: "42501", message: "permission denied" });
-        const id = JSON.parse(opt.body || "{}").uid;
-        return res(200, (w.usage[id] = (w.usage[id] || 0) + 1));
+        const b = JSON.parse(opt.body || "{}"), k = b.uid + "/" + b.tr; // 계정·트랙마다 따로 셈
+        return res(200, (w.usage[k] = (w.usage[k] || 0) + 1));
       }
       if (u.pathname === "/auth/v1/user") {
         if (![PUBLISHABLE, SECRET, env.SUPABASE_SERVICE_ROLE_KEY].includes(h.get("apikey")) || !w.tokens[bearer]) return res(401, { msg: "invalid token" });
