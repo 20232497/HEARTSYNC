@@ -1,4 +1,4 @@
-// 채팅 흐름: 자동 스크롤 끔/켬, 추천 답변 수동, 출력 설정 카드, 설정 페이지(이미지 기본 수위 칸 없음)
+// 채팅 흐름: 입력창 ! 명령어 목록, 자동 스크롤 끔/켬, 추천 답변 수동, 출력 설정 카드, 설정 페이지(이미지 기본 수위 칸 없음)
 import { webkit, chromium, devices } from "playwright";
 import { noSupabase } from "./_offline.mjs";
 const url = process.argv[2], out = process.argv[3];
@@ -11,6 +11,17 @@ for (const [dev, engine] of targets) {
     await p.goto(url, { waitUntil: "load" }); await p.waitForTimeout(1200);
     await p.evaluate(() => { const r = newRoom(normalizeChar(ORIGINALS.find((c) => c.id === "godseats")), 0, S.personas[0]); location.hash = "r-" + r.id; });
     await p.waitForTimeout(900);
+    // ! 명령어 목록: !만 치면 앱 + 작품 명령어가 모두 뜨고, ↓·Enter로 고르면 입력창에 채워진 뒤 닫힘(보내지는 않음)
+    res.cmd = await p.evaluate(() => {
+      const inp = $("#inp"), key = (k) => inp.dispatchEvent(new KeyboardEvent("keydown", { key: k, bubbles: true, cancelable: true })), all = allCommands(getChar(room.char.id));
+      inp.value = "!"; inp.oninput();
+      const n = $$("#cmdPanel [data-i]").length, open = !$("#cmdPanel").hidden;
+      key("ArrowDown"); key("Enter");
+      const r = { n, want: all.length, open, filled: inp.value, expect: "!" + all[1].cmd, closed: $("#cmdPanel").hidden, msgs: room.msgs.length };
+      inp.value = ""; inp.oninput();
+      return r;
+    });
+    if (!res.cmd.open || res.cmd.n !== res.cmd.want || res.cmd.n < 5 || res.cmd.filled !== res.cmd.expect || !res.cmd.closed || res.cmd.msgs !== 1) errs.push("! 명령어 목록이 다름: " + JSON.stringify(res.cmd));
     // 가짜 llm: 1.6초 동안 조금씩 흘려보냄
     await p.evaluate(() => {
       const para = (i) => `*장면 ${i}: 바람이 부서진 간판을 흔들었다. 먼지가 내려앉았다.*\n\n한서윤: "대사 ${i}번이에요. 조금 길게 말해 볼게요, 화면이 충분히 길어지도록."`;

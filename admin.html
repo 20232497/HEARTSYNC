@@ -419,6 +419,12 @@ details.stat[open] summary::after { content:"▴"; }
 .sug-panel button.s { border:1px solid var(--line); background:var(--bg); border-radius:12px; padding:8px 12px; font-size:13.5px; text-align:left; }
 .sug-panel button.s:hover { border-color:var(--accent); }
 @media (max-width:560px) { .sug-panel { gap:4px; } .sug-panel button.s { padding:6px 11px; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; } }
+/* 입력창 ! 명령어 목록(ui/chat/cmdlist.js) — 추천 답변 칸처럼 입력창 바로 위에 끼움 */
+.cmd-panel { display:grid; gap:4px; margin-bottom:8px; max-height:36vh; overflow-y:auto; }
+.cmd-panel button.c { display:flex; align-items:center; gap:8px; border:1px solid var(--line); background:var(--bg); border-radius:12px; padding:7px 12px; font-size:13.5px; text-align:left; }
+.cmd-panel button.c code { font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-weight:700; color:var(--accent); white-space:nowrap; }
+.cmd-panel button.c span:not(.pill) { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--muted); }
+.cmd-panel button.c.on, .cmd-panel button.c:hover { border-color:var(--accent); background:var(--accent-soft); }
 .inputrow { display:flex; gap:8px; align-items:flex-end; background:var(--bg); border:1px solid var(--line); border-radius:16px; padding:6px 6px 6px 14px; }
 .inputrow:focus-within { border-color:var(--accent); }
 .inputrow textarea { flex:1; min-width:0; border:0; background:none; outline:none; resize:none; max-height:160px; min-height:24px; padding:7px 0; line-height:1.55; }
@@ -672,7 +678,7 @@ const CATS = ["로맨스", "판타지", "RPG", "미스터리", "일상", "시뮬
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/core/util.js
    내보냄: $, $$, esc, uid, clamp, today, won, num, ago, timeoutSignal, abortCode, toast
-   쓰는 곳: src/js/core/storage.js, src/js/core/state.js, src/js/core/wallet.js, src/js/core/rooms.js, src/js/services/images.js, src/js/services/cloud.js, src/js/services/supabase.js, src/js/ai/parse.js, src/js/ai/llm.js, src/js/ai/prompt/memory.js, src/js/ui/sheet.js, src/js/ui/chat/suggest.js, src/js/ui/cover.js, src/js/ui/account.js, src/js/ui/store.js, src/js/ui/faq.js, src/js/ui/help.js, src/js/ui/home.js, src/js/ui/me.js, src/js/ui/pay.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/chat/render.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/ui/shell.js, src/js/ui/codex.js, src/js/ui/worldart.js, src/js/ui/detail.js, src/js/ui/chats.js, src/js/ui/login.js, src/js/app.js, src/js/admin/support.js, src/js/admin/gate.js, src/js/core/migrate.js, src/js/boot.js
+   쓰는 곳: src/js/core/storage.js, src/js/core/state.js, src/js/core/wallet.js, src/js/core/rooms.js, src/js/services/images.js, src/js/services/cloud.js, src/js/services/supabase.js, src/js/ai/parse.js, src/js/ai/llm.js, src/js/ai/prompt/memory.js, src/js/ui/sheet.js, src/js/ui/chat/cmdlist.js, src/js/ui/chat/suggest.js, src/js/ui/cover.js, src/js/ui/account.js, src/js/ui/store.js, src/js/ui/faq.js, src/js/ui/help.js, src/js/ui/home.js, src/js/ui/me.js, src/js/ui/pay.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/chat/render.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/ui/shell.js, src/js/ui/codex.js, src/js/ui/worldart.js, src/js/ui/detail.js, src/js/ui/chats.js, src/js/ui/login.js, src/js/app.js, src/js/admin/support.js, src/js/admin/gate.js, src/js/core/migrate.js, src/js/boot.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* DOM·문자열·숫자 유틸, toast, 예상 못 한 오류 기록(reportError) */
 /** @typedef {import("./types.js").TimeoutSignal} TimeoutSignal */
@@ -808,7 +814,7 @@ const KV = {
    가져옴: src/js/core/config.js { CFG }
            src/js/core/util.js { today }
    내보냄: hasClaudeKey, S, room, gen, setGen, setRoom
-   쓰는 곳: src/js/core/audience.js, src/js/core/wallet.js, src/js/core/rooms.js, src/js/core/settings.js, src/js/services/cloud.js, src/js/services/load.js, src/js/services/sync.js, src/js/ai/llm.js, src/js/ai/prompt/memory.js, src/js/ui/chat/suggest.js, src/js/ui/account.js, src/js/ui/store.js, src/js/ui/help.js, src/js/ui/home.js, src/js/ui/me.js, src/js/ui/pay.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/ui/shell.js, src/js/ui/detail.js, src/js/ui/chats.js, src/js/app.js, src/js/core/migrate.js, src/js/boot.js
+   쓰는 곳: src/js/core/audience.js, src/js/core/wallet.js, src/js/core/rooms.js, src/js/core/settings.js, src/js/services/cloud.js, src/js/services/load.js, src/js/services/sync.js, src/js/ai/llm.js, src/js/ai/prompt/memory.js, src/js/ui/chat/cmdlist.js, src/js/ui/chat/suggest.js, src/js/ui/account.js, src/js/ui/store.js, src/js/ui/help.js, src/js/ui/home.js, src/js/ui/me.js, src/js/ui/pay.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/ui/shell.js, src/js/ui/detail.js, src/js/ui/chats.js, src/js/app.js, src/js/core/migrate.js, src/js/boot.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 전역 상태 S(지갑·페르소나·대화방·설정), 현재 대화방·진행 중 생성(다른 모듈은 set…()로만 바꿈), API 키 유무(hasClaudeKey — S와 CFG.serverKeys를 함께 봄) */
 
@@ -1489,7 +1495,7 @@ for (const c of ORIGINALS) {
    src/js/core/character.js
    가져옴: src/js/content/index.js { ORIGINALS }
    내보냄: normalizeChar, getChar
-   쓰는 곳: src/js/core/rooms.js, src/js/images/pick.js, src/js/ai/prompt/input.js, src/js/ai/prompt/rules.js, src/js/ui/cover.js, src/js/ui/room-drawer.js, src/js/ui/chat/view.js, src/js/ui/codex.js, src/js/ui/worldart.js, src/js/ui/detail.js, src/js/ui/login.js, src/js/app.js
+   쓰는 곳: src/js/core/rooms.js, src/js/images/pick.js, src/js/ai/prompt/input.js, src/js/ai/prompt/rules.js, src/js/ui/chat/cmdlist.js, src/js/ui/cover.js, src/js/ui/room-drawer.js, src/js/ui/chat/view.js, src/js/ui/codex.js, src/js/ui/worldart.js, src/js/ui/detail.js, src/js/ui/login.js, src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 작품 찾기·정규화: normalizeChar, id로 찾기(getChar — 오리지널) */
 
@@ -2623,24 +2629,50 @@ function matchLore(lore, texts) {
 }
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/core/commands.js
-   내보냄: APP_COMMANDS, parseCommand, findCommand, commandText, commandHelp
-   쓰는 곳: src/js/ai/prompt/input.js, src/js/ui/chat/view.js, src/js/ui/codex.js
+   내보냄: APP_COMMANDS, COMMAND_KINDS, allCommands, parseCommand, findCommand, commandText, commandHelp, commandList
+   쓰는 곳: src/js/ai/prompt/input.js, src/js/ui/chat/cmdlist.js, src/js/ui/faq.js, src/js/ui/chat/view.js, src/js/ui/codex.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
-/* 대화방 명령어(순수): 앱 명령어(APP_COMMANDS — !상태창·!갤러리·!지도·!도움말, 앱이 바로 처리)와 작품 명령어(work.js commands — AI에 연출 지시로 감), 입력 글 해석(parseCommand·findCommand·commandText) */
+/* 대화방 명령어(순수): 앱 명령어(APP_COMMANDS — 화면형 !상태창·!갤러리·!지도·!도움말은 앱이 바로 처리, 연출형 !시간경과·!새사건·!조연등장·!반복금지는 AI에 연출 지시)와
+   작품 명령어(work.js commands — AI에 연출 지시로 감), 한 모양으로 모은 목록(allCommands·commandList), 입력 글 해석(parseCommand·findCommand·commandText) */
+/** @typedef {import("./types.js").AppCommand} AppCommand */
 /** @typedef {import("./types.js").Command} Command */
 
-/** 앱 명령어 — 어느 작품에서나 AI를 부르지 않고 앱이 바로 처리(view는 대화방 드로어 화면, help는 도움말 한 줄). 작품 명령어는 이 이름·별칭을 쓸 수 없음(빌드 검사) */
+/**
+ * 앱 명령어 — 어느 작품에서나 쓰는 공통 명령어. 작품 명령어는 이 이름·별칭을 쓸 수 없음(빌드 검사).
+ * view가 있으면 '화면형': AI를 부르지 않고 대화방 드로어 화면을 엶(help는 도움말 한 줄, 하트·턴을 쓰지 않음).
+ * prompt가 있으면 '연출형': 작품 명령어처럼 그대로 보내되 AI에는 prompt가 // 연출 지시로 감(한 턴을 씀). title·desc는 독자용.
+ * @type {AppCommand[]}
+ */
 const APP_COMMANDS = [
   { cmd: "상태창", alias: ["상태"], view: "status", title: "상태창 보기", desc: "지금 장면의 상태창을 펼쳐요" },
   { cmd: "갤러리", alias: ["도감"], view: "gallery", title: "갤러리", desc: "이 대화에 나온 장면 그림을 모아 봐요" },
   { cmd: "지도", alias: ["장소"], view: "places", title: "장소 보기", desc: "이 작품의 장소(MP 코드) 목록과 그림을 봐요" },
-  { cmd: "도움말", alias: ["명령어", "help"], view: "help", title: "도움말", desc: "쓸 수 있는 명령어를 알려 줘요" }
+  { cmd: "도움말", alias: ["명령어", "help"], view: "help", title: "도움말", desc: "쓸 수 있는 명령어를 알려 줘요" },
+  { cmd: "시간경과", alias: [], title: "시간 건너뛰기", desc: "며칠 뒤로 건너뛰고 새 장면을 열어요", prompt: "며칠 뒤로 시간을 건너뛴다. 그사이에 있었던 일을 두세 문장으로 요약한 뒤, 달라진 때와 곳에서 새 장면을 연다. 상태창의 날짜·시간 칸이 있으면 함께 바꾼다." },
+  { cmd: "새사건", alias: [], title: "새로운 사건", desc: "지금 이야기에 어울리는 새 사건을 일으켜요", prompt: "이 세계관과 지금의 관계에 어울리는 새 사건 하나를 일으킨다. 지금까지의 흐름·떡밥과 이어지게 하고, 유저가 고를 여지를 남긴다." },
+  { cmd: "조연등장", alias: [], title: "조연 등장", desc: "장면에 어울리는 조연 두세 명을 불러와요", prompt: "이 장면과 세계관에 어울리는 조연 두세 명을 이름·역할과 함께 자연스럽게 등장시킨다. 조연은 모두 성인이고, 기존 인물의 비중을 빼앗지 않는다." },
+  { cmd: "반복금지", alias: [], title: "반복 끊기", desc: "되풀이되는 대사·전개를 끊고 다른 방향으로 가요", prompt: "직전 응답들에 나온 대사·전개·묘사를 되풀이하지 않는다. 같은 표현과 같은 흐름을 피하고 다른 방향으로 장면을 진전시킨다." }
 ];
+/** 명령어 종류(도감 카드 배지·입력창 ! 목록): view 앱 화면형 · direct 앱 연출형 · work 작품 명령어. name은 배지 글, note는 풀이 */
+const COMMAND_KINDS = {
+  view: { name: "앱", note: "앱이 바로 화면을 열어요 — 하트를 쓰지 않아요" },
+  direct: { name: "연출", note: "어느 작품에서나 AI에게 연출을 지시해요 — 한 턴을 써요" },
+  work: { name: "이야기", note: "이 작품의 이야기 장치예요 — 한 턴을 써요" }
+};
+/**
+ * 쓸 수 있는 명령어 전부를 한 모양으로(앱 → 작품 순): { cmd, title, desc, kind, names(이름 + 별칭) }. 도감 카드·도움말·입력창 목록이 모두 이것을 씀.
+ * @param {{commands?: Command[]}|null|undefined} c
+ * @returns {{cmd: string, title: string, desc: string, kind: "view"|"direct"|"work", names: string[]}[]}
+ */
+function allCommands(c) {
+  return [...APP_COMMANDS.map((x) => ({ cmd: x.cmd, title: x.title, desc: x.desc, kind: x.view ? "view" : "direct", names: [x.cmd, ...x.alias] })),
+    ...((c && c.commands) || []).map((x) => ({ cmd: x.cmd, title: x.title, desc: x.desc || "", kind: "work", names: [x.cmd] }))];
+}
 /** 입력 글이 명령어 모양(!이름)이면 이름, 아니면 "". 전각 ！도 받고 앞뒤 공백은 뺌. @param {string} text @returns {string} */
 function parseCommand(text) { const m = String(text || "").trim().match(/^[!！]\s*(\S+)$/); return m ? m[1] : ""; }
 /**
  * 이름으로 명령어 찾기 — 앱 명령어(별칭 포함, 영문은 대소문자 무시)가 먼저, 다음은 작품의 commands. 없으면 null.
- * @param {string} name @param {{commands?: Command[]}|null|undefined} c @returns {{app: typeof APP_COMMANDS[number], work?: undefined}|{work: Command, app?: undefined}|null}
+ * @param {string} name @param {{commands?: Command[]}|null|undefined} c @returns {{app: AppCommand, work?: undefined}|{work: Command, app?: undefined}|null}
  */
 function findCommand(name, c) {
   const n = String(name || "").toLowerCase();
@@ -2650,14 +2682,24 @@ function findCommand(name, c) {
   const work = ((c && c.commands) || []).find((x) => String(x.cmd).toLowerCase() === n);
   return work ? { work } : null;
 }
-/** 유저 메시지가 작품 명령어면 AI에 보낼 글(// 연출 지시 — 명령 이름·제목·지시), 아니면 원문 그대로. @param {string} text @param {{commands?: Command[]}|null|undefined} c @returns {string} */
+/** 유저 메시지가 연출 지시가 있는 명령어(앱 연출형·작품 명령어)면 AI에 보낼 글(// 연출 지시 — 명령 이름·제목·지시), 아니면 원문 그대로. @param {string} text @param {{commands?: Command[]}|null|undefined} c @returns {string} */
 function commandText(text, c) {
-  const f = findCommand(parseCommand(text), c);
-  return f && f.work ? `// 유저가 명령어 !${f.work.cmd}(${f.work.title})을 썼다. ${f.work.prompt}` : text;
+  const f = findCommand(parseCommand(text), c), x = f && (f.work || (f.app.prompt ? f.app : null));
+  return x ? `// 유저가 명령어 !${x.cmd}(${x.title})을 썼다. ${x.prompt}` : text;
 }
 /** 도움말 한 줄: 앱 명령어 + 작품 명령어(제목). @param {{commands?: Command[]}|null|undefined} c @returns {string} */
 function commandHelp(c) {
-  return [...APP_COMMANDS.map((x) => "!" + x.cmd), ...((c && c.commands) || []).map((x) => `!${x.cmd}(${x.title})`)].join(" · ");
+  return allCommands(c).map((x) => (x.kind === "work" ? `!${x.cmd}(${x.title})` : "!" + x.cmd)).join(" · ");
+}
+/**
+ * 입력창 ! 목록: 입력이 !로 시작하는 한 낱말(쓰는 중 — "!"만 쳐도)이면 이름·별칭이 그 글자로 시작하는 명령어들(앱 → 작품), 아니면 [].
+ * @param {string} text @param {{commands?: Command[]}|null|undefined} c @returns {ReturnType<typeof allCommands>}
+ */
+function commandList(text, c) {
+  const m = String(text || "").match(/^\s*[!！]\s*(\S*)\s*$/);
+  if (!m) return [];
+  const p = m[1].toLowerCase();
+  return allCommands(c).filter((x) => x.names.some((n) => n.toLowerCase().indexOf(p) === 0));
 }
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/ai/prompt/input.js
@@ -2712,7 +2754,7 @@ function buildInput(r, uptoIdx, statusBefore, direction) {
   recent.forEach((m, i) => {
     const last = i === recent.length - 1;
     if (m.role === "ai") { out.push({ role: "assistant", content: curText(m) }); return; }
-    // 작품 명령어(!퀘스트 등)는 그 명령의 prompt를 연출 지시(//)로 바꿔 보냄 — 화면의 말풍선은 친 그대로
+    // 앱 연출형 명령어(!시간경과 등)·작품 명령어(!퀘스트 등)는 그 명령의 prompt를 연출 지시(//)로 바꿔 보냄 — 화면의 말풍선은 친 그대로
     let t = m.sys ? "// 직전 장면에서 자연스럽게 이어서 다음 장면을 써라. 유저의 행동은 쓰지 않는다." : commandText(m.text, getChar(r.char.id) || r.char);
     // 분량·대화·새 전개 지시는 시스템 프롬프트에도 있지만, 모델이 가장 잘 따르는 마지막 입력 옆에 한 번 더
     if (last) t = `[현재 상태창 — 이번 장면은 여기서 출발한다]\n${JSON.stringify(statusBefore || {})}\n\n[${r.persona.name}의 입력]\n${t}${direction ? "\n\n// 다시 쓰기 지침: " + direction : ""}\n\n[이번 응답] 위 입력을 본문에 다시 옮겨 적지 말고 그 직후의 반응부터 쓴다. 본문 ${len.chars}, 대사 ${len.lines}줄 이상을 주고받고, 직전 응답과 다른 새 전개를 넣는다. 나오는 인물마다 [[코드번호]]를 한 장씩 넣는다${(() => { const h = m.sys ? [] : sitHints(m.text); return h.length ? `(유저 입력에 맞는 번호 후보: ${h.join(", ")})` : ""; })()}.`;
@@ -2977,6 +3019,49 @@ let TARGET = "user";
 /** @param {"user"|"admin"} t @returns {"user"|"admin"} */
 function setTarget(t) { TARGET = t === "admin" ? "admin" : "user"; return TARGET; }
 const isAdmin = () => TARGET === "admin";
+/* ════════════════════════════════════════════════════════════════════════════════════════════════════
+   src/js/ui/chat/cmdlist.js
+   가져옴: src/js/core/character.js { getChar }
+           src/js/core/commands.js { COMMAND_KINDS, commandList }
+           src/js/core/state.js { room }
+           src/js/core/util.js { $, $$, esc }
+   내보냄: updateCmdList, cmdKey
+   쓰는 곳: src/js/ui/chat/view.js, src/js/app.js
+   ════════════════════════════════════════════════════════════════════════════════════════════════════ */
+/* 대화방 입력창의 ! 명령어 목록: !로 시작하는 낱말을 치는 동안 입력창 위에 "!이름 — 제목" 목록(앱 → 작품)을 띄우고, 고르면 입력창에 채움(↑↓ 고르기 · Enter 채우기 · Esc 닫기).
+   목록은 core/commands.js의 commandList 하나로 만듦 — 작품이 commands를 더하면 그대로 나옴 */
+
+
+
+
+
+let shown = [], sel = 0; // 지금 떠 있는 목록과 고른 줄
+const fullOf = (x) => "!" + x.cmd;
+function paint(inp) {
+  const p = $("#cmdPanel"); if (!p) return;
+  p.hidden = !shown.length;
+  p.innerHTML = shown.map((x, i) => `<button type="button" role="option" class="c${i === sel ? " on" : ""}" aria-selected="${i === sel}" aria-label="${esc(fullOf(x))} — ${esc(x.title)}" data-i="${i}"><code>${esc(fullOf(x))}</code><span>${esc(x.title)}</span><span class="pill${x.kind === "work" ? " gold" : x.kind === "direct" ? " ok" : ""}">${esc(COMMAND_KINDS[x.kind].name)}</span></button>`).join("");
+  $$("[data-i]", p).forEach((b) => b.onclick = () => fill(inp, shown[+b.dataset.i]));
+  const on = $(".on", p); if (on && on.scrollIntoView) on.scrollIntoView({ block: "nearest" });
+}
+function fill(inp, x) { inp.value = fullOf(x); inp.oninput(); inp.focus(); }
+/** 입력이 바뀔 때마다 부름: 목록을 다시 만들고 그림. 다 친 명령어 하나만 남으면(고른 직후 포함) 닫음. @param {HTMLTextAreaElement} inp */
+function updateCmdList(inp) {
+  const list = room ? commandList(inp.value, getChar(room.char.id) || room.char) : [];
+  shown = list.length === 1 && inp.value.trim() === fullOf(list[0]) ? [] : list;
+  sel = Math.min(sel, Math.max(0, shown.length - 1));
+  paint(inp);
+}
+/** 입력창 keydown에서 먼저 부름 — 목록이 떠 있을 때 ↑↓(고르기)·Enter(채우기)·Esc(닫기)를 처리했으면 true(보내기 등 다른 처리는 건너뜀). @param {KeyboardEvent} e @param {HTMLTextAreaElement} inp @returns {boolean} */
+function cmdKey(e, inp) {
+  if (!shown.length) return false;
+  if (e.key === "ArrowDown" || e.key === "ArrowUp") { sel = (sel + (e.key === "ArrowDown" ? 1 : shown.length - 1)) % shown.length; paint(inp); }
+  else if (e.key === "Escape") { shown = []; paint(inp); e.stopPropagation(); } // 전역 Esc(응답 중지·시트 닫기)로 번지지 않게
+  else if (e.key === "Enter" && !e.shiftKey && !e.isComposing && e.keyCode !== 229 && inp.value.trim() !== fullOf(shown[sel])) fill(inp, shown[sel]); // 이미 다 친 명령어면 그대로 보내기
+  else return false;
+  e.preventDefault();
+  return true;
+}
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/ui/chat/suggest.js
    가져옴: src/js/ai/llm.js { errCopy, llm }
@@ -3294,7 +3379,8 @@ function checkout(item, after) {
 }
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/ui/faq.js
-   가져옴: src/js/core/wallet.js { PLAN, FREE_DAILY, PLUS_MONTHLY, WELCOME }
+   가져옴: src/js/core/commands.js { allCommands }
+           src/js/core/wallet.js { PLAN, FREE_DAILY, PLUS_MONTHLY, WELCOME }
            src/js/core/util.js { num, won }
            src/js/services/support.js { SUPPORT_MAIL }
            src/js/ui/store.js { PLUS }
@@ -3309,9 +3395,12 @@ function checkout(item, after) {
 
 
 
+
 /** 묶음 [이름, [[질문, 답 HTML], …]] — 함수라서 부를 때의 상수 값으로 그림 @returns {Array<[string, Array<[string, string]>]>} */
 function faqGroups() {
   const plus = won(PLUS.price);
+  // 공통 명령어 이름은 앱의 표(core/commands.js)에서 읽음 — 운영자가 쓴 고정 글이라 esc 없이
+  const cmds = (kind) => allCommands(null).filter((x) => x.kind === kind).map((x) => `<b>!${x.cmd}</b>`).join("·");
   return [
     ["시작하기", [
       ["HEART SYNC는 어떤 서비스인가요?", "캐릭터와 대화하며 이야기를 만들어 가는 대화형 에피소드 앱이에요. 홈에서 작품을 고르고 시작 상황을 정하면 대화방이 열리고, AI가 캐릭터를 연기해요. 대화가 이어질수록 상태창(호감도 등)이 바뀌고 장면마다 캐릭터 그림이 붙어요."],
@@ -3330,7 +3419,8 @@ function faqGroups() {
       ["캐릭터가 예전 일을 잊어요.", "출력 설정의 <b>기억력</b>은 AI가 그대로 다시 읽는 최근 턴 수예요. 그보다 오래된 일은 몇 턴마다 자동으로 만드는 <b>장기기억</b> 요약으로 기억해요. 메뉴의 장기기억에서 요약을 보고 직접 고칠 수 있어요."],
       ["대화를 저장하거나 옮길 수 있나요?", "대화방 메뉴의 <b>대화 내보내기</b>로 파일로 받거나 <b>대화 복사</b>로 복사할 수 있어요. 로그인하면 대화가 계정에 저장돼 다른 기기에서 이어져요."],
       ["대화 속 그림을 끄고 싶어요.", "<a href=\"#me\">MY</a> → 채팅 설정의 <b>대화 속 장면 이미지 보기</b>를 끄면 돼요. 글자 크기·줄 간격·지문 글꼴도 거기서 바꿔요."],
-      ["도감과 !명령어는 뭔가요?", "<a href=\"#codex\">도감</a>은 작품마다 인물 코드·감정 칸·장소·컷씬·명령어를 보여 주는 안내예요. 대화 속 그림 한 장은 <b>인물 코드 + 번호</b> 한 토큰(예: HSY3 = 한서윤 · 부끄러움)이고, AI가 장면마다 골라 넣어요. 대화방 입력창에 <b>!상태창</b>·<b>!갤러리</b>·<b>!지도</b>·<b>!도움말</b>을 치면 AI를 부르지 않고 바로 열리고(하트를 쓰지 않아요), 작품에 딸린 명령어(예: !퀘스트)는 그 장면을 AI가 열어요."],
+      ["도감과 !명령어는 뭔가요?", "<a href=\"#codex\">도감</a>은 작품마다 인물 코드·감정 칸·장소·컷씬·명령어를 보여 주는 안내예요. 대화 속 그림 한 장은 <b>인물 코드 + 번호</b> 한 토큰(예: HSY3 = 한서윤 · 부끄러움)이고, AI가 장면마다 골라 넣어요. 대화방 입력창에 <b>!</b>를 치면 쓸 수 있는 명령어 목록이 떠요."],
+      ["!명령어에는 어떤 것이 있나요?", `세 가지예요. ① <b>앱 명령어</b> ${cmds("view")} — AI를 부르지 않고 바로 열려요(하트를 쓰지 않아요). ② <b>연출 명령어</b> ${cmds("direct")} — 어느 작품에서나 AI에게 장면 연출을 부탁해요(한 턴을 써요). ③ <b>작품 명령어</b> — 그 작품에만 있는 이야기 장치예요(도감의 작품 칸에서 확인). 직접 지시하고 싶으면 <b>//</b>로 시작해 적어도 돼요.`],
       ["응답이 중간에 끊겼어요.", "연결이 끊기거나 시간이 너무 오래 걸리면 받은 데까지 남기고 멈춰요. 그 메시지의 <b>다시 시도</b>를 누르면 다시 써요."]
     ]],
     ["계정·데이터", [
@@ -4152,6 +4242,7 @@ function openModelSheet() {
            src/js/core/util.js { $, esc, num }
            src/js/core/wallet.js { FREE_DAILY, freeLeft, isPro, listPrice, qShort, quote }
            src/js/ui/chat/generate.js { sendTurn, stopGen }
+           src/js/ui/chat/cmdlist.js { cmdKey, updateCmdList }
            src/js/ui/chat/log.js { bindStick, renderLog }
            src/js/ui/chat/render.js { barPct }
            src/js/ui/chat/suggest.js { toggleSug }
@@ -4164,6 +4255,7 @@ function openModelSheet() {
    쓰는 곳: src/js/ui/chat/suggest.js, src/js/ui/pay.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/render.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/ui/shell.js, src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 대화방 화면 뼈대·입력창·게이지 */
+
 
 
 
@@ -4210,6 +4302,7 @@ async function viewChat(id) {
         <button class="chip" id="contBtn">이어서 쓰기</button>
         <span class="spacer"></span><span class="freecount" id="freeCount"></span>
       </div>
+      <div class="cmd-panel" id="cmdPanel" role="listbox" aria-label="명령어" hidden></div>
       <form class="inputrow" id="form">
         <label class="sr" for="inp">메시지</label>
         <textarea id="inp" rows="1" maxlength="1500" placeholder="${esc(room.persona.name)}의 행동·대사 입력 (지문은 *별표* 사이에)"></textarea>
@@ -4226,8 +4319,9 @@ async function viewChat(id) {
   $("#sugBtn").onclick = () => toggleSug();
   $("#stopBtn").onclick = () => stopGen();
   const inp = $("#inp");
-  inp.oninput = () => { inp.style.height = "auto"; inp.style.height = Math.min(160, inp.scrollHeight) + "px"; };
+  inp.oninput = () => { inp.style.height = "auto"; inp.style.height = Math.min(160, inp.scrollHeight) + "px"; updateCmdList(inp); };
   inp.onkeydown = (e) => {
+    if (cmdKey(e, inp)) return; // ! 명령어 목록이 떠 있으면 ↑↓·Enter·Esc는 목록이 먼저 받음
     // Enter로 보내기(기본) 또는 Ctrl+Enter로 보내기 — 채팅 설정의 enterSend
     const send = S.settings.enterSend !== false ? !e.shiftKey : e.ctrlKey || e.metaKey;
     if (e.key === "Enter" && send && !e.isComposing && e.keyCode !== 229) {
@@ -4247,11 +4341,11 @@ async function viewChat(id) {
   bindStick($("#log"));
   renderLog(true); updateMeter(); updateComposer();
 }
-/* !명령어(core/commands.js): 앱 명령어(!상태창·!갤러리·!지도·!도움말)는 AI를 부르지 않고 드로어를 엶(하트·턴을 쓰지 않음).
-   작품 명령어(work.js commands)와 모르는 !글은 false → 그대로 AI에 보냄(작품 명령어는 buildInput이 연출 지시로 바꿈) */
+/* !명령어(core/commands.js): 앱 화면형 명령어(view가 있는 것 — !상태창·!갤러리·!지도·!도움말)는 AI를 부르지 않고 드로어를 엶(하트·턴을 쓰지 않음).
+   앱 연출형(prompt — !시간경과 등)·작품 명령어(work.js commands)·모르는 !글은 false → 그대로 AI에 보냄(연출 지시로 바꾸는 건 buildInput의 commandText) */
 function runCommand(t) {
   const live = getChar(room.char.id) || room.char, f = findCommand(parseCommand(t), live);
-  if (!f || !f.app) return false;
+  if (!f || !f.app || !f.app.view) return false;
   if (f.app.view === "help") { flashHint("명령어: " + commandHelp(live) + " — // 로 시작하면 연출 지시"); return true; }
   openRoomDrawer(f.app.view); return true;
 }
@@ -4280,7 +4374,7 @@ function updateComposer() {
   if (h && !hintTimer) {
     if (gen) h.textContent = "응답을 쓰는 중이에요 · 다음 입력은 미리 써 둘 수 있어요 · Esc 또는 ■ 중지";
     else if (q.type === "free" && freeLeft() <= 3) h.textContent = `오늘 무료 턴이 ${freeLeft()}번 남았어요. 다 쓰면 라이트 모델은 턴당 ♥${listPrice("lite", room.set.len, room.set.mem)}이에요.`;
-    else h.textContent = (S.settings.enterSend !== false ? "Enter 전송 · Shift+Enter 줄바꿈" : "Ctrl+Enter 전송 · Enter 줄바꿈") + " · // 연출 지시 · !도움말";
+    else h.textContent = (S.settings.enterSend !== false ? "Enter 전송 · Shift+Enter 줄바꿈" : "Ctrl+Enter 전송 · Enter 줄바꿈") + " · // 연출 지시 · ! 명령어";
   }
 }
 function lastAi(r) { for (let i = r.msgs.length - 1; i >= 0; i--) if (r.msgs[i].role === "ai") return r.msgs[i]; return null; }
@@ -4783,7 +4877,7 @@ on("rooms", renderRailRecent); on("wallet", renderWalletChips); on("route", rout
    가져옴: src/js/content/index.js { ORIGINALS }
            src/js/core/audience.js { AUDS, audOK, audience }
            src/js/core/character.js { normalizeChar }
-           src/js/core/commands.js { APP_COMMANDS }
+           src/js/core/commands.js { COMMAND_KINDS, allCommands }
            src/js/core/constants.js { SIT, SIT_TINT }
            src/js/core/util.js { $, $$, esc }
            src/js/images/codes.js { codebook, imgTag }
@@ -4864,16 +4958,18 @@ function seriesBox(c, code, e) {
     const ref = pickImg(c, code, n), name = it[e.nameKey] || code + n, sub = it.desc || it.when || "";
     return `<figure class="wcard">${ref ? `<button class="wpic" data-cxlb aria-label="${esc(name)} 크게 보기">${IMG.tag(ref)}</button>` : `<div class="wpic ph">${esc(code + n)}</div>`}<figcaption><b><code class="code-chip">${esc(code + n)}</code>${esc(name)}</b>${sub ? `<span>${esc(sub)}</span>` : ""}</figcaption></figure>`; }).join("")}</div></div>`;
 }
-/* 명령어 카드 한 장: !이름 · 종류(앱/이야기) · 제목 · 설명 · 복사 */
-function cmdCard(cmd, title, desc, app) {
-  return `<div class="cmd-card"><code class="cmd">!${esc(cmd)}</code><span class="pill${app ? "" : " gold"}">${app ? "앱" : "이야기"}</span><b>${esc(title)}</b><span>${esc(desc || "")}</span><button type="button" class="btn sm ghost" data-copy="!${esc(cmd)}">복사</button></div>`;
+/* 명령어 카드 한 장: !이름 · 종류 배지(COMMAND_KINDS — 앱·연출·이야기) · 제목 · 설명 · 복사. x는 allCommands의 한 항목 */
+function cmdCard(x) {
+  const k = COMMAND_KINDS[x.kind];
+  return `<div class="cmd-card"><code class="cmd">!${esc(x.cmd)}</code><span class="pill${x.kind === "work" ? " gold" : x.kind === "direct" ? " ok" : ""}" title="${esc(k.note)}">${esc(k.name)}</span><b>${esc(x.title)}</b><span>${esc(x.desc)}</span><button type="button" class="btn sm ghost" data-copy="!${esc(x.cmd)}">복사</button></div>`;
 }
-const cmdList = (list, app) => `<div class="cmd-list">${list.map((x) => cmdCard(x.cmd, x.title, x.desc, app)).join("")}</div>`;
+const cmdList = (list) => `<div class="cmd-list">${list.map(cmdCard).join("")}</div>`;
+const KIND_LEGEND = Object.keys(COMMAND_KINDS).map((k) => `'${COMMAND_KINDS[k].name}' ${COMMAND_KINDS[k].note}`).join(" · ");
 /** 상세 페이지 아래쪽 칸들: 장소(MP)·컷씬(EV) 목록(작품에 있을 때만)과 명령어 카드(앱 명령어 + 작품 명령어). @param {Work} c @returns {string} */
 function codexHTML(c) {
   const book = codebook(c);
   return seriesBox(c, "MP", book.MP) + seriesBox(c, "EV", book.EV) +
-    `<div class="box"><h3>명령어 <small>대화방 입력창에 그대로 쳐요 — 앱 명령어는 하트를 쓰지 않아요</small></h3><div class="cmd-list">${APP_COMMANDS.map((x) => cmdCard(x.cmd, x.title, x.desc, true)).join("")}${(c.commands || []).map((x) => cmdCard(x.cmd, x.title, x.desc, false)).join("")}</div></div>`;
+    `<div class="box"><h3>명령어 <small>대화방 입력창에 !를 치면 목록이 떠요</small></h3>${cmdList(allCommands(c))}<p class="note" style="margin-top:8px">${esc(KIND_LEGEND)}</p></div>`;
 }
 /** codexHTML·viewCodex의 복사 버튼·그림 크게 보기 연결. @param {HTMLElement} v */
 function bindCodex(v) {
@@ -4882,11 +4978,11 @@ function bindCodex(v) {
 }
 /* 한 작품의 도감: 작품 머리(표지·제목·상세로) → 인물 카드 → 장소·컷씬 → 작품 명령어 */
 function workCodexHTML(c) {
-  const book = codebook(c), cmds = c.commands || [];
+  const book = codebook(c), cmds = allCommands(c).filter((x) => x.kind === "work");
   return `<div class="codex-work">${coverHTML(c)}<div><b>${esc(c.title)}</b><span class="note">${esc(c.cat)}${c.world_mode ? " · 세계관" : ""} · 인물 ${c.cast.filter((x) => !x.of).length}명</span></div><button class="btn sm ghost" data-go="c-${esc(c.id)}">작품 보기</button></div>
     <div class="box"><h3>등장인물 <small>누르면 코드·감정 칸·소개</small></h3><div class="cast">${castGridHTML(c)}</div></div>
     ${seriesBox(c, "MP", book.MP)}${seriesBox(c, "EV", book.EV)}
-    ${cmds.length ? `<div class="box"><h3>이 작품의 명령어 <small>치면 AI가 그 장면을 열어요</small></h3>${cmdList(cmds, false)}</div>` : ""}`;
+    ${cmds.length ? `<div class="box"><h3>이 작품의 명령어 <small>치면 AI가 그 장면을 열어요</small></h3>${cmdList(cmds)}</div>` : ""}`;
 }
 /**
  * 도감 화면(#codex · #codex-<작품id>): 공통 표(그림 코드 읽는 법·감정 칸 0~14·앱 명령어) + 작품 고르기(관심있는 대화로 거름) → 그 작품의 인물·장소·컷씬·작품 명령어.
@@ -4898,7 +4994,7 @@ function viewCodex(id) {
   v.innerHTML = `<div class="page">${topbar()}<h1 class="sec" style="margin-top:4px">도감 <small>인물 코드·감정 칸·장소·컷씬·명령어</small></h1>
     <div class="box"><h3>그림 코드 읽는 법</h3><p class="codex-how">대화 속 그림 한 장은 코드 한 토큰이에요. <code class="code-chip">HSY3</code>은 인물 코드 <b>HSY</b> + 감정·행동 번호 <b>3</b>(부끄러움). 다른 모습(폼)은 다른 인물 코드로, 장소는 <code class="code-chip">MP1</code>, 컷씬은 <code class="code-chip">EV1</code>처럼 1부터 번호를 매겨요.</p>
       <div class="sit-table">${SIT.map((s, i) => `<span class="sit-chip" style="--tint:${SIT_TINT[i]}"><i></i><code>${i}</code>${esc(s)}</span>`).join("")}</div></div>
-    <div class="box"><h3>앱 명령어 <small>어느 작품에서나 · 하트를 쓰지 않아요</small></h3>${cmdList(APP_COMMANDS, true)}</div>
+    <div class="box"><h3>공통 명령어 <small>어느 작품에서나 · 대화방 입력창에 !를 치면 목록이 떠요</small></h3>${cmdList(allCommands(null))}<p class="note" style="margin-top:8px">${esc(KIND_LEGEND)}</p></div>
     <h2 class="sec" id="cxWorks">작품 <small>${esc(AUDS[audience()].name)}${audience() !== "all" ? " — MY → 설정에서 바꿀 수 있어요" : ""}</small></h2>
     ${pool.length ? `<div class="chips" style="margin-bottom:12px">${pool.map((x) => `<button class="chip${c && x.id === c.id ? " on" : ""}" data-work="${esc(x.id)}">${esc(x.title)}</button>`).join("")}</div>` : `<div class="empty">지금 관심있는 대화에 맞는 작품이 없어요. <button class="btn sm" data-go="me">설정 바꾸기</button></div>`}
     ${c ? workCodexHTML(c) : ""}</div>`;
@@ -5203,6 +5299,7 @@ function newPasswordSheet() {
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 사용자 사이트의 모듈 묶음: 층 순서(core → content → services·images·ai → ui)로 모듈을 불러 모으고 화면 표(USER_VIEWS)·메뉴(USER_NAVS)를 내보낸다.
    진입점 main.js(사용자, index.html)와 admin.js(관리자, admin.html)가 이걸 받아 화면을 등록하고 boot()한다. 빌드는 이 import 그래프를 따라 모듈을 이어 붙인다 */
+
 
 
 

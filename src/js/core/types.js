@@ -54,6 +54,16 @@
  * @property {boolean} [hidden] 비공개(스포일러) — 도감·상세에서 제목·조건·그림을 가림(대화에 나오면 그 방의 갤러리에서 보임)
  */
 /**
+ * 앱 명령어(core/commands.js APP_COMMANDS) — 어느 작품에서나 쓰는 공통 명령어. view와 prompt 중 하나를 가짐.
+ * @typedef {Object} AppCommand
+ * @property {string} cmd 이름 — 대화에서 !이름
+ * @property {string[]} alias 별칭(영문은 대소문자 무시)
+ * @property {string} [view] 화면형: AI를 부르지 않고 여는 대화방 드로어 화면(status·gallery·places, help는 도움말 한 줄)
+ * @property {string} [prompt] 연출형: AI에게 주는 지시(작품 명령어처럼 // 연출 지시로 감 — 한 턴을 씀)
+ * @property {string} title 도감 카드·입력창 목록의 제목
+ * @property {string} desc 독자용 설명
+ */
+/**
  * 작품 명령어(core/commands.js). 대화방에서 !cmd를 치면 말풍선은 그대로, AI에는 prompt가 // 연출 지시로 감. 앱 명령어(APP_COMMANDS)의 이름·별칭은 못 씀.
  * @typedef {Object} Command
  * @property {string} cmd 이름(공백·!·/ 없이) — 대화에서 !이름

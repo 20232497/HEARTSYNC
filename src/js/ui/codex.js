@@ -3,7 +3,7 @@
 import { ORIGINALS } from "../content/index.js";
 import { AUDS, audOK, audience } from "../core/audience.js";
 import { normalizeChar } from "../core/character.js";
-import { APP_COMMANDS } from "../core/commands.js";
+import { COMMAND_KINDS, allCommands } from "../core/commands.js";
 import { SIT, SIT_TINT } from "../core/constants.js";
 import { $, $$, esc } from "../core/util.js";
 import { codebook, imgTag } from "../images/codes.js";
@@ -64,16 +64,18 @@ function seriesBox(c, code, e) {
     const ref = pickImg(c, code, n), name = it[e.nameKey] || code + n, sub = it.desc || it.when || "";
     return `<figure class="wcard">${ref ? `<button class="wpic" data-cxlb aria-label="${esc(name)} 크게 보기">${IMG.tag(ref)}</button>` : `<div class="wpic ph">${esc(code + n)}</div>`}<figcaption><b><code class="code-chip">${esc(code + n)}</code>${esc(name)}</b>${sub ? `<span>${esc(sub)}</span>` : ""}</figcaption></figure>`; }).join("")}</div></div>`;
 }
-/* 명령어 카드 한 장: !이름 · 종류(앱/이야기) · 제목 · 설명 · 복사 */
-function cmdCard(cmd, title, desc, app) {
-  return `<div class="cmd-card"><code class="cmd">!${esc(cmd)}</code><span class="pill${app ? "" : " gold"}">${app ? "앱" : "이야기"}</span><b>${esc(title)}</b><span>${esc(desc || "")}</span><button type="button" class="btn sm ghost" data-copy="!${esc(cmd)}">복사</button></div>`;
+/* 명령어 카드 한 장: !이름 · 종류 배지(COMMAND_KINDS — 앱·연출·이야기) · 제목 · 설명 · 복사. x는 allCommands의 한 항목 */
+function cmdCard(x) {
+  const k = COMMAND_KINDS[x.kind];
+  return `<div class="cmd-card"><code class="cmd">!${esc(x.cmd)}</code><span class="pill${x.kind === "work" ? " gold" : x.kind === "direct" ? " ok" : ""}" title="${esc(k.note)}">${esc(k.name)}</span><b>${esc(x.title)}</b><span>${esc(x.desc)}</span><button type="button" class="btn sm ghost" data-copy="!${esc(x.cmd)}">복사</button></div>`;
 }
-const cmdList = (list, app) => `<div class="cmd-list">${list.map((x) => cmdCard(x.cmd, x.title, x.desc, app)).join("")}</div>`;
+const cmdList = (list) => `<div class="cmd-list">${list.map(cmdCard).join("")}</div>`;
+const KIND_LEGEND = Object.keys(COMMAND_KINDS).map((k) => `'${COMMAND_KINDS[k].name}' ${COMMAND_KINDS[k].note}`).join(" · ");
 /** 상세 페이지 아래쪽 칸들: 장소(MP)·컷씬(EV) 목록(작품에 있을 때만)과 명령어 카드(앱 명령어 + 작품 명령어). @param {Work} c @returns {string} */
 export function codexHTML(c) {
   const book = codebook(c);
   return seriesBox(c, "MP", book.MP) + seriesBox(c, "EV", book.EV) +
-    `<div class="box"><h3>명령어 <small>대화방 입력창에 그대로 쳐요 — 앱 명령어는 하트를 쓰지 않아요</small></h3><div class="cmd-list">${APP_COMMANDS.map((x) => cmdCard(x.cmd, x.title, x.desc, true)).join("")}${(c.commands || []).map((x) => cmdCard(x.cmd, x.title, x.desc, false)).join("")}</div></div>`;
+    `<div class="box"><h3>명령어 <small>대화방 입력창에 !를 치면 목록이 떠요</small></h3>${cmdList(allCommands(c))}<p class="note" style="margin-top:8px">${esc(KIND_LEGEND)}</p></div>`;
 }
 /** codexHTML·viewCodex의 복사 버튼·그림 크게 보기 연결. @param {HTMLElement} v */
 export function bindCodex(v) {
@@ -82,11 +84,11 @@ export function bindCodex(v) {
 }
 /* 한 작품의 도감: 작품 머리(표지·제목·상세로) → 인물 카드 → 장소·컷씬 → 작품 명령어 */
 function workCodexHTML(c) {
-  const book = codebook(c), cmds = c.commands || [];
+  const book = codebook(c), cmds = allCommands(c).filter((x) => x.kind === "work");
   return `<div class="codex-work">${coverHTML(c)}<div><b>${esc(c.title)}</b><span class="note">${esc(c.cat)}${c.world_mode ? " · 세계관" : ""} · 인물 ${c.cast.filter((x) => !x.of).length}명</span></div><button class="btn sm ghost" data-go="c-${esc(c.id)}">작품 보기</button></div>
     <div class="box"><h3>등장인물 <small>누르면 코드·감정 칸·소개</small></h3><div class="cast">${castGridHTML(c)}</div></div>
     ${seriesBox(c, "MP", book.MP)}${seriesBox(c, "EV", book.EV)}
-    ${cmds.length ? `<div class="box"><h3>이 작품의 명령어 <small>치면 AI가 그 장면을 열어요</small></h3>${cmdList(cmds, false)}</div>` : ""}`;
+    ${cmds.length ? `<div class="box"><h3>이 작품의 명령어 <small>치면 AI가 그 장면을 열어요</small></h3>${cmdList(cmds)}</div>` : ""}`;
 }
 /**
  * 도감 화면(#codex · #codex-<작품id>): 공통 표(그림 코드 읽는 법·감정 칸 0~14·앱 명령어) + 작품 고르기(관심있는 대화로 거름) → 그 작품의 인물·장소·컷씬·작품 명령어.
@@ -98,7 +100,7 @@ export function viewCodex(id) {
   v.innerHTML = `<div class="page">${topbar()}<h1 class="sec" style="margin-top:4px">도감 <small>인물 코드·감정 칸·장소·컷씬·명령어</small></h1>
     <div class="box"><h3>그림 코드 읽는 법</h3><p class="codex-how">대화 속 그림 한 장은 코드 한 토큰이에요. <code class="code-chip">HSY3</code>은 인물 코드 <b>HSY</b> + 감정·행동 번호 <b>3</b>(부끄러움). 다른 모습(폼)은 다른 인물 코드로, 장소는 <code class="code-chip">MP1</code>, 컷씬은 <code class="code-chip">EV1</code>처럼 1부터 번호를 매겨요.</p>
       <div class="sit-table">${SIT.map((s, i) => `<span class="sit-chip" style="--tint:${SIT_TINT[i]}"><i></i><code>${i}</code>${esc(s)}</span>`).join("")}</div></div>
-    <div class="box"><h3>앱 명령어 <small>어느 작품에서나 · 하트를 쓰지 않아요</small></h3>${cmdList(APP_COMMANDS, true)}</div>
+    <div class="box"><h3>공통 명령어 <small>어느 작품에서나 · 대화방 입력창에 !를 치면 목록이 떠요</small></h3>${cmdList(allCommands(null))}<p class="note" style="margin-top:8px">${esc(KIND_LEGEND)}</p></div>
     <h2 class="sec" id="cxWorks">작품 <small>${esc(AUDS[audience()].name)}${audience() !== "all" ? " — MY → 설정에서 바꿀 수 있어요" : ""}</small></h2>
     ${pool.length ? `<div class="chips" style="margin-bottom:12px">${pool.map((x) => `<button class="chip${c && x.id === c.id ? " on" : ""}" data-work="${esc(x.id)}">${esc(x.title)}</button>`).join("")}</div>` : `<div class="empty">지금 관심있는 대화에 맞는 작품이 없어요. <button class="btn sm" data-go="me">설정 바꾸기</button></div>`}
     ${c ? workCodexHTML(c) : ""}</div>`;

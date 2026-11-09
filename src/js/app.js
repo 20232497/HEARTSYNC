@@ -38,6 +38,7 @@ import { viewCodex } from "./ui/codex.js";
 import { viewDetail } from "./ui/detail.js";
 import "./ui/chat/render.js";
 import "./ui/chat/log.js";
+import "./ui/chat/cmdlist.js";
 import { viewChat } from "./ui/chat/view.js";
 import "./ui/chat/generate.js";
 import "./ui/chat/suggest.js";
