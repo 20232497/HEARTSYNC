@@ -1,5 +1,5 @@
 // 화면을 옮길 때의 스크롤(#view): 새 화면은 맨 위부터, 같은 주소를 다시 그리면 보던 자리, 홈으로 돌아오면 보던 자리.
-// 대화방의 #log·이미지 스튜디오의 목록처럼 따로 스크롤하는 곳이 깨지지 않는지도 본다. 값이 다르면 errors에 쌓임 → tests/run.mjs가 실패로 판정
+// 대화방의 #log처럼 따로 스크롤하는 곳이 깨지지 않는지도 본다. 값이 다르면 errors에 쌓임 → tests/run.mjs가 실패로 판정
 import { chromium, webkit, devices } from "playwright";
 import { noSupabase } from "./_offline.mjs";
 const [, , url, out] = process.argv; // out: 스크린샷 폴더(없으면 안 찍음)
@@ -72,18 +72,6 @@ for (const [dev, engine] of [["Desktop Chrome", chromium], ["iPhone 13", webkit]
     await page.click("#back"); await hashIs("#home");
     same("대화방 뒤로 → 홈", await y(), before, 2);
 
-    // 이미지 스튜디오(관리자): 자기 화면을 다시 그릴 땐 목록·화면 스크롤 그대로, 주소가 바뀌면 화면만 맨 위
-    const adm = watch(await ctx.newPage());
-    await adm.goto(url + "admin.html#images-hwanghu", { waitUntil: "load" }); await adm.waitForSelector(".is-list [data-pick]");
-    const set = await adm.evaluate(() => { const l = $(".is-list"), v = $("#view"); l.scrollTop = 300; v.scrollTop = 150; return { list: l.scrollTop, view: v.scrollTop }; });
-    if (set.list < 100) res.errors.push("이미지 스튜디오 목록이 내려가지 않음: " + set.list);
-    const scrolls = () => adm.evaluate(() => ({ list: $(".is-list").scrollTop, view: $("#view").scrollTop }));
-    await adm.evaluate(() => document.querySelector(".is-list [data-pick]").click()); await adm.waitForTimeout(150);
-    let now = await scrolls(); same("코드 고르기: 목록", now.list, set.list, 2); same("코드 고르기: 화면", now.view, set.view, 2);
-    await adm.evaluate(() => route()); await adm.waitForTimeout(150);
-    now = await scrolls(); same("같은 주소 다시: 목록", now.list, set.list, 2); same("같은 주소 다시: 화면", now.view, set.view, 2);
-    await to("images-hasuk", adm); same("다른 작품의 스튜디오", await yOf(adm), 0);
-    await adm.evaluate(() => { $("#view").scrollTop = 150; }); await to("works", adm); same("스튜디오 → 작품 화면", await yOf(adm), 0);
   } catch (e) { res.errors.push(String(e).slice(0, 300)); }
   await browser.close();
   console.log(JSON.stringify(res));

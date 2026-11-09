@@ -2,8 +2,8 @@
 export const MARK = "===STATE===";
 /* 요금: 하루 무료 턴(라이트), 첫 방문 하트, PLUS 월 지급 하트 — 계산은 core/wallet.js, 모델 표(ai/models.js)도 이 값을 씀 */
 export const FREE_DAILY = 10, WELCOME = 30, PLUS_MONTHLY = 300;
-/* 네트워크 시간 제한(ms): connect 응답 머리가 올 때까지 · stall 스트림 조각 사이 · image Runware 생성 한 건 · api Supabase 요청 하나. 넘으면 {code:"timeout"}(core/util.js timeoutSignal) */
-export const TIMEOUT = { connect: 45000, stall: 60000, image: 120000, api: 20000 };
+/* 네트워크 시간 제한(ms): connect 응답 머리가 올 때까지 · stall 스트림 조각 사이 · api Supabase 요청 하나. 넘으면 {code:"timeout"}(core/util.js timeoutSignal) */
+export const TIMEOUT = { connect: 45000, stall: 60000, api: 20000 };
 export const SIT = ["프로필", "기본", "웃음", "부끄러움", "슬픔", "놀람", "분노", "삐침", "공포", "부상", "회복", "휴식", "공격", "각성", "설렘"];
 export const SIT_TINT = ["#f5f0ff", "#9fb4ff", "#ffd166", "#ff8fab", "#7b96ff", "#ffe066", "#ff5d5d", "#c77dff", "#56cfe1", "#e63946", "#80ed99", "#a0c4ff", "#ff8c42", "#f9c74f", "#ff70a6"];
 export const PALETTES = [
@@ -12,3 +12,11 @@ export const PALETTES = [
 ];
 export const MOTIFS = { rain: "비", city: "도시", stars: "별", glow: "불빛", petals: "꽃잎", ash: "잿빛", curtain: "무대" };
 export const CATS = ["로맨스", "판타지", "RPG", "미스터리", "일상", "시뮬레이션"];
+/* 화면 예시 문구의 기본값 — 예시는 보고 있는 작품의 인물로 만들고(core/character.js exampleCast), 작품이 하나도 없을 때만 이 값. EXAMPLE_SIT은 예시에 쓰는 감정 번호 */
+export const EXAMPLE_CAST = { code: "ABC", name: "주인공" }, EXAMPLE_SIT = 3;
+/* 작품이 제작자(work.js creator)를 적지 않았을 때 보이는 이름 */
+export const DEFAULT_CREATOR = "HEART SYNC 스튜디오";
+/* 글자 수 상한 — 작품 데이터는 빌드가 검사하고(APP_RULES), 화면의 입력 칸은 maxlength와 "n / 한도"에 씀.
+   guide 작품의 플레이 가이드(work.js guide) · personaDesc 페르소나 상세 정보 · userNote 유저노트(대화방마다 하나) ·
+   memory 장기기억 기본 한도(무료 요금제 PLAN.free.memoMax와 요약 설정 memCfg.limit의 기본값 — 넘으면 압축, PLUS는 PLAN.pro.memoMax까지) */
+export const LIMITS = { guide: 1000, personaDesc: 1000, userNote: 2000, memory: 2000 };

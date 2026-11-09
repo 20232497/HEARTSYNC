@@ -1,7 +1,7 @@
 /* 장기기억: N턴마다 요약·압축(maybeSummarize), 요약 지침 */
 import { llm } from "../llm.js";
 import { speakerName } from "./rules.js";
-import { curText, saveRoom } from "../../core/rooms.js";
+import { curText, memoryMark, saveRoom } from "../../core/rooms.js";
 import { S } from "../../core/state.js";
 import { $, $$, toast } from "../../core/util.js";
 import { plan } from "../../core/wallet.js";
@@ -40,7 +40,7 @@ ${(r.memory || "(없음)").slice(-800)}
 [이번 구간 대화]
 ${excerpt}` }], { tier: "quick", json: true, room: r });
     if (!v || typeof v.summary !== "string") throw 0;
-    r.memory = ((r.memory || "").trim() + `\n\n[${from}-${to}턴] ${String(v.title || "").slice(0, 30)}\n${v.summary.trim()}`).trim();
+    r.memory = ((r.memory || "").trim() + `\n\n${memoryMark(from, to)} ${String(v.title || "").slice(0, 30)}\n${v.summary.trim()}`).trim();
     // 요약하는 동안 진행된 턴은 다음 요약 몫으로 남김(0으로 지우면 그 턴들이 요약에서 빠짐)
     r.sinceMem = Math.max(0, (r.sinceMem || 0) - n);
     if (r.memory.length > cfg.limit) {

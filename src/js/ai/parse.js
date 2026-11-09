@@ -28,9 +28,9 @@ export function splitReply(t) {
   if (i < 0) { const m = /\n[ \t]*={2,}[ \t]*STATE[ \t]*={2,}[ \t]*/i.exec(t); if (m) { i = m.index; len = m[0].length; } }
   if (i < 0) { const m = /\n[ \t]*(?:```(?:json)?\s*)?\{\s*"status"\s*:/.exec(t); if (m) { i = m.index; len = 0; } }
   if (i < 0) return { body: t, json: "" };
-  // JSON 뒤에 붙은 장면 그림 태그는 본문으로 옮김(일부 OpenRouter 모델이 맨 끝에 씀)
-  const json = t.slice(i + len), late = json.match(/\[\[img:[^\]\n]+\]\]/g) || [];
-  return { body: t.slice(0, i) + (late.length ? "\n\n" + late.join("\n") : ""), json: late.length ? json.replace(/\*?\[\[img:[^\]\n]+\]\]\*?/g, "") : json };
+  // JSON 뒤에 붙은 장면 그림 태그([[HSY3]]·예전 [[img:ks:0]])는 본문으로 옮김(일부 모델이 맨 끝에 씀)
+  const json = t.slice(i + len), late = json.match(/\[\[[A-Za-z0-9:,]+\]\]/g) || [];
+  return { body: t.slice(0, i) + (late.length ? "\n\n" + late.join("\n") : ""), json: late.length ? json.replace(/\*?\[\[[A-Za-z0-9:,]+\]\]\*?/g, "") : json };
 }
 /* 토큰 한도 등으로 중간에 끊긴 JSON 복구: 열린 문자열·괄호를 닫고, 값 없이 끝난 키나 쉼표는 버림 */
 function repairJSON(s) {

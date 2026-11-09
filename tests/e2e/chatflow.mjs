@@ -1,4 +1,4 @@
-// 채팅 흐름: 자동 스크롤 끔/켬, 추천 답변 수동, 출력 설정 카드, 설정 페이지(이미지 기본 수위 칸 없음)
+// 채팅 흐름: 입력창 ! 명령어 목록, 자동 스크롤 끔/켬, 좋아요·분기, 추천 답변 수동, 출력 설정 카드, 설정 페이지(이미지 기본 수위 칸 없음)
 import { webkit, chromium, devices } from "playwright";
 import { noSupabase } from "./_offline.mjs";
 const url = process.argv[2], out = process.argv[3];
@@ -11,6 +11,17 @@ for (const [dev, engine] of targets) {
     await p.goto(url, { waitUntil: "load" }); await p.waitForTimeout(1200);
     await p.evaluate(() => { const r = newRoom(normalizeChar(ORIGINALS.find((c) => c.id === "godseats")), 0, S.personas[0]); location.hash = "r-" + r.id; });
     await p.waitForTimeout(900);
+    // ! 명령어 목록: !만 치면 앱 + 작품 명령어가 모두 뜨고, ↓·Enter로 고르면 입력창에 채워진 뒤 닫힘(보내지는 않음)
+    res.cmd = await p.evaluate(() => {
+      const inp = $("#inp"), key = (k) => inp.dispatchEvent(new KeyboardEvent("keydown", { key: k, bubbles: true, cancelable: true })), all = allCommands(getChar(room.char.id));
+      inp.value = "!"; inp.oninput();
+      const n = $$("#cmdPanel [data-i]").length, open = !$("#cmdPanel").hidden;
+      key("ArrowDown"); key("Enter");
+      const r = { n, want: all.length, open, filled: inp.value, expect: "!" + all[1].cmd, closed: $("#cmdPanel").hidden, msgs: room.msgs.length };
+      inp.value = ""; inp.oninput();
+      return r;
+    });
+    if (!res.cmd.open || res.cmd.n !== res.cmd.want || res.cmd.n < 5 || res.cmd.filled !== res.cmd.expect || !res.cmd.closed || res.cmd.msgs !== 1) errs.push("! 명령어 목록이 다름: " + JSON.stringify(res.cmd));
     // 가짜 llm: 1.6초 동안 조금씩 흘려보냄
     await p.evaluate(() => {
       const para = (i) => `*장면 ${i}: 바람이 부서진 간판을 흔들었다. 먼지가 내려앉았다.*\n\n한서윤: "대사 ${i}번이에요. 조금 길게 말해 볼게요, 화면이 충분히 길어지도록."`;
@@ -33,6 +44,21 @@ for (const [dev, engine] of targets) {
     res.off = await turn("첫 번째 입력");
     await p.evaluate(() => { room.set.autoScroll = true; saveRoom(room); });
     res.on = await turn("두 번째 입력");
+    // 좋아요 토글과 분기: 첫 응답(msgs[2])의 '분기' → 확인 → 방 수 +1·새 방으로 이동·메시지 수는 그 메시지까지·원래 방은 그대로·좋아요도 따라옴.
+    // 장기기억은 분기한 턴(1턴)보다 뒤에 시작하는 구간([2-2턴])을 빼고 복사
+    res.fork = await p.evaluate(async () => {
+      const nap = (ms) => new Promise((r) => setTimeout(r, ms)), before = S.rooms.length, src = room.id, n0 = room.msgs.length, i = 2; // [오프닝, 유저, AI, 유저, AI]
+      const head = memoryMark(1, 1) + " 앞\n첫 요약"; room.memory = head + "\n\n" + memoryMark(2, 2) + " 뒤\n둘째 요약"; saveRoom(room);
+      document.querySelector(`[data-act="up"][data-i="${i}"]`).click();
+      const fb = room.msgs[i].alts[room.msgs[i].idx].fb;
+      document.querySelector(`[data-act="fork"][data-i="${i}"]`).click(); await nap(150);
+      document.querySelector(".overlay #ok").click(); await nap(600);
+      const kept = await KV.get(roomKey(src));
+      return { rooms: S.rooms.length - before, moved: room.id !== src && location.hash === "#r-" + room.id, msgs: room.msgs.length, want: i + 1, from: !!room.forkedFrom && room.forkedFrom.roomId === src, fb, fbCopied: room.msgs[i].alts[room.msgs[i].idx].fb,
+        srcMsgs: kept.msgs.length, n0, mark: / \(분기\)$/.test(room.opening), base: baseOpening(room) === kept.opening, index: S.rooms.find((x) => x.id === room.id).fork === true, drawn: $$("#logInner .msg").length,
+        mem: room.memory === head, turn: room.turn, srcTurn: kept.turn, srcMem: kept.memory.includes(memoryMark(2, 2)) };
+    });
+    { const f = res.fork; if (f.rooms !== 1 || !f.moved || f.msgs !== f.want || !f.from || f.fb !== 1 || f.fbCopied !== 1 || f.srcMsgs !== f.n0 || !f.mark || !f.base || !f.index || f.drawn !== f.want || !f.mem || f.turn !== 1 || f.srcTurn !== 2 || !f.srcMem) errs.push("분기가 다름: " + JSON.stringify(f)); }
     res.sugClick = await p.evaluate(async () => { $("#sugBtn").click(); await new Promise((r) => setTimeout(r, 200)); return $$("#sugPanel [data-s]").length; });
     await p.evaluate(() => { hideSug(); openRoomDrawer("output"); }); await p.waitForTimeout(400);
     res.drawer = await p.evaluate(() => { const as = document.querySelector("#as"); return { has: !!as, checked: as && as.checked, oldSug: !!document.querySelector("#sa"), overflowX: document.documentElement.scrollWidth - innerWidth }; });

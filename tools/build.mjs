@@ -32,7 +32,7 @@ export const TARGETS = {
 /* 폴더 이름이 곧 작품의 aud(관심있는 대화) 값 */
 export const AUD_DIRS = { f: "여성향(남성 캐릭터와의 대화)", m: "남성향(여성 캐릭터와의 대화)", all: "전체(남녀가 섞임)" };
 /* 빌드 검사에 쓰는 앱 규칙 — src/js에서 같은 코드를 꺼내 쓴다(규칙이 두 군데로 갈라지지 않게) */
-const APP_RULES = ["SIT", "PALETTES", "MOTIFS", "CATS", "guessAud", "personaWho", "personaLook", "castLook", "minorFlags", "minorHint", "settingHint", "dimOf", "dimDef", "DIMS", "RESET", "MAX_ACT", "isReset", "parseCodes", "splitDims", "keyOf", "LORE_KINDS"];
+const APP_RULES = ["SIT", "CODE_RE", "SERIES", "codebook", "APP_COMMANDS", "PALETTES", "MOTIFS", "CATS", "LIMITS", "FREE_DAILY", "MODELS", "guessAud", "personaWho", "personaLook", "castLook", "minorFlags", "minorHint", "settingHint", "LORE_KINDS"];
 /* 오래된 iOS(13 이하)·인앱 브라우저에서 문법 오류가 나는 것들 */
 const OLD_IOS = [[/\|\|=|&&=|\?\?=/, "논리 할당(||= &&= ??=)"], [/\.at\(/, "Array.at()"], [/\(\?<[=!]/, "정규식 lookbehind"],
   [/\bstructuredClone\b/, "structuredClone"], [/\.findLast(?:Index)?\(/, "findLast()"], [/\bObject\.hasOwn\(/, "Object.hasOwn()"]];
@@ -334,9 +334,9 @@ async function buildContent(R) {
   }
   rows.filter((r) => !r.n).forEach((r) => warnings.push(`${r.rel}: 줄에 작품이 없어 홈에 안 보여요`));
   if (!errors.length && !works.length) errors.push("content/에 작품이 하나도 없어요");
-  // content/codes.json(사용자에게 실리는 코드 표)과 작품 폴더의 images/(관리자 도구가 내보낸 그림) — content/README.md. 관리자 전용 코드(codes.admin.json)는 빌드가 아니라 관리자 페이지가 런타임에 읽음(admin/codes.js)
-  const codes = readCodes(R, errors, warnings);
-  for (const w of works) scanImages(w, R, codes, errors, warnings);
+  // 작품 폴더의 images/(밖에서 만든 그림을 이름 규칙대로 넣음) — content/README.md
+  if (fs.existsSync(path.join(CONTENT, "codes.json"))) warnings.push("content/codes.json: 코드 표는 더 쓰지 않아요(그림 코드는 인물 코드+감정 번호 한 토큰 — content/README.md) — 지워도 돼요");
+  for (const w of works) scanImages(w, R, errors, warnings);
   if (errors.length) throw new BuildError(errors);
 
   const byOrder = (a, b) => (a.order ?? Infinity) - (b.order ?? Infinity) || (a.rel < b.rel ? -1 : a.rel > b.rel ? 1 : 0);
@@ -349,7 +349,6 @@ async function buildContent(R) {
     if (w.images) o.images = w.images; // 작품 폴더 images/의 그림(content/… 상대 경로) — 사용자는 이 그림을 봄
     if (w.img) o.img = w.img;
     if (w.loreImages) o.loreImages = w.loreImages;
-    if (w.motions) o.motions = w.motions; // 같은 칸의 움짤(content/….mp4) — images/motion.js가 켜진 것으로 봄
     return `/* ${rel.slice("content/".length)} */ ${ser(o, "")}`;
   });
   const code = `/* 빌드가 content/ 폴더로 만든 작품 데이터 — 직접 고치지 말고 content/<f|m|all>/…/work.js를 고치세요(content/README.md). git에 넣지 않음 */
@@ -360,59 +359,37 @@ ${objs.join(",\n")}
 export const HOME_ROWS = [
 ${rows.map((r) => "  " + JSON.stringify({ key: r.key, title: r.title, sub: r.sub })).join(",\n")}
 ];
-// 이미지 코드 표(content/codes.json) — 관리자 도구가 내보낸 직접 만든 칸. 번호가 같은 내 칸(customSits)이 있으면 그것이 덮음
-export const CONTENT_CODES = [
-${codes.map((d) => "  " + JSON.stringify(d)).join(",\n")}
-];
 `;
   writeIfChanged(GEN_FILE, jsSafe(code));
   const count = (a) => works.filter((w) => w.aud === a).length, pics = works.reduce((a, w) => a + Object.values(w.images || {}).reduce((b, m) => b + Object.keys(m).length, 0) + (w.img ? 1 : 0) + Object.keys(w.loreImages || {}).length, 0);
-  const motions = works.reduce((a, w) => a + Object.values(w.motions || {}).reduce((b, m) => b + Object.keys(m).length, 0), 0);
-  return { warnings, stats: { works: works.length, f: count("f"), m: count("m"), all: count("all"), rows: rows.length, codes: codes.length, pics, motions } };
+  return { warnings, stats: { works: works.length, f: count("f"), m: count("m"), all: count("all"), rows: rows.length, pics } };
 }
 
-/* content/codes.json → CONTENT_CODES(사용자에게 실림): [{ n, name, prompt, rating, keys? }]. 번호는 15~599(400·500 제외), 성인 수위 코드는 미성년 표현 금지.
-   성인 수위 코드가 있으면 경고(공개 저장소와 사용자 사이트에 그대로 실림 — 관리자만 쓸 코드는 content/codes.admin.json에, git 제외) */
-function readCodes(R, errors, warnings) {
-  const name = "codes.json", file = path.join(CONTENT, name);
-  if (!fs.existsSync(file)) return [];
-  let list;
-  try { list = JSON.parse(readText(file)); } catch (e) { errors.push(`content/${name}: JSON 형식이 아니에요 — ${e.message}`); return []; }
-  if (!Array.isArray(list)) { errors.push(`content/${name}: [{ n, name, prompt, rating }, …] 배열이어야 해요`); return []; }
-  const out = [], seen = new Set();
-  list.forEach((d, i) => {
-    const at = `content/${name}[${i}]`;
-    if (!isObj(d) || !Number.isInteger(d.n) || !str(d.name) || typeof d.prompt !== "string") return errors.push(`${at}: { n: 번호, name: 이름, prompt: 프롬프트, rating?: safe|questionable|explicit, keys?: "낱말|낱말" } 모양이어야 해요`);
-    if (d.n < R.SIT.length || d.n >= 600 || d.n === R.RESET.wear || d.n === R.RESET.place) return errors.push(`${at}: 번호 ${d.n} — 직접 만든 코드는 ${R.SIT.length}~599(400·500 제외)`);
-    if (seen.has(d.n)) return errors.push(`${at}: 번호 ${d.n}이 겹쳐요`);
-    seen.add(d.n);
-    const rating = d.rating || "safe";
-    if (!["safe", "questionable", "explicit"].includes(rating)) return errors.push(`${at}: rating은 safe·questionable·explicit 중 하나`);
-    if (d.keys !== undefined && typeof d.keys !== "string") return errors.push(`${at}: keys는 "낱말|낱말" 글`);
-    if (rating !== "safe" && R.minorHint(d.name + "\n" + d.prompt)) return errors.push(`${at}: 성인 수위 코드의 이름·프롬프트에 미성년으로 보이는 표현이 있어요(minorHint)`);
-    const extra = Object.keys(d).filter((k) => !["n", "name", "prompt", "rating", "keys"].includes(k));
-    if (extra.length) warnings.push(`${at}: 쓰지 않는 칸 ${extra.join(", ")}`);
-    out.push({ n: d.n, name: d.name.trim(), prompt: d.prompt.trim(), rating, ...(d.keys ? { keys: d.keys } : {}), dim: R.dimOf(d.n), shipped: true });
-  });
-  const adult = out.filter((d) => d.rating !== "safe").length;
-  if (adult) warnings.push(`content/${name}: 성인 수위 코드 ${adult}개 — 사용자 사이트와 공개 저장소에 그대로 실려요(관리자만 쓸 코드는 content/codes.admin.json에)`);
-  return out.sort((a, b) => a.n - b.n);
+/* 그림 코드(글자 + 번호)가 이 작품에서 맞는지 검사하는 함수를 만듦 — 틀리면 이유 글, 맞으면 "".
+   앱과 같은 코드 사전(images/codes.js codebook)으로: 인물 코드는 cast의 대문자 코드에 번호 0~14, MP<n>은 places의 n번째, EV<n>은 cuts의 n번째(1부터) */
+function codeRange(c, R) {
+  const book = R.codebook({ ...c, cast: c.cast || [{ code: "C", name: c.name }] });
+  return (code, n) => {
+    const e = book[code];
+    if (!e) return book[code.toUpperCase()] ? `코드는 대문자로 — ${code.toUpperCase()}${n}` : `코드 "${code}"가 cast에 없어요(장소는 MP, 컷씬은 EV)`;
+    if (e.kind !== "cast" && !e.max) return `${code} 코드를 쓰려면 work.js에 ${e.field}(${e.label} 목록)를 적어 주세요`;
+    if (n < e.min || n > e.max) return e.kind === "cast" ? `번호 ${n} — 그림 칸은 기본 감정 ${e.min}~${e.max}번이에요` : `${code}${n} — ${e.label}은 ${e.field}의 ${e.min}~${e.max}번이에요`;
+    return "";
+  };
 }
-/* 작품 폴더의 images/ → 작품의 images(인물 코드 → 조합 키 → content/… 경로)·img(cover.*)·loreImages(lore-<n>.* → n번째 키워드북 항목)·motions(같은 이름의 .mp4|.webm — 그 칸의 움짤, 켜진 것으로 봄).
-   파일 이름: <인물코드>-<번호[-번호…]>.webp|png|jpg (조합 키의 쉼표는 -), cover.*, lore-<n>.*. 관리자 도구의 '작품 폴더에 저장'이 이 이름으로 쓴다 */
-const IMG_EXT = /\.(webp|png|jpe?g)$/i, VIDEO_EXT = /\.(mp4|webm)$/i;
-function scanImages(w, R, codes, errors, warnings) {
+/* 작품 폴더의 images/ → 작품의 images(코드 글자 → 번호 → content/… 경로)·img(cover.*)·loreImages(lore-<n>.* → n번째 키워드북 항목).
+   파일 이름: <코드><번호>.webp|png|jpg — 인물 코드 + 감정 번호 0~14(HSY3.webp), 장소 MP<n>, 컷씬 EV<n>; cover.*, lore-<n>.* */
+const IMG_EXT = /\.(webp|png|jpe?g)$/i;
+function scanImages(w, R, errors, warnings) {
   const dir = path.join(ROOT, w.rel, "images");
   if (!fs.existsSync(dir)) return;
-  const c = w.c, castCodes = new Set((c.cast || [{ code: "c" }]).map((x) => x.code)), lore = c.lore || [];
-  const known = (n) => n < R.SIT.length || !!R.DIMS[n] || codes.some((d) => d.n === n);
-  const images = {}, loreImages = {}, motions = {}; let img = "";
+  const c = w.c, lore = c.lore || [], range = codeRange(c, R);
+  const images = {}, loreImages = {}; let img = "";
   for (const f of fs.readdirSync(dir).filter(visible).sort()) {
-    const at = `${w.rel}/images/${f}`, video = VIDEO_EXT.test(f);
-    if (!IMG_EXT.test(f) && !video) { warnings.push(`${at}: 그림 파일(webp·png·jpg)이나 움짤(mp4·webm)이 아니라 지나쳐요`); continue; }
-    const base = f.replace(video ? VIDEO_EXT : IMG_EXT, "");
+    const at = `${w.rel}/images/${f}`;
+    if (!IMG_EXT.test(f)) { warnings.push(`${at}: 그림 파일(webp·png·jpg)이 아니라 지나쳐요`); continue; }
+    const base = f.replace(IMG_EXT, "");
     let m;
-    if (video && !/^[a-z0-9]+-\d+(?:-\d+)*$/.test(base)) { warnings.push(`${at}: 움짤은 그림 칸(<인물코드>-<번호>.mp4)에만 실을 수 있어 지나쳐요`); continue; }
     if (base === "cover") { if (img) errors.push(`${at}: 표지가 둘이에요(${img})`); img = at; }
     else if ((m = base.match(/^lore-(\d+)$/))) {
       const i = +m[1];
@@ -420,23 +397,16 @@ function scanImages(w, R, codes, errors, warnings) {
       const k = lore[i - 1].keys[0];
       if (loreImages[k]) errors.push(`${at}: 키워드북 ${i}번 항목의 그림이 둘이에요`);
       loreImages[k] = at;
-    } else if ((m = base.match(/^([a-z0-9]+)-(\d+(?:-\d+)*)$/))) {
-      const code = m[1], nums = m[2].split("-").map(Number);
-      if (!castCodes.has(code)) { errors.push(`${at}: 인물 코드 "${code}"가 cast에 없어요`); continue; }
-      const unknown = nums.filter((n) => !known(n));
-      if (unknown.length) { errors.push(`${at}: ${unknown.join(",")}은(는) 기본 번호(0~${R.SIT.length - 1})·내장 코드(1xx·4xx·5xx)·codes.json의 코드가 아니에요`); continue; }
-      const key = R.keyOf(nums) || "1";
-      if (key !== nums.join(",")) warnings.push(`${at}: 조합 키 ${key}로 등록해요(파일 이름은 ${code}-${key.replace(/,/g, "-")} 가 정확해요)`);
-      const into = video ? motions : images, what = video ? "움짤" : "그림";
-      into[code] = into[code] || {};
-      if (into[code][key]) errors.push(`${at}: ${code}의 ${key} ${what}이 둘이에요(${into[code][key]})`);
-      into[code][key] = at;
-    } else warnings.push(`${at}: 이름을 알 수 없어 지나쳐요 — <인물코드>-<번호[-번호…]>.webp · cover.webp · lore-<n>.webp`);
+    } else if ((m = base.match(/^([A-Za-z]+)(\d+)$/))) {
+      const code = m[1], n = +m[2], why = range(code, n);
+      if (why) { errors.push(`${at}: ${why}`); continue; }
+      images[code] = images[code] || {};
+      if (images[code][n]) errors.push(`${at}: ${code}${n} 그림이 둘이에요(${images[code][n]})`);
+      images[code][n] = at;
+    } else if (/^[a-z0-9]+-\d+$/.test(base)) errors.push(`${at}: 예전 이름이에요 — 인물 코드 바로 뒤에 번호를 붙인 <코드><번호>.webp(예: HSY3.webp)로 바꿔 주세요`);
+    else warnings.push(`${at}: 이름을 알 수 없어 지나쳐요 — <코드><번호>.webp(HSY3 · MP1 · EV2) · cover.webp · lore-<n>.webp`);
   }
-  // 움짤은 사진 위에 겹쳐 보이므로 같은 칸의 사진이 있어야 함(없으면 사용자 사이트에서 보이지 않음)
-  for (const code of Object.keys(motions)) for (const key of Object.keys(motions[code])) if (!(images[code] || {})[key]) warnings.push(`${motions[code][key]}: 같은 이름의 사진(${code}-${key.replace(/,/g, "-")}.webp 등)이 없어 이 움짤은 보이지 않아요`);
   if (Object.keys(images).length) w.images = images;
-  if (Object.keys(motions).length) w.motions = motions;
   if (img) w.img = img;
   if (Object.keys(loreImages).length) w.loreImages = loreImages;
 }
@@ -471,18 +441,70 @@ function checkWork(mod, { aud, row, id, wrel, R, errors, warnings }) {
     else if (c.row !== row.key) e(`row("${c.row}")가 줄 폴더(${row.key}/)와 달라요 — row는 폴더가 정하니 지우세요`);
   }
 
-  // 출연진: 없으면 앱이 설정의 "외모:" 줄로 한 명(code c)을 만든다(src/js/content/index.js) — 검사도 같은 모양으로
+  // 출연진: 없으면 앱이 설정의 "외모:" 줄로 한 명(code C)을 만든다(src/js/content/index.js) — 검사도 같은 모양으로
   let cast = c.cast;
-  if (cast === undefined) cast = [{ code: "c", name: c.name, look: (String(c.persona || "").match(/외모:\s*([^\n]+)/) || [])[1] || "" }];
+  if (cast === undefined) cast = [{ code: "C", name: c.name, look: (String(c.persona || "").match(/외모:\s*([^\n]+)/) || [])[1] || "" }];
   else if (!Array.isArray(cast) || !cast.length) { e("cast는 출연진 배열(한 명 이상)"); cast = []; }
   const codes = new Set();
   cast.forEach((x, i) => {
-    if (!isObj(x) || !/^[a-z0-9]+$/.test(x.code || "") || !str(x.name)) return e(`cast[${i}]: { code: "영문 소문자·숫자", name, look } 모양이어야 해요`);
+    if (!isObj(x) || typeof x.code !== "string" || !str(x.name)) return e(`cast[${i}]: { code: "영문 대문자 1~4자", name, look } 모양이어야 해요`);
+    // 인물 코드: 영문 대문자 1~4자(images/codes.js CODE_RE) — 번호와 붙여 HSY3처럼 쓰니 숫자는 안 됨. MP·EV는 장소·컷씬 예약 코드
+    if (!R.CODE_RE.test(x.code)) return e(`cast[${i}](${x.name}).code "${x.code}" — 인물 코드는 영문 대문자 1~4자예요(숫자 없이, 예: HSY). 그림 태그·파일은 번호와 붙여 HSY3처럼 써요`);
+    if (R.SERIES[x.code]) return e(`cast[${i}](${x.name}).code "${x.code}"는 예약 코드예요(MP 장소 · EV 컷씬) — 다른 글자로`);
     if (codes.has(x.code)) e(`cast 코드 "${x.code}"가 겹쳐요`);
     codes.add(x.code);
     if (x.look !== undefined && typeof x.look !== "string") e(`cast[${i}].look은 글이어야 해요`);
+    if (x.desc !== undefined && typeof x.desc !== "string") e(`cast[${i}].desc(도감 소개)는 글이어야 해요`);
     if (x.tags !== undefined && (typeof x.tags !== "string" || /[가-힣]/.test(x.tags))) e(`cast[${i}].tags는 영문 Danbooru 태그 글이어야 해요(한국어 외모는 look에)`);
+    // 비공개(스포일러) 감정 칸: 도감·상세에서 가리고 대화에 나온 방에서만 보임(images/codes.js codebook의 hidden). 0 프로필은 인물 카드라 숨길 수 없음
+    if (x.hidden !== undefined) {
+      const max = R.SIT.length - 1;
+      if (!Array.isArray(x.hidden) || x.hidden.some((n) => !Number.isInteger(n) || n < 0 || n > max)) e(`cast[${i}](${x.name}).hidden은 숨길 감정 번호 배열이에요(1~${max} 정수, 예: [13])`);
+      else {
+        if (new Set(x.hidden).size !== x.hidden.length) e(`cast[${i}](${x.name}).hidden에 같은 번호가 두 번 있어요`);
+        if (x.hidden.includes(0)) e(`cast[${i}](${x.name}).hidden — 0(프로필)은 숨길 수 없어요(인물 카드에 쓰는 그림)`);
+      }
+    }
   });
+  // 다른 모습(폼): of는 같은 출연진의 본체 코드 — 폼의 폼은 안 됨
+  cast.forEach((x, i) => {
+    if (!isObj(x) || x.of === undefined) return;
+    const base = cast.find((y) => isObj(y) && y !== x && y.code === x.of);
+    if (typeof x.of !== "string" || !base) e(`cast[${i}](${x.name}).of "${x.of}" — 본체 인물의 코드여야 해요`);
+    else if (base.of !== undefined) e(`cast[${i}](${x.name}).of "${x.of}" — 폼의 폼은 둘 수 없어요(본체 코드로)`);
+  });
+  // 장소·컷씬 목록(선택): 순서가 곧 코드 번호 — places[0]이 MP1, cuts[0]이 EV1
+  const engOk = (t) => t === undefined || (typeof t === "string" && !/[가-힣]/.test(t)), boolOk = (v) => v === undefined || typeof v === "boolean";
+  if (c.places !== undefined && (!Array.isArray(c.places) || c.places.some((p) => !isObj(p) || !str(p.name) || (p.desc !== undefined && typeof p.desc !== "string") || !engOk(p.tags) || !boolOk(p.hidden))))
+    e('places(장소)는 [{ name: "장소 이름", desc?: "설명", tags?: "영문 태그", hidden?: true(비공개) }, …] — 순서대로 MP1, MP2…');
+  if (c.cuts !== undefined && (!Array.isArray(c.cuts) || c.cuts.some((x) => !isObj(x) || !str(x.title) || (x.when !== undefined && typeof x.when !== "string") || !engOk(x.tags) || !boolOk(x.hidden))))
+    e('cuts(컷씬)는 [{ title: "제목", when?: "나오는 조건", tags?: "영문 태그", hidden?: true(비공개) }, …] — 순서대로 EV1, EV2…');
+  // 작품 명령어(선택): 대화방에서 !cmd를 치면 prompt가 AI에 연출 지시로 감(core/commands.js). 앱 명령어 이름·별칭(APP_COMMANDS)과 겹치면 안 됨
+  if (c.commands !== undefined) {
+    const reserved = new Set(R.APP_COMMANDS.flatMap((x) => [x.cmd, ...x.alias]).map((s) => s.toLowerCase())), seenCmd = new Set();
+    if (!Array.isArray(c.commands)) e('commands(명령어)는 [{ cmd: "이름", title: "제목", desc?: "설명", prompt: "AI 지시" }, …]');
+    else c.commands.forEach((x, i) => {
+      if (!isObj(x) || !str(x.cmd) || !str(x.title) || !str(x.prompt) || (x.desc !== undefined && typeof x.desc !== "string")) return e(`commands[${i}]: { cmd, title, desc?, prompt } 모양이어야 해요(cmd·title·prompt는 글)`);
+      if (!/^[^\s!！/]+$/.test(x.cmd)) e(`commands[${i}].cmd "${x.cmd}" — 공백·!·/ 없이 이름만 적어요(예: "퀘스트" → 대화에서 !퀘스트)`);
+      const k = x.cmd.toLowerCase();
+      if (reserved.has(k)) e(`commands[${i}].cmd "${x.cmd}"는 앱 명령어 이름이에요(${[...reserved].join("·")}) — 다른 이름으로`);
+      if (seenCmd.has(k)) e(`commands[${i}].cmd "${x.cmd}"가 겹쳐요`);
+      seenCmd.add(k);
+    });
+  }
+  // 작품 메타(선택): 제작자 이름·독점 여부·공개일 — 상세 페이지 머리와 도감 작품 칸에 보임(ui/codex.js metaHTML)
+  if (c.creator !== undefined && !str(c.creator)) e("creator(제작자 이름)는 비어 있지 않은 글이어야 해요");
+  if (c.exclusive !== undefined && typeof c.exclusive !== "boolean") e("exclusive(독점 여부)는 참거짓(true·false)이어야 해요");
+  if (c.publishedAt !== undefined) {
+    const d = typeof c.publishedAt === "string" && /^\d{4}-\d{2}-\d{2}$/.test(c.publishedAt) ? new Date(c.publishedAt + "T00:00:00Z") : null;
+    if (!d || isNaN(d) || d.toISOString().slice(0, 10) !== c.publishedAt) e(`publishedAt("${c.publishedAt}")은 "YYYY-MM-DD" 모양의 실제 날짜여야 해요(공개일)`);
+  }
+  // 권장 모델(선택): 모델 선택 시트의 '권장' 배지 — ai/models.js MODELS의 키(없으면 앱이 RECOMMEND_DEFAULT)
+  if (c.recommend !== undefined && !Object.prototype.hasOwnProperty.call(R.MODELS, c.recommend)) e(`recommend("${c.recommend}")는 ${Object.keys(R.MODELS).join("·")} 중 하나(권장 모델)`);
+  // 플레이 가이드(선택): 제작자가 독자에게 주는 안내문 — 상세·도감·대화방 드로어에 줄바꿈 그대로 보임(마크다운 없음)
+  if (c.guide !== undefined && (!str(c.guide) || c.guide.length > R.LIMITS.guide)) e(`guide(플레이 가이드)는 ${R.LIMITS.guide}자 이내의 글이어야 해요${typeof c.guide === "string" ? `(지금 ${c.guide.length}자)` : ""}`);
+  // 유저노트 양식(선택): 대화방 유저노트의 '이 작품의 양식 넣기'가 넣는 글 — 유저노트 한도 안이어야
+  if (c.noteTemplate !== undefined && (!str(c.noteTemplate) || c.noteTemplate.length > R.LIMITS.userNote)) e(`noteTemplate(유저노트 양식)는 ${R.LIMITS.userNote}자 이내의 글이어야 해요${typeof c.noteTemplate === "string" ? `(지금 ${c.noteTemplate.length}자)` : ""}`);
   if (c.lookTags !== undefined && (typeof c.lookTags !== "string" || /[가-힣]/.test(c.lookTags))) e("lookTags는 영문 Danbooru 태그 글이어야 해요");
   if (c.lookTags !== undefined && c.cast !== undefined) w("cast가 있으면 lookTags는 쓰이지 않아요 — cast[].tags에 적어 주세요");
   if (c.lore !== undefined && (!Array.isArray(c.lore) || c.lore.some((x) => !isObj(x) || !Array.isArray(x.keys) || !x.keys.length || x.keys.some((k) => !str(k)) || !str(x.text) || (x.tags !== undefined && typeof x.tags !== "string"))))
@@ -491,7 +513,7 @@ function checkWork(mod, { aud, row, id, wrel, R, errors, warnings }) {
     // 세계관 일러스트: 종류(kind)는 상세 카드 머리표·AI 구도를 정하고, tags는 번역 없이 그대로 프롬프트에 들어가므로 영문만
     if (x.kind !== undefined && !R.LORE_KINDS[x.kind]) e(`lore[${i}](${x.keys[0]}).kind("${x.kind}")는 ${Object.keys(R.LORE_KINDS).join("·")} 중 하나`);
     if (typeof x.tags === "string" && /[가-힣]/.test(x.tags)) e(`lore[${i}](${x.keys[0]}).tags는 영문 태그 글이어야 해요(한국어 설명은 text에)`);
-    if (x.tags === undefined || x.kind === undefined) w(`lore[${i}](${x.keys[0]})에 kind·tags가 없어요 — 세계관 일러스트를 AI로 그릴 때 설명 글을 번역해 써요`);
+    if (x.tags === undefined || x.kind === undefined) w(`lore[${i}](${x.keys[0]})에 kind·tags가 없어요 — 세계관 일러스트를 만들 때 쓸 종류·영문 낱말이에요`);
   });
   if (c.artTags !== undefined && (typeof c.artTags !== "string" || /[가-힣]/.test(c.artTags))) e("artTags(세계관 태그)는 영문 태그 글이어야 해요 — 시대·장소·분위기 낱말");
   if (!Array.isArray(c.openings) || !c.openings.length) e("openings(시작 상황)가 하나 이상 있어야 해요");
@@ -504,10 +526,12 @@ function checkWork(mod, { aud, row, id, wrel, R, errors, warnings }) {
       const miss = Object.keys(o.status).filter((k) => !c.fields.includes(k));
       if (miss.length) w(`openings[${i}].status의 ${miss.join(", ")} 칸이 fields에 없어요`);
     }
-    for (const m of o.text.matchAll(/\[\[img:([^\]:]+):([\d,]+)\]\]/g)) {
-      if (!codes.has(m[1])) e(`openings[${i}]: [[img:${m[1]}:${m[2]}]]의 인물 코드가 cast에 없어요`);
-      const bad = m[2].split(",").filter((n) => n !== "" && +n >= R.SIT.length && !R.DIMS[+n]);
-      if (bad.length) e(`openings[${i}]: [[img:${m[1]}:${m[2]}]] — ${bad.join(",")}은(는) 기본 상황 번호(0~${R.SIT.length - 1})도 내장 코드(1xx·4xx·5xx)도 아니에요`);
+    // 그림 태그는 [[코드번호]] 한 토큰 — 코드가 cast(대문자)·places(MP)·cuts(EV)에 있고 번호가 범위 안인지
+    const range = codeRange({ ...c, cast }, R);
+    for (const m of o.text.matchAll(/\[\[([^\]]*)\]\]/g)) {
+      const tok = m[1], t = tok.match(/^([A-Za-z]+)(\d{1,2})$/);
+      if (!t) { e(`openings[${i}]: [[${tok}]] — 그림 태그는 [[코드번호]] 한 토큰이에요(예: [[${(cast[0] || {}).code || "HSY"}0]])${/^img:/i.test(tok) ? ". 예전 [[img:코드:번호]] 모양은 더 쓰지 않아요" : ""}`); continue; }
+      const why = range(t[1], +t[2]); if (why) e(`openings[${i}]: [[${tok}]] — ${why}`);
     }
   });
 
@@ -566,16 +590,14 @@ function checkScripts(html, map, out) {
   return errors;
 }
 
-/* 사용자 빌드에 그림 생성이 섞이지 않았는지(2026-11-05, 사용자 결정 — 그림은 관리자 계정만 만들어 content/에 싣는다. 라이선스: docs/COMMERCIALIZATION.md §8).
-   생성 모듈(관리자 전용)의 머리·생성 함수 이름·Runware 작업 이름이 결과에 있으면 실패 — 사용자 모듈이 관리자 모듈을 import하게 바뀌는 실수를 막음 */
-const NO_GEN = [
-  [/\/\* ── src\/js\/admin\//, "관리자 모듈(src/js/admin/)"],
-  [/\/\* ── src\/js\/images\/(runware|prompt|tags|styles|style-fit|gen-guard)\.js/, "그림 생성 모듈(images/runware·prompt·tags·styles·style-fit·gen-guard)"],
-  [/\b(runwareImage|makeMotion|autoImages)\b/, "그림·움짤 생성 함수"],
-  [/["'](imageInference|videoInference)["']/, "Runware 생성 작업"]
+/* 결과에 들어가면 안 되는 것(2026-11-08 정리 — 브라우저는 Anthropic 말고 다른 AI·그림 서비스를 부르지 않음, 성인 경로는 서버에 다시 세움: docs/ROADMAP.md).
+   사용자 빌드(index.html)에는 관리자 모듈도 들어가지 않음 — 사용자 모듈이 admin/을 import하게 바뀌는 실수를 막음 */
+const FORBIDDEN = [
+  [/openrouter\.ai|runware\.ai/i, "외부 AI·그림 서비스 주소(OpenRouter·Runware)", "all"],
+  [/\/\* ── src\/js\/admin\//, "관리자 모듈(src/js/admin/)", "user"]
 ];
-export function checkNoGen(html) {
-  return NO_GEN.filter(([re]) => re.test(html)).map(([, what]) => `index.html(사용자 사이트)에 들어가면 안 되는 것이 있어요: ${what} — 그림 생성은 관리자 빌드(admin.html)에만. 사용자 모듈이 그걸 import하는지 확인하세요(CLAUDE.md '두 빌드')`);
+export function checkForbidden(html, name) {
+  return FORBIDDEN.filter(([re, , only]) => (only === "all" || only === name) && re.test(html)).map(([, what]) => `${TARGETS[name].out}에 들어가면 안 되는 것이 있어요: ${what}`);
 }
 
 /* 대상 하나를 만든다(content/는 buildAll이 먼저). 결과 HTML과 줄 지도를 돌려주고 지도는 .build/에도 남김 */
@@ -586,7 +608,7 @@ export async function build(name = "user") {
   const { html: raw, map, css, bundle } = await assemble(t);
   const html = raw.replace(/<\/script(?![\s>])/gi, "<\\/script").split(LS).join("\\u2028").split(PS).join("\\u2029");
   const errors = checkScripts(html, map, t.out);
-  if (name === "user") errors.push(...checkNoGen(html));
+  errors.push(...checkForbidden(html, name));
   if (errors.length) throw new BuildError(errors);
   fs.mkdirSync(BUILD_DIR, { recursive: true });
   fs.writeFileSync(path.join(BUILD_DIR, t.linemap), JSON.stringify(map));
@@ -608,7 +630,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     const { content, outs } = await buildAll(names);
     [...new Set([...content.warnings, ...outs.flatMap((o) => o.warnings)])].forEach((x) => console.warn("⚠ " + x));
     const s = content.stats;
-    console.log(`작품 ${s.works}개(여성향 ${s.f} · 남성향 ${s.m} · 전체 ${s.all}), 홈 줄 ${s.rows}개, 실린 그림 ${s.pics}장${s.motions ? ` · 움짤 ${s.motions}개` : ""}, 코드 표 ${s.codes}개`);
+    console.log(`작품 ${s.works}개(여성향 ${s.f} · 남성향 ${s.m} · 전체 ${s.all}), 홈 줄 ${s.rows}개, 실린 그림 ${s.pics}장`);
     let fail = false;
     for (const o of outs) {
       const cur = fs.existsSync(o.out) ? readText(o.out) : null, same = cur === o.html;

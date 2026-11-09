@@ -10,7 +10,7 @@ export const AUDS = { all: { name: "전체", desc: "남녀 캐릭터" }, m: { na
 /** 출연진 외모의 성별로 짐작한 성향 — 여자만 m, 남자만 f, 섞이거나 모르면 all. @param {Work} c @returns {Aud} */
 export function guessAud(c) {
   let f = 0, m = 0;
-  (Array.isArray(c.cast) && c.cast.length ? c.cast : [{ code: "c", name: c.name, look: "" }]).forEach((x) => {
+  (Array.isArray(c.cast) && c.cast.length ? c.cast : [{ code: "C", name: c.name, look: "" }]).forEach((x) => {
     const l = castLook(x, c);
     if (/여성|여자|\b(?:female|woman|girl)\b/i.test(l)) f++; else if (/남성|남자|\b(?:male|man|boy)\b/i.test(l)) m++;
   });

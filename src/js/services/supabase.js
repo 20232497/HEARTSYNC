@@ -1,23 +1,21 @@
 /* Supabase 인증 REST(SB): 로그인·가입·소셜·세션 갱신, 안내 문구 */
-import { CFG, IN_CLAUDE } from "../core/config.js";
+import { CFG } from "../core/config.js";
 import { TIMEOUT } from "../core/constants.js";
 import { emit } from "../core/events.js";
 import { timeoutSignal, toast } from "../core/util.js";
 import { CLOUD } from "./cloud.js";
-import { VAULT } from "./vault.js";
 
 /* ---------------------------------------------------------------- 계정(Supabase): 로그인하면 KV를 계정에도 저장해 PC·휴대폰이 이어짐(사용자 요청 2026-11)
    라이브러리 없이 REST만 씀. 표 public.kv(user_id, key, value jsonb, updated_at) + RLS(본인 행만) — 만드는 SQL은 docs/supabase.sql.
-   publishable 키는 브라우저에 넣으라고 만든 공개 키라 저장소에 둬도 됨(데이터는 RLS가 지킴). 세션은 이 기기 localStorage(hv1_auth)에만.
-   claude.ai 안(IN_CLAUDE)에서는 쓰지 않음 — 그쪽은 claude.ai 계정 db에 저장됨 */
+   publishable 키는 브라우저에 넣으라고 만든 공개 키라 저장소에 둬도 됨(데이터는 RLS가 지킴). 세션은 이 기기 localStorage(hv1_auth)에만 */
 /**
  * Supabase 인증·REST(라이브러리 없음). on() 서버 설정 여부 · s 세션 { access_token, refresh_token, expires_at, user: { id, email, provider, providers } }(hv1_auth)
- * req(path, opt) → Promise<Response>(토큰 갱신·401 재시도·시간 제한) · signIn/signUp/verify/recover/setPassword/oauth/signOut · fromHash() 인증 메일·소셜 로그인 링크의 토큰을 세션으로
+ * req(path, opt) → Promise<Response>(토큰 갱신·401 재시도·시간 제한) · signIn/signUp/recover/setPassword/oauth/signOut · fromHash() 인증 메일·소셜 로그인 링크의 토큰을 세션으로
  */
 export const SB = {
   url: String(CFG.supabaseUrl || "").replace(/\/+$/, ""), key: String(CFG.supabaseKey || ""),
   s: null, refreshing: null, // 세션 { access_token, refresh_token, expires_at(ms), user: { id, email } }
-  on() { return !IN_CLAUDE && !!(this.url && this.key); },
+  on() { return !!(this.url && this.key); },
   load() { try { const s = JSON.parse(localStorage.getItem("hv1_auth") || "null"); this.s = s && s.access_token && s.user && s.user.id ? s : null; } catch { this.s = null; } },
   keep(s) {
     const was = (this.s && this.s.user && this.s.user.id) || "", now = (s && s.user && s.user.id) || "";
@@ -60,13 +58,10 @@ export const SB = {
     return j;
   },
   async signIn(email, password) { this.keep(null); this.keep(this.session(await this.auth("token?grant_type=password", { email, password }))); },
-  // 로그인한 채로 비밀번호만 확인(API 키 잠금 풀기) — 틀려도 로그인은 그대로
-  async verify(password) { this.keep(this.session(await this.auth("token?grant_type=password", { email: this.s.user.email, password }))); },
-  // 이메일 인증이 켜져 있으면 세션 없이 user만 옴 → "confirm"(lastUid는 키 잠금을 미리 만들 때 씀)
+  // 이메일 인증이 켜져 있으면 세션 없이 user만 옴 → "confirm"
   async signUp(email, password) {
     this.keep(null);
     const j = await this.auth("signup?redirect_to=" + encodeURIComponent(this.site()), { email, password });
-    this.lastUid = (j.user && j.user.id) || j.id || "";
     if (j.access_token) { this.keep(this.session(j)); return "in"; }
     return "confirm";
   },
@@ -82,7 +77,7 @@ export const SB = {
     location.href = u;
     return true;
   },
-  async signOut() { if (this.s) { try { await this.req("/auth/v1/logout", { method: "POST" }); } catch {} } this.keep(null); VAULT.forget(); },
+  async signOut() { if (this.s) { try { await this.req("/auth/v1/logout", { method: "POST" }); } catch {} } this.keep(null); },
   // 인증 메일·소셜 로그인·비밀번호 재설정 링크는 #access_token=…&type=… 로 돌아옴 → 세션으로 바꾸고 주소에서 지움
   // 소셜 로그인을 취소했거나 실패하면 오류가 #… 또는 ?… 로 옴
   async fromHash() {

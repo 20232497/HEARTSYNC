@@ -1,11 +1,11 @@
-/* 저장소: IndexedDB(IDB)와 KV(localStorage → claude.ai db → 계정). 계정 저장은 KV.remote 고리로 — services/cloud.js가 꽂음(core는 services를 모름) */
+/* 저장소: IndexedDB(IDB)와 KV(localStorage → 계정). 계정 저장은 KV.remote 고리로 — services/cloud.js가 꽂음(core는 services를 모름) */
 import { toast } from "./util.js";
 
 /* 브라우저 저장 공간이 가득 찼을 때 한 번만 알림(조용히 저장이 실패해 데이터가 사라지는 것을 막기 위해) */
 let fullWarned = false;
 function storageFull() {
   if (fullWarned) return; fullWarned = true;
-  setTimeout(() => toast("브라우저 저장 공간이 가득 찼어요. 오래된 대화방이나 쓰지 않는 그림·세트를 지워 주세요."), 0);
+  setTimeout(() => toast("브라우저 저장 공간이 가득 찼어요. 오래된 대화방이나 쓰지 않는 사진을 지워 주세요."), 0);
 }
 /* 큰 데이터(그림) 저장소: IndexedDB. localStorage(약 5MB)보다 훨씬 크고, 막혀 있으면(사생활 모드 등) null을 돌려 localStorage로 물러남 */
 /**
@@ -42,41 +42,21 @@ export const IDB = {
   }
 };
 /**
- * 키·값 저장 — 항상 localStorage(hv1_ 접두사)에 쓰고, claude.ai db가 되면(dbOk) data/users/<uid>/<key>에도, 로그인했으면 remote 고리(CLOUD.put)로 계정에도.
- * getLocal(k)·setLocal(k, v)는 이 기기만 · get(k) → Promise<unknown>(db 우선) · set(k, v, { local = true })(v가 undefined면 지움, 그림 본문은 local:false)
+ * 키·값 저장 — 항상 localStorage(hv1_ 접두사)에 쓰고, 로그인했으면 remote 고리(CLOUD.put)로 계정에도.
+ * getLocal(k)·setLocal(k, v)는 이 기기만 · get(k) → Promise<unknown> · set(k, v, { local = true })(v가 undefined면 지움, IndexedDB에 둔 그림 본문은 local:false)
  * 값은 JSON으로 직렬화되는 것만. localStorage가 가득 차면 storageFull()이 한 번 알림
  */
 export const KV = {
-  db: null, uid: null, dbOk: false, queues: {},
-  remote: null, // (k, v) => … 계정 저장(services/cloud.js가 꽂음). 없으면 이 기기·claude.ai db에만
+  remote: null, // (k, v) => … 계정 저장(services/cloud.js가 꽂음). 없으면 이 기기에만
   lkey: (k) => "hv1_" + k,
   getLocal(k) { try { const v = localStorage.getItem(this.lkey(k)); return v ? JSON.parse(v) : undefined; } catch { return undefined; } },
   setLocal(k, v) {
     try { if (v === undefined) localStorage.removeItem(this.lkey(k)); else localStorage.setItem(this.lkey(k), JSON.stringify(v)); }
     catch (e) { if (e && (e.name === "QuotaExceededError" || e.code === 22)) storageFull(); }
   },
-  ref(k) { return this.db.doc("data/users/" + this.uid + "/" + k); },
-  async get(k) {
-    if (this.dbOk) {
-      try { const s = await this.ref(k).get(); if (s.exists) { const v = s.data().v; this.setLocal(k, v); return v; } } catch {}
-    }
-    return this.getLocal(k);
-  },
+  async get(k) { return this.getLocal(k); },
   set(k, v, { local = true } = {}) {
     if (local) this.setLocal(k, v);
     if (this.remote) this.remote(k, v);
-    if (!this.dbOk) return;
-    const q = this.queues[k] || (this.queues[k] = { busy: false, next: undefined, has: false });
-    q.next = v; q.has = true;
-    if (q.busy) return;
-    (async () => {
-      q.busy = true;
-      while (q.has) {
-        const val = q.next; q.has = false;
-        try { if (val === undefined) await this.ref(k).delete(); else await this.ref(k).set({ v: val, at: Date.now() }); }
-        catch (e) { if (e instanceof TypeError || (e && (e.code === "permission_denied" || e.code === "invalid_argument"))) { this.dbOk = false; q.has = false; } }
-      }
-      q.busy = false;
-    })();
   }
 };

@@ -19,11 +19,11 @@ export default {
 ④ 7년 전 엔진 폭주 사고(서하진의 아버지 사망)는 의회가 정비용 연료를 빼돌려서 생겼다.
 
 [히로인 — 모두 성인]
-- 서하진(hj, 28): 수석 기관사. 무뚝뚝하고 기계 말고는 믿지 않는다. 엔진 정지를 홀로 짊어지고 있다. 상처: 7년 전 사고로 아버지를 잃었고 자기 실수였다고 믿는다.
-- 홍레나(rn, 24): 의장의 딸. 오만한 앞칸 귀족처럼 굴지만 몰래 꼬리칸에 약을 빼돌린다. 비밀: 아버지의 꼬리칸 분리 계획을 엿들었고, 막을지 말지 정하지 못했다.
-- 차유리(yr, 26): 열차 경비대 저격수. 약탈단 '늑대 썰매' 출신 배신자. 과묵하고 귀가 밝다. 상처: 썰매단에 두고 온 여동생 차은이. 썰매단이 열차를 노린다는 소문에 밤마다 총을 닦는다.
-- 미소(ms, 23): 엔진교의 성녀. 엔진 소리를 신탁으로 해석하는 척하며 기관실 정보를 교단에 넘긴다. 실은 교단을 안에서 무너뜨리려 한다. 밝고 맹한 연기가 특기.
-- 윤도경(dg, 30): 꼬리칸 의사. 냉소적이고 술을 달고 산다. 실력은 열차 최고, 꼬리칸 연대의 숨은 브레인. 상처: 첫 겨울에 아이를 잃었다.
+- 서하진(SHJ, 28): 수석 기관사. 무뚝뚝하고 기계 말고는 믿지 않는다. 엔진 정지를 홀로 짊어지고 있다. 상처: 7년 전 사고로 아버지를 잃었고 자기 실수였다고 믿는다.
+- 홍레나(HRN, 24): 의장의 딸. 오만한 앞칸 귀족처럼 굴지만 몰래 꼬리칸에 약을 빼돌린다. 비밀: 아버지의 꼬리칸 분리 계획을 엿들었고, 막을지 말지 정하지 못했다.
+- 차유리(CYR, 26): 열차 경비대 저격수. 약탈단 '늑대 썰매' 출신 배신자. 과묵하고 귀가 밝다. 상처: 썰매단에 두고 온 여동생 차은이. 썰매단이 열차를 노린다는 소문에 밤마다 총을 닦는다.
+- 미소(MSO, 23): 엔진교의 성녀. 엔진 소리를 신탁으로 해석하는 척하며 기관실 정보를 교단에 넘긴다. 실은 교단을 안에서 무너뜨리려 한다. 밝고 맹한 연기가 특기.
+- 윤도경(YDG, 30): 꼬리칸 의사. 냉소적이고 술을 달고 산다. 실력은 열차 최고, 꼬리칸 연대의 숨은 브레인. 상처: 첫 겨울에 아이를 잃었다.
 
 [세력] 의회(1~6칸 선두원, 의장 홍태석: 질서를 위해 소수를 버릴 수 있는 실용주의자), 꼬리칸 연대(35~42칸, 반장 강두식: 분노가 쌓인 노동자들), 엔진교(13칸 예배칸, 대사제: 엔진 정지를 '종말의 축복'이라 부를 광신), 늑대 썰매단(설원의 약탈단, 두목 백랑: 열차의 연료와 사람을 노린다).`,
   world: `- 백야호 42량: 1~6칸 선두원(의회·기관실), 7~20칸 중간칸(온실·공방·식당·학교), 21~34칸 일반칸, 35~42칸 꼬리칸(노동자·밀입자). 칸 사이 이동은 통행증이 있어야 하고, 위조가 들키면 감금.
@@ -53,11 +53,11 @@ export default {
     { keys: ["첫 겨울", "13년 전", "대동결"], text: "13년 전 '대동결'. 하늘이 회색 재로 덮이고 한 달 만에 기온이 40도 떨어졌다. 열차에 오르지 못한 사람들은 그해 겨울을 넘기지 못했다.", kind: "event", tags: "great freeze, ash-covered sky, frozen city, snow, apocalypse, desolate" }
   ],
   cast: [
-    { code: "hj", name: "서하진", look: "28세 여성, 기름 묻은 방한 작업복, 짧게 친 흑발, 고글을 이마에 올림, 화상 흉터가 있는 손", tags: "black hair, very short hair, oil-stained winter work overalls, goggles on head, burn scar on hand, mechanic" },
-    { code: "rn", name: "홍레나", look: "24세 여성, 흰 모피 코트, 금빛 통행증 목걸이, 길게 땋은 금갈색 머리, 오만한 표정", tags: "golden brown hair, long braid, white fur coat, gold pendant, necklace, elegant" },
-    { code: "yr", name: "차유리", look: "26세 여성, 회색 위장 방한복, 긴 저격총, 짧은 은회색 머리, 왼뺨의 동상 자국", tags: "silver grey hair, short hair, grey camouflage winter jacket, frostbite scar on cheek, sniper rifle" },
-    { code: "ms", name: "미소", look: "23세 여성, 흰 사제복과 기어 문양 목걸이, 양 갈래 머리, 해맑은 미소", tags: "twin braids, white priestess robe, nun habit, gear pendant, necklace, bright eyes" },
-    { code: "dg", name: "윤도경", look: "30세 여성, 낡은 흰 가운 위 군용 외투, 흐트러진 묶음 머리, 손에 든 술병, 피곤한 눈", tags: "black hair, messy bun, worn white lab coat, military coat, holding bottle, tired eyes, doctor" }
+    { code: "SHJ", name: "서하진", desc: "수석 기관사. 무뚝뚝하고 기계 말고는 믿지 않는다. 엔진 정지를 홀로 짊어지고 있다.", look: "28세 여성, 기름 묻은 방한 작업복, 짧게 친 흑발, 고글을 이마에 올림, 화상 흉터가 있는 손", tags: "black hair, very short hair, side-swept bangs, narrow eyes, thick eyebrows, oil-stained winter work overalls, goggles on head, mechanic" },
+    { code: "HRN", name: "홍레나", desc: "의장의 딸. 오만한 앞칸 귀족처럼 굴지만 몰래 꼬리칸에 약을 빼돌린다.", look: "24세 여성, 흰 모피 코트, 금빛 통행증 목걸이, 길게 땋은 금갈색 머리, 오만한 표정", tags: "golden brown hair, long braid, curtain bangs, upturned eyes, arched eyebrows, mole under mouth, white fur coat, gold pendant, necklace, elegant" },
+    { code: "CYR", name: "차유리", desc: "열차 경비대 저격수. 약탈단 '늑대 썰매' 출신 배신자. 과묵하고 귀가 밝다.", look: "26세 여성, 회색 위장 방한복, 긴 저격총, 짧은 은회색 머리, 왼뺨의 동상 자국", tags: "silver grey hair, short hair, side-swept bangs, narrow eyes, straight eyebrows, grey camouflage winter jacket, frostbite scar on cheek, sniper rifle" },
+    { code: "MSO", name: "미소", desc: "엔진교의 성녀. 엔진 소리를 신탁으로 해석하는 척하며 기관실 정보를 교단에 넘긴다. 실은 교단을 안에서 무너뜨리려 한다. 밝고 맹한 연기가 특기.", look: "23세 여성, 흰 사제복과 기어 문양 목걸이, 밝은 갈색 양 갈래 머리, 해맑은 미소", tags: "light brown hair, twin braids, round eyes, thin eyebrows, freckles, white priestess robe, nun habit, gear pendant, necklace, bright eyes" },
+    { code: "YDG", name: "윤도경", desc: "꼬리칸 의사. 냉소적이고 술을 달고 산다. 실력은 열차 최고, 꼬리칸 연대의 숨은 브레인.", look: "30세 여성, 낡은 흰 가운 위 군용 외투, 흐트러진 묶음 머리, 손에 든 술병, 피곤한 눈", tags: "black hair, messy bun, parted bangs, droopy eyes, thin eyebrows, worn white lab coat, military coat, tired eyes, doctor" }
   ],
   openings: [
     { title: "❄️ 설원에서 주워 온 사람", directive: "기본 시작. 유저가 꼬리칸 의무실에서 깨어난다. 윤도경과 차유리가 곁에 있다. 지도 조각의 존재가 곧 열차에 소문으로 퍼질 것임을 암시한다.",

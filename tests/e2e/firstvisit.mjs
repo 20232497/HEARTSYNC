@@ -1,6 +1,6 @@
 // 첫 방문 시험: 처음 온 사람이 작품 주소(#c-<id>)로 들어와도 로그인·둘러보기 뒤 그 작품이 열리는지.
 // 둘러보기·이메일 로그인·소셜 로그인(취소·안 켠 공급자)·인증 메일과 비밀번호 재설정 링크(새 탭)·새로 고침, 없는 작품·작품이 아닌 주소,
-// 계정에만 있는 작품, 관심있는 대화 시트가 작품을 가리지 않고 홈에 처음 갈 때 뜨는지, 계정의 고른 값을 덮지 않는지.
+// 관심있는 대화 시트가 작품을 가리지 않고 홈에 처음 갈 때 뜨는지, 계정의 고른 값을 덮지 않는지.
 // Supabase와 소셜 로그인 왕복은 page.route로 흉내 냄(실제 서버·계정 없음). 값이 다르면 errors에 쌓임 → tests/run.mjs가 실패로 판정
 import { chromium, webkit, devices } from "playwright";
 const [, , url, out] = process.argv; // out: 스크린샷 폴더(없으면 안 찍음)
@@ -162,19 +162,12 @@ for (const [dev, engine] of [["Desktop Chrome", chromium], ["iPhone 13", webkit]
   });
   // 계정에 고른 관심있는 대화가 있으면 덮지 않고 묻지도 않음
   await scenario("account-aud", async (pg, db) => {
-    addRow(db, "settings", { audience: "m" }); addRow(db, "mine", []);
+    addRow(db, "settings", { audience: "m" }); addRow(db, "wallet", { hearts: 0, freeDay: "", freeUsed: 0, pro: null, history: [], ledger: [], ack: {} }); // 설정만 있으면 빈 계정으로 봐서 이 기기 것을 올림 — 계정에 다른 값도 있는 경우를 봄
     await opened(pg, "#c-daeyeon");
     await signIn(pg); await hashIs(pg, "#c-daeyeon"); await synced(pg); await settle(pg);
     await expect(pg, "계정 값", { work: true, sheet: false, aud: "m" });
     await pg.evaluate(() => { location.hash = "home"; }); await hashIs(pg, "#home"); await settle(pg);
     await expect(pg, "계정 값 홈", { sheet: false, aud: "m" });
-  });
-  // 계정에만 있는 내 작품: 받아 온 뒤에 열림
-  await scenario("own-work", async (pg, db) => {
-    await opened(pg, "#c-mywork");
-    addRow(db, "mine", [await pg.evaluate(() => Object.assign({}, ORIGINALS[0], { id: "mywork", title: "내가 만든 시험 작품" }))]);
-    await signIn(pg); await hashIs(pg, "#c-mywork"); await settle(pg);
-    await expect(pg, "내 작품", { hash: "#c-mywork", work: true, signedIn: true });
   });
   // 소셜 로그인: 페이지를 떠났다 돌아와도 그 작품, 주소에 토큰 없음, 적어 둔 값은 지워짐
   await scenario("oauth", async (pg) => {

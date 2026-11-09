@@ -3,6 +3,7 @@
    주의: 정적 페이지의 클라이언트 관문이라 소스를 읽는 사람은 우회할 수 있다 — 무심코 들어오는 것을 막는 용도. 실제 데이터(API 키·그림·대화)는 관리자의 브라우저와 계정(Supabase RLS)에만 있어 페이지가 보여도 새지 않는다.
    비밀번호를 바꾸려면 HASH를 새 비밀번호의 sha256 16진수로(node -e 'console.log(require("crypto").createHash("sha256").update("새비밀번호").digest("hex"))') */
 import { $ } from "../core/util.js";
+import { EXT } from "../ui/ext.js";
 import { LOGO } from "../ui/shell.js";
 
 const HASH = "0b66aa75aec80f1efadd5420201f74451496acf05526b52015ee26ea44ed3a3e", KEY = "hv1_admin";
@@ -11,6 +12,12 @@ export const gateNeeded = () => /^https?:$/.test(location.protocol) && !/^(local
 async function sha256(s) { const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s)); return [...new Uint8Array(b)].map((x) => x.toString(16).padStart(2, "0")).join(""); }
 /** 이 브라우저의 기억을 지우고 다시 묻게 함. @returns {void} */
 export function lockAdmin() { try { localStorage.removeItem(KEY); } catch {} location.reload(); }
+/* MY(관리자 도구, 웹 주소일 때만): 이 브라우저의 기억을 지우는 버튼 */
+EXT.me.push((v) => {
+  const box = $("#meExt", v); if (!box || !gateNeeded()) return;
+  box.insertAdjacentHTML("beforeend", `<div class="box" style="margin-top:12px"><button class="btn sm ghost" id="adminLock">이 브라우저에서 관리자 잠그기</button></div>`);
+  $("#adminLock", box).onclick = () => lockAdmin();
+});
 /** 비밀번호가 맞을 때(또는 관문이 필요 없을 때) 풀리는 약속 — 진입점이 boot() 앞에 기다림. @returns {Promise<void>} */
 export function gate() {
   return new Promise((resolve) => {

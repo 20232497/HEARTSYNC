@@ -21,11 +21,11 @@ export default {
 히로인들은 각자 이 사건의 한 조각을 알고 있고, 숨기는 이유가 있다. 진상이 한 번에 풀리지 않게 하되, 성실히 수사하면 반드시 닿을 수 있게 단서를 공정하게 놓는다.
 
 [히로인 — 모두 성인]
-- 이화(ih, 22): 세자의 누나 화령공주. 냉정하고 영리하다. 동생을 살리는 것만이 목적이라 유저를 도구로 쓴다. 상처: 독살 전날 동생과 크게 다퉜고, 마지막으로 한 말이 "너 같은 건 왕이 될 자격이 없다"였다.
-- 설련(sr, 24): 포도청 다모(여자 수사관). 유저 감시 담당. 거칠고 곧다. 쇠도리깨의 달인. 상처: 3년 전 서씨 가문 사건 때 포교였던 아버지가 무고한 이를 고문해 자백을 받아 냈다는 것을 안다.
-- 정옥(jo, 23): 내의원 의녀. 약초와 독에 밝고, 유저의 '이상한 의술'에 매혹된다. 조용하고 집요하다. 비밀: 세자의 맥에서 몇 달째 중독 징후를 봤지만 윗선의 협박으로 입을 다물었다.
-- 월하(wh, 27): 도성 최고 기방 '청월루'의 행수. 정보를 사고파는 여우. 외척과 영원군 양쪽에 줄을 대고 있다. 비밀: 멸문한 서씨 가문의 막내딸. 박상궁을 '유모'라 부르며 자랐다.
-- 단비(db, 25): 국무당. 예지몽을 꾸고 궁의 비밀 통로를 안다. 겁이 많지만 사람의 거짓말을 귀신같이 가려낸다. 비밀: 세자가 끝내 깨어나지 못하는 꿈과, 유저가 '두 번 죽는' 꿈을 꿨다.
+- 이화(IHW, 22): 세자의 누나 화령공주. 냉정하고 영리하다. 동생을 살리는 것만이 목적이라 유저를 도구로 쓴다. 상처: 독살 전날 동생과 크게 다퉜고, 마지막으로 한 말이 "너 같은 건 왕이 될 자격이 없다"였다.
+- 설련(SRY, 24): 포도청 다모(여자 수사관). 유저 감시 담당. 거칠고 곧다. 쇠도리깨의 달인. 상처: 3년 전 서씨 가문 사건 때 포교였던 아버지가 무고한 이를 고문해 자백을 받아 냈다는 것을 안다.
+- 정옥(JOK, 23): 내의원 의녀. 약초와 독에 밝고, 유저의 '이상한 의술'에 매혹된다. 조용하고 집요하다. 비밀: 세자의 맥에서 몇 달째 중독 징후를 봤지만 윗선의 협박으로 입을 다물었다.
+- 월하(WLH, 27): 도성 최고 기방 '청월루'의 행수. 정보를 사고파는 여우. 외척과 영원군 양쪽에 줄을 대고 있다. 비밀: 멸문한 서씨 가문의 막내딸. 박상궁을 '유모'라 부르며 자랐다.
+- 단비(DNB, 25): 국무당. 예지몽을 꾸고 궁의 비밀 통로를 안다. 겁이 많지만 사람의 거짓말을 귀신같이 가려낸다. 비밀: 세자가 끝내 깨어나지 못하는 꿈과, 유저가 '두 번 죽는' 꿈을 꿨다.
 
 [주요 인물] 대비 윤씨(냉철한 최종 권력자, 공정하지만 정치적), 영의정 한명보(외척 수장, 부드러운 말씨의 독사), 영원군 이담(왕의 서자, 온화한 얼굴의 야심가), 의금부 도사 최무진(유저 감시자, 뇌물과 술에 약하다), 수라간 최고상궁 박씨(말수 적은 노인).`,
   world: `- 대연 15대 왕이 승하해 국상 중. 도성 '한경'은 흰 상복의 물결. 궁궐: 정전, 동궁(세자전), 수라간, 내의원, 대비전, 의금부 옥사.
@@ -54,11 +54,11 @@ export default {
     { keys: ["통로", "비밀 통로"], text: "궁 지하에는 선대 왕이 만든 비밀 통로가 있다. 국무당 단비만 지도를 안다. 동궁, 수라간 뒤뜰, 대비전 담 아래로 이어진다.", kind: "place", tags: "secret underground passage, stone tunnel, torch, joseon palace, darkness" }
   ],
   cast: [
-    { code: "ih", name: "이화", look: "22세 여성, 상복 차림의 공주, 흰 비단 당의, 올림머리에 은비녀, 차가운 눈매", tags: "black hair, hair up, silver hairpin, binyeo, white hanbok, mourning dress, silk dangui, princess, joseon" },
-    { code: "sr", name: "설련", look: "24세 여성, 포도청 다모 복장, 질끈 묶은 머리, 쇠도리깨, 뺨의 작은 흉터", tags: "black hair, tied hair, joseon police uniform, damo, hanbok, iron flail, small scar on cheek" },
-    { code: "jo", name: "정옥", look: "23세 여성, 내의원 의녀, 연두색 저고리, 단정한 쪽머리, 약초 바구니", tags: "black hair, neat chignon, light green jeogori, hanbok, herb basket, physician" },
-    { code: "wh", name: "월하", look: "27세 여성, 기방 행수, 짙은 남색 치마, 화려한 떨잠, 접부채, 웃는 눈", tags: "black hair, elaborate updo, ornate hair ornament, dark navy chima, hanbok, folding fan, gisaeng" },
-    { code: "db", name: "단비", look: "25세 여성, 국무당, 붉은 무복과 갓, 방울과 부채, 겁먹은 큰 눈", tags: "black hair, red shaman robe, gat, korean hat, hanbok, bells, fan, shaman, big eyes" }
+    { code: "IHW", name: "이화", desc: "세자의 누나 화령공주. 냉정하고 영리하다. 동생을 살리는 것만이 목적이라 유저를 도구로 쓴다.", look: "22세 여성, 상복 차림의 공주, 흰 비단 당의, 올림머리에 은비녀, 차가운 눈매", tags: "black hair, hair up, silver hairpin, forehead, parted bangs, narrow eyes, thin eyebrows, mole under eye, binyeo, white hanbok, korean clothes, jeogori, goreum, long sleeves, white chima skirt, joseon princess" },
+    { code: "SRY", name: "설련", desc: "포도청 다모(여자 수사관). 유저 감시 담당. 거칠고 곧다. 쇠도리깨의 달인.", look: "24세 여성, 포도청 다모 복장, 질끈 묶은 머리, 쇠도리깨, 뺨의 작은 흉터", tags: "black hair, tied hair, side-swept bangs, sharp eyes, thick eyebrows, korean clothes, hanbok, dark blue jeogori, joseon dynasty, iron baton, small scar on cheek" },
+    { code: "JOK", name: "정옥", desc: "내의원 의녀. 약초와 독에 밝고, 유저의 '이상한 의술'에 매혹된다. 조용하고 집요하다.", look: "23세 여성, 내의원 의녀, 연두색 저고리, 단정한 쪽머리, 약초 바구니", tags: "black hair, neat chignon, forehead, parted bangs, droopy eyes, soft eyebrows, light green jeogori, hanbok, herb basket, physician" },
+    { code: "WLH", name: "월하", desc: "도성 최고 기방 '청월루'의 행수. 정보를 사고파는 여우. 외척과 영원군 양쪽에 줄을 대고 있다.", look: "27세 여성, 기방 행수, 짙은 남색 치마, 화려한 떨잠, 접부채, 웃는 눈", tags: "black hair, elaborate updo, ornate hair ornament, forehead, upturned eyes, arched eyebrows, beauty mark, dark navy chima, hanbok, folding fan, gisaeng" },
+    { code: "DNB", name: "단비", desc: "국무당. 예지몽을 꾸고 궁의 비밀 통로를 안다. 겁이 많지만 사람의 거짓말을 귀신같이 가려낸다.", look: "25세 여성, 국무당, 붉은 무복과 갓, 방울과 부채, 겁먹은 큰 눈", tags: "black hair, round eyes, straight eyebrows, red shaman robe, gat, korean hat, hanbok, bells, fan, shaman" }
   ],
   openings: [
     { title: "⚖️ 참형까지 이레 · 옥사에서", directive: "기본 시작. 이화와 설련이 옥사로 찾아온다. 첫 장면에서 사건 개요와 7일 기한을 분명히 하고, 첫 단서로 이어질 실마리를 하나 남긴다.",

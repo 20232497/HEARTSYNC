@@ -2,7 +2,7 @@
 // 사용자 사이트(index.html): MY의 고객센터·약관 칸과 '새 공지' → 공지 메뉴(공개만·고정 먼저·메뉴 표시·예전 주소 #help-notice) → 자주 묻는 질문 찾기 → 둘러보기면 로그인 안내 →
 //   로그인한 사람의 문의 남기기(보내는 칸은 열 권한 안의 것만)·하루 5건 제한·지우기 → 관리자 기능이 없음. 휴대폰(iPhone 13 WebKit)에서 가로 넘침 없음.
 // 관리자 도구(admin.html, 같은 서버의 /admin.html): 로그인 안 함·관리자가 아닌 계정은 공지를 읽기만 하고 로그인 안내(SQL·계정 id는 안 보임) → 관리자 계정은 공지 메뉴를 누르면 바로 비공개 공지·새 공지·고치기·지우기 →
-//   받은 문의에 답 → 답변 완료로 바뀜 → 사용자 화면의 '내 문의'에 답이 보임 → MY의 답변 대기 수 → 휴대폰 탭바 8칸 넘침 없음.
+//   받은 문의에 답 → 답변 완료로 바뀜 → 사용자 화면의 '내 문의'에 답이 보임 → MY의 답변 대기 수 → 휴대폰 탭바 넘침 없음.
 import { chromium, webkit, devices } from "playwright";
 const [, , url, out] = process.argv;
 const site = url.replace(/[^/]*$/, ""); // 저장소 루트(…/index.html이면 그 폴더)
@@ -212,18 +212,18 @@ try {
   if (out) await P.screenshot({ path: `${out}/help_ask_iphone.png`, fullPage: true });
   await hash(P, "notice", 700);
   if (out) await P.screenshot({ path: `${out}/notice_user_iphone.png` });
-  // 휴대폰 탭바: 사용자 5칸 · 관리자 8칸 — 좁은 폭(320px)에서도 글자가 한 줄로 칸 안에 들어옴(wrapped: 이미/지처럼 꺾인 칸)
+  // 휴대폰 탭바: 사용자·관리자 모두 5칸(홈·대화·공지·스토어·MY) — 좁은 폭(320px)에서도 글자가 한 줄로 칸 안에 들어옴(wrapped: 이미/지처럼 꺾인 칸)
   const tabFit = (pg) => pg.evaluate(() => {
     const t = document.querySelector("#tabbar"), bs = [...t.querySelectorAll("button")];
     const lines = (b) => { const r = document.createRange(); r.selectNodeContents(b.querySelector("span")); return r.getClientRects().length; };
     return { n: bs.length, over: t.scrollWidth - t.clientWidth, clipped: bs.filter((b) => b.scrollWidth > b.clientWidth).map((b) => b.textContent), wrapped: bs.filter((b) => lines(b) > 1).map((b) => b.textContent), page: document.documentElement.scrollWidth - innerWidth };
   });
   res.tabUser = await tabFit(P);
-  expect(res.tabUser.n === 5 && res.tabUser.over <= 0 && !res.tabUser.clipped.length && !res.tabUser.wrapped.length, "사용자 탭바 5칸 " + JSON.stringify(res.tabUser));
+  expect(res.tabUser.n === 6 && res.tabUser.over <= 0 && !res.tabUser.clipped.length && !res.tabUser.wrapped.length, "사용자 탭바 6칸 " + JSON.stringify(res.tabUser));
   const PA = await open(webkit, "iPhone 13", "admin.html", "tokB");
   await hash(PA, "notice", 1000);
   res.tabAdmin = await tabFit(PA);
-  expect(res.tabAdmin.n === 8 && res.tabAdmin.over <= 0 && !res.tabAdmin.clipped.length && !res.tabAdmin.wrapped.length && res.tabAdmin.page <= 0, "관리자 탭바 8칸 " + JSON.stringify(res.tabAdmin));
+  expect(res.tabAdmin.n === 6 && res.tabAdmin.over <= 0 && !res.tabAdmin.clipped.length && !res.tabAdmin.wrapped.length && res.tabAdmin.page <= 0, "관리자 탭바 6칸 " + JSON.stringify(res.tabAdmin));
   if (out) await PA.screenshot({ path: `${out}/notice_admin_iphone.png` });
   await PA.setViewportSize({ width: 320, height: 640 }); await PA.waitForTimeout(250);
   res.tabAdmin320 = await tabFit(PA);

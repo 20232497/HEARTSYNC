@@ -1,6 +1,6 @@
-// API 키 금고 시험: Supabase를 page.route로 흉내 냄(실제 서버로는 아무것도 안 감). 키는 모두 시험용 가짜 값
-// PC 가입 → 계정에는 암호문만 → 휴대폰 로그인으로 키 받음 → 메일 링크로 들어온 기기는 잠김 → 비밀번호 입력으로 풂
-// → 비밀번호 재설정 → 예전 잠금 기기는 덮어쓰지 못함 → 다시 풂 → 키 저장 끄기 → 로그아웃하면 잠금 키도 지움
+// 계정 저장 시험: Supabase를 page.route로 흉내 냄(실제 서버로는 아무것도 안 감). 키는 모두 시험용 가짜 값
+// PC 게스트 → 이메일 가입(계정이 비어 이 기기 데이터를 올림) → 휴대폰 로그인으로 대화·그림 받음 → 휴대폰 새 대화를 PC가 받음 → API 키는 계정에 안 올라감
+// → 휴대폰 로그아웃(기기 지우기) → 갤럭시 게스트 대화 합치기 → 계정 삭제
 import { chromium, webkit, devices } from "playwright";
 const [, , url, out] = process.argv;
 const SB = "https://mblvphojbmxiuqnlxisi.supabase.co";
@@ -26,7 +26,6 @@ function match(row, q) {
 function violates(x) {
   const v = x.value;
   if (x.key === "settings" && v && typeof v === "object" && !Array.isArray(v) && ["apiKey", "runwareKey", "openRouterKey"].some((k) => k in v)) return true;
-  if (x.key === "vault" && !(v && typeof v === "object" && v.kid && v.iv && v.ct)) return true;
   return false;
 }
 const pick = (r, sel) => sel ? Object.fromEntries(sel.split(",").map((k) => [k, r[k]])) : r;
@@ -141,10 +140,10 @@ try {
   await B.page.evaluate(() => CLOUD.flush()); await B.page.waitForTimeout(300);
   const room2 = await B.page.evaluate(() => window.__room2);
   res.pcPull = await A.page.evaluate(async (id) => { const n = await CLOUD.pull(); await reloadFromCloud(); return { n, has: S.rooms.some((r) => r.id === id), roomBody: !!KV.getLocal(roomKey(id)) }; }, room2);
-  // PC: API 키 계정 저장 끄기 → 계정 설정에서 키가 빠짐, 휴대폰은 자기 키 유지
-  await A.page.click("#syncKeys"); await A.page.waitForTimeout(1200);
-  res.keysOff = { serverKey: (db.rows.find((r) => r.key === "settings") || {}).value?.apiKey, keysLocal: (db.rows.find((r) => r.key === "settings") || {}).value?.keysLocal };
-  res.phoneAfterKeysOff = await B.page.evaluate(async () => { await CLOUD.pull(); return { apiKey: S.settings.apiKey, syncKeys: S.settings.syncKeys }; });
+  // API 키는 계정에 올라가지 않음 — 휴대폰에는 대화는 넘어오되 키는 비어 있음(MY에서 따로 넣음)
+  res.keys = { server: JSON.stringify(db.rows).includes("sk-ant-test-fake"), phone: await B.page.evaluate(() => S.settings.apiKey) };
+  if (res.keys.server || res.keys.phone) errs.push("API 키가 계정을 거쳐 넘어감: " + JSON.stringify(res.keys));
+  if (!res.phone.hasRoom || !res.phone.img.startsWith("data:image") || !res.pcPull.has || !res.pcPull.roomBody) errs.push("기기 사이 이어짐: " + JSON.stringify({ phone: res.phone, pc: res.pcPull }));
   // 휴대폰: 로그아웃 + 기기 데이터 지우기
   await B.page.evaluate(() => { location.hash = "me"; }); await B.page.waitForTimeout(500);
   if (out) await B.page.screenshot({ path: `${out}/phone_me.png`, fullPage: false });

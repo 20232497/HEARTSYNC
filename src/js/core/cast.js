@@ -13,6 +13,6 @@ function personaLook(c) {
 export function castLook(cast, c) {
   const l = String(cast?.look || "").trim();
   if (!l) return personaLook(c);
-  const who = cast.code === "c" && !/남성|여성|남자|여자|\b(?:male|female|girl|boy|man|woman)\b/i.test(l) ? personaWho(c) : "";
+  const who = cast.code === "C" && !/남성|여성|남자|여자|\b(?:male|female|girl|boy|man|woman)\b/i.test(l) ? personaWho(c) : "";
   return [who, l].filter(Boolean).join(", ");
 }

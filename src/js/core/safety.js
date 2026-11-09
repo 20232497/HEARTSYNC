@@ -1,4 +1,4 @@
-/* 안전: 미성년 인물 막기(minorFlags·minorHint·roomMinorHint)·성인 인증 판정(idvPassed) — 순수 함수라 빌드의 작품 검사와 단위 테스트가 그대로 import */
+/* 안전: 미성년 인물 막기(minorFlags·minorHint·settingHint·roomMinorHint) — 순수 함수라 빌드의 작품 검사와 단위 테스트가 그대로 import */
 /** @typedef {import("./types.js").CastMember} CastMember */
 /** @typedef {import("./types.js").LoreEntry} LoreEntry */
 /** @typedef {import("./types.js").Room} Room */
@@ -15,14 +15,10 @@ export function minorFlags(c) {
   return [...new Set(out)];
 }
 /**
- * 휴대폰 성인 인증 결과가 지금 유효한지: 성인 판정 + 1년 안 + live 모드면 시험 채널 결과는 인정하지 않음(시험 채널은 통신사 확인 없이 통과함).
- * @param {{ adult: boolean, test: boolean, until: number }|null|undefined} rec @param {string} mode CFG.idv.mode @param {number} [now] @returns {boolean}
- */
-export function idvPassed(rec, mode, now = Date.now()) { return !!rec && rec.adult === true && rec.until > now && (mode !== "live" || rec.test === false); }
-/**
- * 글 속 미성년 암시(나이·학년·학생·아동·교복 낱말과 영문 태그). 성인 경로·Claude 거절 우회·성인 수위 그림을 막는 데 씀.
+ * 글 속 미성년 암시(나이·학년·학생·아동·교복 낱말과 영문 태그). 지금은 minorFlags(빌드의 작품 검사)와 단위 테스트가 쓰고,
+ * 성인 기능을 서버에 다시 세울 때 서버 판정이 같은 함수를 씀(docs/ROADMAP.md).
  * 글자로 찾는 것이라 모든 표현을 잡지는 못함 — 애매하면 막는 쪽으로 둠.
- * 여학생·남학생은 보지 않음: 대학생에게도 흔히 쓰는 말이라(2026-11-06 사용자 결정). 나이·학년·교복 같은 다른 표현과 함께 쓰면 그쪽이 잡고, 학생 신분의 성적 묘사 금지는 모델 규칙(ADULT_RULE)에 그대로 있음.
+ * 여학생·남학생은 보지 않음: 대학생에게도 흔히 쓰는 말이라(2026-11-06 사용자 결정). 나이·학년·교복 같은 다른 표현과 함께 쓰면 그쪽이 잡고, 성적 장면은 지금 모델 규칙이 암전으로 넘김.
  * @param {string} t @returns {boolean}
  */
 export function minorHint(t) {
@@ -57,7 +53,7 @@ export function minorHint(t) {
 /** 설정·장기기억처럼 오래 남는 글의 미성년 암시 — 어른 인물의 과거 이야기('중학생 때'·'열일곱 살 시절')는 빼고 본다. @param {string} t @returns {boolean} */
 export function settingHint(t) { return minorHint(String(t || "").replace(/[^\s,.]+[ \t]*(?:때(?!문|리|렸|려)|시절|무렵)/g, " ")); }
 /**
- * 대화방에 미성년 암시가 있는지 — 성인 경로(unfilteredRoute)와 거절 우회(canFallback)를 막는 기준. 세 겹으로 본다:
+ * 대화방에 미성년 암시가 있는지 — 성인 경로를 서버에 다시 세울 때 대화방을 막는 기준(지금 앱은 부르지 않고 단위 테스트가 지킴). 세 겹으로 본다:
  * ① 작품의 인물(minorFlags) ② 모델이 이번 턴에 그대로 읽는 글(유저노트·상태창·기억력만큼의 대화)은 그대로
  * ③ 오래 남는 글(작품 설정·키워드북·유저 캐릭터·장기기억)과 유저가 예전에 쓴 말은 과거 이야기를 빼고 — 기억력 밖으로 밀어내 넘기지 못하게. 기억력 밖의 AI 글은 모델이 읽지 않아 보지 않음.
  * 키워드북의 동물 항목(kind creature)은 나이가 있어도 사람이 아니라 뺌.

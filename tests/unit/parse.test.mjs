@@ -18,10 +18,13 @@ test("splitReply: 변형 구분자(== STATE ==)와 구분자 없는 {\"status\"�
   assert.ok(looseJSON(splitReply('본문\n```json\n{"status":{}}').json).status);
   assert.deepEqual(splitReply("구분자 없는 본문만"), { body: "구분자 없는 본문만", json: "" });
 });
-test("splitReply: JSON 뒤에 붙은 [[img]] 태그는 본문으로 옮긴다", () => {
-  const r = splitReply(`본문\n${MARK}\n{"status":{}}\n[[img:ks:0]]`);
-  assert.match(r.body, /\[\[img:ks:0\]\]$/);
-  assert.doesNotMatch(r.json, /\[\[img/);
+test("splitReply: JSON 뒤에 붙은 그림 태그([[HSY0]]·예전 [[img:ks:0]])는 본문으로 옮긴다", () => {
+  const r = splitReply(`본문\n${MARK}\n{"status":{}}\n[[HSY0]]`);
+  assert.match(r.body, /\[\[HSY0\]\]$/);
+  assert.doesNotMatch(r.json, /\[\[/);
+  const old = splitReply(`본문\n${MARK}\n{"status":{}}\n[[img:ks:0]]`);
+  assert.match(old.body, /\[\[img:ks:0\]\]$/);
+  assert.doesNotMatch(old.json, /\[\[img/);
 });
 
 test("multiPairs: '이름 n · …' 다인원 칸을 읽고, 숫자만 있는 값(60/100)은 인물로 보지 않는다", () => {

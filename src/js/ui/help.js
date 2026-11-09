@@ -1,8 +1,7 @@
 /* 공지 화면(#notice)과 고객센터 화면(#help — 자주 묻는 질문·문의하기). 공지는 홈·대화처럼 메뉴에서 바로 들어오고, 고객센터는 MY의 칸에서 들어옴(#help-faq·#help-ask로 바로, 예전 주소 #help-notice는 #notice로 넘김).
    공지·문의는 Supabase(services/support.js), FAQ는 ui/faq.js의 고정 글. 관리자 빌드는 그린 뒤 EXT.help(tab, box, list)로 공지 쓰기·받은 문의를 더함(admin/support.js) — 관리자 계정이면 누를 것 없이 바로 관리 화면.
-   claude.ai 안·서버 설정이 없으면(SB.on() 거짓) 공지는 마지막으로 받은 것만, 문의는 이메일 안내만 */
-import { IN_CLAUDE } from "../core/config.js";
-import { S } from "../core/state.js";
+   서버 설정이 없으면(SB.on() 거짓) 공지는 마지막으로 받은 것만, 문의는 이메일 안내만 */
+import { hasClaudeKey } from "../core/state.js";
 import { TARGET } from "../core/target.js";
 import { $, $$, ago, esc, toast } from "../core/util.js";
 import { SB, acctName } from "../services/supabase.js";
@@ -18,8 +17,8 @@ import { bindGo, go, topbar } from "./shell.js";
 const TABS = [["faq", "자주 묻는 질문"], ["ask", "문의하기"]];
 const SITE = "https://20232497.github.io/HEARTSYNC/";
 const SEEN = "hv1_notice_seen"; // 마지막으로 본 공지 id(가장 큰 것) — MY의 '새 공지' 표시
-/** 정적 문서(terms.html·privacy.html) 주소 — 파일로 열었거나 claude.ai 안이면 같은 폴더에 문서가 없으니 웹 주소로. @param {string} f @returns {string} */
-export function docUrl(f) { return location.protocol === "file:" || IN_CLAUDE ? SITE + f : f; }
+/** 정적 문서(terms.html·privacy.html) 주소 — 파일로 열었으면 같은 폴더에 문서가 없을 수 있으니 웹 주소로. @param {string} f @returns {string} */
+export function docUrl(f) { return location.protocol === "file:" ? SITE + f : f; }
 const day = (t) => { const d = new Date(t); return isNaN(d) ? "" : d.toLocaleDateString("ko-KR"); };
 // 공지·답변 본문: esc 뒤 주소만 링크로(따옴표·꺾쇠는 이미 이스케이프돼 속성을 깨지 못함)
 const rich = (s) => esc(s).replace(/https?:\/\/[^\s<]+/g, (u) => `<a href="${u}" target="_blank" rel="noopener">${u}</a>`);
@@ -105,7 +104,7 @@ export function askHTML(a, extra = "") {
 function askTab(box) {
   const mail = `<a href="mailto:${SUPPORT_MAIL}">${SUPPORT_MAIL}</a>`;
   if (!SB.on()) {
-    box.innerHTML = `<div class="box"><p>${IN_CLAUDE ? "claude.ai 안에서는 문의를 남길 수 없어요." : "계정 서버가 연결되지 않았어요."} 이메일 ${mail}로 보내 주시거나, 웹 주소(<a href="${SITE}" target="_blank" rel="noopener">${SITE.replace("https://", "")}</a>)에서 로그인한 뒤 문의해 주세요.</p></div>`;
+    box.innerHTML = `<div class="box"><p>계정 서버가 연결되지 않았어요. 이메일 ${mail}로 보내 주시거나, 웹 주소(<a href="${SITE}" target="_blank" rel="noopener">${SITE.replace("https://", "")}</a>)에서 로그인한 뒤 문의해 주세요.</p></div>`;
     runExt("help", "ask", box, []); return;
   }
   if (!SB.s) {
@@ -134,7 +133,7 @@ function askTab(box) {
     if (!title) { err.textContent = "제목을 적어 주세요."; return $("#aTitle", box).focus(); }
     if (text.length < 5) { err.textContent = "내용을 5자 이상 적어 주세요."; return body.focus(); }
     if (mail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail)) { err.textContent = "이메일 주소를 확인해 주세요."; return $("#aMail", box).focus(); }
-    const meta = $("#aMeta", box).checked ? { ua: String(navigator.userAgent || "").slice(0, 200), screen: innerWidth + "x" + innerHeight, engine: S.engine, app: TARGET, host: location.host || location.protocol } : null;
+    const meta = $("#aMeta", box).checked ? { ua: String(navigator.userAgent || "").slice(0, 200), screen: innerWidth + "x" + innerHeight, engine: hasClaudeKey() ? "key" : "none", app: TARGET, host: location.host || location.protocol } : null;
     const btn = $("#aSend", box); btn.disabled = true; err.textContent = "";
     try {
       await SUPPORT.ask({ category: $("#aCat", box).value, title, body: text, reply_to: mail, meta });

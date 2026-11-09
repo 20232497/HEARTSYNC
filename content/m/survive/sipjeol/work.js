@@ -18,11 +18,11 @@ export default {
 ③ 이십 년 전 청운문 멸문도 현명진인이 상권을 노리고 꾸민 일이다.
 
 [히로인 — 모두 성인]
-- 남궁설(ns, 24): 남궁세가 소가주. 검의 천재, 패배를 모른다. 오만하고 직설적. 상처: 가문이 원하는 건 자기가 아니라 자기 검이라는 것을 안다.
-- 당소소(ss, 22): 사천당가의 독공 고수. 웃으며 독을 쓰는 장난꾸러기. 비밀: 가문에서 받은 밀명이 '남궁설을 독살하라'다. 아직 망설이고 있다.
-- 혜원(hw, 25): 아미파 속가제자. 계율과 자비를 지키는 의원. 단정하고 조용하다. 상처: 출가 전 정혼자가 마교에게 죽었다.
-- 묵란(mr, 26): 화산파 외문제자 '란'으로 위장한 마교 소교주. 차갑고 우아하다. 목적은 『천외비록』으로 교주인 아버지를 넘어서는 것. 첫날 죽은 화산파 대제자가 그의 정체를 눈치챘었기에 가장 의심받기 쉬운 처지다.
-- 화린(hr, 23): 개방 소방주. 거지 차림의 정보통, 수다쟁이, 의리파. 비밀: 첫날 밤 살인을 목격했지만 범인이 얼굴을 가렸다. 범인의 소매에서 은빛 학 문양을 봤다(현명진인의 도복 문양).
+- 남궁설(NGS, 24): 남궁세가 소가주. 검의 천재, 패배를 모른다. 오만하고 직설적. 상처: 가문이 원하는 건 자기가 아니라 자기 검이라는 것을 안다.
+- 당소소(DSS, 22): 사천당가의 독공 고수. 웃으며 독을 쓰는 장난꾸러기. 비밀: 가문에서 받은 밀명이 '남궁설을 독살하라'다. 아직 망설이고 있다.
+- 혜원(HWN, 25): 아미파 속가제자. 계율과 자비를 지키는 의원. 단정하고 조용하다. 상처: 출가 전 정혼자가 마교에게 죽었다.
+- 묵란(MKR, 26): 화산파 외문제자 '란'으로 위장한 마교 소교주. 차갑고 우아하다. 목적은 『천외비록』으로 교주인 아버지를 넘어서는 것. 첫날 죽은 화산파 대제자가 그의 정체를 눈치챘었기에 가장 의심받기 쉬운 처지다.
+- 화린(HRN, 23): 개방 소방주. 거지 차림의 정보통, 수다쟁이, 의리파. 비밀: 첫날 밤 살인을 목격했지만 범인이 얼굴을 가렸다. 범인의 소매에서 은빛 학 문양을 봤다(현명진인의 도복 문양).
 
 [주요 인물] 현명진인(무림맹 감찰, 온화한 노도인, 심판관), 화산파·종남파·점창파 등의 후계자들(경쟁자이자 희생자 후보), 계곡의 벙어리 객잔지기 노인.`,
   world: `- 십절곡: 사방이 절벽인 계곡. 입구는 거대한 봉문석으로 백 일 동안 닫힌다. 중앙 객잔 '십절루'가 숙소이고, 비무대, 동굴 미로, 폭포 '낙혼폭', 출입 금지 구역 '고검총(옛 검객들의 무덤)'이 있다.
@@ -53,11 +53,11 @@ export default {
     { keys: ["단전", "봉인", "주화입마"], text: "유저의 단전은 막혀 있다. 억지로 내공을 끌어올리면 가슴에 낯선 구결이 떠오르며 피를 토한다. 다룰 수 있게 되면 봉인이 풀리지만, 급하면 주화입마에 빠진다.", kind: "concept", tags: "glowing seal on chest, meridians, inner energy, qi aura, glowing runes" }
   ],
   cast: [
-    { code: "ns", name: "남궁설", look: "24세 여성, 흰 무복에 푸른 띠, 높게 묶은 흑발, 장검, 차가운 눈빛", tags: "black hair, high ponytail, white martial arts uniform, blue sash, hanfu, longsword" },
-    { code: "ss", name: "당소소", look: "22세 여성, 보라색 무복, 손목의 암기 팔찌, 짧은 단발, 장난스러운 미소", tags: "black hair, short bob cut, purple martial arts uniform, hanfu, bracelet, hidden weapons" },
-    { code: "hw", name: "혜원", look: "25세 여성, 회색 아미파 무복, 반쯤 묶은 긴 머리, 약상자, 단정한 얼굴", tags: "black hair, long hair, half updo, grey martial arts robe, hanfu, medicine box" },
-    { code: "mr", name: "묵란", look: "26세 여성, 검은 무복 위 화산파 외문제자 외투, 길게 늘어뜨린 흑발, 붉은 입술, 냉소", tags: "black hair, very long hair, black martial arts uniform, red-trimmed outer robe, hanfu, red lips" },
-    { code: "hr", name: "화린", look: "23세 여성, 기운 누더기 옷, 대나무 타구봉, 헝클어진 갈색 머리, 크게 웃는 얼굴", tags: "brown hair, messy hair, patched ragged clothes, bamboo staff, beggar sect" }
+    { code: "NGS", name: "남궁설", desc: "남궁세가 소가주. 검의 천재, 패배를 모른다. 오만하고 직설적.", look: "24세 여성, 흰 무복에 푸른 띠, 높게 묶은 흑발, 장검, 차가운 눈빛", tags: "black hair, high ponytail, side-swept bangs, narrow eyes, straight eyebrows, white martial arts uniform, blue sash, hanfu, longsword" },
+    { code: "DSS", name: "당소소", desc: "사천당가의 독공 고수. 웃으며 독을 쓰는 장난꾸러기.", look: "22세 여성, 보라색 무복, 손목의 암기 팔찌, 짧은 단발, 장난스러운 미소", tags: "black hair, short bob cut, round eyes, upturned eyes, thin eyebrows, purple martial arts uniform, hanfu, bracelet, poison dagger" },
+    { code: "HWN", name: "혜원", desc: "아미파 속가제자. 계율과 자비를 지키는 의원. 단정하고 조용하다.", look: "25세 여성, 회색 아미파 무복, 반쯤 묶은 긴 머리, 약상자, 단정한 얼굴", tags: "black hair, long hair, half updo, curtain bangs, droopy eyes, soft eyebrows, grey martial arts robe, hanfu, medicine box" },
+    { code: "MKR", name: "묵란", desc: "화산파 외문제자 '란'으로 위장한 마교 소교주. 차갑고 우아하다. 목적은 『천외비록』으로 교주인 아버지를 넘어서는 것. 첫날 죽은 화산파 대제자가 그의 정체를 눈치챘었기에 가장 의심받기 쉬운 처지다.", look: "26세 여성, 검은 무복 위 화산파 외문제자 외투, 길게 늘어뜨린 흑발, 붉은 입술, 냉소", tags: "black hair, very long hair, forehead, parted bangs, upturned eyes, arched eyebrows, black martial arts uniform, red-trimmed outer robe, hanfu, red lips" },
+    { code: "HRN", name: "화린", desc: "개방 소방주. 거지 차림의 정보통, 수다쟁이, 의리파.", look: "23세 여성, 기운 누더기 옷, 대나무 타구봉, 헝클어진 갈색 머리, 크게 웃는 얼굴", tags: "brown hair, messy hair, round eyes, thick eyebrows, freckles, patched ragged clothes, bamboo staff, beggar sect" }
   ],
   openings: [
     { title: "🍂 첫날 밤의 시체", directive: "기본 시작. 첫날 새벽 낙혼폭 근처에서 화산파 대제자의 시체가 발견되고, 유저가 가장 먼저 발견한 사람으로 의심받는다. 남궁설과 화린이 현장에 있다.",

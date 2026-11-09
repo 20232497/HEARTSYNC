@@ -1,7 +1,6 @@
-// 소셜 로그인·그림 넘기기 시험: Supabase와 카카오 로그인 왕복을 page.route로 흉내 냄(실제 서버·계정 없음). 키는 모두 시험용 가짜 값
-// 로그인 화면 버튼 3개 → 안 켠 공급자(네이버)는 안내 → PC 게스트 그림 + 카카오로 가입(이메일 없음) → 그림이 계정으로
-// → 키 잠금 암호 정하기 → 휴대폰 게스트 그림(같은 인물 다른 칸·번호가 겹치는 직접 만든 칸) + 카카오 로그인 → 합치기 → 그림·칸 합쳐짐
-// → 다른 기기 그림을 한 번에 받음 → 틀린 암호·맞는 암호 → 암호를 잊었어요(새로 정함) → PC는 stale → 새 암호로 풂 → 취소 오류
+// 소셜 로그인·계정 합치기 시험: Supabase와 카카오 로그인 왕복을 page.route로 흉내 냄(실제 서버·계정 없음). 키는 모두 시험용 가짜 값
+// 로그인 화면 버튼 3개 → 안 켠 공급자(네이버)는 안내 → PC 게스트 대화·페르소나 사진 + 카카오로 가입(이메일 없음) → 계정이 비어 전부 올라감
+// → 휴대폰 게스트 대화 + 카카오 로그인 → 합치기 → 대화가 합쳐짐 → PC가 받으면 휴대폰 페르소나 사진도 받음 → API 키는 어디에도 안 올라감 → 취소 오류
 import { chromium, webkit, devices } from "playwright";
 const [, , url, out] = process.argv; // out: 스크린샷 폴더(없으면 안 찍음)
 const SB = "https://mblvphojbmxiuqnlxisi.supabase.co";
@@ -30,7 +29,6 @@ function match(row, q) {
 function violates(x) {
   const v = x.value;
   if (x.key === "settings" && v && typeof v === "object" && !Array.isArray(v) && ["apiKey", "runwareKey", "openRouterKey"].some((k) => k in v)) return true;
-  if (x.key === "vault" && !(v && typeof v === "object" && v.kid && v.iv && v.ct)) return true;
   return false;
 }
 const pick = (r, sel) => sel ? Object.fromEntries(sel.split(",").map((k) => [k, r[k]])) : r;
@@ -99,105 +97,79 @@ async function device(engine, dev) {
 }
 const row = (k) => (db.rows.find((r) => r.key === k) || {}).value;
 const plainOnServer = (s) => JSON.stringify(db.rows).includes(s);
-const keysOf = (pg) => pg.evaluate(() => ({ apiKey: S.settings.apiKey, runwareKey: S.settings.runwareKey, state: VAULT.state, rec: !!VAULT.rec }));
-const meText = async (pg) => { await pg.evaluate(() => { location.hash = "me"; }); await pg.waitForTimeout(500); return pg.evaluate(() => ({ acct: (document.querySelector(".acct-row") || {}).textContent || "", vault: (document.querySelector("#vaultBox") || {}).textContent || "", btn: (document.querySelector("#vUnlock") || {}).textContent || "" })); };
 const toasts = (pg) => pg.evaluate(() => Array.from(document.querySelectorAll(".toast")).map((t) => t.textContent));
-// 게스트 그림 만들기: 캔버스로 작은 JPEG를 그려 IMG.put → kv:img… 연결
-const makeImgs = (pg, plan) => pg.evaluate(async (plan) => {
-  const pic = async (color) => { const c = document.createElement("canvas"); c.width = c.height = 40; const g = c.getContext("2d"); g.fillStyle = color; g.fillRect(0, 0, 40, 40); const b = await new Promise((r) => c.toBlob(r, "image/png")); return IMG.put(b); };
-  const out = {};
-  for (const x of plan.slots) { const ref = await pic(x.color); ((S.imgpacks[x.c] = S.imgpacks[x.c] || {})[x.code] = S.imgpacks[x.c][x.code] || {})[x.sit] = ref; out[x.c + "/" + x.code + "/" + x.sit] = ref; }
-  KV.set("imgpacks", S.imgpacks);
-  if (plan.cover) { S.coverpacks[plan.cover] = await pic("#123"); KV.set("coverpacks", S.coverpacks); out.cover = S.coverpacks[plan.cover]; }
-  if (plan.sits) { S.settings.customSits = plan.sits; }
-  if (plan.set) { S.settings.styleSets = [{ id: plan.set, name: "시험 세트", refs: [await pic("#0a0"), await pic("#0b0")], prompt: "illustration", model: "test-model" }]; out.setRefs = S.settings.styleSets[0].refs; }
-  saveSettings();
-  return out;
+const check = (ok, what, v) => { if (!ok) errs.push(what + ": " + JSON.stringify(v).slice(0, 300)); };
+// 게스트 데이터 만들기: 대화방 하나(+ 원하면 페르소나 사진 — 캔버스로 작은 그림을 그려 IMG.put → kv:img…)
+const makeGuest = (pg, plan) => pg.evaluate(async (plan) => {
+  S.settings.apiKey = plan.key; saveSettings();
+  const r = newRoom(normalizeChar(getChar(plan.work)), 0, S.personas[0]);
+  let img = "";
+  if (plan.color) {
+    const c = document.createElement("canvas"); c.width = c.height = 40; const g = c.getContext("2d"); g.fillStyle = plan.color; g.fillRect(0, 0, 40, 40);
+    img = await IMG.put(await new Promise((z) => c.toBlob(z, "image/png")));
+    S.personas.push({ id: uid("p"), name: plan.persona, memo: "", desc: "", img, def: false }); KV.set("personas", S.personas);
+  }
+  return { room: r.id, img };
 }, plan);
 try {
   // ---------- 로그인 화면: 아이폰 SE 폭에서 버튼 3개
   const SE = await device(webkit, "iPhone SE");
   await SE.goto(url, { waitUntil: "load" }); await SE.waitForTimeout(1000);
-  res.se = await SE.evaluate(() => ({ hash: location.hash, buttons: Array.from(document.querySelectorAll("[data-oauth]")).map((b) => b.textContent.trim() + "|" + b.dataset.oauth + "|" + Math.round(b.getBoundingClientRect().width)), overflow: document.documentElement.scrollWidth > innerWidth, note: (document.querySelector(".lnote") || {}).textContent }));
+  res.se = await SE.evaluate(() => ({ hash: location.hash, buttons: Array.from(document.querySelectorAll("[data-oauth]")).map((b) => b.dataset.oauth), overflow: document.documentElement.scrollWidth > innerWidth }));
+  check(res.se.hash === "#login" && res.se.buttons.join() === "kakao,custom:naver,google" && !res.se.overflow, "로그인 화면", res.se);
   if (out) await SE.screenshot({ path: `${out}/social-login-se.png`, fullPage: true });
   await SE.click("[data-oauth='custom:naver']"); await SE.waitForTimeout(800);
-  res.naverOff = { err: await SE.textContent("#loerr"), stillLogin: await SE.evaluate(() => location.hash), btnEnabled: await SE.evaluate(() => !document.querySelector("[data-oauth=kakao]").disabled) };
+  res.naverOff = { err: await SE.textContent("#loerr"), hash: await SE.evaluate(() => location.hash), btnEnabled: await SE.evaluate(() => !document.querySelector("[data-oauth=kakao]").disabled) };
+  check(/준비 중/.test(res.naverOff.err) && res.naverOff.hash === "#login" && res.naverOff.btnEnabled, "안 켠 공급자", res.naverOff);
 
-  // ---------- PC: 게스트로 그림·키를 만든 뒤 카카오로 가입(계정이 빔 → 전부 올림)
+  // ---------- PC: 게스트로 대화·페르소나 사진·키를 만든 뒤 카카오로 가입(계정이 빔 → 전부 올림)
   const A = await device(chromium, "Desktop Chrome");
   await A.goto(url, { waitUntil: "load" }); await A.waitForTimeout(1000);
   await A.click("#lguest"); await A.waitForTimeout(300); await A.click(".overlay [data-aud=all]"); await A.waitForTimeout(200);
-  await A.evaluate(() => { S.settings.apiKey = "sk-ant-test-fake-A"; saveSettings(); });
-  const aImgs = await makeImgs(A, { slots: [{ c: "hasuk", code: "A", sit: 0, color: "#f00" }, { c: "hasuk", code: "A", sit: 15, color: "#f80" }], cover: "hasuk", sits: [{ n: 15, name: "데이트", prompt: "date", rating: "safe" }], set: "setA" });
+  const a = await makeGuest(A, { key: "sk-ant-test-fake-A", work: "hasuk", color: "#f00", persona: "PC 사진" });
   await A.evaluate(() => { location.hash = "login"; }); await A.waitForTimeout(400);
   await A.click("[data-oauth=kakao]"); await A.waitForLoadState("load"); await A.waitForTimeout(3500);
-  const imgKeysA = Object.values(aImgs).flat().filter((r) => typeof r === "string").map((r) => r.slice(3));
-  res.A_login = { hashClean: await A.evaluate(() => !/access_token/.test(location.href)), user: await A.evaluate(() => SB.s && SB.s.user), rowKeys: db.rows.map((r) => r.key).filter((k) => !/^img[a-z0-9]{6,}$/.test(k)).sort(), imgsUploaded: imgKeysA.filter((k) => db.rows.some((r) => r.key === k)).length + "/" + imgKeysA.length, vaultRow: !!row("vault"), toasts: await toasts(A) };
-  res.A_me = await meText(A);
-  // 키 잠금 암호 정하기(짧음 → 확인 다름 → 정상)
-  await A.click("#vUnlock"); await A.waitForTimeout(500);
-  await A.fill("#vpw", "short"); await A.fill("#vpw2", "short"); await A.click("#vok"); await A.waitForTimeout(150);
-  const e1 = await A.textContent("#verr");
-  await A.fill("#vpw", "phrase-one-1"); await A.fill("#vpw2", "phrase-one-2"); await A.click("#vok"); await A.waitForTimeout(150);
-  const e2 = await A.textContent("#verr");
-  await A.fill("#vpw2", "phrase-one-1"); await A.click("#vok"); await A.waitForTimeout(3500);
-  res.A_phrase = { e1, e2, sheet: await A.evaluate(() => !!document.querySelector("#vform")), vault: row("vault") && { kid: row("vault").kid, ct: !!row("vault").ct }, plain: plainOnServer("sk-ant-test-fake-A"), me: (await meText(A)).vault };
+  res.A_login = { hashClean: await A.evaluate(() => !/access_token/.test(location.href)), user: await A.evaluate(() => SB.s && SB.s.user && SB.s.user.provider), rowKeys: db.rows.map((r) => r.key).filter((k) => !/^img[a-z0-9]{6,}$/.test(k)).sort(), img: db.rows.some((r) => r.key === a.img.slice(3)), toasts: await toasts(A) };
+  check(res.A_login.hashClean && res.A_login.user === "kakao" && ["personas", "rooms", "room-" + a.room, "settings", "wallet"].every((k) => res.A_login.rowKeys.includes(k)) && res.A_login.img, "PC 가입 뒤 올리기", res.A_login);
+  check(!res.A_login.rowKeys.some((k) => /vault|imgpacks|mine|tagpacks/.test(k)), "올리지 않는 칸", res.A_login.rowKeys);
+  await A.evaluate(() => { location.hash = "me"; }); await A.waitForTimeout(500);
+  res.A_me = await A.evaluate(() => ({ acct: ($(".acct-row") || {}).textContent || "", syncKeys: !!$("#syncKeys"), vault: !!$("#vaultBox"), sync: !!$("#cSync") }));
+  check(/카카오/.test(res.A_me.acct) && !res.A_me.syncKeys && !res.A_me.vault && res.A_me.sync, "MY 계정 칸", res.A_me);
 
-  // ---------- 휴대폰: 게스트 그림(같은 인물 다른 칸 + 이름이 다른 15번 칸) → 카카오 로그인 → 합치기
+  // ---------- 휴대폰: 게스트 대화 → 카카오 로그인 → 합치기
   const B = await device(webkit, "iPhone 13");
   await B.goto(url, { waitUntil: "load" }); await B.waitForTimeout(1000);
   await B.click("#lguest"); await B.waitForTimeout(300); await B.click(".overlay [data-aud=all]"); await B.waitForTimeout(200);
-  await B.evaluate(() => { S.settings.runwareKey = "rw-test-fake-B"; saveSettings(); });
-  const bImgs = await makeImgs(B, { slots: [{ c: "hasuk", code: "A", sit: 3, color: "#00f" }, { c: "hasuk", code: "A", sit: 0, color: "#0ff" }, { c: "hasuk", code: "A", sit: 15, color: "#f0f" }], sits: [{ n: 15, name: "수영복", prompt: "swimsuit", rating: "safe" }] });
+  const b = await makeGuest(B, { key: "sk-ant-test-fake-B", work: "seodoyun", color: "#00f", persona: "폰 사진" });
   await B.evaluate(() => { location.hash = "login"; }); await B.waitForTimeout(400);
   await B.click("[data-oauth=kakao]"); await B.waitForLoadState("load"); await B.waitForTimeout(3000);
   res.B_sheet = await B.evaluate(() => { const o = document.querySelector(".overlay .sheet"); return o ? o.textContent.replace(/\s+/g, " ").slice(0, 160) : null; });
+  check(/대화 1개/.test(res.B_sheet || ""), "합치기 창", res.B_sheet);
   if (out) await B.screenshot({ path: `${out}/social-merge-sheet.png` });
   await B.click("#mYes"); await B.waitForTimeout(3500);
-  const packs = await B.evaluate(() => ({ slots: S.imgpacks.hasuk && S.imgpacks.hasuk.A, cover: S.coverpacks.hasuk, sits: S.settings.customSits.map((d) => d.n + ":" + d.name), sets: S.settings.styleSets.map((x) => x.id) }));
-  res.B_merged = {
-    slot0IsAccount: packs.slots && packs.slots[0] === aImgs["hasuk/A/0"], slot3FromPhone: packs.slots && packs.slots[3] === bImgs["hasuk/A/3"], slot15Date: packs.slots && packs.slots[15] === aImgs["hasuk/A/15"],
-    swimMovedTo16: packs.slots && packs.slots[16] === bImgs["hasuk/A/15"], sits: packs.sits, sets: packs.sets, cover: packs.cover === aImgs.cover,
-    server: { imgpacks: Object.keys((row("imgpacks") || {}).hasuk.A).sort(), sits: (row("settings").customSits || []).map((d) => d.n + ":" + d.name), phoneImgs: ["hasuk/A/3", "hasuk/A/15"].map((k) => db.rows.some((r) => r.key === bImgs[k].slice(3))) },
-    keys: await keysOf(B), toasts: await toasts(B)
-  };
-  // 계정(PC)의 그림은 휴대폰에 없음 → 그림 칸을 열면 한 번에 받아 옴
-  const before = db.log.length;
-  res.B_hydrate = await B.evaluate(async (refs) => { const d = document.createElement("div"); d.innerHTML = refs.map((r) => IMG.tag(r)).join(""); document.body.appendChild(d); await IMG.hydrate(d); const ok = Array.from(d.querySelectorAll("img")).filter((i) => /^data:image/.test(i.src)).length; d.remove(); return ok + "/" + refs.length; }, [aImgs["hasuk/A/0"], aImgs["hasuk/A/15"], aImgs.cover, aImgs.setRefs[0]]);
-  res.B_hydrateReqs = db.log.slice(before).filter((l) => /rest\/v1\/kv/.test(l)).map((l) => l.slice(0, 70));
-  res.B_idbAfter = await B.evaluate(async (k) => typeof (await IDB.get(k)) === "string", aImgs.cover.slice(3));
+  res.B_merged = await B.evaluate(() => ({ rooms: S.rooms.map((r) => r.charId).sort(), personas: S.personas.map((p) => p.name), defs: S.personas.filter((p) => p.def).length, apiKey: S.settings.apiKey }));
+  res.B_server = { rooms: (row("rooms") || []).map((r) => r.charId).sort(), roomRow: !!row("room-" + b.room), personas: (row("personas") || []).map((p) => p.name), img: db.rows.some((r) => r.key === b.img.slice(3)) };
+  check(res.B_merged.rooms.join() === "hasuk,seodoyun" && res.B_merged.personas.includes("PC 사진") && res.B_merged.personas.includes("폰 사진") && res.B_merged.defs === 1 && res.B_merged.apiKey === "sk-ant-test-fake-B", "휴대폰 합친 뒤", res.B_merged);
+  check(res.B_server.rooms.join() === "hasuk,seodoyun" && res.B_server.roomRow && res.B_server.personas.includes("폰 사진") && res.B_server.img, "합친 뒤 계정", res.B_server);
 
-  // ---------- 휴대폰 키 잠금: 틀린 암호 → 맞는 암호
-  res.B_me = await meText(B);
-  await B.click("#vUnlock"); await B.waitForTimeout(600);
-  await B.fill("#vpw", "wrong-phrase"); await B.click("#vok"); await B.waitForTimeout(3000);
-  res.B_wrong = { err: await B.textContent("#verr"), keys: await keysOf(B), vaultKid: row("vault").kid };
-  await B.fill("#vpw", "phrase-one-1"); await B.click("#vok"); await B.waitForTimeout(3500);
-  res.B_unlock = { keys: await keysOf(B), me: (await meText(B)).vault, plain: plainOnServer("rw-test-fake-B") };
-  res.A_gets = await A.evaluate(async () => { await CLOUD.pull(); return { apiKey: S.settings.apiKey, runwareKey: S.settings.runwareKey }; });
-
-  // ---------- 휴대폰: 암호를 잊었어요 → 새로 정함 → PC는 stale → 새 암호로 풂
-  const oldKid = row("vault").kid;
-  await B.evaluate(() => { VAULT.state = "stale"; paintVault(); }); // 잠금 풀기 창을 띄우려고 상태만 바꿈
-  await B.click("#vUnlock"); await B.waitForTimeout(600);
-  await B.click("#vreset"); await B.waitForTimeout(600);
-  res.B_resetTitle = await B.evaluate(() => (document.querySelector(".overlay h2") || {}).textContent);
-  await B.fill("#vpw", "phrase-two-2"); await B.fill("#vpw2", "phrase-two-2"); await B.click("#vok"); await B.waitForTimeout(3500);
-  res.B_reset = { kidChanged: row("vault").kid !== oldKid, keys: await keysOf(B) };
-  await A.evaluate(() => { S.settings.apiKey = "sk-ant-test-fake-A2"; saveSettings(); }); await A.waitForTimeout(1800);
-  res.A_stale = { keys: await keysOf(A), me: await meText(A), serverKid: row("vault").kid !== oldKid };
-  await A.click("#vUnlock"); await A.waitForTimeout(600);
-  await A.fill("#vpw", "phrase-one-1"); await A.click("#vok"); await A.waitForTimeout(3000);
-  const aw = await A.textContent("#verr");
-  await A.fill("#vpw", "phrase-two-2"); await A.click("#vok"); await A.waitForTimeout(3500);
-  res.A_unlock = { wrongOld: aw, keys: await keysOf(A) };
+  // ---------- PC가 받으면 휴대폰 대화·페르소나 사진(그림 본문은 계정에서 한 장씩)도 보임
+  res.A_pull = await A.evaluate(async (ref) => {
+    const n = await CLOUD.pull(); if (n) await reloadFromCloud();
+    const d = document.createElement("div"); d.innerHTML = IMG.tag(ref); document.body.appendChild(d); await IMG.hydrate(d);
+    const ok = /^data:image/.test((d.querySelector("img") || {}).src || ""); d.remove();
+    return { rooms: S.rooms.map((r) => r.charId).sort(), photo: ok, apiKey: S.settings.apiKey };
+  }, b.img);
+  check(res.A_pull.rooms.join() === "hasuk,seodoyun" && res.A_pull.photo && res.A_pull.apiKey === "sk-ant-test-fake-A", "PC가 받은 뒤", res.A_pull);
+  res.plain = ["sk-ant-test-fake-A", "sk-ant-test-fake-B"].filter(plainOnServer);
+  check(!res.plain.length, "API 키가 계정에 올라감", res.plain);
 
   // ---------- 취소하고 돌아옴(#error) → 안내
   const D = await device(chromium, "Galaxy S9+");
   await D.goto(url + "#error=access_denied&error_code=access_denied&error_description=User+cancelled+login", { waitUntil: "load" }); await D.waitForTimeout(1500);
   res.cancel = { toasts: await toasts(D), href: await D.evaluate(() => location.href), signedIn: await D.evaluate(() => !!SB.s) };
-  await A.setViewportSize({ width: 375, height: 760 }); await meText(A); if (out) await A.screenshot({ path: `${out}/social-me.png` });
+  check(res.cancel.toasts.length && !/error=/.test(res.cancel.href) && !res.cancel.signedIn, "취소 안내", res.cancel);
+  await A.setViewportSize({ width: 375, height: 760 }); await A.evaluate(() => { location.hash = "me"; }); await A.waitForTimeout(400); if (out) await A.screenshot({ path: `${out}/social-me.png` });
 } catch (e) { res.fail = String(e).slice(0, 600); }
-for (const b of browsers) await b.close();
+for (const br of browsers) await br.close();
 res.errors = errs;
 console.log(JSON.stringify(res, null, 1));

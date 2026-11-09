@@ -46,7 +46,7 @@ for (const [dev, engine] of targets) {
     res.works = await page.evaluate(() => ["hwanghu", "hasuk", "lethe"].map((id) => {
       const c = normalizeChar(getChar(id));
       return { id, aud: audOf(c), cast: c.cast.length, open: c.openings.length, lore: c.lore.length, minor: (typeof minorFlags === "function" ? minorFlags(c) : []).length,
-        imgs: c.openings.map((o) => (o.text.match(/\[\[img:/g) || []).length), gender: guessAud(c) };
+        imgs: c.openings.map((o) => (o.text.match(/\[\[[A-Z]+\d+\]\]/g) || []).length), gender: guessAud(c) };
     }));
     await page.evaluate(() => { location.hash = "c-hwanghu"; }); await page.waitForTimeout(500);
     if (out) await page.screenshot({ path: `${out}/${tag}_detail.png` });

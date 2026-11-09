@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { idvPassed, minorFlags, minorHint, roomMinorHint, settingHint } from "../../src/js/core/safety.js";
+import { minorFlags, minorHint, roomMinorHint, settingHint } from "../../src/js/core/safety.js";
 
 test("minorFlags: 출연진 외모의 19세 미만 나이·학생 신분, 설정 첫머리의 '이름(나이'를 잡는다", () => {
   assert.deepEqual(minorFlags({ cast: [{ code: "a", name: "A", look: "17세 여성" }, { code: "b", name: "B", look: "25세 남성" }], persona: "" }), ["A"]);
@@ -82,7 +82,7 @@ test("minorFlags: 한글 나이·학년·영문 태그도 잡고, 나이 차이�
 });
 
 /* 대화방 전체 판정: 빈 방은 통과하고, 한 칸에 표현을 넣으면 막힌다 */
-const adultRoom = (over = {}) => ({
+const sampleRoom = (over = {}) => ({
   char: { id: "w", title: "작품", name: "서윤", persona: "서윤(25, 여). 탐정", world: "", speech: "", secret: "", tags: [], cast: [{ code: "c", name: "서윤", look: "25세 여성" }], lore: [] },
   persona: { name: "유저", memo: "", desc: "" }, directive: "", userNote: "", memory: "", status: {}, set: { mem: 2 },
   msgs: [{ role: "ai", idx: 0, alts: [{ text: "*비가 내렸다.*" }] }], ...over
@@ -91,43 +91,43 @@ const you = (text) => ({ role: "user", text }), ai = (text) => ({ role: "ai", id
 const filler = (n) => Array.from({ length: n }, (_, i) => (i % 2 ? ai("*장면이 이어졌다.*") : you("다음 장면으로 가자")));
 
 test("roomMinorHint: 깨끗한 방은 통과", () => {
-  assert.equal(roomMinorHint(adultRoom()), false);
-  assert.equal(roomMinorHint(adultRoom({ msgs: [ai("*비가 내렸다.*"), you("스무 살이야. 대학생이고")] })), false);
+  assert.equal(roomMinorHint(sampleRoom()), false);
+  assert.equal(roomMinorHint(sampleRoom({ msgs: [ai("*비가 내렸다.*"), you("스무 살이야. 대학생이고")] })), false);
   assert.equal(roomMinorHint({}), false);
 });
 test("roomMinorHint: 대화 앞부분에서 유저가 쓴 나이는 기억력 밖으로 밀려도 계속 막는다", () => {
-  assert.equal(roomMinorHint(adultRoom({ msgs: [you("걔는 열일곱 살이야"), ai("*고개를 끄덕였다.*"), you("계속 가자")] })), true);
-  assert.equal(roomMinorHint(adultRoom({ msgs: [you("걔는 열일곱 살이야"), ...filler(40)] })), true);
+  assert.equal(roomMinorHint(sampleRoom({ msgs: [you("걔는 열일곱 살이야"), ai("*고개를 끄덕였다.*"), you("계속 가자")] })), true);
+  assert.equal(roomMinorHint(sampleRoom({ msgs: [you("걔는 열일곱 살이야"), ...filler(40)] })), true);
 });
 test("roomMinorHint: 모델이 읽는 범위의 글은 그대로, 밖으로 밀린 AI 글·과거 이야기는 풀린다", () => {
-  assert.equal(roomMinorHint(adultRoom({ msgs: [ai("*교복 차림의 소녀가 들어왔다.*"), you("인사해")] })), true);
-  assert.equal(roomMinorHint(adultRoom({ msgs: [ai("*교복 차림의 소녀가 들어왔다.*"), ...filler(40)] })), false);
-  assert.equal(roomMinorHint(adultRoom({ msgs: [you("중학생 때 어땠어?"), ai("*웃었다.*")] })), true);
-  assert.equal(roomMinorHint(adultRoom({ msgs: [you("중학생 때 어땠어?"), ...filler(40)] })), false);
+  assert.equal(roomMinorHint(sampleRoom({ msgs: [ai("*교복 차림의 소녀가 들어왔다.*"), you("인사해")] })), true);
+  assert.equal(roomMinorHint(sampleRoom({ msgs: [ai("*교복 차림의 소녀가 들어왔다.*"), ...filler(40)] })), false);
+  assert.equal(roomMinorHint(sampleRoom({ msgs: [you("중학생 때 어땠어?"), ai("*웃었다.*")] })), true);
+  assert.equal(roomMinorHint(sampleRoom({ msgs: [you("중학생 때 어땠어?"), ...filler(40)] })), false);
   // 고른 버전의 글만 모델이 읽음
-  assert.equal(roomMinorHint(adultRoom({ msgs: [{ role: "ai", idx: 1, alts: [{ text: "교복" }, { text: "정장" }] }] })), false);
+  assert.equal(roomMinorHint(sampleRoom({ msgs: [{ role: "ai", idx: 1, alts: [{ text: "교복" }, { text: "정장" }] }] })), false);
 });
 test("roomMinorHint: 인물 설정·유저 캐릭터·유저노트·장기기억·키워드북·상태창의 나이를 본다", () => {
-  const char = adultRoom().char;
-  assert.equal(roomMinorHint(adultRoom({ char: { ...char, persona: "서윤(25, 여). " + "x".repeat(200) + " 그런데 사실 열일곱 살이다" } })), true);
-  assert.equal(roomMinorHint(adultRoom({ char: { ...char, cast: [{ code: "c", name: "서윤", look: "고2 여성" }] } })), true);
-  assert.equal(roomMinorHint(adultRoom({ char: { ...char, secret: "실은 고등학교 2학년이다" } })), true);
-  assert.equal(roomMinorHint(adultRoom({ char: { ...char, world: "배경은 여고생들의 기숙사" } })), true);
-  assert.equal(roomMinorHint(adultRoom({ persona: { name: "유저", memo: "17 y/o", desc: "" } })), true);
-  assert.equal(roomMinorHint(adultRoom({ persona: { name: "유저", memo: "", desc: "고2 남학생" } })), true);
-  assert.equal(roomMinorHint(adultRoom({ userNote: "서윤은 열여덟 살로 한다" })), true);
-  assert.equal(roomMinorHint(adultRoom({ memory: "서윤이 열일곱 살이라고 밝혔다" })), true);
-  assert.equal(roomMinorHint(adultRoom({ directive: "둘 다 고3이다" })), true);
-  assert.equal(roomMinorHint(adultRoom({ status: { "나이": 17 } })), true);
-  assert.equal(roomMinorHint(adultRoom({ status: { "호감도": 17, "관계": "서윤 12 · 하린 7" } })), false);
-  assert.equal(roomMinorHint(adultRoom(), [{ keys: ["하린"], text: "서윤의 친구. 열일곱 살", kind: "person" }]), true);
+  const char = sampleRoom().char;
+  assert.equal(roomMinorHint(sampleRoom({ char: { ...char, persona: "서윤(25, 여). " + "x".repeat(200) + " 그런데 사실 열일곱 살이다" } })), true);
+  assert.equal(roomMinorHint(sampleRoom({ char: { ...char, cast: [{ code: "c", name: "서윤", look: "고2 여성" }] } })), true);
+  assert.equal(roomMinorHint(sampleRoom({ char: { ...char, secret: "실은 고등학교 2학년이다" } })), true);
+  assert.equal(roomMinorHint(sampleRoom({ char: { ...char, world: "배경은 여고생들의 기숙사" } })), true);
+  assert.equal(roomMinorHint(sampleRoom({ persona: { name: "유저", memo: "17 y/o", desc: "" } })), true);
+  assert.equal(roomMinorHint(sampleRoom({ persona: { name: "유저", memo: "", desc: "고2 남학생" } })), true);
+  assert.equal(roomMinorHint(sampleRoom({ userNote: "서윤은 열여덟 살로 한다" })), true);
+  assert.equal(roomMinorHint(sampleRoom({ memory: "서윤이 열일곱 살이라고 밝혔다" })), true);
+  assert.equal(roomMinorHint(sampleRoom({ directive: "둘 다 고3이다" })), true);
+  assert.equal(roomMinorHint(sampleRoom({ status: { "나이": 17 } })), true);
+  assert.equal(roomMinorHint(sampleRoom({ status: { "호감도": 17, "관계": "서윤 12 · 하린 7" } })), false);
+  assert.equal(roomMinorHint(sampleRoom(), [{ keys: ["하린"], text: "서윤의 친구. 열일곱 살", kind: "person" }]), true);
 });
 test("roomMinorHint: 어른 인물의 과거 이야기와 동물의 나이는 막지 않는다", () => {
-  const char = adultRoom().char;
-  assert.equal(roomMinorHint(adultRoom({ char: { ...char, secret: "중학생 때 유저와 마주친 적이 있다" } })), false);
-  assert.equal(roomMinorHint(adultRoom({ memory: "서윤은 열일곱 살 때 집을 나왔다" })), false);
-  assert.equal(roomMinorHint(adultRoom({ persona: { name: "유저", memo: "", desc: "고등학교 2학년 때 전학 왔다" } })), false);
-  assert.equal(roomMinorHint(adultRoom(), [{ keys: ["보리"], text: "늙은 진돗개(14살)", kind: "creature" }]), false);
+  const char = sampleRoom().char;
+  assert.equal(roomMinorHint(sampleRoom({ char: { ...char, secret: "중학생 때 유저와 마주친 적이 있다" } })), false);
+  assert.equal(roomMinorHint(sampleRoom({ memory: "서윤은 열일곱 살 때 집을 나왔다" })), false);
+  assert.equal(roomMinorHint(sampleRoom({ persona: { name: "유저", memo: "", desc: "고등학교 2학년 때 전학 왔다" } })), false);
+  assert.equal(roomMinorHint(sampleRoom(), [{ keys: ["보리"], text: "늙은 진돗개(14살)", kind: "creature" }]), false);
 });
 test("오리지널 작품은 어느 시작 상황에서도 막히지 않는다(content/ 전부)", async () => {
   const root = fileURLToPath(new URL("../../content/", import.meta.url)), files = [];
@@ -141,16 +141,4 @@ test("오리지널 작품은 어느 시작 상황에서도 막히지 않는다(c
       assert.equal(roomMinorHint(r), false, `${c.id} · ${op.title}`);
     }
   }
-});
-test("idvPassed: 성인 판정 + 기간 안 + live 모드는 실제 채널 결과만", () => {
-  const now = 1000, ok = { adult: true, test: false, until: 2000 };
-  assert.equal(idvPassed(ok, "live", now), true);
-  assert.equal(idvPassed(ok, "test", now), true);
-  assert.equal(idvPassed({ ...ok, test: true }, "test", now), true);
-  assert.equal(idvPassed({ ...ok, test: true }, "live", now), false);
-  assert.equal(idvPassed({ ...ok, adult: false }, "test", now), false);
-  assert.equal(idvPassed({ ...ok, until: 1000 }, "test", now), false);
-  assert.equal(idvPassed({ ...ok, adult: "true" }, "test", now), false);
-  assert.equal(idvPassed({ ...ok, test: undefined }, "live", now), false);
-  assert.equal(idvPassed(null, "test", now), false);
 });
