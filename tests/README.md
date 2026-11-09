@@ -40,7 +40,11 @@
 | 파일 | 보는 것 |
 |---|---|
 | `codes.test.mjs` | 그림 태그 읽기(`images/codes.js` — `sitOf`: 0~14는 그대로, 예전 조합·세 자리 코드는 처음 나오는 0~14 번호, 없으면 1 · `imgTags` · `fallbackSits` 그 칸 → 1 → 0 · `sitName`)와 감정 칸 낱말 점수(`images/situations.js` `sitScores`·`sitHints`) |
-| `lore.test.mjs` | 키워드북(`ai/prompt/lore.js`) |
+| `lore.test.mjs` | 키워드북(`ai/prompt/lore.js` matchLore — 상시·우선순위·제외 낱말·보조 키와 한 턴 예산) |
+| `rules.test.mjs` | 프롬프트 세 블록(`ai/prompt/rules.js` rulesParts — 고정부가 턴이 바뀌어도 글자 하나까지 같은지, 이용자가 쓴 글은 변동부에만, 이미 등장한 인물에는 인물 코드만), 시작 상황의 선택 칸(place·suggestions·lead), 프롬프트 캐싱 스위치(`ai/llm.js`) |
+| `commands.test.mjs` | 대화방 명령어(`core/commands.js` — 앱·연출·이야기·즉답 구분, 입력창 ! 목록, AI에 보낼 글) |
+| `shelf.test.mjs` | 내 서재(`core/shelf.js` — 여러 기기 값을 합치는 mergeShelf, 계정 동기화 날짜 관문 shelfSyncOn과 **개인정보처리방침 시행일이 같은 날인지**, 찜 켜고 끄기·최근 본·수집 기록) |
+| `content-report.test.mjs` | 작품 완성도 보고서(`tools/content-report.mjs`)의 셈과 얕은 칸 판정 |
 | `parse.test.mjs` | 응답 파싱(`ai/parse.js` — 구분자 변형·끊긴 JSON·다인원 칸) |
 | `safety.test.mjs` | 미성년 인물 막기(`core/safety.js` minorFlags·minorHint) |
 | `util.test.mjs` | 네트워크 시간 제한(`core/util.js` timeoutSignal·abortCode) |
