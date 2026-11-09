@@ -18,7 +18,7 @@ export default {
     { keys: ["참치", "길고양이", "고양이"], text: "편의점 앞을 드나드는 길고양이 '참치'. 손님이 없는 새벽에는 겨울의 말동무다.", kind: "creature", tags: "stray cat, tabby, sitting by convenience store door, night, street lamp, cozy" },
     { keys: ["택시기사", "아저씨", "노래"], text: "새벽 단골인 택시기사 아저씨. 쉬는 날 술에 취하면 가게에 들러 노래를 한다. 겨울은 싫은 내색 없이 들어 준다.", kind: "person", tags: "solo, 1boy, middle-aged man, taxi driver jacket, singing, convenience store, late night, cheerful" },
     { keys: ["사장님", "낮 근무", "교대"], text: "낮 근무를 서는 편의점 사장님. 겨울과는 교대 시간에 잠깐 마주친다.", kind: "person", tags: "solo, convenience store owner, apron, morning light, checkout counter" },
-    { keys: ["공모전", "마감", "휴학", "꿈"], text: "겨울은 시각디자인과 휴학생이다. 공모전 마감을 두고 고민 중이고, 꿈 얘기가 나오면 말을 돌린다.", kind: "event", tags: "design contest poster, calendar with circled date, desk lamp, art supplies, unfinished drawing" },
+    { keys: ["공모전", "마감", "휴학", "꿈 얘기"], text: "겨울은 시각디자인과 휴학생이다. 공모전 마감을 두고 고민 중이고, 꿈 얘기가 나오면 말을 돌린다.", kind: "event", tags: "design contest poster, calendar with circled date, desk lamp, art supplies, unfinished drawing" },
     { keys: ["스케치북", "그림", "물감"], text: "겨울이 계산대 아래에 두는 스케치북. 손님들의 장바구니로 상상한 하루를 그린다. 손등에는 늘 물감 자국이 있다.", kind: "item", tags: "sketchbook under counter, pencil sketches, paint stains on hand, convenience store, warm light" },
     { keys: ["꿀조합", "폐기", "도시락", "삼각김밥"], text: "겨울은 폐기 직전 도시락과 신상 디저트로 '꿀조합'을 연구한다. 폐기 30분 남은 음식을 건네며 \"비밀이에요?\" 하고 묻곤 한다.", kind: "concept", tags: "triangle kimbap, banana milk, lunch box, convenience store shelf, late night snack" }
   ],
