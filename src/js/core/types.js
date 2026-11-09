@@ -169,6 +169,7 @@
  * @property {boolean} [autoScroll]
  */
 /** @typedef {{ at: number, label: string, text: string }} MemHist 장기기억 히스토리 한 건 */
+/** @typedef {{ id: string, text: string, at: number, msgId?: string }} Pin 고정 기억 한 줄(LIMITS.pin자까지) — msgId는 고정한 메시지(직접 적었으면 없음; 분기하면 그 메시지까지에서 고정한 것만 따라감) */
 /**
  * 대화방(KV "room-<id>"). 목록용 요약은 RoomIndex(S.rooms).
  * @typedef {Object} Room
@@ -181,6 +182,7 @@
  * @property {string} userNote 유저노트(LIMITS.userNote자까지 — 방마다 하나)
  * @property {string} memory 장기기억(memCfg().limit자를 넘으면 압축 — 기본 LIMITS.memory, 요금제 memoMax까지)
  * @property {MemHist[]} memHist
+ * @property {Pin[]} [pins] 고정 기억 — 요약·압축과 무관하게 프롬프트 변동부의 [고정 기억]으로 매 턴 그대로(개수 plan().pins, ui/pins.js)
  * @property {number} sinceMem 마지막 요약 뒤 지난 턴
  * @property {number} turn
  * @property {StatusMap} status
@@ -220,7 +222,7 @@
  * @property {Record<string, boolean>} ack
  */
 /** @typedef {{ type: "free"|"plus"|"heart", n: number, list: number }} Quote 한 턴 견적 — n은 낼 하트, list는 정가 */
-/** @typedef {{ memTurns: number, memoMax: number, hist: number, rooms: number }} Plan 요금제 한도(core/wallet.js PLAN) */
+/** @typedef {{ memTurns: number, memoMax: number, hist: number, rooms: number, pins: number }} Plan 요금제 한도(core/wallet.js PLAN) — pins는 대화방마다 고정 기억 개수 */
 /** @typedef {{ auto: boolean, every: number, limit: number, guide: "auto"|"custom", custom: string }} MemCfg 장기기억 요약 설정 */
 /**
  * 설정(S.settings, localStorage hv1_settings). API 키(apiKey)는 이 브라우저에만 — 계정에는 올리지 않음(services/cloud.js가 빼고, 서버 표 제약 kv_no_plain_keys도 거부).

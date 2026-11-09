@@ -10,7 +10,8 @@ import { today } from "./util.js";
 /** @typedef {import("./types.js").RoomSet} RoomSet */
 
 export { FREE_DAILY, PLUS_MONTHLY, WELCOME }; // 요금 상수는 core/constants.js에(ai/models.js와의 순환 import 때문) — 쓰던 곳은 그대로 wallet에서 가져감
-export const PLAN = { free: { memTurns: 20, memoMax: LIMITS.memory, hist: 5, rooms: 3 }, pro: { memTurns: 40, memoMax: 10000, hist: 20, rooms: 99 } };
+// pins: 대화방마다 고정 기억 개수(2026-11-09 사용자 결정 — 무료 5 · PLUS 20, 한 줄의 글자 수는 LIMITS.pin)
+export const PLAN = { free: { memTurns: 20, memoMax: LIMITS.memory, hist: 5, rooms: 3, pins: 5 }, pro: { memTurns: 40, memoMax: 10000, hist: 20, rooms: 99, pins: 20 } };
 /** PLUS 유효 여부. @returns {boolean} */
 export function isPro() { return !!(S.wallet.pro && S.wallet.pro.until > Date.now()); }
 /** 지금 요금제 한도. @returns {Plan} */

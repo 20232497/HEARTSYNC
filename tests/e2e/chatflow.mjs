@@ -1,4 +1,4 @@
-// 채팅 흐름: 입력창 ! 명령어 목록, 자동 스크롤 끔/켬, 좋아요·분기, 추천 답변 수동, 출력 설정 카드, 설정 페이지(이미지 기본 수위 칸 없음)
+// 채팅 흐름: 입력창 ! 명령어 목록, 자동 스크롤 끔/켬, 고정 기억, 좋아요·분기, 추천 답변 수동, 출력 설정 카드, 설정 페이지(이미지 기본 수위 칸 없음)
 import { webkit, chromium, devices } from "playwright";
 import { noSupabase } from "./_offline.mjs";
 const url = process.argv[2], out = process.argv[3];
@@ -42,8 +42,22 @@ for (const [dev, engine] of targets) {
         reminder: /\[이번 응답\]/.test(window.__lastInput[window.__lastInput.length - 1].content) };
     }, text);
     res.off = await turn("첫 번째 입력");
+    // 고정 기억: 첫 응답(msgs[2])의 '📌 고정' → 시트에서 고쳐 저장 → 방에 한 줄(그 메시지 id와 함께) → 드로어 장기기억의 '고정 기억' 탭에 보임
+    res.pin = await p.evaluate(async () => {
+      const nap = (ms) => new Promise((r) => setTimeout(r, ms));
+      document.querySelector('[data-act="pin"][data-i="2"]').click(); await nap(150);
+      const ta = document.querySelector("#pinTa"), seeded = ta.value.length > 0 && ta.maxLength === LIMITS.pin; ta.value = "첫눈 오는 날 다시 만나기로 약속했다"; ta.oninput();
+      document.querySelector("#pinSave").click(); await nap(150);
+      openRoomDrawer("memory"); document.querySelector('[data-tab="pin"]').click(); await nap(100);
+      const rows = $$(".pin-row").length; closeOverlays();
+      return { seeded, n: (room.pins || []).length, msg: room.pins[0] && room.pins[0].msgId === room.msgs[2].id, rows, cap: PLAN.free.pins };
+    });
+    if (!res.pin.seeded || res.pin.n !== 1 || !res.pin.msg || res.pin.rows !== 1) errs.push("고정 기억이 다름: " + JSON.stringify(res.pin));
     await p.evaluate(() => { room.set.autoScroll = true; saveRoom(room); });
     res.on = await turn("두 번째 입력");
+    // 고정한 줄은 다음 턴의 프롬프트(변동부의 [고정 기억])에 그대로 들어감
+    res.pinSent = await p.evaluate(() => { const s = window.__lastInput[0].content; return s.includes("[고정 기억") && s.includes("첫눈 오는 날 다시 만나기로 약속했다") && s.indexOf("[고정 기억") > window.__lastInput[0].cut; });
+    if (!res.pinSent) errs.push("고정 기억이 프롬프트에 없음");
     // 좋아요 토글과 분기: 첫 응답(msgs[2])의 '분기' → 확인 → 방 수 +1·새 방으로 이동·메시지 수는 그 메시지까지·원래 방은 그대로·좋아요도 따라옴.
     // 장기기억은 분기한 턴(1턴)보다 뒤에 시작하는 구간([2-2턴])을 빼고 복사
     res.fork = await p.evaluate(async () => {
@@ -56,9 +70,9 @@ for (const [dev, engine] of targets) {
       const kept = await KV.get(roomKey(src));
       return { rooms: S.rooms.length - before, moved: room.id !== src && location.hash === "#r-" + room.id, msgs: room.msgs.length, want: i + 1, from: !!room.forkedFrom && room.forkedFrom.roomId === src, fb, fbCopied: room.msgs[i].alts[room.msgs[i].idx].fb,
         srcMsgs: kept.msgs.length, n0, mark: / \(분기\)$/.test(room.opening), base: baseOpening(room) === kept.opening, index: S.rooms.find((x) => x.id === room.id).fork === true, drawn: $$("#logInner .msg").length,
-        mem: room.memory === head, turn: room.turn, srcTurn: kept.turn, srcMem: kept.memory.includes(memoryMark(2, 2)) };
+        mem: room.memory === head, turn: room.turn, srcTurn: kept.turn, srcMem: kept.memory.includes(memoryMark(2, 2)), pins: (room.pins || []).length };
     });
-    { const f = res.fork; if (f.rooms !== 1 || !f.moved || f.msgs !== f.want || !f.from || f.fb !== 1 || f.fbCopied !== 1 || f.srcMsgs !== f.n0 || !f.mark || !f.base || !f.index || f.drawn !== f.want || !f.mem || f.turn !== 1 || f.srcTurn !== 2 || !f.srcMem) errs.push("분기가 다름: " + JSON.stringify(f)); }
+    { const f = res.fork; if (f.rooms !== 1 || !f.moved || f.msgs !== f.want || !f.from || f.fb !== 1 || f.fbCopied !== 1 || f.srcMsgs !== f.n0 || !f.mark || !f.base || !f.index || f.drawn !== f.want || !f.mem || f.turn !== 1 || f.srcTurn !== 2 || !f.srcMem || f.pins !== 1) errs.push("분기가 다름: " + JSON.stringify(f)); }
     res.sugClick = await p.evaluate(async () => { $("#sugBtn").click(); await new Promise((r) => setTimeout(r, 200)); return $$("#sugPanel [data-s]").length; });
     await p.evaluate(() => { hideSug(); openRoomDrawer("output"); }); await p.waitForTimeout(400);
     res.drawer = await p.evaluate(() => { const as = document.querySelector("#as"); return { has: !!as, checked: as && as.checked, oldSug: !!document.querySelector("#sa"), overflowX: document.documentElement.scrollWidth - innerWidth }; });

@@ -26,7 +26,7 @@ content   index.js — 빌드가 만든 generated.js(ORIGINALS · HOME_ROWS)
 services  supabase · cloud · sync · load · images · support
 images    codes(그림 태그 읽기 — 순수) · situations(감정 칸 0~14 이름·낱말 점수 — 순수) · pick(인물·칸별 그림 찾기)
 ai        models · llm · parse · prompt/{lore,rules,input,memory}
-ui        icons · sheet · ext · shell · cover · home · detail · codex · chat/{render,log,cmdlist,view,generate,suggest} · pay · model-sheet · room-tools · room-drawer · worldart(보기) · chats · store · login · account · me · help · faq
+ui        icons · sheet · ext · shell · cover · home · detail · codex · chat/{render,log,cmdlist,view,generate,suggest} · pay · pins(고정 기억) · model-sheet · room-tools · room-drawer · worldart(보기) · chats · store · login · account · me · help · faq
 admin     gate · support   (관리자 빌드만)
 boot.js → app.js(USER_VIEWS · USER_NAVS) → main.js | admin.js
 ```

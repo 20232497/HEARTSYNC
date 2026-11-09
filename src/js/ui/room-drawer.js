@@ -22,6 +22,7 @@ import { ICON } from "./icons.js";
 import { personaSheet } from "./me.js";
 import { openModelSheet } from "./model-sheet.js";
 import { plusSheet } from "./pay.js";
+import { bindPins, pinsHTML } from "./pins.js";
 import { deleteRoom, exportRoom, exportText, galleryItems, jumpTo } from "./room-tools.js";
 import { closeOverlays, confirmSheet } from "./sheet.js";
 import { go } from "./shell.js";
@@ -54,7 +55,7 @@ export function openRoomDrawer(view = "main") {
       <div class="menu-list">
         <button data-v="persona">내 페르소나<span class="v">${esc(r.persona.name)}</span></button>
         <div class="grp"></div>
-        <button data-v="memory">장기기억<span class="v">${cfg.auto ? `${Math.max(0, cfg.every - (r.sinceMem || 0))}턴 뒤 요약` : "자동 요약 꺼짐"}</span></button>
+        <button data-v="memory">장기기억<span class="v">${(r.pins || []).length ? `📌 ${r.pins.length} · ` : ""}${cfg.auto ? `${Math.max(0, cfg.every - (r.sinceMem || 0))}턴 뒤 요약` : "자동 요약 꺼짐"}</span></button>
         <button data-v="note">유저노트<span class="v">${r.userNote ? "작성됨" : "비어 있음"}</span></button>
         <div class="grp"></div>
         <button id="mModel">AI 모델<span class="v">${MODELS[r.set.model].name}</span></button>
@@ -97,7 +98,7 @@ export function openRoomDrawer(view = "main") {
   else if (view === "memory") {
     let tab = "cur";
     const paint = () => {
-      const tabs = `<div class="tabs" role="tablist">${[["cur", "현재 기억"], ["hist", "히스토리"], ["cfg", "요약 설정"]].map(([k, l]) => `<button role="tab" data-tab="${k}" class="${tab === k ? "on" : ""}">${l}</button>`).join("")}</div>`;
+      const tabs = `<div class="tabs" role="tablist">${[["cur", "현재 기억"], ["pin", "고정 기억"], ["hist", "히스토리"], ["cfg", "요약 설정"]].map(([k, l]) => `<button role="tab" data-tab="${k}" class="${tab === k ? "on" : ""}">${l}</button>`).join("")}</div>`;
       if (tab === "cur") {
         body.innerHTML = tabs + `<b>현재 대화방에 적용 중인 기억이에요</b><p class="note" style="margin:4px 0 12px">설정한 요약 주기마다 지금까지 나눈 대화를 자동으로 요약해 업데이트해요.</p>
           <div class="setcard"><div class="toggle"><label for="mAuto">자동 업데이트</label><input type="checkbox" id="mAuto" ${cfg.auto ? "checked" : ""}></div>
@@ -109,6 +110,9 @@ export function openRoomDrawer(view = "main") {
         $("#mAuto", body).onchange = (e) => { S.settings.memCfg.auto = e.target.checked; saveSettings(); openRoomDrawer("memory"); };
         $("#memSave", body).onclick = () => { if (ta.value !== (r.memory || "")) { pushHist(r, r.memory, "수정 전 기억"); r.memory = ta.value.slice(0, cfg.limit); saveRoom(r); } toast("저장했어요. 다음 턴부터 반영돼요."); };
         $("#memNow", body).onclick = async () => { r.memory = ta.value; ov.remove(); await maybeSummarize(r, true); };
+      } else if (tab === "pin") {
+        body.innerHTML = tabs + pinsHTML(r);
+        bindPins(body, r, () => { openRoomDrawer("memory"); const b = $('[data-tab="pin"]'); if (b) b.click(); }); // 시트가 드로어를 닫으므로 다시 열어 이 탭으로
       } else if (tab === "hist") {
         const h = r.memHist || [];
         let sel = -1;

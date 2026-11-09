@@ -43,6 +43,7 @@ import { viewChat } from "./ui/chat/view.js";
 import "./ui/chat/generate.js";
 import "./ui/chat/suggest.js";
 import "./ui/pay.js";
+import "./ui/pins.js";
 import "./ui/model-sheet.js";
 import "./ui/room-tools.js";
 import "./ui/room-drawer.js";

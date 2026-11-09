@@ -81,7 +81,7 @@ export function newRoom(c, openingIdx, persona) {
   if (st[c.gauge] === undefined) st[c.gauge] = 10;
   const r = {
     id: uid("r"), v2: true, char: JSON.parse(JSON.stringify(c)), persona: { id: persona.id, name: persona.name, memo: persona.memo || "", desc: persona.desc || "", img: persona.img || "" },
-    opening: op.title, directive: op.directive || "", userNote: "", memory: "", memHist: [], sinceMem: 0, turn: 0, status: st, bookmarks: [],
+    opening: op.title, directive: op.directive || "", userNote: "", memory: "", memHist: [], pins: [], sinceMem: 0, turn: 0, status: st, bookmarks: [],
     set: defaultSet(c),
     msgs: [{ id: uid("m"), role: "ai", idx: 0, alts: [{ text: op.text, status: st, suggestions: [], opening: true }], statusBefore: st }],
     at: Date.now(), created: Date.now()
@@ -122,5 +122,6 @@ export function forkRoom(r, msgId) {
   const after = r.msgs.slice(i + 1).filter((m) => m.role === "user").length, turn = Math.max(0, (r.turn || 0) - after), mem = memoryUpTo(r.memory, turn);
   f.turn = turn; f.memory = mem[0]; f.sinceMem = mem[2] ? Math.max(0, turn - mem[1]) : Math.max(0, (r.sinceMem || 0) - after);
   f.memHist = []; f.lastErr = ""; f.bookmarks = (r.bookmarks || []).filter((b) => ids.has(b)); f.created = Date.now();
+  f.pins = (r.pins || []).filter((p) => !p.msgId || ids.has(p.msgId)).map((p) => ({ ...p })); // 고정 기억은 그 메시지까지에서 고정한 것만(직접 적은 것은 모두)
   saveRoom(f); return f;
 }

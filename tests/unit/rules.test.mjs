@@ -29,11 +29,12 @@ test("rulesParts 고정부: 턴이 바뀌어도(대화·상태창·기억·유�
     const r = room(id), a = rulesParts(r);
     const code = r.char.cast[0].code, gauge = r.char.gauge;
     r.msgs.push({ id: "u1", role: "user", text: "안녕" }, { id: "a1", role: "ai", idx: 0, alts: [{ text: `[[${code}3]]\n\n*고개를 든다. 창밖으로 비가 내리고 있었다.*\n\n"누구시죠? 처음 뵙는 얼굴인데요."`, status: r.status }], statusBefore: r.status });
-    r.status = { ...r.status, [gauge]: 55 }; r.memory = "[1-5턴] 첫 만남\n비 오는 날 처음 만났다."; r.userNote = "유저노트 표식"; r.persona = { ...r.persona, name: "다른이름", desc: "페르소나 표식" }; r.turn = 7;
+    r.status = { ...r.status, [gauge]: 55 }; r.memory = "[1-5턴] 첫 만남\n비 오는 날 처음 만났다."; r.userNote = "유저노트 표식"; r.pins = [{ id: "pin1", text: "고정 표식", at: 1 }]; r.persona = { ...r.persona, name: "다른이름", desc: "페르소나 표식" }; r.turn = 7;
     const b = rulesParts(r, [{ keys: ["비"], text: "키워드북 표식" }]);
     assert.equal(b.fixed, a.fixed, id + ": 고정부가 달라짐");
     assert.notEqual(b.vary, a.vary);
-    for (const mark of ["유저노트 표식", "페르소나 표식", "다른이름", "키워드북 표식", "비 오는 날 처음 만났다", "이미 등장한 인물: " + code]) { assert.ok(b.vary.includes(mark), id + ": 변동부에 " + mark); assert.ok(!b.fixed.includes(mark), id + ": 고정부에 " + mark); }
+    assert.ok(b.vary.indexOf("\n[고정 기억") > b.vary.indexOf("\n[유저노트") && b.vary.indexOf("\n[고정 기억") < b.vary.indexOf("\n[장기 기억"), id + ": 고정 기억은 유저노트와 장기 기억 사이");
+    for (const mark of ["유저노트 표식", "고정 표식", "페르소나 표식", "다른이름", "키워드북 표식", "비 오는 날 처음 만났다", "이미 등장한 인물: " + code]) { assert.ok(b.vary.includes(mark), id + ": 변동부에 " + mark); assert.ok(!b.fixed.includes(mark), id + ": 고정부에 " + mark); }
     // 상시(always) 키워드북은 고정부에, 걸린 항목은 변동부에
     const c2 = rulesParts(r, [{ keys: ["늘"], text: "상시 표식", always: true }, { keys: ["비"], text: "걸린 표식" }]);
     assert.ok(c2.fixed.includes("상시 표식") && !c2.vary.includes("상시 표식") && c2.vary.includes("걸린 표식"));

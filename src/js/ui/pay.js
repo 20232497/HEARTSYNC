@@ -56,6 +56,7 @@ function afterBuy() { if (room && $("#logInner")) { renderLog(); updateComposer(
 export function plusSheet(reason) {
   const copy = {
     rooms: ["대화방을 더 만들 수 없어요", `무료 요금제는 캐릭터당 대화방 ${PLAN.free.rooms}개까지예요. 기존 대화방을 지우거나 PLUS로 무제한 만들 수 있어요.`],
+    pins: ["고정 기억을 더 담으려면 PLUS가 필요해요", `무료 요금제는 대화방마다 고정 기억 ${PLAN.free.pins}개까지예요. 덜 중요한 것을 지우거나, PLUS로 ${PLAN.pro.pins}개까지 고정할 수 있어요.`],
     mem: ["더 오래 기억하려면 PLUS가 필요해요", `무료 요금제는 기억력 ${PLAN.free.memTurns}턴, 장기기억 ${num(PLAN.free.memoMax)}자까지예요. PLUS는 ${PLAN.pro.memTurns}턴, ${num(PLAN.pro.memoMax)}자까지 기억해요.`]
   }[reason];
   const ov = sheet(`<h2>${esc(copy[0])}</h2><p class="sub">${esc(copy[1])}</p>
