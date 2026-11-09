@@ -479,12 +479,23 @@ function checkWork(mod, { aud, row, id, wrel, R, errors, warnings }) {
     e('places(장소)는 [{ name: "장소 이름", desc?: "설명", tags?: "영문 태그", hidden?: true(비공개) }, …] — 순서대로 MP1, MP2…');
   if (c.cuts !== undefined && (!Array.isArray(c.cuts) || c.cuts.some((x) => !isObj(x) || !str(x.title) || (x.when !== undefined && typeof x.when !== "string") || !engOk(x.tags) || !boolOk(x.hidden))))
     e('cuts(컷씬)는 [{ title: "제목", when?: "나오는 조건", tags?: "영문 태그", hidden?: true(비공개) }, …] — 순서대로 EV1, EV2…');
-  // 작품 명령어(선택): 대화방에서 !cmd를 치면 prompt가 AI에 연출 지시로 감(core/commands.js). 앱 명령어 이름·별칭(APP_COMMANDS)과 겹치면 안 됨
+  // 본문의 그림 태그는 [[코드번호]] 한 토큰 — 코드가 cast(대문자)·places(MP)·cuts(EV)에 있고 번호가 범위 안인지(시작 상황 본문·즉답 명령어의 글이 같이 씀)
+  const tagRange = codeRange({ ...c, cast }, R);
+  const checkTags = (text, at) => {
+    for (const m of String(text).matchAll(/\[\[([^\]]*)\]\]/g)) {
+      const tok = m[1], t = tok.match(/^([A-Za-z]+)(\d{1,2})$/);
+      if (!t) { e(`${at}: [[${tok}]] — 그림 태그는 [[코드번호]] 한 토큰이에요(예: [[${(cast[0] || {}).code || "HSY"}0]])${/^img:/i.test(tok) ? ". 예전 [[img:코드:번호]] 모양은 더 쓰지 않아요" : ""}`); continue; }
+      const why = tagRange(t[1], +t[2]); if (why) e(`${at}: [[${tok}]] — ${why}`);
+    }
+  };
+  // 작품 명령어(선택): 대화방에서 !cmd를 치면 prompt가 AI에 연출 지시로 가거나(이야기), text를 AI 없이 바로 보여 줌(즉답) — 둘 중 하나(core/commands.js). 앱 명령어 이름·별칭(APP_COMMANDS)과 겹치면 안 됨
   if (c.commands !== undefined) {
     const reserved = new Set(R.APP_COMMANDS.flatMap((x) => [x.cmd, ...x.alias]).map((s) => s.toLowerCase())), seenCmd = new Set();
-    if (!Array.isArray(c.commands)) e('commands(명령어)는 [{ cmd: "이름", title: "제목", desc?: "설명", prompt: "AI 지시" }, …]');
+    if (!Array.isArray(c.commands)) e('commands(명령어)는 [{ cmd: "이름", title: "제목", desc?: "설명", prompt: "AI 지시" 또는 text: "바로 보여 줄 글" }, …]');
     else c.commands.forEach((x, i) => {
-      if (!isObj(x) || !str(x.cmd) || !str(x.title) || !str(x.prompt) || (x.desc !== undefined && typeof x.desc !== "string")) return e(`commands[${i}]: { cmd, title, desc?, prompt } 모양이어야 해요(cmd·title·prompt는 글)`);
+      if (!isObj(x) || !str(x.cmd) || !str(x.title) || (x.desc !== undefined && typeof x.desc !== "string")) return e(`commands[${i}]: { cmd, title, desc?, prompt 또는 text } 모양이어야 해요(cmd·title은 글)`);
+      if ((x.prompt !== undefined) === (x.text !== undefined) || !str(x.prompt !== undefined ? x.prompt : x.text)) return e(`commands[${i}](${x.cmd}): prompt(AI에게 주는 지시)와 text(AI 없이 바로 보여 줄 글) 중 하나만, 글로 적어요`);
+      if (x.text !== undefined) { if (x.text.length > R.LIMITS.reply) e(`commands[${i}](${x.cmd}).text가 ${x.text.length}자예요 — 즉답 글은 ${R.LIMITS.reply}자 이내`); checkTags(x.text, `commands[${i}](${x.cmd}).text`); }
       if (!/^[^\s!！/]+$/.test(x.cmd)) e(`commands[${i}].cmd "${x.cmd}" — 공백·!·/ 없이 이름만 적어요(예: "퀘스트" → 대화에서 !퀘스트)`);
       const k = x.cmd.toLowerCase();
       if (reserved.has(k)) e(`commands[${i}].cmd "${x.cmd}"는 앱 명령어 이름이에요(${[...reserved].join("·")}) — 다른 이름으로`);
@@ -548,13 +559,7 @@ function checkWork(mod, { aud, row, id, wrel, R, errors, warnings }) {
       const miss = Object.keys(o.status).filter((k) => !c.fields.includes(k));
       if (miss.length) w(`openings[${i}].status의 ${miss.join(", ")} 칸이 fields에 없어요`);
     }
-    // 그림 태그는 [[코드번호]] 한 토큰 — 코드가 cast(대문자)·places(MP)·cuts(EV)에 있고 번호가 범위 안인지
-    const range = codeRange({ ...c, cast }, R);
-    for (const m of o.text.matchAll(/\[\[([^\]]*)\]\]/g)) {
-      const tok = m[1], t = tok.match(/^([A-Za-z]+)(\d{1,2})$/);
-      if (!t) { e(`openings[${i}]: [[${tok}]] — 그림 태그는 [[코드번호]] 한 토큰이에요(예: [[${(cast[0] || {}).code || "HSY"}0]])${/^img:/i.test(tok) ? ". 예전 [[img:코드:번호]] 모양은 더 쓰지 않아요" : ""}`); continue; }
-      const why = range(t[1], +t[2]); if (why) e(`openings[${i}]: [[${tok}]] — ${why}`);
-    }
+    checkTags(o.text, `openings[${i}]`);
   });
 
   // 공개 저장소의 작품은 일반 트랙만 — 성인 트랙 작품은 서버 쪽 비공개 데이터로만 둠(CLAUDE.md 원칙)

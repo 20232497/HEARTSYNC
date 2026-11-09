@@ -95,12 +95,12 @@ export function guideSheet(c) {
 }
 /* 한 작품의 도감: 작품 머리(표지·제목·상세로) → 플레이 가이드 → 인물 카드 → 장소·컷씬 → 작품 명령어 */
 function workCodexHTML(c) {
-  const book = codebook(c), cmds = allCommands(c).filter((x) => x.kind === "work");
+  const book = codebook(c), cmds = allCommands(c).filter((x) => x.own);
   return `<div class="codex-work">${coverHTML(c)}<div><b>${esc(c.title)}</b><span class="note">${esc(c.cat)}${c.world_mode ? " · 세계관" : ""} · 인물 ${c.cast.filter((x) => !x.of).length}명 · ${metaHTML(c)}</span></div><button class="btn sm ghost" data-go="c-${esc(c.id)}">작품 보기</button></div>
     ${guideHTML(c)}
     <div class="box"><h3>등장인물 <small>누르면 코드·감정 칸·소개</small></h3><div class="cast">${castGridHTML(c)}</div></div>
     ${seriesHTML(c, book)}
-    ${cmds.length ? `<div class="box"><h3>이 작품의 명령어 <small>치면 AI가 그 장면을 열어요</small></h3>${cmdList(cmds)}</div>` : ""}`;
+    ${cmds.length ? `<div class="box"><h3>이 작품의 명령어 <small>'이야기'는 AI가 그 장면을 열고, '즉답'은 정해진 글을 바로 보여 줘요</small></h3>${cmdList(cmds)}</div>` : ""}`;
 }
 /**
  * 도감 화면(#codex · #codex-<작품id>): 공통 표(그림 코드 읽는 법·감정 칸 0~14·공통 명령어) + 작품 고르기(관심있는 대화로 거름) → 그 작품의 인물·장소·컷씬·작품 명령어.

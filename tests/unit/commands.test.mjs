@@ -43,6 +43,17 @@ test("allCommands·commandHelp: 앱(화면 → 연출) → 작품 순, 종류는
   assert.equal(commandHelp(work), "!상태창 · !갤러리 · !지도 · !도움말 · !시간경과 · !새사건 · !조연등장 · !반복금지 · !퀘스트(퀘스트 정리)");
   assert.equal(allCommands(null).length, APP_COMMANDS.length);
 });
+test("즉답 명령어(commands의 text): 종류는 reply·작품 것(own), commandText는 원문 그대로(AI에 지시로 바꾸지 않음), 도움말에는 제목과 함께", () => {
+  const w = { commands: [...work.commands, { cmd: "규칙", title: "탑의 규칙", desc: "기본 규칙을 다시 봐요", text: "[안내] 정해진 글" }] };
+  const all = allCommands(w), rule = all[all.length - 1];
+  assert.deepEqual([rule.kind, rule.own, all[all.length - 2].kind, all[0].own], ["reply", true, "work", false]);
+  assert.ok(COMMAND_KINDS.reply.name && COMMAND_KINDS.reply.note);
+  assert.equal(findCommand("규칙", w).work.text, "[안내] 정해진 글");
+  assert.equal(commandText("!규칙", w), "!규칙");
+  assert.equal(commandText("!퀘스트", w).indexOf("// 유저가 명령어 !퀘스트("), 0);
+  assert.ok(commandHelp(w).endsWith("!퀘스트(퀘스트 정리) · !규칙(탑의 규칙)"));
+  assert.deepEqual(commandList("!규", w).map((x) => [x.cmd, x.kind]), [["규칙", "reply"]]);
+});
 test("commandList(입력창 ! 목록): !만 쳐도 전부, 글자를 치면 이름·별칭이 그 글자로 시작하는 것만, 명령어 모양이 아니면 빈 목록", () => {
   assert.equal(commandList("!", work).length, APP_COMMANDS.length + 1);
   assert.deepEqual(commandList("!상", work).map((x) => x.cmd), ["상태창"]);

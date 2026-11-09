@@ -617,7 +617,7 @@ const CATS = ["로맨스", "판타지", "RPG", "미스터리", "일상", "시뮬
 const LORE = { scan: 3, max: 8, budget: 2500 };
 const EXAMPLE_CAST = { code: "ABC", name: "주인공" }, EXAMPLE_SIT = 3;
 const DEFAULT_CREATOR = "HEART SYNC 스튜디오";
-const LIMITS = { guide: 1000, personaDesc: 1000, userNote: 2000, memory: 2000, pin: 200, suggestion: 40, lead: 500, leadTurns: 20 };
+const LIMITS = { guide: 1000, personaDesc: 1000, userNote: 2000, memory: 2000, pin: 200, reply: 1000, suggestion: 40, lead: 500, leadTurns: 20 };
 /* ── src/js/core/util.js — DOM·문자열·숫자 유틸, toast, 예상 못 한 오류 기록(reportError) */
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
@@ -1421,7 +1421,7 @@ function forkRoom(r, msgId) {
   const ai = [...f.msgs].reverse().find((m) => m.role === "ai"), ids = new Set(f.msgs.map((m) => m.id));
   f.id = uid("r"); f.opening = (baseOpening(r) || "기본") + FORK_MARK; f.forkedFrom = { roomId: r.id, msgId };
   f.status = (ai && (ai.alts[ai.idx].status || ai.statusBefore)) || r.status;
-  const after = r.msgs.slice(i + 1).filter((m) => m.role === "user").length, turn = Math.max(0, (r.turn || 0) - after), mem = memoryUpTo(r.memory, turn);
+  const after = r.msgs.slice(i + 1).filter((m) => m.role === "user" && !m.canned).length,  turn = Math.max(0, (r.turn || 0) - after), mem = memoryUpTo(r.memory, turn);
   f.turn = turn; f.memory = mem[0]; f.sinceMem = mem[2] ? Math.max(0, turn - mem[1]) : Math.max(0, (r.sinceMem || 0) - after);
   f.memHist = []; f.lastErr = ""; f.bookmarks = (r.bookmarks || []).filter((b) => ids.has(b)); f.created = Date.now();
   f.pins = (r.pins || []).filter((p) => !p.msgId || ids.has(p.msgId)).map((p) => ({ ...p }));
@@ -2147,11 +2147,12 @@ const APP_COMMANDS = [
 const COMMAND_KINDS = {
   view: { name: "앱", note: "앱이 바로 화면을 열어요 — 하트를 쓰지 않아요" },
   direct: { name: "연출", note: "어느 작품에서나 AI에게 연출을 지시해요 — 한 턴을 써요" },
-  work: { name: "이야기", note: "이 작품의 이야기 장치예요 — 한 턴을 써요" }
+  work: { name: "이야기", note: "이 작품의 이야기 장치예요 — 한 턴을 써요" },
+  reply: { name: "즉답", note: "이 작품이 정해 둔 글을 바로 보여 줘요 — 하트를 쓰지 않아요" }
 };
 function allCommands(c) {
-  return [...APP_COMMANDS.map((x) => ({ cmd: x.cmd, title: x.title, desc: x.desc, kind: x.view ? "view" : "direct", names: [x.cmd, ...x.alias] })),
-    ...((c && c.commands) || []).map((x) => ({ cmd: x.cmd, title: x.title, desc: x.desc || "", kind: "work", names: [x.cmd] }))];
+  return [...APP_COMMANDS.map((x) => ({ cmd: x.cmd, title: x.title, desc: x.desc, kind: x.view ? "view" : "direct", names: [x.cmd, ...x.alias], own: false })),
+    ...((c && c.commands) || []).map((x) => ({ cmd: x.cmd, title: x.title, desc: x.desc || "", kind: x.text ? "reply" : "work", names: [x.cmd], own: true }))];
 }
 function parseCommand(text) { const m = String(text || "").trim().match(/^[!！]\s*(\S+)$/); return m ? m[1] : ""; }
 function findCommand(name, c) {
@@ -2163,11 +2164,11 @@ function findCommand(name, c) {
   return work ? { work } : null;
 }
 function commandText(text, c) {
-  const f = findCommand(parseCommand(text), c), x = f && (f.work || (f.app.prompt ? f.app : null));
-  return x ? `// 유저가 명령어 !${x.cmd}(${x.title})을 썼다. ${x.prompt}` : text;
+  const f = findCommand(parseCommand(text), c), x = f && (f.work || f.app);
+  return x && x.prompt ? `// 유저가 명령어 !${x.cmd}(${x.title})을 썼다. ${x.prompt}` : text;
 }
 function commandHelp(c) {
-  return allCommands(c).map((x) => (x.kind === "work" ? `!${x.cmd}(${x.title})` : "!" + x.cmd)).join(" · ");
+  return allCommands(c).map((x) => (x.own ? `!${x.cmd}(${x.title})` : "!" + x.cmd)).join(" · ");
 }
 function commandList(text, c) {
   const m = String(text || "").match(/^\s*[!！]\s*(\S*)\s*$/);
@@ -2532,12 +2533,12 @@ function guideSheet(c) {
   sheet(`<div class="sheet-head"><h2>플레이 가이드</h2><button class="icon-btn" data-x aria-label="닫기">${ICON.close}</button></div><p class="sub">${esc(c.title)}</p><p class="guide">${esc(c.guide || "")}</p>`);
 }
 function workCodexHTML(c) {
-  const book = codebook(c), cmds = allCommands(c).filter((x) => x.kind === "work");
+  const book = codebook(c), cmds = allCommands(c).filter((x) => x.own);
   return `<div class="codex-work">${coverHTML(c)}<div><b>${esc(c.title)}</b><span class="note">${esc(c.cat)}${c.world_mode ? " · 세계관" : ""} · 인물 ${c.cast.filter((x) => !x.of).length}명 · ${metaHTML(c)}</span></div><button class="btn sm ghost" data-go="c-${esc(c.id)}">작품 보기</button></div>
     ${guideHTML(c)}
     <div class="box"><h3>등장인물 <small>누르면 코드·감정 칸·소개</small></h3><div class="cast">${castGridHTML(c)}</div></div>
     ${seriesHTML(c, book)}
-    ${cmds.length ? `<div class="box"><h3>이 작품의 명령어 <small>치면 AI가 그 장면을 열어요</small></h3>${cmdList(cmds)}</div>` : ""}`;
+    ${cmds.length ? `<div class="box"><h3>이 작품의 명령어 <small>'이야기'는 AI가 그 장면을 열고, '즉답'은 정해진 글을 바로 보여 줘요</small></h3>${cmdList(cmds)}</div>` : ""}`;
 }
 function viewCodex(id) {
   const v = $("#view"), pool = ORIGINALS.map(normalizeChar).filter(audOK);
@@ -2729,7 +2730,7 @@ function faqGroups() {
       ["대화를 저장하거나 옮길 수 있나요?", "대화방 메뉴의 <b>대화 내보내기</b>로 파일로 받거나 <b>대화 복사</b>로 복사할 수 있어요. 로그인하면 대화가 계정에 저장돼 다른 기기에서 이어져요."],
       ["대화 속 그림을 끄고 싶어요.", "<a href=\"#me\">MY</a> → 채팅 설정의 <b>대화 속 장면 이미지 보기</b>를 끄면 돼요. 글자 크기·줄 간격·지문 글꼴도 거기서 바꿔요."],
       ["도감과 !명령어는 뭔가요?", `<a href="#codex">도감</a>은 작품마다 인물 코드·감정 칸·장소·컷씬·명령어를 보여 주는 안내예요. 대화 속 그림 한 장은 <b>인물 코드 + 번호</b> 한 토큰(예: ${esc(ex.code)}${EXAMPLE_SIT} = ${esc(ex.name)} · ${SIT[EXAMPLE_SIT]})이고, AI가 장면마다 골라 넣어요. 대화방 입력창에 <b>!</b>를 치면 쓸 수 있는 명령어 목록이 떠요.`],
-      ["!명령어에는 어떤 것이 있나요?", `세 가지예요. ① <b>앱 명령어</b> ${cmds("view")} — AI를 부르지 않고 바로 열려요(하트를 쓰지 않아요). ② <b>연출 명령어</b> ${cmds("direct")} — 어느 작품에서나 AI에게 장면 연출을 부탁해요(한 턴을 써요). ③ <b>작품 명령어</b> — 그 작품에만 있는 이야기 장치예요(도감의 작품 칸에서 확인). 직접 지시하고 싶으면 <b>//</b>로 시작해 적어도 돼요.`],
+      ["!명령어에는 어떤 것이 있나요?", `세 가지예요. ① <b>앱 명령어</b> ${cmds("view")} — AI를 부르지 않고 바로 열려요(하트를 쓰지 않아요). ② <b>연출 명령어</b> ${cmds("direct")} — 어느 작품에서나 AI에게 장면 연출을 부탁해요(한 턴을 써요). ③ <b>작품 명령어</b> — 그 작품에만 있는 장치예요(도감의 작품 칸에서 확인). 배지가 <b>이야기</b>면 AI가 그 장면을 열고(한 턴), <b>즉답</b>이면 작품이 정해 둔 글을 AI 없이 바로 보여 줘요(하트를 쓰지 않아요). 직접 지시하고 싶으면 <b>//</b>로 시작해 적어도 돼요.`],
       ["응답이 중간에 끊겼어요.", "연결이 끊기거나 시간이 너무 오래 걸리면 받은 데까지 남기고 멈춰요. 그 메시지의 <b>다시 시도</b>를 누르면 다시 써요."]
     ]],
     ["계정·데이터", [
@@ -3417,9 +3418,16 @@ async function viewChat(id) {
 }
 function runCommand(t) {
   const live = getChar(room.char.id) || room.char, f = findCommand(parseCommand(t), live);
+  if (f && f.work && f.work.text) { replyNow(t, f.work); return true; }
   if (!f || !f.app || !f.app.view) return false;
   if (f.app.view === "help") { flashHint("명령어: " + commandHelp(live) + " — // 로 시작하면 연출 지시"); return true; }
   openRoomDrawer(f.app.view); return true;
+}
+function replyNow(t, cmd) {
+  const a = lastAi(room), st = a ? (a.alts[a.idx] || {}).status || a.statusBefore : room.status;
+  room.lastErr = "";
+  room.msgs.push({ id: uid("m"), role: "user", text: t, canned: true }, { id: uid("m"), role: "ai", idx: 0, canned: true, alts: [{ text: cmd.text, status: st, suggestions: [], cost: "무료" }], statusBefore: st });
+  saveRoom(room); hideSug(); renderLog(true);
 }
 let hintTimer = null;
 function flashHint(msg) {
@@ -3576,7 +3584,7 @@ function renderLog(scroll) {
       const ooc = m.text.startsWith("//");
       html += `<div class="msg me ${ooc ? "ooc" : ""}" data-id="${m.id}">${ooc ? "" : pavHTML(r.persona)}<div class="col">
         ${m.editing ? editBox(m.text, i) : `<div class="bubble">${ooc ? esc(m.text) : fmt(m.text, c, r.persona)}</div>
-        <div class="tools-row"><button data-act="edit" data-i="${i}">수정</button><button data-act="del" data-i="${i}">삭제</button>${ooc ? "" : `<button data-act="pin" data-i="${i}" title="이 내용을 고정 기억으로 — 매 턴 그대로 AI에게 전해요">📌 고정</button>`}</div>`}
+        <div class="tools-row">${m.canned ? "" : `<button data-act="edit" data-i="${i}">수정</button>`}<button data-act="del" data-i="${i}">삭제</button>${ooc || m.canned ? "" : `<button data-act="pin" data-i="${i}" title="이 내용을 고정 기억으로 — 매 턴 그대로 AI에게 전해요">📌 고정</button>`}</div>`}
       </div></div>`;
       return;
     }
@@ -3590,12 +3598,12 @@ function renderLog(scroll) {
       html += statusBlock(c, alt.status, m.statusBefore, { open: isLast, live: isLast });
       html += `<div class="tools-row">
         ${m.alts.length > 1 ? `<button data-act="prev" data-i="${i}" ${m.idx === 0 ? "disabled" : ""} aria-label="이전 버전">‹</button><span class="sw">${m.idx + 1}/${m.alts.length}</span><button data-act="next" data-i="${i}" ${m.idx === m.alts.length - 1 ? "disabled" : ""} aria-label="다음 버전">›</button>` : ""}
-        ${isLast && !alt.opening ? `<button data-act="regen" data-i="${i}">↻ 다시 쓰기</button>` : ""}
+        ${isLast && !alt.opening && !m.canned ? `<button data-act="regen" data-i="${i}">↻ 다시 쓰기</button>` : ""}
         <button data-act="bm" data-i="${i}" class="${bm ? "on" : ""}" aria-pressed="${bm}">${bm ? "★" : "☆"} 북마크</button>
         <button data-act="pin" data-i="${i}" title="이 장면을 고정 기억으로 — 매 턴 그대로 AI에게 전해요">📌 고정</button>
         <button data-act="editai" data-i="${i}">수정</button><button data-act="copy" data-i="${i}">복사</button>
         ${i > 0 ? `<button data-act="fork" data-i="${i}" title="이 메시지까지를 새 대화방으로 복사해요">분기</button><button data-act="del" data-i="${i}">삭제</button>` : ""}
-        ${alt.opening ? "" : fbBtn(i, 1, alt.fb) + fbBtn(i, -1, alt.fb)}
+        ${alt.opening || m.canned ? "" : fbBtn(i, 1, alt.fb) + fbBtn(i, -1, alt.fb)}
         ${alt.lore?.length ? `<span class="lore-used" title="이 응답에 반영된 키워드북">📖 ${esc(alt.lore.join(" · "))}</span>` : ""}
         ${alt.cost ? `<span class="rcpt" title="이 응답에 쓴 비용">${esc(alt.cost)}</span>` : ""}
       </div>`;

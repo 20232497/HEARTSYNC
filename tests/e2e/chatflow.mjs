@@ -1,4 +1,4 @@
-// 채팅 흐름: 입력창 ! 명령어 목록, 자동 스크롤 끔/켬, 고정 기억, 좋아요·분기, 추천 답변 수동, 출력 설정 카드, 설정 페이지(이미지 기본 수위 칸 없음)
+// 채팅 흐름: 입력창 ! 명령어 목록, 자동 스크롤 끔/켬, 고정 기억, 즉답 명령어, 좋아요·분기, 추천 답변 수동, 출력 설정 카드, 설정 페이지(이미지 기본 수위 칸 없음)
 import { webkit, chromium, devices } from "playwright";
 import { noSupabase } from "./_offline.mjs";
 const url = process.argv[2], out = process.argv[3];
@@ -58,10 +58,24 @@ for (const [dev, engine] of targets) {
     // 고정한 줄은 다음 턴의 프롬프트(변동부의 [고정 기억])에 그대로 들어감
     res.pinSent = await p.evaluate(() => { const s = window.__lastInput[0].content; return s.includes("[고정 기억") && s.includes("첫눈 오는 날 다시 만나기로 약속했다") && s.indexOf("[고정 기억") > window.__lastInput[0].cut; });
     if (!res.pinSent) errs.push("고정 기억이 프롬프트에 없음");
+    // 즉답 명령어(작품 commands의 text — 가짜 데이터로 틀만): !이름을 보내면 AI를 부르지 않고 유저 말풍선 + 정해진 글이 남음 — 하트·턴은 그대로, 다시 쓰기 없음, 다음 턴 기록에는 들어감
+    res.canned = await p.evaluate(async () => {
+      const nap = (ms) => new Promise((r) => setTimeout(r, ms)), live = getChar(room.char.id), was = live.commands, hearts = S.wallet.hearts, used = S.wallet.freeUsed, n = room.msgs.length, turn = room.turn, real = window.llm; let calls = 0;
+      window.llm = async (a, b) => { calls++; return real(a, b); };
+      live.commands = (was || []).concat({ cmd: "안내시험", title: "안내", text: "[안내] 정해진 글이에요." });
+      $("#inp").value = "!안내시험"; $("#form").requestSubmit(); await nap(300);
+      const last = room.msgs[room.msgs.length - 1], prev = room.msgs[room.msgs.length - 2], sent = buildInput(room, room.msgs.length, room.status);
+      const r = { added: room.msgs.length - n, canned: !!last.canned && !!prev.canned, text: last.alts[0].text, calls, wallet: S.wallet.hearts === hearts && S.wallet.freeUsed === used, turn: room.turn === turn,
+        regen: !!document.querySelector('[data-act="regen"]'), cleared: $("#inp").value === "", drawn: $$("#logInner .msg").length === room.msgs.length,
+        inHistory: sent.some((m) => m.role === "assistant" && m.content.includes("[안내] 정해진 글이에요.")) && sent.some((m) => m.role === "user" && m.content === "!안내시험") };
+      window.llm = real; live.commands = was;
+      return r;
+    });
+    { const c = res.canned; if (c.added !== 2 || !c.canned || c.text !== "[안내] 정해진 글이에요." || c.calls !== 0 || !c.wallet || !c.turn || c.regen || !c.cleared || !c.drawn || !c.inHistory) errs.push("즉답 명령어가 다름: " + JSON.stringify(c)); }
     // 좋아요 토글과 분기: 첫 응답(msgs[2])의 '분기' → 확인 → 방 수 +1·새 방으로 이동·메시지 수는 그 메시지까지·원래 방은 그대로·좋아요도 따라옴.
     // 장기기억은 분기한 턴(1턴)보다 뒤에 시작하는 구간([2-2턴])을 빼고 복사
     res.fork = await p.evaluate(async () => {
-      const nap = (ms) => new Promise((r) => setTimeout(r, ms)), before = S.rooms.length, src = room.id, n0 = room.msgs.length, i = 2; // [오프닝, 유저, AI, 유저, AI]
+      const nap = (ms) => new Promise((r) => setTimeout(r, ms)), before = S.rooms.length, src = room.id, n0 = room.msgs.length, i = 2; // [오프닝, 유저, AI, 유저, AI, 즉답 유저, 즉답 글] — 즉답은 턴으로 세지 않음
       const head = memoryMark(1, 1) + " 앞\n첫 요약"; room.memory = head + "\n\n" + memoryMark(2, 2) + " 뒤\n둘째 요약"; saveRoom(room);
       document.querySelector(`[data-act="up"][data-i="${i}"]`).click();
       const fb = room.msgs[i].alts[room.msgs[i].idx].fb;

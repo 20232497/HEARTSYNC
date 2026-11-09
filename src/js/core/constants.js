@@ -30,5 +30,5 @@ export const DEFAULT_CREATOR = "HEART SYNC 스튜디오";
    guide 작품의 플레이 가이드(work.js guide) · personaDesc 페르소나 상세 정보 · userNote 유저노트(대화방마다 하나) ·
    memory 장기기억 기본 한도(무료 요금제 PLAN.free.memoMax와 요약 설정 memCfg.limit의 기본값 — 넘으면 압축, PLUS는 PLAN.pro.memoMax까지) ·
    pin 고정 기억 한 줄의 글자 수(개수는 요금제 PLAN.free/pro.pins — core/wallet.js) ·
-   suggestion 시작 상황의 첫 답변 추천 한 줄(openings[].suggestions — 최대 3개) · lead 시작 직후 연출 지시(openings[].lead.text)의 글자 수 · leadTurns 그 지시가 이어질 수 있는 최대 턴 수 */
-export const LIMITS = { guide: 1000, personaDesc: 1000, userNote: 2000, memory: 2000, pin: 200, suggestion: 40, lead: 500, leadTurns: 20 };
+   reply 즉답 명령어가 보여 주는 글(commands[].text) · suggestion 시작 상황의 첫 답변 추천 한 줄(openings[].suggestions — 최대 3개) · lead 시작 직후 연출 지시(openings[].lead.text)의 글자 수 · leadTurns 그 지시가 이어질 수 있는 최대 턴 수 */
+export const LIMITS = { guide: 1000, personaDesc: 1000, userNote: 2000, memory: 2000, pin: 200, reply: 1000, suggestion: 40, lead: 500, leadTurns: 20 };

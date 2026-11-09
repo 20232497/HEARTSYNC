@@ -1,5 +1,5 @@
 /* 대화방 명령어(순수): 앱 명령어(APP_COMMANDS — 화면형 !상태창·!갤러리·!지도·!도움말은 앱이 바로 처리, 연출형 !시간경과·!새사건·!조연등장·!반복금지는 AI에 연출 지시)와
-   작품 명령어(work.js commands — AI에 연출 지시로 감), 한 모양으로 모은 목록(allCommands·commandList), 입력 글 해석(parseCommand·findCommand·commandText) */
+   작품 명령어(work.js commands — prompt가 있으면 AI에 연출 지시로, text가 있으면 AI 없이 그 글을 바로 보여 주는 '즉답'), 한 모양으로 모은 목록(allCommands·commandList), 입력 글 해석(parseCommand·findCommand·commandText) */
 /** @typedef {import("./types.js").AppCommand} AppCommand */
 /** @typedef {import("./types.js").Command} Command */
 
@@ -19,20 +19,21 @@ export const APP_COMMANDS = [
   { cmd: "조연등장", alias: [], title: "조연 등장", desc: "장면에 어울리는 조연 두세 명을 불러와요", prompt: "이 장면과 세계관에 어울리는 조연 두세 명을 이름·역할과 함께 자연스럽게 등장시킨다. 조연은 모두 성인이고, 기존 인물의 비중을 빼앗지 않는다." },
   { cmd: "반복금지", alias: [], title: "반복 끊기", desc: "되풀이되는 대사·전개를 끊고 다른 방향으로 가요", prompt: "직전 응답들에 나온 대사·전개·묘사를 되풀이하지 않는다. 같은 표현과 같은 흐름을 피하고 다른 방향으로 장면을 진전시킨다." }
 ];
-/** 명령어 종류(도감 카드 배지·입력창 ! 목록): view 앱 화면형 · direct 앱 연출형 · work 작품 명령어. name은 배지 글, note는 풀이 */
+/** 명령어 종류(도감 카드 배지·입력창 ! 목록): view 앱 화면형 · direct 앱 연출형 · work 작품 명령어(AI 연출) · reply 작품 명령어(즉답 — 정해진 글). name은 배지 글, note는 풀이 */
 export const COMMAND_KINDS = {
   view: { name: "앱", note: "앱이 바로 화면을 열어요 — 하트를 쓰지 않아요" },
   direct: { name: "연출", note: "어느 작품에서나 AI에게 연출을 지시해요 — 한 턴을 써요" },
-  work: { name: "이야기", note: "이 작품의 이야기 장치예요 — 한 턴을 써요" }
+  work: { name: "이야기", note: "이 작품의 이야기 장치예요 — 한 턴을 써요" },
+  reply: { name: "즉답", note: "이 작품이 정해 둔 글을 바로 보여 줘요 — 하트를 쓰지 않아요" }
 };
 /**
- * 쓸 수 있는 명령어 전부를 한 모양으로(앱 → 작품 순): { cmd, title, desc, kind, names(이름 + 별칭) }. 도감 카드·도움말·입력창 목록이 모두 이것을 씀.
+ * 쓸 수 있는 명령어 전부를 한 모양으로(앱 → 작품 순): { cmd, title, desc, kind, names(이름 + 별칭), own(작품 것이면 true) }. 도감 카드·도움말·입력창 목록이 모두 이것을 씀.
  * @param {{commands?: Command[]}|null|undefined} c
- * @returns {{cmd: string, title: string, desc: string, kind: "view"|"direct"|"work", names: string[]}[]}
+ * @returns {{cmd: string, title: string, desc: string, kind: "view"|"direct"|"work"|"reply", names: string[], own: boolean}[]}
  */
 export function allCommands(c) {
-  return [...APP_COMMANDS.map((x) => ({ cmd: x.cmd, title: x.title, desc: x.desc, kind: x.view ? "view" : "direct", names: [x.cmd, ...x.alias] })),
-    ...((c && c.commands) || []).map((x) => ({ cmd: x.cmd, title: x.title, desc: x.desc || "", kind: "work", names: [x.cmd] }))];
+  return [...APP_COMMANDS.map((x) => ({ cmd: x.cmd, title: x.title, desc: x.desc, kind: x.view ? "view" : "direct", names: [x.cmd, ...x.alias], own: false })),
+    ...((c && c.commands) || []).map((x) => ({ cmd: x.cmd, title: x.title, desc: x.desc || "", kind: x.text ? "reply" : "work", names: [x.cmd], own: true }))];
 }
 /** 입력 글이 명령어 모양(!이름)이면 이름, 아니면 "". 전각 ！도 받고 앞뒤 공백은 뺌. @param {string} text @returns {string} */
 export function parseCommand(text) { const m = String(text || "").trim().match(/^[!！]\s*(\S+)$/); return m ? m[1] : ""; }
@@ -48,14 +49,14 @@ export function findCommand(name, c) {
   const work = ((c && c.commands) || []).find((x) => String(x.cmd).toLowerCase() === n);
   return work ? { work } : null;
 }
-/** 유저 메시지가 연출 지시가 있는 명령어(앱 연출형·작품 명령어)면 AI에 보낼 글(// 연출 지시 — 명령 이름·제목·지시), 아니면 원문 그대로. @param {string} text @param {{commands?: Command[]}|null|undefined} c @returns {string} */
+/** 유저 메시지가 연출 지시(prompt)가 있는 명령어(앱 연출형·작품 명령어)면 AI에 보낼 글(// 연출 지시 — 명령 이름·제목·지시), 아니면(보통 글·화면형·즉답 명령어) 원문 그대로. @param {string} text @param {{commands?: Command[]}|null|undefined} c @returns {string} */
 export function commandText(text, c) {
-  const f = findCommand(parseCommand(text), c), x = f && (f.work || (f.app.prompt ? f.app : null));
-  return x ? `// 유저가 명령어 !${x.cmd}(${x.title})을 썼다. ${x.prompt}` : text;
+  const f = findCommand(parseCommand(text), c), x = f && (f.work || f.app);
+  return x && x.prompt ? `// 유저가 명령어 !${x.cmd}(${x.title})을 썼다. ${x.prompt}` : text;
 }
 /** 도움말 한 줄: 앱 명령어 + 작품 명령어(제목). @param {{commands?: Command[]}|null|undefined} c @returns {string} */
 export function commandHelp(c) {
-  return allCommands(c).map((x) => (x.kind === "work" ? `!${x.cmd}(${x.title})` : "!" + x.cmd)).join(" · ");
+  return allCommands(c).map((x) => (x.own ? `!${x.cmd}(${x.title})` : "!" + x.cmd)).join(" · ");
 }
 /**
  * 입력창 ! 목록: 입력이 !로 시작하는 한 낱말(쓰는 중 — "!"만 쳐도)이면 이름·별칭이 그 글자로 시작하는 명령어들(앱 → 작품), 아니면 [].

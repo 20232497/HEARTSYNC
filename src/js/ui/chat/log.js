@@ -49,7 +49,7 @@ export function renderLog(scroll) {
       const ooc = m.text.startsWith("//");
       html += `<div class="msg me ${ooc ? "ooc" : ""}" data-id="${m.id}">${ooc ? "" : pavHTML(r.persona)}<div class="col">
         ${m.editing ? editBox(m.text, i) : `<div class="bubble">${ooc ? esc(m.text) : fmt(m.text, c, r.persona)}</div>
-        <div class="tools-row"><button data-act="edit" data-i="${i}">수정</button><button data-act="del" data-i="${i}">삭제</button>${ooc ? "" : `<button data-act="pin" data-i="${i}" title="이 내용을 고정 기억으로 — 매 턴 그대로 AI에게 전해요">📌 고정</button>`}</div>`}
+        <div class="tools-row">${m.canned ? "" : `<button data-act="edit" data-i="${i}">수정</button>`}<button data-act="del" data-i="${i}">삭제</button>${ooc || m.canned ? "" : `<button data-act="pin" data-i="${i}" title="이 내용을 고정 기억으로 — 매 턴 그대로 AI에게 전해요">📌 고정</button>`}</div>`}
       </div></div>`;
       return;
     }
@@ -63,12 +63,12 @@ export function renderLog(scroll) {
       html += statusBlock(c, alt.status, m.statusBefore, { open: isLast, live: isLast });
       html += `<div class="tools-row">
         ${m.alts.length > 1 ? `<button data-act="prev" data-i="${i}" ${m.idx === 0 ? "disabled" : ""} aria-label="이전 버전">‹</button><span class="sw">${m.idx + 1}/${m.alts.length}</span><button data-act="next" data-i="${i}" ${m.idx === m.alts.length - 1 ? "disabled" : ""} aria-label="다음 버전">›</button>` : ""}
-        ${isLast && !alt.opening ? `<button data-act="regen" data-i="${i}">↻ 다시 쓰기</button>` : ""}
+        ${isLast && !alt.opening && !m.canned ? `<button data-act="regen" data-i="${i}">↻ 다시 쓰기</button>` : ""}
         <button data-act="bm" data-i="${i}" class="${bm ? "on" : ""}" aria-pressed="${bm}">${bm ? "★" : "☆"} 북마크</button>
         <button data-act="pin" data-i="${i}" title="이 장면을 고정 기억으로 — 매 턴 그대로 AI에게 전해요">📌 고정</button>
         <button data-act="editai" data-i="${i}">수정</button><button data-act="copy" data-i="${i}">복사</button>
         ${i > 0 ? `<button data-act="fork" data-i="${i}" title="이 메시지까지를 새 대화방으로 복사해요">분기</button><button data-act="del" data-i="${i}">삭제</button>` : ""}
-        ${alt.opening ? "" : fbBtn(i, 1, alt.fb) + fbBtn(i, -1, alt.fb)}
+        ${alt.opening || m.canned ? "" : fbBtn(i, 1, alt.fb) + fbBtn(i, -1, alt.fb)}
         ${alt.lore?.length ? `<span class="lore-used" title="이 응답에 반영된 키워드북">📖 ${esc(alt.lore.join(" · "))}</span>` : ""}
         ${alt.cost ? `<span class="rcpt" title="이 응답에 쓴 비용">${esc(alt.cost)}</span>` : ""}
       </div>`;

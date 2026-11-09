@@ -76,7 +76,8 @@
  * @property {string} cmd 이름(공백·!·/ 없이) — 대화에서 !이름
  * @property {string} title 도감 카드 제목
  * @property {string} [desc] 도감 카드 설명(독자용)
- * @property {string} prompt AI에게 주는 지시
+ * @property {string} [prompt] AI에게 주는 지시('이야기' — 한 턴을 씀). prompt와 text 중 하나만
+ * @property {string} [text] AI 없이 바로 보여 주는 정해진 글('즉답' — 하트·턴을 쓰지 않음, 그림 태그 허용, LIMITS.reply자까지)
  */
 /** @typedef {Record<string, Record<string, ImageRef>>} ImagesMap 코드 글자 부분(인물 코드·MP·EV) → 번호(인물은 감정 칸 "0"~"14", MP·EV는 "1"부터) → 그림 참조 */
 /**
@@ -139,6 +140,7 @@
  * @property {string} text
  * @property {boolean} [sys]
  * @property {boolean} [editing]
+ * @property {boolean} [canned] 즉답 명령어로 남은 메시지(유저의 !이름과 그 정해진 글 — AI 메시지에도 같은 표시): 턴으로 세지 않고 다시 쓰기·좋아요가 없음
  */
 /**
  * AI 응답 한 버전(다시 쓰기마다 하나).
