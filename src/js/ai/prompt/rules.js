@@ -24,6 +24,7 @@ function relStage(c, s) {
 /**
  * 시스템 프롬프트의 세 블록. 이어 붙이면(fixed + vary + tail) rulesPrompt와 같은 글.
  * fixed: 작품·방이 정해지면 바뀌지 않는 것 — 작품 설정, 상시 키워드북, 시작 설정, 연기 규칙, 서사 원칙, 장면 이미지 규칙과 코드 표(출력량·트랙을 바꾸면 달라짐).
+ * (지금 상태에는 시작 연출 r.lead도 — 시작 상황이 준 지시를 r.turn이 lead.turns에 닿기 전까지만.)
  * vary: 턴마다 달라질 수 있는 것 — 유저 캐릭터, 유저노트, 고정 기억(r.pins — 이용자가 박아 둔 한 줄들, 요약·압축과 무관하게 그대로), 장기 기억, 키워드로 걸린 키워드북, 지금 상태(등장한 인물·나온 컷씬·관계 단계), 이미 쓴 문장.
  * tail: 이용자가 쓴 글(유저노트·기억) 뒤에 한 번 더 두는 안전 문장과 출력 형식 — 출력 형식은 늘 맨 끝.
  * @param {Room} r @param {LoreEntry[]} [lore] 이번 턴에 넘길 키워드북(matchLore — 상시 항목 + 키워드로 걸린 항목) @param {Message[]} [hist=r.msgs]
@@ -102,7 +103,7 @@ ${r.userNote ? "\n[유저노트 — 유저가 직접 적은 설정. 캐릭터 �
 ${r.memory || "(아직 없음)"}
 ${loreHit.length ? "\n[키워드북 — 이번 장면에 나온 키워드의 설정. 사실로 삼아 자연스럽게 반영하되 설명하듯 늘어놓지 않는다]\n" + loreLine(loreHit) + "\n" : ""}
 [지금 상태]
-- 이미 등장한 인물: ${[...seen].join(", ") || "없음"}${cutsDone.length ? `\n- 이미 나온 컷씬(다시 쓰지 않는다): ${cutsDone.join(", ")}` : ""}${relStage(c, r.status)}
+- 이미 등장한 인물: ${[...seen].join(", ") || "없음"}${cutsDone.length ? `\n- 이미 나온 컷씬(다시 쓰지 않는다): ${cutsDone.join(", ")}` : ""}${relStage(c, r.status)}${r.lead && (r.turn || 0) < r.lead.turns ? `\n- 시작 연출(이야기를 연 뒤 ${r.lead.turns}턴 동안만 따른다 — 지금 ${(r.turn || 0) + 1}번째): ${r.lead.text}` : ""}
 ${used.length ? `\n[이미 쓴 문장 — 이렇게 시작하거나 같은 묘사를 되풀이하지 않는다]\n${used.map((s) => "- " + s + "…").join("\n")}\n` : ""}`;
 
   const tail = `

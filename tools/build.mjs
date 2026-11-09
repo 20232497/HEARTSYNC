@@ -537,6 +537,11 @@ function checkWork(mod, { aud, row, id, wrel, R, errors, warnings }) {
   else c.openings.forEach((o, i) => {
     if (!isObj(o) || !str(o.title) || !str(o.text)) return e(`openings[${i}]: title·text가 있어야 해요`);
     if (o.directive !== undefined && typeof o.directive !== "string") e(`openings[${i}].directive는 글이어야 해요`);
+    // 시작 상황의 선택 칸: 배경 장소(places의 n번째)·첫 답변 추천(최대 3개)·시작 직후 N턴 동안만 주는 연출 지시
+    const nPlaces = Array.isArray(c.places) ? c.places.length : 0;
+    if (o.place !== undefined && !(Number.isInteger(o.place) && o.place >= 1 && o.place <= nPlaces)) e(`openings[${i}].place(${o.place}) — 배경 장소는 places의 1~${nPlaces}번째 번호예요${nPlaces ? "" : "(places가 없으면 쓸 수 없어요)"}`);
+    if (o.suggestions !== undefined && (!Array.isArray(o.suggestions) || !o.suggestions.length || o.suggestions.length > 3 || o.suggestions.some((s) => !str(s) || s.length > R.LIMITS.suggestion))) e(`openings[${i}].suggestions(첫 답변 추천)는 글 1~3개, 각 ${R.LIMITS.suggestion}자 이내`);
+    if (o.lead !== undefined && !(isObj(o.lead) && str(o.lead.text) && o.lead.text.length <= R.LIMITS.lead && Number.isInteger(o.lead.turns) && o.lead.turns >= 1 && o.lead.turns <= R.LIMITS.leadTurns)) e(`openings[${i}].lead(시작 연출)는 { text: "지시"(${R.LIMITS.lead}자 이내), turns: 1~${R.LIMITS.leadTurns} }`);
     if (o.status !== undefined && (!isObj(o.status) || Object.values(o.status).some((v) => typeof v !== "string" && typeof v !== "number")))
       e(`openings[${i}].status는 { "칸 이름": 글 또는 숫자 }`);
     else if (o.status && Array.isArray(c.fields)) {

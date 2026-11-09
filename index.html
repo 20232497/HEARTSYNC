@@ -603,6 +603,10 @@ const MARK = "===STATE===";
 const FREE_DAILY = 10, WELCOME = 30, PLUS_MONTHLY = 300;
 const TIMEOUT = { connect: 45000, stall: 60000, think: 150000, api: 20000 };
 const SIT = ["프로필", "기본", "웃음", "부끄러움", "슬픔", "놀람", "분노", "삐침", "공포", "부상", "회복", "휴식", "공격", "각성", "설렘"];
+const SERIES = {
+  MP: { kind: "place", field: "places", label: "장소", nameKey: "name" },
+  EV: { kind: "cut", field: "cuts", label: "컷씬", nameKey: "title" }
+};
 const SIT_TINT = ["#f5f0ff", "#9fb4ff", "#ffd166", "#ff8fab", "#7b96ff", "#ffe066", "#ff5d5d", "#c77dff", "#56cfe1", "#e63946", "#80ed99", "#a0c4ff", "#ff8c42", "#f9c74f", "#ff70a6"];
 const PALETTES = [
   ["#1d2735", "#3c5a73", "#c9a46a"], ["#2a1720", "#7a2e48", "#f0b7c8"], ["#151a2e", "#3b3f7a", "#d8c38a"], ["#16222a", "#2f6f73", "#f6d58e"],
@@ -613,7 +617,7 @@ const CATS = ["로맨스", "판타지", "RPG", "미스터리", "일상", "시뮬
 const LORE = { scan: 3, max: 8, budget: 2500 };
 const EXAMPLE_CAST = { code: "ABC", name: "주인공" }, EXAMPLE_SIT = 3;
 const DEFAULT_CREATOR = "HEART SYNC 스튜디오";
-const LIMITS = { guide: 1000, personaDesc: 1000, userNote: 2000, memory: 2000, pin: 200 };
+const LIMITS = { guide: 1000, personaDesc: 1000, userNote: 2000, memory: 2000, pin: 200, suggestion: 40, lead: 500, leadTurns: 20 };
 /* ── src/js/core/util.js — DOM·문자열·숫자 유틸, toast, 예상 못 한 오류 기록(reportError) */
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
@@ -1385,11 +1389,14 @@ function newRoom(c, openingIdx, persona) {
   const op = c.openings[openingIdx] || c.openings[0];
   const st = { ...(op.status || {}) };
   if (st[c.gauge] === undefined) st[c.gauge] = 10;
+  const placeTag = op.place ? `[[${Object.keys(SERIES).find((k) => SERIES[k].field === "places")}${op.place}]]` : "";
+  const text = placeTag && !op.text.includes(placeTag) ? placeTag + "\n\n" + op.text : op.text;
   const r = {
     id: uid("r"), v2: true, char: JSON.parse(JSON.stringify(c)), persona: { id: persona.id, name: persona.name, memo: persona.memo || "", desc: persona.desc || "", img: persona.img || "" },
     opening: op.title, directive: op.directive || "", userNote: "", memory: "", memHist: [], pins: [], sinceMem: 0, turn: 0, status: st, bookmarks: [],
     set: defaultSet(c),
-    msgs: [{ id: uid("m"), role: "ai", idx: 0, alts: [{ text: op.text, status: st, suggestions: [], opening: true }], statusBefore: st }],
+    ...(op.lead ? { lead: { text: op.lead.text, turns: op.lead.turns } } : {}),
+    msgs: [{ id: uid("m"), role: "ai", idx: 0, alts: [{ text, status: st, suggestions: (op.suggestions || []).slice(0, 3), opening: true }], statusBefore: st }],
     at: Date.now(), created: Date.now()
   };
   saveRoom(r); return r;
@@ -1847,10 +1854,6 @@ const SUPPORT = {
 };
 /* ── src/js/images/codes.js — 그림 코드 체계(순수 — SIT 상수만 import해 Node 단위 테스트가 바로 씀): 인물 코드 + 번호 한 토큰, 작품의 코드 사전(codebook), 본문 태그… */
 const CODE_RE = /^[A-Z]{1,4}$/;
-const SERIES = {
-  MP: { kind: "place", field: "places", label: "장소", nameKey: "name" },
-  EV: { kind: "cut", field: "cuts", label: "컷씬", nameKey: "title" }
-};
 function seriesCode(kind) { return Object.keys(SERIES).find((k) => SERIES[k].kind === kind) || ""; }
 const IMG_TAG_RE = /\[\[(?:img:)?([A-Za-z]{1,4})(\d{1,2})\]\]|\[\[img:([a-z0-9]+):([\d,]+)\]\]/gi;
 function codebook(c) {
@@ -2273,7 +2276,7 @@ ${r.userNote ? "\n[유저노트 — 유저가 직접 적은 설정. 캐릭터 �
 ${r.memory || "(아직 없음)"}
 ${loreHit.length ? "\n[키워드북 — 이번 장면에 나온 키워드의 설정. 사실로 삼아 자연스럽게 반영하되 설명하듯 늘어놓지 않는다]\n" + loreLine(loreHit) + "\n" : ""}
 [지금 상태]
-- 이미 등장한 인물: ${[...seen].join(", ") || "없음"}${cutsDone.length ? `\n- 이미 나온 컷씬(다시 쓰지 않는다): ${cutsDone.join(", ")}` : ""}${relStage(c, r.status)}
+- 이미 등장한 인물: ${[...seen].join(", ") || "없음"}${cutsDone.length ? `\n- 이미 나온 컷씬(다시 쓰지 않는다): ${cutsDone.join(", ")}` : ""}${relStage(c, r.status)}${r.lead && (r.turn || 0) < r.lead.turns ? `\n- 시작 연출(이야기를 연 뒤 ${r.lead.turns}턴 동안만 따른다 — 지금 ${(r.turn || 0) + 1}번째): ${r.lead.text}` : ""}
 ${used.length ? `\n[이미 쓴 문장 — 이렇게 시작하거나 같은 묘사를 되풀이하지 않는다]\n${used.map((s) => "- " + s + "…").join("\n")}\n` : ""}`;
   const tail = `
 [연기 규칙 재확인]
@@ -3852,7 +3855,7 @@ function viewDetail(id) {
           <div class="cast">${castGridHTML(c)}</div></div>
         ${codexHTML(c)}
         <div class="box"><h3>${c.world_mode ? "게임 모드 · 시작 상황" : "시작 상황"}</h3><div class="openings">
-          ${c.openings.map((o, i) => `<label class="opening"><input type="radio" name="op" value="${i}" ${i === 0 ? "checked" : ""}><b>${esc(o.title)}</b>
+          ${c.openings.map((o, i) => `<label class="opening"><input type="radio" name="op" value="${i}" ${i === 0 ? "checked" : ""}><b>${esc(o.title)}${o.place && (c.places || [])[o.place - 1] ? ` <span class="pill">장소 · ${esc(c.places[o.place - 1].name)}</span>` : ""}</b>
             <span>${esc(o.text.replace(/\[\[[^\]]*\]\]/g, "").replace(/[*"\[\]]/g, "").replace(/\s+/g, " ").slice(0, 120))}…</span></label>`).join("")}
         </div>
         <div class="field"><label for="pp">대화할 내 페르소나</label><select id="pp">${S.personas.map((p) => `<option value="${esc(p.id)}" ${p === persona ? "selected" : ""}>${esc(p.name)}${p.memo ? " · " + esc(p.memo) : ""}</option>`).join("")}</select></div>

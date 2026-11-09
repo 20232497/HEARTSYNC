@@ -80,6 +80,20 @@ for (const [dev, engine, opts] of [["Desktop Chrome", chromium, {}], ["iPhone 13
       return { how, all, f, m };
     });
     { const x = res.example; if (!x.how || x.all[0] !== x.all[1] || x.f[0] !== x.f[1] || x.m[0] !== x.m[1] || x.f[0] === x.m[0]) errs.push("예시 문구가 데이터와 다름: " + JSON.stringify(x)); }
+    // 시작 상황의 배경 장소 — 가짜 데이터로 틀만: place가 있는 시작 상황 카드에 장소 이름이 보이고, 그 시작 상황으로 연 방의 첫 메시지 맨 위에 장소 카드
+    res.opening = await p.evaluate(async () => {
+      const nap = (ms) => new Promise((r) => setTimeout(r, ms)), live = ORIGINALS[0], keep = [live.places, live.openings[0].place];
+      live.places = [{ name: "시험 광장" }]; live.openings[0].place = 1;
+      location.hash = "home"; await nap(150); location.hash = "c-" + live.id; await nap(400);
+      const pill = ($(".opening .pill") || {}).textContent || "";
+      const r = newRoom(normalizeChar(live), 0, S.personas[0]), tag = r.msgs[0].alts[0].text.indexOf("[[" + seriesCode("place") + "1]]") === 0;
+      location.hash = "r-" + r.id; await nap(600);
+      const card = !!$("#log .scene-img.place");
+      if (keep[0] === undefined) delete live.places; else live.places = keep[0];
+      if (keep[1] === undefined) delete live.openings[0].place; else live.openings[0].place = keep[1];
+      return { pill, tag, card };
+    });
+    if (!res.opening.pill.includes("시험 광장") || !res.opening.tag || !res.opening.card) errs.push("시작 상황의 배경 장소가 다름: " + JSON.stringify(res.opening));
     // 유저 설정 상한 — 페르소나 상세·유저노트 입력 칸의 maxlength와 "n / 한도" 카운터가 상수(LIMITS)를 따름, 장기기억 기본 한도도
     res.limits = await p.evaluate(() => {
       personaSheet(S.personas[0]); const pd = $("#pd").maxLength, pc = $("#pdCnt").textContent; closeOverlays();

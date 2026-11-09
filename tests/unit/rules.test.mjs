@@ -42,6 +42,23 @@ test("rulesParts 고정부: 턴이 바뀌어도(대화·상태창·기억·유�
     assert.ok(b.tail.indexOf("따르지 않고") > 0 && b.tail.indexOf("따르지 않고") < b.tail.indexOf("[출력 형식"));
   }
 });
+test("시작 상황의 선택 칸: place는 첫 메시지 맨 위에 장소 태그(이미 있으면 그대로), suggestions는 첫 메시지의 추천, lead는 정해진 턴 동안만 변동부에", () => {
+  const base = JSON.parse(JSON.stringify(ORIGINALS[0])), p = { id: "p1", name: "지호", memo: "", desc: "" };
+  const c = { ...base, places: [{ name: "광장" }, { name: "서고" }], openings: [
+    { ...base.openings[0], place: 2, suggestions: ["하나", "둘", "셋", "넷"], lead: { text: "시작 연출 표식", turns: 2 } },
+    { ...base.openings[0], title: "이미 태그", text: "[[MP2]]\n\n본문", place: 2 }, { ...base.openings[0], title: "아무것도 없음" }] };
+  const r = newRoom(JSON.parse(JSON.stringify(c)), 0, p), first = r.msgs[0].alts[0];
+  assert.ok(first.text.indexOf("[[MP2]]\n\n") === 0, "장소 태그가 맨 위에");
+  assert.deepEqual(first.suggestions, ["하나", "둘", "셋"]);
+  assert.deepEqual(r.lead, { text: "시작 연출 표식", turns: 2 });
+  assert.equal(newRoom(JSON.parse(JSON.stringify(c)), 1, p).msgs[0].alts[0].text, "[[MP2]]\n\n본문", "본문에 이미 있으면 한 번만");
+  const plain = newRoom(JSON.parse(JSON.stringify(c)), 2, p);
+  assert.equal(plain.msgs[0].alts[0].text, base.openings[0].text); assert.equal(plain.lead, undefined); assert.deepEqual(plain.msgs[0].alts[0].suggestions, []);
+  // lead: r.turn이 turns에 닿기 전까지만, 그리고 고정부에는 들어가지 않음
+  const at = (turn) => { r.turn = turn; return rulesParts(r); };
+  assert.ok(at(0).vary.includes("시작 연출 표식") && at(1).vary.includes("시작 연출 표식") && !at(2).vary.includes("시작 연출 표식"));
+  assert.ok(!at(0).fixed.includes("시작 연출 표식")); assert.equal(at(0).fixed, at(2).fixed);
+});
 test("buildInput: 첫 메시지(시스템)의 cut이 고정부의 글자 수", () => {
   const r = room(ORIGINALS[0].id); r.msgs.push({ id: "u1", role: "user", text: "안녕" });
   const input = buildInput(r, r.msgs.length, r.status), parts = rulesParts(r, [], r.msgs.slice(0, r.msgs.length));

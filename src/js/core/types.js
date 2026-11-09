@@ -40,6 +40,9 @@
  * @property {string} text 첫 장면 본문([[HSY0]] 같은 그림 태그 포함 가능 — 인물 코드 + 감정 번호 0~14)
  * @property {string} [directive] AI에게만 주는 지시
  * @property {StatusMap} [status] 시작 상태창
+ * @property {number} [place] 배경 장소 — places의 n번째(1부터). 새 방의 첫 메시지 맨 위에 그 장소 태그가 붙고(본문에 이미 있으면 그대로), 상세 페이지 카드에 장소 이름
+ * @property {string[]} [suggestions] 첫 답변 추천(최대 3개, 각 LIMITS.suggestion자) — 새 방의 첫 메시지에 실려 '✦ AI 추천'을 누르면 AI 호출 없이 보임
+ * @property {{ text: string, turns: number }} [lead] 시작 연출 — 이야기를 연 뒤 turns턴 동안만 AI에 주는 지시(directive는 방이 끝날 때까지, 이것은 잠깐)
  */
 /**
  * 장소(코드 MP<n>, places의 n번째 — 1부터). 그림은 images/MP<n>.*
@@ -179,6 +182,7 @@
  * @property {{ id: string, name: string, memo: string, desc: string, img: ImageRef|"" }} persona
  * @property {string} opening 시작 상황 제목
  * @property {string} directive
+ * @property {{ text: string, turns: number }} [lead] 시작 연출(시작 상황의 lead 사본) — r.turn이 turns에 닿기 전까지만 프롬프트 변동부의 [지금 상태]에
  * @property {string} userNote 유저노트(LIMITS.userNote자까지 — 방마다 하나)
  * @property {string} memory 장기기억(memCfg().limit자를 넘으면 압축 — 기본 LIMITS.memory, 요금제 memoMax까지)
  * @property {MemHist[]} memHist

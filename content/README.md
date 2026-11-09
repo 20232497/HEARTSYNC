@@ -82,7 +82,8 @@ export default {
   places: [ { name: "루벨리아 황궁 알현실", desc: "…", tags: "throne room, gothic, …" }, { name: "지하 봉인실", hidden: true } ],   // 장소 → MP1, MP2… — 선택. hidden: true면 그림을 대화에 나올 때까지 가림
   cuts: [ { title: "첫 입맞춤", when: "카시안이 처음으로 먼저 입을 맞추는 순간", tags: "…" } ],   // 컷씬 → EV1, EV2… — 선택
   commands: [ { cmd: "알현", title: "황제 알현", desc: "독자용 설명", prompt: "AI에게 주는 지시 — 장면을 알현실로 옮기고 …" } ],   // 대화방 !알현 — 선택
-  openings: [ { title: "시작 상황 이름", directive: "AI에게만 주는 지시", status: { "📅 날짜": "1일차" }, text: "첫 장면 …\n\n[[KAS0]]\n\n카시안: \"…\"" } ]
+  openings: [ { title: "시작 상황 이름", directive: "AI에게만 주는 지시", status: { "📅 날짜": "1일차" }, text: "첫 장면 …\n\n[[KAS0]]\n\n카시안: \"…\"",
+               place: 1, suggestions: ["먼저 인사를 건넨다", "말없이 지켜본다", "이름을 묻는다"], lead: { text: "처음 몇 턴은 …", turns: 3 } } ]   // place·suggestions·lead는 선택
 };
 ```
 
@@ -102,6 +103,7 @@ export default {
 | `commands` | 작품 명령어(선택) `[{ cmd, title, desc, prompt }]`. 상세 페이지 '명령어' 카드에 보이고, 대화방 입력창에 `!cmd`를 치면 말풍선은 그대로 두고 AI에는 `prompt`가 `//` 연출 지시로 가요(예: `m/godseats`의 `!퀘스트`·`!관람석`·`!쉼터`). 앱 명령어의 이름·별칭(`상태창`·`상태`·`갤러리`·`도감`·`지도`·`장소`·`도움말`·`명령어`·`help`·`시간경과`·`새사건`·`조연등장`·`반복금지` — `src/js/core/commands.js` APP_COMMANDS)은 쓸 수 없어요(빌드 검사) |
 | `lore` | 키워드북 `[{ keys, text, kind, tags, always, order, not, also }]`. 대화(최근 메시지 3개)에 `keys`가 나오면 `text`를 AI에 전달해요. **고르는 규칙**(`src/js/ai/prompt/lore.js` matchLore 한 곳): `always: true`는 **상시 항목** — 키워드와 상관없이 매 턴 들어가요(그 세계에서 늘 사실인 전제에만, 꼭 필요한 것 하나둘). `also: [낱말…]`은 **보조 키** — `keys` 중 하나와 `also` 중 하나가 함께 나와야 들어가요(흔한 낱말이 엉뚱한 장면에서 걸리는 것을 막음). `not: [낱말…]`은 **제외 낱말** — 이 낱말이 나오면 넣지 않아요. `order`(숫자, 기본 0)는 **우선순위** — 클수록 먼저 담겨요. 한 턴에 들어가는 양은 상시 + 키워드로 걸린 항목을 합쳐 **8개·2,500자**까지(`src/js/core/constants.js` LORE — 넘치는 항목은 자르지 않고 그 턴에 빠짐). 상시 항목에는 `not`·`also`를 쓸 수 없어요. `kind`는 항목 종류 — `person` 인물 · `creature` 동물·존재 · `place` 장소 · `item` 물건 · `event` 사건 · `group` 세력 · `concept` 설정(앱의 `LORE_KINDS`, 상세 페이지 세계관 카드의 머리표). `tags`는 그 항목을 그릴 영문 낱말(앱 밖에서 `lore-<n>` 그림을 만들 때). 둘 다 빠지면 빌드 경고 |
 | `artTags` | 그 세계관의 영문 낱말(시대·장소·조명·분위기, 예: `joseon dynasty, korean royal palace, paper lanterns, night`). 앱 밖에서 표지·세계관 일러스트를 만들 때 붙여 작품마다 분위기를 맞춰요 |
+| `openings[].place`·`suggestions`·`lead` | 시작 상황의 선택 칸. `place`는 **배경 장소** — `places`의 n번째 번호(1부터): 새 대화의 첫 장면 맨 위에 그 장소 카드(`[[MP<n>]]`)가 붙고 상세 페이지의 시작 상황 카드에 장소 이름이 보여요(본문에 이미 그 태그를 적었으면 한 번만). `suggestions`는 **첫 답변 추천** — 독자가 첫마디를 고르기 쉽게 1~3개, 각 40자 이내('✦ AI 추천'을 누르면 AI 호출 없이 보임). `lead`는 **시작 연출** `{ text, turns }` — 이야기를 연 뒤 `turns`턴(1~20) 동안만 AI에 주는 지시(500자 이내). `directive`는 방이 끝날 때까지 가고, `lead`는 도입부에만(예: "처음 세 턴은 사건을 일으키지 말고 인물 소개에 쓴다") |
 | `openings` | 시작 상황(게임 모드). 인물이 처음 등장하는 줄 위에 `[[코드0]]`(예: `[[KAS0]]` — 코드가 `cast`에 있고 번호가 0~14인지 빌드가 검사). 예전 `[[img:코드:번호]]` 모양은 더 쓰지 않아요 |
 
 `work.js` 안에서는 `const`로 같이 쓸 값을 만들거나(`m/godseats/work.js`의 상태창), 다른 파일을 `import`해도 돼요(예: 키워드북이 길면 `lore.js`로 빼서 `import lore from "./lore.js"`). 빌드가 Node에서 실행한 **결과 값**만 `index.html`에 넣어요 — 그래서 함수 같은 건 넣을 수 없고 글·숫자·참거짓·배열·객체만 돼요.
@@ -150,6 +152,7 @@ content/<f|m|all>/[<줄>/]<id>/images/
 - **미성년 인물**: 출연진 외모·설정 첫머리에 19세 미만 나이나 학생 신분이 있으면 실패(앱의 `minorFlags`와 같은 코드)
 - 필수 칸(`name`·`title`·`oneLiner`·`desc`·`persona`·`openings`), `cat`·`pal`·`motif` 값, `guide`(플레이 가이드)가 1,000자 이내의 글인지, `noteTemplate`(유저노트 양식)이 2,000자 이내의 글인지, `recommend`(권장 모델)가 `lite`·`story`·`master` 중 하나인지, `creator`가 글·`exclusive`가 참거짓·`publishedAt`이 `YYYY-MM-DD` 모양의 실제 날짜인지
 - `cast[].code`가 영문 대문자 1~4자(숫자 없이, `MP`·`EV` 아님)이고 겹치지 않는지, `of`가 본체 인물의 코드인지(폼의 폼은 안 됨), `desc`가 글인지, `hidden`(비공개 감정 번호)이 1~14 정수 배열이고 겹치지 않는지(0 프로필은 실패), `places`·`cuts` 모양(`hidden`은 참거짓), `commands`의 `cmd`가 공백·`!` 없이 겹치지 않고 앱 명령어 이름이 아닌지
+- 시작 상황의 선택 칸: `place`가 `places` 범위 안의 번호인지, `suggestions`가 글 1~3개·각 40자 이내인지, `lead`가 `{ text(500자 이내), turns(1~20) }`인지
 - 시작 상황의 `[[코드번호]]`: 코드가 `cast`(또는 `MP`·`EV`)에 있고 번호가 범위 안인지. 예전 `[[img:…]]` 모양은 실패
 - `images/`: 파일 이름이 `<코드><번호>`·`cover`·`lore-<n>`인지, 코드와 번호가 위 규칙에 맞는지, 같은 그림·표지가 둘인지, `lore-<n>`이 키워드북 범위 안인지
 - 키워드북 규칙: `always`가 참거짓·`order`가 숫자·`not`/`also`가 글 배열인지, 상시 항목에 `not`·`also`를 썼는지, 한 항목의 `text`가 한 턴 예산(2,500자)보다 긴지, 상시 항목의 합이 예산(8개·2,500자)을 넘는지(절반을 넘으면 경고)

@@ -1,6 +1,7 @@
 /* 대화방 저장·목록·이전(migrateRoom)·새 방 만들기(newRoom)·분기(forkRoom), 메시지의 현재 버전 글(curText) */
 import { recommendOf } from "../ai/models.js";
 import { getChar, normalizeChar } from "./character.js";
+import { SERIES } from "./constants.js";
 import { emit } from "./events.js";
 import { S } from "./state.js";
 import { KV } from "./storage.js";
@@ -72,6 +73,7 @@ function upgradeCodes(r) {
 export function defaultSet(c) { return { model: recommendOf(c), len: "mid", mem: 10, rerollAsk: false }; }
 /**
  * 새 대화방 — 작품 사본·시작 상황 본문을 첫 AI 메시지로, 게이지가 없으면 10, 설정은 defaultSet. 바로 저장함.
+ * 시작 상황의 선택 칸: place(배경 장소 — 본문에 그 장소 태그가 없으면 맨 위에 넣음) · suggestions(첫 메시지의 추천 답변) · lead(시작 직후 N턴 동안만 주는 연출 지시 — 방에 복사해 둠).
  * @param {Work} c @param {number} openingIdx 시작 상황 번호 @param {Persona} persona @returns {Room}
  */
 export function newRoom(c, openingIdx, persona) {
@@ -79,11 +81,14 @@ export function newRoom(c, openingIdx, persona) {
   const op = c.openings[openingIdx] || c.openings[0];
   const st = { ...(op.status || {}) };
   if (st[c.gauge] === undefined) st[c.gauge] = 10;
+  const placeTag = op.place ? `[[${Object.keys(SERIES).find((k) => SERIES[k].field === "places")}${op.place}]]` : "";
+  const text = placeTag && !op.text.includes(placeTag) ? placeTag + "\n\n" + op.text : op.text;
   const r = {
     id: uid("r"), v2: true, char: JSON.parse(JSON.stringify(c)), persona: { id: persona.id, name: persona.name, memo: persona.memo || "", desc: persona.desc || "", img: persona.img || "" },
     opening: op.title, directive: op.directive || "", userNote: "", memory: "", memHist: [], pins: [], sinceMem: 0, turn: 0, status: st, bookmarks: [],
     set: defaultSet(c),
-    msgs: [{ id: uid("m"), role: "ai", idx: 0, alts: [{ text: op.text, status: st, suggestions: [], opening: true }], statusBefore: st }],
+    ...(op.lead ? { lead: { text: op.lead.text, turns: op.lead.turns } } : {}),
+    msgs: [{ id: uid("m"), role: "ai", idx: 0, alts: [{ text, status: st, suggestions: (op.suggestions || []).slice(0, 3), opening: true }], statusBefore: st }],
     at: Date.now(), created: Date.now()
   };
   saveRoom(r); return r;

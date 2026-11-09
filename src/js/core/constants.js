@@ -6,6 +6,12 @@ export const FREE_DAILY = 10, WELCOME = 30, PLUS_MONTHLY = 300;
    think: 성인 트랙 관문에서 첫 글자가 올 때까지의 조각 사이 — 답 전에 오래 생각하는 모델이 있어 stall보다 넉넉히(첫 글자 뒤에는 stall) */
 export const TIMEOUT = { connect: 45000, stall: 60000, think: 150000, api: 20000 };
 export const SIT = ["프로필", "기본", "웃음", "부끄러움", "슬픔", "놀람", "분노", "삐침", "공포", "부상", "회복", "휴식", "공격", "각성", "설렘"];
+/** 예약 시리즈(인물 코드로 못 씀): 코드 글자 → { kind 종류, field 작품의 목록 칸, label 사람이 보는 이름, nameKey 항목의 이름 칸 }. 번호는 목록의 n번째(1부터).
+    해석은 images/codes.js(codebook·seriesCode)가 맡고, 표만 여기에 둠(core/rooms.js도 씀) */
+export const SERIES = {
+  MP: { kind: "place", field: "places", label: "장소", nameKey: "name" },
+  EV: { kind: "cut", field: "cuts", label: "컷씬", nameKey: "title" }
+};
 export const SIT_TINT = ["#f5f0ff", "#9fb4ff", "#ffd166", "#ff8fab", "#7b96ff", "#ffe066", "#ff5d5d", "#c77dff", "#56cfe1", "#e63946", "#80ed99", "#a0c4ff", "#ff8c42", "#f9c74f", "#ff70a6"];
 export const PALETTES = [
   ["#1d2735", "#3c5a73", "#c9a46a"], ["#2a1720", "#7a2e48", "#f0b7c8"], ["#151a2e", "#3b3f7a", "#d8c38a"], ["#16222a", "#2f6f73", "#f6d58e"],
@@ -23,5 +29,6 @@ export const DEFAULT_CREATOR = "HEART SYNC 스튜디오";
 /* 글자 수 상한 — 작품 데이터는 빌드가 검사하고(APP_RULES), 화면의 입력 칸은 maxlength와 "n / 한도"에 씀.
    guide 작품의 플레이 가이드(work.js guide) · personaDesc 페르소나 상세 정보 · userNote 유저노트(대화방마다 하나) ·
    memory 장기기억 기본 한도(무료 요금제 PLAN.free.memoMax와 요약 설정 memCfg.limit의 기본값 — 넘으면 압축, PLUS는 PLAN.pro.memoMax까지) ·
-   pin 고정 기억 한 줄의 글자 수(개수는 요금제 PLAN.free/pro.pins — core/wallet.js) */
-export const LIMITS = { guide: 1000, personaDesc: 1000, userNote: 2000, memory: 2000, pin: 200 };
+   pin 고정 기억 한 줄의 글자 수(개수는 요금제 PLAN.free/pro.pins — core/wallet.js) ·
+   suggestion 시작 상황의 첫 답변 추천 한 줄(openings[].suggestions — 최대 3개) · lead 시작 직후 연출 지시(openings[].lead.text)의 글자 수 · leadTurns 그 지시가 이어질 수 있는 최대 턴 수 */
+export const LIMITS = { guide: 1000, personaDesc: 1000, userNote: 2000, memory: 2000, pin: 200, suggestion: 40, lead: 500, leadTurns: 20 };
