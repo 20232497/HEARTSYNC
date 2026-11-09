@@ -3394,7 +3394,7 @@ function matchLore(lore, texts) {
 }
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/core/commands.js
-   내보냄: APP_COMMANDS, COMMAND_KINDS, allCommands, parseCommand, findCommand, commandText, commandHelp, commandList
+   내보냄: APP_COMMANDS, COMMAND_KINDS, allCommands, parseCommand, commandArg, findCommand, commandText, commandHelp, commandList
    쓰는 곳: src/js/ai/prompt/input.js, src/js/ui/chat/cmdlist.js, src/js/ui/codex.js, src/js/ui/faq.js, src/js/ui/chat/view.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 대화방 명령어(순수): 앱 명령어(APP_COMMANDS — 화면형 !상태창·!갤러리·!지도·!도움말은 앱이 바로 처리, 연출형 !시간경과·!새사건·!조연등장·!반복금지는 AI에 연출 지시)와
@@ -3434,8 +3434,12 @@ function allCommands(c) {
   return [...APP_COMMANDS.map((x) => ({ cmd: x.cmd, title: x.title, desc: x.desc, kind: x.view ? "view" : "direct", names: [x.cmd, ...x.alias], own: false })),
     ...((c && c.commands) || []).map((x) => ({ cmd: x.cmd, title: x.title, desc: x.desc || "", kind: x.text ? "reply" : "work", names: [x.cmd], own: true }))];
 }
-/** 입력 글이 명령어 모양(!이름)이면 이름, 아니면 "". 전각 ！도 받고 앞뒤 공백은 뺌. @param {string} text @returns {string} */
-function parseCommand(text) { const m = String(text || "").trim().match(/^[!！]\s*(\S+)$/); return m ? m[1] : ""; }
+/* 명령어 모양: !이름 [덧붙인 말]. 이름 뒤 공백 다음은 모두 덧붙인 말(줄바꿈 포함) — "!다과회 공작 부인을 부른다" */
+const CMD_RE = /^[!！]\s*(\S+)(?:\s+([\s\S]*))?$/;
+/** 입력 글이 명령어 모양(!이름, 뒤에 덧붙인 말이 있어도)이면 이름, 아니면 "". 전각 ！도 받고 앞뒤 공백은 뺌. 이름이 실제 명령어인지는 findCommand가 봄. @param {string} text @returns {string} */
+function parseCommand(text) { const m = String(text || "").trim().match(CMD_RE); return m ? m[1] : ""; }
+/** 명령어 이름 뒤에 덧붙인 말("!다과회 공작 부인을 부른다" → "공작 부인을 부른다"), 없으면 "". @param {string} text @returns {string} */
+function commandArg(text) { const m = String(text || "").trim().match(CMD_RE); return m && m[2] ? m[2].trim() : ""; }
 /**
  * 이름으로 명령어 찾기 — 앱 명령어(별칭 포함, 영문은 대소문자 무시)가 먼저, 다음은 작품의 commands. 없으면 null.
  * @param {string} name @param {{commands?: Command[]}|null|undefined} c @returns {{app: AppCommand, work?: undefined}|{work: Command, app?: undefined}|null}
@@ -3448,10 +3452,12 @@ function findCommand(name, c) {
   const work = ((c && c.commands) || []).find((x) => String(x.cmd).toLowerCase() === n);
   return work ? { work } : null;
 }
-/** 유저 메시지가 연출 지시(prompt)가 있는 명령어(앱 연출형·작품 명령어)면 AI에 보낼 글(// 연출 지시 — 명령 이름·제목·지시), 아니면(보통 글·화면형·즉답 명령어) 원문 그대로. @param {string} text @param {{commands?: Command[]}|null|undefined} c @returns {string} */
+/** 유저 메시지가 연출 지시(prompt)가 있는 명령어(앱 연출형·작품 명령어)면 AI에 보낼 글(// 연출 지시 — 명령 이름·제목·덧붙인 말·지시), 아니면(보통 글·화면형·즉답 명령어) 원문 그대로. @param {string} text @param {{commands?: Command[]}|null|undefined} c @returns {string} */
 function commandText(text, c) {
   const f = findCommand(parseCommand(text), c), x = f && (f.work || f.app);
-  return x && x.prompt ? `// 유저가 명령어 !${x.cmd}(${x.title})을 썼다. ${x.prompt}` : text;
+  if (!x || !x.prompt) return text;
+  const arg = commandArg(text);
+  return `// 유저가 명령어 !${x.cmd}(${x.title})을 썼다${arg ? ` — 덧붙인 말: 「${arg}」` : ""}. ${x.prompt}`;
 }
 /** 도움말 한 줄: 앱 명령어 + 작품 명령어(제목). @param {{commands?: Command[]}|null|undefined} c @returns {string} */
 function commandHelp(c) {
@@ -4393,7 +4399,7 @@ function faqGroups() {
       ["세계관 수첩은 뭔가요?", "키워드북이 있는 작품의 대화방 메뉴(☰)에 있는 모음이에요. 대화에 어떤 낱말이 나오면 AI가 그 작품의 설정을 꺼내 쓰고(말풍선 아래 📖), 그 항목이 수첩에 채워져요. 아직 대화에 안 나온 항목은 종류만 보이고 ???로 남아요."],
       ["도감과 !명령어는 뭔가요?", `<a href="#codex">도감</a>은 작품마다 인물 코드·감정 칸·장소·컷씬·명령어를 보여 주는 안내예요. 대화 속 그림 한 장은 <b>인물 코드 + 번호</b> 한 토큰(예: ${esc(ex.code)}${EXAMPLE_SIT} = ${esc(ex.name)} · ${SIT[EXAMPLE_SIT]})이고, AI가 장면마다 골라 넣어요. 대화방 입력창에 <b>!</b>를 치면 쓸 수 있는 명령어 목록이 떠요. 그림이 실린 작품은 대화에서 본 그림이 도감에 <b>모은 그림</b>으로 쌓이고, 🔒로 가려진 그림은 대화에서 한 번 나오면 도감에서도 열려요.`],
       ["AI의 답이 부적절하거나 이상해요. 어떻게 알리나요?", `그 말풍선의 메뉴에서 <b>신고</b>를 눌러 사유를 고르면 운영자에게 전해져요(로그인 필요, 하루 ${ASK_DAILY}건까지 — 문의와 같이 세요). 신고에는 사유와 작품 이름, 그리고 끄지 않았다면 그 메시지의 앞부분 ${LIMITS.reportQuote}자가 담겨요. 대화 전체는 보내지 않아요. 답변은 고객센터의 <b>내 문의</b>에서 볼 수 있어요. 마음에 들지 않는 답은 <b>↻ 다시 쓰기</b>로 새로 받거나 👎로 표시해 둘 수 있어요.`],
-      ["!명령어에는 어떤 것이 있나요?", `세 가지예요. ① <b>앱 명령어</b> ${cmds("view")} — AI를 부르지 않고 바로 열려요(하트를 쓰지 않아요). ② <b>연출 명령어</b> ${cmds("direct")} — 어느 작품에서나 AI에게 장면 연출을 부탁해요(한 턴을 써요). ③ <b>작품 명령어</b> — 그 작품에만 있는 장치예요(도감의 작품 칸에서 확인). 배지가 <b>이야기</b>면 AI가 그 장면을 열고(한 턴), <b>즉답</b>이면 작품이 정해 둔 글을 AI 없이 바로 보여 줘요(하트를 쓰지 않아요). 직접 지시하고 싶으면 <b>//</b>로 시작해 적어도 돼요.`],
+      ["!명령어에는 어떤 것이 있나요?", `세 가지예요. ① <b>앱 명령어</b> ${cmds("view")} — AI를 부르지 않고 바로 열려요(하트를 쓰지 않아요). ② <b>연출 명령어</b> ${cmds("direct")} — 어느 작품에서나 AI에게 장면 연출을 부탁해요(한 턴을 써요). ③ <b>작품 명령어</b> — 그 작품에만 있는 장치예요(도감의 작품 칸에서 확인). 배지가 <b>이야기</b>면 AI가 그 장면을 열고(한 턴), <b>즉답</b>이면 작품이 정해 둔 글을 AI 없이 바로 보여 줘요(하트를 쓰지 않아요). 연출·이야기 명령어는 이름 뒤에 말을 덧붙이면(예: <b>!새사건 비가 쏟아진다</b>) AI가 그 말도 함께 받아요. 직접 지시하고 싶으면 <b>//</b>로 시작해 적어도 돼요.`],
       ["응답이 중간에 끊겼어요.", "연결이 끊기거나 시간이 너무 오래 걸리면 받은 데까지 남기고 멈춰요. 그 메시지의 <b>다시 시도</b>를 누르면 다시 써요."]
     ]],
     ["계정·데이터", [
@@ -5521,13 +5527,13 @@ async function viewChat(id) {
   renderLog(true); updateMeter(); updateComposer();
 }
 /* !명령어(core/commands.js): 앱 화면형 명령어(view가 있는 것 — !상태창·!갤러리·!지도·!도움말)는 AI를 부르지 않고 드로어를 엶(하트·턴을 쓰지 않음).
-   작품의 즉답 명령어(commands의 text)는 AI 없이 정해진 글을 방에 남김(replyNow).
-   앱 연출형(prompt — !시간경과 등)·작품 명령어(work.js commands의 prompt)·모르는 !글은 false → 그대로 AI에 보냄(연출 지시로 바꾸는 건 buildInput의 commandText) */
+   작품의 즉답 명령어(commands의 text)는 AI 없이 정해진 글을 방에 남김(replyNow). 이 둘은 이름 뒤에 덧붙인 말이 있어도 같음(덧붙인 말은 쓰지 않음).
+   앱 연출형(prompt — !시간경과 등)·작품 명령어(work.js commands의 prompt)·모르는 !글은 false → 그대로 AI에 보냄(연출 지시로 바꾸고 덧붙인 말을 붙이는 건 buildInput의 commandText) */
 function runCommand(t) {
   const live = getChar(room.char.id) || room.char, f = findCommand(parseCommand(t), live);
   if (f && f.work && f.work.text) { replyNow(t, f.work); return true; }
   if (!f || !f.app || !f.app.view) return false;
-  if (f.app.view === "help") { flashHint("명령어: " + commandHelp(live) + " — // 로 시작하면 연출 지시"); return true; }
+  if (f.app.view === "help") { flashHint("명령어: " + commandHelp(live) + " — 이름 뒤에 말을 덧붙여도 되고, // 로 시작하면 연출 지시"); return true; }
   openRoomDrawer(f.app.view); return true;
 }
 /* 즉답: 유저 말풍선과 정해진 글의 AI 메시지를 방에 남김 — 하트·턴을 쓰지 않고 상태창은 직전 값 그대로. 두 메시지에 canned 표시

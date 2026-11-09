@@ -35,8 +35,12 @@ export function allCommands(c) {
   return [...APP_COMMANDS.map((x) => ({ cmd: x.cmd, title: x.title, desc: x.desc, kind: x.view ? "view" : "direct", names: [x.cmd, ...x.alias], own: false })),
     ...((c && c.commands) || []).map((x) => ({ cmd: x.cmd, title: x.title, desc: x.desc || "", kind: x.text ? "reply" : "work", names: [x.cmd], own: true }))];
 }
-/** 입력 글이 명령어 모양(!이름)이면 이름, 아니면 "". 전각 ！도 받고 앞뒤 공백은 뺌. @param {string} text @returns {string} */
-export function parseCommand(text) { const m = String(text || "").trim().match(/^[!！]\s*(\S+)$/); return m ? m[1] : ""; }
+/* 명령어 모양: !이름 [덧붙인 말]. 이름 뒤 공백 다음은 모두 덧붙인 말(줄바꿈 포함) — "!다과회 공작 부인을 부른다" */
+const CMD_RE = /^[!！]\s*(\S+)(?:\s+([\s\S]*))?$/;
+/** 입력 글이 명령어 모양(!이름, 뒤에 덧붙인 말이 있어도)이면 이름, 아니면 "". 전각 ！도 받고 앞뒤 공백은 뺌. 이름이 실제 명령어인지는 findCommand가 봄. @param {string} text @returns {string} */
+export function parseCommand(text) { const m = String(text || "").trim().match(CMD_RE); return m ? m[1] : ""; }
+/** 명령어 이름 뒤에 덧붙인 말("!다과회 공작 부인을 부른다" → "공작 부인을 부른다"), 없으면 "". @param {string} text @returns {string} */
+export function commandArg(text) { const m = String(text || "").trim().match(CMD_RE); return m && m[2] ? m[2].trim() : ""; }
 /**
  * 이름으로 명령어 찾기 — 앱 명령어(별칭 포함, 영문은 대소문자 무시)가 먼저, 다음은 작품의 commands. 없으면 null.
  * @param {string} name @param {{commands?: Command[]}|null|undefined} c @returns {{app: AppCommand, work?: undefined}|{work: Command, app?: undefined}|null}
@@ -49,10 +53,12 @@ export function findCommand(name, c) {
   const work = ((c && c.commands) || []).find((x) => String(x.cmd).toLowerCase() === n);
   return work ? { work } : null;
 }
-/** 유저 메시지가 연출 지시(prompt)가 있는 명령어(앱 연출형·작품 명령어)면 AI에 보낼 글(// 연출 지시 — 명령 이름·제목·지시), 아니면(보통 글·화면형·즉답 명령어) 원문 그대로. @param {string} text @param {{commands?: Command[]}|null|undefined} c @returns {string} */
+/** 유저 메시지가 연출 지시(prompt)가 있는 명령어(앱 연출형·작품 명령어)면 AI에 보낼 글(// 연출 지시 — 명령 이름·제목·덧붙인 말·지시), 아니면(보통 글·화면형·즉답 명령어) 원문 그대로. @param {string} text @param {{commands?: Command[]}|null|undefined} c @returns {string} */
 export function commandText(text, c) {
   const f = findCommand(parseCommand(text), c), x = f && (f.work || f.app);
-  return x && x.prompt ? `// 유저가 명령어 !${x.cmd}(${x.title})을 썼다. ${x.prompt}` : text;
+  if (!x || !x.prompt) return text;
+  const arg = commandArg(text);
+  return `// 유저가 명령어 !${x.cmd}(${x.title})을 썼다${arg ? ` — 덧붙인 말: 「${arg}」` : ""}. ${x.prompt}`;
 }
 /** 도움말 한 줄: 앱 명령어 + 작품 명령어(제목). @param {{commands?: Command[]}|null|undefined} c @returns {string} */
 export function commandHelp(c) {

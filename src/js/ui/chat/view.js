@@ -88,13 +88,13 @@ export async function viewChat(id) {
   renderLog(true); updateMeter(); updateComposer();
 }
 /* !명령어(core/commands.js): 앱 화면형 명령어(view가 있는 것 — !상태창·!갤러리·!지도·!도움말)는 AI를 부르지 않고 드로어를 엶(하트·턴을 쓰지 않음).
-   작품의 즉답 명령어(commands의 text)는 AI 없이 정해진 글을 방에 남김(replyNow).
-   앱 연출형(prompt — !시간경과 등)·작품 명령어(work.js commands의 prompt)·모르는 !글은 false → 그대로 AI에 보냄(연출 지시로 바꾸는 건 buildInput의 commandText) */
+   작품의 즉답 명령어(commands의 text)는 AI 없이 정해진 글을 방에 남김(replyNow). 이 둘은 이름 뒤에 덧붙인 말이 있어도 같음(덧붙인 말은 쓰지 않음).
+   앱 연출형(prompt — !시간경과 등)·작품 명령어(work.js commands의 prompt)·모르는 !글은 false → 그대로 AI에 보냄(연출 지시로 바꾸고 덧붙인 말을 붙이는 건 buildInput의 commandText) */
 function runCommand(t) {
   const live = getChar(room.char.id) || room.char, f = findCommand(parseCommand(t), live);
   if (f && f.work && f.work.text) { replyNow(t, f.work); return true; }
   if (!f || !f.app || !f.app.view) return false;
-  if (f.app.view === "help") { flashHint("명령어: " + commandHelp(live) + " — // 로 시작하면 연출 지시"); return true; }
+  if (f.app.view === "help") { flashHint("명령어: " + commandHelp(live) + " — 이름 뒤에 말을 덧붙여도 되고, // 로 시작하면 연출 지시"); return true; }
   openRoomDrawer(f.app.view); return true;
 }
 /* 즉답: 유저 말풍선과 정해진 글의 AI 메시지를 방에 남김 — 하트·턴을 쓰지 않고 상태창은 직전 값 그대로. 두 메시지에 canned 표시
