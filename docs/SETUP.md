@@ -52,6 +52,12 @@ README에서 옮겨 둔 운영 메모예요. 코드 구조는 [ARCHITECTURE.md](
 2. 관리자로 쓸 계정으로 앱에 한 번 로그인한 뒤 SQL Editor에서: `insert into public.admins (user_id) select id from auth.users where email = '관리자 이메일' on conflict do nothing;` (소셜 계정은 Authentication → Users의 User UID로 `values ('UID')`)
 3. 그 계정으로 로그인한 관리자 도구에서는 따로 누를 것 없이 **공지** 메뉴에 '+ 새 공지'·고치기·삭제와 비공개 공지가 보이고, MY에 **고객센터 관리**(답변 대기 수), 고객센터의 문의하기 아래에 **받은 문의**(답변 대기·완료·종료·전체, 답을 쓰면 서버가 '답변 완료'로 바꿈)가 생겨요
 - 권한은 서버가 정해요: 공지는 누구나(로그인 없이도) 공개된 것만 읽고 관리자만 씀, 문의는 쓴 사람 본인과 관리자만 봄, 사용자는 분류·제목·내용·답변 받을 이메일·앱 정보 칸만 쓸 수 있고(열 권한) 하루 5건까지(트리거). 관리자 페이지의 비밀번호 관문은 브라우저 안의 확인이라 서버 권한을 주지 않아요 — 관문을 지나도 `admins` 표에 없는 계정은 공지를 쓰거나 남의 문의를 볼 수 없고, 공지 화면은 읽기만 되며 로그인 안내가 보여요
+- **메시지 신고 분류(2026-11-09 추가 — 한 번만, 아직 실행 전)**: 대화방 AI 말풍선의 '신고'는 문의 표에 분류 `report`('신고')로 들어와요. 2026-11-05에 만든 표의 분류 제약은 이 값을 모르므로 **SQL Editor**에서 아래 두 줄을 실행해 주세요([supabase.sql](supabase.sql)을 전체 다시 실행해도 같아요).
+  ```sql
+  alter table public.inquiries drop constraint if exists inquiries_category_check;
+  alter table public.inquiries add constraint inquiries_category_check check (category in ('account', 'pay', 'chat', 'image', 'adult', 'bug', 'suggest', 'report', 'etc'));
+  ```
+  실행하기 전에도 신고는 접수돼요 — 서버가 분류를 거부하면 앱이 '기타' 분류로 다시 보내고 제목 앞의 `[신고]`로 구분해요(받은 문의 목록에는 어느 쪽이든 '신고' 배지). 신고에는 사유·작품 이름과, 이용자가 끄지 않았다면 그 메시지의 앞부분 300자가 담겨요(개인정보처리방침 2026-11-23 개정에 적음). 하루 5건 규칙은 문의와 같이 셈
 - 문의 알림(메일·카카오톡)은 없어요 — 관리자 도구 MY의 답변 대기 수로 확인해요. 알림이 필요하면 Supabase Database Webhook이나 Edge Function으로 붙일 수 있어요
 
 ## 대화 관문 설정(성인 트랙·일반 트랙의 무료 길 — 2026-11-09 틀만 세움, 아직 켜지 않음)

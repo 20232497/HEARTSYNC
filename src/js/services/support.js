@@ -6,8 +6,13 @@ import { SB } from "./supabase.js";
 /** @typedef {import("../core/types.js").Notice} Notice */
 /** @typedef {import("../core/types.js").Inquiry} Inquiry */
 
-/** 문의 분류 [값, 이름] — docs/supabase.sql inquiries.category 제약 안의 값. 'adult'(성인 모드)는 예전 문의 때문에 서버 제약에만 남김(화면에선 '기타'로 보임) */
-export const ASK_CATS = [["account", "계정·로그인"], ["pay", "요금·하트"], ["chat", "대화·AI"], ["image", "그림"], ["bug", "오류 신고"], ["suggest", "제안"], ["etc", "기타"]];
+/** 문의 분류 [값, 이름] — docs/supabase.sql inquiries.category 제약 안의 값. 'adult'(성인 모드)는 예전 문의 때문에 서버 제약에만 남김(화면에선 '기타'로 보임). 'report'는 메시지 신고(REPORT_CAT — 말풍선 메뉴에서 접수, 문의 폼에서도 고를 수 있음) */
+export const ASK_CATS = [["account", "계정·로그인"], ["pay", "요금·하트"], ["chat", "대화·AI"], ["image", "그림"], ["bug", "오류 신고"], ["suggest", "제안"], ["report", "신고"], ["etc", "기타"]];
+/** 메시지 신고의 분류 값과 사유 [값, 이름](ui/report.js의 신고 시트) */
+export const REPORT_CAT = "report";
+export const REPORT_REASONS = [["bad", "부적절한 내용"], ["error", "오류·이상한 응답"], ["etc", "기타"]];
+/** 신고인지(분류가 신고이거나, 서버 제약을 고치기 전에 '기타'로 받은 [신고] 제목) — 목록의 배지에. @param {{category?: string, title?: string}} a @returns {boolean} */
+export const isReport = (a) => !!a && (a.category === REPORT_CAT || /^\[신고\]/.test(a.title || ""));
 /** 문의 상태 이름 */
 export const ASK_STATUS = { open: "답변 대기", answered: "답변 완료", closed: "종료" };
 /** 앱 밖 문의(로그인하지 않았거나 서버가 없을 때) — privacy.html의 개인정보 보호책임자 이메일과 같음 */
@@ -17,11 +22,12 @@ const NOTICE_COLS = "id,title,body,pinned,published,created_at,updated_at";
 const ASK_COLS = "id,user_id,category,title,body,reply_to,meta,status,answer,answered_at,created_at";
 const CACHE = "hv1_notices";
 
-// 서버 오류 → { code }: notable(표가 없음 — docs/supabase.sql을 아직 안 돌림) · denied(권한 — 관리자가 아니거나 로그인이 풀림) · limit(하루 문의 수) · server
+// 서버 오류 → { code }: notable(표가 없음 — docs/supabase.sql을 아직 안 돌림) · denied(권한 — 관리자가 아니거나 로그인이 풀림) · limit(하루 문의 수) · check(표의 제약에 걸림 — 예: 서버가 아직 모르는 분류) · server
 async function fail(r) {
   const j = await r.json().catch(() => ({})), c = String(j.code || ""), m = String(j.message || j.msg || "");
   if (c === "PGRST205" || c === "42P01" || r.status === 404) return { code: "notable" };
   if (/too_many_inquiries/.test(m)) return { code: "limit" };
+  if (c === "23514") return { code: "check", msg: m.slice(0, 120) };
   if (c === "42501" || r.status === 401 || r.status === 403 || /row-level security|permission denied/i.test(m)) return { code: "denied" };
   return { code: "server", msg: m.slice(0, 120) || "HTTP " + r.status };
 }
@@ -78,6 +84,15 @@ export const SUPPORT = {
     const body = { category: a.category, title: a.title, body: a.body, reply_to: a.reply_to || null, meta: a.meta || null };
     const j = await call(`/rest/v1/inquiries?select=${ASK_COLS}`, { method: "POST", headers: rep, body: JSON.stringify(body) });
     return Array.isArray(j) ? j[0] : j;
+  },
+  /**
+   * 메시지 신고 — 문의 표에 '신고' 분류로(하루 문의 수에 같이 셈). 서버 제약이 아직 예전 것이면(분류 'report'를 모름 — docs/SETUP.md '메시지 신고 분류'의 SQL을 실행하기 전)
+   * '기타'로 다시 보내 접수는 되게 함(제목의 [신고]로 구분 — isReport).
+   * @param {{title: string, body: string}} a @returns {Promise<Inquiry>} @throws {{code: string}}
+   */
+  async report(a) {
+    try { return await this.ask({ category: REPORT_CAT, title: a.title, body: a.body }); }
+    catch (e) { if (!e || e.code !== "check") throw e; return this.ask({ category: "etc", title: a.title, body: a.body }); }
   },
   /** 내 문의(최신순 50개) — 관리자도 자기 것만(받은 문의는 inbox). @returns {Promise<Inquiry[]>} */
   async mine() {

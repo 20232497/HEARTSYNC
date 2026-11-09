@@ -301,7 +301,7 @@
  * @typedef {Object} Inquiry
  * @property {number} id
  * @property {string} user_id 쓴 계정(서버가 auth.uid()로 채움)
- * @property {string} category services/support.js ASK_CATS
+ * @property {string} category services/support.js ASK_CATS('report'는 메시지 신고 — ui/report.js)
  * @property {string} title 100자까지
  * @property {string} body 4000자까지
  * @property {string|null} reply_to 답변 받을 이메일(선택)

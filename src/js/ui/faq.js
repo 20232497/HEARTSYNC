@@ -7,7 +7,7 @@ import { exampleCast } from "../core/character.js";
 import { EXAMPLE_SIT, LIMITS, SHELF, SIT } from "../core/constants.js";
 import { PLAN, FREE_DAILY, PLUS_MONTHLY, WELCOME, listPrice } from "../core/wallet.js";
 import { esc, num, won } from "../core/util.js";
-import { SUPPORT_MAIL } from "../services/support.js";
+import { ASK_DAILY, SUPPORT_MAIL } from "../services/support.js";
 import { PLUS } from "./store.js";
 
 /** 묶음 [이름, [[질문, 답 HTML], …]] — 함수라서 부를 때의 상수 값으로 그림 @returns {Array<[string, Array<[string, string]>]>} */
@@ -36,6 +36,7 @@ export function faqGroups() {
       ["대화를 저장하거나 옮길 수 있나요?", "대화방 메뉴의 <b>대화 내보내기</b>로 파일로 받거나 <b>대화 복사</b>로 복사할 수 있어요. 로그인하면 대화가 계정에 저장돼 다른 기기에서 이어져요."],
       ["대화 속 그림을 끄고 싶어요.", "<a href=\"#me\">MY</a> → 채팅 설정의 <b>대화 속 장면 이미지 보기</b>를 끄면 돼요. 글자 크기·줄 간격·지문 글꼴도 거기서 바꿔요."],
       ["도감과 !명령어는 뭔가요?", `<a href="#codex">도감</a>은 작품마다 인물 코드·감정 칸·장소·컷씬·명령어를 보여 주는 안내예요. 대화 속 그림 한 장은 <b>인물 코드 + 번호</b> 한 토큰(예: ${esc(ex.code)}${EXAMPLE_SIT} = ${esc(ex.name)} · ${SIT[EXAMPLE_SIT]})이고, AI가 장면마다 골라 넣어요. 대화방 입력창에 <b>!</b>를 치면 쓸 수 있는 명령어 목록이 떠요. 그림이 실린 작품은 대화에서 본 그림이 도감에 <b>모은 그림</b>으로 쌓이고, 🔒로 가려진 그림은 대화에서 한 번 나오면 도감에서도 열려요.`],
+      ["AI의 답이 부적절하거나 이상해요. 어떻게 알리나요?", `그 말풍선의 메뉴에서 <b>신고</b>를 눌러 사유를 고르면 운영자에게 전해져요(로그인 필요, 하루 ${ASK_DAILY}건까지 — 문의와 같이 세요). 신고에는 사유와 작품 이름, 그리고 끄지 않았다면 그 메시지의 앞부분 ${LIMITS.reportQuote}자가 담겨요. 대화 전체는 보내지 않아요. 답변은 고객센터의 <b>내 문의</b>에서 볼 수 있어요. 마음에 들지 않는 답은 <b>↻ 다시 쓰기</b>로 새로 받거나 👎로 표시해 둘 수 있어요.`],
       ["!명령어에는 어떤 것이 있나요?", `세 가지예요. ① <b>앱 명령어</b> ${cmds("view")} — AI를 부르지 않고 바로 열려요(하트를 쓰지 않아요). ② <b>연출 명령어</b> ${cmds("direct")} — 어느 작품에서나 AI에게 장면 연출을 부탁해요(한 턴을 써요). ③ <b>작품 명령어</b> — 그 작품에만 있는 장치예요(도감의 작품 칸에서 확인). 배지가 <b>이야기</b>면 AI가 그 장면을 열고(한 턴), <b>즉답</b>이면 작품이 정해 둔 글을 AI 없이 바로 보여 줘요(하트를 쓰지 않아요). 직접 지시하고 싶으면 <b>//</b>로 시작해 적어도 돼요.`],
       ["응답이 중간에 끊겼어요.", "연결이 끊기거나 시간이 너무 오래 걸리면 받은 데까지 남기고 멈춰요. 그 메시지의 <b>다시 시도</b>를 누르면 다시 써요."]
     ]],

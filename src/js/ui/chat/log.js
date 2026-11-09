@@ -12,6 +12,7 @@ import { coverHTML, pavHTML, zoomPic } from "../cover.js";
 import { plan } from "../../core/wallet.js";
 import { ensurePay, plusSheet } from "../pay.js";
 import { pinSheet } from "../pins.js";
+import { reportSheet } from "../report.js";
 import { confirmSheet } from "../sheet.js";
 import { go } from "../shell.js";
 
@@ -66,7 +67,7 @@ export function renderLog(scroll) {
         ${isLast && !alt.opening && !m.canned ? `<button data-act="regen" data-i="${i}">↻ 다시 쓰기</button>` : ""}
         <button data-act="bm" data-i="${i}" class="${bm ? "on" : ""}" aria-pressed="${bm}">${bm ? "★" : "☆"} 북마크</button>
         <button data-act="pin" data-i="${i}" title="이 장면을 고정 기억으로 — 매 턴 그대로 AI에게 전해요">📌 고정</button>
-        <button data-act="editai" data-i="${i}">수정</button><button data-act="copy" data-i="${i}">복사</button>
+        <button data-act="editai" data-i="${i}">수정</button><button data-act="copy" data-i="${i}">복사</button><button data-act="report" data-i="${i}" title="이 메시지를 운영자에게 신고해요">신고</button>
         ${i > 0 ? `<button data-act="fork" data-i="${i}" title="이 메시지까지를 새 대화방으로 복사해요">분기</button><button data-act="del" data-i="${i}">삭제</button>` : ""}
         ${alt.opening || m.canned ? "" : fbBtn(i, 1, alt.fb) + fbBtn(i, -1, alt.fb)}
         ${alt.lore?.length ? `<span class="lore-used" title="이 응답에 반영된 키워드북">📖 ${esc(alt.lore.join(" · "))}</span>` : ""}
@@ -108,6 +109,7 @@ function bindLog(box) {
     else if (act === "copy") copyText(curText(m).replace(/\[\[img:[^\]]*\]\]\n?/g, ""), "복사했어요");
     else if (act === "bm") { const s = new Set(room.bookmarks || []); s.has(m.id) ? s.delete(m.id) : s.add(m.id); room.bookmarks = [...s]; saveRoom(room); renderLog(); toast(s.has(m.id) ? "북마크에 담았어요" : "북마크에서 뺐어요"); }
     else if (act === "pin") pinSheet(room, m);
+    else if (act === "report") reportSheet(room, m);
     else if (act === "up" || act === "down") { const a = m.alts[m.idx], v = act === "up" ? 1 : -1; a.fb = a.fb === v ? 0 : v; saveRoom(room); renderLog(); }
     else if (act === "fork") {
       if (S.rooms.filter((x) => x.charId === room.char.id).length >= plan().rooms) return plusSheet("rooms");

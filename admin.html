@@ -493,6 +493,7 @@ details.stat[open] summary::after { content:"▴"; }
 .setcard h4 { margin:0; font-size:14.5px; }
 .setcard .d { color:var(--muted); font-size:12.5px; margin-top:-4px; }
 .setcard .res { color:var(--accent); font-size:12.5px; font-weight:600; }
+.rp-quote { margin:10px 0 0; padding:10px 12px; border-left:3px solid var(--line); background:var(--surface2); border-radius:0 9px 9px 0; font-size:13px; color:var(--muted); max-height:96px; overflow:auto; overflow-wrap:anywhere; } /* 신고 시트 — 함께 보낼 메시지 앞부분 */
 .toggle { display:flex; align-items:center; justify-content:space-between; gap:12px; }
 .toggle input { width:40px; height:22px; accent-color:var(--accent); }
 .memo-count { text-align:right; font-size:11.5px; color:var(--muted); font-variant-numeric:tabular-nums; }
@@ -673,7 +674,7 @@ const CFG = Object.assign({ anthropicUrl: ANTHROPIC_URL, serverKeys: false, chat
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/core/constants.js
    내보냄: MARK, FREE_DAILY, WELCOME, PLUS_MONTHLY, TIMEOUT, SIT, SERIES, SIT_TINT, PALETTES, MOTIFS, CATS, LORE, EXAMPLE_CAST, EXAMPLE_SIT, SHELF, DEFAULT_CREATOR, LIMITS
-   쓰는 곳: src/js/core/state.js, src/js/ai/models.js, src/js/core/wallet.js, src/js/core/character.js, src/js/core/rooms.js, src/js/core/shelf.js, src/js/services/supabase.js, src/js/images/codes.js, src/js/images/situations.js, src/js/ai/parse.js, src/js/ai/llm.js, src/js/ai/prompt/lore.js, src/js/ai/prompt/input.js, src/js/ai/prompt/rules.js, src/js/ui/cover.js, src/js/ui/codex.js, src/js/ui/faq.js, src/js/ui/home.js, src/js/ui/me.js, src/js/ui/pins.js, src/js/ui/room-drawer.js, src/js/app.js
+   쓰는 곳: src/js/core/state.js, src/js/ai/models.js, src/js/core/wallet.js, src/js/core/character.js, src/js/core/rooms.js, src/js/core/shelf.js, src/js/services/supabase.js, src/js/images/codes.js, src/js/images/situations.js, src/js/ai/parse.js, src/js/ai/llm.js, src/js/ai/prompt/lore.js, src/js/ai/prompt/input.js, src/js/ai/prompt/rules.js, src/js/ui/cover.js, src/js/ui/codex.js, src/js/ui/faq.js, src/js/ui/home.js, src/js/ui/me.js, src/js/ui/pins.js, src/js/ui/room-drawer.js, src/js/ui/report.js, src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 순수 상수: 응답 구분자(MARK), 상황 이름(SIT)·표지 색·무늬·장르, 요금 상수 — 다른 모듈을 import하지 않음 */
 const MARK = "===STATE===";
@@ -710,11 +711,11 @@ const DEFAULT_CREATOR = "HEART SYNC 스튜디오";
    memory 장기기억 기본 한도(무료 요금제 PLAN.free.memoMax와 요약 설정 memCfg.limit의 기본값 — 넘으면 압축, PLUS는 PLAN.pro.memoMax까지) ·
    pin 고정 기억 한 줄의 글자 수(개수는 요금제 PLAN.free/pro.pins — core/wallet.js) ·
    reply 즉답 명령어가 보여 주는 글(commands[].text) · suggestion 시작 상황의 첫 답변 추천 한 줄(openings[].suggestions — 최대 3개) · lead 시작 직후 연출 지시(openings[].lead.text)의 글자 수 · leadTurns 그 지시가 이어질 수 있는 최대 턴 수 */
-const LIMITS = { guide: 1000, personaDesc: 1000, userNote: 2000, memory: 2000, pin: 200, reply: 1000, suggestion: 40, lead: 500, leadTurns: 20 };
+const LIMITS = { guide: 1000, personaDesc: 1000, userNote: 2000, memory: 2000, pin: 200, reply: 1000, suggestion: 40, lead: 500, leadTurns: 20, reportQuote: 300 };
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/core/util.js
    내보냄: $, $$, esc, uid, clamp, today, won, num, ago, timeoutSignal, abortCode, toast
-   쓰는 곳: src/js/core/storage.js, src/js/core/state.js, src/js/core/wallet.js, src/js/core/rooms.js, src/js/services/images.js, src/js/services/cloud.js, src/js/services/supabase.js, src/js/ai/parse.js, src/js/ai/llm.js, src/js/ai/prompt/memory.js, src/js/ui/sheet.js, src/js/ui/chat/cmdlist.js, src/js/ui/chat/suggest.js, src/js/ui/cover.js, src/js/ui/codex.js, src/js/ui/account.js, src/js/ui/store.js, src/js/ui/faq.js, src/js/ui/help.js, src/js/ui/home.js, src/js/ui/me.js, src/js/ui/pay.js, src/js/ui/pins.js, src/js/ui/room-tools.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/chat/render.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/ui/shell.js, src/js/ui/worldart.js, src/js/ui/detail.js, src/js/ui/chats.js, src/js/ui/login.js, src/js/app.js, src/js/admin/support.js, src/js/admin/gate.js, src/js/core/migrate.js, src/js/boot.js
+   쓰는 곳: src/js/core/storage.js, src/js/core/state.js, src/js/core/wallet.js, src/js/core/rooms.js, src/js/services/images.js, src/js/services/cloud.js, src/js/services/supabase.js, src/js/ai/parse.js, src/js/ai/llm.js, src/js/ai/prompt/memory.js, src/js/ui/sheet.js, src/js/ui/chat/cmdlist.js, src/js/ui/chat/suggest.js, src/js/ui/cover.js, src/js/ui/codex.js, src/js/ui/account.js, src/js/ui/store.js, src/js/ui/faq.js, src/js/ui/help.js, src/js/ui/home.js, src/js/ui/me.js, src/js/ui/pay.js, src/js/ui/pins.js, src/js/ui/room-tools.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/chat/render.js, src/js/ui/report.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/ui/shell.js, src/js/ui/worldart.js, src/js/ui/detail.js, src/js/ui/chats.js, src/js/ui/login.js, src/js/app.js, src/js/admin/support.js, src/js/admin/gate.js, src/js/core/migrate.js, src/js/boot.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* DOM·문자열·숫자 유틸, toast, 예상 못 한 오류 기록(reportError) */
 /** @typedef {import("./types.js").TimeoutSignal} TimeoutSignal */
@@ -1682,7 +1683,7 @@ function messagesMinorHint(messages) {
            src/js/core/storage.js { KV }
            src/js/core/util.js { uid }
    내보냄: curText, roomKey, saveRoom, deletedRooms, migrateRoom, defaultSet, newRoom, memoryMark, baseOpening, forkRoom
-   쓰는 곳: src/js/services/cloud.js, src/js/services/sync.js, src/js/ai/prompt/input.js, src/js/ai/prompt/rules.js, src/js/ai/prompt/memory.js, src/js/ui/chat/suggest.js, src/js/ui/me.js, src/js/ui/pins.js, src/js/ui/room-tools.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/ui/detail.js, src/js/app.js
+   쓰는 곳: src/js/services/cloud.js, src/js/services/sync.js, src/js/ai/prompt/input.js, src/js/ai/prompt/rules.js, src/js/ai/prompt/memory.js, src/js/ui/chat/suggest.js, src/js/ui/me.js, src/js/ui/pins.js, src/js/ui/room-tools.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/report.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/ui/detail.js, src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 대화방 저장·목록·이전(migrateRoom)·새 방 만들기(newRoom)·분기(forkRoom), 메시지의 현재 버전 글(curText) */
 
@@ -2206,7 +2207,7 @@ function cloudStateText() {
            src/js/core/util.js { timeoutSignal, toast }
            src/js/services/cloud.js { CLOUD }
    내보냄: SB, PROVIDERS, OAUTH_ICONS, provName, acctName
-   쓰는 곳: src/js/services/cloud.js, src/js/services/support.js, src/js/ai/llm.js, src/js/ui/account.js, src/js/ui/help.js, src/js/ui/login.js, src/js/app.js, src/js/admin/support.js, src/js/boot.js
+   쓰는 곳: src/js/services/cloud.js, src/js/services/support.js, src/js/ai/llm.js, src/js/ui/account.js, src/js/ui/help.js, src/js/ui/report.js, src/js/ui/login.js, src/js/app.js, src/js/admin/support.js, src/js/boot.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* Supabase 인증 REST(SB): 로그인·가입·소셜·세션 갱신, 안내 문구 */
 
@@ -2403,8 +2404,8 @@ async function wipeDevice() {
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/services/support.js
    가져옴: src/js/services/supabase.js { SB }
-   내보냄: ASK_CATS, ASK_STATUS, SUPPORT_MAIL, ASK_DAILY, supportErr, SUPPORT
-   쓰는 곳: src/js/ui/faq.js, src/js/ui/help.js, src/js/app.js, src/js/admin/support.js
+   내보냄: ASK_CATS, REPORT_CAT, REPORT_REASONS, isReport, ASK_STATUS, SUPPORT_MAIL, ASK_DAILY, supportErr, SUPPORT
+   쓰는 곳: src/js/ui/faq.js, src/js/ui/help.js, src/js/ui/report.js, src/js/app.js, src/js/admin/support.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 고객센터 서버(SUPPORT): 공지사항 읽기·쓰기, 문의 남기기·내 문의·받은 문의·답변 — Supabase REST(표 notices·inquiries·admins, docs/supabase.sql).
    공지는 로그인 없이도 읽음(anon은 published만), 문의는 로그인한 본인 것만 쓰고 읽음(RLS). 관리자(admins 표에 있는 계정)만 공지를 쓰고 모든 문의를 보고 답한다.
@@ -2414,8 +2415,13 @@ async function wipeDevice() {
 /** @typedef {import("../core/types.js").Notice} Notice */
 /** @typedef {import("../core/types.js").Inquiry} Inquiry */
 
-/** 문의 분류 [값, 이름] — docs/supabase.sql inquiries.category 제약 안의 값. 'adult'(성인 모드)는 예전 문의 때문에 서버 제약에만 남김(화면에선 '기타'로 보임) */
-const ASK_CATS = [["account", "계정·로그인"], ["pay", "요금·하트"], ["chat", "대화·AI"], ["image", "그림"], ["bug", "오류 신고"], ["suggest", "제안"], ["etc", "기타"]];
+/** 문의 분류 [값, 이름] — docs/supabase.sql inquiries.category 제약 안의 값. 'adult'(성인 모드)는 예전 문의 때문에 서버 제약에만 남김(화면에선 '기타'로 보임). 'report'는 메시지 신고(REPORT_CAT — 말풍선 메뉴에서 접수, 문의 폼에서도 고를 수 있음) */
+const ASK_CATS = [["account", "계정·로그인"], ["pay", "요금·하트"], ["chat", "대화·AI"], ["image", "그림"], ["bug", "오류 신고"], ["suggest", "제안"], ["report", "신고"], ["etc", "기타"]];
+/** 메시지 신고의 분류 값과 사유 [값, 이름](ui/report.js의 신고 시트) */
+const REPORT_CAT = "report";
+const REPORT_REASONS = [["bad", "부적절한 내용"], ["error", "오류·이상한 응답"], ["etc", "기타"]];
+/** 신고인지(분류가 신고이거나, 서버 제약을 고치기 전에 '기타'로 받은 [신고] 제목) — 목록의 배지에. @param {{category?: string, title?: string}} a @returns {boolean} */
+const isReport = (a) => !!a && (a.category === REPORT_CAT || /^\[신고\]/.test(a.title || ""));
 /** 문의 상태 이름 */
 const ASK_STATUS = { open: "답변 대기", answered: "답변 완료", closed: "종료" };
 /** 앱 밖 문의(로그인하지 않았거나 서버가 없을 때) — privacy.html의 개인정보 보호책임자 이메일과 같음 */
@@ -2425,11 +2431,12 @@ const NOTICE_COLS = "id,title,body,pinned,published,created_at,updated_at";
 const ASK_COLS = "id,user_id,category,title,body,reply_to,meta,status,answer,answered_at,created_at";
 const CACHE = "hv1_notices";
 
-// 서버 오류 → { code }: notable(표가 없음 — docs/supabase.sql을 아직 안 돌림) · denied(권한 — 관리자가 아니거나 로그인이 풀림) · limit(하루 문의 수) · server
+// 서버 오류 → { code }: notable(표가 없음 — docs/supabase.sql을 아직 안 돌림) · denied(권한 — 관리자가 아니거나 로그인이 풀림) · limit(하루 문의 수) · check(표의 제약에 걸림 — 예: 서버가 아직 모르는 분류) · server
 async function fail(r) {
   const j = await r.json().catch(() => ({})), c = String(j.code || ""), m = String(j.message || j.msg || "");
   if (c === "PGRST205" || c === "42P01" || r.status === 404) return { code: "notable" };
   if (/too_many_inquiries/.test(m)) return { code: "limit" };
+  if (c === "23514") return { code: "check", msg: m.slice(0, 120) };
   if (c === "42501" || r.status === 401 || r.status === 403 || /row-level security|permission denied/i.test(m)) return { code: "denied" };
   return { code: "server", msg: m.slice(0, 120) || "HTTP " + r.status };
 }
@@ -2487,6 +2494,15 @@ const SUPPORT = {
     const j = await call(`/rest/v1/inquiries?select=${ASK_COLS}`, { method: "POST", headers: rep, body: JSON.stringify(body) });
     return Array.isArray(j) ? j[0] : j;
   },
+  /**
+   * 메시지 신고 — 문의 표에 '신고' 분류로(하루 문의 수에 같이 셈). 서버 제약이 아직 예전 것이면(분류 'report'를 모름 — docs/SETUP.md '메시지 신고 분류'의 SQL을 실행하기 전)
+   * '기타'로 다시 보내 접수는 되게 함(제목의 [신고]로 구분 — isReport).
+   * @param {{title: string, body: string}} a @returns {Promise<Inquiry>} @throws {{code: string}}
+   */
+  async report(a) {
+    try { return await this.ask({ category: REPORT_CAT, title: a.title, body: a.body }); }
+    catch (e) { if (!e || e.code !== "check") throw e; return this.ask({ category: "etc", title: a.title, body: a.body }); }
+  },
   /** 내 문의(최신순 50개) — 관리자도 자기 것만(받은 문의는 inbox). @returns {Promise<Inquiry[]>} */
   async mine() {
     const u = uidOf(); if (!u) return [];
@@ -2529,7 +2545,7 @@ const SUPPORT = {
    src/js/images/codes.js
    가져옴: src/js/core/constants.js { SERIES, SIT }
    내보냄: SERIES, CODE_RE, seriesCode, IMG_TAG_RE, codebook, sitOf, imgTags, imgTag, codeKind, fallbackSits
-   쓰는 곳: src/js/images/pick.js, src/js/ai/prompt/rules.js, src/js/ui/cover.js, src/js/ui/codex.js, src/js/ui/room-tools.js, src/js/ui/room-drawer.js, src/js/ui/chat/render.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/app.js
+   쓰는 곳: src/js/images/pick.js, src/js/ai/prompt/rules.js, src/js/ui/cover.js, src/js/ui/codex.js, src/js/ui/room-tools.js, src/js/ui/room-drawer.js, src/js/ui/chat/render.js, src/js/ui/report.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 그림 코드 체계(순수 — SIT 상수만 import해 Node 단위 테스트가 바로 씀): 인물 코드 + 번호 한 토큰, 작품의 코드 사전(codebook), 본문 태그 [[코드번호]], 그림을 찾는 순서.
    인물 코드는 영문 대문자 1~4자(HSY = 한서윤), 그 뒤 번호가 감정·행동 칸 0~14(SIT) — HSY3 = 한서윤 3 부끄러움. 본문 태그는 [[HSY3]], 그림 파일은 HSY3.webp.
@@ -3365,7 +3381,7 @@ const ICON = {
    src/js/ui/sheet.js
    가져옴: src/js/core/util.js { $, $$, esc }
    내보냄: sheet, closeOverlays, confirmSheet
-   쓰는 곳: src/js/ui/codex.js, src/js/ui/account.js, src/js/ui/store.js, src/js/ui/help.js, src/js/ui/home.js, src/js/ui/me.js, src/js/ui/pay.js, src/js/ui/pins.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/ui/shell.js, src/js/ui/login.js, src/js/app.js, src/js/admin/support.js, src/js/boot.js
+   쓰는 곳: src/js/ui/codex.js, src/js/ui/account.js, src/js/ui/store.js, src/js/ui/help.js, src/js/ui/home.js, src/js/ui/me.js, src/js/ui/pay.js, src/js/ui/pins.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/report.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/ui/shell.js, src/js/ui/login.js, src/js/app.js, src/js/admin/support.js, src/js/boot.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 바닥 시트·확인 창(sheet·confirmSheet), 오버레이 닫기 */
 
@@ -3928,7 +3944,7 @@ function checkout(item, after) {
            src/js/core/constants.js { EXAMPLE_SIT, LIMITS, SHELF, SIT }
            src/js/core/wallet.js { PLAN, FREE_DAILY, PLUS_MONTHLY, WELCOME, listPrice }
            src/js/core/util.js { esc, num, won }
-           src/js/services/support.js { SUPPORT_MAIL }
+           src/js/services/support.js { ASK_DAILY, SUPPORT_MAIL }
            src/js/ui/store.js { PLUS }
    내보냄: faqGroups
    쓰는 곳: src/js/ui/help.js
@@ -3971,6 +3987,7 @@ function faqGroups() {
       ["대화를 저장하거나 옮길 수 있나요?", "대화방 메뉴의 <b>대화 내보내기</b>로 파일로 받거나 <b>대화 복사</b>로 복사할 수 있어요. 로그인하면 대화가 계정에 저장돼 다른 기기에서 이어져요."],
       ["대화 속 그림을 끄고 싶어요.", "<a href=\"#me\">MY</a> → 채팅 설정의 <b>대화 속 장면 이미지 보기</b>를 끄면 돼요. 글자 크기·줄 간격·지문 글꼴도 거기서 바꿔요."],
       ["도감과 !명령어는 뭔가요?", `<a href="#codex">도감</a>은 작품마다 인물 코드·감정 칸·장소·컷씬·명령어를 보여 주는 안내예요. 대화 속 그림 한 장은 <b>인물 코드 + 번호</b> 한 토큰(예: ${esc(ex.code)}${EXAMPLE_SIT} = ${esc(ex.name)} · ${SIT[EXAMPLE_SIT]})이고, AI가 장면마다 골라 넣어요. 대화방 입력창에 <b>!</b>를 치면 쓸 수 있는 명령어 목록이 떠요. 그림이 실린 작품은 대화에서 본 그림이 도감에 <b>모은 그림</b>으로 쌓이고, 🔒로 가려진 그림은 대화에서 한 번 나오면 도감에서도 열려요.`],
+      ["AI의 답이 부적절하거나 이상해요. 어떻게 알리나요?", `그 말풍선의 메뉴에서 <b>신고</b>를 눌러 사유를 고르면 운영자에게 전해져요(로그인 필요, 하루 ${ASK_DAILY}건까지 — 문의와 같이 세요). 신고에는 사유와 작품 이름, 그리고 끄지 않았다면 그 메시지의 앞부분 ${LIMITS.reportQuote}자가 담겨요. 대화 전체는 보내지 않아요. 답변은 고객센터의 <b>내 문의</b>에서 볼 수 있어요. 마음에 들지 않는 답은 <b>↻ 다시 쓰기</b>로 새로 받거나 👎로 표시해 둘 수 있어요.`],
       ["!명령어에는 어떤 것이 있나요?", `세 가지예요. ① <b>앱 명령어</b> ${cmds("view")} — AI를 부르지 않고 바로 열려요(하트를 쓰지 않아요). ② <b>연출 명령어</b> ${cmds("direct")} — 어느 작품에서나 AI에게 장면 연출을 부탁해요(한 턴을 써요). ③ <b>작품 명령어</b> — 그 작품에만 있는 장치예요(도감의 작품 칸에서 확인). 배지가 <b>이야기</b>면 AI가 그 장면을 열고(한 턴), <b>즉답</b>이면 작품이 정해 둔 글을 AI 없이 바로 보여 줘요(하트를 쓰지 않아요). 직접 지시하고 싶으면 <b>//</b>로 시작해 적어도 돼요.`],
       ["응답이 중간에 끊겼어요.", "연결이 끊기거나 시간이 너무 오래 걸리면 받은 데까지 남기고 멈춰요. 그 메시지의 <b>다시 시도</b>를 누르면 다시 써요."]
     ]],
@@ -3997,14 +4014,14 @@ function faqGroups() {
            src/js/core/target.js { TARGET }
            src/js/core/util.js { $, $$, ago, esc, toast }
            src/js/services/supabase.js { SB, acctName }
-           src/js/services/support.js { ASK_CATS, ASK_DAILY, ASK_STATUS, SUPPORT, SUPPORT_MAIL, supportErr }
+           src/js/services/support.js { ASK_CATS, ASK_DAILY, ASK_STATUS, SUPPORT, SUPPORT_MAIL, isReport, supportErr }
            src/js/ui/ext.js { runExt }
            src/js/ui/faq.js { faqGroups }
            src/js/ui/icons.js { ICON }
            src/js/ui/sheet.js { confirmSheet }
            src/js/ui/shell.js { bindGo, go, topbar }
    내보냄: docUrl, hasNewNotice, checkNotices, viewHelp, viewNotice, askHTML
-   쓰는 곳: src/js/ui/me.js, src/js/ui/login.js, src/js/app.js, src/js/admin/support.js
+   쓰는 곳: src/js/ui/me.js, src/js/ui/report.js, src/js/ui/login.js, src/js/app.js, src/js/admin/support.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 공지 화면(#notice)과 고객센터 화면(#help — 자주 묻는 질문·문의하기). 공지는 홈·대화처럼 메뉴에서 바로 들어오고, 고객센터는 MY의 칸에서 들어옴(#help-faq·#help-ask로 바로, 예전 주소 #help-notice는 #notice로 넘김).
    공지·문의는 Supabase(services/support.js), FAQ는 ui/faq.js의 고정 글. 관리자 빌드는 그린 뒤 EXT.help(tab, box, list)로 공지 쓰기·받은 문의를 더함(admin/support.js) — 관리자 계정이면 누를 것 없이 바로 관리 화면.
@@ -4105,7 +4122,7 @@ function faqTab(box) {
 /** 내 문의 한 개. @param {Inquiry} a @returns {string} */
 function askHTML(a, extra = "") {
   const cat = (ASK_CATS.find((c) => c[0] === a.category) || ["", "기타"])[1];
-  return `<details class="ask" data-aid="${+a.id}"><summary><span class="t"><span class="pill ${a.status === "open" ? "" : "ok"}">${ASK_STATUS[a.status] || esc(a.status)}</span><b>${esc(a.title)}</b></span><span class="d">${esc(cat)} · ${day(a.created_at)}</span></summary>
+  return `<details class="ask" data-aid="${+a.id}"><summary><span class="t"><span class="pill ${a.status === "open" ? "" : "ok"}">${ASK_STATUS[a.status] || esc(a.status)}</span>${isReport(a) ? '<span class="pill gold">신고</span>' : ""}<b>${esc(a.title)}</b></span><span class="d">${esc(cat)} · ${day(a.created_at)}</span></summary>
     <div class="nbody">${rich(a.body)}</div>
     ${a.answer ? `<div class="answer"><b>운영자 답변</b><span class="d">${day(a.answered_at)}</span><div>${rich(a.answer)}</div></div>` : ""}${extra}</details>`;
 }
@@ -5198,6 +5215,64 @@ function liveFill(el, text, c, persona, anim = true) {
   cur.innerHTML = /^[^\s:*"“\[]{1,14}$/.test(last.trim()) ? "" : fmt(closeOpen(last), c, persona);
 }
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
+   src/js/ui/report.js
+   가져옴: src/js/core/constants.js { LIMITS }
+           src/js/core/rooms.js { curText }
+           src/js/core/util.js { $, $$, esc, toast }
+           src/js/images/codes.js { IMG_TAG_RE }
+           src/js/services/supabase.js { SB }
+           src/js/services/support.js { REPORT_REASONS, SUPPORT, SUPPORT_MAIL, supportErr }
+           src/js/ui/help.js { docUrl }
+           src/js/ui/sheet.js { closeOverlays, sheet }
+           src/js/ui/shell.js { bindGo }
+   내보냄: reportQuote, reportSheet
+   쓰는 곳: src/js/ui/chat/log.js
+   ════════════════════════════════════════════════════════════════════════════════════════════════════ */
+/* 메시지 신고(reportSheet): AI 말풍선 메뉴의 '신고' → 사유·덧붙일 말·'이 메시지 앞부분을 함께 보내기'(기본 켜짐, 끌 수 있음) → 문의 표에 '신고' 분류로 접수(SUPPORT.report). 로그인하지 않았으면 메일 안내 */
+
+
+
+
+
+
+
+
+
+/** @typedef {import("../core/types.js").Room} Room */
+
+/** 신고에 담을 메시지 앞부분 — 그림 태그를 빼고 공백을 줄여 LIMITS.reportQuote자까지. @param {string} text @returns {string} */
+function reportQuote(text) { return String(text || "").replace(IMG_TAG_RE, "").replace(/\s+/g, " ").trim().slice(0, LIMITS.reportQuote); }
+/**
+ * 신고 시트. 보내는 것: 사유·작품 이름·(적었으면) 덧붙일 말·(켜 두었으면) 그 메시지의 앞부분 — 대화 전체나 다른 메시지는 보내지 않음.
+ * @param {Room} r @param {{alts?: {text: string}[], idx?: number, text?: string}} m 신고할 메시지
+ */
+function reportSheet(r, m) {
+  const mail = `<a href="mailto:${SUPPORT_MAIL}">${SUPPORT_MAIL}</a>`;
+  if (!SB.on() || !SB.s) {
+    const ov = sheet(`<h2>이 메시지 신고</h2><p class="sub">신고는 로그인한 뒤 보낼 수 있어요. 로그인하지 않고 알리려면 ${mail}로 메일을 보내 주세요.</p>
+      ${SB.on() ? `<div class="cta-row"><span class="spacer"></span><button class="btn pri" data-go="login">로그인 · 회원가입</button></div>` : ""}`);
+    bindGo(ov); return;
+  }
+  const quote = reportQuote(curText(m));
+  const ov = sheet(`<h2>이 메시지 신고</h2><p class="sub">운영자가 확인해요. 답변은 MY → 고객센터 → 문의하기의 '내 문의'에서 볼 수 있어요.</p>
+    <div class="chips" id="rpWhy">${REPORT_REASONS.map(([k, l], i) => `<button type="button" class="chip${i === 0 ? " on" : ""}" data-why="${k}" aria-pressed="${i === 0}">${esc(l)}</button>`).join("")}</div>
+    <div class="field" style="margin-top:12px"><label for="rpNote">덧붙일 말 <span class="note">선택</span></label><textarea id="rpNote" maxlength="500" style="min-height:70px" placeholder="어떤 점이 문제였는지 적어 주시면 확인이 빨라요."></textarea></div>
+    <div class="toggle" style="margin-top:12px"><label for="rpQuote">이 메시지 앞부분(${LIMITS.reportQuote}자)을 함께 보내기 <span class="note">끄면 사유와 작품 이름만 보내요</span></label><input type="checkbox" id="rpQuote" checked></div>
+    <blockquote class="rp-quote" id="rpPv">${esc(quote)}</blockquote>
+    <p class="lerr" id="rpErr" role="alert"></p>
+    <div class="cta-row" style="margin-top:6px"><span class="note">신고 내용은 문의와 같이 보관해요 · <a href="${docUrl("privacy.html")}#items" target="_blank" rel="noopener">개인정보처리방침</a></span><span class="spacer"></span><button class="btn pri" id="rpSend">신고 보내기</button></div>`);
+  let why = REPORT_REASONS[0][0];
+  $$("[data-why]", ov).forEach((b) => b.onclick = () => { why = b.dataset.why; $$("[data-why]", ov).forEach((o) => { o.classList.toggle("on", o === b); o.setAttribute("aria-pressed", o === b); }); });
+  $("#rpQuote", ov).onchange = (e) => { $("#rpPv", ov).hidden = !e.target.checked; };
+  $("#rpSend", ov).onclick = async (e) => {
+    const btn = e.currentTarget, err = $("#rpErr", ov), reason = (REPORT_REASONS.find((x) => x[0] === why) || REPORT_REASONS[0])[1], note = $("#rpNote", ov).value.trim();
+    const body = [`사유: ${reason}`, `작품: ${r.char.title} (${r.char.id})`, note ? "\n" + note : "", $("#rpQuote", ov).checked && quote ? "\n[신고한 메시지 앞부분]\n" + quote : ""].filter(Boolean).join("\n");
+    btn.disabled = true; err.textContent = "";
+    try { await SUPPORT.report({ title: `[신고] ${reason} — ${r.char.title}`.slice(0, 100), body }); closeOverlays(); toast("신고를 접수했어요. 답변은 고객센터의 '내 문의'에서 볼 수 있어요"); }
+    catch (x) { err.textContent = supportErr(x); btn.disabled = false; }
+  };
+}
+/* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/ui/chat/log.js
    가져옴: src/js/ai/prompt/rules.js { speakerName }
            src/js/core/rooms.js { curText, forkRoom, saveRoom }
@@ -5212,12 +5287,14 @@ function liveFill(el, text, c, persona, anim = true) {
            src/js/core/wallet.js { plan }
            src/js/ui/pay.js { ensurePay, plusSheet }
            src/js/ui/pins.js { pinSheet }
+           src/js/ui/report.js { reportSheet }
            src/js/ui/sheet.js { confirmSheet }
            src/js/ui/shell.js { go }
    내보냄: stick, setStick, autoScroll, followLog, syncJump, bindStick, renderLog, copyText
    쓰는 곳: src/js/ui/codex.js, src/js/ui/me.js, src/js/ui/pay.js, src/js/ui/room-tools.js, src/js/ui/room-drawer.js, src/js/ui/chat/view.js, src/js/ui/chat/generate.js, src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 메시지 로그 그리기·스크롤 따라가기·말풍선 메뉴(수정·삭제·북마크·고정·좋아요/아쉬워요·분기) */
+
 
 
 
@@ -5285,7 +5362,7 @@ function renderLog(scroll) {
         ${isLast && !alt.opening && !m.canned ? `<button data-act="regen" data-i="${i}">↻ 다시 쓰기</button>` : ""}
         <button data-act="bm" data-i="${i}" class="${bm ? "on" : ""}" aria-pressed="${bm}">${bm ? "★" : "☆"} 북마크</button>
         <button data-act="pin" data-i="${i}" title="이 장면을 고정 기억으로 — 매 턴 그대로 AI에게 전해요">📌 고정</button>
-        <button data-act="editai" data-i="${i}">수정</button><button data-act="copy" data-i="${i}">복사</button>
+        <button data-act="editai" data-i="${i}">수정</button><button data-act="copy" data-i="${i}">복사</button><button data-act="report" data-i="${i}" title="이 메시지를 운영자에게 신고해요">신고</button>
         ${i > 0 ? `<button data-act="fork" data-i="${i}" title="이 메시지까지를 새 대화방으로 복사해요">분기</button><button data-act="del" data-i="${i}">삭제</button>` : ""}
         ${alt.opening || m.canned ? "" : fbBtn(i, 1, alt.fb) + fbBtn(i, -1, alt.fb)}
         ${alt.lore?.length ? `<span class="lore-used" title="이 응답에 반영된 키워드북">📖 ${esc(alt.lore.join(" · "))}</span>` : ""}
@@ -5327,6 +5404,7 @@ function bindLog(box) {
     else if (act === "copy") copyText(curText(m).replace(/\[\[img:[^\]]*\]\]\n?/g, ""), "복사했어요");
     else if (act === "bm") { const s = new Set(room.bookmarks || []); s.has(m.id) ? s.delete(m.id) : s.add(m.id); room.bookmarks = [...s]; saveRoom(room); renderLog(); toast(s.has(m.id) ? "북마크에 담았어요" : "북마크에서 뺐어요"); }
     else if (act === "pin") pinSheet(room, m);
+    else if (act === "report") reportSheet(room, m);
     else if (act === "up" || act === "down") { const a = m.alts[m.idx], v = act === "up" ? 1 : -1; a.fb = a.fb === v ? 0 : v; saveRoom(room); renderLog(); }
     else if (act === "fork") {
       if (S.rooms.filter((x) => x.charId === room.char.id).length >= plan().rooms) return plusSheet("rooms");
@@ -5535,7 +5613,7 @@ function stopGen() { if (gen) gen.ctl.abort(); }
            src/js/ui/icons.js { ICON }
            src/js/ui/sheet.js { closeOverlays }
    내보냄: registerViews, setNavs, go, route, LOGO, renderShell, renderRailRecent, renderWalletChips, topbar, bindGo
-   쓰는 곳: src/js/ui/codex.js, src/js/ui/store.js, src/js/ui/help.js, src/js/ui/home.js, src/js/ui/me.js, src/js/ui/room-tools.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/chat/log.js, src/js/ui/detail.js, src/js/ui/chats.js, src/js/ui/login.js, src/js/app.js, src/js/admin/support.js, src/js/admin/gate.js, src/js/boot.js, src/js/admin.js
+   쓰는 곳: src/js/ui/codex.js, src/js/ui/store.js, src/js/ui/help.js, src/js/ui/home.js, src/js/ui/me.js, src/js/ui/room-tools.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/report.js, src/js/ui/chat/log.js, src/js/ui/detail.js, src/js/ui/chats.js, src/js/ui/login.js, src/js/app.js, src/js/admin/support.js, src/js/admin/gate.js, src/js/boot.js, src/js/admin.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 라우팅(go·route)·레일·탭바·상단바·지갑 칩. 화면은 진입점(main.js·admin.js)이 registerViews·setNavs로 등록한다 — 셸은 어떤 화면이 있는지 모른다.
    아래층의 "rooms"·"wallet"·"route" 이벤트를 받아 레일·칩·화면을 다시 그림 */

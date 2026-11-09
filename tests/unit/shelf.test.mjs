@@ -1,4 +1,5 @@
 // 내 서재(core/shelf.js): 여러 기기의 값을 덮지 않고 합치는 규칙(mergeShelf), 계정 동기화의 날짜 관문(shelfSyncOn), 찜·최근 본 읽고 쓰기
+import fs from "node:fs";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { SHELF } from "../../src/js/core/constants.js";
@@ -31,6 +32,9 @@ test("shelfSyncOn: SHELF.syncFrom 날짜(이 기기의 날짜)부터 참", () =>
   assert.equal(shelfSyncOn(new Date(p[0], p[1] - 1, p[2], 0, 0)), true);
   assert.equal(shelfSyncOn(new Date(p[0] + 1, 0, 1)), true);
   assert.match(SHELF.syncFrom, /^\d{4}-\d{2}-\d{2}$/);
+  // 계정에 올리기 시작하는 날 = 개인정보처리방침 시행일(그 방침에 이 항목을 적었으므로) — 날짜를 미루면 상수와 방침을 같이 고치게
+  const day = `${p[0]}년 ${p[1]}월 ${p[2]}일`, doc = fs.readFileSync(new URL("../../privacy.html", import.meta.url), "utf8");
+  assert.ok(doc.includes("시행일 " + day) && doc.includes("시행일: " + day), "privacy.html의 시행일이 SHELF.syncFrom과 같아야 함");
 });
 test("찜 켜고 끄기·최근 본: 방금 누른 쪽이 이기고(같은 순간에 눌러도), 목록은 새것 먼저", () => {
   S.shelf = mergeShelf();
