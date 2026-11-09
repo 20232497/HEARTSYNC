@@ -22,8 +22,9 @@ export async function readSSE(body, onData, onChunk) {
     }
   }
 }
-/** Anthropic Messages 스트림의 이벤트 하나. @param {any} ev @returns {StreamPart} */
+/** Anthropic Messages 스트림의 이벤트 하나. 답을 보내던 중의 오류 조각(type "error" — 과부하 등)은 failed. @param {any} ev @returns {StreamPart} */
 export function anthropicEvent(ev) {
+  if (ev.type === "error") return { failed: true };
   if (ev.type === "content_block_delta" && ev.delta && ev.delta.text) return { delta: ev.delta.text };
   if (ev.type === "message_delta" && ev.delta && ev.delta.stop_reason) {
     const d = ev.delta.stop_details || ev.stop_details;

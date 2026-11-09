@@ -17,6 +17,10 @@ import { SB } from "../services/supabase.js";
 /** 설정 화면에 보이는 AI 연결 이름. @returns {string} */
 export function engineName() { return !hasClaudeKey() ? "연결 안 됨" : S.settings.apiKey ? "API 키" : "HEART SYNC 서버"; }
 const MODEL_OF = { quick: "claude-haiku-5-5", default: "claude-sonnet-5-5", complex: "claude-opus-5-5" };
+/* 생각(thinking): 이 세대 모델은 생각이 기본으로 켜져 있고(Sonnet 기본 effort high, Haiku·Opus medium — Opus는 끌 수 없음) 생각 토큰도 max_tokens에서 빠짐.
+   그대로 두면 본문이 한도에 잘려 상태창이 빠짐(2026-11-10 실측: Sonnet이 출력 3,200토큰 중 2,051을 생각에 씀). 대화는 effort low,
+   room은 생각 몫으로 출력 한도에 더하는 토큰(쓰지 않은 만큼은 과금 없음). 무료 길 관문(docs/edge/chat.ts)은 서버가 요청을 만들어 여기 값을 쓰지 않음 */
+export const THINKING = { effort: "low", room: 2000 };
 /** 서버 대화 관문이 돌려주는 오류 코드 중 그대로 안내하는 것(나머지는 upstream_error). */
 const GATE_CODES = ["login", "need_key", "adult_required", "minor_blocked", "too_many", "rate_limited", "not_configured"];
 /**
@@ -58,7 +62,7 @@ async function viaAnthropic({ sys, cut, rest, tier, onText, signal, maxTokens })
       res = await fetch(CFG.anthropicUrl, {
         method: "POST", signal: T.signal,
         headers: { "content-type": "application/json", "anthropic-version": "2023-06-01", ...(srvFb ? { "anthropic-beta": "server-side-fallback-2026-07-01" } : {}), ...(S.settings.apiKey ? { "x-api-key": S.settings.apiKey, "anthropic-dangerous-direct-browser-access": "true" } : {}) },
-        body: JSON.stringify({ model, max_tokens: maxTokens, stream: true, system, messages: rest, ...(srvFb ? { fallbacks: "default" } : {}) })
+        body: JSON.stringify({ model, max_tokens: maxTokens + THINKING.room, output_config: { effort: THINKING.effort }, stream: true, system, messages: rest, ...(srvFb ? { fallbacks: "default" } : {}) })
       });
     } catch (e) { T.clear(); throw { code: abortCode(e, T, "upstream_error") }; }
     // fallbacks를 모르는 계정·엔드포인트면 한 번만 빼고 다시
@@ -111,7 +115,8 @@ async function pump(res, T, parse, onText, firstMs = TIMEOUT.stall) {
   finally { T.clear(); }
   // 거절(stop_reason refusal)은 부분 출력이 있어도 완성된 답으로 쓰지 않음
   if (stop === "refusal") throw { code: "refused", text, category };
-  if (failed) throw { code: "upstream_error", text };
+  // 스트림 안의 오류 조각, 끝난 이유(stop) 없이 닫힌 스트림은 끊긴 답 — 완성된 답으로 저장·과금하지 않음(부르는 쪽이 하트를 돌려줌)
+  if (failed || !stop) throw { code: "upstream_error", text };
   // 본문 없이 끝난 응답(출력 한도를 생각에 다 쓴 모델 등)은 답으로 치지 않음 — 부르는 쪽이 하트·무료 턴을 돌려줌
   if (!text.trim()) throw { code: "upstream_error", text: "" };
   return text;

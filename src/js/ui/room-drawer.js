@@ -1,4 +1,4 @@
-/* 대화방 관리 드로어(대화 구성·페르소나·장기기억·유저노트·출력 설정·상태창·갤러리·장소·북마크) — 내보내기·삭제·그림 모으기는 room-tools.js */
+/* 대화방 관리 드로어(대화 구성·페르소나·장기기억·유저노트·출력 설정·상태창·갤러리·장소·북마크·세계관 수첩) — 내보내기·삭제·그림 모으기는 room-tools.js, 세계관 카드는 worldart.js */
 import { engineName } from "../ai/llm.js";
 import { LEN, MODELS } from "../ai/models.js";
 import { maybeSummarize, memCfg, pushHist } from "../ai/prompt/memory.js";
@@ -27,13 +27,14 @@ import { bindPins, pinsHTML } from "./pins.js";
 import { deleteRoom, exportRoom, exportText, galleryItems, jumpTo } from "./room-tools.js";
 import { closeOverlays, confirmSheet } from "./sheet.js";
 import { go } from "./shell.js";
+import { loreCard, loreSeen } from "./worldart.js";
 
 /* ---------------------------------------------------------------- 대화방 관리 드로어 */
 export function openRoomDrawer(view = "main") {
   closeOverlays();
   const r = room, c = r.char;
   const ov = document.createElement("div"); ov.className = "overlay drawer-ov";
-  const titles = { main: "대화방 관리", persona: "내 페르소나", memory: "장기기억", note: "유저노트", output: "출력 설정", status: "상태창", gallery: "갤러리", places: "장소", bookmarks: "북마크" };
+  const titles = { main: "대화방 관리", persona: "내 페르소나", memory: "장기기억", note: "유저노트", output: "출력 설정", status: "상태창", gallery: "갤러리", places: "장소", bookmarks: "북마크", lore: "세계관 수첩" };
   ov.innerHTML = `<aside class="drawer" role="dialog" aria-label="${titles[view]}"><div class="sheet-head">${view !== "main" ? `<button class="icon-btn" id="dBack" aria-label="뒤로">${ICON.back}</button>` : ""}<h2>${titles[view]}</h2><button class="icon-btn" data-x aria-label="닫기">${ICON.close}</button></div><div id="dBody"></div></aside>`;
   document.body.append(ov);
   ov.addEventListener("click", (e) => { if (e.target === ov || e.target.closest("[data-x]")) ov.remove(); });
@@ -64,6 +65,7 @@ export function openRoomDrawer(view = "main") {
         <div class="grp"></div>
         <button data-v="status">상태창</button>
         <button data-v="gallery">갤러리<span class="v">${galleryItems(r).length}장</span></button>
+        ${(liveWork.lore || []).length ? `<button data-v="lore">세계관 수첩<span class="v">${loreSeen(r, liveWork.lore).size} / ${liveWork.lore.length}</span></button>` : ""}
         <button data-v="bookmarks">북마크<span class="v">${(r.bookmarks || []).length}개</span></button>
         ${guide ? `<div class="grp"></div><button id="mGuide">플레이 가이드<span class="v">제작자의 안내</span></button>` : ""}
       </div>
@@ -212,5 +214,14 @@ export function openRoomDrawer(view = "main") {
     body.innerHTML = list.length ? list.map((m) => `<button class="bm" data-j="${m.id}"><b>${m.role === "ai" ? esc(speakerName(r)) : esc(r.persona.name)}</b>${esc(curText(m).replace(IMG_TAG_RE, "").replace(/[*"]/g, "").replace(/\s+/g, " ").slice(0, 120))}…</button>`).join("")
       : `<div class="empty">북마크한 장면이 없어요. 메시지 아래 ☆ 북마크를 눌러 담아 두세요.</div>`;
     $$("[data-j]", body).forEach((b) => b.onclick = () => { ov.remove(); jumpTo(b.dataset.j); });
+  }
+  else if (view === "lore") {
+    // 세계관 수첩: 작품의 키워드북(최신 작품) 가운데 이 대화에서 AI가 꺼내 쓴 항목만 이름·설명까지, 나머지는 종류만 — 대화가 이어질수록 채워짐(worldart.js loreSeen)
+    const live = getChar(c.id) || c, lore = live.lore || [], seen = loreSeen(r, lore);
+    body.innerHTML = lore.length ? `<p class="note" style="margin-bottom:10px">이 대화에서 펼친 세계관 ${seen.size} / ${lore.length}. 대화에 그 낱말이 나오면 AI가 설정을 꺼내 쓰고(말풍선 아래 📖), 여기에 채워져요.</p>
+      <div class="wgal lore-book">${lore.map((e, i) => loreCard(live, e, seen.has(i), false)).join("")}</div>`
+      : `<div class="empty">이 작품에는 키워드북이 없어요.</div>`;
+    IMG.hydrate(body);
+    $$("[data-wlb]", body).forEach((b) => b.onclick = () => { const im = $("img", b); if (im && im.src) lightbox(im.src); });
   }
 }
