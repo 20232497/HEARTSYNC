@@ -6,13 +6,15 @@ import { anthropicEvent, openaiEvent, readSSE } from "../../src/js/ai/stream.js"
 
 const stream = (chunks) => new ReadableStream({ start(c) { const e = new TextEncoder(); chunks.forEach((x) => c.enqueue(typeof x === "string" ? e.encode(x) : x)); c.close(); } });
 
-test("readSSE: 줄이 조각 사이에서 끊겨도 data 줄마다 한 번, 깨진 줄·[DONE]·onData 오류는 넘어감", async () => {
+test("readSSE: 줄이 조각 사이에서 끊겨도 data 줄마다 한 번, 깨진 줄·[DONE]·onData 오류는 넘어감, 주석 줄은 시간 제한을 되돌리지 않음", async () => {
   const got = []; let ticks = 0;
   const han = new TextEncoder().encode('data: {"t":"한글"}\n'); // 한글 글자 중간에서 끊긴 조각
   await readSSE(stream(['event: x\ndata: {"t":1}\n\ndata: {"t"', ':2}\r\n', "data: {broken\n", "data: [DONE]\n", han.slice(0, 12), han.slice(12), ': comment\ndata:{"t":3}\n']),
     (ev) => { got.push(ev.t); if (ev.t === 2) throw new Error("화면 오류"); }, () => ticks++);
   assert.deepEqual(got, [1, 2, "한글", 3]);
-  assert.equal(ticks, 7);
+  assert.equal(ticks, 6); // data 줄 6개(깨진 줄·[DONE] 포함) — event·주석 줄은 세지 않음
+  let alive = 0; await readSSE(stream([": OPENROUTER PROCESSING\n\n", ": OPENROUTER PROCESSING\n\n"]), () => {}, () => alive++);
+  assert.equal(alive, 0);
 });
 
 test("anthropicEvent: 글 조각·끝난 이유·거절 분류", () => {

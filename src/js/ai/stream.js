@@ -5,19 +5,19 @@
  * SSE 본문을 끝까지 읽어 `data:` 줄의 JSON마다 onData. 읽을 수 없는 줄과 onData 안의 오류는 넘어감(조각 하나가 깨져도 스트림은 계속).
  * @param {ReadableStream<Uint8Array>} body
  * @param {(ev: any) => void} onData
- * @param {() => void} [onChunk] 조각이 올 때마다(멈춤 시간 제한을 다시 셈)
+ * @param {() => void} [onChunk] data 줄이 올 때마다(멈춤 시간 제한을 다시 셈) — 주석 줄(": …" keep-alive)만 오는 동안은 부르지 않아, 답 없이 연결만 붙들린 스트림이 시간 제한에 걸림
  * @returns {Promise<void>}
  */
 export async function readSSE(body, onData, onChunk) {
   const reader = body.getReader(), dec = new TextDecoder(); let buf = "";
   for (;;) {
     const { value, done } = await reader.read(); if (done) break;
-    onChunk && onChunk();
     buf += dec.decode(value, { stream: true });
     let i;
     while ((i = buf.indexOf("\n")) >= 0) {
       const line = buf.slice(0, i).trim(); buf = buf.slice(i + 1);
       if (!line.startsWith("data:")) continue;
+      onChunk && onChunk();
       try { onData(JSON.parse(line.slice(5))); } catch {}
     }
   }

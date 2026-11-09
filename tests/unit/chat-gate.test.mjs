@@ -32,6 +32,7 @@ test("통과: 성인 인증된 계정의 성인 트랙 요청을 모델 서버�
   assert.equal(sent.stream, true);
   assert.equal(sent.max_tokens, 3200);
   assert.deepEqual(sent.provider, { data_collection: "deny" });
+  assert.deepEqual(sent.reasoning, { effort: "low" }); // 생각을 낮게(끌 수 없는 모델이 있어 끄지 않음)
   assert.equal(sent.messages[0].content, "[운영자 머리말]\n\n" + MSGS[0].content); // 머리말은 시스템 글 맨 앞
   assert.deepEqual(sent.messages.slice(1), MSGS.slice(1));
   assert.ok(!JSON.stringify(sent).includes(A) && !m.body.includes("tokA"), "계정 id·토큰을 모델 쪽으로 보내지 않음");
@@ -44,6 +45,13 @@ test("등급마다 서버 설정의 모델, 출력 한도는 256~8000으로", as
   await call(w, { tier: "complex", max_tokens: 999999 });
   const sent = w.modelCalls().map((c) => JSON.parse(c.body));
   assert.deepEqual(sent.map((s) => [s.model, s.max_tokens]), [["vendor/small", 256], ["vendor/big", 8000]]);
+});
+
+test("모델마다 생각 설정: CHAT_MODELS의 값이 { model, reasoning }이면 그 설정, 이름만이면 기본", async () => {
+  const w = world({ CHAT_MODELS: JSON.stringify({ adult: { quick: { model: "vendor/a", reasoning: { enabled: false } }, default: { model: "vendor/b" }, complex: { reasoning: { effort: "high" } } } }) }); adult(w);
+  await call(w, { tier: "quick" }); await call(w, { tier: "default" });
+  assert.deepEqual(w.modelCalls().map((c) => JSON.parse(c.body)).map((s) => [s.model, s.reasoning]), [["vendor/a", { enabled: false }], ["vendor/b", { effort: "low" }]]);
+  assert.deepEqual((await call(w, { tier: "complex" })).body, { code: "not_configured" }); // 모델 이름이 없는 칸
 });
 
 test("로그인 없이·모르는 토큰은 login", async () => {

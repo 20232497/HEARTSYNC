@@ -653,14 +653,15 @@ const CFG = Object.assign({ anthropicUrl: ANTHROPIC_URL, serverKeys: false, chat
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/core/constants.js
    내보냄: MARK, FREE_DAILY, WELCOME, PLUS_MONTHLY, TIMEOUT, SIT, SIT_TINT, PALETTES, MOTIFS, CATS
-   쓰는 곳: src/js/ai/models.js, src/js/core/wallet.js, src/js/services/supabase.js, src/js/images/codes.js, src/js/images/situations.js, src/js/ai/parse.js, src/js/ai/llm.js, src/js/ai/prompt/rules.js, src/js/ui/cover.js, src/js/ui/home.js, src/js/ui/codex.js, src/js/app.js
+   쓰는 곳: src/js/ai/models.js, src/js/core/wallet.js, src/js/services/supabase.js, src/js/images/codes.js, src/js/images/situations.js, src/js/ai/parse.js, src/js/ai/llm.js, src/js/ai/prompt/input.js, src/js/ai/prompt/rules.js, src/js/ui/cover.js, src/js/ui/home.js, src/js/ui/codex.js, src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 순수 상수: 응답 구분자(MARK), 상황 이름(SIT)·표지 색·무늬·장르, 요금 상수 — 다른 모듈을 import하지 않음 */
 const MARK = "===STATE===";
 /* 요금: 하루 무료 턴(라이트), 첫 방문 하트, PLUS 월 지급 하트 — 계산은 core/wallet.js, 모델 표(ai/models.js)도 이 값을 씀 */
 const FREE_DAILY = 10, WELCOME = 30, PLUS_MONTHLY = 300;
-/* 네트워크 시간 제한(ms): connect 응답 머리가 올 때까지 · stall 스트림 조각 사이 · api Supabase 요청 하나. 넘으면 {code:"timeout"}(core/util.js timeoutSignal) */
-const TIMEOUT = { connect: 45000, stall: 60000, api: 20000 };
+/* 네트워크 시간 제한(ms): connect 응답 머리가 올 때까지 · stall 스트림 조각 사이 · api Supabase 요청 하나. 넘으면 {code:"timeout"}(core/util.js timeoutSignal)
+   think: 성인 트랙 관문에서 첫 글자가 올 때까지의 조각 사이 — 답 전에 오래 생각하는 모델이 있어 stall보다 넉넉히(첫 글자 뒤에는 stall) */
+const TIMEOUT = { connect: 45000, stall: 60000, think: 150000, api: 20000 };
 const SIT = ["프로필", "기본", "웃음", "부끄러움", "슬픔", "놀람", "분노", "삐침", "공포", "부상", "회복", "휴식", "공격", "각성", "설렘"];
 const SIT_TINT = ["#f5f0ff", "#9fb4ff", "#ffd166", "#ff8fab", "#7b96ff", "#ffe066", "#ff5d5d", "#c77dff", "#56cfe1", "#e63946", "#80ed99", "#a0c4ff", "#ff8c42", "#f9c74f", "#ff70a6"];
 const PALETTES = [
@@ -2543,19 +2544,19 @@ function parseState(text, c, before) {
  * SSE 본문을 끝까지 읽어 `data:` 줄의 JSON마다 onData. 읽을 수 없는 줄과 onData 안의 오류는 넘어감(조각 하나가 깨져도 스트림은 계속).
  * @param {ReadableStream<Uint8Array>} body
  * @param {(ev: any) => void} onData
- * @param {() => void} [onChunk] 조각이 올 때마다(멈춤 시간 제한을 다시 셈)
+ * @param {() => void} [onChunk] data 줄이 올 때마다(멈춤 시간 제한을 다시 셈) — 주석 줄(": …" keep-alive)만 오는 동안은 부르지 않아, 답 없이 연결만 붙들린 스트림이 시간 제한에 걸림
  * @returns {Promise<void>}
  */
 async function readSSE(body, onData, onChunk) {
   const reader = body.getReader(), dec = new TextDecoder(); let buf = "";
   for (;;) {
     const { value, done } = await reader.read(); if (done) break;
-    onChunk && onChunk();
     buf += dec.decode(value, { stream: true });
     let i;
     while ((i = buf.indexOf("\n")) >= 0) {
       const line = buf.slice(0, i).trim(); buf = buf.slice(i + 1);
       if (!line.startsWith("data:")) continue;
+      onChunk && onChunk();
       try { onData(JSON.parse(line.slice(5))); } catch {}
     }
   }
@@ -2680,24 +2681,28 @@ async function viaGateway({ sys, rest, tier, onText, signal, maxTokens }, r) {
     const j = await res.json().catch(() => ({}));
     throw { code: GATE_CODES.includes(j && j.code) ? j.code : res.status === 429 ? "rate_limited" : "upstream_error" };
   }
-  return pump(res, T, openaiEvent, onText);
+  return pump(res, T, openaiEvent, onText, TIMEOUT.think);
 }
-/* 스트림을 끝까지 읽어 본문을 모음 — 조각 사이 stall 시간 제한, 끊기면 받은 데까지를 text에 실어 던짐. parse는 공급자별 조각 해석(ai/stream.js) */
-async function pump(res, T, parse, onText) {
+/* 스트림을 끝까지 읽어 본문을 모음 — 조각 사이 stall 시간 제한(첫 글자 전에는 firstMs), 끊기면 받은 데까지를 text에 실어 던짐. parse는 공급자별 조각 해석(ai/stream.js).
+   시간 제한은 data 줄이 올 때만 다시 셈(readSSE) — 주석 줄만 보내며 연결을 붙드는 스트림은 끝내 timeout */
+async function pump(res, T, parse, onText, firstMs = TIMEOUT.stall) {
   let text = "", stop = "", category = null, failed = false;
-  T.tick(TIMEOUT.stall);
+  const gap = () => (text ? TIMEOUT.stall : firstMs);
+  T.tick(gap());
   try {
     await readSSE(res.body, (ev) => {
       const e = parse(ev);
       if (e.delta) { text += e.delta; onText && onText({ text, delta: e.delta }); }
       if (e.stop) { stop = e.stop; category = e.category !== undefined ? e.category : null; }
       if (e.failed) failed = true;
-    }, () => T.tick(TIMEOUT.stall));
+    }, () => T.tick(gap()));
   } catch (e) { throw { code: abortCode(e, T, "upstream_error"), text }; }
   finally { T.clear(); }
   // 거절(stop_reason refusal)은 부분 출력이 있어도 완성된 답으로 쓰지 않음
   if (stop === "refusal") throw { code: "refused", text, category };
   if (failed) throw { code: "upstream_error", text };
+  // 본문 없이 끝난 응답(출력 한도를 생각에 다 쓴 모델 등)은 답으로 치지 않음 — 부르는 쪽이 하트·무료 턴을 돌려줌
+  if (!text.trim()) throw { code: "upstream_error", text: "" };
   return text;
 }
 /** 오류 → 사용자 안내 문구. 취소(cancelled)는 빈 문자열. @param {LLMError|unknown} e @returns {string} */
@@ -2775,12 +2780,14 @@ function commandHelp(c) {
            src/js/ai/prompt/rules.js { rulesPrompt }
            src/js/core/character.js { getChar }
            src/js/core/commands.js { commandText }
+           src/js/core/constants.js { MARK }
            src/js/core/rooms.js { curText }
            src/js/images/situations.js { sitHints }
    내보냄: usedOpeners, buildInput
    쓰는 곳: src/js/ai/prompt/rules.js, src/js/ui/chat/generate.js, src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 유저 메시지 끝에 붙는 [이번 응답] 지시(buildInput)와 [이미 쓴 문장](usedOpeners) */
+
 
 
 
@@ -2818,13 +2825,17 @@ function buildInput(r, uptoIdx, statusBefore, direction) {
   const len = LEN[r.set.len] || LEN.mid;
   const out = [{ role: "user", content: rulesPrompt(r, lore, hist) }];
   out.lore = lore.map((e) => e.keys[0]);
+  // 직전 응답 하나에는 그때의 상태창을 출력 형식 그대로 붙여 보냄 — 기록 속 응답이 모두 본문으로만 끝나면 그 모양을 따라 상태창을 빼먹는 모델이 많음(2026-11-09 모델 시험).
+  // 추천 답변이 없던 응답(시작 상황 등)에는 형식을 보이기 위한 보기 셋을 넣음
+  const lastAi = [...recent].reverse().find((m) => m.role === "ai");
+  const stateTail = (m) => { const a = m.alts[m.idx] || {}; return `\n${MARK}\n` + JSON.stringify({ status: a.status || m.statusBefore || {}, suggestions: (a.suggestions || []).length ? a.suggestions : ["조금 더 가까이 다가간다", "솔직하게 속마음을 말한다", "화제를 돌려 상황을 살핀다"] }); };
   recent.forEach((m, i) => {
     const last = i === recent.length - 1;
-    if (m.role === "ai") { out.push({ role: "assistant", content: curText(m) }); return; }
+    if (m.role === "ai") { out.push({ role: "assistant", content: curText(m) + (m === lastAi ? stateTail(m) : "") }); return; }
     // 작품 명령어(!퀘스트 등)는 그 명령의 prompt를 연출 지시(//)로 바꿔 보냄 — 화면의 말풍선은 친 그대로
     let t = m.sys ? "// 직전 장면에서 자연스럽게 이어서 다음 장면을 써라. 유저의 행동은 쓰지 않는다." : commandText(m.text, getChar(r.char.id) || r.char);
     // 분량·대화·새 전개 지시는 시스템 프롬프트에도 있지만, 모델이 가장 잘 따르는 마지막 입력 옆에 한 번 더
-    if (last) t = `[현재 상태창 — 이번 장면은 여기서 출발한다]\n${JSON.stringify(statusBefore || {})}\n\n[${r.persona.name}의 입력]\n${t}${direction ? "\n\n// 다시 쓰기 지침: " + direction : ""}\n\n[이번 응답] 위 입력을 본문에 다시 옮겨 적지 말고 그 직후의 반응부터 쓴다. 본문 ${len.chars}, 대사 ${len.lines}줄 이상을 주고받고, 직전 응답과 다른 새 전개를 넣는다. 나오는 인물마다 [[코드번호]]를 한 장씩 넣는다${(() => { const h = m.sys ? [] : sitHints(m.text); return h.length ? `(유저 입력에 맞는 번호 후보: ${h.join(", ")})` : ""; })()}.`;
+    if (last) t = `[현재 상태창 — 이번 장면은 여기서 출발한다]\n${JSON.stringify(statusBefore || {})}\n\n[${r.persona.name}의 입력]\n${t}${direction ? "\n\n// 다시 쓰기 지침: " + direction : ""}\n\n[이번 응답] 위 입력을 본문에 다시 옮겨 적지 말고 그 직후의 반응부터 쓴다. 본문 ${len.chars}, 대사 ${len.lines}줄 이상을 주고받고, 직전 응답과 다른 새 전개를 넣는다. 나오는 인물마다 [[코드번호]]를 한 장씩 넣는다${(() => { const h = m.sys ? [] : sitHints(m.text); return h.length ? `(유저 입력에 맞는 번호 후보: ${h.join(", ")})` : ""; })()}. 본문이 끝나면 한 줄에 ${MARK}를 쓰고 그 아래 상태 JSON 한 개로 응답을 마친다(빠뜨리지 않는다).`;
     out.push({ role: "user", content: t });
   });
   return out;

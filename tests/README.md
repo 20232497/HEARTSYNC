@@ -45,3 +45,4 @@
 | `verify-adult.test.mjs` | 서버에 남겨 둔 휴대폰 성인 인증 Edge Function(`docs/edge/verify-adult.ts` — 지금 앱은 부르지 않음). 진짜 함수 코드에 가짜 인증 서버·`adult_checks` 표·PortOne API를 끼움 — 도우미 `_idv-fake.mjs`(시험 목록에는 없음) |
 | `chat-gate.test.mjs` | 성인 트랙의 서버 대화 관문 Edge Function(`docs/edge/chat.ts`). 진짜 함수 코드에 가짜 인증 서버·표·모델 서버(`_idv-fake.mjs`)를 끼워: 통과한 요청의 중계(회사 키·서버 설정의 모델·머리말·계정 정보는 안 보냄), 로그인, 성인 인증(없음·미성년·만료·남의 것·시험 채널), 미성년 암시(판정이 없거나 오류면 막음), 요청 모양, 하루 한도, 설정 누락, 모델 서버 오류 |
 | `stream.test.mjs` | AI 응답 스트림 읽기(`ai/stream.js` — 조각 사이에서 끊긴 줄·한글, Anthropic·OpenAI 호환 조각 해석, 내용 필터는 거절)와 트랙 고르기(`ai/models.js` trackOf) |
+| `input.test.mjs` | 한 턴의 요청 묶음(`ai/prompt/input.js` buildInput): 직전 응답 하나에만 상태창을 출력 형식 그대로 붙이는지(앱의 파서가 그대로 읽음), 마지막 입력에 상태창으로 마치라는 다짐이 있는지 |

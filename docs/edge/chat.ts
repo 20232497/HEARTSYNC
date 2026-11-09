@@ -10,7 +10,8 @@
 //
 // 차례: 로그인 확인 → 요청 모양 → 성인 인증(adult_checks — verify-adult.ts가 쓴 것) → 미성년 암시(앱과 같은 함수) → 하루 한도(chat_usage) → 모델 호출.
 // 대화 내용은 저장·기록하지 않는다(남는 것은 계정별 하루 호출 수뿐). 모델 이름과 성인 트랙 머리말은 코드가 아니라 환경 변수에 둔다(공개 저장소에 두지 않음):
-//   OPENROUTER_API_KEY · CHAT_MODELS '{"adult":{"quick":"…","default":"…","complex":"…"}}' · CHAT_PREAMBLE_ADULT(선택) · CHAT_DAILY_LIMIT(기본 300) · CHAT_ALLOW_TEST_IDV(시험 채널 인증도 인정하려면 "1")
+//   OPENROUTER_API_KEY · CHAT_MODELS '{"adult":{"quick":"…","default":"…","complex":"…"}}'(값은 모델 이름, 또는 그 모델만의 생각 설정을 붙인 {"model":"…","reasoning":{…}})
+//   · CHAT_PREAMBLE_ADULT(선택) · CHAT_DAILY_LIMIT(기본 300) · CHAT_ALLOW_TEST_IDV(시험 채널 인증도 인정하려면 "1")
 
 const UPSTREAM = "https://openrouter.ai/api/v1/chat/completions";
 const ROLES = ["system", "user", "assistant"], TIERS = ["quick", "default", "complex"];
@@ -54,7 +55,8 @@ export async function handle(req, get, f = fetch, now = () => new Date(), screen
     if (body.track !== "adult" || !TIERS.includes(body.tier) || !Array.isArray(msgs) || msgs.length < 2 || msgs.length > MAX_MESSAGES) fail(400, "bad_request");
     if (!msgs.every((m) => m && ROLES.includes(m.role) && typeof m.content === "string") || msgs[0].role !== "system" || msgs.slice(1).some((m) => m.role === "system")) fail(400, "bad_request");
     if (msgs.reduce((n, m) => n + m.content.length, 0) > MAX_CHARS) fail(400, "bad_request");
-    const model = typeof models[body.tier] === "string" ? models[body.tier] : "";
+    const entry = typeof models[body.tier] === "string" ? { model: models[body.tier] } : models[body.tier] || {};
+    const model = typeof entry.model === "string" ? entry.model : "";
     if (!model) fail(500, "not_configured");
     const maxTokens = Math.min(8000, Math.max(256, Math.floor(+body.max_tokens) || 2000));
 
@@ -83,11 +85,14 @@ export async function handle(req, get, f = fetch, now = () => new Date(), screen
     // 성인 트랙 머리말(운영자가 비공개로 넣는 글)은 시스템 글 맨 앞에. 사용자 토큰·계정 정보는 모델 쪽으로 보내지 않음
     const pre = String(get("CHAT_PREAMBLE_ADULT") || "").trim();
     const send = [{ role: "system", content: (pre ? pre + "\n\n" : "") + msgs[0].content }, ...msgs.slice(1).map((m) => ({ role: m.role, content: m.content }))];
+    // 생각(reasoning) 토큰도 출력 한도에서 빠져, 그대로 두면 한도를 생각에 다 쓰고 본문 없이 끝나는 모델이 있음(2026-11-09 시험).
+    // 기본은 '낮게' — '끄기'는 생각을 끌 수 없는 모델에서 400이 나고, '낮게'는 시험한 후보 모두가 받음. 그래도 한도를 다 쓰는 모델이 있어 모델마다 CHAT_MODELS의 reasoning으로 바꿈
+    const reasoning = entry.reasoning && typeof entry.reasoning === "object" ? entry.reasoning : { effort: "low" };
     let up;
     try {
       up = await f(UPSTREAM, { method: "POST", signal: req.signal, headers: { Authorization: "Bearer " + modelKey, "Content-Type": "application/json" },
         // data_collection deny: 입력을 학습·보관하는 제공자를 빼고 고름(맞는 제공자가 없으면 404 → not_configured)
-        body: JSON.stringify({ model, messages: send, max_tokens: maxTokens, stream: true, provider: { data_collection: "deny" } }) });
+        body: JSON.stringify({ model, messages: send, max_tokens: maxTokens, stream: true, reasoning, provider: { data_collection: "deny" } }) });
     } catch { fail(502, "upstream"); }
     if (up.status === 429) fail(429, "rate_limited");
     if ([401, 403, 404].includes(up.status)) fail(500, "not_configured"); // 키가 틀렸거나, 그 모델·제공자를 쓸 수 없음

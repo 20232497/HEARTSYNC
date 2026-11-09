@@ -590,7 +590,7 @@ const CFG = Object.assign({ anthropicUrl: ANTHROPIC_URL, serverKeys: false, chat
 /* ── src/js/core/constants.js — 순수 상수: 응답 구분자(MARK), 상황 이름(SIT)·표지 색·무늬·장르, 요금 상수 — 다른 모듈을 import하지 않음 */
 const MARK = "===STATE===";
 const FREE_DAILY = 10, WELCOME = 30, PLUS_MONTHLY = 300;
-const TIMEOUT = { connect: 45000, stall: 60000, api: 20000 };
+const TIMEOUT = { connect: 45000, stall: 60000, think: 150000, api: 20000 };
 const SIT = ["프로필", "기본", "웃음", "부끄러움", "슬픔", "놀람", "분노", "삐침", "공포", "부상", "회복", "휴식", "공격", "각성", "설렘"];
 const SIT_TINT = ["#f5f0ff", "#9fb4ff", "#ffd166", "#ff8fab", "#7b96ff", "#ffe066", "#ff5d5d", "#c77dff", "#56cfe1", "#e63946", "#80ed99", "#a0c4ff", "#ff8c42", "#f9c74f", "#ff70a6"];
 const PALETTES = [
@@ -1938,12 +1938,12 @@ async function readSSE(body, onData, onChunk) {
   const reader = body.getReader(), dec = new TextDecoder(); let buf = "";
   for (;;) {
     const { value, done } = await reader.read(); if (done) break;
-    onChunk && onChunk();
     buf += dec.decode(value, { stream: true });
     let i;
     while ((i = buf.indexOf("\n")) >= 0) {
       const line = buf.slice(0, i).trim(); buf = buf.slice(i + 1);
       if (!line.startsWith("data:")) continue;
+      onChunk && onChunk();
       try { onData(JSON.parse(line.slice(5))); } catch {}
     }
   }
@@ -2019,22 +2019,24 @@ async function viaGateway({ sys, rest, tier, onText, signal, maxTokens }, r) {
     const j = await res.json().catch(() => ({}));
     throw { code: GATE_CODES.includes(j && j.code) ? j.code : res.status === 429 ? "rate_limited" : "upstream_error" };
   }
-  return pump(res, T, openaiEvent, onText);
+  return pump(res, T, openaiEvent, onText, TIMEOUT.think);
 }
-async function pump(res, T, parse, onText) {
+async function pump(res, T, parse, onText, firstMs = TIMEOUT.stall) {
   let text = "", stop = "", category = null, failed = false;
-  T.tick(TIMEOUT.stall);
+  const gap = () => (text ? TIMEOUT.stall : firstMs);
+  T.tick(gap());
   try {
     await readSSE(res.body, (ev) => {
       const e = parse(ev);
       if (e.delta) { text += e.delta; onText && onText({ text, delta: e.delta }); }
       if (e.stop) { stop = e.stop; category = e.category !== undefined ? e.category : null; }
       if (e.failed) failed = true;
-    }, () => T.tick(TIMEOUT.stall));
+    }, () => T.tick(gap()));
   } catch (e) { throw { code: abortCode(e, T, "upstream_error"), text }; }
   finally { T.clear(); }
   if (stop === "refusal") throw { code: "refused", text, category };
   if (failed) throw { code: "upstream_error", text };
+  if (!text.trim()) throw { code: "upstream_error", text: "" };
   return text;
 }
 function errCopy(e) {
@@ -2101,11 +2103,13 @@ function buildInput(r, uptoIdx, statusBefore, direction) {
   const len = LEN[r.set.len] || LEN.mid;
   const out = [{ role: "user", content: rulesPrompt(r, lore, hist) }];
   out.lore = lore.map((e) => e.keys[0]);
+  const lastAi = [...recent].reverse().find((m) => m.role === "ai");
+  const stateTail = (m) => { const a = m.alts[m.idx] || {}; return `\n${MARK}\n` + JSON.stringify({ status: a.status || m.statusBefore || {}, suggestions: (a.suggestions || []).length ? a.suggestions : ["조금 더 가까이 다가간다", "솔직하게 속마음을 말한다", "화제를 돌려 상황을 살핀다"] }); };
   recent.forEach((m, i) => {
     const last = i === recent.length - 1;
-    if (m.role === "ai") { out.push({ role: "assistant", content: curText(m) }); return; }
+    if (m.role === "ai") { out.push({ role: "assistant", content: curText(m) + (m === lastAi ? stateTail(m) : "") }); return; }
     let t = m.sys ? "// 직전 장면에서 자연스럽게 이어서 다음 장면을 써라. 유저의 행동은 쓰지 않는다." : commandText(m.text, getChar(r.char.id) || r.char);
-    if (last) t = `[현재 상태창 — 이번 장면은 여기서 출발한다]\n${JSON.stringify(statusBefore || {})}\n\n[${r.persona.name}의 입력]\n${t}${direction ? "\n\n// 다시 쓰기 지침: " + direction : ""}\n\n[이번 응답] 위 입력을 본문에 다시 옮겨 적지 말고 그 직후의 반응부터 쓴다. 본문 ${len.chars}, 대사 ${len.lines}줄 이상을 주고받고, 직전 응답과 다른 새 전개를 넣는다. 나오는 인물마다 [[코드번호]]를 한 장씩 넣는다${(() => { const h = m.sys ? [] : sitHints(m.text); return h.length ? `(유저 입력에 맞는 번호 후보: ${h.join(", ")})` : ""; })()}.`;
+    if (last) t = `[현재 상태창 — 이번 장면은 여기서 출발한다]\n${JSON.stringify(statusBefore || {})}\n\n[${r.persona.name}의 입력]\n${t}${direction ? "\n\n// 다시 쓰기 지침: " + direction : ""}\n\n[이번 응답] 위 입력을 본문에 다시 옮겨 적지 말고 그 직후의 반응부터 쓴다. 본문 ${len.chars}, 대사 ${len.lines}줄 이상을 주고받고, 직전 응답과 다른 새 전개를 넣는다. 나오는 인물마다 [[코드번호]]를 한 장씩 넣는다${(() => { const h = m.sys ? [] : sitHints(m.text); return h.length ? `(유저 입력에 맞는 번호 후보: ${h.join(", ")})` : ""; })()}. 본문이 끝나면 한 줄에 ${MARK}를 쓰고 그 아래 상태 JSON 한 개로 응답을 마친다(빠뜨리지 않는다).`;
     out.push({ role: "user", content: t });
   });
   return out;

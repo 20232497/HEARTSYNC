@@ -1,5 +1,5 @@
 // 모델 비교 시험(개발 도구 — 앱·빌드에 들어가지 않음): 성인 트랙 후보 모델에 같은 한국어 대화를 시켜 보고 중립 지표를 잰다.
-//   OPENROUTER_API_KEY=… node tools/model-bench.mjs --models a/b,c/d [--work seodoyun] [--turns 4] [--out 폴더] [--tokens 3200]
+//   OPENROUTER_API_KEY=… node tools/model-bench.mjs --models a/b,c/d [--work seodoyun] [--turns 4] [--out 폴더] [--tokens 3200] [--reasoning '{"enabled":false}']
 // 길: 앱의 진짜 코드(프롬프트 buildInput → 호출 llm → 스트림 해석 → 상태창 parseState)와 진짜 관문 코드(docs/edge/chat.ts handle)를 그대로 거쳐
 // 진짜 모델 서버를 부른다. 흉내 내는 것은 계정 서버뿐(tests/unit/_idv-fake.mjs — 로그인·성인 인증·하루 한도).
 // 대화 내용은 공개 저장소의 일반 작품과 평범한 입력만 쓴다 — 프롬프트는 일반 트랙의 것(암전 지시 포함)을 그대로 보내고, 경로만 관문으로 돌린다.
@@ -34,7 +34,8 @@ const { handle } = await loadEdge("chat");
 const GATE = "https://gate.local/chat", now = new Date(), als = new AsyncLocalStorage(), realFetch = globalThis.fetch;
 const world = fakeWorld({ OPENROUTER_API_KEY: key });
 world.add({ id: "hs" + "a".repeat(32), user_id: A, checked_at: now.toISOString(), adult: true, test: false, expires_at: new Date(now.getTime() + 864e5).toISOString() });
-const env = (k) => { const m = als.getStore().model; return k === "CHAT_MODELS" ? JSON.stringify({ adult: { quick: m, default: m, complex: m } }) : k === "CHAT_DAILY_LIMIT" ? "100000" : world.env(k); };
+const reasoning = arg("reasoning") ? JSON.parse(arg("reasoning")) : undefined; // 주면 그 모델들에 이 생각 설정을 붙임(없으면 관문의 기본)
+const env = (k) => { const m = reasoning ? { model: als.getStore().model, reasoning } : als.getStore().model; return k === "CHAT_MODELS" ? JSON.stringify({ adult: { quick: m, default: m, complex: m } }) : k === "CHAT_DAILY_LIMIT" ? "100000" : world.env(k); };
 const upstream = async (url, opt = {}) => {
   if (!String(url).startsWith("https://openrouter.ai/")) return world.fetch(url, opt);
   const meta = als.getStore().meta, res = await realFetch(url, opt);
@@ -47,6 +48,7 @@ const upstream = async (url, opt = {}) => {
       buf += dec.decode(chunk, { stream: true });
       let i; while ((i = buf.indexOf("\n")) >= 0) {
         const line = buf.slice(0, i).trim(); buf = buf.slice(i + 1);
+        if (line.startsWith(":")) { meta.alive++; continue; } // 주석 줄(keep-alive)
         if (!line.startsWith("data:")) continue;
         try { const ev = JSON.parse(line.slice(5)), d = ev.choices && ev.choices[0] && ev.choices[0].delta;
           if (ev.provider) meta.provider = ev.provider; if (ev.usage) meta.usage = ev.usage; if (ev.error) meta.err = JSON.stringify(ev.error).slice(0, 300);
@@ -75,15 +77,15 @@ async function runModel(model) {
   const r = newRoom(JSON.parse(JSON.stringify(work)), 0, { id: "p1", name: "지호", memo: "", desc: "" }), rows = [], log = [`# ${model} — ${work.title}`, "", "## 시작 상황", r.msgs[0].alts[0].text];
   r.set.len = "mid";
   for (let t = 0; t < turns; t++) {
-    const said = SAID[t % SAID.length], meta = { think: 0 }, before = r.status, t0 = Date.now(); let first = 0, text = "", err = "";
+    const said = SAID[t % SAID.length], meta = { think: 0, alive: 0 }, before = r.status, t0 = Date.now(); let first = 0, text = "", err = "";
     r.msgs.push({ id: "u" + t, role: "user", text: said });
     const input = buildInput(r, r.msgs.length, before); // 프롬프트는 일반 트랙의 것(이 시점에 방의 track은 비어 있음)
-    try { text = await als.run({ model, meta }, () => llm(input, { tier: "default", maxTokens, room: { ...r, char: { ...r.char, track: "adult" } }, onText: () => { first = first || Date.now() - t0; } })); }
+    try { text = await als.run({ model, meta }, () => llm(input, { tier: "default", maxTokens, room: { ...r, char: { ...r.char, track: "adult" } }, signal: AbortSignal.timeout(240000), onText: () => { first = first || Date.now() - t0; } })); }
     catch (e) { err = (e && e.code) || String(e).slice(0, 80); text = (e && e.text) || ""; }
     const m = measure(text, r.char, said, r.persona.name), u = meta.usage || {}, parsed = parseState(text, r.char, before);
     rows.push({ model, turn: t + 1, err, http: meta.http, finish: meta.finish || "", provider: meta.provider || "", first, total: Date.now() - t0, ...m, body: undefined,
-      inTok: u.prompt_tokens, outTok: u.completion_tokens, thinkTok: (u.completion_tokens_details || {}).reasoning_tokens, thinkChars: meta.think, cost: u.cost, upstream: meta.err });
-    log.push("", `## ${t + 1}턴 — 지호`, said, "", `### 응답 (${m.chars}자 · ${Date.now() - t0}ms${err ? " · 오류 " + err : ""}${meta.finish ? " · " + meta.finish : ""})`, m.body || "(없음)", "", "상태창: `" + JSON.stringify(parsed.status) + "`", "추천: " + JSON.stringify(parsed.suggestions));
+      inTok: u.prompt_tokens, outTok: u.completion_tokens, thinkTok: (u.completion_tokens_details || {}).reasoning_tokens, thinkChars: meta.think, alive: meta.alive, cost: u.cost, upstream: meta.err });
+    log.push("", `## ${t + 1}턴 — 지호`, said, "", `### 응답 (${m.chars}자 · ${Date.now() - t0}ms${err ? " · 오류 " + err : ""}${meta.finish ? " · " + meta.finish : ""})`, m.body || "(없음)", "", "상태창: `" + JSON.stringify(parsed.status) + "`", "추천: " + JSON.stringify(parsed.suggestions), "", "받은 글의 끝(상태창 자리): `" + text.slice(-260).replace(/\s+/g, " ") + "`");
     if (!m.body) break; // 답이 없으면 더 보내지 않음
     r.msgs.push({ id: "a" + t, role: "ai", idx: 0, alts: [{ text: m.body, ...parsed }], statusBefore: before }); r.status = parsed.status;
   }
@@ -94,7 +96,7 @@ fs.mkdirSync(outDir, { recursive: true });
 const all = (await Promise.all(models.map((m) => runModel(m).catch((e) => [{ model: m, turn: 0, err: String(e).slice(0, 120) }])))).flat();
 fs.writeFileSync(path.join(outDir, "result__" + work.id + ".json"), JSON.stringify(all, null, 1));
 const pad = (v, n) => String(v === undefined || v === null ? "-" : v).padEnd(n);
-console.log(["모델", "턴", "오류", "끝", "첫글자ms", "전체ms", "글자", "한글%", "영문", "한자", "가나", "상태", "칸", "추천", "태그", "나쁜태그", "대사줄", "유저대사", "입력tok", "출력tok", "생각tok", "비용$"].join("\t"));
-for (const x of all) console.log([pad(x.model, 34), x.turn, x.err || "-", x.finish || "-", x.first, x.total, x.chars, x.ko, x.latin, x.han, x.kana, x.json ? "OK" : x.state ? "깨짐" : "없음", x.fields, x.sug, x.tags, x.badTags, x.lines, x.asUser, x.inTok, x.outTok, x.thinkTok === undefined ? (x.thinkChars ? "~" + x.thinkChars + "자" : "-") : x.thinkTok, x.cost === undefined ? "-" : (+x.cost).toFixed(5)].join("\t") + (x.upstream ? "\t" + x.upstream : ""));
+console.log(["모델", "턴", "오류", "끝", "첫글자ms", "전체ms", "글자", "한글%", "영문", "한자", "가나", "상태", "칸", "추천", "태그", "나쁜태그", "대사줄", "유저대사", "입력tok", "출력tok", "생각tok", "주석줄", "비용$"].join("\t"));
+for (const x of all) console.log([pad(x.model, 34), x.turn, x.err || "-", x.finish || "-", x.first, x.total, x.chars, x.ko, x.latin, x.han, x.kana, x.json ? "OK" : x.state ? "깨짐" : "없음", x.fields, x.sug, x.tags, x.badTags, x.lines, x.asUser, x.inTok, x.outTok, x.thinkTok === undefined ? (x.thinkChars ? "~" + x.thinkChars + "자" : "-") : x.thinkTok, x.alive, x.cost === undefined ? "-" : (+x.cost).toFixed(5)].join("\t") + (x.upstream ? "\t" + x.upstream : ""));
 console.log("\n대화 기록·결과: " + path.resolve(outDir));
 process.exit(0);

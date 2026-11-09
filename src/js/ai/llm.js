@@ -84,24 +84,28 @@ async function viaGateway({ sys, rest, tier, onText, signal, maxTokens }, r) {
     const j = await res.json().catch(() => ({}));
     throw { code: GATE_CODES.includes(j && j.code) ? j.code : res.status === 429 ? "rate_limited" : "upstream_error" };
   }
-  return pump(res, T, openaiEvent, onText);
+  return pump(res, T, openaiEvent, onText, TIMEOUT.think);
 }
-/* 스트림을 끝까지 읽어 본문을 모음 — 조각 사이 stall 시간 제한, 끊기면 받은 데까지를 text에 실어 던짐. parse는 공급자별 조각 해석(ai/stream.js) */
-async function pump(res, T, parse, onText) {
+/* 스트림을 끝까지 읽어 본문을 모음 — 조각 사이 stall 시간 제한(첫 글자 전에는 firstMs), 끊기면 받은 데까지를 text에 실어 던짐. parse는 공급자별 조각 해석(ai/stream.js).
+   시간 제한은 data 줄이 올 때만 다시 셈(readSSE) — 주석 줄만 보내며 연결을 붙드는 스트림은 끝내 timeout */
+async function pump(res, T, parse, onText, firstMs = TIMEOUT.stall) {
   let text = "", stop = "", category = null, failed = false;
-  T.tick(TIMEOUT.stall);
+  const gap = () => (text ? TIMEOUT.stall : firstMs);
+  T.tick(gap());
   try {
     await readSSE(res.body, (ev) => {
       const e = parse(ev);
       if (e.delta) { text += e.delta; onText && onText({ text, delta: e.delta }); }
       if (e.stop) { stop = e.stop; category = e.category !== undefined ? e.category : null; }
       if (e.failed) failed = true;
-    }, () => T.tick(TIMEOUT.stall));
+    }, () => T.tick(gap()));
   } catch (e) { throw { code: abortCode(e, T, "upstream_error"), text }; }
   finally { T.clear(); }
   // 거절(stop_reason refusal)은 부분 출력이 있어도 완성된 답으로 쓰지 않음
   if (stop === "refusal") throw { code: "refused", text, category };
   if (failed) throw { code: "upstream_error", text };
+  // 본문 없이 끝난 응답(출력 한도를 생각에 다 쓴 모델 등)은 답으로 치지 않음 — 부르는 쪽이 하트·무료 턴을 돌려줌
+  if (!text.trim()) throw { code: "upstream_error", text: "" };
   return text;
 }
 /** 오류 → 사용자 안내 문구. 취소(cancelled)는 빈 문자열. @param {LLMError|unknown} e @returns {string} */
