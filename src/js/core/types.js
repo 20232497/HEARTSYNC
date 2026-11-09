@@ -136,6 +136,7 @@
  * @property {string} [cost] "무료"·"PLUS"·"♥n"
  * @property {string[]} [lore] 이 응답에 반영된 키워드
  * @property {boolean} [opening] 시작 상황 본문이면 true
+ * @property {1|-1|0} [fb] 독자 피드백: 1 좋아요 · -1 아쉬워요 · 0(또는 없음) 없음 — 이 기기·계정에 저장만, 프롬프트에는 쓰지 않음
  */
 /**
  * AI 메시지. alts[idx]가 현재 보이는 버전.
@@ -179,6 +180,7 @@
  * @property {number} at 마지막 저장 시각
  * @property {number} created
  * @property {string} [lastErr] 마지막 오류 안내(대화방 아래 오류 줄 + 다시 시도)
+ * @property {{ roomId: string, msgId: string }} [forkedFrom] 분기한 방이면 원래 방과 갈라진 메시지(core/rooms.js forkRoom) — opening 끝에 ' (분기)'
  */
 /**
  * 대화방 목록 항목(S.rooms, core/rooms.js indexRoom이 만듦) — 표지를 그릴 수 있게 작품 정보 일부를 복사해 둠.
@@ -193,6 +195,7 @@
  * @property {ImageRef|""} img
  * @property {number} at
  * @property {string} last 마지막 줄 미리보기
+ * @property {boolean} [fork] 분기한 방(대화 목록 카드의 '분기' 표시)
  */
 /** @typedef {{ at: number, d: number, label: string }} LedgerItem 하트 장부 한 줄(d는 변화량) */
 /**

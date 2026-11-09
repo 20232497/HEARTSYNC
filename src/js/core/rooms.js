@@ -1,4 +1,4 @@
-/* 대화방 저장·목록·이전(migrateRoom)·새 방 만들기, 메시지의 현재 버전 글(curText) */
+/* 대화방 저장·목록·이전(migrateRoom)·새 방 만들기(newRoom)·분기(forkRoom), 메시지의 현재 버전 글(curText) */
 import { getChar, normalizeChar } from "./character.js";
 import { emit } from "./events.js";
 import { S } from "./state.js";
@@ -14,7 +14,7 @@ export function curText(m) { return m.role === "ai" ? (m.alts[m.idx] || {}).text
 export function roomKey(id) { return "room-" + id; }
 function indexRoom(r) {
   const c = r.char, lastAi = [...r.msgs].reverse().find((m) => curText(m));
-  const entry = { id: r.id, charId: c.id, name: c.name, title: c.title, glyph: c.glyph, pal: c.pal, motif: c.motif, img: c.img || "", at: r.at,
+  const entry = { id: r.id, charId: c.id, name: c.name, title: c.title, glyph: c.glyph, pal: c.pal, motif: c.motif, img: c.img || "", at: r.at, fork: !!r.forkedFrom,
     last: (lastAi ? curText(lastAi) : "").replace(/\[\[[^\]]*\]\]/g, "").replace(/[*"\[\]]/g, "").replace(/\s+/g, " ").trim().slice(0, 70) };
   S.rooms = [entry, ...S.rooms.filter((x) => x.id !== r.id)].sort((a, b) => b.at - a.at);
   KV.set("rooms", S.rooms); emit("rooms");
@@ -83,4 +83,24 @@ export function newRoom(c, openingIdx, persona) {
     at: Date.now(), created: Date.now()
   };
   saveRoom(r); return r;
+}
+/* 분기한 방의 시작 상황 제목 끝에 붙는 표시 — 원래 제목은 baseOpening으로 */
+const FORK_MARK = " (분기)";
+/** 시작 상황의 원래 제목(분기 표시를 뗌) — '처음부터'가 같은 시작 상황을 찾을 때. @param {Room} r @returns {string} */
+export function baseOpening(r) { const t = r.opening || ""; return t.slice(-FORK_MARK.length) === FORK_MARK ? t.slice(0, -FORK_MARK.length) : t; }
+/**
+ * 분기: 그 메시지까지를 깊은 복사한 새 대화방 — 같은 작품 사본·페르소나·설정·유저노트·장기기억, 상태창은 그 시점의 것, 시작 상황 제목에 '(분기)', forkedFrom에 출처.
+ * 원래 방은 건드리지 않고 새 방을 바로 저장함(지운 방·MAX_MSGS_KEEP 규칙은 saveRoom 그대로). 장기기억은 그 시점으로 되돌릴 수 없어 지금 것을 복사.
+ * @param {Room} r @param {string} msgId 이 메시지까지 가져감 @returns {Room|null} 메시지를 못 찾으면 null
+ */
+export function forkRoom(r, msgId) {
+  const i = r.msgs.findIndex((m) => m.id === msgId);
+  if (i < 0) return null;
+  const f = JSON.parse(JSON.stringify({ ...r, msgs: r.msgs.slice(0, i + 1) }));
+  const ai = [...f.msgs].reverse().find((m) => m.role === "ai"), ids = new Set(f.msgs.map((m) => m.id));
+  f.id = uid("r"); f.opening = (baseOpening(r) || "기본") + FORK_MARK; f.forkedFrom = { roomId: r.id, msgId };
+  f.status = (ai && (ai.alts[ai.idx].status || ai.statusBefore)) || r.status;
+  f.turn = f.msgs.filter((m) => m.role === "user").length; f.sinceMem = Math.min(f.sinceMem || 0, f.turn);
+  f.memHist = []; f.lastErr = ""; f.bookmarks = (r.bookmarks || []).filter((b) => ids.has(b)); f.created = Date.now();
+  saveRoom(f); return f;
 }

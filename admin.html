@@ -678,7 +678,7 @@ const CATS = ["로맨스", "판타지", "RPG", "미스터리", "일상", "시뮬
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/core/util.js
    내보냄: $, $$, esc, uid, clamp, today, won, num, ago, timeoutSignal, abortCode, toast
-   쓰는 곳: src/js/core/storage.js, src/js/core/state.js, src/js/core/wallet.js, src/js/core/rooms.js, src/js/services/images.js, src/js/services/cloud.js, src/js/services/supabase.js, src/js/ai/parse.js, src/js/ai/llm.js, src/js/ai/prompt/memory.js, src/js/ui/sheet.js, src/js/ui/chat/cmdlist.js, src/js/ui/chat/suggest.js, src/js/ui/cover.js, src/js/ui/account.js, src/js/ui/store.js, src/js/ui/faq.js, src/js/ui/help.js, src/js/ui/home.js, src/js/ui/me.js, src/js/ui/pay.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/chat/render.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/ui/shell.js, src/js/ui/codex.js, src/js/ui/worldart.js, src/js/ui/detail.js, src/js/ui/chats.js, src/js/ui/login.js, src/js/app.js, src/js/admin/support.js, src/js/admin/gate.js, src/js/core/migrate.js, src/js/boot.js
+   쓰는 곳: src/js/core/storage.js, src/js/core/state.js, src/js/core/wallet.js, src/js/core/rooms.js, src/js/services/images.js, src/js/services/cloud.js, src/js/services/supabase.js, src/js/ai/parse.js, src/js/ai/llm.js, src/js/ai/prompt/memory.js, src/js/ui/sheet.js, src/js/ui/chat/cmdlist.js, src/js/ui/chat/suggest.js, src/js/ui/cover.js, src/js/ui/account.js, src/js/ui/store.js, src/js/ui/faq.js, src/js/ui/help.js, src/js/ui/home.js, src/js/ui/me.js, src/js/ui/pay.js, src/js/ui/room-tools.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/chat/render.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/ui/shell.js, src/js/ui/codex.js, src/js/ui/worldart.js, src/js/ui/detail.js, src/js/ui/chats.js, src/js/ui/login.js, src/js/app.js, src/js/admin/support.js, src/js/admin/gate.js, src/js/core/migrate.js, src/js/boot.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* DOM·문자열·숫자 유틸, toast, 예상 못 한 오류 기록(reportError) */
 /** @typedef {import("./types.js").TimeoutSignal} TimeoutSignal */
@@ -745,7 +745,7 @@ if (typeof window !== "undefined") {
    src/js/core/storage.js
    가져옴: src/js/core/util.js { toast }
    내보냄: IDB, KV
-   쓰는 곳: src/js/core/wallet.js, src/js/core/rooms.js, src/js/core/settings.js, src/js/services/images.js, src/js/services/cloud.js, src/js/services/load.js, src/js/services/sync.js, src/js/ui/me.js, src/js/ui/room-drawer.js, src/js/ui/chat/view.js, src/js/app.js
+   쓰는 곳: src/js/core/wallet.js, src/js/core/rooms.js, src/js/core/settings.js, src/js/services/images.js, src/js/services/cloud.js, src/js/services/load.js, src/js/services/sync.js, src/js/ui/me.js, src/js/ui/room-tools.js, src/js/ui/chat/view.js, src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 저장소: IndexedDB(IDB)와 KV(localStorage → 계정). 계정 저장은 KV.remote 고리로 — services/cloud.js가 꽂음(core는 services를 모름) */
 
@@ -814,7 +814,7 @@ const KV = {
    가져옴: src/js/core/config.js { CFG }
            src/js/core/util.js { today }
    내보냄: hasClaudeKey, S, room, gen, setGen, setRoom
-   쓰는 곳: src/js/core/audience.js, src/js/core/wallet.js, src/js/core/rooms.js, src/js/core/settings.js, src/js/services/cloud.js, src/js/services/load.js, src/js/services/sync.js, src/js/ai/llm.js, src/js/ai/prompt/memory.js, src/js/ui/chat/cmdlist.js, src/js/ui/chat/suggest.js, src/js/ui/account.js, src/js/ui/store.js, src/js/ui/help.js, src/js/ui/home.js, src/js/ui/me.js, src/js/ui/pay.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/ui/shell.js, src/js/ui/detail.js, src/js/ui/chats.js, src/js/app.js, src/js/core/migrate.js, src/js/boot.js
+   쓰는 곳: src/js/core/audience.js, src/js/core/wallet.js, src/js/core/rooms.js, src/js/core/settings.js, src/js/services/cloud.js, src/js/services/load.js, src/js/services/sync.js, src/js/ai/llm.js, src/js/ai/prompt/memory.js, src/js/ui/chat/cmdlist.js, src/js/ui/chat/suggest.js, src/js/ui/account.js, src/js/ui/store.js, src/js/ui/help.js, src/js/ui/home.js, src/js/ui/me.js, src/js/ui/pay.js, src/js/ui/room-tools.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/ui/shell.js, src/js/ui/detail.js, src/js/ui/chats.js, src/js/app.js, src/js/core/migrate.js, src/js/boot.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 전역 상태 S(지갑·페르소나·대화방·설정), 현재 대화방·진행 중 생성(다른 모듈은 set…()로만 바꿈), API 키 유무(hasClaudeKey — S와 CFG.serverKeys를 함께 봄) */
 
@@ -941,7 +941,7 @@ function emit(name, v) { (handlers[name] || []).forEach((fn) => { try { fn(v); }
            src/js/core/storage.js { KV }
            src/js/core/util.js { today }
    내보냄: FREE_DAILY, PLUS_MONTHLY, WELCOME, PLAN, isPro, plan, refreshFree, freeLeft, saveWallet, ledger, listPrice, quote, qShort, charge, refund
-   쓰는 곳: src/js/services/load.js, src/js/ai/prompt/memory.js, src/js/ui/store.js, src/js/ui/faq.js, src/js/ui/me.js, src/js/ui/pay.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/chat/generate.js, src/js/ui/shell.js, src/js/ui/detail.js, src/js/app.js
+   쓰는 곳: src/js/services/load.js, src/js/ai/prompt/memory.js, src/js/ui/store.js, src/js/ui/faq.js, src/js/ui/me.js, src/js/ui/pay.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/ui/shell.js, src/js/ui/detail.js, src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 요금: 무료 턴·PLUS·하트 차감/환불, 가격 계산(listPrice·quote) */
 
@@ -1594,10 +1594,10 @@ function roomMinorHint(r, lore = r.char?.lore) {
            src/js/core/state.js { S }
            src/js/core/storage.js { KV }
            src/js/core/util.js { uid }
-   내보냄: curText, roomKey, saveRoom, deletedRooms, migrateRoom, newRoom
-   쓰는 곳: src/js/services/cloud.js, src/js/services/sync.js, src/js/ai/prompt/input.js, src/js/ai/prompt/rules.js, src/js/ai/prompt/memory.js, src/js/ui/chat/suggest.js, src/js/ui/me.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/ui/detail.js, src/js/app.js
+   내보냄: curText, roomKey, saveRoom, deletedRooms, migrateRoom, newRoom, baseOpening, forkRoom
+   쓰는 곳: src/js/services/cloud.js, src/js/services/sync.js, src/js/ai/prompt/input.js, src/js/ai/prompt/rules.js, src/js/ai/prompt/memory.js, src/js/ui/chat/suggest.js, src/js/ui/me.js, src/js/ui/room-tools.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/ui/detail.js, src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
-/* 대화방 저장·목록·이전(migrateRoom)·새 방 만들기, 메시지의 현재 버전 글(curText) */
+/* 대화방 저장·목록·이전(migrateRoom)·새 방 만들기(newRoom)·분기(forkRoom), 메시지의 현재 버전 글(curText) */
 
 
 
@@ -1613,7 +1613,7 @@ function curText(m) { return m.role === "ai" ? (m.alts[m.idx] || {}).text || "" 
 function roomKey(id) { return "room-" + id; }
 function indexRoom(r) {
   const c = r.char, lastAi = [...r.msgs].reverse().find((m) => curText(m));
-  const entry = { id: r.id, charId: c.id, name: c.name, title: c.title, glyph: c.glyph, pal: c.pal, motif: c.motif, img: c.img || "", at: r.at,
+  const entry = { id: r.id, charId: c.id, name: c.name, title: c.title, glyph: c.glyph, pal: c.pal, motif: c.motif, img: c.img || "", at: r.at, fork: !!r.forkedFrom,
     last: (lastAi ? curText(lastAi) : "").replace(/\[\[[^\]]*\]\]/g, "").replace(/[*"\[\]]/g, "").replace(/\s+/g, " ").trim().slice(0, 70) };
   S.rooms = [entry, ...S.rooms.filter((x) => x.id !== r.id)].sort((a, b) => b.at - a.at);
   KV.set("rooms", S.rooms); emit("rooms");
@@ -1682,6 +1682,26 @@ function newRoom(c, openingIdx, persona) {
     at: Date.now(), created: Date.now()
   };
   saveRoom(r); return r;
+}
+/* 분기한 방의 시작 상황 제목 끝에 붙는 표시 — 원래 제목은 baseOpening으로 */
+const FORK_MARK = " (분기)";
+/** 시작 상황의 원래 제목(분기 표시를 뗌) — '처음부터'가 같은 시작 상황을 찾을 때. @param {Room} r @returns {string} */
+function baseOpening(r) { const t = r.opening || ""; return t.slice(-FORK_MARK.length) === FORK_MARK ? t.slice(0, -FORK_MARK.length) : t; }
+/**
+ * 분기: 그 메시지까지를 깊은 복사한 새 대화방 — 같은 작품 사본·페르소나·설정·유저노트·장기기억, 상태창은 그 시점의 것, 시작 상황 제목에 '(분기)', forkedFrom에 출처.
+ * 원래 방은 건드리지 않고 새 방을 바로 저장함(지운 방·MAX_MSGS_KEEP 규칙은 saveRoom 그대로). 장기기억은 그 시점으로 되돌릴 수 없어 지금 것을 복사.
+ * @param {Room} r @param {string} msgId 이 메시지까지 가져감 @returns {Room|null} 메시지를 못 찾으면 null
+ */
+function forkRoom(r, msgId) {
+  const i = r.msgs.findIndex((m) => m.id === msgId);
+  if (i < 0) return null;
+  const f = JSON.parse(JSON.stringify({ ...r, msgs: r.msgs.slice(0, i + 1) }));
+  const ai = [...f.msgs].reverse().find((m) => m.role === "ai"), ids = new Set(f.msgs.map((m) => m.id));
+  f.id = uid("r"); f.opening = (baseOpening(r) || "기본") + FORK_MARK; f.forkedFrom = { roomId: r.id, msgId };
+  f.status = (ai && (ai.alts[ai.idx].status || ai.statusBefore)) || r.status;
+  f.turn = f.msgs.filter((m) => m.role === "user").length; f.sinceMem = Math.min(f.sinceMem || 0, f.turn);
+  f.memHist = []; f.lastErr = ""; f.bookmarks = (r.bookmarks || []).filter((b) => ids.has(b)); f.created = Date.now();
+  saveRoom(f); return f;
 }
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/core/settings.js
@@ -2302,7 +2322,7 @@ const SUPPORT = {
    src/js/images/codes.js
    가져옴: src/js/core/constants.js { SIT }
    내보냄: CODE_RE, SERIES, IMG_TAG_RE, codebook, sitOf, imgTags, imgTag, codeKind, fallbackSits
-   쓰는 곳: src/js/images/pick.js, src/js/ai/prompt/rules.js, src/js/ui/cover.js, src/js/ui/room-drawer.js, src/js/ui/chat/render.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/ui/codex.js, src/js/app.js
+   쓰는 곳: src/js/images/pick.js, src/js/ai/prompt/rules.js, src/js/ui/cover.js, src/js/ui/room-tools.js, src/js/ui/room-drawer.js, src/js/ui/chat/render.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/ui/codex.js, src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 그림 코드 체계(순수 — SIT 상수만 import해 Node 단위 테스트가 바로 씀): 인물 코드 + 번호 한 토큰, 작품의 코드 사전(codebook), 본문 태그 [[코드번호]], 그림을 찾는 순서.
    인물 코드는 영문 대문자 1~4자(HSY = 한서윤), 그 뒤 번호가 감정·행동 칸 0~14(SIT) — HSY3 = 한서윤 3 부끄러움. 본문 태그는 [[HSY3]], 그림 파일은 HSY3.webp.
@@ -2774,7 +2794,7 @@ function buildInput(r, uptoIdx, statusBefore, direction) {
            src/js/images/pick.js { imagesOf }
            src/js/services/images.js { validRef }
    내보냄: speakerName, rulesPrompt
-   쓰는 곳: src/js/ai/prompt/input.js, src/js/ai/prompt/memory.js, src/js/ui/chat/suggest.js, src/js/ui/room-drawer.js, src/js/ui/chat/log.js, src/js/app.js
+   쓰는 곳: src/js/ai/prompt/input.js, src/js/ai/prompt/memory.js, src/js/ui/chat/suggest.js, src/js/ui/room-tools.js, src/js/ui/room-drawer.js, src/js/ui/chat/log.js, src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 시스템 프롬프트(rulesPrompt): 연기 규칙·서사 원칙·장면 이미지, 관계 단계(relStage) */
 
@@ -3126,7 +3146,7 @@ ${recent}` }], { tier: "quick", json: true, room: r });
            src/js/images/situations.js { sitName }
            src/js/services/images.js { IMG }
    내보냄: coverHTML, artHTML, tagInfo, figHTML, portraitHTML, lightbox, zoomPic, pavHTML
-   쓰는 곳: src/js/ui/home.js, src/js/ui/me.js, src/js/ui/room-drawer.js, src/js/ui/chat/view.js, src/js/ui/chat/render.js, src/js/ui/chat/log.js, src/js/ui/shell.js, src/js/ui/codex.js, src/js/ui/detail.js, src/js/ui/chats.js, src/js/app.js
+   쓰는 곳: src/js/ui/home.js, src/js/ui/me.js, src/js/ui/room-tools.js, src/js/ui/room-drawer.js, src/js/ui/chat/view.js, src/js/ui/chat/render.js, src/js/ui/chat/log.js, src/js/ui/shell.js, src/js/ui/codex.js, src/js/ui/detail.js, src/js/ui/chats.js, src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 표지·장면 그림 HTML(coverHTML·figHTML·portraitHTML·artHTML — 그림이 없으면 색 카드), 그림 태그 해석(tagInfo), 라이트박스 */
 
@@ -3928,37 +3948,91 @@ function plusSheet(reason) {
   $("#upPlus", ov).onclick = () => checkout(PLUS, afterBuy);
 }
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
+   src/js/ui/room-tools.js
+   가져옴: src/js/ai/prompt/rules.js { speakerName }
+           src/js/core/rooms.js { curText, deletedRooms, roomKey }
+           src/js/core/state.js { S, gen, room, setRoom }
+           src/js/core/storage.js { KV }
+           src/js/core/util.js { $ }
+           src/js/images/codes.js { IMG_TAG_RE, imgTags }
+           src/js/ui/chat/generate.js { stopGen }
+           src/js/ui/chat/log.js { copyText }
+           src/js/ui/cover.js { tagInfo }
+           src/js/ui/shell.js { go, renderRailRecent }
+   내보냄: galleryItems, jumpTo, exportText, exportRoom, deleteRoom
+   쓰는 곳: src/js/ui/room-drawer.js, src/js/app.js
+   ════════════════════════════════════════════════════════════════════════════════════════════════════ */
+/* 대화방 도구(드로어가 씀): 대화에 나온 그림 모으기(galleryItems)·그 장면으로 가기(jumpTo)·대화 내보내기(exportText·exportRoom)·대화방 삭제(deleteRoom) */
+
+
+
+
+
+
+
+
+
+
+/** @typedef {import("../core/types.js").Room} Room */
+
+/** 대화에 나온 그림 태그를 처음 나온 순서로(같은 코드번호는 한 번) — 인물·장소·컷씬 모두, 작품에 없는 코드는 뺌. 각 항목은 tagInfo + 그 메시지 id. @param {Room} r */
+function galleryItems(r) {
+  const out = [], seen = new Set();
+  r.msgs.forEach((m) => imgTags(curText(m)).forEach((t) => { const k = t.code + t.sit; if (seen.has(k)) return; const i = tagInfo(r.char, t); if (i) { seen.add(k); out.push({ ...i, id: m.id }); } }));
+  return out;
+}
+/** 그 메시지로 스크롤하고 잠깐 강조. @param {string} id 메시지 id */
+function jumpTo(id) { const el = $(`.msg[data-id="${id}"]`); if (!el) return; el.scrollIntoView({ block: "center" }); el.classList.add("flash"); setTimeout(() => el.classList.remove("flash"), 1400); }
+/** 대화 전체를 글로(그림 태그는 [이미지: 이름 · 칸]으로). @param {Room} r @returns {string} */
+function exportText(r) {
+  const head = `${r.char.title} — ${r.opening || ""}\n${r.persona.name}(으)로 플레이 · ${new Date().toLocaleString("ko-KR")}\n\n`;
+  return head + r.msgs.filter((m) => curText(m) && !m.sys).map((m) => `${m.role === "ai" ? speakerName(r) : r.persona.name}: ${curText(m).replace(IMG_TAG_RE, (raw) => { const t = imgTags(raw)[0], i = t && tagInfo(r.char, t); return i ? `[이미지: ${i.name} · ${i.label}]` : ""; })}`).join("\n\n");
+}
+/** 대화를 txt 파일로 내려받기(막히면 복사). @param {Room} r */
+async function exportRoom(r) {
+  const data = exportText(r), filename = `HEART_SYNC_${r.char.title.replace(/[^\w가-힣]+/g, "_")}_${new Date().toISOString().slice(0, 10)}.txt`;
+  try { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([data], { type: "text/plain" })); a.download = filename; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); }
+  catch { copyText(data, "내보내기가 막혀 있어서 대신 복사했어요"); }
+}
+/** 대화방 삭제 — 진행 중 응답을 멈추고, 지운 방으로 적어(되살아나지 않게) 목록에서 빼고 대화 목록으로. @param {string} id */
+function deleteRoom(id) {
+  deletedRooms.add(id);
+  if (gen && room && room.id === id) stopGen();
+  KV.set(roomKey(id), undefined);
+  S.rooms = S.rooms.filter((r) => r.id !== id); KV.set("rooms", S.rooms); renderRailRecent();
+  if (room && room.id === id) setRoom(null);
+  go("chats");
+}
+/* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/ui/room-drawer.js
    가져옴: src/js/ai/llm.js { engineName }
            src/js/ai/models.js { LEN, MODELS }
            src/js/ai/prompt/memory.js { maybeSummarize, memCfg, pushHist }
            src/js/ai/prompt/rules.js { speakerName }
            src/js/core/character.js { getChar, normalizeChar }
-           src/js/core/rooms.js { curText, deletedRooms, newRoom, roomKey, saveRoom }
+           src/js/core/rooms.js { baseOpening, curText, newRoom, saveRoom }
            src/js/core/settings.js { saveSettings }
-           src/js/core/state.js { S, gen, room, setRoom }
-           src/js/core/storage.js { KV }
+           src/js/core/state.js { S, room, setRoom }
            src/js/core/util.js { $, $$, clamp, esc, num, toast }
            src/js/core/wallet.js { FREE_DAILY, PLAN, freeLeft, isPro, plan, qShort, quote }
-           src/js/images/codes.js { IMG_TAG_RE, codebook, imgTags }
+           src/js/images/codes.js { IMG_TAG_RE, codebook }
            src/js/images/pick.js { pickImg }
            src/js/services/images.js { IMG }
-           src/js/ui/chat/generate.js { stopGen }
            src/js/ui/chat/log.js { copyText, renderLog }
            src/js/ui/chat/render.js { statusBlock }
            src/js/ui/chat/view.js { lastAi, updateComposer }
-           src/js/ui/cover.js { artHTML, coverHTML, lightbox, pavHTML, tagInfo }
+           src/js/ui/cover.js { artHTML, coverHTML, lightbox, pavHTML }
            src/js/ui/icons.js { ICON }
            src/js/ui/me.js { personaSheet }
            src/js/ui/model-sheet.js { openModelSheet }
            src/js/ui/pay.js { plusSheet }
+           src/js/ui/room-tools.js { deleteRoom, exportRoom, exportText, galleryItems, jumpTo }
            src/js/ui/sheet.js { closeOverlays, confirmSheet }
-           src/js/ui/shell.js { go, renderRailRecent }
+           src/js/ui/shell.js { go }
    내보냄: openRoomDrawer
    쓰는 곳: src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
-/* 대화방 관리 드로어(출력 설정·기억·갤러리·내보내기·삭제) */
-
+/* 대화방 관리 드로어(대화 구성·페르소나·장기기억·유저노트·출력 설정·상태창·갤러리·장소·북마크) — 내보내기·삭제·그림 모으기는 room-tools.js */
 
 
 
@@ -3996,6 +4070,7 @@ function openRoomDrawer(view = "main") {
   const back = $("#dBack", ov); if (back) back.onclick = () => openRoomDrawer("main");
   const body = $("#dBody", ov), cfg = memCfg(), q = quote(r.set);
   if (view === "main") {
+    const src = r.forkedFrom && S.rooms.some((x) => x.id === r.forkedFrom.roomId); // 분기한 방이고 원래 방이 아직 있으면 '원래 대화방' 버튼
     body.innerHTML = `<div class="quick">
         <button id="qCopy">${ICON.copy}대화 복사</button><button id="qExport">${ICON.down}대화 내보내기</button><button id="qNew">${ICON.redo}처음부터</button></div>
       <div class="sheet-head"><h3 class="lbl" style="flex:1;margin:0">내 재화</h3><button class="btn sm pri" id="topup">충전</button></div>
@@ -4006,6 +4081,7 @@ function openRoomDrawer(view = "main") {
       </div>
       <h3 class="lbl" style="margin:16px 0 8px">대화 구성</h3>
       <button class="compo" id="compo">${coverHTML(c)}<span class="x"><b>${esc(c.title)}</b><span>${c.world_mode ? "세계관" : "캐릭터"} · ${esc(c.name)}</span><span>씬 · ${esc(r.opening || "기본")}</span></span></button>
+      ${r.forkedFrom ? `<p class="note" style="margin:8px 0 0">이 방은 「${esc(baseOpening(r) || "기본")}」 대화의 한 장면에서 분기했어요.${src ? ` <button class="btn sm ghost" id="forkSrc">원래 대화방</button>` : ""}</p>` : ""}
       <div class="menu-list">
         <button data-v="persona">내 페르소나<span class="v">${esc(r.persona.name)}</span></button>
         <div class="grp"></div>
@@ -4024,12 +4100,13 @@ function openRoomDrawer(view = "main") {
     $$("[data-v]", body).forEach((b) => b.onclick = () => openRoomDrawer(b.dataset.v));
     $("#topup", body).onclick = () => go("store");
     $("#compo", body).onclick = () => go("c-" + c.id);
+    if (src) $("#forkSrc", body).onclick = () => go("r-" + r.forkedFrom.roomId);
     $("#mModel", body).onclick = () => openModelSheet();
     $("#qCopy", body).onclick = () => copyText(exportText(r), "대화 전체를 복사했어요");
     $("#qExport", body).onclick = () => exportRoom(r);
     $("#qNew", body).onclick = () => confirmSheet("처음부터 다시 시작할까요?", "같은 작품·씬으로 새 대화방을 만들어요. 지금 대화는 목록에 남아요.", "새로 시작", () => {
       const c0 = normalizeChar(getChar(c.id) || c); if (S.rooms.filter((x) => x.charId === c0.id).length >= plan().rooms) return plusSheet("rooms");
-      setRoom(newRoom(c0, Math.max(0, c0.openings.findIndex((o) => o.title === r.opening)), r.persona)); go("r-" + room.id); });
+      setRoom(newRoom(c0, Math.max(0, c0.openings.findIndex((o) => o.title === baseOpening(r))), r.persona)); go("r-" + room.id); });
     $("#delRoom", body).onclick = () => confirmSheet("이 대화방을 삭제할까요?", "메시지와 기억이 모두 지워지고 되돌릴 수 없어요.", "삭제", () => deleteRoom(r.id));
   }
   else if (view === "persona") {
@@ -4159,30 +4236,6 @@ function openRoomDrawer(view = "main") {
       : `<div class="empty">북마크한 장면이 없어요. 메시지 아래 ☆ 북마크를 눌러 담아 두세요.</div>`;
     $$("[data-j]", body).forEach((b) => b.onclick = () => { ov.remove(); jumpTo(b.dataset.j); });
   }
-}
-/* 대화에 나온 그림 태그를 처음 나온 순서로(같은 코드번호는 한 번) — 인물·장소·컷씬 모두, 작품에 없는 코드는 뺌 */
-function galleryItems(r) {
-  const out = [], seen = new Set();
-  r.msgs.forEach((m) => imgTags(curText(m)).forEach((t) => { const k = t.code + t.sit; if (seen.has(k)) return; const i = tagInfo(r.char, t); if (i) { seen.add(k); out.push({ ...i, id: m.id }); } }));
-  return out;
-}
-function jumpTo(id) { const el = $(`.msg[data-id="${id}"]`); if (!el) return; el.scrollIntoView({ block: "center" }); el.classList.add("flash"); setTimeout(() => el.classList.remove("flash"), 1400); }
-function exportText(r) {
-  const head = `${r.char.title} — ${r.opening || ""}\n${r.persona.name}(으)로 플레이 · ${new Date().toLocaleString("ko-KR")}\n\n`;
-  return head + r.msgs.filter((m) => curText(m) && !m.sys).map((m) => `${m.role === "ai" ? speakerName(r) : r.persona.name}: ${curText(m).replace(IMG_TAG_RE, (raw) => { const t = imgTags(raw)[0], i = t && tagInfo(r.char, t); return i ? `[이미지: ${i.name} · ${i.label}]` : ""; })}`).join("\n\n");
-}
-async function exportRoom(r) {
-  const data = exportText(r), filename = `HEART_SYNC_${r.char.title.replace(/[^\w가-힣]+/g, "_")}_${new Date().toISOString().slice(0, 10)}.txt`;
-  try { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([data], { type: "text/plain" })); a.download = filename; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); }
-  catch { copyText(data, "내보내기가 막혀 있어서 대신 복사했어요"); }
-}
-function deleteRoom(id) {
-  deletedRooms.add(id);
-  if (gen && room && room.id === id) stopGen();
-  KV.set(roomKey(id), undefined);
-  S.rooms = S.rooms.filter((r) => r.id !== id); KV.set("rooms", S.rooms); renderRailRecent();
-  if (room && room.id === id) setRoom(null);
-  go("chats");
 }
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/ui/model-sheet.js
@@ -4494,8 +4547,8 @@ function liveFill(el, text, c, persona, anim = true) {
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/ui/chat/log.js
    가져옴: src/js/ai/prompt/rules.js { speakerName }
-           src/js/core/rooms.js { curText, saveRoom }
-           src/js/core/state.js { gen, room }
+           src/js/core/rooms.js { curText, forkRoom, saveRoom }
+           src/js/core/state.js { S, gen, room, setRoom }
            src/js/core/util.js { $, $$, clamp, esc, toast }
            src/js/images/codes.js { imgTags }
            src/js/services/images.js { IMG }
@@ -4503,12 +4556,16 @@ function liveFill(el, text, c, persona, anim = true) {
            src/js/ui/chat/render.js { fmt, liveFill, statusBlock }
            src/js/ui/chat/view.js { flashHint, lastAi, updateMeter }
            src/js/ui/cover.js { coverHTML, pavHTML, zoomPic }
-           src/js/ui/pay.js { ensurePay }
+           src/js/core/wallet.js { plan }
+           src/js/ui/pay.js { ensurePay, plusSheet }
            src/js/ui/sheet.js { confirmSheet }
+           src/js/ui/shell.js { go }
    내보냄: stick, setStick, autoScroll, followLog, syncJump, bindStick, renderLog, copyText
-   쓰는 곳: src/js/ui/me.js, src/js/ui/pay.js, src/js/ui/room-drawer.js, src/js/ui/chat/view.js, src/js/ui/chat/generate.js, src/js/ui/codex.js, src/js/app.js
+   쓰는 곳: src/js/ui/me.js, src/js/ui/pay.js, src/js/ui/room-tools.js, src/js/ui/room-drawer.js, src/js/ui/chat/view.js, src/js/ui/chat/generate.js, src/js/ui/codex.js, src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
-/* 메시지 로그 그리기·스크롤 따라가기·말풍선 메뉴(수정·삭제·북마크) */
+/* 메시지 로그 그리기·스크롤 따라가기·말풍선 메뉴(수정·삭제·북마크·좋아요/아쉬워요·분기) */
+
+
 
 
 
@@ -4573,7 +4630,8 @@ function renderLog(scroll) {
         ${isLast && !alt.opening ? `<button data-act="regen" data-i="${i}">↻ 다시 쓰기</button>` : ""}
         <button data-act="bm" data-i="${i}" class="${bm ? "on" : ""}" aria-pressed="${bm}">${bm ? "★" : "☆"} 북마크</button>
         <button data-act="editai" data-i="${i}">수정</button><button data-act="copy" data-i="${i}">복사</button>
-        ${i > 0 ? `<button data-act="del" data-i="${i}">삭제</button>` : ""}
+        ${i > 0 ? `<button data-act="fork" data-i="${i}" title="이 메시지까지를 새 대화방으로 복사해요">분기</button><button data-act="del" data-i="${i}">삭제</button>` : ""}
+        ${alt.opening ? "" : fbBtn(i, 1, alt.fb) + fbBtn(i, -1, alt.fb)}
         ${alt.lore?.length ? `<span class="lore-used" title="이 응답에 반영된 키워드북">📖 ${esc(alt.lore.join(" · "))}</span>` : ""}
         ${alt.cost ? `<span class="rcpt" title="이 응답에 쓴 비용">${esc(alt.cost)}</span>` : ""}
       </div>`;
@@ -4586,6 +4644,11 @@ function renderLog(scroll) {
   if (lb && gm) liveFill(lb, gm.alts[gm.idx]?.text || "", c, r.persona, false);
   bindLog(box); IMG.hydrate(box);
   if (scroll) { const log = $("#log"); log.scrollTop = log.scrollHeight; }
+}
+/* 좋아요(1)·아쉬워요(-1) 토글 — Alt.fb(0이면 없음). 이 기기·계정에 저장만 하고 프롬프트에는 쓰지 않음 */
+function fbBtn(i, v, cur) {
+  const on = cur === v, label = v > 0 ? "좋아요" : "아쉬워요";
+  return `<button data-act="${v > 0 ? "up" : "down"}" data-i="${i}" class="${on ? "on" : ""}" aria-pressed="${on}" aria-label="${label}" title="${label}">${v > 0 ? "👍" : "👎"}</button>`;
 }
 function editBox(text, i) {
   return `<div class="edit-box"><label class="sr" for="ed${i}">메시지 수정</label><textarea id="ed${i}">${esc(text)}</textarea>
@@ -4602,11 +4665,16 @@ function bindLog(box) {
   };
   $$("[data-act]", box).forEach((b) => b.onclick = () => {
     const i = +b.dataset.i, m = room.msgs[i], act = b.dataset.act;
-    if (gen && !["copy", "bm"].includes(act)) return flashHint("응답이 끝난 뒤에 할 수 있어요.");
+    if (gen && !["copy", "bm", "up", "down"].includes(act)) return flashHint("응답이 끝난 뒤에 할 수 있어요.");
     if (act === "prev" || act === "next") { m.idx = clamp(m.idx + (act === "next" ? 1 : -1), 0, m.alts.length - 1); restoreStatus(); saveRoom(room); renderLog(); }
     else if (act === "regen") regenAsk(i);
     else if (act === "copy") copyText(curText(m).replace(/\[\[img:[^\]]*\]\]\n?/g, ""), "복사했어요");
     else if (act === "bm") { const s = new Set(room.bookmarks || []); s.has(m.id) ? s.delete(m.id) : s.add(m.id); room.bookmarks = [...s]; saveRoom(room); renderLog(); toast(s.has(m.id) ? "북마크에 담았어요" : "북마크에서 뺐어요"); }
+    else if (act === "up" || act === "down") { const a = m.alts[m.idx], v = act === "up" ? 1 : -1; a.fb = a.fb === v ? 0 : v; saveRoom(room); renderLog(); }
+    else if (act === "fork") {
+      if (S.rooms.filter((x) => x.charId === room.char.id).length >= plan().rooms) return plusSheet("rooms");
+      confirmSheet("이 장면에서 분기할까요?", "이 메시지까지를 복사한 새 대화방을 만들어요. 지금 대화방은 그대로 남아요.", "분기", () => { const f = forkRoom(room, m.id); if (f) { setRoom(f); go("r-" + f.id); toast("분기한 대화방이에요"); } });
+    }
     else if (act === "edit" || act === "editai") { m.editing = true; renderLog(); $("#ed" + i)?.focus(); }
     else if (act === "cancel") { delete m.editing; renderLog(); }
     else if (act === "save") {
@@ -4649,7 +4717,7 @@ function restoreStatus() {
            src/js/ui/pay.js { ensurePay }
            src/js/ui/sheet.js { closeOverlays, sheet }
    내보냄: sendTurn, regenAsk, regen, generate, stopGen
-   쓰는 곳: src/js/ui/room-drawer.js, src/js/ui/chat/view.js, src/js/ui/chat/log.js, src/js/ui/shell.js, src/js/app.js, src/js/boot.js
+   쓰는 곳: src/js/ui/room-tools.js, src/js/ui/chat/view.js, src/js/ui/chat/log.js, src/js/ui/shell.js, src/js/app.js, src/js/boot.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 한 턴 보내기 → 응답 생성(generate)·다시 쓰기·빠진 인물 그림 태그 채우기(addCastImages) */
 
@@ -4806,7 +4874,7 @@ function stopGen() { if (gen) gen.ctl.abort(); }
            src/js/ui/icons.js { ICON }
            src/js/ui/sheet.js { closeOverlays }
    내보냄: registerViews, setNavs, go, route, LOGO, renderShell, renderRailRecent, renderWalletChips, topbar, bindGo
-   쓰는 곳: src/js/ui/store.js, src/js/ui/help.js, src/js/ui/home.js, src/js/ui/me.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/codex.js, src/js/ui/detail.js, src/js/ui/chats.js, src/js/ui/login.js, src/js/app.js, src/js/admin/support.js, src/js/admin/gate.js, src/js/boot.js, src/js/admin.js
+   쓰는 곳: src/js/ui/store.js, src/js/ui/help.js, src/js/ui/home.js, src/js/ui/me.js, src/js/ui/room-tools.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/chat/log.js, src/js/ui/codex.js, src/js/ui/detail.js, src/js/ui/chats.js, src/js/ui/login.js, src/js/app.js, src/js/admin/support.js, src/js/admin/gate.js, src/js/boot.js, src/js/admin.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 라우팅(go·route)·레일·탭바·상단바·지갑 칩. 화면은 진입점(main.js·admin.js)이 registerViews·setNavs로 등록한다 — 셸은 어떤 화면이 있는지 모른다.
    아래층의 "rooms"·"wallet"·"route" 이벤트를 받아 레일·칩·화면을 다시 그림 */
@@ -5123,7 +5191,7 @@ function viewChats() {
   const v = $("#view");
   v.innerHTML = `<div class="page">${topbar()}<h1 class="sec" style="margin-top:4px">대화</h1>
     ${S.rooms.length ? `<div class="cont" style="grid-template-columns:1fr">${S.rooms.map((r) => `
-      <button data-room="${esc(r.id)}">${coverHTML(r)}<span class="x"><b>${esc(r.title)} <span class="note" style="display:inline;font-weight:400">· ${esc(r.name)}</span></b><span>${esc(r.last) || "대화를 시작해 보세요"}</span></span><span class="note">${ago(r.at)}</span></button>`).join("")}</div>`
+      <button data-room="${esc(r.id)}">${coverHTML(r)}<span class="x"><b>${esc(r.title)} <span class="note" style="display:inline;font-weight:400">· ${esc(r.name)}</span>${r.fork ? ' <span class="pill">분기</span>' : ""}</b><span>${esc(r.last) || "대화를 시작해 보세요"}</span></span><span class="note">${ago(r.at)}</span></button>`).join("")}</div>`
       : `<div class="empty">아직 대화가 없어요. 마음에 드는 작품을 골라 첫 대화를 시작해 보세요.<br><button class="btn sm pri" data-go="home">작품 둘러보기</button></div>`}</div>`;
   bindGo(v); IMG.hydrate(v);
   $$("[data-room]", v).forEach((b) => b.onclick = () => go("r-" + b.dataset.room));
@@ -5299,6 +5367,7 @@ function newPasswordSheet() {
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 사용자 사이트의 모듈 묶음: 층 순서(core → content → services·images·ai → ui)로 모듈을 불러 모으고 화면 표(USER_VIEWS)·메뉴(USER_NAVS)를 내보낸다.
    진입점 main.js(사용자, index.html)와 admin.js(관리자, admin.html)가 이걸 받아 화면을 등록하고 boot()한다. 빌드는 이 import 그래프를 따라 모듈을 이어 붙인다 */
+
 
 
 

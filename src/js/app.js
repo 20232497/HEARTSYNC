@@ -44,6 +44,7 @@ import "./ui/chat/generate.js";
 import "./ui/chat/suggest.js";
 import "./ui/pay.js";
 import "./ui/model-sheet.js";
+import "./ui/room-tools.js";
 import "./ui/room-drawer.js";
 import "./ui/worldart.js";
 import { viewChats } from "./ui/chats.js";

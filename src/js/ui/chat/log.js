@@ -1,7 +1,7 @@
-/* 메시지 로그 그리기·스크롤 따라가기·말풍선 메뉴(수정·삭제·북마크) */
+/* 메시지 로그 그리기·스크롤 따라가기·말풍선 메뉴(수정·삭제·북마크·좋아요/아쉬워요·분기) */
 import { speakerName } from "../../ai/prompt/rules.js";
-import { curText, saveRoom } from "../../core/rooms.js";
-import { gen, room } from "../../core/state.js";
+import { curText, forkRoom, saveRoom } from "../../core/rooms.js";
+import { S, gen, room, setRoom } from "../../core/state.js";
 import { $, $$, clamp, esc, toast } from "../../core/util.js";
 import { imgTags } from "../../images/codes.js";
 import { IMG } from "../../services/images.js";
@@ -9,8 +9,10 @@ import { generate, regen, regenAsk, sendTurn } from "./generate.js";
 import { fmt, liveFill, statusBlock } from "./render.js";
 import { flashHint, lastAi, updateMeter } from "./view.js";
 import { coverHTML, pavHTML, zoomPic } from "../cover.js";
-import { ensurePay } from "../pay.js";
+import { plan } from "../../core/wallet.js";
+import { ensurePay, plusSheet } from "../pay.js";
 import { confirmSheet } from "../sheet.js";
+import { go } from "../shell.js";
 
 /* 응답 중 스크롤: 대화방 출력 설정의 '자동 스크롤'(r.set.autoScroll, 기본 꺼짐)이 켜져 있고 맨 아래에 있을 때만 따라 내려감.
    사용자가 위로 올리면 멈춤. 꺼져 있으면 보낼 때 한 번만 맨 아래로 가고, 답은 읽는 자리에서 아래로 자라남 */
@@ -63,7 +65,8 @@ export function renderLog(scroll) {
         ${isLast && !alt.opening ? `<button data-act="regen" data-i="${i}">↻ 다시 쓰기</button>` : ""}
         <button data-act="bm" data-i="${i}" class="${bm ? "on" : ""}" aria-pressed="${bm}">${bm ? "★" : "☆"} 북마크</button>
         <button data-act="editai" data-i="${i}">수정</button><button data-act="copy" data-i="${i}">복사</button>
-        ${i > 0 ? `<button data-act="del" data-i="${i}">삭제</button>` : ""}
+        ${i > 0 ? `<button data-act="fork" data-i="${i}" title="이 메시지까지를 새 대화방으로 복사해요">분기</button><button data-act="del" data-i="${i}">삭제</button>` : ""}
+        ${alt.opening ? "" : fbBtn(i, 1, alt.fb) + fbBtn(i, -1, alt.fb)}
         ${alt.lore?.length ? `<span class="lore-used" title="이 응답에 반영된 키워드북">📖 ${esc(alt.lore.join(" · "))}</span>` : ""}
         ${alt.cost ? `<span class="rcpt" title="이 응답에 쓴 비용">${esc(alt.cost)}</span>` : ""}
       </div>`;
@@ -76,6 +79,11 @@ export function renderLog(scroll) {
   if (lb && gm) liveFill(lb, gm.alts[gm.idx]?.text || "", c, r.persona, false);
   bindLog(box); IMG.hydrate(box);
   if (scroll) { const log = $("#log"); log.scrollTop = log.scrollHeight; }
+}
+/* 좋아요(1)·아쉬워요(-1) 토글 — Alt.fb(0이면 없음). 이 기기·계정에 저장만 하고 프롬프트에는 쓰지 않음 */
+function fbBtn(i, v, cur) {
+  const on = cur === v, label = v > 0 ? "좋아요" : "아쉬워요";
+  return `<button data-act="${v > 0 ? "up" : "down"}" data-i="${i}" class="${on ? "on" : ""}" aria-pressed="${on}" aria-label="${label}" title="${label}">${v > 0 ? "👍" : "👎"}</button>`;
 }
 function editBox(text, i) {
   return `<div class="edit-box"><label class="sr" for="ed${i}">메시지 수정</label><textarea id="ed${i}">${esc(text)}</textarea>
@@ -92,11 +100,16 @@ function bindLog(box) {
   };
   $$("[data-act]", box).forEach((b) => b.onclick = () => {
     const i = +b.dataset.i, m = room.msgs[i], act = b.dataset.act;
-    if (gen && !["copy", "bm"].includes(act)) return flashHint("응답이 끝난 뒤에 할 수 있어요.");
+    if (gen && !["copy", "bm", "up", "down"].includes(act)) return flashHint("응답이 끝난 뒤에 할 수 있어요.");
     if (act === "prev" || act === "next") { m.idx = clamp(m.idx + (act === "next" ? 1 : -1), 0, m.alts.length - 1); restoreStatus(); saveRoom(room); renderLog(); }
     else if (act === "regen") regenAsk(i);
     else if (act === "copy") copyText(curText(m).replace(/\[\[img:[^\]]*\]\]\n?/g, ""), "복사했어요");
     else if (act === "bm") { const s = new Set(room.bookmarks || []); s.has(m.id) ? s.delete(m.id) : s.add(m.id); room.bookmarks = [...s]; saveRoom(room); renderLog(); toast(s.has(m.id) ? "북마크에 담았어요" : "북마크에서 뺐어요"); }
+    else if (act === "up" || act === "down") { const a = m.alts[m.idx], v = act === "up" ? 1 : -1; a.fb = a.fb === v ? 0 : v; saveRoom(room); renderLog(); }
+    else if (act === "fork") {
+      if (S.rooms.filter((x) => x.charId === room.char.id).length >= plan().rooms) return plusSheet("rooms");
+      confirmSheet("이 장면에서 분기할까요?", "이 메시지까지를 복사한 새 대화방을 만들어요. 지금 대화방은 그대로 남아요.", "분기", () => { const f = forkRoom(room, m.id); if (f) { setRoom(f); go("r-" + f.id); toast("분기한 대화방이에요"); } });
+    }
     else if (act === "edit" || act === "editai") { m.editing = true; renderLog(); $("#ed" + i)?.focus(); }
     else if (act === "cancel") { delete m.editing; renderLog(); }
     else if (act === "save") {

@@ -1,29 +1,28 @@
-/* 대화방 관리 드로어(출력 설정·기억·갤러리·내보내기·삭제) */
+/* 대화방 관리 드로어(대화 구성·페르소나·장기기억·유저노트·출력 설정·상태창·갤러리·장소·북마크) — 내보내기·삭제·그림 모으기는 room-tools.js */
 import { engineName } from "../ai/llm.js";
 import { LEN, MODELS } from "../ai/models.js";
 import { maybeSummarize, memCfg, pushHist } from "../ai/prompt/memory.js";
 import { speakerName } from "../ai/prompt/rules.js";
 import { getChar, normalizeChar } from "../core/character.js";
-import { curText, deletedRooms, newRoom, roomKey, saveRoom } from "../core/rooms.js";
+import { baseOpening, curText, newRoom, saveRoom } from "../core/rooms.js";
 import { saveSettings } from "../core/settings.js";
-import { S, gen, room, setRoom } from "../core/state.js";
-import { KV } from "../core/storage.js";
+import { S, room, setRoom } from "../core/state.js";
 import { $, $$, clamp, esc, num, toast } from "../core/util.js";
 import { FREE_DAILY, PLAN, freeLeft, isPro, plan, qShort, quote } from "../core/wallet.js";
-import { IMG_TAG_RE, codebook, imgTags } from "../images/codes.js";
+import { IMG_TAG_RE, codebook } from "../images/codes.js";
 import { pickImg } from "../images/pick.js";
 import { IMG } from "../services/images.js";
-import { stopGen } from "./chat/generate.js";
 import { copyText, renderLog } from "./chat/log.js";
 import { statusBlock } from "./chat/render.js";
 import { lastAi, updateComposer } from "./chat/view.js";
-import { artHTML, coverHTML, lightbox, pavHTML, tagInfo } from "./cover.js";
+import { artHTML, coverHTML, lightbox, pavHTML } from "./cover.js";
 import { ICON } from "./icons.js";
 import { personaSheet } from "./me.js";
 import { openModelSheet } from "./model-sheet.js";
 import { plusSheet } from "./pay.js";
+import { deleteRoom, exportRoom, exportText, galleryItems, jumpTo } from "./room-tools.js";
 import { closeOverlays, confirmSheet } from "./sheet.js";
-import { go, renderRailRecent } from "./shell.js";
+import { go } from "./shell.js";
 
 /* ---------------------------------------------------------------- 대화방 관리 드로어 */
 export function openRoomDrawer(view = "main") {
@@ -37,6 +36,7 @@ export function openRoomDrawer(view = "main") {
   const back = $("#dBack", ov); if (back) back.onclick = () => openRoomDrawer("main");
   const body = $("#dBody", ov), cfg = memCfg(), q = quote(r.set);
   if (view === "main") {
+    const src = r.forkedFrom && S.rooms.some((x) => x.id === r.forkedFrom.roomId); // 분기한 방이고 원래 방이 아직 있으면 '원래 대화방' 버튼
     body.innerHTML = `<div class="quick">
         <button id="qCopy">${ICON.copy}대화 복사</button><button id="qExport">${ICON.down}대화 내보내기</button><button id="qNew">${ICON.redo}처음부터</button></div>
       <div class="sheet-head"><h3 class="lbl" style="flex:1;margin:0">내 재화</h3><button class="btn sm pri" id="topup">충전</button></div>
@@ -47,6 +47,7 @@ export function openRoomDrawer(view = "main") {
       </div>
       <h3 class="lbl" style="margin:16px 0 8px">대화 구성</h3>
       <button class="compo" id="compo">${coverHTML(c)}<span class="x"><b>${esc(c.title)}</b><span>${c.world_mode ? "세계관" : "캐릭터"} · ${esc(c.name)}</span><span>씬 · ${esc(r.opening || "기본")}</span></span></button>
+      ${r.forkedFrom ? `<p class="note" style="margin:8px 0 0">이 방은 「${esc(baseOpening(r) || "기본")}」 대화의 한 장면에서 분기했어요.${src ? ` <button class="btn sm ghost" id="forkSrc">원래 대화방</button>` : ""}</p>` : ""}
       <div class="menu-list">
         <button data-v="persona">내 페르소나<span class="v">${esc(r.persona.name)}</span></button>
         <div class="grp"></div>
@@ -65,12 +66,13 @@ export function openRoomDrawer(view = "main") {
     $$("[data-v]", body).forEach((b) => b.onclick = () => openRoomDrawer(b.dataset.v));
     $("#topup", body).onclick = () => go("store");
     $("#compo", body).onclick = () => go("c-" + c.id);
+    if (src) $("#forkSrc", body).onclick = () => go("r-" + r.forkedFrom.roomId);
     $("#mModel", body).onclick = () => openModelSheet();
     $("#qCopy", body).onclick = () => copyText(exportText(r), "대화 전체를 복사했어요");
     $("#qExport", body).onclick = () => exportRoom(r);
     $("#qNew", body).onclick = () => confirmSheet("처음부터 다시 시작할까요?", "같은 작품·씬으로 새 대화방을 만들어요. 지금 대화는 목록에 남아요.", "새로 시작", () => {
       const c0 = normalizeChar(getChar(c.id) || c); if (S.rooms.filter((x) => x.charId === c0.id).length >= plan().rooms) return plusSheet("rooms");
-      setRoom(newRoom(c0, Math.max(0, c0.openings.findIndex((o) => o.title === r.opening)), r.persona)); go("r-" + room.id); });
+      setRoom(newRoom(c0, Math.max(0, c0.openings.findIndex((o) => o.title === baseOpening(r))), r.persona)); go("r-" + room.id); });
     $("#delRoom", body).onclick = () => confirmSheet("이 대화방을 삭제할까요?", "메시지와 기억이 모두 지워지고 되돌릴 수 없어요.", "삭제", () => deleteRoom(r.id));
   }
   else if (view === "persona") {
@@ -200,28 +202,4 @@ export function openRoomDrawer(view = "main") {
       : `<div class="empty">북마크한 장면이 없어요. 메시지 아래 ☆ 북마크를 눌러 담아 두세요.</div>`;
     $$("[data-j]", body).forEach((b) => b.onclick = () => { ov.remove(); jumpTo(b.dataset.j); });
   }
-}
-/* 대화에 나온 그림 태그를 처음 나온 순서로(같은 코드번호는 한 번) — 인물·장소·컷씬 모두, 작품에 없는 코드는 뺌 */
-function galleryItems(r) {
-  const out = [], seen = new Set();
-  r.msgs.forEach((m) => imgTags(curText(m)).forEach((t) => { const k = t.code + t.sit; if (seen.has(k)) return; const i = tagInfo(r.char, t); if (i) { seen.add(k); out.push({ ...i, id: m.id }); } }));
-  return out;
-}
-function jumpTo(id) { const el = $(`.msg[data-id="${id}"]`); if (!el) return; el.scrollIntoView({ block: "center" }); el.classList.add("flash"); setTimeout(() => el.classList.remove("flash"), 1400); }
-function exportText(r) {
-  const head = `${r.char.title} — ${r.opening || ""}\n${r.persona.name}(으)로 플레이 · ${new Date().toLocaleString("ko-KR")}\n\n`;
-  return head + r.msgs.filter((m) => curText(m) && !m.sys).map((m) => `${m.role === "ai" ? speakerName(r) : r.persona.name}: ${curText(m).replace(IMG_TAG_RE, (raw) => { const t = imgTags(raw)[0], i = t && tagInfo(r.char, t); return i ? `[이미지: ${i.name} · ${i.label}]` : ""; })}`).join("\n\n");
-}
-async function exportRoom(r) {
-  const data = exportText(r), filename = `HEART_SYNC_${r.char.title.replace(/[^\w가-힣]+/g, "_")}_${new Date().toISOString().slice(0, 10)}.txt`;
-  try { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([data], { type: "text/plain" })); a.download = filename; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); }
-  catch { copyText(data, "내보내기가 막혀 있어서 대신 복사했어요"); }
-}
-function deleteRoom(id) {
-  deletedRooms.add(id);
-  if (gen && room && room.id === id) stopGen();
-  KV.set(roomKey(id), undefined);
-  S.rooms = S.rooms.filter((r) => r.id !== id); KV.set("rooms", S.rooms); renderRailRecent();
-  if (room && room.id === id) setRoom(null);
-  go("chats");
 }
