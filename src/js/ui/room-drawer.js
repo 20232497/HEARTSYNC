@@ -191,13 +191,13 @@ export function openRoomDrawer(view = "main") {
   }
   else if (view === "places") {
     // 작품의 장소(places → 예약 시리즈 코드 MP1…, 코드 글자는 codes.js SERIES에서) — !지도 명령어로도 열림. 그림은 작품 폴더 images/MP<n>.webp. 목록은 최신 작품에서
-    // 비공개(hidden) 장소는 이 대화에 그 코드가 나오기 전까지 이름·그림을 가린 카드로(codebook의 hidden)
+    // 비공개(hidden) 장소는 이 대화에 그 코드가 나오기 전까지 그림만 가림(이름·설명은 보임 — codebook의 hidden)
     const live = getChar(c.id) || c, list = live.places || [], MP = seriesCode("place"), book = codebook(live)[MP], hid = book.hidden, seen = new Set(galleryItems(r).map((it) => it.code + it.sit));
     const lock = (i) => hid.includes(i + 1) && !seen.has(MP + (i + 1));
     body.innerHTML = list.length ? `<p class="note" style="margin-bottom:10px">이 작품의 장소 ${list.length}곳. 대화에서는 [[${MP}번호]] 코드로 나와요.</p><div class="gallery">${list.map((p, i) => {
-      const ref = lock(i) ? null : pickImg(c, MP, i + 1), name = lock(i) ? "🔒" : p.name;
-      return `<button data-p="${i}" title="${MP}${i + 1} · ${esc(name)}">${ref ? IMG.tag(ref) : artHTML(c, { name }, i + 1, book.label)}</button>`; }).join("")}</div>
-      <div class="box" style="margin-top:12px">${list.map((p, i) => lock(i) ? `<p><b>${MP}${i + 1} 🔒</b> — 대화에서 나오면 보여요</p>` : `<p><b>${MP}${i + 1} ${esc(p.name)}</b>${p.desc ? " — " + esc(p.desc) : ""}</p>`).join("")}</div>`
+      const ref = lock(i) ? null : pickImg(c, MP, i + 1);
+      return `<button data-p="${i}" title="${MP}${i + 1} · ${esc(p.name)}">${ref ? IMG.tag(ref) : artHTML(c, { name: p.name }, i + 1, (lock(i) ? "🔒 " : "") + book.label)}</button>`; }).join("")}</div>
+      <div class="box" style="margin-top:12px">${list.map((p, i) => `<p><b>${MP}${i + 1} ${esc(p.name)}</b>${p.desc ? " — " + esc(p.desc) : ""}${lock(i) ? " · 🔒 그림은 대화에서 나오면 보여요" : ""}</p>`).join("")}</div>`
       : `<div class="empty">이 작품에는 장소 그림이 없어요.</div>`;
     IMG.hydrate(body);
     $$("[data-p]", body).forEach((b) => b.onclick = () => { const im = $("img", b); if (im && im.src) lightbox(im.src); });

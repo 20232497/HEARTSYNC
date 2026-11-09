@@ -67,7 +67,7 @@ export default {
   desc: "상세 페이지 소개",
   guide: "플레이 가이드 — 독자에게 주는 안내문(선택, 줄바꿈만, 1,000자 이내)",
   noteTemplate: "## 시작 설정\n- 관계: \n- 상황: ",   // 유저노트 양식(선택) — 대화방 유저노트의 '이 작품의 양식 넣기'가 넣는 글
-  recommend: "story",   // 권장 모델(선택) — lite·story·master, 빼면 story
+  recommend: "master",   // 권장 모델(선택) — lite·story·master. 새 대화방이 이 모델로 시작(빼면 앱 기본 추천인 story)
   creator: "제작자 이름", exclusive: true, publishedAt: "2026-11-09",   // 작품 메타(선택) — 빼면 HEART SYNC 스튜디오 · 독점 아님 · 공개일 없음
   persona: `AI에게 주는 인물·진상 설정 …`,
   world: `세계관 규칙 …`,
@@ -77,7 +77,7 @@ export default {
   lore: [ { keys: ["키워드", "별칭"], text: "대화에 키워드가 나오면 AI에 전달할 설명", kind: "place", tags: "ruined cathedral, stained glass, moonlight" } ],
   cast: [ { code: "KAS", name: "카시안", desc: "독자에게 보이는 소개(비밀은 persona에만)", look: "29세 남성, 흑발, …", tags: "black hair, golden eyes, black military uniform, …", hidden: [13] },   // hidden(선택): 비공개(스포일러) 감정 번호
           { code: "KASD", name: "카시안(용의 모습)", of: "KAS", look: "…", tags: "…" } ],   // 다른 모습(폼)은 별도 코드 — 선택
-  places: [ { name: "루벨리아 황궁 알현실", desc: "…", tags: "throne room, gothic, …" }, { name: "지하 봉인실", hidden: true } ],   // 장소 → MP1, MP2… — 선택. hidden: true면 비공개
+  places: [ { name: "루벨리아 황궁 알현실", desc: "…", tags: "throne room, gothic, …" }, { name: "지하 봉인실", hidden: true } ],   // 장소 → MP1, MP2… — 선택. hidden: true면 그림을 대화에 나올 때까지 가림
   cuts: [ { title: "첫 입맞춤", when: "카시안이 처음으로 먼저 입을 맞추는 순간", tags: "…" } ],   // 컷씬 → EV1, EV2… — 선택
   commands: [ { cmd: "알현", title: "황제 알현", desc: "독자용 설명", prompt: "AI에게 주는 지시 — 장면을 알현실로 옮기고 …" } ],   // 대화방 !알현 — 선택
   openings: [ { title: "시작 상황 이름", directive: "AI에게만 주는 지시", status: { "📅 날짜": "1일차" }, text: "첫 장면 …\n\n[[KAS0]]\n\n카시안: \"…\"" } ]
@@ -91,12 +91,12 @@ export default {
 | `world_mode` | 여러 인물이 나오는 군상극(세계관). 1:1 캐릭터면 빼요 |
 | `creator`·`exclusive`·`publishedAt` | 작품 메타(선택). `creator`는 제작자 이름(빼면 `HEART SYNC 스튜디오` — `src/js/core/constants.js` DEFAULT_CREATOR), `exclusive: true`는 독점 작품('독점' 배지), `publishedAt`은 공개일 `"YYYY-MM-DD"`. 상세 페이지 머리와 도감 작품 칸에 보여요(홈 카드에는 안 보임). 지금은 표시만 하고, 제작자 보상·독점 가산은 서버 원장이 생긴 뒤의 일이에요(`docs/ROADMAP.md` 5장) |
 | `noteTemplate` | 유저노트 양식(선택) — 대화방 메뉴 → 유저노트의 '이 작품의 양식 넣기' 버튼이 넣는 글(유저노트 한도 2,000자 이내, 줄바꿈은 `\n`). 이 칸이 있는 작품에서만 버튼이 떠요. 독자가 채울 빈칸이 있는 양식을 적어요(예: `m/godseats`의 커스텀 모드 양식 — 시작 상황의 `directive`가 유저노트를 읽게 해 둠) |
-| `recommend` | 권장 모델(선택) — `lite`·`story`·`master` 중 하나(`src/js/ai/models.js` MODELS의 키), 빼면 `story`. 대화방의 모델 선택 시트에서 그 모델에 '권장' 배지가 붙어요(방의 기본 모델은 바뀌지 않아요 — 새 방은 무료 턴이 있는 라이트로 시작) |
+| `recommend` | 권장 모델(선택) — `lite`·`story`·`master` 중 하나(`src/js/ai/models.js` MODELS의 키), 빼면 `story`. **새 대화방이 이 모델로 시작**하고, 모델 선택 시트에서 그 모델에 '권장' 배지가 붙어요. 빼면 앱의 기본 추천 모델(스토리 — '추천' 표시)로 시작하고 '권장' 배지는 없어요. 무료 턴으로 가볍게 시작하게 하려면 `lite`를 적어요(스토리·마스터는 첫 턴부터 하트를 써요) |
 | `guide` | 플레이 가이드(선택) — 제작자가 **독자에게** 주는 안내문(어떻게 시작하면 좋은지·쓸 만한 명령어·주의할 점). 마크다운 없이 줄바꿈만, 1,000자 이내(`src/js/core/constants.js` LIMITS.guide). 상세 페이지 소개 아래·도감 작품 칸·대화방 메뉴의 '플레이 가이드'에 보이고 AI에는 보내지 않아요(AI 지시는 `persona`·`world`에). 예: `m/godseats` |
 | `fields`·`gauge` | 상태창 칸 이름(3글자 안팎)과 관계 게이지 칸. 시작 상황 `status`의 칸은 `fields`에 있어야 해요 |
 | `cast` | 출연진. `code`는 **인물 코드 — 영문 대문자 1~4자**(한서윤 → `HSY`, 카시안 → `KAS`; 숫자는 안 되고 `MP`·`EV`는 예약). 그림 코드는 인물 코드 바로 뒤에 감정·행동 번호를 붙인 한 토큰이에요: 본문 태그 `[[HSY3]]`, 그림 파일 `HSY3.webp`(번호는 기본 감정 0~14 — `src/js/core/constants.js`의 `SIT`, 아래 '그림 코드 체계'). `of`(선택)는 다른 모습(폼)일 때 본체 인물의 코드 — 폼은 별도 코드로 그림을 갖고 AI는 '그 모습일 때만' 그 코드를 써요. `desc`(선택)는 상세 페이지 인물 시트(도감)에 보이는 독자용 소개 — 비밀·진상은 `persona`에만 적어요. `look`은 한국어 외모(AI가 읽고, 성별로 작품의 aud를 짐작). `tags`(선택)는 그 인물의 외모를 영문 Danbooru 태그로 적은 글 — 앱은 쓰지 않고, **앱 밖에서 그림을 만들 때** 같은 인물을 매번 같은 생김새로 맞추는 기준이에요(한국어는 넣지 않기 — 빌드가 막음). 그림을 위한 메모: 옷·머리만 적으면 인물끼리 얼굴이 같아지니 눈매(`narrow eyes`·`droopy eyes`·`round eyes` 등)·눈썹·앞머리(`parted bangs`·`side-swept bangs`·`forehead`)·점·주근깨도 적고, `big eyes`처럼 어려 보이는 낱말과 손에 든 물건(`holding …`)은 넣지 않기. 무기는 검 길이 이하를 기본으로(긴 막대 끝에 날이 달린 무기는 세로 그림에서 잘려요). 색이나 옷이 번지는 낱말도 조심하기 — `red hair ribbon`은 머리칼을 붉게, `white dress shirt`는 치마를, `mourning dress`는 서양 드레스를, `police`는 현대 경찰복을 불러요. `hidden`(선택)은 **비공개(스포일러) 감정 번호 배열**(예: `[13]` — 1~14, 0 프로필은 안 됨) — 그 칸 그림은 도감·상세의 미리보기에서 🔒 카드로 가리고, 대화에 그 코드가 실제로 나온 방(본문·갤러리)에서만 보여요. **화면에서만 가리는 장치예요**(2026-11-09 결정) — 그림 파일과 장소·컷씬 이름은 배포물(`index.html`·`content/`)에 그대로 실려 주소를 직접 열면 볼 수 있으니, 보통 독자의 스포일러 방지용으로 써요. 완전한 비공개는 서버가 프롬프트를 조립하게 된 뒤(`docs/ROADMAP.md` 6장). 1:1 캐릭터도 `cast` 한 명을 적어요(`f/kael` → `KAEL`). 빼면 앱이 설정의 `외모:` 줄로 한 명(코드 `C`)을 만들고 그때는 맨 위 `lookTags`가 `tags` 자리 |
-| `places` | 장소 목록(선택) `[{ name, desc, tags }]`. 순서가 곧 코드 — 첫 항목이 `MP1`, 둘째가 `MP2`…. AI는 장면의 장소가 바뀔 때 본문 첫 줄에 `[[MP1]]`을 넣고, 대화방의 `!지도` 명령어가 목록을 보여 줘요. 그림은 `images/MP1.webp`. `tags`는 그 장소를 그릴 영문 낱말(앱 밖에서). `hidden: true`(선택)면 비공개 — 도감·상세·`!지도`에서 이름·설명·그림을 가린 🔒 카드로 두고, 그 대화에 `[[MP<n>]]`이 나온 뒤에만 보여요(AI에게 주는 목록에는 그대로 들어가요) |
-| `cuts` | 컷씬 목록(선택) `[{ title, when, tags }]`. 순서가 곧 코드 — `EV1`, `EV2`…. `when`(나오는 조건)이 처음 이루어지는 순간 AI가 `[[EV1]]`을 한 번 넣어요. 그림은 `images/EV1.webp`. `hidden: true`(선택)면 도감·상세에서 제목·조건·그림을 가려요(대화에 나오면 그 방의 갤러리에) |
+| `places` | 장소 목록(선택) `[{ name, desc, tags }]`. 순서가 곧 코드 — 첫 항목이 `MP1`, 둘째가 `MP2`…. AI는 장면의 장소가 바뀔 때 본문 첫 줄에 `[[MP1]]`을 넣고, 대화방의 `!지도` 명령어가 목록을 보여 줘요. 그림은 `images/MP1.webp`. `tags`는 그 장소를 그릴 영문 낱말(앱 밖에서). `hidden: true`(선택)면 비공개 — 도감·상세·`!지도`에서 **그림만** 🔒로 가리고(이름·설명은 보여요 — 무엇을 모으는지는 알 수 있게), 그 대화에 `[[MP<n>]]`이 나온 뒤에는 그림도 보여요(AI에게 주는 목록에는 그대로 들어가요) |
+| `cuts` | 컷씬 목록(선택) `[{ title, when, tags }]`. 순서가 곧 코드 — `EV1`, `EV2`…. `when`(나오는 조건)이 처음 이루어지는 순간 AI가 `[[EV1]]`을 한 번 넣어요. 그림은 `images/EV1.webp`. `hidden: true`(선택)면 도감·상세에서 **그림만** 🔒로 가려요(제목·조건은 보이니, 제목 자체가 스포일러면 에둘러 적기 — 대화에 나오면 그 방의 갤러리에) |
 | `commands` | 작품 명령어(선택) `[{ cmd, title, desc, prompt }]`. 상세 페이지 '명령어' 카드에 보이고, 대화방 입력창에 `!cmd`를 치면 말풍선은 그대로 두고 AI에는 `prompt`가 `//` 연출 지시로 가요(예: `m/godseats`의 `!퀘스트`·`!관람석`·`!쉼터`). 앱 명령어의 이름·별칭(`상태창`·`상태`·`갤러리`·`도감`·`지도`·`장소`·`도움말`·`명령어`·`help`·`시간경과`·`새사건`·`조연등장`·`반복금지` — `src/js/core/commands.js` APP_COMMANDS)은 쓸 수 없어요(빌드 검사) |
 | `lore` | 키워드북 `[{ keys, text, kind, tags }]`. 대화에 `keys`가 나오면 `text`를 AI에 전달해요. `kind`는 항목 종류 — `person` 인물 · `creature` 동물·존재 · `place` 장소 · `item` 물건 · `event` 사건 · `group` 세력 · `concept` 설정(앱의 `LORE_KINDS`, 상세 페이지 세계관 카드의 머리표). `tags`는 그 항목을 그릴 영문 낱말(앱 밖에서 `lore-<n>` 그림을 만들 때). 둘 다 빠지면 빌드 경고 |
 | `artTags` | 그 세계관의 영문 낱말(시대·장소·조명·분위기, 예: `joseon dynasty, korean royal palace, paper lanterns, night`). 앱 밖에서 표지·세계관 일러스트를 만들 때 붙여 작품마다 분위기를 맞춰요 |

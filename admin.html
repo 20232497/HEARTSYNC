@@ -684,7 +684,7 @@ const DEFAULT_CREATOR = "HEART SYNC 스튜디오";
 /* 글자 수 상한 — 작품 데이터는 빌드가 검사하고(APP_RULES), 화면의 입력 칸은 maxlength와 "n / 한도"에 씀.
    guide 작품의 플레이 가이드(work.js guide) · personaDesc 페르소나 상세 정보 · userNote 유저노트(대화방마다 하나) ·
    memory 장기기억 기본 한도(무료 요금제 PLAN.free.memoMax와 요약 설정 memCfg.limit의 기본값 — 넘으면 압축, PLUS는 PLAN.pro.memoMax까지) */
-const LIMITS = { guide: 1000, personaDesc: 1000, userNote: 2000, memory: 3000 };
+const LIMITS = { guide: 1000, personaDesc: 1000, userNote: 2000, memory: 2000 };
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/core/util.js
    내보냄: $, $$, esc, uid, clamp, today, won, num, ago, timeoutSignal, abortCode, toast
@@ -905,8 +905,8 @@ const audOK = (c) => audience() === "all" || audOf(c) === audience();
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/ai/models.js
    가져옴: src/js/core/constants.js { FREE_DAILY }
-   내보냄: MODELS, RECOMMEND_DEFAULT, recommendOf, LEN
-   쓰는 곳: src/js/core/wallet.js, src/js/ai/prompt/input.js, src/js/ai/prompt/rules.js, src/js/ui/faq.js, src/js/ui/pay.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/chat/generate.js, src/js/app.js
+   내보냄: MODELS, RECOMMEND_DEFAULT, recommendSet, recommendOf, LEN
+   쓰는 곳: src/js/core/wallet.js, src/js/core/rooms.js, src/js/ai/prompt/input.js, src/js/ai/prompt/rules.js, src/js/ui/faq.js, src/js/ui/pay.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/chat/generate.js, src/js/ui/detail.js, src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* AI 모델 등급(MODELS)·출력량(LEN)·작품의 권장 모델(recommendOf). 모델 고도화는 여기와 ai/prompt/ */
 
@@ -917,13 +917,15 @@ const audOK = (c) => audience() === "all" || audOf(c) === audience();
 /** 모델 등급 표 — tier는 llm()의 모델(quick Haiku · default Sonnet · complex Opus), base는 기본가(하트), memStep은 기억력 10턴마다 더하는 값. @type {Record<ModelKey, { tier: Tier, name: string, badge: string, desc: string, base: number, memStep: number }>} */
 const MODELS = {
   lite:   { tier: "quick",   name: "라이트", badge: "매일 무료 " + FREE_DAILY + "턴", desc: "빠르고 가벼운 일상 대화", base: 1, memStep: 0 },
-  story:  { tier: "default", name: "스토리", badge: "이야기 중심", desc: "풍부한 묘사와 안정적인 캐릭터 연기", base: 4, memStep: 1 },
+  story:  { tier: "default", name: "스토리", badge: "추천", desc: "풍부한 묘사와 안정적인 캐릭터 연기", base: 4, memStep: 1 },
   master: { tier: "complex", name: "마스터", badge: "최고 품질", desc: "한 편의 소설 같은 몰입감. 복잡한 세계관과 전투 계산에 강해요", base: 8, memStep: 2 }
 };
-/** 작품이 권장 모델(work.js recommend)을 적지 않았을 때의 권장 모델 */
+/** 앱의 기본 추천 모델 — 작품이 권장 모델(work.js recommend)을 적지 않았을 때 새 대화방이 시작하는 모델. MODELS의 그 모델 badge가 '추천'(바꾸면 badge도 같이) */
 const RECOMMEND_DEFAULT = "story";
-/** 작품의 권장 모델 — work.js recommend(MODELS의 키), 없거나 모르는 값이면 RECOMMEND_DEFAULT. 모델 선택 시트의 '권장' 배지. @param {{recommend?: string}|null|undefined} c @returns {ModelKey} */
-function recommendOf(c) { return c && MODELS[c.recommend] ? c.recommend : RECOMMEND_DEFAULT; }
+/** 작품이 권장 모델을 직접 적었으면 그 키, 아니면 "" — 모델 선택 시트의 '권장' 배지는 이때만 붙음. @param {{recommend?: string}|null|undefined} c @returns {ModelKey|""} */
+function recommendSet(c) { return c && MODELS[c.recommend] ? c.recommend : ""; }
+/** 새 대화방이 시작하는 모델 — 작품의 권장 모델(recommendSet), 없으면 RECOMMEND_DEFAULT. @param {{recommend?: string}|null|undefined} c @returns {ModelKey} */
+function recommendOf(c) { return recommendSet(c) || RECOMMEND_DEFAULT; }
 // chars는 본문 분량, lines는 한 응답에 넣을 대사 줄 수(대화가 자주 오가게), tokens는 상태 JSON까지 담을 출력 한도
 /** 출력량 표 — chars 본문 분량, lines 대사 줄 수, tokens 출력 한도, mul 요금 배수. @type {Record<LenKey, { name: string, mul: number, desc: string, chars: string, lines: number, tokens: number }>} */
 const LEN = { short: { name: "적게", mul: 0.75, desc: "짧고 빠른 티키타카", chars: "500~800자", lines: 4, tokens: 2000 },
@@ -1620,12 +1622,13 @@ function roomMinorHint(r, lore = r.char?.lore) {
 }
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/core/rooms.js
-   가져옴: src/js/core/character.js { getChar, normalizeChar }
+   가져옴: src/js/ai/models.js { recommendOf }
+           src/js/core/character.js { getChar, normalizeChar }
            src/js/core/events.js { emit }
            src/js/core/state.js { S }
            src/js/core/storage.js { KV }
            src/js/core/util.js { uid }
-   내보냄: curText, roomKey, saveRoom, deletedRooms, migrateRoom, newRoom, baseOpening, forkRoom
+   내보냄: curText, roomKey, saveRoom, deletedRooms, migrateRoom, defaultSet, newRoom, memoryMark, baseOpening, forkRoom
    쓰는 곳: src/js/services/cloud.js, src/js/services/sync.js, src/js/ai/prompt/input.js, src/js/ai/prompt/rules.js, src/js/ai/prompt/memory.js, src/js/ui/chat/suggest.js, src/js/ui/me.js, src/js/ui/room-tools.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/ui/detail.js, src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 대화방 저장·목록·이전(migrateRoom)·새 방 만들기(newRoom)·분기(forkRoom), 메시지의 현재 버전 글(curText) */
@@ -1634,9 +1637,11 @@ function roomMinorHint(r, lore = r.char?.lore) {
 
 
 
+
 /** @typedef {import("./types.js").Message} Message */
 /** @typedef {import("./types.js").Persona} Persona */
 /** @typedef {import("./types.js").Room} Room */
+/** @typedef {import("./types.js").RoomSet} RoomSet */
 /** @typedef {import("./types.js").Work} Work */
 
 function curText(m) { return m.role === "ai" ? (m.alts[m.idx] || {}).text || "" : m.text; }
@@ -1696,8 +1701,10 @@ function upgradeCodes(r) {
   if (r.char.images) { const im = {}; for (const k of Object.keys(r.char.images)) im[map[k] || k] = r.char.images[k]; r.char.images = im; }
   return true;
 }
+/** 새 대화방의 기본 설정 — 모델은 작품의 권장 모델(recommendOf: work.js recommend, 없으면 앱 기본 추천), 출력량 보통·기억력 10턴. 상세 페이지의 '새 대화는 …로 시작' 안내도 이것으로. @param {Work} c @returns {RoomSet} */
+function defaultSet(c) { return { model: recommendOf(c), len: "mid", mem: 10, rerollAsk: false }; }
 /**
- * 새 대화방 — 작품 사본·시작 상황 본문을 첫 AI 메시지로, 게이지가 없으면 10. 바로 저장함.
+ * 새 대화방 — 작품 사본·시작 상황 본문을 첫 AI 메시지로, 게이지가 없으면 10, 설정은 defaultSet. 바로 저장함.
  * @param {Work} c @param {number} openingIdx 시작 상황 번호 @param {Persona} persona @returns {Room}
  */
 function newRoom(c, openingIdx, persona) {
@@ -1708,19 +1715,34 @@ function newRoom(c, openingIdx, persona) {
   const r = {
     id: uid("r"), v2: true, char: JSON.parse(JSON.stringify(c)), persona: { id: persona.id, name: persona.name, memo: persona.memo || "", desc: persona.desc || "", img: persona.img || "" },
     opening: op.title, directive: op.directive || "", userNote: "", memory: "", memHist: [], sinceMem: 0, turn: 0, status: st, bookmarks: [],
-    set: { model: "lite", len: "mid", mem: 10, rerollAsk: false },
+    set: defaultSet(c),
     msgs: [{ id: uid("m"), role: "ai", idx: 0, alts: [{ text: op.text, status: st, suggestions: [], opening: true }], statusBefore: st }],
     at: Date.now(), created: Date.now()
   };
   saveRoom(r); return r;
+}
+/** 장기기억 구간의 머리표 "[a-b턴]" — 요약(ai/prompt/memory.js)이 구간마다 붙이고, 분기(memoryUpTo)가 읽음. @param {number} from @param {number} to @returns {string} */
+function memoryMark(from, to) { return `[${from}-${to}턴]`; }
+/* 장기기억에서 그 턴보다 뒤에 시작하는 구간을 뺌 → [남긴 기억, 남긴 마지막 구간의 끝 턴(없으면 0), 뺀 것이 있는지].
+   구간 머리표가 없는 글(직접 쓴 기억·압축으로 합쳐진 기억)은 그대로 둠 */
+function memoryUpTo(mem, turn) {
+  let last = 0, cut = false;
+  const kept = String(mem || "").split(/\n\n(?=\[\d+-\d+턴\])/).filter((p) => {
+    const m = p.match(/^\[(\d+)-(\d+)턴\]/);
+    if (!m) return true;
+    if (+m[1] > turn) { cut = true; return false; }
+    last = +m[2]; return true;
+  });
+  return [kept.join("\n\n"), last, cut];
 }
 /* 분기한 방의 시작 상황 제목 끝에 붙는 표시 — 원래 제목은 baseOpening으로 */
 const FORK_MARK = " (분기)";
 /** 시작 상황의 원래 제목(분기 표시를 뗌) — '처음부터'가 같은 시작 상황을 찾을 때. @param {Room} r @returns {string} */
 function baseOpening(r) { const t = r.opening || ""; return t.slice(-FORK_MARK.length) === FORK_MARK ? t.slice(0, -FORK_MARK.length) : t; }
 /**
- * 분기: 그 메시지까지를 깊은 복사한 새 대화방 — 같은 작품 사본·페르소나·설정·유저노트·장기기억, 상태창은 그 시점의 것, 시작 상황 제목에 '(분기)', forkedFrom에 출처.
- * 원래 방은 건드리지 않고 새 방을 바로 저장함(지운 방·MAX_MSGS_KEEP 규칙은 saveRoom 그대로). 장기기억은 그 시점으로 되돌릴 수 없어 지금 것을 복사.
+ * 분기: 그 메시지까지를 깊은 복사한 새 대화방 — 같은 작품 사본·페르소나·설정·유저노트, 상태창은 그 시점의 것, 시작 상황 제목에 '(분기)', forkedFrom에 출처.
+ * 장기기억은 분기한 턴보다 뒤에 시작하는 구간([a-b턴])을 빼고 복사(2026-11-09 사용자 결정 — 아직 안 일어난 일이 따라오지 않게. 머리표가 없으면 통째로).
+ * 턴 번호는 원래 방의 것을 이어 씀(지운 메시지가 있어도 구간 머리표와 어긋나지 않게). 원래 방은 건드리지 않고 새 방을 바로 저장함(지운 방·MAX_MSGS_KEEP 규칙은 saveRoom 그대로).
  * @param {Room} r @param {string} msgId 이 메시지까지 가져감 @returns {Room|null} 메시지를 못 찾으면 null
  */
 function forkRoom(r, msgId) {
@@ -1730,7 +1752,8 @@ function forkRoom(r, msgId) {
   const ai = [...f.msgs].reverse().find((m) => m.role === "ai"), ids = new Set(f.msgs.map((m) => m.id));
   f.id = uid("r"); f.opening = (baseOpening(r) || "기본") + FORK_MARK; f.forkedFrom = { roomId: r.id, msgId };
   f.status = (ai && (ai.alts[ai.idx].status || ai.statusBefore)) || r.status;
-  f.turn = f.msgs.filter((m) => m.role === "user").length; f.sinceMem = Math.min(f.sinceMem || 0, f.turn);
+  const after = r.msgs.slice(i + 1).filter((m) => m.role === "user").length, turn = Math.max(0, (r.turn || 0) - after), mem = memoryUpTo(r.memory, turn);
+  f.turn = turn; f.memory = mem[0]; f.sinceMem = mem[2] ? Math.max(0, turn - mem[1]) : Math.max(0, (r.sinceMem || 0) - after);
   f.memHist = []; f.lastErr = ""; f.bookmarks = (r.bookmarks || []).filter((b) => ids.has(b)); f.created = Date.now();
   saveRoom(f); return f;
 }
@@ -2935,7 +2958,7 @@ ${(() => { const used = usedOpeners(hist); return used.length ? `\n[이미 쓴 �
    src/js/ai/prompt/memory.js
    가져옴: src/js/ai/llm.js { llm }
            src/js/ai/prompt/rules.js { speakerName }
-           src/js/core/rooms.js { curText, saveRoom }
+           src/js/core/rooms.js { curText, memoryMark, saveRoom }
            src/js/core/state.js { S }
            src/js/core/util.js { $, $$, toast }
            src/js/core/wallet.js { plan }
@@ -2984,7 +3007,7 @@ ${(r.memory || "(없음)").slice(-800)}
 [이번 구간 대화]
 ${excerpt}` }], { tier: "quick", json: true, room: r });
     if (!v || typeof v.summary !== "string") throw 0;
-    r.memory = ((r.memory || "").trim() + `\n\n[${from}-${to}턴] ${String(v.title || "").slice(0, 30)}\n${v.summary.trim()}`).trim();
+    r.memory = ((r.memory || "").trim() + `\n\n${memoryMark(from, to)} ${String(v.title || "").slice(0, 30)}\n${v.summary.trim()}`).trim();
     // 요약하는 동안 진행된 턴은 다음 요약 몫으로 남김(0으로 지우면 그 턴들이 요약에서 빠짐)
     r.sinceMem = Math.max(0, (r.sinceMem || 0) - n);
     if (r.memory.length > cfg.limit) {
@@ -3314,14 +3337,13 @@ function bindCast(v, c) {
 }
 /* 코드 글자의 비공개 번호들(codebook의 hidden) — 작품에 없는 코드는 빈 배열 */
 function hiddenOf(c, code) { const e = codebook(c)[code]; return e ? e.hidden : []; }
-/* 시리즈(장소 MP·컷씬 EV) 한 칸: 코드·이름·설명(장소 desc / 컷씬 when)과 그림 — 목록이 비면 빈 문자열. 비공개 항목은 코드만 남긴 잠긴 카드(이름·설명·그림 모두 가림) */
+/* 시리즈(장소 MP·컷씬 EV) 한 칸: 코드·이름·설명(장소 desc / 컷씬 when)과 그림 — 목록이 비면 빈 문자열.
+   비공개 항목은 그림만 🔒로 가림 — 이름·설명은 보임(2026-11-09 사용자 결정: 무엇을 모으는지는 알 수 있게. 제목이 스포일러면 제작자가 에둘러 적음) */
 function seriesBox(c, code, e) {
   if (!e.max) return "";
   return `<div class="box"><h3>${esc(e.label)} <small>코드 ${esc(code)}1~${esc(code)}${e.max}</small></h3><div class="codex-grid">${e.items.map((it, i) => {
-    const n = i + 1;
-    if (e.hidden.includes(n)) return `<figure class="wcard locked"><div class="wpic ph">🔒</div><figcaption><b><code class="code-chip">${esc(code + n)}</code>숨겨진 ${esc(e.label)}</b><span>${LOCK_NOTE}</span></figcaption></figure>`;
-    const ref = pickImg(c, code, n), name = it[e.nameKey] || code + n, sub = it.desc || it.when || "";
-    return `<figure class="wcard">${ref ? `<button class="wpic" data-cxlb aria-label="${esc(name)} 크게 보기">${IMG.tag(ref)}</button>` : `<div class="wpic ph">${esc(code + n)}</div>`}<figcaption><b><code class="code-chip">${esc(code + n)}</code>${esc(name)}</b>${sub ? `<span>${esc(sub)}</span>` : ""}</figcaption></figure>`; }).join("")}</div></div>`;
+    const n = i + 1, lock = e.hidden.includes(n), ref = lock ? null : pickImg(c, code, n), name = it[e.nameKey] || code + n, sub = it.desc || it.when || "";
+    return `<figure class="wcard${lock ? " locked" : ""}">${ref ? `<button class="wpic" data-cxlb aria-label="${esc(name)} 크게 보기">${IMG.tag(ref)}</button>` : `<div class="wpic ph"${lock ? ` title="${LOCK_NOTE}"` : ""}>${lock ? "🔒" : esc(code + n)}</div>`}<figcaption><b><code class="code-chip">${esc(code + n)}</code>${esc(name)}</b>${sub ? `<span>${esc(sub)}</span>` : ""}${lock ? `<span>🔒 그림은 ${LOCK_NOTE}</span>` : ""}</figcaption></figure>`; }).join("")}</div></div>`;
 }
 /* 예약 시리즈(SERIES — 장소·컷씬…) 칸 전부. 시리즈를 더하면 도감에 그대로 나옴 */
 const seriesHTML = (c, book) => Object.keys(SERIES).map((k) => seriesBox(c, k, book[k])).join("");
@@ -3577,7 +3599,7 @@ function checkout(item, after) {
 }
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/ui/faq.js
-   가져옴: src/js/ai/models.js { LEN, MODELS }
+   가져옴: src/js/ai/models.js { LEN, MODELS, RECOMMEND_DEFAULT }
            src/js/core/commands.js { allCommands }
            src/js/core/character.js { exampleCast }
            src/js/core/constants.js { EXAMPLE_SIT, LIMITS, SIT }
@@ -3613,9 +3635,9 @@ function faqGroups() {
       ["휴대폰에서도 쓸 수 있나요?", "네. 휴대폰에서는 내려받은 파일이 아니라 웹 주소(20232497.github.io/HEARTSYNC)로 열어 주세요. 로그인하면 PC에서 하던 대화·설정이 휴대폰에서 그대로 이어져요."]
     ]],
     ["요금·하트", [
-      ["무료로 얼마나 쓸 수 있나요?", `라이트 모델은 <b>매일 ${FREE_DAILY}턴 무료</b>예요. 자정에 다시 채워져요. 처음 방문하면 하트 ${WELCOME}개를 드려요.`],
+      ["무료로 얼마나 쓸 수 있나요?", `라이트 모델은 <b>매일 ${FREE_DAILY}턴 무료</b>예요. 자정에 다시 채워져요. 처음 방문하면 하트 ${WELCOME}개를 드려요. 새 대화방은 그 작품의 권장 모델(따로 없으면 ${MODELS[RECOMMEND_DEFAULT].name})로 시작하니, 무료 턴을 쓰려면 대화방 위쪽의 모델 이름을 눌러 <b>라이트</b>로 바꿔 주세요.`],
       ["하트는 어디에 쓰나요?", "무료 턴을 다 쓴 뒤의 라이트 모델과, 스토리·마스터 모델 대화에 써요. 보내기 버튼에 이번 턴 비용이 항상 표시되고, 응답이 실패하면 자동으로 환불돼요. 장기기억 요약·AI 추천 답변은 무료예요."],
-      ["모델마다 한 턴에 하트가 얼마나 드나요?", `출력량 ${LEN.mid.name}·기억력 10턴 기준으로 ${Object.keys(MODELS).map((k) => `<b>${MODELS[k].name}</b> ♥${listPrice(k, "mid", 10)}`).join(" · ")}예요(라이트는 무료 턴을 다 쓴 뒤). 출력량과 기억력을 올리면 조금씩 늘어나요. 대화방 위쪽의 모델 이름을 누르면 지금 설정에서의 턴당 하트와, 그 작품의 <b>권장</b> 모델을 볼 수 있어요.`],
+      ["모델마다 한 턴에 하트가 얼마나 드나요?", `출력량 ${LEN.mid.name}·기억력 10턴 기준으로 ${Object.keys(MODELS).map((k) => `<b>${MODELS[k].name}</b> ♥${listPrice(k, "mid", 10)}`).join(" · ")}예요(라이트는 무료 턴을 다 쓴 뒤). 출력량과 기억력을 올리면 조금씩 늘어나요. 대화방 위쪽의 모델 이름을 누르면 지금 설정에서의 턴당 하트와 <b>추천</b>(앱의 기본 추천)·<b>권장</b>(그 작품의 제작자가 고른 모델) 표시를 볼 수 있어요.`],
       ["PLUS는 무엇인가요?", `월 ${plus} 멤버십이에요. 라이트 모델 무제한, 스토리·마스터 50% 할인, 매달 하트 ${num(PLUS_MONTHLY)}개, 장기기억 ${num(PLAN.free.memoMax)}자 → ${num(PLAN.pro.memoMax)}자, 기억력 ${PLAN.free.memTurns}턴 → ${PLAN.pro.memTurns}턴으로 늘어나요.`],
       ["결제하면 실제로 돈이 나가나요?", "지금 스토어는 결제 흐름을 보여 주는 <b>시연(데모)</b>이라 실제로 청구되지 않고, 하트와 멤버십은 체험용으로만 지급돼요. 다만 내 API 키로 쓰는 AI 대화 요금은 그 키를 발급한 Anthropic이 따로 청구해요."]
     ]],
@@ -4418,13 +4440,13 @@ function openRoomDrawer(view = "main") {
   }
   else if (view === "places") {
     // 작품의 장소(places → 예약 시리즈 코드 MP1…, 코드 글자는 codes.js SERIES에서) — !지도 명령어로도 열림. 그림은 작품 폴더 images/MP<n>.webp. 목록은 최신 작품에서
-    // 비공개(hidden) 장소는 이 대화에 그 코드가 나오기 전까지 이름·그림을 가린 카드로(codebook의 hidden)
+    // 비공개(hidden) 장소는 이 대화에 그 코드가 나오기 전까지 그림만 가림(이름·설명은 보임 — codebook의 hidden)
     const live = getChar(c.id) || c, list = live.places || [], MP = seriesCode("place"), book = codebook(live)[MP], hid = book.hidden, seen = new Set(galleryItems(r).map((it) => it.code + it.sit));
     const lock = (i) => hid.includes(i + 1) && !seen.has(MP + (i + 1));
     body.innerHTML = list.length ? `<p class="note" style="margin-bottom:10px">이 작품의 장소 ${list.length}곳. 대화에서는 [[${MP}번호]] 코드로 나와요.</p><div class="gallery">${list.map((p, i) => {
-      const ref = lock(i) ? null : pickImg(c, MP, i + 1), name = lock(i) ? "🔒" : p.name;
-      return `<button data-p="${i}" title="${MP}${i + 1} · ${esc(name)}">${ref ? IMG.tag(ref) : artHTML(c, { name }, i + 1, book.label)}</button>`; }).join("")}</div>
-      <div class="box" style="margin-top:12px">${list.map((p, i) => lock(i) ? `<p><b>${MP}${i + 1} 🔒</b> — 대화에서 나오면 보여요</p>` : `<p><b>${MP}${i + 1} ${esc(p.name)}</b>${p.desc ? " — " + esc(p.desc) : ""}</p>`).join("")}</div>`
+      const ref = lock(i) ? null : pickImg(c, MP, i + 1);
+      return `<button data-p="${i}" title="${MP}${i + 1} · ${esc(p.name)}">${ref ? IMG.tag(ref) : artHTML(c, { name: p.name }, i + 1, (lock(i) ? "🔒 " : "") + book.label)}</button>`; }).join("")}</div>
+      <div class="box" style="margin-top:12px">${list.map((p, i) => `<p><b>${MP}${i + 1} ${esc(p.name)}</b>${p.desc ? " — " + esc(p.desc) : ""}${lock(i) ? " · 🔒 그림은 대화에서 나오면 보여요" : ""}</p>`).join("")}</div>`
       : `<div class="empty">이 작품에는 장소 그림이 없어요.</div>`;
     IMG.hydrate(body);
     $$("[data-p]", body).forEach((b) => b.onclick = () => { const im = $("img", b); if (im && im.src) lightbox(im.src); });
@@ -4438,7 +4460,7 @@ function openRoomDrawer(view = "main") {
 }
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/ui/model-sheet.js
-   가져옴: src/js/ai/models.js { LEN, MODELS, recommendOf }
+   가져옴: src/js/ai/models.js { LEN, MODELS, recommendSet }
            src/js/core/character.js { getChar }
            src/js/core/rooms.js { saveRoom }
            src/js/core/state.js { S, room }
@@ -4452,7 +4474,7 @@ function openRoomDrawer(view = "main") {
    내보냄: setModel, openModelSheet
    쓰는 곳: src/js/ui/pay.js, src/js/ui/room-drawer.js, src/js/ui/chat/view.js, src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
-/* 모델 선택 시트: 모델마다 턴당 하트·무료 턴 안내, 작품의 권장 모델(work.js recommend)에 '권장' 배지 */
+/* 모델 선택 시트: 모델마다 턴당 하트·무료 턴 안내, 앱 기본 추천(스토리 '추천')과 작품이 직접 고른 모델의 '권장' 배지(work.js recommend) */
 
 
 
@@ -4468,7 +4490,7 @@ function openRoomDrawer(view = "main") {
 /* 모델 선택 시트 */
 function setModel(k) { room.set.model = k; saveRoom(room); updateComposer(); }
 function openModelSheet() {
-  const r = room, rec = recommendOf(getChar(r.char.id) || r.char); // 권장 모델은 최신 작품에서
+  const r = room, rec = recommendSet(getChar(r.char.id) || r.char); // 작품이 직접 적은 권장 모델(없으면 배지 없음) — 최신 작품에서
   const card = (k) => {
     const m = MODELS[k], q = quote({ ...r.set, model: k }); // q.list = 정가(listPrice), q.n = 지금 낼 하트
     const price = q.type === "free" ? `오늘 무료 ${freeLeft()}턴 남음 · 이후 턴당 ♥${q.list}` : q.type === "plus" ? `PLUS 무제한 <s>턴당 ♥${q.list}</s>` : (isPro() && q.n < q.list ? `턴당 <s>♥${q.list}</s>♥${q.n}` : `턴당 ♥${q.n}`);
@@ -4476,7 +4498,7 @@ function openModelSheet() {
     return `<button class="model-card ${r.set.model === k ? "on" : ""}" data-m="${k}"><span class="k">${esc(m.badge)}</span><b>${m.name}${k === rec ? ' <span class="pill ok">권장</span>' : ""}${isPro() && k !== "lite" ? ' <span class="pill gold">PLUS -50%</span>' : ""}</b><p>${esc(m.desc)}</p><div class="price">${price}<small>${free}</small></div><span class="chk">✓</span></button>`;
   };
   const ov = sheet(`<div class="sheet-head"><h2>AI 모델 선택</h2><button class="icon-btn" data-x aria-label="닫기">${ICON.close}</button></div>
-    <p class="sub">턴당 비용은 모델, 출력량(${LEN[r.set.len].name}), 기억력(${r.set.mem}턴)에 따라 달라져요. 실패한 응답은 자동 환불돼요. <b>권장</b>은 이 작품에 어울리는 모델이에요.</p>
+    <p class="sub">턴당 비용은 모델, 출력량(${LEN[r.set.len].name}), 기억력(${r.set.mem}턴)에 따라 달라져요. 실패한 응답은 자동 환불돼요.${rec ? " <b>권장</b>은 이 작품의 제작자가 고른 모델이에요." : ""}</p>
     <div class="purse" style="margin-bottom:12px"><div>보유 하트 <span class="spacer"></span><b>♥ ${num(S.wallet.hearts)}</b><button class="btn sm pri" id="topup" style="margin-left:8px">충전</button></div></div>
     ${Object.keys(MODELS).map(card).join("")}
     <div class="cta-row"><button class="btn ghost" id="outSet">출력 설정 바꾸기</button><span class="spacer"></span><button class="btn pri" id="apply">적용</button></div>`);
@@ -5168,11 +5190,12 @@ function worldArtHTML(c) {
 }
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/ui/detail.js
-   가져옴: src/js/core/character.js { getChar, normalizeChar }
-           src/js/core/rooms.js { newRoom }
+   가져옴: src/js/ai/models.js { MODELS }
+           src/js/core/character.js { getChar, normalizeChar }
+           src/js/core/rooms.js { defaultSet, newRoom }
            src/js/core/state.js { S, room, setRoom }
            src/js/core/util.js { $, $$, ago, esc }
-           src/js/core/wallet.js { FREE_DAILY, plan }
+           src/js/core/wallet.js { FREE_DAILY, plan, qShort, quote }
            src/js/services/images.js { IMG }
            src/js/ui/codex.js { bindCast, bindCodex, castGridHTML, codexHTML, guideHTML, metaHTML }
            src/js/ui/cover.js { coverHTML, lightbox }
@@ -5197,12 +5220,14 @@ function worldArtHTML(c) {
 
 
 
+
 function viewDetail(id) {
   const c = normalizeChar(getChar(id)), v = $("#view");
   if (!c) { v.innerHTML = `<div class="page">${topbar()}<div class="empty">캐릭터를 찾을 수 없어요. 삭제됐거나 아직 불러오는 중일 수 있어요.<br><button class="btn sm" data-go="home">홈으로</button></div></div>`; bindGo(v); return; }
   const rooms = S.rooms.filter((r) => r.charId === c.id);
   const persona = S.personas.find((p) => p.def) || S.personas[0];
   const wa = worldArtHTML(c); // 키워드북이 없으면 칸을 숨김
+  const set0 = defaultSet(c), q0 = quote(set0); // 새 대화방이 시작하는 모델(작품의 권장 모델)과 그 턴당 비용
   v.innerHTML = `<div class="page">
     ${topbar(`<button class="icon-btn" data-go="home" aria-label="뒤로">${ICON.back}</button>`)}
     <div class="detail">
@@ -5224,7 +5249,7 @@ function viewDetail(id) {
         </div>
         <div class="field"><label for="pp">대화할 내 페르소나</label><select id="pp">${S.personas.map((p) => `<option value="${esc(p.id)}" ${p === persona ? "selected" : ""}>${esc(p.name)}${p.memo ? " · " + esc(p.memo) : ""}</option>`).join("")}</select></div>
         <div class="cta-row"><button class="btn pri big" id="start">새 대화 시작</button><button class="btn ghost sm" data-go="me">페르소나 관리</button></div>
-        <p class="note" style="margin-top:8px">라이트 모델은 하루 ${FREE_DAILY}턴 무료. 상태창: ${c.fields.slice(0, 8).map(esc).join(" · ")}${c.fields.length > 8 ? " 외" : ""}</p>
+        <p class="note" style="margin-top:8px">새 대화는 ${esc(MODELS[set0.model].name)} 모델(${q0.type === "heart" ? "턴당 ♥" + q0.n : qShort(q0)})로 시작해요 — 대화방에서 바꿀 수 있어요. 라이트 모델은 하루 ${FREE_DAILY}턴 무료. 상태창: ${c.fields.slice(0, 8).map(esc).join(" · ")}${c.fields.length > 8 ? " 외" : ""}</p>
         </div>
         ${rooms.length ? `<div class="box"><h3>내 대화방</h3><div class="cont">${rooms.map((r) => `<button data-room="${esc(r.id)}">${coverHTML(r)}<span class="x"><b>${esc(r.name)}</b><span>${esc(r.last)}</span></span><span class="note">${ago(r.at)}</span></button>`).join("")}</div></div>` : ""}
       </div>

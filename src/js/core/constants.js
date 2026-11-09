@@ -19,4 +19,4 @@ export const DEFAULT_CREATOR = "HEART SYNC 스튜디오";
 /* 글자 수 상한 — 작품 데이터는 빌드가 검사하고(APP_RULES), 화면의 입력 칸은 maxlength와 "n / 한도"에 씀.
    guide 작품의 플레이 가이드(work.js guide) · personaDesc 페르소나 상세 정보 · userNote 유저노트(대화방마다 하나) ·
    memory 장기기억 기본 한도(무료 요금제 PLAN.free.memoMax와 요약 설정 memCfg.limit의 기본값 — 넘으면 압축, PLUS는 PLAN.pro.memoMax까지) */
-export const LIMITS = { guide: 1000, personaDesc: 1000, userNote: 2000, memory: 3000 };
+export const LIMITS = { guide: 1000, personaDesc: 1000, userNote: 2000, memory: 2000 };

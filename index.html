@@ -608,7 +608,7 @@ const MOTIFS = { rain: "비", city: "도시", stars: "별", glow: "불빛", peta
 const CATS = ["로맨스", "판타지", "RPG", "미스터리", "일상", "시뮬레이션"];
 const EXAMPLE_CAST = { code: "ABC", name: "주인공" }, EXAMPLE_SIT = 3;
 const DEFAULT_CREATOR = "HEART SYNC 스튜디오";
-const LIMITS = { guide: 1000, personaDesc: 1000, userNote: 2000, memory: 3000 };
+const LIMITS = { guide: 1000, personaDesc: 1000, userNote: 2000, memory: 2000 };
 /* ── src/js/core/util.js — DOM·문자열·숫자 유틸, toast, 예상 못 한 오류 기록(reportError) */
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
@@ -736,11 +736,12 @@ const audOK = (c) => audience() === "all" || audOf(c) === audience();
 /* ── src/js/ai/models.js — AI 모델 등급(MODELS)·출력량(LEN)·작품의 권장 모델(recommendOf) */
 const MODELS = {
   lite:   { tier: "quick",   name: "라이트", badge: "매일 무료 " + FREE_DAILY + "턴", desc: "빠르고 가벼운 일상 대화", base: 1, memStep: 0 },
-  story:  { tier: "default", name: "스토리", badge: "이야기 중심", desc: "풍부한 묘사와 안정적인 캐릭터 연기", base: 4, memStep: 1 },
+  story:  { tier: "default", name: "스토리", badge: "추천", desc: "풍부한 묘사와 안정적인 캐릭터 연기", base: 4, memStep: 1 },
   master: { tier: "complex", name: "마스터", badge: "최고 품질", desc: "한 편의 소설 같은 몰입감. 복잡한 세계관과 전투 계산에 강해요", base: 8, memStep: 2 }
 };
 const RECOMMEND_DEFAULT = "story";
-function recommendOf(c) { return c && MODELS[c.recommend] ? c.recommend : RECOMMEND_DEFAULT; }
+function recommendSet(c) { return c && MODELS[c.recommend] ? c.recommend : ""; }
+function recommendOf(c) { return recommendSet(c) || RECOMMEND_DEFAULT; }
 const LEN = { short: { name: "적게", mul: 0.75, desc: "짧고 빠른 티키타카", chars: "500~800자", lines: 4, tokens: 2000 },
   mid: { name: "보통", mul: 1, desc: "지문과 대사가 균형 있게", chars: "1000~1500자", lines: 6, tokens: 3200 },
   long: { name: "많게", mul: 1.5, desc: "소설처럼 길고 풍성하게", chars: "1800~2600자", lines: 10, tokens: 5000 } };
@@ -1367,6 +1368,7 @@ function upgradeCodes(r) {
   if (r.char.images) { const im = {}; for (const k of Object.keys(r.char.images)) im[map[k] || k] = r.char.images[k]; r.char.images = im; }
   return true;
 }
+function defaultSet(c) { return { model: recommendOf(c), len: "mid", mem: 10, rerollAsk: false }; }
 function newRoom(c, openingIdx, persona) {
   normalizeChar(c);
   const op = c.openings[openingIdx] || c.openings[0];
@@ -1375,11 +1377,22 @@ function newRoom(c, openingIdx, persona) {
   const r = {
     id: uid("r"), v2: true, char: JSON.parse(JSON.stringify(c)), persona: { id: persona.id, name: persona.name, memo: persona.memo || "", desc: persona.desc || "", img: persona.img || "" },
     opening: op.title, directive: op.directive || "", userNote: "", memory: "", memHist: [], sinceMem: 0, turn: 0, status: st, bookmarks: [],
-    set: { model: "lite", len: "mid", mem: 10, rerollAsk: false },
+    set: defaultSet(c),
     msgs: [{ id: uid("m"), role: "ai", idx: 0, alts: [{ text: op.text, status: st, suggestions: [], opening: true }], statusBefore: st }],
     at: Date.now(), created: Date.now()
   };
   saveRoom(r); return r;
+}
+function memoryMark(from, to) { return `[${from}-${to}턴]`; }
+function memoryUpTo(mem, turn) {
+  let last = 0, cut = false;
+  const kept = String(mem || "").split(/\n\n(?=\[\d+-\d+턴\])/).filter((p) => {
+    const m = p.match(/^\[(\d+)-(\d+)턴\]/);
+    if (!m) return true;
+    if (+m[1] > turn) { cut = true; return false; }
+    last = +m[2]; return true;
+  });
+  return [kept.join("\n\n"), last, cut];
 }
 const FORK_MARK = " (분기)";
 function baseOpening(r) { const t = r.opening || ""; return t.slice(-FORK_MARK.length) === FORK_MARK ? t.slice(0, -FORK_MARK.length) : t; }
@@ -1390,7 +1403,8 @@ function forkRoom(r, msgId) {
   const ai = [...f.msgs].reverse().find((m) => m.role === "ai"), ids = new Set(f.msgs.map((m) => m.id));
   f.id = uid("r"); f.opening = (baseOpening(r) || "기본") + FORK_MARK; f.forkedFrom = { roomId: r.id, msgId };
   f.status = (ai && (ai.alts[ai.idx].status || ai.statusBefore)) || r.status;
-  f.turn = f.msgs.filter((m) => m.role === "user").length; f.sinceMem = Math.min(f.sinceMem || 0, f.turn);
+  const after = r.msgs.slice(i + 1).filter((m) => m.role === "user").length, turn = Math.max(0, (r.turn || 0) - after), mem = memoryUpTo(r.memory, turn);
+  f.turn = turn; f.memory = mem[0]; f.sinceMem = mem[2] ? Math.max(0, turn - mem[1]) : Math.max(0, (r.sinceMem || 0) - after);
   f.memHist = []; f.lastErr = ""; f.bookmarks = (r.bookmarks || []).filter((b) => ids.has(b)); f.created = Date.now();
   saveRoom(f); return f;
 }
@@ -2197,7 +2211,7 @@ ${(r.memory || "(없음)").slice(-800)}
 [이번 구간 대화]
 ${excerpt}` }], { tier: "quick", json: true, room: r });
     if (!v || typeof v.summary !== "string") throw 0;
-    r.memory = ((r.memory || "").trim() + `\n\n[${from}-${to}턴] ${String(v.title || "").slice(0, 30)}\n${v.summary.trim()}`).trim();
+    r.memory = ((r.memory || "").trim() + `\n\n${memoryMark(from, to)} ${String(v.title || "").slice(0, 30)}\n${v.summary.trim()}`).trim();
     r.sinceMem = Math.max(0, (r.sinceMem || 0) - n);
     if (r.memory.length > cfg.limit) {
       pushHist(r, r.memory, "압축 전 기억");
@@ -2384,10 +2398,8 @@ function hiddenOf(c, code) { const e = codebook(c)[code]; return e ? e.hidden : 
 function seriesBox(c, code, e) {
   if (!e.max) return "";
   return `<div class="box"><h3>${esc(e.label)} <small>코드 ${esc(code)}1~${esc(code)}${e.max}</small></h3><div class="codex-grid">${e.items.map((it, i) => {
-    const n = i + 1;
-    if (e.hidden.includes(n)) return `<figure class="wcard locked"><div class="wpic ph">🔒</div><figcaption><b><code class="code-chip">${esc(code + n)}</code>숨겨진 ${esc(e.label)}</b><span>${LOCK_NOTE}</span></figcaption></figure>`;
-    const ref = pickImg(c, code, n), name = it[e.nameKey] || code + n, sub = it.desc || it.when || "";
-    return `<figure class="wcard">${ref ? `<button class="wpic" data-cxlb aria-label="${esc(name)} 크게 보기">${IMG.tag(ref)}</button>` : `<div class="wpic ph">${esc(code + n)}</div>`}<figcaption><b><code class="code-chip">${esc(code + n)}</code>${esc(name)}</b>${sub ? `<span>${esc(sub)}</span>` : ""}</figcaption></figure>`; }).join("")}</div></div>`;
+    const n = i + 1, lock = e.hidden.includes(n), ref = lock ? null : pickImg(c, code, n), name = it[e.nameKey] || code + n, sub = it.desc || it.when || "";
+    return `<figure class="wcard${lock ? " locked" : ""}">${ref ? `<button class="wpic" data-cxlb aria-label="${esc(name)} 크게 보기">${IMG.tag(ref)}</button>` : `<div class="wpic ph"${lock ? ` title="${LOCK_NOTE}"` : ""}>${lock ? "🔒" : esc(code + n)}</div>`}<figcaption><b><code class="code-chip">${esc(code + n)}</code>${esc(name)}</b>${sub ? `<span>${esc(sub)}</span>` : ""}${lock ? `<span>🔒 그림은 ${LOCK_NOTE}</span>` : ""}</figcaption></figure>`; }).join("")}</div></div>`;
 }
 const seriesHTML = (c, book) => Object.keys(SERIES).map((k) => seriesBox(c, k, book[k])).join("");
 function cmdCard(x) {
@@ -2597,9 +2609,9 @@ function faqGroups() {
       ["휴대폰에서도 쓸 수 있나요?", "네. 휴대폰에서는 내려받은 파일이 아니라 웹 주소(20232497.github.io/HEARTSYNC)로 열어 주세요. 로그인하면 PC에서 하던 대화·설정이 휴대폰에서 그대로 이어져요."]
     ]],
     ["요금·하트", [
-      ["무료로 얼마나 쓸 수 있나요?", `라이트 모델은 <b>매일 ${FREE_DAILY}턴 무료</b>예요. 자정에 다시 채워져요. 처음 방문하면 하트 ${WELCOME}개를 드려요.`],
+      ["무료로 얼마나 쓸 수 있나요?", `라이트 모델은 <b>매일 ${FREE_DAILY}턴 무료</b>예요. 자정에 다시 채워져요. 처음 방문하면 하트 ${WELCOME}개를 드려요. 새 대화방은 그 작품의 권장 모델(따로 없으면 ${MODELS[RECOMMEND_DEFAULT].name})로 시작하니, 무료 턴을 쓰려면 대화방 위쪽의 모델 이름을 눌러 <b>라이트</b>로 바꿔 주세요.`],
       ["하트는 어디에 쓰나요?", "무료 턴을 다 쓴 뒤의 라이트 모델과, 스토리·마스터 모델 대화에 써요. 보내기 버튼에 이번 턴 비용이 항상 표시되고, 응답이 실패하면 자동으로 환불돼요. 장기기억 요약·AI 추천 답변은 무료예요."],
-      ["모델마다 한 턴에 하트가 얼마나 드나요?", `출력량 ${LEN.mid.name}·기억력 10턴 기준으로 ${Object.keys(MODELS).map((k) => `<b>${MODELS[k].name}</b> ♥${listPrice(k, "mid", 10)}`).join(" · ")}예요(라이트는 무료 턴을 다 쓴 뒤). 출력량과 기억력을 올리면 조금씩 늘어나요. 대화방 위쪽의 모델 이름을 누르면 지금 설정에서의 턴당 하트와, 그 작품의 <b>권장</b> 모델을 볼 수 있어요.`],
+      ["모델마다 한 턴에 하트가 얼마나 드나요?", `출력량 ${LEN.mid.name}·기억력 10턴 기준으로 ${Object.keys(MODELS).map((k) => `<b>${MODELS[k].name}</b> ♥${listPrice(k, "mid", 10)}`).join(" · ")}예요(라이트는 무료 턴을 다 쓴 뒤). 출력량과 기억력을 올리면 조금씩 늘어나요. 대화방 위쪽의 모델 이름을 누르면 지금 설정에서의 턴당 하트와 <b>추천</b>(앱의 기본 추천)·<b>권장</b>(그 작품의 제작자가 고른 모델) 표시를 볼 수 있어요.`],
       ["PLUS는 무엇인가요?", `월 ${plus} 멤버십이에요. 라이트 모델 무제한, 스토리·마스터 50% 할인, 매달 하트 ${num(PLUS_MONTHLY)}개, 장기기억 ${num(PLAN.free.memoMax)}자 → ${num(PLAN.pro.memoMax)}자, 기억력 ${PLAN.free.memTurns}턴 → ${PLAN.pro.memTurns}턴으로 늘어나요.`],
       ["결제하면 실제로 돈이 나가나요?", "지금 스토어는 결제 흐름을 보여 주는 <b>시연(데모)</b>이라 실제로 청구되지 않고, 하트와 멤버십은 체험용으로만 지급돼요. 다만 내 API 키로 쓰는 AI 대화 요금은 그 키를 발급한 Anthropic이 따로 청구해요."]
     ]],
@@ -3163,9 +3175,9 @@ function openRoomDrawer(view = "main") {
     const live = getChar(c.id) || c, list = live.places || [], MP = seriesCode("place"), book = codebook(live)[MP], hid = book.hidden, seen = new Set(galleryItems(r).map((it) => it.code + it.sit));
     const lock = (i) => hid.includes(i + 1) && !seen.has(MP + (i + 1));
     body.innerHTML = list.length ? `<p class="note" style="margin-bottom:10px">이 작품의 장소 ${list.length}곳. 대화에서는 [[${MP}번호]] 코드로 나와요.</p><div class="gallery">${list.map((p, i) => {
-      const ref = lock(i) ? null : pickImg(c, MP, i + 1), name = lock(i) ? "🔒" : p.name;
-      return `<button data-p="${i}" title="${MP}${i + 1} · ${esc(name)}">${ref ? IMG.tag(ref) : artHTML(c, { name }, i + 1, book.label)}</button>`; }).join("")}</div>
-      <div class="box" style="margin-top:12px">${list.map((p, i) => lock(i) ? `<p><b>${MP}${i + 1} 🔒</b> — 대화에서 나오면 보여요</p>` : `<p><b>${MP}${i + 1} ${esc(p.name)}</b>${p.desc ? " — " + esc(p.desc) : ""}</p>`).join("")}</div>`
+      const ref = lock(i) ? null : pickImg(c, MP, i + 1);
+      return `<button data-p="${i}" title="${MP}${i + 1} · ${esc(p.name)}">${ref ? IMG.tag(ref) : artHTML(c, { name: p.name }, i + 1, (lock(i) ? "🔒 " : "") + book.label)}</button>`; }).join("")}</div>
+      <div class="box" style="margin-top:12px">${list.map((p, i) => `<p><b>${MP}${i + 1} ${esc(p.name)}</b>${p.desc ? " — " + esc(p.desc) : ""}${lock(i) ? " · 🔒 그림은 대화에서 나오면 보여요" : ""}</p>`).join("")}</div>`
       : `<div class="empty">이 작품에는 장소 그림이 없어요.</div>`;
     IMG.hydrate(body);
     $$("[data-p]", body).forEach((b) => b.onclick = () => { const im = $("img", b); if (im && im.src) lightbox(im.src); });
@@ -3177,10 +3189,10 @@ function openRoomDrawer(view = "main") {
     $$("[data-j]", body).forEach((b) => b.onclick = () => { ov.remove(); jumpTo(b.dataset.j); });
   }
 }
-/* ── src/js/ui/model-sheet.js — 모델 선택 시트: 모델마다 턴당 하트·무료 턴 안내, 작품의 권장 모델(work.js recommend)에 '권장' 배지 */
+/* ── src/js/ui/model-sheet.js — 모델 선택 시트: 모델마다 턴당 하트·무료 턴 안내, 앱 기본 추천(스토리 '추천')과 작품이 직접 고른 모델의 '권장' 배지(work.js recommend) */
 function setModel(k) { room.set.model = k; saveRoom(room); updateComposer(); }
 function openModelSheet() {
-  const r = room, rec = recommendOf(getChar(r.char.id) || r.char);
+  const r = room, rec = recommendSet(getChar(r.char.id) || r.char);
   const card = (k) => {
     const m = MODELS[k], q = quote({ ...r.set, model: k });
     const price = q.type === "free" ? `오늘 무료 ${freeLeft()}턴 남음 · 이후 턴당 ♥${q.list}` : q.type === "plus" ? `PLUS 무제한 <s>턴당 ♥${q.list}</s>` : (isPro() && q.n < q.list ? `턴당 <s>♥${q.list}</s>♥${q.n}` : `턴당 ♥${q.n}`);
@@ -3188,7 +3200,7 @@ function openModelSheet() {
     return `<button class="model-card ${r.set.model === k ? "on" : ""}" data-m="${k}"><span class="k">${esc(m.badge)}</span><b>${m.name}${k === rec ? ' <span class="pill ok">권장</span>' : ""}${isPro() && k !== "lite" ? ' <span class="pill gold">PLUS -50%</span>' : ""}</b><p>${esc(m.desc)}</p><div class="price">${price}<small>${free}</small></div><span class="chk">✓</span></button>`;
   };
   const ov = sheet(`<div class="sheet-head"><h2>AI 모델 선택</h2><button class="icon-btn" data-x aria-label="닫기">${ICON.close}</button></div>
-    <p class="sub">턴당 비용은 모델, 출력량(${LEN[r.set.len].name}), 기억력(${r.set.mem}턴)에 따라 달라져요. 실패한 응답은 자동 환불돼요. <b>권장</b>은 이 작품에 어울리는 모델이에요.</p>
+    <p class="sub">턴당 비용은 모델, 출력량(${LEN[r.set.len].name}), 기억력(${r.set.mem}턴)에 따라 달라져요. 실패한 응답은 자동 환불돼요.${rec ? " <b>권장</b>은 이 작품의 제작자가 고른 모델이에요." : ""}</p>
     <div class="purse" style="margin-bottom:12px"><div>보유 하트 <span class="spacer"></span><b>♥ ${num(S.wallet.hearts)}</b><button class="btn sm pri" id="topup" style="margin-left:8px">충전</button></div></div>
     ${Object.keys(MODELS).map(card).join("")}
     <div class="cta-row"><button class="btn ghost" id="outSet">출력 설정 바꾸기</button><span class="spacer"></span><button class="btn pri" id="apply">적용</button></div>`);
@@ -3686,6 +3698,7 @@ function viewDetail(id) {
   const rooms = S.rooms.filter((r) => r.charId === c.id);
   const persona = S.personas.find((p) => p.def) || S.personas[0];
   const wa = worldArtHTML(c);
+  const set0 = defaultSet(c), q0 = quote(set0);
   v.innerHTML = `<div class="page">
     ${topbar(`<button class="icon-btn" data-go="home" aria-label="뒤로">${ICON.back}</button>`)}
     <div class="detail">
@@ -3707,7 +3720,7 @@ function viewDetail(id) {
         </div>
         <div class="field"><label for="pp">대화할 내 페르소나</label><select id="pp">${S.personas.map((p) => `<option value="${esc(p.id)}" ${p === persona ? "selected" : ""}>${esc(p.name)}${p.memo ? " · " + esc(p.memo) : ""}</option>`).join("")}</select></div>
         <div class="cta-row"><button class="btn pri big" id="start">새 대화 시작</button><button class="btn ghost sm" data-go="me">페르소나 관리</button></div>
-        <p class="note" style="margin-top:8px">라이트 모델은 하루 ${FREE_DAILY}턴 무료. 상태창: ${c.fields.slice(0, 8).map(esc).join(" · ")}${c.fields.length > 8 ? " 외" : ""}</p>
+        <p class="note" style="margin-top:8px">새 대화는 ${esc(MODELS[set0.model].name)} 모델(${q0.type === "heart" ? "턴당 ♥" + q0.n : qShort(q0)})로 시작해요 — 대화방에서 바꿀 수 있어요. 라이트 모델은 하루 ${FREE_DAILY}턴 무료. 상태창: ${c.fields.slice(0, 8).map(esc).join(" · ")}${c.fields.length > 8 ? " 외" : ""}</p>
         </div>
         ${rooms.length ? `<div class="box"><h3>내 대화방</h3><div class="cont">${rooms.map((r) => `<button data-room="${esc(r.id)}">${coverHTML(r)}<span class="x"><b>${esc(r.name)}</b><span>${esc(r.last)}</span></span><span class="note">${ago(r.at)}</span></button>`).join("")}</div></div>` : ""}
       </div>

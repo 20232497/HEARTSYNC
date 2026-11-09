@@ -1,4 +1,5 @@
 /* 대화방 저장·목록·이전(migrateRoom)·새 방 만들기(newRoom)·분기(forkRoom), 메시지의 현재 버전 글(curText) */
+import { recommendOf } from "../ai/models.js";
 import { getChar, normalizeChar } from "./character.js";
 import { emit } from "./events.js";
 import { S } from "./state.js";
@@ -7,6 +8,7 @@ import { uid } from "./util.js";
 /** @typedef {import("./types.js").Message} Message */
 /** @typedef {import("./types.js").Persona} Persona */
 /** @typedef {import("./types.js").Room} Room */
+/** @typedef {import("./types.js").RoomSet} RoomSet */
 /** @typedef {import("./types.js").Work} Work */
 
 export function curText(m) { return m.role === "ai" ? (m.alts[m.idx] || {}).text || "" : m.text; }
@@ -66,8 +68,10 @@ function upgradeCodes(r) {
   if (r.char.images) { const im = {}; for (const k of Object.keys(r.char.images)) im[map[k] || k] = r.char.images[k]; r.char.images = im; }
   return true;
 }
+/** 새 대화방의 기본 설정 — 모델은 작품의 권장 모델(recommendOf: work.js recommend, 없으면 앱 기본 추천), 출력량 보통·기억력 10턴. 상세 페이지의 '새 대화는 …로 시작' 안내도 이것으로. @param {Work} c @returns {RoomSet} */
+export function defaultSet(c) { return { model: recommendOf(c), len: "mid", mem: 10, rerollAsk: false }; }
 /**
- * 새 대화방 — 작품 사본·시작 상황 본문을 첫 AI 메시지로, 게이지가 없으면 10. 바로 저장함.
+ * 새 대화방 — 작품 사본·시작 상황 본문을 첫 AI 메시지로, 게이지가 없으면 10, 설정은 defaultSet. 바로 저장함.
  * @param {Work} c @param {number} openingIdx 시작 상황 번호 @param {Persona} persona @returns {Room}
  */
 export function newRoom(c, openingIdx, persona) {
@@ -78,19 +82,34 @@ export function newRoom(c, openingIdx, persona) {
   const r = {
     id: uid("r"), v2: true, char: JSON.parse(JSON.stringify(c)), persona: { id: persona.id, name: persona.name, memo: persona.memo || "", desc: persona.desc || "", img: persona.img || "" },
     opening: op.title, directive: op.directive || "", userNote: "", memory: "", memHist: [], sinceMem: 0, turn: 0, status: st, bookmarks: [],
-    set: { model: "lite", len: "mid", mem: 10, rerollAsk: false },
+    set: defaultSet(c),
     msgs: [{ id: uid("m"), role: "ai", idx: 0, alts: [{ text: op.text, status: st, suggestions: [], opening: true }], statusBefore: st }],
     at: Date.now(), created: Date.now()
   };
   saveRoom(r); return r;
+}
+/** 장기기억 구간의 머리표 "[a-b턴]" — 요약(ai/prompt/memory.js)이 구간마다 붙이고, 분기(memoryUpTo)가 읽음. @param {number} from @param {number} to @returns {string} */
+export function memoryMark(from, to) { return `[${from}-${to}턴]`; }
+/* 장기기억에서 그 턴보다 뒤에 시작하는 구간을 뺌 → [남긴 기억, 남긴 마지막 구간의 끝 턴(없으면 0), 뺀 것이 있는지].
+   구간 머리표가 없는 글(직접 쓴 기억·압축으로 합쳐진 기억)은 그대로 둠 */
+function memoryUpTo(mem, turn) {
+  let last = 0, cut = false;
+  const kept = String(mem || "").split(/\n\n(?=\[\d+-\d+턴\])/).filter((p) => {
+    const m = p.match(/^\[(\d+)-(\d+)턴\]/);
+    if (!m) return true;
+    if (+m[1] > turn) { cut = true; return false; }
+    last = +m[2]; return true;
+  });
+  return [kept.join("\n\n"), last, cut];
 }
 /* 분기한 방의 시작 상황 제목 끝에 붙는 표시 — 원래 제목은 baseOpening으로 */
 const FORK_MARK = " (분기)";
 /** 시작 상황의 원래 제목(분기 표시를 뗌) — '처음부터'가 같은 시작 상황을 찾을 때. @param {Room} r @returns {string} */
 export function baseOpening(r) { const t = r.opening || ""; return t.slice(-FORK_MARK.length) === FORK_MARK ? t.slice(0, -FORK_MARK.length) : t; }
 /**
- * 분기: 그 메시지까지를 깊은 복사한 새 대화방 — 같은 작품 사본·페르소나·설정·유저노트·장기기억, 상태창은 그 시점의 것, 시작 상황 제목에 '(분기)', forkedFrom에 출처.
- * 원래 방은 건드리지 않고 새 방을 바로 저장함(지운 방·MAX_MSGS_KEEP 규칙은 saveRoom 그대로). 장기기억은 그 시점으로 되돌릴 수 없어 지금 것을 복사.
+ * 분기: 그 메시지까지를 깊은 복사한 새 대화방 — 같은 작품 사본·페르소나·설정·유저노트, 상태창은 그 시점의 것, 시작 상황 제목에 '(분기)', forkedFrom에 출처.
+ * 장기기억은 분기한 턴보다 뒤에 시작하는 구간([a-b턴])을 빼고 복사(2026-11-09 사용자 결정 — 아직 안 일어난 일이 따라오지 않게. 머리표가 없으면 통째로).
+ * 턴 번호는 원래 방의 것을 이어 씀(지운 메시지가 있어도 구간 머리표와 어긋나지 않게). 원래 방은 건드리지 않고 새 방을 바로 저장함(지운 방·MAX_MSGS_KEEP 규칙은 saveRoom 그대로).
  * @param {Room} r @param {string} msgId 이 메시지까지 가져감 @returns {Room|null} 메시지를 못 찾으면 null
  */
 export function forkRoom(r, msgId) {
@@ -100,7 +119,8 @@ export function forkRoom(r, msgId) {
   const ai = [...f.msgs].reverse().find((m) => m.role === "ai"), ids = new Set(f.msgs.map((m) => m.id));
   f.id = uid("r"); f.opening = (baseOpening(r) || "기본") + FORK_MARK; f.forkedFrom = { roomId: r.id, msgId };
   f.status = (ai && (ai.alts[ai.idx].status || ai.statusBefore)) || r.status;
-  f.turn = f.msgs.filter((m) => m.role === "user").length; f.sinceMem = Math.min(f.sinceMem || 0, f.turn);
+  const after = r.msgs.slice(i + 1).filter((m) => m.role === "user").length, turn = Math.max(0, (r.turn || 0) - after), mem = memoryUpTo(r.memory, turn);
+  f.turn = turn; f.memory = mem[0]; f.sinceMem = mem[2] ? Math.max(0, turn - mem[1]) : Math.max(0, (r.sinceMem || 0) - after);
   f.memHist = []; f.lastErr = ""; f.bookmarks = (r.bookmarks || []).filter((b) => ids.has(b)); f.created = Date.now();
   saveRoom(f); return f;
 }
