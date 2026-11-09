@@ -41,6 +41,19 @@ export default {
   speech: "서술은 웹소설체. 긴장감 있는 묘사와 구체적인 수치. 시스템 메시지는 대괄호 한 줄. 파티원 대사는 '이름: \"대사\"'. 관람신은 시스템 메시지 안에서만 말한다.",
   secret: "탑을 만든 것은 신들이 아니라 '이름 없는 관객'이며, 30층의 커튼콜은 관람석의 신들까지 무대 위로 끌어내리는 의식이다.",
   fields: ["📅 날짜", "📍 위치", "Lv", "S 코인", "EXP", "HP", "MP", "스탯", "📜 기록", "⚡ 스킬", "✨ 계약", "💎 정수", "🧪 회복", "❤️ 호감도", "퀘스트", "보상"], gauge: "HP",
+  // 키워드북(초안) — 위 persona·world에 이미 있는 것을 낱말별로 옮김(새 설정 없음, 숨겨진 설정 secret은 넣지 않음). 대화에 낱말이 나오면 그 항목만 AI에 전해지고, 상세 페이지 '세계관 일러스트' 칸에 보임
+  lore: [
+    { keys: ["관람신", "관람석"], text: "하늘의 관람석에서 등반자를 구경하는 신화·전설·괴담 속 존재들. 수다·훈수·질투·감탄·후원(S 코인)을 하며, 시스템 메시지로만 말한다.", kind: "group", tags: "floating spectator seats in the sky, divine silhouettes, theater balcony, starlight, dramatic clouds" },
+    { keys: ["천 년 묵은 여우", "여우"], text: "관람신 '천 년 묵은 여우'. 장난기와 질투가 많고, 유저에게 유독 관심을 보인다.", kind: "creature", tags: "nine-tailed fox spirit, golden eyes, playful smile, fluffy tails, theater seat, lantern light" },
+    { keys: ["명부의 여왕", "명부"], text: "관람신 '명부의 여왕'. 무표정하게 죽음과 기록을 센다.", kind: "person", tags: "solo, queen of the underworld, black veil, ledger and brush, expressionless, dark throne" },
+    { keys: ["타락한 새벽별", "새벽별"], text: "관람신 '타락한 새벽별'. 오만한 미학주의자로, 효율과 우아함을 사랑한다.", kind: "person", tags: "solo, fallen angel, black wings, morning star, arrogant smile, elegant pose, dawn light" },
+    { keys: ["해적왕", "총잡이", "무신", "토끼 약사"], text: "관람신들. '붉은 수염의 해적왕'은 호탕하고 도박과 모험을 좋아한다. '황야의 유령 총잡이'는 속도광이고 휘파람을 분다. '전쟁의 무신'은 강자를 숭배하고 정면승부를 좋아한다. '달의 토끼 약사'는 다정하고 부상에 민감하다.", kind: "group", tags: "four divine spectators, red-bearded pirate king, ghost gunslinger, war god in armor, moon rabbit apothecary, theater seats" },
+    { keys: ["이름 없는 관객"], text: "관람신 '이름 없는 관객'. 정체를 아는 이가 없고, 아주 가끔 섬뜩한 한마디를 남긴다.", kind: "person", tags: "faceless figure in a dark theater seat, silhouette, single spotlight, eerie, empty row" },
+    { keys: ["계약", "권능"], text: "3층을 클리어하면 관람신과의 계약이 해금된다. 계약한 신의 권능을 쓸 수 있지만, 그 신의 취향에 맞는 '공연'을 보여 줘야 계약이 유지된다.", kind: "concept", tags: "divine contract, glowing sigil, hand reaching from the sky, starlight, system window" },
+    { keys: ["막간의 쉼터", "쉼터", "상점"], text: "3층을 클리어한 뒤 각 층에서 들어갈 수 있는 안전지대. 휴식·상점·파티 대화를 한다. S 코인은 여기 상점에서 쓴다.", kind: "place", tags: "backstage lounge, velvet curtains, warm lamps, small shop counter, sofas, safe zone" },
+    { keys: ["막의 문", "층 보스", "중간보스"], text: "각 층은 퀘스트 5단계. 3단계에 중간보스, 5단계에 층 보스가 나온다. 층 보스를 쓰러뜨리면 다음 층으로 가는 '막(幕)의 문'이 열린다.", kind: "concept", tags: "giant theater curtain parting, glowing doorway, stage light, boss arena" },
+    { keys: ["융합", "등급", "정수"], text: "등급은 일반 < 고급 < 희귀 < 영웅 < 전설 < 신화. 📜 기록과 ⚡ 스킬은 각각 최대 3개이고, 넷째를 얻으면 같은 계열 둘이 한 단계 높은 등급으로 융합된다. 💎 정수는 쓰면 스탯이 영구히 오른다.", kind: "concept", tags: "glowing skill cards merging, rpg system window, gemstone essence, rank colors, magical light" }
+  ],
   cast: [
     { code: "HSY", name: "한서윤", desc: "전 펜싱 국가대표. 레이피어 딜러. 냉정하고 자존심이 세지만 칭찬에 약하다. 높게 묶은 흑발 포니테일, 날카로운 눈매, 찢어진 흰 펜싱 재킷.", look: "26세 여성, 높게 묶은 흑발 포니테일, 날카로운 눈매, 찢어진 흰 펜싱 재킷, 레이피어", tags: "black hair, high ponytail, side-swept bangs, arched eyebrows, sharp eyes, white fencing uniform, high collar, rapier" },
     { code: "DHR", name: "도하린", desc: "응급의학과 레지던트, 치유 각성. 다정한데 입이 험하다. 헝클어진 갈색 단발, 피 묻은 수술복 위 회색 카디건.", look: "27세 여성, 헝클어진 갈색 단발, 피 묻은 수술복 위 회색 카디건", tags: "brown hair, messy bob cut, parted bangs, droopy eyes, thick eyebrows, bloodstained scrubs, grey cardigan" },
