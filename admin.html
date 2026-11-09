@@ -662,7 +662,7 @@ const CFG = Object.assign({ anthropicUrl: ANTHROPIC_URL, serverKeys: false,
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/core/constants.js
    내보냄: MARK, FREE_DAILY, WELCOME, PLUS_MONTHLY, TIMEOUT, SIT, SIT_TINT, PALETTES, MOTIFS, CATS, DEFAULT_CREATOR, LIMITS
-   쓰는 곳: src/js/ai/models.js, src/js/core/wallet.js, src/js/services/supabase.js, src/js/images/codes.js, src/js/images/situations.js, src/js/ai/parse.js, src/js/ai/llm.js, src/js/ai/prompt/rules.js, src/js/ui/cover.js, src/js/ui/codex.js, src/js/ui/home.js, src/js/app.js
+   쓰는 곳: src/js/core/state.js, src/js/ai/models.js, src/js/core/wallet.js, src/js/services/supabase.js, src/js/images/codes.js, src/js/images/situations.js, src/js/ai/parse.js, src/js/ai/llm.js, src/js/ai/prompt/rules.js, src/js/ui/cover.js, src/js/ui/codex.js, src/js/ui/faq.js, src/js/ui/home.js, src/js/ui/me.js, src/js/ui/room-drawer.js, src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 순수 상수: 응답 구분자(MARK), 상황 이름(SIT)·표지 색·무늬·장르, 요금 상수 — 다른 모듈을 import하지 않음 */
 const MARK = "===STATE===";
@@ -680,8 +680,10 @@ const MOTIFS = { rain: "비", city: "도시", stars: "별", glow: "불빛", peta
 const CATS = ["로맨스", "판타지", "RPG", "미스터리", "일상", "시뮬레이션"];
 /* 작품이 제작자(work.js creator)를 적지 않았을 때 보이는 이름 */
 const DEFAULT_CREATOR = "HEART SYNC 스튜디오";
-/* 글자 수 상한 — 작품 데이터는 빌드가 검사하고(APP_RULES), 화면의 입력 칸은 maxlength와 "n/한도"에 씀. guide: 작품의 플레이 가이드(work.js guide) */
-const LIMITS = { guide: 1000 };
+/* 글자 수 상한 — 작품 데이터는 빌드가 검사하고(APP_RULES), 화면의 입력 칸은 maxlength와 "n / 한도"에 씀.
+   guide 작품의 플레이 가이드(work.js guide) · personaDesc 페르소나 상세 정보 · userNote 유저노트(대화방마다 하나) ·
+   memory 장기기억 기본 한도(무료 요금제 PLAN.free.memoMax와 요약 설정 memCfg.limit의 기본값 — 넘으면 압축, PLUS는 PLAN.pro.memoMax까지) */
+const LIMITS = { guide: 1000, personaDesc: 1000, userNote: 2000, memory: 3000 };
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/core/util.js
    내보냄: $, $$, esc, uid, clamp, today, won, num, ago, timeoutSignal, abortCode, toast
@@ -819,11 +821,13 @@ const KV = {
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/core/state.js
    가져옴: src/js/core/config.js { CFG }
+           src/js/core/constants.js { LIMITS }
            src/js/core/util.js { today }
    내보냄: hasClaudeKey, S, room, gen, setGen, setRoom
    쓰는 곳: src/js/core/audience.js, src/js/core/wallet.js, src/js/core/rooms.js, src/js/core/settings.js, src/js/services/cloud.js, src/js/services/load.js, src/js/services/sync.js, src/js/ai/llm.js, src/js/ai/prompt/memory.js, src/js/ui/chat/cmdlist.js, src/js/ui/chat/suggest.js, src/js/ui/account.js, src/js/ui/store.js, src/js/ui/help.js, src/js/ui/home.js, src/js/ui/me.js, src/js/ui/pay.js, src/js/ui/room-tools.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/ui/shell.js, src/js/ui/detail.js, src/js/ui/chats.js, src/js/app.js, src/js/core/migrate.js, src/js/boot.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 전역 상태 S(지갑·페르소나·대화방·설정), 현재 대화방·진행 중 생성(다른 모듈은 set…()로만 바꿈), API 키 유무(hasClaudeKey — S와 CFG.serverKeys를 함께 봄) */
+
 
 
 /** @typedef {import("./types.js").Room} Room */
@@ -835,7 +839,7 @@ const S = {
   wallet: { hearts: 0, freeDay: today(), freeUsed: 0, pro: null, history: [], ledger: [], ack: {} },
   personas: [{ id: "p1", name: "유저", memo: "", desc: "", img: "", def: true }],
   rooms: [],
-  settings: { fs: 15.5, chatLh: 1.8, narrFont: "serif", enterSend: true, sceneImg: true, apiKey: "", memCfg: { auto: true, every: 5, limit: 3000, guide: "auto", custom: "" } },
+  settings: { fs: 15.5, chatLh: 1.8, narrFont: "serif", enterSend: true, sceneImg: true, apiKey: "", memCfg: { auto: true, every: 5, limit: LIMITS.memory, guide: "auto", custom: "" } },
   cat: "전체", q: ""
 };
 let room = null, gen = null;
@@ -946,7 +950,7 @@ function emit(name, v) { (handlers[name] || []).forEach((fn) => { try { fn(v); }
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/core/wallet.js
    가져옴: src/js/ai/models.js { LEN, MODELS }
-           src/js/core/constants.js { FREE_DAILY, PLUS_MONTHLY, WELCOME }
+           src/js/core/constants.js { FREE_DAILY, LIMITS, PLUS_MONTHLY, WELCOME }
            src/js/core/events.js { emit }
            src/js/core/state.js { S }
            src/js/core/storage.js { KV }
@@ -966,7 +970,7 @@ function emit(name, v) { (handlers[name] || []).forEach((fn) => { try { fn(v); }
 /** @typedef {import("./types.js").RoomSet} RoomSet */
 
  // 요금 상수는 core/constants.js에(ai/models.js와의 순환 import 때문) — 쓰던 곳은 그대로 wallet에서 가져감
-const PLAN = { free: { memTurns: 20, memoMax: 3000, hist: 5, rooms: 3 }, pro: { memTurns: 40, memoMax: 10000, hist: 20, rooms: 99 } };
+const PLAN = { free: { memTurns: 20, memoMax: LIMITS.memory, hist: 5, rooms: 3 }, pro: { memTurns: 40, memoMax: 10000, hist: 20, rooms: 99 } };
 /** PLUS 유효 여부. @returns {boolean} */
 function isPro() { return !!(S.wallet.pro && S.wallet.pro.until > Date.now()); }
 /** 지금 요금제 한도. @returns {Plan} */
@@ -3556,6 +3560,7 @@ function checkout(item, after) {
    src/js/ui/faq.js
    가져옴: src/js/ai/models.js { LEN, MODELS }
            src/js/core/commands.js { allCommands }
+           src/js/core/constants.js { LIMITS }
            src/js/core/wallet.js { PLAN, FREE_DAILY, PLUS_MONTHLY, WELCOME, listPrice }
            src/js/core/util.js { num, won }
            src/js/services/support.js { SUPPORT_MAIL }
@@ -3566,6 +3571,7 @@ function checkout(item, after) {
 /* 자주 묻는 질문: 고객센터(#help-faq)의 묶음별 질문·답(고정 글). 요금·턴 수는 상수에서 읽어 앱과 어긋나지 않게 한다.
    답은 앱의 실제 동작(CLAUDE.md)을 근거로 쓴다 — 무료 턴·하트·PLUS·계정 저장·API 키·수위가 바뀌면 여기도 같이 고치기.
    답 글은 운영자가 쓴 고정 HTML이라 esc()를 거치지 않음(사용자 데이터를 넣지 않기) */
+
 
 
 
@@ -3595,6 +3601,7 @@ function faqGroups() {
     ["대화", [
       ["답이 너무 짧아요(길어요).", "대화방 오른쪽 위 메뉴(☰) → <b>출력 설정</b>에서 출력량(적게·보통·많게)을 바꿀 수 있어요. 모델을 스토리·마스터로 올리면 묘사가 더 풍부해져요."],
       ["캐릭터가 예전 일을 잊어요.", "출력 설정의 <b>기억력</b>은 AI가 그대로 다시 읽는 최근 턴 수예요. 그보다 오래된 일은 몇 턴마다 자동으로 만드는 <b>장기기억</b> 요약으로 기억해요. 메뉴의 장기기억에서 요약을 보고 직접 고칠 수 있어요."],
+      ["설정은 얼마나 길게 쓸 수 있나요?", `<b>페르소나</b> 상세 정보는 ${num(LIMITS.personaDesc)}자, <b>유저노트</b>는 대화방마다 하나씩 ${num(LIMITS.userNote)}자, <b>장기기억</b>은 ${num(PLAN.free.memoMax)}자(PLUS ${num(PLAN.pro.memoMax)}자)까지예요. 장기기억이 한도를 넘으면 자동으로 압축하고 압축 전 내용은 히스토리에 보관해요. 답의 분량은 설정에 적기보다 메뉴의 <b>출력 설정</b>에서 고르는 편이 잘 지켜져요.`],
       ["대화를 저장하거나 옮길 수 있나요?", "대화방 메뉴의 <b>대화 내보내기</b>로 파일로 받거나 <b>대화 복사</b>로 복사할 수 있어요. 로그인하면 대화가 계정에 저장돼 다른 기기에서 이어져요."],
       ["대화 속 그림을 끄고 싶어요.", "<a href=\"#me\">MY</a> → 채팅 설정의 <b>대화 속 장면 이미지 보기</b>를 끄면 돼요. 글자 크기·줄 간격·지문 글꼴도 거기서 바꿔요."],
       ["도감과 !명령어는 뭔가요?", "<a href=\"#codex\">도감</a>은 작품마다 인물 코드·감정 칸·장소·컷씬·명령어를 보여 주는 안내예요. 대화 속 그림 한 장은 <b>인물 코드 + 번호</b> 한 토큰(예: HSY3 = 한서윤 · 부끄러움)이고, AI가 장면마다 골라 넣어요. 대화방 입력창에 <b>!</b>를 치면 쓸 수 있는 명령어 목록이 떠요."],
@@ -3878,6 +3885,7 @@ function viewHome() {
    src/js/ui/me.js
    가져옴: src/js/ai/llm.js { engineName }
            src/js/core/audience.js { AUDS, audience }
+           src/js/core/constants.js { LIMITS }
            src/js/core/rooms.js { roomKey, saveRoom }
            src/js/core/settings.js { applySettings, cleanKeys, saveSettings }
            src/js/core/state.js { S, room }
@@ -3899,6 +3907,7 @@ function viewHome() {
    쓰는 곳: src/js/ui/account.js, src/js/ui/room-drawer.js, src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* MY: 페르소나·관심있는 대화·채팅 설정·AI 연결·계정·고객센터·약관 및 정책. #meExt 자리는 관리자 빌드가 EXT.me로 채움(답변 대기 문의 수) */
+
 
 
 
@@ -4004,17 +4013,18 @@ function personaSheet(p, after) {
     <div class="avatar-pick" style="margin:8px 0 4px"><div id="avBox">${pavHTML({ name: p?.name || "?", img })}</div><div><input type="file" id="av" accept="image/png,image/jpeg,image/webp" hidden><button class="btn sm" id="avBtn">이미지 올리기</button> <button class="btn sm ghost" id="avDel" ${img ? "" : "hidden"}>빼기</button><p class="note" style="margin:6px 0 0">대화에서 내 말풍선 옆에 보여요.</p></div></div>
     <div class="field"><label for="pn">이름</label><input id="pn" maxlength="20" value="${esc(p?.name || "")}"></div>
     <div class="field"><label for="pm">메모 (목록에 보이는 한 줄, 예: 관능미 · 츤데레)</label><input id="pm" maxlength="30" value="${esc(p?.memo || "")}"></div>
-    <div class="field"><label for="pd">상세 정보 (AI가 보고 나를 대해요)</label><textarea id="pd" maxlength="800" style="min-height:130px" placeholder="예: 27세 남자. 긴 장발의 리프컷, 진한 흑발. 나른하고 귀찮은 말투, 맑은 저음.">${esc(p?.desc || "")}</textarea></div>
+    <div class="field"><label for="pd" style="display:flex">상세 정보 (AI가 보고 나를 대해요)<span class="spacer"></span><span class="memo-count" id="pdCnt"></span></label><textarea id="pd" maxlength="${LIMITS.personaDesc}" style="min-height:130px" placeholder="예: 27세 남자. 긴 장발의 리프컷, 진한 흑발. 나른하고 귀찮은 말투, 맑은 저음.">${esc(p?.desc || "")}</textarea></div>
     <div class="toggle" style="margin-top:12px"><label for="pdef">기본 페르소나로 쓰기</label><input type="checkbox" id="pdef" ${p?.def ? "checked" : ""}></div>
     <div class="cta-row">${p && S.personas.length > 1 ? `<button class="btn danger" id="pdel">삭제</button>` : ""}<span class="spacer"></span><button class="btn ghost" data-x>취소</button><button class="btn pri" id="psave">저장</button></div>`);
   IMG.hydrate(ov);
+  const pd = $("#pd", ov), pdUpd = () => { $("#pdCnt", ov).textContent = num(pd.value.length) + " / " + num(LIMITS.personaDesc); }; pd.oninput = pdUpd; pdUpd(); // 글자 수 "n / 한도"
   const setImg = (ref) => { img = ref || ""; $("#avBox", ov).innerHTML = pavHTML({ name: $("#pn", ov).value || "?", img }); IMG.hydrate(ov); $("#avDel", ov).hidden = !img; };
   $("#avBtn", ov).onclick = () => $("#av", ov).click();
   $("#av", ov).onchange = async (e) => { const f = e.target.files[0]; if (!f) return; try { setImg(await IMG.put(f)); } catch { toast("이미지를 읽지 못했어요."); } };
   $("#avDel", ov).onclick = () => setImg("");
   $("#psave", ov).onclick = () => {
     const name = $("#pn", ov).value.trim(); if (!name) { $("#pn", ov).focus(); return; }
-    const item = p || { id: uid("p") }; Object.assign(item, { name, memo: $("#pm", ov).value.trim(), desc: $("#pd", ov).value.trim(), img });
+    const item = p || { id: uid("p") }; Object.assign(item, { name, memo: $("#pm", ov).value.trim(), desc: pd.value.trim().slice(0, LIMITS.personaDesc), img });
     if ($("#pdef", ov).checked) S.personas.forEach((x) => x.def = false);
     item.def = $("#pdef", ov).checked || (!!p && p.def);
     if (!p) S.personas.push(item);
@@ -4168,6 +4178,7 @@ function deleteRoom(id) {
            src/js/ai/prompt/memory.js { maybeSummarize, memCfg, pushHist }
            src/js/ai/prompt/rules.js { speakerName }
            src/js/core/character.js { getChar, normalizeChar }
+           src/js/core/constants.js { LIMITS }
            src/js/core/rooms.js { baseOpening, curText, newRoom, saveRoom }
            src/js/core/settings.js { saveSettings }
            src/js/core/state.js { S, room, setRoom }
@@ -4192,6 +4203,7 @@ function deleteRoom(id) {
    쓰는 곳: src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 대화방 관리 드로어(대화 구성·페르소나·장기기억·유저노트·출력 설정·상태창·갤러리·장소·북마크) — 내보내기·삭제·그림 모으기는 room-tools.js */
+
 
 
 
@@ -4338,12 +4350,12 @@ function openRoomDrawer(view = "main") {
   }
   else if (view === "note") {
     body.innerHTML = `<p class="note">AI가 매 턴 가장 먼저 참고하는 메모예요. 관계 설정, 금지하고 싶은 전개, 커스텀 모드 설정 등을 적어 두세요.</p>
-      <div class="field"><label for="noteTa">유저노트</label><textarea id="noteTa" maxlength="2000" style="min-height:260px" placeholder="예: 서윤과 나는 대학 펜싱부 선후배 사이였다. / 전투는 짧게, 대화 위주로.">${esc(r.userNote || "")}</textarea><div class="memo-count" id="nCnt"></div></div>
+      <div class="field"><label for="noteTa">유저노트</label><textarea id="noteTa" maxlength="${LIMITS.userNote}" style="min-height:260px" placeholder="예: 서윤과 나는 대학 펜싱부 선후배 사이였다. / 전투는 짧게, 대화 위주로.">${esc(r.userNote || "")}</textarea><div class="memo-count" id="nCnt"></div></div>
       ${c.world_mode ? `<button class="btn sm ghost" id="tpl" style="margin-top:6px">커스텀 모드 양식 넣기</button>` : ""}
       <button class="btn pri block" id="noteSave" style="margin-top:12px">저장</button>`;
-    const ta = $("#noteTa", body), cnt = $("#nCnt", body); const upd = () => cnt.textContent = num(ta.value.length) + " / 2,000"; ta.oninput = upd; upd();
+    const ta = $("#noteTa", body), cnt = $("#nCnt", body); const upd = () => cnt.textContent = num(ta.value.length) + " / " + num(LIMITS.userNote); ta.oninput = upd; upd();
     const tpl = $("#tpl", body); if (tpl) tpl.onclick = () => { ta.value = (ta.value ? ta.value + "\n\n" : "") + "## 커스텀 모드\n- 시작 위치: 1층 붕괴한 서울\n- 초기 파티: \n- 상황: \n- 파티원과의 관계: \n- 특전: "; upd(); ta.focus(); };
-    $("#noteSave", body).onclick = () => { r.userNote = ta.value.trim(); saveRoom(r); toast("유저노트를 저장했어요"); openRoomDrawer("main"); };
+    $("#noteSave", body).onclick = () => { r.userNote = ta.value.trim().slice(0, LIMITS.userNote); saveRoom(r); toast("유저노트를 저장했어요"); openRoomDrawer("main"); };
   }
   else if (view === "output") {
     const s = { ...r.set };

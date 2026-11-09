@@ -14,5 +14,7 @@ export const MOTIFS = { rain: "비", city: "도시", stars: "별", glow: "불빛
 export const CATS = ["로맨스", "판타지", "RPG", "미스터리", "일상", "시뮬레이션"];
 /* 작품이 제작자(work.js creator)를 적지 않았을 때 보이는 이름 */
 export const DEFAULT_CREATOR = "HEART SYNC 스튜디오";
-/* 글자 수 상한 — 작품 데이터는 빌드가 검사하고(APP_RULES), 화면의 입력 칸은 maxlength와 "n/한도"에 씀. guide: 작품의 플레이 가이드(work.js guide) */
-export const LIMITS = { guide: 1000 };
+/* 글자 수 상한 — 작품 데이터는 빌드가 검사하고(APP_RULES), 화면의 입력 칸은 maxlength와 "n / 한도"에 씀.
+   guide 작품의 플레이 가이드(work.js guide) · personaDesc 페르소나 상세 정보 · userNote 유저노트(대화방마다 하나) ·
+   memory 장기기억 기본 한도(무료 요금제 PLAN.free.memoMax와 요약 설정 memCfg.limit의 기본값 — 넘으면 압축, PLUS는 PLAN.pro.memoMax까지) */
+export const LIMITS = { guide: 1000, personaDesc: 1000, userNote: 2000, memory: 3000 };

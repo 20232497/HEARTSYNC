@@ -4,6 +4,7 @@ import { LEN, MODELS } from "../ai/models.js";
 import { maybeSummarize, memCfg, pushHist } from "../ai/prompt/memory.js";
 import { speakerName } from "../ai/prompt/rules.js";
 import { getChar, normalizeChar } from "../core/character.js";
+import { LIMITS } from "../core/constants.js";
 import { baseOpening, curText, newRoom, saveRoom } from "../core/rooms.js";
 import { saveSettings } from "../core/settings.js";
 import { S, room, setRoom } from "../core/state.js";
@@ -145,12 +146,12 @@ export function openRoomDrawer(view = "main") {
   }
   else if (view === "note") {
     body.innerHTML = `<p class="note">AI가 매 턴 가장 먼저 참고하는 메모예요. 관계 설정, 금지하고 싶은 전개, 커스텀 모드 설정 등을 적어 두세요.</p>
-      <div class="field"><label for="noteTa">유저노트</label><textarea id="noteTa" maxlength="2000" style="min-height:260px" placeholder="예: 서윤과 나는 대학 펜싱부 선후배 사이였다. / 전투는 짧게, 대화 위주로.">${esc(r.userNote || "")}</textarea><div class="memo-count" id="nCnt"></div></div>
+      <div class="field"><label for="noteTa">유저노트</label><textarea id="noteTa" maxlength="${LIMITS.userNote}" style="min-height:260px" placeholder="예: 서윤과 나는 대학 펜싱부 선후배 사이였다. / 전투는 짧게, 대화 위주로.">${esc(r.userNote || "")}</textarea><div class="memo-count" id="nCnt"></div></div>
       ${c.world_mode ? `<button class="btn sm ghost" id="tpl" style="margin-top:6px">커스텀 모드 양식 넣기</button>` : ""}
       <button class="btn pri block" id="noteSave" style="margin-top:12px">저장</button>`;
-    const ta = $("#noteTa", body), cnt = $("#nCnt", body); const upd = () => cnt.textContent = num(ta.value.length) + " / 2,000"; ta.oninput = upd; upd();
+    const ta = $("#noteTa", body), cnt = $("#nCnt", body); const upd = () => cnt.textContent = num(ta.value.length) + " / " + num(LIMITS.userNote); ta.oninput = upd; upd();
     const tpl = $("#tpl", body); if (tpl) tpl.onclick = () => { ta.value = (ta.value ? ta.value + "\n\n" : "") + "## 커스텀 모드\n- 시작 위치: 1층 붕괴한 서울\n- 초기 파티: \n- 상황: \n- 파티원과의 관계: \n- 특전: "; upd(); ta.focus(); };
-    $("#noteSave", body).onclick = () => { r.userNote = ta.value.trim(); saveRoom(r); toast("유저노트를 저장했어요"); openRoomDrawer("main"); };
+    $("#noteSave", body).onclick = () => { r.userNote = ta.value.trim().slice(0, LIMITS.userNote); saveRoom(r); toast("유저노트를 저장했어요"); openRoomDrawer("main"); };
   }
   else if (view === "output") {
     const s = { ...r.set };

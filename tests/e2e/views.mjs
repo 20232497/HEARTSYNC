@@ -62,6 +62,13 @@ for (const [dev, engine, opts] of [["Desktop Chrome", chromium, {}], ["iPhone 13
       return { locked, placeHidden: !html.includes("비밀의 방") && html.includes("광장") };
     });
     if (res.hidden.locked !== 1 || !res.hidden.placeHidden) errs.push("비공개 칸이 가려지지 않음: " + JSON.stringify(res.hidden));
+    // 유저 설정 상한 — 페르소나 상세·유저노트 입력 칸의 maxlength와 "n / 한도" 카운터가 상수(LIMITS)를 따름, 장기기억 기본 한도도
+    res.limits = await p.evaluate(() => {
+      personaSheet(S.personas[0]); const pd = $("#pd").maxLength, pc = $("#pdCnt").textContent; closeOverlays();
+      openRoomDrawer("note"); const nt = $("#noteTa").maxLength, nc = $("#nCnt").textContent; closeOverlays();
+      return { pd, pc, nt, nc, mem: PLAN.free.memoMax, want: LIMITS, end: [" / " + num(LIMITS.personaDesc), " / " + num(LIMITS.userNote)] };
+    });
+    { const l = res.limits; if (l.pd !== l.want.personaDesc || l.nt !== l.want.userNote || l.mem !== l.want.memory || l.pc.slice(-l.end[0].length) !== l.end[0] || l.nc.slice(-l.end[1].length) !== l.end[1]) errs.push("설정 상한이 상수와 다름: " + JSON.stringify(l)); }
     // 작품 메타 한 줄 — 가짜 데이터로 틀만: 제작자 기본값, 공개일·독점 배지
     res.meta = await p.evaluate(() => ({ def: metaHTML({}) === esc(DEFAULT_CREATOR), full: metaHTML({ creator: "시험 <제작자>", exclusive: true, publishedAt: "2026-11-09" }) }));
     if (!res.meta.def || !/^시험 &lt;제작자&gt; · 2026\.11\.09 공개 <span class="pill gold">독점<\/span>$/.test(res.meta.full)) errs.push("작품 메타 줄이 다름: " + JSON.stringify(res.meta));

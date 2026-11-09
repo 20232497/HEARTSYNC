@@ -118,7 +118,7 @@
  * @property {string} id
  * @property {string} name
  * @property {string} memo 목록에 보이는 한 줄
- * @property {string} desc AI가 보는 상세 정보
+ * @property {string} desc AI가 보는 상세 정보(core/constants.js LIMITS.personaDesc자까지)
  * @property {ImageRef|""} img
  * @property {boolean} [def] 기본 페르소나
  */
@@ -172,8 +172,8 @@
  * @property {{ id: string, name: string, memo: string, desc: string, img: ImageRef|"" }} persona
  * @property {string} opening 시작 상황 제목
  * @property {string} directive
- * @property {string} userNote
- * @property {string} memory 장기기억
+ * @property {string} userNote 유저노트(LIMITS.userNote자까지 — 방마다 하나)
+ * @property {string} memory 장기기억(memCfg().limit자를 넘으면 압축 — 기본 LIMITS.memory, 요금제 memoMax까지)
  * @property {MemHist[]} memHist
  * @property {number} sinceMem 마지막 요약 뒤 지난 턴
  * @property {number} turn

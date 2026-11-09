@@ -1,6 +1,7 @@
 /* MY: 페르소나·관심있는 대화·채팅 설정·AI 연결·계정·고객센터·약관 및 정책. #meExt 자리는 관리자 빌드가 EXT.me로 채움(답변 대기 문의 수) */
 import { engineName } from "../ai/llm.js";
 import { AUDS, audience } from "../core/audience.js";
+import { LIMITS } from "../core/constants.js";
 import { roomKey, saveRoom } from "../core/rooms.js";
 import { applySettings, cleanKeys, saveSettings } from "../core/settings.js";
 import { S, room } from "../core/state.js";
@@ -104,17 +105,18 @@ export function personaSheet(p, after) {
     <div class="avatar-pick" style="margin:8px 0 4px"><div id="avBox">${pavHTML({ name: p?.name || "?", img })}</div><div><input type="file" id="av" accept="image/png,image/jpeg,image/webp" hidden><button class="btn sm" id="avBtn">이미지 올리기</button> <button class="btn sm ghost" id="avDel" ${img ? "" : "hidden"}>빼기</button><p class="note" style="margin:6px 0 0">대화에서 내 말풍선 옆에 보여요.</p></div></div>
     <div class="field"><label for="pn">이름</label><input id="pn" maxlength="20" value="${esc(p?.name || "")}"></div>
     <div class="field"><label for="pm">메모 (목록에 보이는 한 줄, 예: 관능미 · 츤데레)</label><input id="pm" maxlength="30" value="${esc(p?.memo || "")}"></div>
-    <div class="field"><label for="pd">상세 정보 (AI가 보고 나를 대해요)</label><textarea id="pd" maxlength="800" style="min-height:130px" placeholder="예: 27세 남자. 긴 장발의 리프컷, 진한 흑발. 나른하고 귀찮은 말투, 맑은 저음.">${esc(p?.desc || "")}</textarea></div>
+    <div class="field"><label for="pd" style="display:flex">상세 정보 (AI가 보고 나를 대해요)<span class="spacer"></span><span class="memo-count" id="pdCnt"></span></label><textarea id="pd" maxlength="${LIMITS.personaDesc}" style="min-height:130px" placeholder="예: 27세 남자. 긴 장발의 리프컷, 진한 흑발. 나른하고 귀찮은 말투, 맑은 저음.">${esc(p?.desc || "")}</textarea></div>
     <div class="toggle" style="margin-top:12px"><label for="pdef">기본 페르소나로 쓰기</label><input type="checkbox" id="pdef" ${p?.def ? "checked" : ""}></div>
     <div class="cta-row">${p && S.personas.length > 1 ? `<button class="btn danger" id="pdel">삭제</button>` : ""}<span class="spacer"></span><button class="btn ghost" data-x>취소</button><button class="btn pri" id="psave">저장</button></div>`);
   IMG.hydrate(ov);
+  const pd = $("#pd", ov), pdUpd = () => { $("#pdCnt", ov).textContent = num(pd.value.length) + " / " + num(LIMITS.personaDesc); }; pd.oninput = pdUpd; pdUpd(); // 글자 수 "n / 한도"
   const setImg = (ref) => { img = ref || ""; $("#avBox", ov).innerHTML = pavHTML({ name: $("#pn", ov).value || "?", img }); IMG.hydrate(ov); $("#avDel", ov).hidden = !img; };
   $("#avBtn", ov).onclick = () => $("#av", ov).click();
   $("#av", ov).onchange = async (e) => { const f = e.target.files[0]; if (!f) return; try { setImg(await IMG.put(f)); } catch { toast("이미지를 읽지 못했어요."); } };
   $("#avDel", ov).onclick = () => setImg("");
   $("#psave", ov).onclick = () => {
     const name = $("#pn", ov).value.trim(); if (!name) { $("#pn", ov).focus(); return; }
-    const item = p || { id: uid("p") }; Object.assign(item, { name, memo: $("#pm", ov).value.trim(), desc: $("#pd", ov).value.trim(), img });
+    const item = p || { id: uid("p") }; Object.assign(item, { name, memo: $("#pm", ov).value.trim(), desc: pd.value.trim().slice(0, LIMITS.personaDesc), img });
     if ($("#pdef", ov).checked) S.personas.forEach((x) => x.def = false);
     item.def = $("#pdef", ov).checked || (!!p && p.def);
     if (!p) S.personas.push(item);

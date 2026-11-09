@@ -1,6 +1,6 @@
 /* 요금: 무료 턴·PLUS·하트 차감/환불, 가격 계산(listPrice·quote) */
 import { LEN, MODELS } from "../ai/models.js";
-import { FREE_DAILY, PLUS_MONTHLY, WELCOME } from "./constants.js";
+import { FREE_DAILY, LIMITS, PLUS_MONTHLY, WELCOME } from "./constants.js";
 import { emit } from "./events.js";
 import { S } from "./state.js";
 import { KV } from "./storage.js";
@@ -10,7 +10,7 @@ import { today } from "./util.js";
 /** @typedef {import("./types.js").RoomSet} RoomSet */
 
 export { FREE_DAILY, PLUS_MONTHLY, WELCOME }; // 요금 상수는 core/constants.js에(ai/models.js와의 순환 import 때문) — 쓰던 곳은 그대로 wallet에서 가져감
-export const PLAN = { free: { memTurns: 20, memoMax: 3000, hist: 5, rooms: 3 }, pro: { memTurns: 40, memoMax: 10000, hist: 20, rooms: 99 } };
+export const PLAN = { free: { memTurns: 20, memoMax: LIMITS.memory, hist: 5, rooms: 3 }, pro: { memTurns: 40, memoMax: 10000, hist: 20, rooms: 99 } };
 /** PLUS 유효 여부. @returns {boolean} */
 export function isPro() { return !!(S.wallet.pro && S.wallet.pro.until > Date.now()); }
 /** 지금 요금제 한도. @returns {Plan} */
