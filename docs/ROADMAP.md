@@ -71,3 +71,53 @@
 
 - `serverKeys: true`면 키 헤더(`x-api-key`, `Authorization: Bearer`)를 보내지 않습니다. 사용자가 키를 넣었다면 그 키를 보냅니다.
 - 프록시는 요청 본문과 응답 형식(Anthropic SSE·JSON)을 그대로 중계해야 지금 파서가 동작합니다.
+
+## 5. 제작자 보상 대비 사용량 원장(설계 — 2026-11-09, 아직 코드 없음)
+
+작품에 제작자 메타(`work.js`의 `creator`·`exclusive`·`publishedAt`)를 실을 자리는 만들었습니다(상세 페이지·도감에 표시만). 보상을 계산하려면 **어느 작품에서 유료 하트가 얼마나 쓰였는지**를 서버가 적어야 합니다. 브라우저의 지갑(`S.wallet`)은 데모라 조작할 수 있으므로 **이 원장은 브라우저 코드로 기록하지 않습니다** — 서버 원장(3장 3번)을 만들 때 같은 트랜잭션에 넣습니다.
+
+**원장 한 줄(후보)** — 턴 하나를 차감할 때 서버가 남기는 기록:
+
+| 칸 | 뜻 |
+|---|---|
+| `workId` | 작품 id(`content/` 폴더 이름) |
+| `roomId` | 대화방 id(분기한 방은 새 id — `forkedFrom`은 방 데이터에) |
+| `model` | `lite`·`story`·`master`(`ai/models.js` MODELS의 키) |
+| `len` | 출력량 `short`·`mid`·`long` |
+| `memTurns` | 기억력(최근 몇 턴을 그대로 읽었는지) |
+| `turns` | 이 줄이 대표하는 턴 수(보통 1, 묶어 적으면 그 수) |
+| `hearts` | 실제로 차감한 하트(PLUS 할인 뒤 값) |
+| `free` | 무료 턴·PLUS 무제한으로 처리했으면 true(이때 `hearts`는 0) |
+| `at` | 서버 시각 |
+
+- **집계 원칙**: 작품별로, **유료 하트 사용분만**(`free`가 아닌 줄의 `hearts` 합). 실패해 환불한 턴·다시 쓰기의 환불분은 빼고, 장기기억 요약·추천 답변처럼 무료인 호출은 줄을 만들지 않습니다. 지급받은 하트(가입 환영·PLUS 월 지급)와 충전한 하트를 구분할지는 원장을 만들 때 정합니다.
+- **참고값(베이비챗, 2026-11-09 탐방 — 우리 결정은 아래 '정할 것'에 비워 둠)**: 사용량의 10~13%를 적립(독점 작품 28~37%, 신작 +10%p) · 작품당 누적 500회 대화 뒤 적립 활성 · 적립분은 10:1로 재화 전환 또는 상품권(본인인증 필요) · 1년 뒤 소멸 · 독점은 100일 고정 · 응원(후원)은 70~90%가 제작자 몫 · 공식 크리에이터 계약은 현금성 정산(국세청 소득 자료 제공).
+- **정할 것(비워 둠)**: ① 적립 비율과 독점 가산 — `exclusive`가 보상에 닿는 유일한 자리 ② 활성화 문턱(작품당 몇 턴부터) ③ 소멸 기한 ④ 정산 수단(재화 전환만 할지, 현금성 정산까지 갈지 — 본인인증·세무 처리가 따라옴) ⑤ 독점 고정 기간과 해지 규칙 ⑥ 외부 제작자를 받는 시점(지금 작품은 모두 `HEART SYNC 스튜디오` — 작품 올리기·심사·`minorFlags` 검사가 서버로 가야 함).
+- **지금 코드와의 연결**: 차감 지점은 `ui/chat/generate.js`의 `charge(q, label)` 한 곳(실패 환불은 `refund`)이고, 견적 `quote(set)`가 `type`(free·plus·heart)·`n`·`list`를 줍니다 — 서버 원장은 이 견적 계산(`core/wallet.js` listPrice·quote)을 서버로 옮긴 것과 같은 모양입니다.
+
+## 6. 서버 프록시 요청 모양 참고(설계 — 2026-11-09)
+
+4장의 프록시는 Anthropic 요청을 **그대로 중계**합니다(브라우저가 프롬프트를 조립). 다음 단계는 **서버가 프롬프트를 조립**하고 브라우저는 입력과 설정만 보내는 BFF입니다.
+
+**참고 — 베이비챗 전송 API**(2026-11-09 탐방): `POST /ko/api/u/message/<charId>`, 본문 `{ prompt, roomId, proChatCount, isMultipleImage, model, outputLanguage, impersonation, memoryLimit, outputLevel, thinkingLevel, redo, enablePass }`, 응답은 `text/event-stream`(Vercel AI SDK 데이터 스트림 — start·start-step·text-start·text-delta). 서버가 캐릭터 설정·로어북·기억으로 프롬프트를 만들고, 브라우저에는 설정 원문이 내려오지 않습니다.
+
+**우리 BFF가 받을 필드(후보)**:
+
+| 필드 | 뜻 | 지금 코드의 출처 |
+|---|---|---|
+| `workId` | 작품 id | `room.char.id` |
+| `roomId` | 대화방 id — 서버가 방의 메시지·상태창·장기기억·유저노트·페르소나를 가짐 | `room.id`(지금은 KV `room-<id>`가 계정 표에 통째로) |
+| `model` | `lite`·`story`·`master` — 실제 모델 ID는 서버가 고름 | `room.set.model` → `ai/llm.js` MODEL_OF |
+| `len` | 출력량 | `room.set.len` → `ai/models.js` LEN |
+| `mem` | 기억력(턴) | `room.set.mem` |
+| `text` | 유저 입력 원문(명령어 `!이름`도 그대로 — 연출 지시로 바꾸는 건 서버) | 입력창 → `core/commands.js` commandText |
+| `redo` | 다시 쓰기면 대상 메시지 id와 방향 글 | `regen(i, direction)` |
+
+**프롬프트 조립을 서버로 옮기면 바뀌는 것**:
+
+- 순수 모듈은 서버(Edge Function)가 그대로 import할 수 있습니다 — `core/commands.js`·`images/codes.js`·`images/situations.js`·`ai/parse.js`·`ai/prompt/lore.js`(지금도 Node 단위 테스트가 바로 import). 프롬프트 조립 본체(`ai/prompt/rules.js`·`input.js`·`memory.js`)는 아직 브라우저 상태에 기댑니다 — `core/rooms.js`(KV·`S`)·`core/character.js`(작품 목록)·`images/pick.js`·`services/images.js`, 요약의 `S.settings.memCfg`·`plan()`·화면 표시(`flagMemo`). 서버로 옮기려면 이 의존을 인자(방·작품·설정)로 받게 먼저 다듬어야 합니다(3장 1번의 '남은 것'과 같은 일).
+- **작품의 비공개 설정이 브라우저에서 빠집니다**: 지금은 `persona`·`secret`·`openings[].directive`·키워드북 `text`·명령어 `prompt`가 `index.html`에 그대로 실립니다(공개 저장소). 서버 조립이 되면 빌드가 작품을 '독자용'(제목·소개·출연진 desc·가이드·명령어 제목)과 '서버용'으로 갈라 내보내야 합니다 — 비공개(스포일러) 플래그(`hidden`)도 그때 진짜로 가려집니다(지금은 화면에서만 가림).
+- 방의 진실이 서버로 갑니다: 지금은 브라우저가 방 전체를 들고 있고 계정 표는 사본입니다. 서버가 메시지를 가지면 수정·삭제·분기·다시 쓰기도 서버 호출이 됩니다(오프라인·`file://` BYOK 모드를 남길지 정해야 함).
+- 응답 형식(본문 + `===STATE===` + JSON)과 받는 쪽 파서(`ai/parse.js`)는 그대로 둘 수 있습니다. 서버가 파싱해 상태창을 저장하고 본문만 흘려보내는 쪽으로 바꾸면 `addCastImages`(빠진 그림 태그 채우기)도 서버로 갑니다.
+- 차감·환불·무료 턴이 서버 트랜잭션이 되고(5장의 원장 한 줄이 여기서 생김), 레이트 리밋·입출력 모더레이션·성인 경로 판정(`adult_checks`)이 같은 자리에 붙습니다.
+- `ai/llm.js`는 Anthropic 스트림 대신 BFF 스트림을 읽게 되고, 모델 ID·server-side fallback·시간 제한 정책이 서버 설정이 됩니다.

@@ -67,6 +67,7 @@ export default {
   desc: "상세 페이지 소개",
   guide: "플레이 가이드 — 독자에게 주는 안내문(선택, 줄바꿈만, 1,000자 이내)",
   recommend: "story",   // 권장 모델(선택) — lite·story·master, 빼면 story
+  creator: "제작자 이름", exclusive: true, publishedAt: "2026-11-09",   // 작품 메타(선택) — 빼면 HEART SYNC 스튜디오 · 독점 아님 · 공개일 없음
   persona: `AI에게 주는 인물·진상 설정 …`,
   world: `세계관 규칙 …`,
   speech: `문체·말투 예시 …`,
@@ -87,6 +88,7 @@ export default {
 | `cat` | 로맨스·판타지·RPG·미스터리·일상·시뮬레이션 중 하나 |
 | `pal`·`motif`·`glyph` | 표지 색(0~7)·무늬(rain·city·stars·glow·petals·ash·curtain)·가운데 한 글자 |
 | `world_mode` | 여러 인물이 나오는 군상극(세계관). 1:1 캐릭터면 빼요 |
+| `creator`·`exclusive`·`publishedAt` | 작품 메타(선택). `creator`는 제작자 이름(빼면 `HEART SYNC 스튜디오` — `src/js/core/constants.js` DEFAULT_CREATOR), `exclusive: true`는 독점 작품('독점' 배지), `publishedAt`은 공개일 `"YYYY-MM-DD"`. 상세 페이지 머리와 도감 작품 칸에 보여요(홈 카드에는 안 보임). 지금은 표시만 하고, 제작자 보상·독점 가산은 서버 원장이 생긴 뒤의 일이에요(`docs/ROADMAP.md` 5장) |
 | `recommend` | 권장 모델(선택) — `lite`·`story`·`master` 중 하나(`src/js/ai/models.js` MODELS의 키), 빼면 `story`. 대화방의 모델 선택 시트에서 그 모델에 '권장' 배지가 붙어요(방의 기본 모델은 바뀌지 않아요 — 새 방은 무료 턴이 있는 라이트로 시작) |
 | `guide` | 플레이 가이드(선택) — 제작자가 **독자에게** 주는 안내문(어떻게 시작하면 좋은지·쓸 만한 명령어·주의할 점). 마크다운 없이 줄바꿈만, 1,000자 이내(`src/js/core/constants.js` LIMITS.guide). 상세 페이지 소개 아래·도감 작품 칸·대화방 메뉴의 '플레이 가이드'에 보이고 AI에는 보내지 않아요(AI 지시는 `persona`·`world`에). 예: `m/godseats` |
 | `fields`·`gauge` | 상태창 칸 이름(3글자 안팎)과 관계 게이지 칸. 시작 상황 `status`의 칸은 `fields`에 있어야 해요 |
@@ -142,7 +144,7 @@ content/<f|m|all>/[<줄>/]<id>/images/
 - `aud`·`row`를 적었다면 폴더와 같은지
 - **출연진 성별과 폴더**: 출연진 외모가 모두 여성인데 `f/`에, 모두 남성인데 `m/`에 있으면 실패(남녀가 섞인 작품은 그대로 둠 — 앱의 `guessAud`와 같은 규칙)
 - **미성년 인물**: 출연진 외모·설정 첫머리에 19세 미만 나이나 학생 신분이 있으면 실패(앱의 `minorFlags`와 같은 코드)
-- 필수 칸(`name`·`title`·`oneLiner`·`desc`·`persona`·`openings`), `cat`·`pal`·`motif` 값, `guide`(플레이 가이드)가 1,000자 이내의 글인지, `recommend`(권장 모델)가 `lite`·`story`·`master` 중 하나인지
+- 필수 칸(`name`·`title`·`oneLiner`·`desc`·`persona`·`openings`), `cat`·`pal`·`motif` 값, `guide`(플레이 가이드)가 1,000자 이내의 글인지, `recommend`(권장 모델)가 `lite`·`story`·`master` 중 하나인지, `creator`가 글·`exclusive`가 참거짓·`publishedAt`이 `YYYY-MM-DD` 모양의 실제 날짜인지
 - `cast[].code`가 영문 대문자 1~4자(숫자 없이, `MP`·`EV` 아님)이고 겹치지 않는지, `of`가 본체 인물의 코드인지(폼의 폼은 안 됨), `desc`가 글인지, `hidden`(비공개 감정 번호)이 1~14 정수 배열이고 겹치지 않는지(0 프로필은 실패), `places`·`cuts` 모양(`hidden`은 참거짓), `commands`의 `cmd`가 공백·`!` 없이 겹치지 않고 앱 명령어 이름이 아닌지
 - 시작 상황의 `[[코드번호]]`: 코드가 `cast`(또는 `MP`·`EV`)에 있고 번호가 범위 안인지. 예전 `[[img:…]]` 모양은 실패
 - `images/`: 파일 이름이 `<코드><번호>`·`cover`·`lore-<n>`인지, 코드와 번호가 위 규칙에 맞는지, 같은 그림·표지가 둘인지, `lore-<n>`이 키워드북 범위 안인지

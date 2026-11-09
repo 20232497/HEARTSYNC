@@ -108,7 +108,9 @@
  * @property {ImagesMap} [images] 작품 폴더 images/의 그림
  * @property {ImageRef} [img] 대표 일러스트(표지, images/cover.*)
  * @property {Record<string, ImageRef>} [loreImages] 키워드북 첫 키워드 → 세계관 일러스트(images/lore-<n>.*)
- * @property {string} [creator] 예전 커뮤니티 작품의 크리에이터 이름(그 작품으로 연 방의 작품 사본에만 남아 있을 수 있음 — ui/detail.js)
+ * @property {string} [creator] 제작자 이름 — 없으면 core/constants.js DEFAULT_CREATOR. 상세 페이지 머리·도감 작품 칸(ui/codex.js metaHTML)
+ * @property {boolean} [exclusive] 독점 작품이면 true — '독점' 배지(지금은 표시만; 보상 가산은 서버 원장이 생긴 뒤 — docs/ROADMAP.md)
+ * @property {string} [publishedAt] 공개일 "YYYY-MM-DD"(빌드가 실제 날짜인지 검사)
  */
 /**
  * 내 페르소나(대화에서 내가 연기하는 인물).

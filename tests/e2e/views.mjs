@@ -62,6 +62,9 @@ for (const [dev, engine, opts] of [["Desktop Chrome", chromium, {}], ["iPhone 13
       return { locked, placeHidden: !html.includes("비밀의 방") && html.includes("광장") };
     });
     if (res.hidden.locked !== 1 || !res.hidden.placeHidden) errs.push("비공개 칸이 가려지지 않음: " + JSON.stringify(res.hidden));
+    // 작품 메타 한 줄 — 가짜 데이터로 틀만: 제작자 기본값, 공개일·독점 배지
+    res.meta = await p.evaluate(() => ({ def: metaHTML({}) === esc(DEFAULT_CREATOR), full: metaHTML({ creator: "시험 <제작자>", exclusive: true, publishedAt: "2026-11-09" }) }));
+    if (!res.meta.def || !/^시험 &lt;제작자&gt; · 2026\.11\.09 공개 <span class="pill gold">독점<\/span>$/.test(res.meta.full)) errs.push("작품 메타 줄이 다름: " + JSON.stringify(res.meta));
     // 권장 모델 배지 — 작품이 recommend를 적지 않으면 기본(story), 적으면 그 모델 카드에
     res.rec = await p.evaluate(() => {
       const live = getChar(room.char.id), keep = live.recommend, at = () => { openModelSheet(); const b = document.querySelector(".model-card .pill.ok"), k = b && b.closest("[data-m]").dataset.m; closeOverlays(); return k; };

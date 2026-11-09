@@ -607,6 +607,7 @@ const PALETTES = [
 ];
 const MOTIFS = { rain: "비", city: "도시", stars: "별", glow: "불빛", petals: "꽃잎", ash: "잿빛", curtain: "무대" };
 const CATS = ["로맨스", "판타지", "RPG", "미스터리", "일상", "시뮬레이션"];
+const DEFAULT_CREATOR = "HEART SYNC 스튜디오";
 const LIMITS = { guide: 1000 };
 /* ── src/js/core/util.js — DOM·문자열·숫자 유틸, toast, 예상 못 한 오류 기록(reportError) */
 const $ = (s, el = document) => el.querySelector(s);
@@ -2397,13 +2398,16 @@ function bindCodex(v) {
   $$("[data-copy]", v).forEach((b) => b.onclick = () => copyText(b.dataset.copy, `${b.dataset.copy} 복사했어요 — 대화방 입력창에 붙여 넣으세요`));
   $$("[data-cxlb]", v).forEach((b) => b.onclick = () => { const i = b.querySelector("img"); if (i && i.src) lightbox(i.src); });
 }
+function metaHTML(c) {
+  return `${esc(c.creator || DEFAULT_CREATOR)}${c.publishedAt ? ` · ${esc(String(c.publishedAt).replace(/-/g, "."))} 공개` : ""}${c.exclusive ? ' <span class="pill gold">독점</span>' : ""}`;
+}
 function guideHTML(c) { return c.guide ? `<div class="box"><h3>플레이 가이드 <small>제작자의 안내</small></h3><p class="guide">${esc(c.guide)}</p></div>` : ""; }
 function guideSheet(c) {
   sheet(`<div class="sheet-head"><h2>플레이 가이드</h2><button class="icon-btn" data-x aria-label="닫기">${ICON.close}</button></div><p class="sub">${esc(c.title)}</p><p class="guide">${esc(c.guide || "")}</p>`);
 }
 function workCodexHTML(c) {
   const book = codebook(c), cmds = allCommands(c).filter((x) => x.kind === "work");
-  return `<div class="codex-work">${coverHTML(c)}<div><b>${esc(c.title)}</b><span class="note">${esc(c.cat)}${c.world_mode ? " · 세계관" : ""} · 인물 ${c.cast.filter((x) => !x.of).length}명</span></div><button class="btn sm ghost" data-go="c-${esc(c.id)}">작품 보기</button></div>
+  return `<div class="codex-work">${coverHTML(c)}<div><b>${esc(c.title)}</b><span class="note">${esc(c.cat)}${c.world_mode ? " · 세계관" : ""} · 인물 ${c.cast.filter((x) => !x.of).length}명 · ${metaHTML(c)}</span></div><button class="btn sm ghost" data-go="c-${esc(c.id)}">작품 보기</button></div>
     ${guideHTML(c)}
     <div class="box"><h3>등장인물 <small>누르면 코드·감정 칸·소개</small></h3><div class="cast">${castGridHTML(c)}</div></div>
     ${seriesBox(c, "MP", book.MP)}${seriesBox(c, "EV", book.EV)}
@@ -3671,14 +3675,13 @@ function viewDetail(id) {
   if (!c) { v.innerHTML = `<div class="page">${topbar()}<div class="empty">캐릭터를 찾을 수 없어요. 삭제됐거나 아직 불러오는 중일 수 있어요.<br><button class="btn sm" data-go="home">홈으로</button></div></div>`; bindGo(v); return; }
   const rooms = S.rooms.filter((r) => r.charId === c.id);
   const persona = S.personas.find((p) => p.def) || S.personas[0];
-  const creator = ORIGINALS.includes(c) ? "HEART SYNC 스튜디오" : (c.creator || "익명 크리에이터");
   const wa = worldArtHTML(c);
   v.innerHTML = `<div class="page">
     ${topbar(`<button class="icon-btn" data-go="home" aria-label="뒤로">${ICON.back}</button>`)}
     <div class="detail">
       <div>${coverHTML(c, "", { vt: true })}</div>
       <div>
-        <span class="note">${esc(c.cat)} · ${esc(creator)}${c.world_mode ? " · 세계관" : ""}</span>
+        <span class="note">${esc(c.cat)}${c.world_mode ? " · 세계관" : ""} · ${metaHTML(c)}</span>
         <h1>${esc(c.title)}</h1>
         <p class="lead">${esc(c.oneLiner)}</p>
         <div class="tags">${(c.tags || []).map((t) => `<span>#${esc(t)}</span>`).join("")}</div>

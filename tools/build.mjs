@@ -492,6 +492,13 @@ function checkWork(mod, { aud, row, id, wrel, R, errors, warnings }) {
       seenCmd.add(k);
     });
   }
+  // 작품 메타(선택): 제작자 이름·독점 여부·공개일 — 상세 페이지 머리와 도감 작품 칸에 보임(ui/codex.js metaHTML)
+  if (c.creator !== undefined && !str(c.creator)) e("creator(제작자 이름)는 비어 있지 않은 글이어야 해요");
+  if (c.exclusive !== undefined && typeof c.exclusive !== "boolean") e("exclusive(독점 여부)는 참거짓(true·false)이어야 해요");
+  if (c.publishedAt !== undefined) {
+    const d = typeof c.publishedAt === "string" && /^\d{4}-\d{2}-\d{2}$/.test(c.publishedAt) ? new Date(c.publishedAt + "T00:00:00Z") : null;
+    if (!d || isNaN(d) || d.toISOString().slice(0, 10) !== c.publishedAt) e(`publishedAt("${c.publishedAt}")은 "YYYY-MM-DD" 모양의 실제 날짜여야 해요(공개일)`);
+  }
   // 권장 모델(선택): 모델 선택 시트의 '권장' 배지 — ai/models.js MODELS의 키(없으면 앱이 RECOMMEND_DEFAULT)
   if (c.recommend !== undefined && !Object.prototype.hasOwnProperty.call(R.MODELS, c.recommend)) e(`recommend("${c.recommend}")는 ${Object.keys(R.MODELS).join("·")} 중 하나(권장 모델)`);
   // 플레이 가이드(선택): 제작자가 독자에게 주는 안내문 — 상세·도감·대화방 드로어에 줄바꿈 그대로 보임(마크다운 없음)

@@ -12,5 +12,7 @@ export const PALETTES = [
 ];
 export const MOTIFS = { rain: "비", city: "도시", stars: "별", glow: "불빛", petals: "꽃잎", ash: "잿빛", curtain: "무대" };
 export const CATS = ["로맨스", "판타지", "RPG", "미스터리", "일상", "시뮬레이션"];
+/* 작품이 제작자(work.js creator)를 적지 않았을 때 보이는 이름 */
+export const DEFAULT_CREATOR = "HEART SYNC 스튜디오";
 /* 글자 수 상한 — 작품 데이터는 빌드가 검사하고(APP_RULES), 화면의 입력 칸은 maxlength와 "n/한도"에 씀. guide: 작품의 플레이 가이드(work.js guide) */
 export const LIMITS = { guide: 1000 };

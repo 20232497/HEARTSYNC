@@ -661,7 +661,7 @@ const CFG = Object.assign({ anthropicUrl: ANTHROPIC_URL, serverKeys: false,
   typeof window !== "undefined" && window.HEARTVERSE_CONFIG && typeof window.HEARTVERSE_CONFIG === "object" ? window.HEARTVERSE_CONFIG : {});
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/core/constants.js
-   내보냄: MARK, FREE_DAILY, WELCOME, PLUS_MONTHLY, TIMEOUT, SIT, SIT_TINT, PALETTES, MOTIFS, CATS, LIMITS
+   내보냄: MARK, FREE_DAILY, WELCOME, PLUS_MONTHLY, TIMEOUT, SIT, SIT_TINT, PALETTES, MOTIFS, CATS, DEFAULT_CREATOR, LIMITS
    쓰는 곳: src/js/ai/models.js, src/js/core/wallet.js, src/js/services/supabase.js, src/js/images/codes.js, src/js/images/situations.js, src/js/ai/parse.js, src/js/ai/llm.js, src/js/ai/prompt/rules.js, src/js/ui/cover.js, src/js/ui/codex.js, src/js/ui/home.js, src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 순수 상수: 응답 구분자(MARK), 상황 이름(SIT)·표지 색·무늬·장르, 요금 상수 — 다른 모듈을 import하지 않음 */
@@ -678,6 +678,8 @@ const PALETTES = [
 ];
 const MOTIFS = { rain: "비", city: "도시", stars: "별", glow: "불빛", petals: "꽃잎", ash: "잿빛", curtain: "무대" };
 const CATS = ["로맨스", "판타지", "RPG", "미스터리", "일상", "시뮬레이션"];
+/* 작품이 제작자(work.js creator)를 적지 않았을 때 보이는 이름 */
+const DEFAULT_CREATOR = "HEART SYNC 스튜디오";
 /* 글자 수 상한 — 작품 데이터는 빌드가 검사하고(APP_RULES), 화면의 입력 칸은 maxlength와 "n/한도"에 씀. guide: 작품의 플레이 가이드(work.js guide) */
 const LIMITS = { guide: 1000 };
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
@@ -1488,7 +1490,7 @@ const HOME_ROWS = [
    src/js/content/index.js
    가져옴: src/js/content/generated.js { HOME_ROWS, ORIGINALS }
    내보냄: ORIGINALS, HOME_ROWS
-   쓰는 곳: src/js/core/character.js, src/js/ui/codex.js, src/js/ui/home.js, src/js/ui/detail.js, src/js/app.js
+   쓰는 곳: src/js/core/character.js, src/js/ui/codex.js, src/js/ui/home.js, src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 작품 목록: 빌드가 content/ 폴더로 만든 generated.js(git에 없음)를 읽고, 출연진이 없는 1:1 작품에 cast를 만들어 내보냄.
    ORIGINALS의 images·img·loreImages는 작품 폴더 images/의 그림(content/… 상대 경로) */
@@ -3220,7 +3222,7 @@ function pavHTML(p) { const img = IMG.tag(p.img); return `<div class="pav">${img
            src/js/core/audience.js { AUDS, audOK, audience }
            src/js/core/character.js { normalizeChar }
            src/js/core/commands.js { COMMAND_KINDS, allCommands }
-           src/js/core/constants.js { SIT, SIT_TINT }
+           src/js/core/constants.js { DEFAULT_CREATOR, SIT, SIT_TINT }
            src/js/core/util.js { $, $$, esc }
            src/js/images/codes.js { codebook, imgTag }
            src/js/images/pick.js { imagesOf, pickImg }
@@ -3231,7 +3233,7 @@ function pavHTML(p) { const img = IMG.tag(p.img); return `<div class="pav">${img
            src/js/ui/icons.js { ICON }
            src/js/ui/sheet.js { sheet }
            src/js/ui/shell.js { bindGo, go, topbar }
-   내보냄: castSheet, castGridHTML, bindCast, codexHTML, bindCodex, guideHTML, guideSheet, viewCodex
+   내보냄: castSheet, castGridHTML, bindCast, codexHTML, bindCodex, metaHTML, guideHTML, guideSheet, viewCodex
    쓰는 곳: src/js/ui/room-drawer.js, src/js/ui/detail.js, src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 도감(코드 안내): 독립 화면 viewCodex(#codex·#codex-<작품id> — 공통 표·앱 명령어·작품 고르기·인물·장소·컷씬·작품 명령어), 인물 시트(castSheet — 코드·다른 모습·감정 칩·외형·소개),
@@ -3318,6 +3320,10 @@ function bindCodex(v) {
   $$("[data-copy]", v).forEach((b) => b.onclick = () => copyText(b.dataset.copy, `${b.dataset.copy} 복사했어요 — 대화방 입력창에 붙여 넣으세요`));
   $$("[data-cxlb]", v).forEach((b) => b.onclick = () => { const i = b.querySelector("img"); if (i && i.src) lightbox(i.src); });
 }
+/** 작품 메타 한 줄(상세 페이지 머리·도감 작품 칸 공용): 제작자(work.js creator, 없으면 DEFAULT_CREATOR) · 공개일(publishedAt) · 독점 배지(exclusive). @param {Work} c @returns {string} */
+function metaHTML(c) {
+  return `${esc(c.creator || DEFAULT_CREATOR)}${c.publishedAt ? ` · ${esc(String(c.publishedAt).replace(/-/g, "."))} 공개` : ""}${c.exclusive ? ' <span class="pill gold">독점</span>' : ""}`;
+}
 /** 플레이 가이드 칸 — 제작자가 독자에게 주는 안내문(work.js guide, 줄바꿈 그대로). 없으면 빈 문자열. 상세 페이지·도감 공용. @param {Work} c @returns {string} */
 function guideHTML(c) { return c.guide ? `<div class="box"><h3>플레이 가이드 <small>제작자의 안내</small></h3><p class="guide">${esc(c.guide)}</p></div>` : ""; }
 /** 플레이 가이드 시트(대화방 드로어의 '플레이 가이드'). @param {Work} c */
@@ -3327,7 +3333,7 @@ function guideSheet(c) {
 /* 한 작품의 도감: 작품 머리(표지·제목·상세로) → 플레이 가이드 → 인물 카드 → 장소·컷씬 → 작품 명령어 */
 function workCodexHTML(c) {
   const book = codebook(c), cmds = allCommands(c).filter((x) => x.kind === "work");
-  return `<div class="codex-work">${coverHTML(c)}<div><b>${esc(c.title)}</b><span class="note">${esc(c.cat)}${c.world_mode ? " · 세계관" : ""} · 인물 ${c.cast.filter((x) => !x.of).length}명</span></div><button class="btn sm ghost" data-go="c-${esc(c.id)}">작품 보기</button></div>
+  return `<div class="codex-work">${coverHTML(c)}<div><b>${esc(c.title)}</b><span class="note">${esc(c.cat)}${c.world_mode ? " · 세계관" : ""} · 인물 ${c.cast.filter((x) => !x.of).length}명 · ${metaHTML(c)}</span></div><button class="btn sm ghost" data-go="c-${esc(c.id)}">작품 보기</button></div>
     ${guideHTML(c)}
     <div class="box"><h3>등장인물 <small>누르면 코드·감정 칸·소개</small></h3><div class="cast">${castGridHTML(c)}</div></div>
     ${seriesBox(c, "MP", book.MP)}${seriesBox(c, "EV", book.EV)}
@@ -5124,14 +5130,13 @@ function worldArtHTML(c) {
 }
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/ui/detail.js
-   가져옴: src/js/content/index.js { ORIGINALS }
-           src/js/core/character.js { getChar, normalizeChar }
+   가져옴: src/js/core/character.js { getChar, normalizeChar }
            src/js/core/rooms.js { newRoom }
            src/js/core/state.js { S, room, setRoom }
            src/js/core/util.js { $, $$, ago, esc }
            src/js/core/wallet.js { FREE_DAILY, plan }
            src/js/services/images.js { IMG }
-           src/js/ui/codex.js { bindCast, bindCodex, castGridHTML, codexHTML, guideHTML }
+           src/js/ui/codex.js { bindCast, bindCodex, castGridHTML, codexHTML, guideHTML, metaHTML }
            src/js/ui/cover.js { coverHTML, lightbox }
            src/js/ui/icons.js { ICON }
            src/js/ui/pay.js { plusSheet }
@@ -5154,20 +5159,18 @@ function worldArtHTML(c) {
 
 
 
-
 function viewDetail(id) {
   const c = normalizeChar(getChar(id)), v = $("#view");
   if (!c) { v.innerHTML = `<div class="page">${topbar()}<div class="empty">캐릭터를 찾을 수 없어요. 삭제됐거나 아직 불러오는 중일 수 있어요.<br><button class="btn sm" data-go="home">홈으로</button></div></div>`; bindGo(v); return; }
   const rooms = S.rooms.filter((r) => r.charId === c.id);
   const persona = S.personas.find((p) => p.def) || S.personas[0];
-  const creator = ORIGINALS.includes(c) ? "HEART SYNC 스튜디오" : (c.creator || "익명 크리에이터");
   const wa = worldArtHTML(c); // 키워드북이 없으면 칸을 숨김
   v.innerHTML = `<div class="page">
     ${topbar(`<button class="icon-btn" data-go="home" aria-label="뒤로">${ICON.back}</button>`)}
     <div class="detail">
       <div>${coverHTML(c, "", { vt: true })}</div>
       <div>
-        <span class="note">${esc(c.cat)} · ${esc(creator)}${c.world_mode ? " · 세계관" : ""}</span>
+        <span class="note">${esc(c.cat)}${c.world_mode ? " · 세계관" : ""} · ${metaHTML(c)}</span>
         <h1>${esc(c.title)}</h1>
         <p class="lead">${esc(c.oneLiner)}</p>
         <div class="tags">${(c.tags || []).map((t) => `<span>#${esc(t)}</span>`).join("")}</div>

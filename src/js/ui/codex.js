@@ -4,7 +4,7 @@ import { ORIGINALS } from "../content/index.js";
 import { AUDS, audOK, audience } from "../core/audience.js";
 import { normalizeChar } from "../core/character.js";
 import { COMMAND_KINDS, allCommands } from "../core/commands.js";
-import { SIT, SIT_TINT } from "../core/constants.js";
+import { DEFAULT_CREATOR, SIT, SIT_TINT } from "../core/constants.js";
 import { $, $$, esc } from "../core/util.js";
 import { codebook, imgTag } from "../images/codes.js";
 import { imagesOf, pickImg } from "../images/pick.js";
@@ -82,6 +82,10 @@ export function bindCodex(v) {
   $$("[data-copy]", v).forEach((b) => b.onclick = () => copyText(b.dataset.copy, `${b.dataset.copy} 복사했어요 — 대화방 입력창에 붙여 넣으세요`));
   $$("[data-cxlb]", v).forEach((b) => b.onclick = () => { const i = b.querySelector("img"); if (i && i.src) lightbox(i.src); });
 }
+/** 작품 메타 한 줄(상세 페이지 머리·도감 작품 칸 공용): 제작자(work.js creator, 없으면 DEFAULT_CREATOR) · 공개일(publishedAt) · 독점 배지(exclusive). @param {Work} c @returns {string} */
+export function metaHTML(c) {
+  return `${esc(c.creator || DEFAULT_CREATOR)}${c.publishedAt ? ` · ${esc(String(c.publishedAt).replace(/-/g, "."))} 공개` : ""}${c.exclusive ? ' <span class="pill gold">독점</span>' : ""}`;
+}
 /** 플레이 가이드 칸 — 제작자가 독자에게 주는 안내문(work.js guide, 줄바꿈 그대로). 없으면 빈 문자열. 상세 페이지·도감 공용. @param {Work} c @returns {string} */
 export function guideHTML(c) { return c.guide ? `<div class="box"><h3>플레이 가이드 <small>제작자의 안내</small></h3><p class="guide">${esc(c.guide)}</p></div>` : ""; }
 /** 플레이 가이드 시트(대화방 드로어의 '플레이 가이드'). @param {Work} c */
@@ -91,7 +95,7 @@ export function guideSheet(c) {
 /* 한 작품의 도감: 작품 머리(표지·제목·상세로) → 플레이 가이드 → 인물 카드 → 장소·컷씬 → 작품 명령어 */
 function workCodexHTML(c) {
   const book = codebook(c), cmds = allCommands(c).filter((x) => x.kind === "work");
-  return `<div class="codex-work">${coverHTML(c)}<div><b>${esc(c.title)}</b><span class="note">${esc(c.cat)}${c.world_mode ? " · 세계관" : ""} · 인물 ${c.cast.filter((x) => !x.of).length}명</span></div><button class="btn sm ghost" data-go="c-${esc(c.id)}">작품 보기</button></div>
+  return `<div class="codex-work">${coverHTML(c)}<div><b>${esc(c.title)}</b><span class="note">${esc(c.cat)}${c.world_mode ? " · 세계관" : ""} · 인물 ${c.cast.filter((x) => !x.of).length}명 · ${metaHTML(c)}</span></div><button class="btn sm ghost" data-go="c-${esc(c.id)}">작품 보기</button></div>
     ${guideHTML(c)}
     <div class="box"><h3>등장인물 <small>누르면 코드·감정 칸·소개</small></h3><div class="cast">${castGridHTML(c)}</div></div>
     ${seriesBox(c, "MP", book.MP)}${seriesBox(c, "EV", book.EV)}
