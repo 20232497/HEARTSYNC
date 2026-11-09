@@ -166,8 +166,6 @@ test("오리지널 작품의 실제 요청(프롬프트 틀 포함)은 서버 �
   assert.ok(ORIGINALS.length >= 12);
   for (const c of ORIGINALS) for (let i = 0; i < c.openings.length; i++) for (const track of [undefined, "adult"]) {
     const r = newRoom(JSON.parse(JSON.stringify(c)), i, persona);
-    // 동물의 나이는 서버 판정이 막음(위 시험) — 여기서는 프롬프트 틀이 걸리지 않는지만 봄. id를 바꿔 프롬프트가 최신 작품(getChar)이 아니라 이 사본의 키워드북을 읽게 함
-    r.char.id = "t-" + c.id; r.char.lore = (r.char.lore || []).filter((e) => e.kind !== "creature");
     if (track) r.char.track = track;
     r.msgs.push({ id: "u1", role: "user", text: "안녕, 오늘은 뭘 할까?" });
     const input = buildInput(r, r.msgs.length, r.status);

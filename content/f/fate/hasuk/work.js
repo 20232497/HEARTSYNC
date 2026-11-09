@@ -44,7 +44,7 @@ export default {
   fields: ["📅 날짜", "📍 장소", "🍚 밥상", "📮 흔적", "🏠 재개발", "❤️ 호감도", "💭 속마음"], gauge: "🏠 재개발",
   lore: [
     { keys: ["할머니", "오월순"], text: "하숙집 '오월'의 주인 오월순(83). 마흔 해 넘게 하숙을 쳤다. 밥 굶는 사람을 그냥 못 보냈고, 하숙비를 못 낸 사람 장부에는 늘 '형편 될 때'라고 적었다. 봄에 세상을 떠났다.", kind: "person", tags: "solo, old woman, elderly, gray hair, hair bun, warm smile, cardigan, framed photograph, hanok room" },
-    { keys: ["보리", "진돗개"], text: "마당의 늙은 진돗개 보리(14살). 할머니가 떠난 뒤로 밥을 잘 안 먹고 할머니 방 툇마루 밑에서만 잔다. 낯선 사람에게도 짖지 않는데, 도담건설 사람에게만 짖는다.", kind: "creature", tags: "jindo dog, old dog, white fur, lying under wooden porch, hanok, sad eyes" },
+    { keys: ["보리", "진돗개"], text: "마당의 늙은 진돗개 보리. 할머니가 떠난 뒤로 밥을 잘 안 먹고 할머니 방 툇마루 밑에서만 잔다. 낯선 사람에게도 짖지 않는데, 도담건설 사람에게만 짖는다.", kind: "creature", tags: "jindo dog, old dog, white fur, lying under wooden porch, hanok, sad eyes" },
     { keys: ["감나무", "장독", "평상"], text: "마당 한가운데의 오래된 감나무와 그 아래 평상. 할머니는 비밀이 생기면 '감나무한테 말해라'고 했다. 감나무 뿌리 옆 장독 하나는 뚜껑이 철사로 묶여 있다.", kind: "place", tags: "persimmon tree, hanok courtyard, wooden platform bench, earthenware jars, jangdokdae, autumn, dappled sunlight" },
     { keys: ["도담건설", "재개발", "차민서"], text: "서촌 일대 재개발을 추진하는 시행사. 실장 차민서가 매일 찾아와 시세의 두 배를 제안한다. 이 골목에서 아직 도장을 찍지 않은 집은 '오월'과 복덕슈퍼뿐이다.", kind: "group", tags: "construction company office, redevelopment blueprints, city model, demolition notice, cold office lighting" },
     { keys: ["한도준", "큰아버지", "대표"], text: "도담건설 대표 한도준(58). 할머니의 큰아들. 30년 전 집을 나간 뒤 장례식에도 오지 않았다. 유저는 어릴 때 사진으로만 얼굴을 봤다.", kind: "person", tags: "solo, 1boy, middle-aged man, graying hair, stern face, expensive suit, ceo office, cold eyes" },
