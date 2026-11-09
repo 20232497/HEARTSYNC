@@ -1,16 +1,23 @@
 // 대화방 명령어(src/js/core/commands.js) 단위 테스트 — 순수 모듈이라 Node가 바로 import
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { APP_COMMANDS, COMMAND_KINDS, allCommands, commandHelp, commandList, commandText, findCommand, parseCommand } from "../../src/js/core/commands.js";
+import { APP_COMMANDS, COMMAND_KINDS, allCommands, commandArg, commandHelp, commandList, commandText, findCommand, parseCommand } from "../../src/js/core/commands.js";
 
 const work = { commands: [{ cmd: "퀘스트", title: "퀘스트 정리", desc: "지금 퀘스트를 정리해요", prompt: "현재 퀘스트를 시스템 메시지로 정리한다." }] };
 
-test("parseCommand: !이름(전각 ！·앞뒤 공백 허용)만 명령어, 그 밖은 빈 문자열", () => {
+test("parseCommand·commandArg: !이름(전각 ！·앞뒤 공백 허용) 뒤의 글은 덧붙인 말, 명령어 모양이 아니면 빈 문자열", () => {
   assert.equal(parseCommand("!상태창"), "상태창");
   assert.equal(parseCommand("  ！지도 "), "지도");
-  assert.equal(parseCommand("!퀘스트 정리"), "");
+  assert.equal(parseCommand("! 퀘스트"), "퀘스트");
+  assert.equal(parseCommand("!퀘스트 정리"), "퀘스트");
   assert.equal(parseCommand("상태창"), "");
+  assert.equal(parseCommand("안녕 !퀘스트"), "");
   assert.equal(parseCommand(""), "");
+  assert.equal(commandArg("!퀘스트 정리"), "정리");
+  assert.equal(commandArg("  !퀘스트   보상만\n  알려 줘  "), "보상만\n  알려 줘");
+  assert.equal(commandArg("!퀘스트"), "");
+  assert.equal(commandArg("!퀘스트   "), "");
+  assert.equal(commandArg("안녕"), "");
 });
 test("findCommand: 앱 명령어(별칭·영문 대소문자 무시)가 먼저, 다음 작품 명령어, 없으면 null", () => {
   assert.equal(findCommand("상태창", work).app.view, "status");
@@ -28,6 +35,16 @@ test("commandText: 작품 명령어·앱 연출형은 // 연출 지시로, 앱 �
   const skip = APP_COMMANDS.find((x) => x.cmd === "시간경과");
   assert.equal(commandText("!시간경과", work), `// 유저가 명령어 !시간경과(${skip.title})을 썼다. ${skip.prompt}`);
   assert.equal(commandText("！반복금지", null).indexOf("// 유저가 명령어 !반복금지("), 0);
+});
+test("commandText: 덧붙인 말은 이름 뒤에 「」로 함께 — 화면형·즉답·모르는 이름은 덧붙여도 원문 그대로", () => {
+  assert.equal(commandText("!퀘스트 보상만 알려 줘", work), "// 유저가 명령어 !퀘스트(퀘스트 정리)을 썼다 — 덧붙인 말: 「보상만 알려 줘」. 현재 퀘스트를 시스템 메시지로 정리한다.");
+  const ev = APP_COMMANDS.find((x) => x.cmd === "새사건");
+  assert.equal(commandText("!새사건 비가 쏟아진다", null), `// 유저가 명령어 !새사건(${ev.title})을 썼다 — 덧붙인 말: 「비가 쏟아진다」. ${ev.prompt}`);
+  assert.equal(commandText("!상태창 보여 줘", work), "!상태창 보여 줘");
+  assert.equal(commandText("!없는명령 아무 말", work), "!없는명령 아무 말");
+  const w = { commands: [{ cmd: "규칙", title: "탑의 규칙", text: "[안내] 정해진 글" }] };
+  assert.equal(commandText("!규칙 다시", w), "!규칙 다시");
+  assert.equal(findCommand(parseCommand("!규칙 다시"), w).work.text, "[안내] 정해진 글");
 });
 test("APP_COMMANDS: 항목마다 view(화면형)와 prompt(연출형) 중 하나만, 이름·별칭은 겹치지 않음", () => {
   assert.deepEqual(APP_COMMANDS.filter((x) => x.view).map((x) => x.cmd), ["상태창", "갤러리", "지도", "도움말"]);
