@@ -102,6 +102,21 @@ for (const [dev, engine, opts] of [["Desktop Chrome", chromium, {}], ["iPhone 13
       return { def, set, want: RECOMMEND_DEFAULT };
     });
     if (res.rec.def.rec !== "" || res.rec.def.pick !== res.rec.want || res.rec.def.start !== res.rec.want || res.rec.set.rec !== "master" || res.rec.set.pick !== res.rec.want || res.rec.set.start !== "master") errs.push("권장 모델 배지가 다름: " + JSON.stringify(res.rec));
+    // 세계관 수첩 — 키워드북이 있는 작품의 드로어에만 메뉴가 뜨고, 응답에 📖로 저장된 항목만 열리고 나머지는 잠긴 카드(이름·설명이 화면에 없음)
+    res.lorebook = await p.evaluate(() => {
+      const w = ORIGINALS.find((c) => (c.lore || []).length), r = newRoom(normalizeChar(getChar(w.id)), 0, S.personas[0]); setRoom(r);
+      r.msgs.push({ id: "lb1", role: "ai", idx: 0, alts: [{ text: "시험", lore: [w.lore[0].keys[0]] }] });
+      openRoomDrawer("main"); const menu = ($('[data-v="lore"]') || {}).textContent || ""; closeOverlays();
+      openRoomDrawer("lore"); const txt = $(".drawer").textContent;
+      return { id: w.id, n: w.lore.length, menu, cards: $$(".drawer .wcard").length, locked: $$(".drawer .wcard.locked").length,
+        open: txt.includes(w.lore[0].text), leak: w.lore.slice(1).filter((e) => txt.includes(e.text)).map((e) => e.keys[0]) };
+    });
+    await wait(250); if (out) await p.screenshot({ path: `${out}/${tag}_views_lorebook.png` });
+    res.lorebook.plain = await p.evaluate(() => {
+      closeOverlays(); const w = ORIGINALS.find((c) => !(c.lore || []).length); setRoom(newRoom(normalizeChar(getChar(w.id)), 0, S.personas[0]));
+      openRoomDrawer("main"); const has = !!$('[data-v="lore"]'); closeOverlays(); return has;
+    });
+    { const l = res.lorebook; if (!l.menu.includes(`1 / ${l.n}`) || l.cards !== l.n || l.locked !== l.n - 1 || !l.open || l.leak.length || l.plain) errs.push("세계관 수첩이 다름: " + JSON.stringify(l)); }
     if (out) { await p.evaluate(() => openRoomDrawer("main")); await wait(300); await p.screenshot({ path: `${out}/${tag}_views_drawer.png` }); await p.evaluate(() => closeOverlays()); }
   } catch (e) { res.fail = String(e).slice(0, 400); }
   res.errs = [...new Set(errs)];

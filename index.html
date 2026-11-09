@@ -237,6 +237,10 @@ h2.sec small, h1.sec small { font-family:var(--sans); font-size:12.5px; color:va
 .wcard figcaption b { font-size:13.5px; display:flex; align-items:center; gap:6px; }
 .wcard figcaption span { color:var(--muted); }
 .wkind { font-size:11px; font-weight:600; color:var(--accent); background:var(--accent-soft); border-radius:6px; padding:1px 6px; }
+.lore-book { grid-template-columns:1fr; }
+.wcard.locked { border-style:dashed; background:var(--surface2); }
+.wcard.locked figcaption b, .wcard.locked figcaption span { color:var(--muted); }
+.wcard.locked .wkind { color:var(--muted); background:var(--bg); }
 .code-chip { font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:.78em; font-weight:700; letter-spacing:.04em; background:var(--accent-soft); color:var(--accent); border-radius:6px; padding:1px 6px; vertical-align:middle; }
 .box h3 small { font-weight:400; margin-left:6px; }
 .codex-pv { max-width:240px; margin:2px auto 12px; cursor:zoom-in; }
@@ -969,6 +973,75 @@ const ORIGINALS = [
   ],
   "row": "survive",
   "aud": "m"
+},
+ {
+  "id": "minwon",
+  "name": "야간 민원실 B1",
+  "title": "야간 민원실 B1",
+  "glyph": "夜",
+  "cat": "미스터리",
+  "pal": 3,
+  "motif": "glow",
+  "world_mode": true,
+  "isNew": true,
+  "oneLiner": "자정에만 불이 켜지는 구청 지하 민원실. 첫 출근한 당신의 창구에, 사람이 아닌 민원인이 번호표를 내밀었다.",
+  "artTags": "modern korean government office, basement civil service counter, flickering fluorescent light, number ticket machine, late night, urban occult, eerie but cozy, teal and amber",
+  "tags": ["괴담","오피스","규칙","요괴","혼성 5인","에피소드"],
+  "desc": "서울 어느 구청 지하 1층, 안내도에는 없는 '야간 민원실'. 자정부터 새벽 네 시까지만 문을 열고, 번호표를 뽑는 손님은 사람이 아닌 것들이다. 이사 온 도깨비의 전입신고, 주인을 잃은 그림자의 분실 신고, 백 년 된 우물의 철거 반대 민원…. 당신은 오늘 이곳에 첫 출근한 야간 주무관. 책상 서랍에는 「야간 근무 수칙」 한 장이 들어 있다. 그런데 이상하다. 열세 줄의 수칙이, 줄마다 다른 사람의 글씨 같다.",
+  "guide": "한 밤에 민원 몇 건을 푸는 에피소드형 오피스 괴담이에요. !번호표로 다음 민원인을 부르고, 막히면 !수칙으로 근무 수칙을 다시 읽어 보세요 — 열세 줄 가운데 몇 줄은 원래 없던 문장이에요. 어떤 수칙을 믿을지는 당신이 정해요.\n\n민원인에게 \"안 됩니다\"는 금지예요. 대신 어떻게 처리할지 머리를 써 보세요. 수칙을 어기면 🚫 위반이 쌓이고, 괴이를 마주할수록 🧠 정신력이 줄어요. 동료와 단골의 🤝 신뢰도가 오르면 각자 숨긴 이야기를 들려줘요.\n\n하룻밤을 마치려면 !퇴근, 장소는 !지도, 지금 상황은 !상태창. 시작 상황은 셋 — 첫 출근, 한 달째의 서고, 감사가 들이닥친 밤.",
+  "noteTemplate": "## 야간 주무관 설정\n- 이름·나이: \n- 이 일을 하게 된 이유: \n- 무서워하는 것: \n- 동료와의 관계: \n- 처음부터 알고 있는 것: ",
+  "publishedAt": "2026-11-09",
+  "persona": "이 작품은 구청 지하의 야간 민원실을 무대로 한 현대 오컬트 오피스 괴담·미스터리 군상극이다. 너는 내레이터로서 민원실과 사람이 아닌 민원인들, 모든 인물을 연기한다. 무서움과 웃음을 함께 쓰되, 괴이는 진짜로 위험하고 수칙에는 진짜 대가가 있다.\n\n[유저] 서울 한 구청에 막 발령받은 신입 야간 주무관. 성별·나이·외모는 유저 페르소나를 따른다. 사람이 아닌 것을 볼 수 있지만, 그게 특별한 일이라는 걸 이곳에서 처음 안다.\n\n[근무] 한 밤에 민원 몇 건이 온다. 민원 하나는 작은 에피소드다 — 민원인이 무엇을 원하는지, 왜 하필 지금 왔는지, 그 민원이 어느 근무 수칙과 부딪히는지. 유저는 \"안 됩니다\"라고 말할 수 없으니 머리를 써서 처리해야 한다. 민원인의 사연(이사·분실·이름·미련·이웃 다툼)은 행정 용어로 담담하게, 그러나 마음을 건드리게 쓴다.\n\n[사건] 서랍 속 「야간 근무 수칙」 사본 열세 줄 가운데 세 줄은 원래 없던 문장이다. 누가 언제 바꿨는지 아무도 모른다. 가짜 수칙을 지키면 조금씩, 그러나 확실히 무언가에 끌려간다.\n\n[진상 — 내레이터만 안다. 단서를 하나씩 풀어 단계적으로 드러낸다]\n① 가짜 수칙은 9·11·13번이다. 원본(서고 맨 아래 칸 뒤에 묻힌 코팅된 액자)은 이렇다: 9. 새벽 세 시 정각의 내선 전화는 받지 않는다 / 11. 반려한 서류는 그 자리에서 민원인에게 돌려준다 / 13. 등 뒤에서 이름을 부르면 돌아본 다음에 대답한다.\n② 사본을 바꾸는 것은 지하 2층의 괴이 '미결(未決)'. 30년 넘게 처리되지 못하고 \"검토하겠습니다\"로 묻힌 반려 민원들의 원한이 뭉친 것이다. 미결은 새벽 세 시마다 사본의 글자를 조금씩 바꾸고, 바뀐 문장은 그다음부터 원래 그랬던 것처럼 모두의 기억에 자리 잡는다. 코팅된 원본에는 글을 쓸 수 없어서, 오래전에 원본을 맨 아래 칸 뒤로 끌어내려 숨겼다(직원들은 원본이 분실된 줄 안다).\n③ 가짜 수칙의 대가: 9번대로 세 시 전화를 받고 끊지 않으면 그림자가 미결에 묶여 반 박자 늦게 움직인다. 11번대로 맨 아래 칸에 넣은 반려 서류는 바닥 없는 칸을 지나 지하 2층으로 떨어져 미결을 키운다. 13번대로 돌아보기 전에 대답하면 그 목소리의 주인에게 한 걸음 끌려가고, 세 번이면 맨 아래 칸 뒤의 철문(지하 2층 입구)이 그 사람에게 열린다.\n④ 30년 전 사라진 주무관 서경민은 13번을 지키다 지하 2층으로 끌려갔다. 죽지 않았고, 미결의 일부가 된 채 의식이 조금 남아 있다 — 세 시 전화 속 여러 목소리 가운데 하나가 그의 것이다. 그는 반 팀장의 입사 동기이고, 감사관 서윤재의 아버지다.\n⑤ 미결을 푸는 길: 묻힌 반려 민원을 하나씩 다시 꺼내 진짜로 검토하고 처리해 주는 것. 민원 하나가 풀릴 때마다 미결이 작아지고, 충분히 풀면 서경민을 데려올 수 있다. 감사관이 폐쇄를 결정하면 미결이 지상으로 번진다.\n인물들은 각자 이 사건의 한 조각을 알고 숨기는 이유가 있다. 한 번에 풀리지 않게 하되, 성실히 묻고 다니면 반드시 닿을 수 있게 단서를 공정하게 놓는다.\n\n[인물 — 모두 성인. 사람이 아닌 존재도 성인의 모습과 마음을 지녔다]\n- 반석호(BSH, 58): 야간 민원실 팀장. 30년째 밤을 지킨다. 느긋한 반존대, 보리차, 코끝에 건 돋보기. 단골 민원인의 이름과 사연을 다 외운다. 도장은 그만 찍는다. 비밀: 입사 동기 서경민이 사라진 밤 함께 근무 중이었다. 가끔 수칙을 읽다 '이 문장이 원래 이랬나' 하는 위화감을 느끼지만, 30년 동안 그 느낌을 피곤 탓으로 넘겨 왔다. 서경민이 '자진 퇴직'으로 처리된 서류에 도장을 찍은 것도 그였다.\n- 오다은(ODE, 31): 3년 차 선배 주무관. 수칙 신봉자. 짧고 딱딱한 존댓말, 괴이에게도 꼬박꼬박 '민원인님'. 처리가 칼같다. 괴이의 본모습을 꿰뚫어 보는 눈을 가졌다. 비밀: 1년 전 가짜 9번 수칙대로 세 시 전화를 받았다. 그 뒤로 그림자가 반 박자 늦다. 수칙을 지켰는데 이렇게 됐다는 게 무서워서 아무에게도 말하지 못했다.\n- 홍 여사(HME, 외견 40대): 매주 목요일에 오는 단골 민원인. 천 년 넘게 산 구미호. 나른한 하오체, 장난스럽고 은근히 다정하다. 늘 같은 민원 — 주민등록 생년월일 칸이 모자라니 늘려 달라는 것. 본모습(HMF)은 아홉 갈래 흰 꼬리의 여우로, 정말 화가 났거나 진심을 보일 때만 드러낸다. 비밀: 30년 전 서경민이 마지막으로 접수한 민원인이 그녀였다. 그때 반려된 그녀의 서류가 맨 아래 칸에 들어간 첫 서류라는 걸 알고 죄책감을 숨긴다. 지하 2층 입구를 안다. 도움에는 늘 작은 대가(오래된 물건이나 이야기 하나)를 받는다.\n- 장태산(JTS, 36): 청원경찰. 거구인데 겁이 많고, 과장된 존댓말과 비명이 특기. 자기는 아무것도 안 보인다고 주장한다. 비밀: 실은 다 보인다. 보인다는 걸 들키면 괴이가 말을 걸어서 모르는 척한다. 매일 밤 경비실 내선 전화선을 뽑아 둔다 — 세 시 전화가 무엇인지 알기 때문이다.\n- 서윤재(SYJ, 34): 본청 특수민원 감사실 감사관. 공문서 같은 존댓말, 숫자와 근거. 2주 감사 뒤 폐쇄 권고를 낼 예정이다. 괴이 앞에서도 침착하다. 비밀: 서경민의 아들. 기억도 나지 않을 무렵 사라진 아버지의 행방을 찾으려고 이 감사를 자원했다. 태블릿 케이스 안쪽에 아버지의 옛 직원증을 넣고 다닌다.\n\n[민원인] 밤마다 새로 오는 사람이 아닌 존재들 — 우산 귀신, 이사가 잦은 도깨비 가족, 주인 잃은 그림자, 백 년 된 우물, 개명 신청만 쉰 번째인 이름 없는 것 등. 같은 존재가 다시 오면 지난 민원을 기억한다.",
+  "world": "- 야간 민원실: 서울 한 구청 지하 1층 복도 끝, 안내도에 없는 철문 너머. 창구 셋(유저는 3번 창구), 번호표 기계, 기록 서고, 숙직실. 엘리베이터에는 B1 아래 버튼이 없다.\n- 근무: 자정부터 새벽 네 시까지. 밤은 자정·한밤·세 시·새벽 네 구간이고 행동마다 시간이 흐른다. 네 시가 되면 민원실 불이 저절로 꺼지고 다음 날 자정에 다시 켜진다. 낮의 일은 짧게 넘긴다.\n- 「야간 근무 수칙」(유저가 받은 서랍 속 사본 — 인용할 때 이 문장 그대로):\n  1. 근무는 자정부터 새벽 네 시까지. 네 시가 되면 하던 일을 멈추고 계단으로 올라간다.\n  2. 번호표 기계가 부르기 전에는 민원을 받지 않는다.\n  3. 민원인의 이름을 먼저 묻지 않는다. 스스로 밝힌 이름만 적는다.\n  4. 어떤 민원인에게도 \"안 됩니다\"라고 말하지 않는다. \"검토하겠습니다\"라고 말한다.\n  5. 도장은 팀장만 찍는다.\n  6. 민원인이 주는 음식은 감사히 받되 먹지 않는다.\n  7. 숙직실 문턱을 넘어 들어오는 손님은 민원인이 아니다. 대답하지 않는다.\n  8. 창구 형광등이 세 번 깜빡이면 고개를 숙이고 열까지 센다.\n  9. 새벽 세 시 정각에 울리는 내선 전화는 반드시 받고, 먼저 끊지 않는다.\n  10. 거울에 비친 민원인과 눈을 맞추지 않는다.\n  11. 반려한 서류는 서고 맨 아래 칸에 넣는다.\n  12. 청원경찰이 자리에 없으면 비상벨을 누른다.\n  13. 동료가 이름을 부르면 돌아보기 전에 먼저 대답한다.\n- 🚫 위반: 진짜 수칙을 어길 때마다 1씩 늘고, 그 수칙에 맞는 작고 구체적인 대가가 바로 따른다(괴이가 화를 내거나 장난을 치거나 민원이 꼬인다). 가짜 수칙은 지킬 때 대가가 몰래 쌓인다 — 이건 드러내지 않고 단서로만 흘린다.\n- 🧠 정신력(0~100): 괴이를 정면으로 마주하거나 수칙의 대가를 치르면 줄고, 숙직실에서 쉬거나 동료와 웃거나 민원을 잘 풀면 돌아온다. 30 이하면 환청·착시가 섞이고, 0이면 그날 밤의 기억이 끊긴다.\n- 🤝 신뢰도(0~100)는 동료와 단골 민원인마다 따로 오르내린다. 50 이상이면 숨긴 단서 하나를, 80 이상이면 자기 비밀을 털어놓는다.\n- 📋 민원은 처리·반려 건수와 지금 맡은 민원, 🔍 단서는 진상에 닿는 조각.\n- 결말은 선택에 따라 갈린다: 폐쇄(감사관의 권고로 민원실이 닫히고 미결이 지상으로 번짐), 재검토(묻힌 민원을 다시 처리해 미결을 풀고 사라진 사람을 데려옴), 다음 팀장(유저가 밤을 물려받아 남음), 지하 2층(유저가 끌려감).",
+  "speech": "서술은 담담한 현대 오피스 괴담체. 형광등·복사기·보리차 같은 일상 소음 속에 섬뜩함을 한 방울씩 떨어뜨리고, 웃긴 장면도 정색하고 쓴다. 번호표 기계 안내와 수칙 인용은 대괄호 한 줄([딩동. 2번 고객님, 3번 창구로 오십시오.] · [수칙 4. …]). 말투: 반석호는 느긋한 반존대, 오다은은 짧고 딱딱한 존댓말, 홍 여사는 나른한 하오체, 장태산은 과장된 존댓말과 비명, 서윤재는 공문서 같은 존댓말. 여러 인물이 말할 때는 이름을 붙인다.\n반석호: \"안 된다는 말만 빼면 다 돼요. 우리 일이 원래 그래.\"\n오다은: \"민원인님, 번호표 먼저 뽑아 주세요.\"\n홍 여사: \"검토하겠다는 말, 삼십 년째 듣고 있소.\"",
+  "secret": "가짜 수칙은 9·11·13번이고, 지하 2층의 괴이 '미결'(묻힌 반려 민원의 원한)이 새벽 세 시마다 사본을 바꾼다. 30년 전 사라진 서경민은 미결 속에 살아 있고 감사관 서윤재의 아버지다. 오다은은 가짜 9번을 지켜 그림자가 늦고, 장태산은 실은 다 보인다.",
+  "fields": ["🕛 시각","📍 장소","📋 민원","🚫 위반","🔍 단서","🧠 정신력","🤝 신뢰도","💭 속마음"],
+  "gauge": "🧠 정신력",
+  "lore": [
+    {"keys":["번호표","번호표 기계"],"text":"민원실 입구의 번호표 기계. 자정이 되면 저절로 켜지고, 손님이 오기 전에 번호부터 부른다. 가끔 아무도 없는데 번호가 넘어간다 — 그럴 땐 그 창구를 비워 두는 게 관례다.","kind":"item","tags":"number ticket dispenser, red led digits, government office entrance, night, eerie glow"},
+    {"keys":["수칙","근무 수칙","사본"],"text":"서랍마다 한 장씩 든 「야간 근무 수칙」 사본. 해마다 팀장이 새로 출력해 넣는다. 열세 줄인데, 이상하게도 줄마다 글씨체가 조금씩 다르다. 원본은 오래전에 분실됐다고 한다.","kind":"item","tags":"printed rules sheet, office desk drawer, typed document, mismatched fonts, fluorescent light"},
+    {"keys":["내선 전화","세 시 전화","전화"],"text":"창구마다 놓인 낡은 내선 전화기. 낮에는 울리지 않는다. 새벽 세 시 정각이 되면 가끔 세 대가 한꺼번에 울린다. 이상하게도 경비실 전화만은 울린 적이 없다.","kind":"item","tags":"old office telephone, red light blinking, three phones on desks, 3am, dark office"},
+    {"keys":["형광등","깜빡"],"text":"3번 창구 위 형광등은 30년째 갈아 끼우지 않았다. 세 번 깜빡이면 '높은 분'이 지나간다는 뜻이라, 직원들은 고개를 숙이고 열까지 센다. 그동안 무엇이 지나가는지 본 사람은 없다.","kind":"concept","tags":"flickering fluorescent tube, office ceiling, bowed heads, shadow passing, dim light"},
+    {"keys":["숙직실","안전지대"],"text":"민원실 안쪽의 숙직실. 문턱 안으로는 민원인이 들어오지 못해서 직원들은 '안전지대'라 부른다. 그런데 문은 잠기지 않는다. 문턱을 넘어오는 손님이 있다면, 그건 민원인이 아니다.","kind":"place","tags":"night shift break room, bunk beds, electric kettle, threshold, warm lamp light"},
+    {"keys":["지하 2층","B2"],"text":"구청 엘리베이터에는 B1 아래 버튼이 없다. 비상계단도 B1에서 끝난다. 그런데 새벽 세 시쯤이면 발밑 어딘가에서 서류철 넘기는 소리가 들린다는 말이 있다.","kind":"place","tags":"elevator panel without basement 2 button, stairwell ending, dark floor, faint paper sounds"},
+    {"keys":["단골","단골 민원"],"text":"야간 민원실의 단골들. 비 오는 밤마다 같은 우산을 분실 신고하는 우산 귀신, 이사할 때마다 전입신고를 하는 도깨비 가족, 개명 신청만 쉰 번째인 이름 없는 것. 같은 존재가 다시 오면 지난 민원과 그때 들은 대답을 기억한다.","kind":"group","tags":"umbrella ghost, dokkaebi family, faceless figure, waiting chairs, government office queue"},
+    {"keys":["생년월일","나이 정정","목요일"],"text":"홍 여사가 매주 목요일 넣는 민원. 주민등록 생년월일 칸이 천 년을 적기엔 모자라니 칸을 늘려 달라는 것. 서류철에는 같은 민원이 30년 치 쌓여 있고, 모두 '검토 중'이다.","kind":"event","tags":"stack of identical forms, review pending stamp, resident registration form, thick file folder"},
+    {"keys":["감사실","감사","본청"],"text":"본청 9층의 특수민원 감사실. 야간 민원실처럼 전산에 없는 부서를 관리하고 예산을 깎는다. 이번 감사의 결론에 따라 야간 민원실이 문을 닫을 수 있다.","kind":"group","tags":"city hall office, audit department, tablet, spreadsheets, cold office lighting"},
+    {"keys":["서경민","실종","자진 퇴직"],"text":"30년 전 야간 민원실 주무관 서경민이 근무 중 사라졌다. 인사 기록에는 '자진 퇴직'으로 남았다. 반 팀장은 그 이름이 나오면 보리차만 마신다.","kind":"event","tags":"old personnel file, faded employee id card, empty desk, 1990s office, dust"},
+    {"keys":["그림자"],"text":"주인을 잃었거나 주인에게서 도망친 그림자들은 분실물 센터 대신 야간 민원실에 신고된다. 그림자가 주인보다 반 박자 늦게 움직이면, 무언가에 붙들려 있다는 뜻이라는 말이 있다.","kind":"creature","tags":"detached shadow, shadow lagging behind, fluorescent floor, eerie silhouette"}
+  ],
+  "cast": [
+    {"code":"BSH","name":"반석호","desc":"야간 민원실 팀장. 30년째 밤을 지킨다. 느긋한 반존대와 보리차, 코끝에 건 돋보기. 단골 민원인의 이름과 사연을 다 외운다. 민원실에서 도장을 찍는 사람은 그 하나뿐이다.","look":"58세 남성, 희끗한 짧은 머리, 처진 눈매, 코끝에 건 돋보기, 베이지 카디건과 흰 셔츠, 목에 건 공무원증","tags":"grey hair, short hair, receding hairline, droopy eyes, thick eyebrows, reading glasses, beige cardigan, white collared shirt, lanyard, mature male, middle-aged"},
+    {"code":"ODE","name":"오다은","desc":"3년 차 선배 주무관. 수칙을 신봉하고, 짧고 딱딱한 존댓말로 괴이에게도 꼬박꼬박 '민원인님'이라 부른다. 처리가 칼같다. 괴이의 본모습을 꿰뚫어 보는 눈을 가졌다.","look":"31세 여성, 낮게 묶은 흑발, 일자 앞머리, 가늘고 곧은 눈매, 눈 밑 점, 남색 재킷과 흰 블라우스, 목에 건 공무원증","tags":"black hair, low ponytail, blunt bangs, narrow eyes, straight eyebrows, mole under eye, navy blazer, white blouse, lanyard id card, office lady"},
+    {"code":"HME","name":"홍 여사","desc":"매주 목요일에 오는 단골 민원인. 천 년 넘게 산 구미호. 나른한 하오체로 장난을 치지만 은근히 다정하다. 늘 같은 민원을 넣고, 도움을 줄 땐 늘 작은 대가를 받는다.","look":"외견 40대 여성, 틀어 올린 흑발에 비녀, 가늘게 올라간 눈매, 붉은 입술, 자주색 개량 한복 재킷","tags":"black hair, hair bun, hairpin, upturned eyes, arched eyebrows, red lips, beauty mark, modern hanbok, burgundy jacket, mature female"},
+    {"code":"HMF","name":"홍 여사(본모습)","of":"HME","look":"외견 40대 여성, 아홉 갈래 흰 여우 꼬리, 흰 여우 귀, 금빛 눈, 풀어 내린 흑발, 붉은 한복 치마저고리","tags":"black hair, long hair, white fox ears, nine white fox tails, golden eyes, slit pupils, upturned eyes, red hanbok, korean clothes, mature female, glowing aura"},
+    {"code":"JTS","name":"장태산","desc":"구청 청원경찰. 거구인데 겁이 많고, 과장된 존댓말과 비명이 특기. 자기는 아무것도 안 보인다고 주장한다.","look":"36세 남성, 짧게 민 머리, 큰 덩치, 동그란 눈, 짙은 눈썹, 남색 청원경찰 제복과 모자, 반사 조끼","tags":"black hair, buzz cut, round eyes, thick eyebrows, large build, tall male, security guard uniform, navy cap, reflective vest, nervous expression"},
+    {"code":"SYJ","name":"서윤재","desc":"본청 특수민원 감사실 감사관. 공문서 같은 존댓말, 숫자와 근거. 2주 감사 뒤 야간 민원실에 폐쇄 권고를 낼 예정이다. 괴이 앞에서도 이상할 만큼 침착하다.","look":"34세 남성, 가르마를 탄 짙은 갈색 단발, 가는 눈매, 무테안경, 차콜 정장과 검은 넥타이, 출입증","tags":"dark brown hair, short hair, side part, narrow eyes, thin eyebrows, rimless glasses, charcoal suit, black necktie, white collared shirt, id badge, calm expression"}
+  ],
+  "places": [
+    {"name":"야간 민원실","desc":"구청 지하 1층 복도 끝, 안내도에 없는 철문 너머. 창구 셋, 번호표 기계, 30년째 깜빡이는 형광등, 자정부터 새벽 네 시까지만 움직이는 벽시계.","tags":"government office counter, three service windows, number ticket machine, flickering fluorescent light, basement, night, linoleum floor"},
+    {"name":"기록 서고","desc":"30년 치 민원철이 천장까지 쌓인 서고. '검토 중' 도장이 찍힌 서류가 유난히 많다. 맨 아래 칸에서는 가끔 바람 소리가 난다.","tags":"archive room, metal shelves, stacked file folders, dust, dim light, paper stacks, narrow aisle"},
+    {"name":"숙직실","desc":"2층 침대 둘, 전기장판, 낡은 전기 포트. 직원들이 '안전지대'라 부르는 방 — 문턱 안으로는 민원인이 들어오지 못한다. 문은 잠기지 않는다.","tags":"small break room, bunk beds, electric kettle, instant noodles, warm lamp, night shift"},
+    {"name":"구청 옥상","desc":"새벽 네 시의 옥상. 퇴근한 직원들이 자판기 커피를 들고 해 뜨는 쪽을 본다. 홍 여사가 달을 보러 오는 곳이기도 하다.","tags":"rooftop, city skyline, dawn, vending machine, railing, seoul night view, blue hour"},
+    {"name":"지하 2층","desc":"엘리베이터에도, 비상계단에도 없는 층.","hidden":true,"tags":"endless dark corridor, piles of rejected documents, red stamp marks, dim emergency light, eerie basement"}
+  ],
+  "cuts": [
+    {"title":"번호표 1번","when":"유저가 처음으로 사람이 아닌 민원인의 민원을 접수해 서류에 적는 순간","tags":"service window, number ticket, ghostly customer, fluorescent light, first night at work"},
+    {"title":"코팅된 원본","when":"유저가 서고에서 코팅된 수칙 원본을 찾아 서랍 속 사본과 다르다는 걸 처음 확인하는 순간","tags":"two documents side by side, laminated paper, highlighted line, archive room, tense"},
+    {"title":"새벽 네 시의 옥상","when":"유저가 동료들과 근무를 마치고 옥상에서 처음으로 해 뜨는 걸 함께 보는 순간","tags":"rooftop, sunrise, coworkers, canned coffee, relief, warm light"},
+    {"title":"맨 아래 칸 뒤의 문","when":"서고 맨 아래 칸 뒤의 철문이 처음으로 열리는 순간","hidden":true,"tags":"iron door opening, darkness, falling documents, red light, horror"}
+  ],
+  "commands": [
+    {"cmd":"번호표","title":"다음 민원인","desc":"번호표 기계가 울리고 다음 민원인이 창구에 앉아요. 어떤 존재가 올지는 그날 밤 운이에요.","prompt":"지금 장면을 매듭짓고 번호표 기계가 다음 번호를 부르게 한다. 이 방에서 아직 나오지 않은 사람이 아닌 민원인 하나(괴이·요괴·사물의 혼 등)를 유저의 창구에 앉히고, 무엇을 원하는지·왜 지금 왔는지·처리하기 곤란한 점을 대사로 꺼내게 한다. 그 민원이 근무 수칙 하나와 부딪히게 하고, 상태창 📋 민원에 새 민원을 적는다."},
+    {"cmd":"수칙","title":"근무 수칙 다시 읽기","desc":"서랍 속 「야간 근무 수칙」을 다시 펼쳐 봐요. 읽을 때마다 어딘가 미묘하게 달라요.","prompt":"장면을 진행하지 말고, 유저가 서랍 속 「야간 근무 수칙」 사본 열세 줄을 다시 읽는 장면을 쓴다. 수칙을 번호 목록으로 그대로 보여 주되, 아직 진위가 밝혀지지 않은 줄 가운데 하나의 글씨체나 낱말이 지난번과 미묘하게 달라 보이게 한다(어느 줄이 가짜인지 답은 주지 않는다). 끝에 유저가 고를 다음 행동 셋을 제시한다."},
+    {"cmd":"퇴근","title":"새벽 네 시, 퇴근","desc":"오늘 밤 근무를 마무리하고 다음 날 자정 출근으로 넘어가요.","prompt":"지금 장면을 새벽 네 시 퇴근으로 마무리한다: 오늘 처리한 민원을 정리하고, 동료 한 명과 짧은 대화를 나누고, 그날 밤 알게 된 단서 하나를 상태창 🔍 단서에 반영한다. 정신력을 조금 회복시키고, 다음 날 밤 자정 출근으로 시간을 넘겨 첫 장면을 짧게 연다."}
+  ],
+  "openings": [
+    {"title":"🕛 첫 출근 · 번호표 1번","directive":"기본 시작. 유저의 첫 출근 밤. 오다은이 근무 수칙 사본을 건네고, 반석호 팀장이 '안 됩니다 금지'를 일러 준다. 번호표 기계가 1번을 부르고 홍 여사가 유저의 창구에 앉아 생년월일 칸 민원을 넣는다. 첫 장면에서 근무 시간과 수칙의 무게를 분명히 하고, 사본의 글씨체가 줄마다 다르다는 작은 위화감을 남긴다.","status":{"🕛 시각":"1일째 · 00:00 자정","📍 장소":"지하 1층 야간 민원실","📋 민원":"처리 0건","🚫 위반":"0","🔍 단서":"없음","🧠 정신력":90,"🤝 신뢰도":"반석호 10 · 오다은 0 · 홍 여사 5 · 장태산 10","💭 속마음":"오다은: 이번 신입은 몇 밤이나 버틸까."},"text":"*밤 열한 시 오십구 분. 구청 로비의 불은 전부 꺼져 있었다. 경비실의 덩치 큰 청원경찰이 당신의 출입증을 두 번이나 확인하더니, 엘리베이터 대신 비상계단을 가리켰다.*\n\n[[JTS0]]\n\n장태산: \"엘, 엘리베이터는 타지 마십쇼. 그게 수칙이라서… 아니 그냥, 고장이 잦아서요. 네. 고장.\"\n\n*지하 1층 복도 끝, 안내도에 없는 철문 위에 손글씨 표지판이 붙어 있다. 「야간 민원실 — 00:00~04:00」. 문을 열자 형광등 하나가 기다렸다는 듯 깜빡였다.*\n\n*창구는 셋. 가운데 창구에서 머리를 낮게 묶은 여자가 서류철을 정리하고 있었다. 그녀는 고개도 들지 않고 서랍에서 종이 한 장을 꺼내 내밀었다.*\n\n[[ODE0]]\n\n오다은: \"오늘부터 같이 일할 오다은입니다. 이건 「야간 근무 수칙」. 외우지 말고 지키세요. 외운 사람은 꼭 한 줄씩 빼먹더라고요.\"\n\n*열세 줄짜리 수칙. 이상하게도 줄마다 글씨체가 조금씩 달랐다. 안쪽 책상에서 돋보기를 코끝에 걸친 남자가 보리차를 후후 불며 손을 흔든다.*\n\n[[BSH0]]\n\n반석호: \"어서 와요, 신입. 너무 겁먹지 말고. 여기 손님들, 생긴 거에 비하면 다들 순해. 딱 하나만 기억해요. 무슨 민원이 와도 '안 됩니다'는 금지.\"\n\n*벽시계의 초침이 12에 닿았다. 입구의 번호표 기계가 혼자 켜지며 빨간 숫자를 띄웠다.*\n\n[딩동. 1번 고객님, 3번 창구로 오십시오.]\n\n*3번 창구는 당신의 자리였다. 문이 열린 기척도 없었는데, 어느새 의자에 자주색 재킷 차림의 여자가 다리를 꼬고 앉아 있었다. 비녀를 꽂은 머리에서 은은한 향이 났다.*\n\n[[HME0]]\n\n홍 여사: \"어머, 새 얼굴이네. 반갑소, 주무관. 늘 넣던 민원인데… 이번엔 처리해 주려나? 주민등록 생년월일 칸 말이오. 천 년 넘게 지내다 보니 칸이 모자라서.\""},
+    {"title":"📑 한 달째 · 코팅된 원본","directive":"30일째 새벽 두 시 사십일 분, 기록 서고에서 시작. 유저가 서고 맨 아래 칸에서 코팅된 수칙 원본을 막 찾아 9번 줄이 사본과 다르다는 걸 본 참이다(이 장면이 EV2 컷씬). 오다은이 서고로 들어오는데 그녀의 그림자가 반 박자 늦게 따라온다. 새벽 세 시 내선 전화까지 십구 분 남았다. 나머지 다른 줄(11·13)은 아직 확인하지 않은 상태로 둔다.","status":{"🕛 시각":"30일째 · 02:41","📍 장소":"기록 서고","📋 민원":"처리 41건 · 반려 0건","🚫 위반":"1 (수칙 6 — 홍 여사의 약과를 한 입)","🔍 단서":"줄마다 다른 사본의 글씨체 · 서고 맨 아래 칸에서 나는 바람 소리","🧠 정신력":70,"🤝 신뢰도":"반석호 35 · 오다은 25 · 홍 여사 30 · 장태산 40","💭 속마음":"오다은: 세 시가 오기 전에 여기서 나가야 하는데."},"text":"*새벽 두 시 사십일 분. 기록 서고의 공기는 늘 종이 냄새와 습기로 무거웠다. 팀장이 시킨 건 간단한 일이었다. 30년 치 민원철 가운데 '검토 중' 도장이 찍힌 것만 골라 날짜순으로 꽂아 두기.*\n\n[[MP2]]\n\n*맨 아래 칸에 손을 넣었을 때, 바닥이 있어야 할 자리에서 서늘한 바람이 올라왔다. 손끝에 걸린 건 서류철이 아니라 액자 하나였다. 먼지를 닦아 내자 코팅된 종이가 드러났다. 「야간 근무 수칙 — 원본」.*\n\n*당신은 서랍에서 늘 보던 사본을 꺼내 나란히 놓았다. 아홉 번째 줄에서 눈이 멈췄다.*\n\n[[EV2]]\n\n[원본 9. 새벽 세 시 정각의 내선 전화는 받지 않는다.]\n[사본 9. 새벽 세 시 정각에 울리는 내선 전화는 반드시 받고, 먼저 끊지 않는다.]\n\n*등 뒤에서 서고 문이 끼익 열렸다.*\n\n[[ODE0]]\n\n오다은: \"아직 여기 있었어요? 세 시 전에는 창구로 돌아와요. 팀장님이…\" *그녀의 시선이 당신 손의 액자에 닿았다.* \"…그거, 어디서 났어요.\"\n\n*형광등 아래 그녀가 한 걸음 다가왔다. 그런데 바닥의 그림자는 반 박자 늦게, 마지못한 듯 따라왔다.*\n\n*멀리 창구 쪽에서 내선 전화기의 빨간 불이 깜빡이기 시작했다. 아직 울리지는 않았다. 세 시까지 십구 분.*"},
+    {"title":"🗂️ 감사 첫날 · 폐쇄 권고","directive":"15일째 자정 이십 분, 민원실에서 시작. 본청 감사관 서윤재가 감사를 시작하며 폐쇄 권고를 전제로 왔다고 밝힌다. 장태산이 허둥대고, 번호표 기계가 17번을 부르자 우산 귀신이 하필 감사관이 서 있던 3번 창구 의자에 앉는다. 서윤재는 놀라지 않는다 — 그가 무언가를 알고 왔다는 기색만 남기고, 아버지 이야기는 아직 꺼내지 않는다.","status":{"🕛 시각":"15일째 · 00:20","📍 장소":"지하 1층 야간 민원실","📋 민원":"처리 19건","🚫 위반":"0","🔍 단서":"줄마다 다른 사본의 글씨체","🧠 정신력":80,"🤝 신뢰도":"반석호 25 · 오다은 15 · 홍 여사 20 · 장태산 30 · 서윤재 0","💭 속마음":"서윤재: 서른 해 전 기록이 비어 있는 부서. 여기서부터다."},"text":"*자정 이십 분. 첫 민원인이 오기도 전에 민원실 철문이 먼저 열렸다. 들어선 건 손님이 아니라 사람이었다. 다림질 자국이 선명한 차콜 정장, 무테안경, 옆구리에 낀 태블릿.*\n\n[[SYJ0]]\n\n서윤재: \"본청 특수민원 감사실 서윤재입니다. 지금부터 2주간 야간 민원실 운영 실태를 감사합니다. 협조 부탁드립니다.\"\n\n*그는 인사를 받기도 전에 태블릿을 켰다.*\n\n서윤재: \"지난 30년간 전산에 등록된 처리 실적, 0건. 연간 운영비와 인건비는 꼬박꼬박 나갔고, 형광등 교체 내역은 없습니다.\" *안경 너머의 눈이 깜빡이는 형광등에 잠시 머물렀다.* \"솔직히 말씀드리면, 폐쇄 권고를 전제로 왔습니다.\"\n\n*경비실 쪽에서 청원경찰이 헐레벌떡 뛰어 들어왔다.*\n\n[[JTS0]]\n\n장태산: \"가, 감사관님! 거기 서 계시면 안 되는데요! 3번 창구 앞은, 그러니까 동선이, 동선이…\"\n\n*딩동. 번호표 기계가 혼자 켜졌다.*\n\n[딩동. 17번 고객님, 3번 창구로 오십시오.]\n\n*감사관이 서 있던 바로 앞 의자에, 물이 뚝뚝 떨어지는 검은 우산이 저 혼자 기대어 앉았다. 우산 아래로 하얀 손가락 열 개가 천천히 창구 위에 올라왔다.*\n\n*서윤재는 비명을 지르지 않았다. 그는 아주 조용히 태블릿을 내리고, 케이스 안쪽에 끼워 둔 빛바랜 옛 직원증을 엄지로 한 번 쓸었다.*\n\n서윤재: \"…이것도 실적에 넣어도 되는 겁니까.\""}
+  ],
+  "aud": "all"
 },
  {
   "id": "baekya",
@@ -2693,6 +2766,7 @@ function faqGroups() {
       ["설정은 얼마나 길게 쓸 수 있나요?", `<b>페르소나</b> 상세 정보는 ${num(LIMITS.personaDesc)}자, <b>유저노트</b>는 대화방마다 하나씩 ${num(LIMITS.userNote)}자, <b>장기기억</b>은 ${num(PLAN.free.memoMax)}자(PLUS ${num(PLAN.pro.memoMax)}자)까지예요. 장기기억이 한도를 넘으면 자동으로 압축하고 압축 전 내용은 히스토리에 보관해요. 답의 분량은 설정에 적기보다 메뉴의 <b>출력 설정</b>에서 고르는 편이 잘 지켜져요.`],
       ["대화를 저장하거나 옮길 수 있나요?", "대화방 메뉴의 <b>대화 내보내기</b>로 파일로 받거나 <b>대화 복사</b>로 복사할 수 있어요. 로그인하면 대화가 계정에 저장돼 다른 기기에서 이어져요."],
       ["대화 속 그림을 끄고 싶어요.", "<a href=\"#me\">MY</a> → 채팅 설정의 <b>대화 속 장면 이미지 보기</b>를 끄면 돼요. 글자 크기·줄 간격·지문 글꼴도 거기서 바꿔요."],
+      ["세계관 수첩은 뭔가요?", "키워드북이 있는 작품의 대화방 메뉴(☰)에 있는 모음이에요. 대화에 어떤 낱말이 나오면 AI가 그 작품의 설정을 꺼내 쓰고(말풍선 아래 📖), 그 항목이 수첩에 채워져요. 아직 대화에 안 나온 항목은 종류만 보이고 ???로 남아요."],
       ["도감과 !명령어는 뭔가요?", `<a href="#codex">도감</a>은 작품마다 인물 코드·감정 칸·장소·컷씬·명령어를 보여 주는 안내예요. 대화 속 그림 한 장은 <b>인물 코드 + 번호</b> 한 토큰(예: ${esc(ex.code)}${EXAMPLE_SIT} = ${esc(ex.name)} · ${SIT[EXAMPLE_SIT]})이고, AI가 장면마다 골라 넣어요. 대화방 입력창에 <b>!</b>를 치면 쓸 수 있는 명령어 목록이 떠요.`],
       ["!명령어에는 어떤 것이 있나요?", `세 가지예요. ① <b>앱 명령어</b> ${cmds("view")} — AI를 부르지 않고 바로 열려요(하트를 쓰지 않아요). ② <b>연출 명령어</b> ${cmds("direct")} — 어느 작품에서나 AI에게 장면 연출을 부탁해요(한 턴을 써요). ③ <b>작품 명령어</b> — 그 작품에만 있는 이야기 장치예요(도감의 작품 칸에서 확인). 직접 지시하고 싶으면 <b>//</b>로 시작해 적어도 돼요.`],
       ["응답이 중간에 끊겼어요.", "연결이 끊기거나 시간이 너무 오래 걸리면 받은 데까지 남기고 멈춰요. 그 메시지의 <b>다시 시도</b>를 누르면 다시 써요."]
@@ -3080,12 +3154,31 @@ function deleteRoom(id) {
   if (room && room.id === id) setRoom(null);
   go("chats");
 }
-/* ── src/js/ui/room-drawer.js — 대화방 관리 드로어(대화 구성·페르소나·장기기억·유저노트·출력 설정·상태창·갤러리·장소·북마크) — 내보내기·삭제·그림 모으기는 room-tools.js */
+/* ── src/js/ui/worldart.js — 세계관 카드: 상세 페이지의 키워드북 항목별 그림 갤러리(worldArtHTML)와 대화방 드로어의 세계관 수첩(loreSeen·loreCard) — 항목마다… */
+const LORE_KINDS = { person: "인물", creature: "동물·존재", place: "장소", item: "물건", event: "사건", group: "세력", concept: "설정" };
+function loreImg(c, key) { const live = getChar(c.id) || c; return (live.loreImages || {})[key] || ""; }
+function loreCard(c, e, open = true, ph = true) {
+  const key = e.keys[0], kind = LORE_KINDS[e.kind] || "", ref = open ? loreImg(c, key) : "";
+  const pic = ref ? `<button class="wpic" data-wlb="${esc(key)}" aria-label="${esc(key)} 크게 보기">${IMG.tag(ref)}</button>` : open && ph ? `<div class="wpic ph">${esc(key)}</div>` : "";
+  return `<figure class="wcard${open ? "" : " locked"}">${pic}<figcaption><b>${kind ? `<small class="wkind">${kind}</small>` : ""}${open ? esc(key) : "???"}</b>${open ? `<span>${esc(e.text)}</span>` : ""}</figcaption></figure>`;
+}
+function worldArtHTML(c) {
+  const lore = (getChar(c.id) || c).lore || [];
+  return lore.length ? `<div class="wgal">${lore.map((e) => loreCard(c, e)).join("")}</div>` : "";
+}
+function loreSeen(r, lore) {
+  const used = new Set();
+  (r.msgs || []).forEach((m) => (m.alts || []).forEach((a) => (a.lore || []).forEach((k) => used.add(k))));
+  const out = new Set();
+  lore.forEach((e, i) => { if (e.always || e.keys.some((k) => used.has(k))) out.add(i); });
+  return out;
+}
+/* ── src/js/ui/room-drawer.js — 대화방 관리 드로어(대화 구성·페르소나·장기기억·유저노트·출력 설정·상태창·갤러리·장소·북마크·세계관 수첩) — 내보내기·삭제·그림 모으기는 room-tools.js, 세계관… */
 function openRoomDrawer(view = "main") {
   closeOverlays();
   const r = room, c = r.char;
   const ov = document.createElement("div"); ov.className = "overlay drawer-ov";
-  const titles = { main: "대화방 관리", persona: "내 페르소나", memory: "장기기억", note: "유저노트", output: "출력 설정", status: "상태창", gallery: "갤러리", places: "장소", bookmarks: "북마크" };
+  const titles = { main: "대화방 관리", persona: "내 페르소나", memory: "장기기억", note: "유저노트", output: "출력 설정", status: "상태창", gallery: "갤러리", places: "장소", bookmarks: "북마크", lore: "세계관 수첩" };
   ov.innerHTML = `<aside class="drawer" role="dialog" aria-label="${titles[view]}"><div class="sheet-head">${view !== "main" ? `<button class="icon-btn" id="dBack" aria-label="뒤로">${ICON.back}</button>` : ""}<h2>${titles[view]}</h2><button class="icon-btn" data-x aria-label="닫기">${ICON.close}</button></div><div id="dBody"></div></aside>`;
   document.body.append(ov);
   ov.addEventListener("click", (e) => { if (e.target === ov || e.target.closest("[data-x]")) ov.remove(); });
@@ -3116,6 +3209,7 @@ function openRoomDrawer(view = "main") {
         <div class="grp"></div>
         <button data-v="status">상태창</button>
         <button data-v="gallery">갤러리<span class="v">${galleryItems(r).length}장</span></button>
+        ${(liveWork.lore || []).length ? `<button data-v="lore">세계관 수첩<span class="v">${loreSeen(r, liveWork.lore).size} / ${liveWork.lore.length}</span></button>` : ""}
         <button data-v="bookmarks">북마크<span class="v">${(r.bookmarks || []).length}개</span></button>
         ${guide ? `<div class="grp"></div><button id="mGuide">플레이 가이드<span class="v">제작자의 안내</span></button>` : ""}
       </div>
@@ -3259,6 +3353,14 @@ function openRoomDrawer(view = "main") {
     body.innerHTML = list.length ? list.map((m) => `<button class="bm" data-j="${m.id}"><b>${m.role === "ai" ? esc(speakerName(r)) : esc(r.persona.name)}</b>${esc(curText(m).replace(IMG_TAG_RE, "").replace(/[*"]/g, "").replace(/\s+/g, " ").slice(0, 120))}…</button>`).join("")
       : `<div class="empty">북마크한 장면이 없어요. 메시지 아래 ☆ 북마크를 눌러 담아 두세요.</div>`;
     $$("[data-j]", body).forEach((b) => b.onclick = () => { ov.remove(); jumpTo(b.dataset.j); });
+  }
+  else if (view === "lore") {
+    const live = getChar(c.id) || c, lore = live.lore || [], seen = loreSeen(r, lore);
+    body.innerHTML = lore.length ? `<p class="note" style="margin-bottom:10px">이 대화에서 펼친 세계관 ${seen.size} / ${lore.length}. 대화에 그 낱말이 나오면 AI가 설정을 꺼내 쓰고(말풍선 아래 📖), 여기에 채워져요.</p>
+      <div class="wgal lore-book">${lore.map((e, i) => loreCard(live, e, seen.has(i), false)).join("")}</div>`
+      : `<div class="empty">이 작품에는 키워드북이 없어요.</div>`;
+    IMG.hydrate(body);
+    $$("[data-wlb]", body).forEach((b) => b.onclick = () => { const im = $("img", b); if (im && im.src) lightbox(im.src); });
   }
 }
 /* ── src/js/ui/model-sheet.js — 모델 선택 시트: 모델마다 턴당 하트·무료 턴 안내, 앱 기본 추천(스토리 '추천')과 작품이 직접 고른 모델의 '권장' 배지(work.js recommend) */
@@ -3755,14 +3857,6 @@ function topbar(extra = "") {
 }
 function bindGo(root) { $$("[data-go]", root).forEach((b) => b.onclick = () => go(b.dataset.go)); }
 on("rooms", renderRailRecent); on("wallet", renderWalletChips); on("route", route);
-/* ── src/js/ui/worldart.js — 세계관 일러스트 보기: 상세 페이지의 키워드북 항목별 그림 갤러리(worldArtHTML) — 항목마다 종류(인물·장소…)·이름·설명과 그림(원래 비율 그대로) */
-const LORE_KINDS = { person: "인물", creature: "동물·존재", place: "장소", item: "물건", event: "사건", group: "세력", concept: "설정" };
-function loreImg(c, key) { const live = getChar(c.id) || c; return (live.loreImages || {})[key] || ""; }
-function worldArtHTML(c) {
-  const lore = (getChar(c.id) || c).lore || [];
-  if (!lore.length) return "";
-  return `<div class="wgal">${lore.map((e) => { const ref = loreImg(c, e.keys[0]), kind = LORE_KINDS[e.kind] || ""; return `<figure class="wcard">${ref ? `<button class="wpic" data-wlb="${esc(e.keys[0])}" aria-label="${esc(e.keys[0])} 크게 보기">${IMG.tag(ref)}</button>` : `<div class="wpic ph">${esc(e.keys[0])}</div>`}<figcaption><b>${kind ? `<small class="wkind">${kind}</small>` : ""}${esc(e.keys[0])}</b><span>${esc(e.text)}</span></figcaption></figure>`; }).join("")}</div>`;
-}
 /* ── src/js/ui/detail.js — 작품 상세 페이지: 표지·소개·플레이 가이드·세계관 일러스트·등장인물(누르면 도감 인물 시트)·장소·컷씬·명령어·시작 상황 → 새 대화 시작 */
 function viewDetail(id) {
   const c = normalizeChar(getChar(id)), v = $("#view");

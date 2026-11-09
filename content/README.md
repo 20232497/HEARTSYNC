@@ -34,7 +34,8 @@ content/
 │  ├─ godseats/work.js        신님들, 관전 매너 좀
 │  ├─ yunhaera/work.js
 │  └─ hangyeoul/work.js
-└─ all/                       전체(지금은 비어 있음)
+└─ all/                       전체(남녀 혼성)
+   └─ minwon/work.js          야간 민원실 B1 — places·cuts·commands·hidden·폼(of)을 모두 쓰는 예시
 ```
 
 - **작품 폴더**: `work.js`가 든 폴더. 폴더 이름 = 작품 `id`(영문 소문자·숫자·`-`·`_`).
@@ -164,6 +165,7 @@ content/<f|m|all>/[<줄>/]<id>/images/
 | daeyeon 대연궁 검시록 | IHW 이화 · SRY 설련 · JOK 정옥 · WLH 월하 · DNB 단비 |
 | baekya 백야호 | SHJ 서하진 · HRN 홍레나 · CYR 차유리 · MSO 미소 · YDG 윤도경 |
 | sipjeol 십절곡 | NGS 남궁설 · DSS 당소소 · HWN 혜원 · MKR 묵란 · HRN 화린 |
+| minwon 야간 민원실 B1 | BSH 반석호 · ODE 오다은 · HME 홍 여사(HMF 본모습 — 폼) · JTS 장태산 · SYJ 서윤재 |
 | 1:1 | BY 백연 · KAEL 카엘 · SDY 서도윤 · HGU 한겨울 · YHR 윤해라 |
 
 한국 이름은 성·이름 첫 자음(한서윤 → HSY), 외국 이름은 짧은 로마자(카시안 → KAS). 작품 안에서만 안 겹치면 돼요(다른 작품의 SHJ·HRN은 다른 사람).
