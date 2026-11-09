@@ -71,4 +71,75 @@
 
 ## 라이선스
 
-Pony 계열(Run七八造와 두 LoRA)은 **수익 모델 서비스 안에서 돌리면** PurpleSmart의 허가가 필요합니다. 관리자가 만들어 정적 그림으로 싣는 경우의 해석도 PurpleSmart 문의로 확인할 것(2026-11 기준 문의 중). 모델별 조건은 `docs/COMMERCIALIZATION.md` §8.
+Pony 계열(Run七八造와 두 LoRA)은 **수익 모델 서비스 안에서 돌리면** PurpleSmart의 허가가 필요합니다. 관리자가 만들어 정적 그림으로 싣는 경우의 해석도 PurpleSmart에 물어 확인해야 합니다. **문의 메일은 아직 보내지 않았고**, 초안은 아래 부록에 있습니다. 모델별 자세한 조건은 `docs/COMMERCIALIZATION.md` §8에 있습니다.
+
+> 이 절과 부록은 화풍 작업 인계 지침서(PR #36, 2026-11-05)에서 옮겨 왔습니다. 그 지침서에 있던 앱 안 생성 절차(관리자 도구·비교 하네스)는 2026-11-08 정리 때 코드가 빠져서 옮기지 않았습니다. 원문은 `docs/style-handoff` 브랜치에 남아 있습니다.
+
+### 그림 원칙(바꾸지 않기)
+
+1. **그림은 관리자만 만든다.** 관리자가 앱 밖에서 만들고 골라 `content/<aud>/<id>/images/`에 싣습니다(커밋 → 배포). 이용자는 보기만 하고, 이용자가 그림을 만드는 기능은 없습니다.
+   - 이유: Pony 계열 모델은 수익 모델 앱 안에서 돌리는 것이 금지(허가 필요)지만, **만든 그림을 파는 것은 허용**됩니다. 미리 만들어 싣는 방식은 뒤쪽에 해당합니다.
+   - 이용자 요청에 맞춰 서버가 그때그때 그리면 다시 '생성 서비스'가 됩니다. 그렇게 하지 않습니다.
+2. **YabaL Mix로 만든 그림은 상업적으로 쓸 수 없습니다**(그림 판매 X). 출시 전에 모두 바꿔야 할 대상입니다. 새 화풍은 처음부터 **그림 판매가 허용되는 모델**로 만듭니다.
+3. **모든 인물은 성인입니다.** 장면 태그에 `adult woman, mature female` 또는 `adult man`을 넣고, 기본 수위는 safe입니다.
+4. **참고 그림은 공개 저장소에 절대 커밋하지 않습니다.** 견본은 우리가 만든 384px 그림(`samples/`)만 씁니다.
+5. **Runware 키는 채팅에 붙여 넣지 않고**, 저장소에도 넣지 않습니다.
+
+### 모델별 상업 조건 요약
+
+| 모델 | 그림 판매 | 앱 안 생성 | 비고 |
+|---|---|---|---|
+| Run七八造 v2 · Add More Details · KoreanAI | O | Pony 라이선스상 허가 필요 | 남성향 일상(이 화풍) |
+| YabaL Mix | **X** | X | 바꿔야 할 대상(이 화풍의 `noHumans`) |
+| Hassaku XL | O | O | Illustrious 계열(비공개 병합 수익화 금지) |
+| WAI · semILust | O | X | |
+| **Animagine XL 4.0** | O | O | **조건이 가장 깔끔**(CreativeML Open RAIL++-M) |
+
+## 부록. PurpleSmart 문의 메일(보내기 전 서명에 이름·이메일 넣기)
+
+3절은 2026-11-08 정리에 맞춰 '앱 밖 도구'로 고쳤습니다. 그 밖의 내용은 지침서 원문 그대로입니다.
+
+```
+To: contact@purplesmart.ai
+Subject: Commercial use inquiry: Pony Diffusion V6 XL derivatives in a Korean character chat app (HEART SYNC)
+
+Hello PurpleSmart team,
+
+I am the developer of HEART SYNC, an independent character chat and interactive story web app being developed in South Korea. I would like to confirm the license terms for Pony Diffusion V6 XL and models based on it before our commercial launch, and ask for permission where it is needed.
+
+1. About the service
+
+- HEART SYNC is a web app where users read and chat with original characters in illustrated story worlds.
+- We plan to make money through in-app currency and a monthly membership (about 9,900 KRW, roughly 7 USD). There is no paid feature yet, and the app is still in development.
+- All characters are adults. We block sexual content involving minors, or characters who look like minors, in every setting. Images are generated as safe-for-work by default.
+
+2. Models we use (all based on Pony Diffusion V6 XL, run through the Runware API)
+
+- Run七八造 v2 (checkpoint, Civitai model 548016)
+- Add More Details (LoRA, Civitai model 390892)
+- KoreanAI Style (LoRA, Civitai model 690861)
+
+3. How we generate images now
+
+End users cannot generate images in the app. Only our administrator (me) generates images, with a separate tool outside the app. I review them by hand, then ship the chosen ones with the app as static files (character portraits, world illustrations and cover art). Users only view these pre-made images. No Pony-based model runs in response to a user request.
+
+4. Questions
+
+Q1. Under your license, may we use images that our administrator generates with the models above (as described in section 3) commercially inside a paid app? This includes showing them to paying users and using them in marketing.
+
+Q2. Is it allowed to generate these images through a third-party paid inference API (Runware), or should we run the models on our own hardware?
+
+Q3. In the future we may let users generate images on demand inside the app as a paid feature. Would this need a separate commercial license from you? If so, what are the terms and the process?
+
+Q4. Could we use images we generated with these models as training data for a style LoRA on a different base model (for example, Animagine XL 4.0)?
+
+Q5. Civitai lists Pony Diffusion V6 XL under a modified Fair AI Public License 1.0-SD, but the Hugging Face page lists CreativeML OpenRAIL-M. Which license applies, and does it also cover the derivative checkpoint and LoRAs above?
+
+If you need more details, such as screenshots of the app or a description of our safety filters, I will be glad to send them. Thank you for your time and for your work on Pony Diffusion.
+
+Best regards,
+[Your name]
+HEART SYNC developer
+[your email]
+https://20232497.github.io/HEARTSYNC/
+```
