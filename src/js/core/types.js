@@ -105,6 +105,7 @@
  * @property {string} [artTags] 그 세계관의 영문 낱말(시대·장소·분위기) — 앱은 쓰지 않음(앱 밖에서 표지·세계관 일러스트를 만들 때)
  * @property {Opening[]} openings
  * @property {Aud} [aud] 오리지널은 폴더가 정함, 없으면 guessAud
+ * @property {"general"|"adult"} [track] 대화 경로(ai/models.js trackOf) — 없으면 general(Claude). adult는 서버 대화 관문 뒤의 외부 모델로만 가고, 공개 저장소의 content/에는 둘 수 없음(빌드가 막음). 방을 만들 때 사본(r.char)에 굳음
  * @property {string} [row] 홈 가로 줄(폴더 이름)
  * @property {ImagesMap} [images] 작품 폴더 images/의 그림
  * @property {ImageRef} [img] 대표 일러스트(표지, images/cover.*)
@@ -240,7 +241,7 @@
  * @property {string} cat 홈 장르 필터(ui/home.js)
  * @property {string} q 홈 검색어
  */
-/** @typedef {{ anthropicUrl: string, supabaseUrl?: string, supabaseKey?: string, serverKeys?: boolean }} Config window.HEARTVERSE_CONFIG로 덮는 연결 설정 — serverKeys면 프록시가 키를 가짐 */
+/** @typedef {{ anthropicUrl: string, supabaseUrl?: string, supabaseKey?: string, serverKeys?: boolean, chatUrl?: string }} Config window.HEARTVERSE_CONFIG로 덮는 연결 설정 — serverKeys면 프록시가 키를 가짐, chatUrl은 성인 트랙의 서버 대화 관문(비면 꺼짐) */
 /** @typedef {{ role: "system"|"user"|"assistant", content: string }} LLMMessage AI 요청 메시지(첫 메시지 = 시스템) */
 /**
  * llm() 옵션.
@@ -250,10 +251,12 @@
  * @property {AbortSignal} [signal] 사용자 취소
  * @property {boolean} [json=false] 응답을 JSON으로 파싱해 돌려줌
  * @property {number} [maxTokens=2000]
+ * @property {Room|null} [room] 이 호출이 속한 방 — 트랙(일반·성인)에 따라 경로가 갈림. 방과 상관없는 호출만 뺌
  */
 /**
  * AI 호출이 던지는 오류. code → 안내 문구는 ai/llm.js errCopy.
  * code: cancelled(사용자 취소) · timeout · refused · rate_limited · no_engine · bad_key · upstream_error · invalid_json · session_expired
+ * 성인 트랙(서버 대화 관문): no_gateway · not_configured · login · adult_required · minor_blocked · too_many
  * @typedef {Object} LLMError
  * @property {string} code
  * @property {string} [text] 끊기기 전까지 받은 본문

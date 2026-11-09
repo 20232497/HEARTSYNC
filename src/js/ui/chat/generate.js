@@ -111,7 +111,7 @@ export async function generate(target, q, direction = "", isEdit = false) {
     else { renderLog(stick && autoScroll()); syncJump(); }
   };
   try {
-    const text = await llm(input, { tier: MODELS[model].tier, signal: ctl.signal, onText: ({ text }) => show(text), maxTokens: (LEN[r.set.len] || LEN.mid).tokens });
+    const text = await llm(input, { tier: MODELS[model].tier, signal: ctl.signal, onText: ({ text }) => show(text), maxTokens: (LEN[r.set.len] || LEN.mid).tokens, room: r });
     show(text);
     const parsed = parseState(text, c, msg.statusBefore), prevMsgs = r.msgs.slice(0, r.msgs.indexOf(msg));
     const bodyText = msg.alts[altIdx].text ? addCastImages(msg.alts[altIdx].text, r, prevMsgs, said) : "(빈 응답)";

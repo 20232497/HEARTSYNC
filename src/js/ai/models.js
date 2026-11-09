@@ -4,7 +4,13 @@ import { FREE_DAILY } from "../core/constants.js";
 /** @typedef {import("../core/types.js").ModelKey} ModelKey */
 /** @typedef {import("../core/types.js").Tier} Tier */
 
-/** 모델 등급 표 — tier는 llm()의 모델(quick Haiku · default Sonnet · complex Opus), base는 기본가(하트), memStep은 기억력 10턴마다 더하는 값. @type {Record<ModelKey, { tier: Tier, name: string, badge: string, desc: string, base: number, memStep: number }>} */
+/**
+ * 방의 트랙(대화 경로): "general" 일반 = Claude(Anthropic) · "adult" 성인 = 서버 대화 관문 뒤의 외부 모델(모델 이름은 서버 설정이 가짐).
+ * 작품의 track이 방을 만들 때 사본(r.char.track)에 굳어 방이 사는 동안 바뀌지 않음 — 한 방 안에서 모델을 오가지 않고, 그 방의 모든 AI 호출(본문·요약·추천)이 같은 경로로 감(ai/llm.js).
+ * @param {{ char?: { track?: string } }|null|undefined} r @returns {"general"|"adult"}
+ */
+export function trackOf(r) { return r && r.char && r.char.track === "adult" ? "adult" : "general"; }
+/** 모델 등급 표 — tier는 llm()의 모델(일반 트랙: quick Haiku · default Sonnet · complex Opus, 성인 트랙: 서버 관문이 같은 세 등급에 모델을 붙임), base는 기본가(하트), memStep은 기억력 10턴마다 더하는 값. @type {Record<ModelKey, { tier: Tier, name: string, badge: string, desc: string, base: number, memStep: number }>} */
 export const MODELS = {
   lite:   { tier: "quick",   name: "라이트", badge: "매일 무료 " + FREE_DAILY + "턴", desc: "빠르고 가벼운 일상 대화", base: 1, memStep: 0 },
   story:  { tier: "default", name: "스토리", badge: "추천", desc: "풍부한 묘사와 안정적인 캐릭터 연기", base: 4, memStep: 1 },

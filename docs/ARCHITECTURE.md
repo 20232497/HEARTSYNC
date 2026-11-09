@@ -71,6 +71,7 @@ CSS는 `src/css/`의 12조각(10-base … 72-help)이 두 빌드 공통이고, �
 
 - **작품 만들기(스튜디오)·커뮤니티 공개는 없다.** 작품은 `content/`에 폴더로 더한다(content/README.md).
 - **성인 기능은 서버에 다시 세운다.** 브라우저가 사용자 키로 AI를 부르는 동안의 판정은 브라우저 안의 일이라 진짜 관문이 될 수 없다. `docs/edge/verify-adult.ts`(휴대폰 성인 인증 Edge Function)와 Supabase 표 `adult_checks`는 그때 쓰려고 남겨 두었고, 지금 앱은 부르지 않는다(docs/ROADMAP.md). 미성년 보호 규칙(`core/safety.js`의 minorFlags·minorHint)은 그대로 있고, 빌드의 작품 검사도 쓴다.
+- **대화 트랙(2026-11-09).** 방의 트랙은 작품 사본 `r.char.track`으로 굳는다(`ai/models.js` `trackOf`). `ai/llm.js`의 `llm(…, { room })`이 일반 트랙은 Anthropic으로, 성인 트랙은 서버 대화 관문(`CFG.chatUrl` → `docs/edge/chat.ts`)으로만 보낸다 — 두 경로는 서로 대신하지 않고, 스트림 해석만 `ai/stream.js`의 `anthropicEvent`·`openaiEvent`로 갈린다. 관문은 로그인 → 성인 인증(`adult_checks`) → 미성년 암시(`core/safety.js` `messagesMinorHint` — 앱과 같은 함수) → 하루 한도(`chat_usage`) → 모델 호출 순서로 판정하고, 모델 이름·키·성인 트랙 머리말은 서버 환경 변수에만 둔다. `content/`의 작품은 일반 트랙만 둘 수 있다(빌드 검사).
 - 다음: 작품마다 그림을 만들어 `content/`에 싣기, 실린 그림이 많아지면 `images/` 폴더 크기와 첫 화면 로딩(lazy)을 보기.
 
 ## 6. 외부 점검(Gemini 제안, 2026-11-05) 반영 여부

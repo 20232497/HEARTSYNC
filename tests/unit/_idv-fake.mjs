@@ -1,6 +1,6 @@
-// 시험 도우미(시험 목록에는 없음): 휴대폰 성인 인증의 서버 쪽. 함수는 진짜 코드(docs/edge/verify-adult.ts)를 그대로 읽어 돌리고,
-// 그 바깥(인증 서버·adult_checks 표·PortOne API)만 메모리로 흉내 낸다 — 표의 규칙은 docs/supabase.sql과 같음(앱은 본인 것 읽기만, 쓰기는 service 키만).
-// 단위 테스트(tests/unit/verify-adult.test.mjs)가 쓴다. 실제 서버로는 아무것도 안 감.
+// 시험 도우미(시험 목록에는 없음): 서버 쪽 함수(docs/edge/ — 휴대폰 성인 인증 verify-adult.ts · 대화 관문 chat.ts). 함수는 진짜 코드를 그대로 읽어 돌리고,
+// 그 바깥(인증 서버·adult_checks 표·하루 한도 chat_usage·PortOne API·모델 서버)만 메모리로 흉내 낸다 — 표의 규칙은 docs/supabase.sql과 같음(앱은 본인 것 읽기만, 쓰기는 service 키만).
+// 단위 테스트(tests/unit/verify-adult.test.mjs · chat-gate.test.mjs)가 쓴다. 실제 서버로는 아무것도 안 감.
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -8,10 +8,10 @@ import { fileURLToPath } from "node:url";
 export const SB_URL = "https://mblvphojbmxiuqnlxisi.supabase.co";
 export const A = "aaaaaaaa-0000-4000-8000-00000000000a", B = "bbbbbbbb-0000-4000-8000-00000000000b";
 export const SECRET = "sb_secret_fake", PUBLISHABLE = "sb_publishable_fake", PORTONE_SECRET = "portone-secret-fake";
-const file = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "docs", "edge", "verify-adult.ts");
+const edgeDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "docs", "edge");
 
 /** 함수 파일을 그대로 불러옴(TS 문법 없이 쓴 파일이라 Node가 바로 읽음 — 어느 Node 버전에서나 되게 data: 주소로). */
-export const loadEdge = () => import("data:text/javascript;base64," + fs.readFileSync(file).toString("base64"));
+export const loadEdge = (name = "verify-adult") => import("data:text/javascript;base64," + fs.readFileSync(path.join(edgeDir, name + ".ts")).toString("base64"));
 
 const res = (status, body) => new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
 const PERSON = { name: "홍길동", phoneNumber: "01012345678", ci: "CI-VALUE", di: "DI-VALUE", gender: "MALE" };
@@ -20,6 +20,9 @@ export function fakeWorld(envOver = {}) {
   const env = { SUPABASE_URL: SB_URL, SUPABASE_SECRET_KEYS: JSON.stringify({ default: SECRET }), SUPABASE_PUBLISHABLE_KEYS: JSON.stringify({ default: PUBLISHABLE }), PORTONE_API_SECRET: PORTONE_SECRET, ...envOver };
   const w = {
     rows: [], calls: [], tokens: { tokA: A, tokB: B }, noTable: false,
+    // 대화 관문: 모델 서버가 돌려줄 것({ status, sse } · { throws: true }), 계정별 오늘 호출 수, 한도 함수가 없는 서버 흉내
+    upstream: { status: 200, sse: 'data: {"choices":[{"delta":{"content":"안녕"}}]}\n\ndata: [DONE]\n\n' }, usage: {}, noUsage: false,
+    modelCalls: () => w.calls.filter((c) => c.url.includes("openrouter.ai")),
     // PortOne이 돌려줄 값: { status, birthDate, type }(type 없으면 channel 칸도 없음) · { http: 숫자 } · { throws: true }
     portone: { status: "VERIFIED", birthDate: "1990-05-05", type: "TEST" },
     env: (k) => env[k],
@@ -27,7 +30,7 @@ export function fakeWorld(envOver = {}) {
     portoneCalls: () => w.calls.filter((c) => c.url.includes("api.portone.io")),
     async fetch(url, opt = {}) {
       const u = new URL(url), h = new Headers(opt.headers || {}), m = opt.method || "GET";
-      w.calls.push({ url: String(url), method: m, headers: Object.fromEntries(h) });
+      w.calls.push({ url: String(url), method: m, headers: Object.fromEntries(h), body: opt.body });
       const bearer = (h.get("authorization") || "").replace(/^Bearer\s+/i, "");
       if (u.host === "api.portone.io") {
         if (w.portone.throws) throw new TypeError("network");
@@ -36,6 +39,17 @@ export function fakeWorld(envOver = {}) {
         const id = decodeURIComponent(u.pathname.split("/").pop()), p = w.portone;
         return res(200, { status: p.status, id: p.id || id, ...(p.type ? { channel: { type: p.type, pgProvider: "PG_PROVIDER_KCP_V2", pgMerchantId: "AO6R1" } } : {}),
           ...(p.status === "VERIFIED" ? { verifiedCustomer: { ...PERSON, ...(p.birthDate ? { birthDate: p.birthDate } : {}) } } : {}) });
+      }
+      if (u.host === "openrouter.ai") {
+        if (w.upstream.throws) throw new TypeError("network");
+        if (w.upstream.status !== 200) return res(w.upstream.status, { error: { message: "x" } });
+        return new Response(w.upstream.sse, { status: 200, headers: { "Content-Type": "text/event-stream" } });
+      }
+      if (u.pathname === "/rest/v1/rpc/bump_chat_usage") { // service 키만 부를 수 있음(docs/supabase.sql의 grant)
+        if (w.noUsage) return res(404, { code: "PGRST202", message: "Could not find the function" });
+        if (![SECRET, env.SUPABASE_SERVICE_ROLE_KEY].includes(h.get("apikey")) || w.tokens[bearer]) return res(403, { code: "42501", message: "permission denied" });
+        const id = JSON.parse(opt.body || "{}").uid;
+        return res(200, (w.usage[id] = (w.usage[id] || 0) + 1));
       }
       if (u.pathname === "/auth/v1/user") {
         if (![PUBLISHABLE, SECRET, env.SUPABASE_SERVICE_ROLE_KEY].includes(h.get("apikey")) || !w.tokens[bearer]) return res(401, { msg: "invalid token" });

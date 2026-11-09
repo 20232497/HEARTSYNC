@@ -142,3 +142,38 @@ test("오리지널 작품은 어느 시작 상황에서도 막히지 않는다(c
     }
   }
 });
+
+/* 서버 대화 관문의 판정(messagesMinorHint): 시스템 글은 과거 이야기를 빼고, 대화는 그대로 */
+test("messagesMinorHint: 시스템 글은 settingHint, 대화는 minorHint", async () => {
+  const { messagesMinorHint } = await import("../../src/js/core/safety.js");
+  const sys = (content) => ({ role: "system", content }), u = (content) => ({ role: "user", content }), a = (content) => ({ role: "assistant", content });
+  assert.equal(messagesMinorHint([sys("서윤(25, 여). 중학생 때 이 동네로 왔다."), u("안녕")]), false);
+  assert.equal(messagesMinorHint([sys("서윤(25, 여). 실은 고등학교 2학년이다."), u("안녕")]), true);
+  assert.equal(messagesMinorHint([sys("서윤(25, 여)."), u("중학생 때 어땠어?")]), true); // 대화는 과거 이야기 꼴도 그대로 봄(roomMinorHint ②와 같음)
+  assert.equal(messagesMinorHint([sys("서윤(25, 여)."), u("안녕"), a("*교복 차림의 소녀가 들어왔다.*"), u("인사해")]), true);
+  assert.equal(messagesMinorHint([sys("서윤(25, 여)."), u('[현재 상태창]\n{"나이":17}\n\n안녕')]), true);
+  assert.equal(messagesMinorHint([sys("서윤(25, 여)."), u('[현재 상태창]\n{"호감도":17,"관계":"서윤 12 · 하린 7"}\n\n안녕')]), false);
+  // roomMinorHint보다 엄한 곳: 서버는 키워드북 항목의 종류를 몰라 동물의 나이도 막음
+  assert.equal(messagesMinorHint([sys("- 보리: 마당의 늙은 진돗개 보리(14살)."), u("안녕")]), true);
+  for (const empty of [null, undefined, [], [null], "x"]) assert.equal(messagesMinorHint(empty), false);
+});
+test("오리지널 작품의 실제 요청(프롬프트 틀 포함)은 서버 판정에 막히지 않고, 성인 트랙 방의 프롬프트에만 암전 지시가 빠진다", async () => {
+  const { messagesMinorHint } = await import("../../src/js/core/safety.js");
+  const { buildInput } = await import("../../src/js/ai/prompt/input.js");
+  const { ORIGINALS } = await import("../../src/js/content/index.js");
+  const { newRoom } = await import("../../src/js/core/rooms.js");
+  const persona = { id: "p1", name: "유저", memo: "", desc: "", img: "" };
+  assert.ok(ORIGINALS.length >= 12);
+  for (const c of ORIGINALS) for (let i = 0; i < c.openings.length; i++) for (const track of [undefined, "adult"]) {
+    const r = newRoom(JSON.parse(JSON.stringify(c)), i, persona);
+    // 동물의 나이는 서버 판정이 막음(위 시험) — 여기서는 프롬프트 틀이 걸리지 않는지만 봄. id를 바꿔 프롬프트가 최신 작품(getChar)이 아니라 이 사본의 키워드북을 읽게 함
+    r.char.id = "t-" + c.id; r.char.lore = (r.char.lore || []).filter((e) => e.kind !== "creature");
+    if (track) r.char.track = track;
+    r.msgs.push({ id: "u1", role: "user", text: "안녕, 오늘은 뭘 할까?" });
+    const input = buildInput(r, r.msgs.length, r.status);
+    const sent = [{ role: "system", content: input[0].content }, ...input.slice(1)]; // ai/llm.js가 관문에 보내는 모양
+    assert.equal(messagesMinorHint(sent), false, `${c.id} · ${c.openings[i].title} · ${track || "general"}`);
+    assert.equal(/암전/.test(input[0].content), !track, `${c.id}: 암전 지시는 일반 트랙에만`);
+    assert.match(input[0].content, /모든 등장인물은 성인이다/);
+  }
+});
