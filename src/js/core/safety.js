@@ -1,4 +1,4 @@
-/* 안전: 미성년 인물 막기(minorFlags·minorHint·settingHint·roomMinorHint) — 순수 함수라 빌드의 작품 검사와 단위 테스트가 그대로 import */
+/* 안전: 미성년 인물 막기(minorFlags·minorHint·settingHint·roomMinorHint·messagesMinorHint) — 순수 함수라 빌드의 작품 검사와 단위 테스트가 그대로 import */
 /** @typedef {import("./types.js").CastMember} CastMember */
 /** @typedef {import("./types.js").LoreEntry} LoreEntry */
 /** @typedef {import("./types.js").Room} Room */
@@ -66,4 +66,15 @@ export function roomMinorHint(r, lore = r.char?.lore) {
   if (minorHint([r.userNote, ...Object.entries(r.status || {}).map(([k, v]) => k + ": " + v), ...msgs.slice(-((r.set?.mem || 10) * 2 + 1)).map(text)].join("\n"))) return true;
   return settingHint([c.title, c.oneLiner, c.desc, ...(c.tags || []), c.persona, c.world, c.speech, c.secret, r.directive, r.persona?.memo, r.persona?.desc, r.memory,
     ...(lore || []).filter((e) => e.kind !== "creature").flatMap((e) => [...(e.keys || []), e.text]), ...msgs.filter((m) => m.role === "user").map(text)].join("\n"));
+}
+/**
+ * AI에 보낼 메시지 묶음의 미성년 암시 — 서버 대화 관문(docs/edge/chat.ts)이 성인 트랙 요청마다 부르는 판정. 방 구조를 모르는 서버가 roomMinorHint와 같은 두 겹으로 봄:
+ * 시스템 글(작품 설정·키워드북·유저 캐릭터·장기기억 — 오래 남는 글)은 과거 이야기를 빼고(settingHint), 대화(모델이 이번 턴에 그대로 읽는 글)는 그대로(minorHint).
+ * 대화에 붙어 오는 상태창 JSON("나이":17)도 잡히게 큰따옴표를 빼고 봄. roomMinorHint보다 엄한 곳 하나: 서버는 키워드북 항목의 종류를 몰라 동물의 나이(진돗개 14살)도 막음 —
+ * 성인 트랙 작품은 19 미만의 나이를 어디에도 적지 않기(작품을 실을 때 이 함수로 미리 봄).
+ * @param {{ role: string, content: string }[]} messages @returns {boolean}
+ */
+export function messagesMinorHint(messages) {
+  const list = Array.isArray(messages) ? messages.filter(Boolean) : [], text = (m) => String(m.content || "");
+  return settingHint(list.filter((m) => m.role === "system").map(text).join("\n")) || minorHint(list.filter((m) => m.role !== "system").map(text).join("\n").replace(/"/g, ""));
 }

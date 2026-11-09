@@ -513,6 +513,8 @@ function checkWork(mod, { aud, row, id, wrel, R, errors, warnings }) {
     }
   });
 
+  // 공개 저장소의 작품은 일반 트랙만 — 성인 트랙 작품은 서버 쪽 비공개 데이터로만 둠(CLAUDE.md 원칙)
+  if (c.track !== undefined && c.track !== "general") e(`track: "${c.track}" — content/의 작품은 일반 트랙만 둘 수 있어요(track 칸을 지우거나 "general")`);
   // 앱과 같은 규칙: 미성년 인물 막기(minorFlags), 출연진 성별로 짐작한 aud(guessAud) — 다른 오류가 있어도 늘 검사
   if (!cast.length || !cast.every(isObj)) return c;
   const probe = { ...c, cast };
