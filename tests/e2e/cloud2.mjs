@@ -176,6 +176,17 @@ try {
   await C.page.click("#mYes"); await C.page.waitForTimeout(2000);
   res.merged = { local: await C.page.evaluate(() => S.rooms.map((r) => r.charId)), server: (db.rows.find((r) => r.key === "rooms") || {}).value?.map((r) => r.charId), room3Body: db.rows.some((r) => r.key === "room-" + room3), aud: await C.page.evaluate(() => S.settings.audience) };
   await C.browser.close();
+  // ---------- 또 다른 기기: 대화는 없고 찜만 있는 게스트가 같은 계정에 로그인 → 찜도 합칠지 물음, '계정 것만 쓰기'를 고르면 이 기기의 찜은 버리고 계정의 찜만(날짜 관문은 지난 것으로)
+  const D = await device(chromium, "Desktop Chrome");
+  await D.page.goto(url, { waitUntil: "load" }); await D.page.waitForTimeout(900);
+  await D.page.click("#lguest"); await D.page.waitForTimeout(300); await D.page.click(".overlay [data-aud=all]");
+  await D.page.evaluate(() => { SHELF.syncFrom = "2000-01-01"; toggleLike("daeyeon"); location.hash = "login"; }); await D.page.waitForTimeout(400);
+  await D.page.fill("#lmail", "tester@example.test"); await D.page.fill("#lpw", "test-pass-1"); await D.page.click("#lgo"); await D.page.waitForTimeout(1500);
+  const likeSheet = await D.page.evaluate(() => document.querySelector(".overlay h2")?.textContent + " / " + document.querySelector(".overlay .sub")?.textContent);
+  await D.page.click("#mNo"); await D.page.waitForTimeout(2000);
+  res.likeMerge = { sheet: likeSheet, local: await D.page.evaluate(() => likedIds().slice().sort()), server: Object.keys((shelfRow() || { likes: {} }).likes).sort() };
+  if (!/^이 기기의 찜을 합칠까요\? \/ .*찜한 작품 1개를/.test(likeSheet) || res.likeMerge.local.join() !== "hasuk" || res.likeMerge.server.includes("daeyeon")) errs.push("찜만 있는 기기의 처음 로그인(묻기·계정 것만 쓰기)이 다름: " + JSON.stringify(res.likeMerge));
+  await D.browser.close();
   // PC: 계정 삭제
   await A.page.evaluate(() => { location.hash = "me"; }); await A.page.waitForTimeout(400);
   await A.page.click("#cDel"); await A.page.waitForTimeout(200); await A.page.click(".overlay #ok"); await A.page.waitForTimeout(800);

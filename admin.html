@@ -278,6 +278,7 @@ h2.sec small, h1.sec small { font-family:var(--sans); font-size:12.5px; color:va
 .codex-chips .chip.on { background:var(--accent-soft); color:var(--accent); border-color:var(--accent); }
 .codex-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(170px, 1fr)); gap:10px; align-items:start; }
 .codex-grid .wcard figcaption b { gap:6px; }
+.codex-grid .wpic.ph { aspect-ratio:auto; height:48px; font-size:13px; } /* 그림이 없는(또는 잠긴) 장소·컷씬 카드는 그림 자리를 낮은 띠로 — 그림이 실리면 원래 크기(2026-11-10 사용자 결정) */
 .cmd-list { display:grid; gap:8px; }
 .cmd-card { display:grid; grid-template-columns:auto auto 1fr auto; grid-template-areas:"cmd pill title copy" "cmd pill desc copy"; align-items:center; gap:2px 10px; border:1px solid var(--line); border-radius:12px; padding:10px 12px; background:var(--bg); }
 .cmd-card .cmd { grid-area:cmd; font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-weight:700; font-size:14px; color:var(--accent); }
@@ -502,6 +503,7 @@ details.stat[open] summary::after { content:"▴"; }
 .pin-row { display:flex; align-items:flex-start; gap:6px; border:1px solid var(--line); border-radius:12px; padding:9px 10px 9px 12px; background:var(--bg); }
 .pin-row p { flex:1; min-width:0; margin:0; font-size:13.5px; line-height:1.6; overflow-wrap:anywhere; }
 .pin-row p::before { content:"📌 "; }
+.pin-row.off { opacity:.62; } /* 요금제 한도를 넘어 보관만 하는 줄 — AI에는 보내지 않음 */
 .hist-item { border-left:3px solid var(--line); padding:4px 0 4px 12px; margin-bottom:12px; cursor:pointer; }
 .hist-item.on { border-left-color:var(--accent); }
 .hist-item .t { font-size:12px; color:var(--muted); }
@@ -1000,7 +1002,7 @@ function emit(name, v) { (handlers[name] || []).forEach((fn) => { try { fn(v); }
            src/js/core/storage.js { KV }
            src/js/core/util.js { today }
    내보냄: FREE_DAILY, PLUS_MONTHLY, WELCOME, PLAN, isPro, plan, refreshFree, freeLeft, saveWallet, ledger, listPrice, quote, qShort, charge, refund
-   쓰는 곳: src/js/services/load.js, src/js/ai/prompt/memory.js, src/js/ui/store.js, src/js/ui/faq.js, src/js/ui/me.js, src/js/ui/pay.js, src/js/ui/pins.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/ui/shell.js, src/js/ui/detail.js, src/js/app.js
+   쓰는 곳: src/js/services/load.js, src/js/ai/prompt/rules.js, src/js/ai/prompt/memory.js, src/js/ui/store.js, src/js/ui/faq.js, src/js/ui/me.js, src/js/ui/pay.js, src/js/ui/pins.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/ui/shell.js, src/js/ui/detail.js, src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 요금: 무료 턴·PLUS·하트 차감/환불, 가격 계산(listPrice·quote) */
 
@@ -3384,6 +3386,7 @@ function buildInput(r, uptoIdx, statusBefore, direction) {
            src/js/core/character.js { exampleCast, getChar }
            src/js/core/constants.js { MARK, SIT }
            src/js/core/rooms.js { curText }
+           src/js/core/wallet.js { plan }
            src/js/images/codes.js { imgTags, seriesCode }
            src/js/images/pick.js { imagesOf }
            src/js/services/images.js { validRef }
@@ -3392,6 +3395,7 @@ function buildInput(r, uptoIdx, statusBefore, direction) {
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 시스템 프롬프트(rulesParts·rulesPrompt): 세 블록 — 고정부(작품 설정·연기 규칙·서사 원칙·장면 이미지 규칙) · 변동부(유저 캐릭터·유저노트·기억·키워드북·지금 상태) · 꼬리(안전 재확인 + 출력 형식), 관계 단계(relStage).
    고정부는 같은 방에서 턴이 바뀌어도 글자 하나까지 같아야 함(프롬프트 캐시의 앞머리 — ai/llm.js가 고정부 끝에 캐시 표시를 붙임). 턴마다 달라지는 것은 모두 변동부에 */
+
 
 
 
@@ -3426,6 +3430,7 @@ function rulesParts(r, lore = [], hist = r.msgs) {
   const c = r.char, p = r.persona, len = LEN[r.set.len] || LEN.mid;
   const fields = c.fields.map((f) => `"${f}":${f === c.gauge && typeof r.status?.[f] === "number" ? "0~100 정수" : '"짧은 값"'}`).join(",");
   const cast = c.cast || [], byCode = (code) => cast.find((x) => x.code === code);
+  const pins = (r.pins || []).slice(0, plan().pins); // 고정 기억은 지금 요금제 한도 안의 앞쪽 줄만 보냄 — PLUS가 끝나 한도가 줄면 넘는 줄은 방에 남기되 보내지 않음(2026-11-10 사용자 결정)
   // 이미 등장한 인물(폼 태그는 본체도 등장한 것으로)·이미 나온 컷씬 번호
   const seen = new Set(), cutsUsed = new Set(), PLACE = seriesCode("place"), CUT = seriesCode("cut"); // 예약 시리즈 코드(MP·EV)는 codes.js SERIES에서
   hist.forEach((m) => imgTags(curText(m)).forEach((t) => { const f = byCode(t.code); if (t.code === CUT) cutsUsed.add(t.sit); else if (f) { seen.add(t.code); if (f.of) seen.add(f.of); } })); // 장소 태그(MP)·작품에 없는 코드는 인물이 아니므로 뺌
@@ -3490,7 +3495,7 @@ ${loreAlways.length ? "\n[키워드북 · 상시 — 이 작품에서 늘 사실
   const vary = `
 [유저 캐릭터] ${p.name}${p.memo ? " (" + p.memo + ")" : ""}
 ${p.desc || "(설명 없음)"}
-${r.userNote ? "\n[유저노트 — 유저가 직접 적은 설정. 캐릭터 설정보다 우선한다. 단, 연기 규칙의 안전 항목은 넘지 않는다]\n" + r.userNote + "\n" : ""}${(r.pins || []).length ? "\n[고정 기억 — 반드시 지킨다. 유저가 꼭 기억하라고 고정한 사실]\n" + r.pins.map((x) => "- " + x.text).join("\n") + "\n" : ""}
+${r.userNote ? "\n[유저노트 — 유저가 직접 적은 설정. 캐릭터 설정보다 우선한다. 단, 연기 규칙의 안전 항목은 넘지 않는다]\n" + r.userNote + "\n" : ""}${pins.length ? "\n[고정 기억 — 반드시 지킨다. 유저가 꼭 기억하라고 고정한 사실]\n" + pins.map((x) => "- " + x.text).join("\n") + "\n" : ""}
 [장기 기억 — 지금까지의 줄거리. 모순되지 않게 쓰고, 물건·별명·약속·떡밥을 자연스럽게 다시 꺼내 쓴다]
 ${r.memory || "(아직 없음)"}
 ${loreHit.length ? "\n[키워드북 — 이번 장면에 나온 키워드의 설정. 사실로 삼아 자연스럽게 반영하되 설명하듯 늘어놓지 않는다]\n" + loreLine(loreHit) + "\n" : ""}
@@ -3982,7 +3987,7 @@ function viewCodex(id) {
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/ui/account.js
    가져옴: src/js/core/events.js { on }
-           src/js/core/shelf.js { resetShelf }
+           src/js/core/shelf.js { likedIds, mergeShelf, resetShelf }
            src/js/core/state.js { S }
            src/js/core/util.js { $, esc, toast }
            src/js/services/cloud.js { CLOUD, cloudStateText }
@@ -4004,7 +4009,8 @@ function viewCodex(id) {
 
 
 
-/* 처음 로그인: 계정이 비었으면 이 기기 데이터를 올리고, 이 기기에만 있는 대화가 있으면 합칠지 물음 */
+/* 처음 로그인: 계정이 비었으면 이 기기 데이터를 올리고, 이 기기에만 있는 대화나 찜한 작품이 있으면 합칠지 물음(2026-11-10 사용자 결정: 찜도 묻기 —
+   '계정 것만 쓰기'를 고르면 이 기기의 서재(찜·최근 본·수집 기록)를 버림. 최근 본·수집 기록만 있을 때는 묻지 않고 합침) */
 async function firstSync() {
   try { localStorage.removeItem(CLOUD.lastKey()); } catch {}
   const rows = await CLOUD.rows("");
@@ -4013,14 +4019,17 @@ async function firstSync() {
   const local = { rooms: S.rooms, personas: S.personas };
   const has = (list, id) => (Array.isArray(list) ? list : []).some((x) => x && x.id === id);
   const onlyRooms = local.rooms.filter((r) => !has(remote.rooms, r.id));
+  // 이 기기에서 찜한 작품 가운데 계정에 없는 것 — 계정의 서재 행은 동기화 날짜(SHELF.syncFrom) 뒤에만 있으므로 그 전에는 이 기기의 찜 전부
+  const rs = mergeShelf(remote.shelf), onlyLikes = likedIds().filter((id) => !((rs.likes[id] || 0) > (rs.unlikes[id] || 0)));
   const use = async (merge) => {
     CLOUD.apply(rows);
     if (merge) { mergeGuest(remote, local); await CLOUD.pushAll([]); }
     await reloadFromCloud();
     toast(merge ? "이 기기의 데이터를 계정에 합쳤어요" : "계정 데이터를 불러왔어요");
   };
-  if (!onlyRooms.length) return use(false);
-  const ov = sheet(`<h2>이 기기의 대화를 합칠까요?</h2><p class="sub">계정에 이미 저장된 데이터가 있어요. 이 기기에만 있는 대화 ${onlyRooms.length}개를 계정에 합칠 수 있어요. 계정에 있던 것은 그대로 남아요.</p>
+  if (!onlyRooms.length && !onlyLikes.length) return use(false);
+  const what = [onlyRooms.length ? `대화 ${onlyRooms.length}개` : "", onlyLikes.length ? `찜한 작품 ${onlyLikes.length}개` : ""].filter(Boolean).join("와 ");
+  const ov = sheet(`<h2>이 기기의 ${onlyRooms.length ? "대화를" : "찜을"} 합칠까요?</h2><p class="sub">계정에 이미 저장된 데이터가 있어요. 이 기기에만 있는 ${what}를 계정에 합칠 수 있어요. 계정에 있던 것은 그대로 남아요.</p>
     <div class="cta-row"><button class="btn ghost" id="mNo">계정 것만 쓰기</button><span class="spacer"></span><button class="btn pri" id="mYes">합치기</button></div>`);
   return new Promise((res) => {
     let done = false;
@@ -4215,7 +4224,7 @@ function faqGroups() {
       ["무료로 얼마나 쓸 수 있나요?", `라이트 모델은 <b>매일 ${FREE_DAILY}턴 무료</b>예요. 자정에 다시 채워져요. 처음 방문하면 하트 ${WELCOME}개를 드려요. 새 대화방은 그 작품의 권장 모델(따로 없으면 ${MODELS[RECOMMEND_DEFAULT].name})로 시작하니, 무료 턴을 쓰려면 대화방 위쪽의 모델 이름을 눌러 <b>라이트</b>로 바꿔 주세요.`],
       ["하트는 어디에 쓰나요?", "무료 턴을 다 쓴 뒤의 라이트 모델과, 스토리·마스터 모델 대화에 써요. 보내기 버튼에 이번 턴 비용이 항상 표시되고, 응답이 실패하면 자동으로 환불돼요. 장기기억 요약·AI 추천 답변은 무료예요."],
       ["모델마다 한 턴에 하트가 얼마나 드나요?", `출력량 ${LEN.mid.name}·기억력 10턴 기준으로 ${Object.keys(MODELS).map((k) => `<b>${MODELS[k].name}</b> ♥${listPrice(k, "mid", 10)}`).join(" · ")}예요(라이트는 무료 턴을 다 쓴 뒤). 출력량과 기억력을 올리면 조금씩 늘어나요. 대화방 위쪽의 모델 이름을 누르면 지금 설정에서의 턴당 하트와 <b>추천</b>(앱의 기본 추천)·<b>권장</b>(그 작품의 제작자가 고른 모델) 표시를 볼 수 있어요.`],
-      ["PLUS는 무엇인가요?", `월 ${plus} 멤버십이에요. 라이트 모델 무제한, 스토리·마스터 50% 할인, 매달 하트 ${num(PLUS_MONTHLY)}개, 장기기억 ${num(PLAN.free.memoMax)}자 → ${num(PLAN.pro.memoMax)}자, 기억력 ${PLAN.free.memTurns}턴 → ${PLAN.pro.memTurns}턴, 고정 기억 ${PLAN.free.pins}개 → ${PLAN.pro.pins}개로 늘어나요.`],
+      ["PLUS는 무엇인가요?", `월 ${plus} 멤버십이에요. 라이트 모델 무제한, 스토리·마스터 50% 할인, 매달 하트 ${num(PLUS_MONTHLY)}개, 장기기억 ${num(PLAN.free.memoMax)}자 → ${num(PLAN.pro.memoMax)}자, 기억력 ${PLAN.free.memTurns}턴 → ${PLAN.pro.memTurns}턴, 고정 기억 ${PLAN.free.pins}개 → ${PLAN.pro.pins}개로 늘어나요. PLUS가 끝나면 고정 기억은 지워지지 않고 앞의 ${PLAN.free.pins}개만 AI에 전해져요(나머지는 보관).`],
       ["결제하면 실제로 돈이 나가나요?", "지금 스토어는 결제 흐름을 보여 주는 <b>시연(데모)</b>이라 실제로 청구되지 않고, 하트와 멤버십은 체험용으로만 지급돼요. 다만 내 API 키로 쓰는 AI 대화 요금은 그 키를 발급한 Anthropic이 따로 청구해요."]
     ]],
     ["대화", [
@@ -4760,7 +4769,8 @@ function plusSheet(reason) {
    쓰는 곳: src/js/ui/room-drawer.js, src/js/ui/chat/log.js, src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 고정 기억(핀): 이용자가 한 줄로 박아 두는 '꼭 기억할 것' — 고정 시트(pinSheet)와 드로어 장기기억의 목록(pinsHTML·bindPins).
-   방의 r.pins [{ id, text, at, msgId? }]에 저장하고 프롬프트 변동부의 [고정 기억]으로 매 턴 그대로 보냄(요약·압축은 건드리지 않음). 한도는 글자 LIMITS.pin, 개수 plan().pins */
+   방의 r.pins [{ id, text, at, msgId? }]에 저장하고 프롬프트 변동부의 [고정 기억]으로 매 턴 그대로 보냄(요약·압축은 건드리지 않음). 한도는 글자 LIMITS.pin, 개수 plan().pins —
+   PLUS가 끝나 한도보다 많이 남은 줄은 지우지 않고 '보관 중'으로 보이며 AI에는 앞의 한도 개수만 감(ai/prompt/rules.js) */
 
 
 
@@ -4795,9 +4805,10 @@ function pinSheet(r, m, after, pin) {
 }
 /** 드로어 장기기억의 '고정 기억' 탭: 목록(수정·삭제)과 한도, 직접 추가 버튼. @param {Room} r @returns {string} */
 function pinsHTML(r) {
-  const pins = r.pins || [];
+  const pins = r.pins || [], max = plan().pins, over = Math.max(0, pins.length - max);
   return `<b>압축하지 않고 매 턴 그대로 전하는 기억이에요</b><p class="note" style="margin:4px 0 12px">대화의 말풍선 아래 📌 고정으로 담거나 여기서 직접 적어요. ${pins.length} / ${plan().pins}개 · 각 ${num(LIMITS.pin)}자${!isPro() ? ` (PLUS ${PLAN.pro.pins}개)` : ""}</p>
-    ${pins.length ? `<div class="pin-list">${pins.map((p) => `<div class="pin-row"><p>${esc(p.text)}</p><button class="btn sm ghost" data-pined="${esc(p.id)}">수정</button><button class="btn sm ghost danger" data-pindel="${esc(p.id)}">삭제</button></div>`).join("")}</div>` : `<div class="empty">아직 고정한 기억이 없어요. 약속·비밀·호칭처럼 잊으면 안 되는 것을 고정해 두세요.</div>`}
+    ${over ? `<p class="note" id="pinOver" style="margin:-6px 0 12px">지금 한도(${max}개)를 넘은 ${over}개는 <b>보관 중</b>이에요 — AI에는 앞의 ${max}개만 전해요. 덜 중요한 것을 지우면 뒤의 것이 올라오고, PLUS가 되면 모두 다시 전해요.</p>` : ""}
+    ${pins.length ? `<div class="pin-list">${pins.map((p, i) => `<div class="pin-row${i >= max ? " off" : ""}"><p>${i >= max ? '<span class="pill">보관 중</span> ' : ""}${esc(p.text)}</p><button class="btn sm ghost" data-pined="${esc(p.id)}">수정</button><button class="btn sm ghost danger" data-pindel="${esc(p.id)}">삭제</button></div>`).join("")}</div>` : `<div class="empty">아직 고정한 기억이 없어요. 약속·비밀·호칭처럼 잊으면 안 되는 것을 고정해 두세요.</div>`}
     <button class="btn block" id="pinAdd" style="margin-top:10px">+ 고정 기억 추가</button>`;
 }
 /** pinsHTML의 버튼 연결 — 바뀌면 repaint(). @param {HTMLElement} body @param {Room} r @param {() => void} repaint */

@@ -6,6 +6,7 @@ import { usedOpeners } from "./input.js";
 import { exampleCast, getChar } from "../../core/character.js";
 import { MARK, SIT } from "../../core/constants.js";
 import { curText } from "../../core/rooms.js";
+import { plan } from "../../core/wallet.js";
 import { imgTags, seriesCode } from "../../images/codes.js";
 import { imagesOf } from "../../images/pick.js";
 import { validRef } from "../../services/images.js";
@@ -34,6 +35,7 @@ export function rulesParts(r, lore = [], hist = r.msgs) {
   const c = r.char, p = r.persona, len = LEN[r.set.len] || LEN.mid;
   const fields = c.fields.map((f) => `"${f}":${f === c.gauge && typeof r.status?.[f] === "number" ? "0~100 정수" : '"짧은 값"'}`).join(",");
   const cast = c.cast || [], byCode = (code) => cast.find((x) => x.code === code);
+  const pins = (r.pins || []).slice(0, plan().pins); // 고정 기억은 지금 요금제 한도 안의 앞쪽 줄만 보냄 — PLUS가 끝나 한도가 줄면 넘는 줄은 방에 남기되 보내지 않음(2026-11-10 사용자 결정)
   // 이미 등장한 인물(폼 태그는 본체도 등장한 것으로)·이미 나온 컷씬 번호
   const seen = new Set(), cutsUsed = new Set(), PLACE = seriesCode("place"), CUT = seriesCode("cut"); // 예약 시리즈 코드(MP·EV)는 codes.js SERIES에서
   hist.forEach((m) => imgTags(curText(m)).forEach((t) => { const f = byCode(t.code); if (t.code === CUT) cutsUsed.add(t.sit); else if (f) { seen.add(t.code); if (f.of) seen.add(f.of); } })); // 장소 태그(MP)·작품에 없는 코드는 인물이 아니므로 뺌
@@ -98,7 +100,7 @@ ${loreAlways.length ? "\n[키워드북 · 상시 — 이 작품에서 늘 사실
   const vary = `
 [유저 캐릭터] ${p.name}${p.memo ? " (" + p.memo + ")" : ""}
 ${p.desc || "(설명 없음)"}
-${r.userNote ? "\n[유저노트 — 유저가 직접 적은 설정. 캐릭터 설정보다 우선한다. 단, 연기 규칙의 안전 항목은 넘지 않는다]\n" + r.userNote + "\n" : ""}${(r.pins || []).length ? "\n[고정 기억 — 반드시 지킨다. 유저가 꼭 기억하라고 고정한 사실]\n" + r.pins.map((x) => "- " + x.text).join("\n") + "\n" : ""}
+${r.userNote ? "\n[유저노트 — 유저가 직접 적은 설정. 캐릭터 설정보다 우선한다. 단, 연기 규칙의 안전 항목은 넘지 않는다]\n" + r.userNote + "\n" : ""}${pins.length ? "\n[고정 기억 — 반드시 지킨다. 유저가 꼭 기억하라고 고정한 사실]\n" + pins.map((x) => "- " + x.text).join("\n") + "\n" : ""}
 [장기 기억 — 지금까지의 줄거리. 모순되지 않게 쓰고, 물건·별명·약속·떡밥을 자연스럽게 다시 꺼내 쓴다]
 ${r.memory || "(아직 없음)"}
 ${loreHit.length ? "\n[키워드북 — 이번 장면에 나온 키워드의 설정. 사실로 삼아 자연스럽게 반영하되 설명하듯 늘어놓지 않는다]\n" + loreLine(loreHit) + "\n" : ""}

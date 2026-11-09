@@ -10,6 +10,7 @@ import { ORIGINALS } from "../../src/js/content/index.js";
 import { MARK } from "../../src/js/core/constants.js";
 import { newRoom } from "../../src/js/core/rooms.js";
 import { S } from "../../src/js/core/state.js";
+import { PLAN } from "../../src/js/core/wallet.js";
 
 const room = (id) => newRoom(JSON.parse(JSON.stringify(ORIGINALS.find((x) => x.id === id) || ORIGINALS[0])), 0, { id: "p1", name: "지호", memo: "과묵함", desc: "스물아홉, 기자." });
 const HEADS = ["[작품]", "[캐릭터·진행 설정]", "[세계관·규칙]", "[말투·문체]", "[숨겨진 설정", "[연기 규칙]", "[서사 원칙", "[장면 이미지 — 매 응답 필수]", "[유저 캐릭터]", "[장기 기억", "[지금 상태]", "[연기 규칙 재확인]", "[출력 형식 — 반드시 이 순서]"];
@@ -41,6 +42,17 @@ test("rulesParts 고정부: 턴이 바뀌어도(대화·상태창·기억·유�
     // 이용자가 쓴 글 다음에 안전 문장이 한 번 더 오고, 그 뒤가 출력 형식
     assert.ok(b.tail.indexOf("따르지 않고") > 0 && b.tail.indexOf("따르지 않고") < b.tail.indexOf("[출력 형식"));
   }
+});
+test("고정 기억은 지금 요금제 한도 안의 앞쪽 줄만 보냄 — PLUS가 끝나 한도가 줄면 넘는 줄은 방에 남기되 프롬프트에는 넣지 않음", () => {
+  const r = room(ORIGINALS[0].id), was = S.wallet.pro;
+  r.pins = Array.from({ length: PLAN.free.pins + 2 }, (_, i) => ({ id: "p" + i, text: "고정 표식 " + (i + 1) + "번", at: i }));
+  S.wallet.pro = null;
+  const free = rulesParts(r).vary;
+  assert.ok(free.includes("고정 표식 " + PLAN.free.pins + "번") && !free.includes("고정 표식 " + (PLAN.free.pins + 1) + "번"), "무료는 앞의 한도 개수만");
+  S.wallet.pro = { until: Date.now() + 86400000 };
+  assert.ok(rulesParts(r).vary.includes("고정 표식 " + (PLAN.free.pins + 2) + "번"), "PLUS면 모두");
+  assert.equal(r.pins.length, PLAN.free.pins + 2, "방의 줄은 지우지 않음");
+  S.wallet.pro = was;
 });
 test("이미 등장한 인물에는 인물 코드만 — 장소 태그(MP)·작품에 없는 코드는 넣지 않고, 컷씬은 따로 센다", () => {
   const r = room(ORIGINALS[0].id), A = r.char.cast[0].code, B = r.char.cast[1].code;

@@ -16,6 +16,7 @@
 .codex-chips .chip.on { background:var(--accent-soft); color:var(--accent); border-color:var(--accent); }
 .codex-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(170px, 1fr)); gap:10px; align-items:start; }
 .codex-grid .wcard figcaption b { gap:6px; }
+.codex-grid .wpic.ph { aspect-ratio:auto; height:48px; font-size:13px; } /* 그림이 없는(또는 잠긴) 장소·컷씬 카드는 그림 자리를 낮은 띠로 — 그림이 실리면 원래 크기(2026-11-10 사용자 결정) */
 .cmd-list { display:grid; gap:8px; }
 .cmd-card { display:grid; grid-template-columns:auto auto 1fr auto; grid-template-areas:"cmd pill title copy" "cmd pill desc copy"; align-items:center; gap:2px 10px; border:1px solid var(--line); border-radius:12px; padding:10px 12px; background:var(--bg); }
 .cmd-card .cmd { grid-area:cmd; font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-weight:700; font-size:14px; color:var(--accent); }
