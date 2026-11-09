@@ -32,7 +32,7 @@ export const TARGETS = {
 /* 폴더 이름이 곧 작품의 aud(관심있는 대화) 값 */
 export const AUD_DIRS = { f: "여성향(남성 캐릭터와의 대화)", m: "남성향(여성 캐릭터와의 대화)", all: "전체(남녀가 섞임)" };
 /* 빌드 검사에 쓰는 앱 규칙 — src/js에서 같은 코드를 꺼내 쓴다(규칙이 두 군데로 갈라지지 않게) */
-const APP_RULES = ["SIT", "CODE_RE", "SERIES", "codebook", "APP_COMMANDS", "PALETTES", "MOTIFS", "CATS", "LIMITS", "FREE_DAILY", "MODELS", "guessAud", "personaWho", "personaLook", "castLook", "minorFlags", "minorHint", "settingHint", "LORE_KINDS"];
+const APP_RULES = ["SIT", "CODE_RE", "SERIES", "codebook", "APP_COMMANDS", "PALETTES", "MOTIFS", "CATS", "LIMITS", "LORE", "FREE_DAILY", "MODELS", "guessAud", "personaWho", "personaLook", "castLook", "minorFlags", "minorHint", "settingHint", "LORE_KINDS"];
 /* 오래된 iOS(13 이하)·인앱 브라우저에서 문법 오류가 나는 것들 */
 const OLD_IOS = [[/\|\|=|&&=|\?\?=/, "논리 할당(||= &&= ??=)"], [/\.at\(/, "Array.at()"], [/\(\?<[=!]/, "정규식 lookbehind"],
   [/\bstructuredClone\b/, "structuredClone"], [/\.findLast(?:Index)?\(/, "findLast()"], [/\bObject\.hasOwn\(/, "Object.hasOwn()"]];
@@ -509,7 +509,24 @@ function checkWork(mod, { aud, row, id, wrel, R, errors, warnings }) {
   if (c.lookTags !== undefined && c.cast !== undefined) w("cast가 있으면 lookTags는 쓰이지 않아요 — cast[].tags에 적어 주세요");
   if (c.lore !== undefined && (!Array.isArray(c.lore) || c.lore.some((x) => !isObj(x) || !Array.isArray(x.keys) || !x.keys.length || x.keys.some((k) => !str(k)) || !str(x.text) || (x.tags !== undefined && typeof x.tags !== "string"))))
     e("lore(키워드북)는 [{ keys: [\"키워드\", …], text: \"설명\", kind?: \"종류\", tags?: \"영문 태그\" }, …]");
-  else (c.lore || []).forEach((x, i) => {
+  else {
+    // 키워드북 규칙(ai/prompt/lore.js matchLore와 같은 상수 LORE): 상시(always)·우선순위(order)·제외 낱말(not)·보조 키(also)
+    const strs = (v) => v === undefined || (Array.isArray(v) && v.length > 0 && v.every(str));
+    (c.lore || []).forEach((x, i) => {
+      const at = `lore[${i}](${x.keys[0]})`;
+      if (x.always !== undefined && typeof x.always !== "boolean") e(`${at}.always(상시 주입)는 참거짓이어야 해요`);
+      if (x.order !== undefined && !Number.isFinite(x.order)) e(`${at}.order(우선순위 — 클수록 먼저)는 숫자여야 해요`);
+      if (!strs(x.not)) e(`${at}.not(이 낱말이 나오면 넣지 않음)은 글 배열이어야 해요`);
+      if (!strs(x.also)) e(`${at}.also(keys와 함께 나와야 하는 낱말)는 글 배열이어야 해요`);
+      if (x.always === true && (x.not !== undefined || x.also !== undefined)) e(`${at}: 상시(always) 항목에는 not·also를 쓸 수 없어요 — 상시 항목은 조건 없이 늘 들어가요`);
+      if (x.text.length > R.LORE.budget) e(`${at}.text가 ${x.text.length}자예요 — 한 턴 예산(${R.LORE.budget}자)보다 길어 한 번도 들어가지 못해요`);
+    });
+    const al = (c.lore || []).filter((x) => x.always === true), sum = al.reduce((n, x) => n + x.text.length, 0);
+    if (al.length > R.LORE.max || sum > R.LORE.budget) e(`키워드북의 상시(always) 항목이 ${al.length}개·${sum}자예요 — 한 턴 예산(${R.LORE.max}개·${R.LORE.budget}자) 안이어야 늘 들어갈 수 있어요`);
+    else if (al.length && sum > R.LORE.budget / 2) w(`키워드북의 상시(always) 항목이 ${sum}자로 한 턴 예산(${R.LORE.budget}자)의 절반을 넘어요 — 키워드로 걸리는 항목이 들어갈 자리가 줄어요`);
+  }
+  (Array.isArray(c.lore) ? c.lore : []).forEach((x, i) => {
+    if (!isObj(x) || !Array.isArray(x.keys) || !str(x.text)) return; // 모양 오류는 위에서 이미 알림
     // 세계관 일러스트: 종류(kind)는 상세 카드 머리표·AI 구도를 정하고, tags는 번역 없이 그대로 프롬프트에 들어가므로 영문만
     if (x.kind !== undefined && !R.LORE_KINDS[x.kind]) e(`lore[${i}](${x.keys[0]}).kind("${x.kind}")는 ${Object.keys(R.LORE_KINDS).join("·")} 중 하나`);
     if (typeof x.tags === "string" && /[가-힣]/.test(x.tags)) e(`lore[${i}](${x.keys[0]}).tags는 영문 태그 글이어야 해요(한국어 설명은 text에)`);

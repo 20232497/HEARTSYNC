@@ -22,7 +22,7 @@ function relStage(c, s) {
 }
 /**
  * 시스템 프롬프트 — 작품 설정·연기 규칙·서사 원칙·장면 이미지 번호(0~14)·응답 형식(MARK + status JSON).
- * @param {Room} r @param {LoreEntry[]} [lore] 이번 턴에 맞은 키워드북 @param {Message[]} [hist=r.msgs] @returns {string}
+ * @param {Room} r @param {LoreEntry[]} [lore] 이번 턴에 넘길 키워드북(matchLore — 상시 항목 + 키워드로 걸린 항목) @param {Message[]} [hist=r.msgs] @returns {string}
  */
 export function rulesPrompt(r, lore = [], hist = r.msgs) {
   const c = r.char, p = r.persona, len = LEN[r.set.len] || LEN.mid;
@@ -39,6 +39,7 @@ export function rulesPrompt(r, lore = [], hist = r.msgs) {
   // 장소(MP<n>)·컷씬(EV<n>) 코드 — 최신 작품(getChar)에 적혀 있을 때만(작품을 고치면 열린 방에도 바로)
   const live = getChar(c.id) || c;
   const places = (live.places || []).map((p, i) => `${PLACE}${i + 1}=${p.name}`).join(", ");
+  const loreLine = (list) => list.map((e) => `- ${e.keys[0]}: ${e.text}`).join("\n"), loreAlways = lore.filter((e) => e.always), loreHit = lore.filter((e) => !e.always);
   const cuts = (live.cuts || []).map((e, i) => cutsUsed.has(i + 1) ? "" : `${CUT}${i + 1}=${e.title}${e.when ? "(" + e.when + ")" : ""}`).filter(Boolean).join(", ");
   return `너는 한국어 캐릭터 롤플레이 플랫폼의 연기 엔진이다. 아래 설정의 ${c.world_mode ? "세계관 내레이터로서 모든 인물과 세계를" : "캐릭터 「" + c.name + "」를"} 연기하며 유저와 함께 이야기를 만든다.
 
@@ -54,13 +55,13 @@ ${c.speech || "(설정 없음)"}
 
 [숨겨진 설정 — 충분히 가까워지기 전까지는 암시만]
 ${c.secret || "(없음)"}
-${r.directive ? "\n[이 대화의 시작 설정]\n" + r.directive + "\n" : ""}
+${loreAlways.length ? "\n[키워드북 · 상시 — 이 작품에서 늘 사실인 설정]\n" + loreLine(loreAlways) + "\n" : ""}${r.directive ? "\n[이 대화의 시작 설정]\n" + r.directive + "\n" : ""}
 [유저 캐릭터] ${p.name}${p.memo ? " (" + p.memo + ")" : ""}
 ${p.desc || "(설명 없음)"}
 ${r.userNote ? "\n[유저노트 — 유저가 직접 적은 설정. 캐릭터 설정보다 우선한다. 단, 아래 연기 규칙의 안전 항목은 넘지 않는다]\n" + r.userNote + "\n" : ""}
 [장기 기억 — 지금까지의 줄거리. 모순되지 않게 쓰고, 물건·별명·약속·떡밥을 자연스럽게 다시 꺼내 쓴다]
 ${r.memory || "(아직 없음)"}
-${lore.length ? "\n[키워드북 — 이번 장면에 나온 키워드의 설정. 사실로 삼아 자연스럽게 반영하되 설명하듯 늘어놓지 않는다]\n" + lore.map((e) => `- ${e.keys[0]}: ${e.text}`).join("\n") + "\n" : ""}
+${loreHit.length ? "\n[키워드북 — 이번 장면에 나온 키워드의 설정. 사실로 삼아 자연스럽게 반영하되 설명하듯 늘어놓지 않는다]\n" + loreLine(loreHit) + "\n" : ""}
 
 [연기 규칙]
 - 유저 캐릭터(${p.name})의 대사·행동·속마음을 대신 쓰거나 결정하지 않는다. 유저가 한 행동의 결과와 다른 인물·세계의 반응만 쓴다.

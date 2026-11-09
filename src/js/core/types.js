@@ -28,6 +28,10 @@
  * @property {string} text
  * @property {string} [kind] 항목 종류(ui/worldart.js LORE_KINDS: person·creature·place·item·event·group·concept) — 상세 페이지 세계관 카드의 머리표
  * @property {string} [tags] 그 항목을 그릴 영문 낱말 — 앱은 쓰지 않음(앱 밖에서 lore-<n> 그림을 만들 때)
+ * @property {boolean} [always] 상시 주입 — 키워드와 상관없이 매 턴 넘김(프롬프트 고정부). not·also와 함께 쓸 수 없음
+ * @property {number} [order] 우선순위 — 클수록 먼저 담김(예산이 모자랄 때 살아남는 순서, 기본 0·같으면 적힌 순서)
+ * @property {string[]} [not] 제외 낱말 — 최근 글에 이 중 하나가 나오면 넣지 않음
+ * @property {string[]} [also] 보조 키 — keys 중 하나와 이 중 하나가 모두 나와야 넣음
  */
 /**
  * 시작 상황(오프닝).

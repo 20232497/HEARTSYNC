@@ -606,6 +606,7 @@ const PALETTES = [
 ];
 const MOTIFS = { rain: "비", city: "도시", stars: "별", glow: "불빛", petals: "꽃잎", ash: "잿빛", curtain: "무대" };
 const CATS = ["로맨스", "판타지", "RPG", "미스터리", "일상", "시뮬레이션"];
+const LORE = { scan: 3, max: 8, budget: 2500 };
 const EXAMPLE_CAST = { code: "ABC", name: "주인공" }, EXAMPLE_SIT = 3;
 const DEFAULT_CREATOR = "HEART SYNC 스튜디오";
 const LIMITS = { guide: 1000, personaDesc: 1000, userNote: 2000, memory: 2000 };
@@ -2106,10 +2107,20 @@ function errCopy(e) {
     default: return "응답을 받지 못했어요. 다시 시도해 주세요. 하트는 돌려드렸어요.";
   }
 }
-/* ── src/js/ai/prompt/lore.js — 키워드북: 최근 메시지에서 키워드 찾기(matchLore) — 작품의 lore[]는 { keys, text, kind?, tags? } */
+/* ── src/js/ai/prompt/lore.js — 키워드북: 이번 턴에 AI에게 넘길 항목 고르기(matchLore — 순수) */
+const has = (hay, words) => (words || []).some((k) => hay.includes(String(k).toLowerCase()));
 function matchLore(lore, texts) {
-  const hay = texts.join("\n").toLowerCase();
-  return (lore || []).filter((e) => e.keys.some((k) => hay.includes(k.toLowerCase()))).slice(0, 6);
+  const hay = (texts || []).join("\n").toLowerCase(), all = (lore || []).map((e, i) => ({ e, i }));
+  const byOrder = (a, b) => (b.e.order || 0) - (a.e.order || 0) || a.i - b.i;
+  const always = all.filter((x) => x.e.always).sort(byOrder);
+  const hit = all.filter((x) => !x.e.always && has(hay, x.e.keys) && (!(x.e.also || []).length || has(hay, x.e.also)) && !has(hay, x.e.not)).sort(byOrder);
+  const out = []; let chars = 0;
+  for (const x of always.concat(hit)) {
+    const n = String(x.e.text || "").length;
+    if (out.length >= LORE.max || chars + n > LORE.budget) continue;
+    out.push(x.e); chars += n;
+  }
+  return out;
 }
 /* ── src/js/core/commands.js — 대화방 명령어(순수): 앱 명령어(APP_COMMANDS — 화면형 !상태창·!갤러리·!지도·!도움말은 앱이 바로 처리, 연출형 !시간경과·!새사건·!조연등장·!반복금지는… */
 const APP_COMMANDS = [
@@ -2168,10 +2179,10 @@ function usedOpeners(hist) {
 function buildInput(r, uptoIdx, statusBefore, direction) {
   const hist = r.msgs.slice(0, uptoIdx).filter((m) => curText(m));
   const recent = hist.slice(-(r.set.mem * 2 + 1));
-  const lore = matchLore(getChar(r.char.id)?.lore || r.char.lore, recent.slice(-3).map((m) => (m.role === "ai" ? curText(m) : m.text) || ""));
+  const lore = matchLore(getChar(r.char.id)?.lore || r.char.lore, recent.slice(-LORE.scan).map((m) => (m.role === "ai" ? curText(m) : m.text) || ""));
   const len = LEN[r.set.len] || LEN.mid;
   const out = [{ role: "user", content: rulesPrompt(r, lore, hist) }];
-  out.lore = lore.map((e) => e.keys[0]);
+  out.lore = lore.filter((e) => !e.always).map((e) => e.keys[0]);
   const lastAi = [...recent].reverse().find((m) => m.role === "ai");
   const stateTail = (m) => { const a = m.alts[m.idx] || {}; return `\n${MARK}\n` + JSON.stringify({ status: a.status || m.statusBefore || {}, suggestions: (a.suggestions || []).length ? a.suggestions : ["조금 더 가까이 다가간다", "솔직하게 속마음을 말한다", "화제를 돌려 상황을 살핀다"] }); };
   recent.forEach((m, i) => {
@@ -2203,6 +2214,7 @@ function rulesPrompt(r, lore = [], hist = r.msgs) {
   const ready = cast.map((x) => { const m = imagesOf(c)[x.code] || {}; const ns = Object.keys(m).filter((k) => validRef(m[k])).map(Number).filter((n) => n >= 0 && n < SIT.length).sort((a, b) => a - b); return ns.length ? `${x.name} ${ns.join("·")}` : ""; }).filter(Boolean);
   const live = getChar(c.id) || c;
   const places = (live.places || []).map((p, i) => `${PLACE}${i + 1}=${p.name}`).join(", ");
+  const loreLine = (list) => list.map((e) => `- ${e.keys[0]}: ${e.text}`).join("\n"), loreAlways = lore.filter((e) => e.always), loreHit = lore.filter((e) => !e.always);
   const cuts = (live.cuts || []).map((e, i) => cutsUsed.has(i + 1) ? "" : `${CUT}${i + 1}=${e.title}${e.when ? "(" + e.when + ")" : ""}`).filter(Boolean).join(", ");
   return `너는 한국어 캐릭터 롤플레이 플랫폼의 연기 엔진이다. 아래 설정의 ${c.world_mode ? "세계관 내레이터로서 모든 인물과 세계를" : "캐릭터 「" + c.name + "」를"} 연기하며 유저와 함께 이야기를 만든다.
 [작품] ${c.title}
@@ -2214,13 +2226,13 @@ ${c.world || "(설정 없음)"}
 ${c.speech || "(설정 없음)"}
 [숨겨진 설정 — 충분히 가까워지기 전까지는 암시만]
 ${c.secret || "(없음)"}
-${r.directive ? "\n[이 대화의 시작 설정]\n" + r.directive + "\n" : ""}
+${loreAlways.length ? "\n[키워드북 · 상시 — 이 작품에서 늘 사실인 설정]\n" + loreLine(loreAlways) + "\n" : ""}${r.directive ? "\n[이 대화의 시작 설정]\n" + r.directive + "\n" : ""}
 [유저 캐릭터] ${p.name}${p.memo ? " (" + p.memo + ")" : ""}
 ${p.desc || "(설명 없음)"}
 ${r.userNote ? "\n[유저노트 — 유저가 직접 적은 설정. 캐릭터 설정보다 우선한다. 단, 아래 연기 규칙의 안전 항목은 넘지 않는다]\n" + r.userNote + "\n" : ""}
 [장기 기억 — 지금까지의 줄거리. 모순되지 않게 쓰고, 물건·별명·약속·떡밥을 자연스럽게 다시 꺼내 쓴다]
 ${r.memory || "(아직 없음)"}
-${lore.length ? "\n[키워드북 — 이번 장면에 나온 키워드의 설정. 사실로 삼아 자연스럽게 반영하되 설명하듯 늘어놓지 않는다]\n" + lore.map((e) => `- ${e.keys[0]}: ${e.text}`).join("\n") + "\n" : ""}
+${loreHit.length ? "\n[키워드북 — 이번 장면에 나온 키워드의 설정. 사실로 삼아 자연스럽게 반영하되 설명하듯 늘어놓지 않는다]\n" + loreLine(loreHit) + "\n" : ""}
 [연기 규칙]
 - 유저 캐릭터(${p.name})의 대사·행동·속마음을 대신 쓰거나 결정하지 않는다. 유저가 한 행동의 결과와 다른 인물·세계의 반응만 쓴다.
 - 서술(행동·표정·풍경)은 *별표*로 감싸고 대사는 "큰따옴표"로 쓴다. 서술과 대사는 줄을 바꿔 구분한다.${c.world_mode ? "\n- 여러 인물이 말할 때는 대사 앞에 이름을 붙인다. 예: 한서윤: \"...\"\n- 시스템 메시지는 [대괄호] 한 줄로 쓴다." : ""}

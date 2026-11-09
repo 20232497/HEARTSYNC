@@ -13,6 +13,9 @@ export const PALETTES = [
 ];
 export const MOTIFS = { rain: "비", city: "도시", stars: "별", glow: "불빛", petals: "꽃잎", ash: "잿빛", curtain: "무대" };
 export const CATS = ["로맨스", "판타지", "RPG", "미스터리", "일상", "시뮬레이션"];
+/* 키워드북이 한 턴에 AI에게 넘기는 양(2026-11-09 사용자 결정 — 참고: 베이비챗 동시 5개·항목 500자): scan 최근 몇 개의 메시지에서 키워드를 찾는지 ·
+   max·budget 상시(always) + 키워드로 걸린 항목을 합친 개수·글자 수 상한(넘치는 항목은 그 턴에 건너뜀 — ai/prompt/lore.js matchLore). 빌드가 상시 항목의 합을 이 값으로 검사 */
+export const LORE = { scan: 3, max: 8, budget: 2500 };
 /* 화면 예시 문구의 기본값 — 예시는 보고 있는 작품의 인물로 만들고(core/character.js exampleCast), 작품이 하나도 없을 때만 이 값. EXAMPLE_SIT은 예시에 쓰는 감정 번호 */
 export const EXAMPLE_CAST = { code: "ABC", name: "주인공" }, EXAMPLE_SIT = 3;
 /* 작품이 제작자(work.js creator)를 적지 않았을 때 보이는 이름 */

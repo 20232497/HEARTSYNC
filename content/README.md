@@ -74,7 +74,9 @@ export default {
   speech: `문체·말투 예시 …`,
   secret: "숨은 설정",
   fields: ["📅 날짜", "📍 장소", "❤️ 호감도"], gauge: "❤️ 호감도",
-  lore: [ { keys: ["키워드", "별칭"], text: "대화에 키워드가 나오면 AI에 전달할 설명", kind: "place", tags: "ruined cathedral, stained glass, moonlight" } ],
+  lore: [ { keys: ["키워드", "별칭"], text: "대화에 키워드가 나오면 AI에 전달할 설명", kind: "place", tags: "ruined cathedral, stained glass, moonlight" },
+          { keys: ["제국"], text: "늘 적용되는 전제", always: true, kind: "concept", tags: "…" },   // 상시 항목(선택)
+          { keys: ["열쇠"], also: ["지하", "창고"], not: ["꿈"], order: 5, text: "…", kind: "item", tags: "…" } ],   // 보조 키·제외 낱말·우선순위(선택)
   cast: [ { code: "KAS", name: "카시안", desc: "독자에게 보이는 소개(비밀은 persona에만)", look: "29세 남성, 흑발, …", tags: "black hair, golden eyes, black military uniform, …", hidden: [13] },   // hidden(선택): 비공개(스포일러) 감정 번호
           { code: "KASD", name: "카시안(용의 모습)", of: "KAS", look: "…", tags: "…" } ],   // 다른 모습(폼)은 별도 코드 — 선택
   places: [ { name: "루벨리아 황궁 알현실", desc: "…", tags: "throne room, gothic, …" }, { name: "지하 봉인실", hidden: true } ],   // 장소 → MP1, MP2… — 선택. hidden: true면 그림을 대화에 나올 때까지 가림
@@ -98,7 +100,7 @@ export default {
 | `places` | 장소 목록(선택) `[{ name, desc, tags }]`. 순서가 곧 코드 — 첫 항목이 `MP1`, 둘째가 `MP2`…. AI는 장면의 장소가 바뀔 때 본문 첫 줄에 `[[MP1]]`을 넣고, 대화방의 `!지도` 명령어가 목록을 보여 줘요. 그림은 `images/MP1.webp`. `tags`는 그 장소를 그릴 영문 낱말(앱 밖에서). `hidden: true`(선택)면 비공개 — 도감·상세·`!지도`에서 **그림만** 🔒로 가리고(이름·설명은 보여요 — 무엇을 모으는지는 알 수 있게), 그 대화에 `[[MP<n>]]`이 나온 뒤에는 그림도 보여요(AI에게 주는 목록에는 그대로 들어가요) |
 | `cuts` | 컷씬 목록(선택) `[{ title, when, tags }]`. 순서가 곧 코드 — `EV1`, `EV2`…. `when`(나오는 조건)이 처음 이루어지는 순간 AI가 `[[EV1]]`을 한 번 넣어요. 그림은 `images/EV1.webp`. `hidden: true`(선택)면 도감·상세에서 **그림만** 🔒로 가려요(제목·조건은 보이니, 제목 자체가 스포일러면 에둘러 적기 — 대화에 나오면 그 방의 갤러리에) |
 | `commands` | 작품 명령어(선택) `[{ cmd, title, desc, prompt }]`. 상세 페이지 '명령어' 카드에 보이고, 대화방 입력창에 `!cmd`를 치면 말풍선은 그대로 두고 AI에는 `prompt`가 `//` 연출 지시로 가요(예: `m/godseats`의 `!퀘스트`·`!관람석`·`!쉼터`). 앱 명령어의 이름·별칭(`상태창`·`상태`·`갤러리`·`도감`·`지도`·`장소`·`도움말`·`명령어`·`help`·`시간경과`·`새사건`·`조연등장`·`반복금지` — `src/js/core/commands.js` APP_COMMANDS)은 쓸 수 없어요(빌드 검사) |
-| `lore` | 키워드북 `[{ keys, text, kind, tags }]`. 대화에 `keys`가 나오면 `text`를 AI에 전달해요. `kind`는 항목 종류 — `person` 인물 · `creature` 동물·존재 · `place` 장소 · `item` 물건 · `event` 사건 · `group` 세력 · `concept` 설정(앱의 `LORE_KINDS`, 상세 페이지 세계관 카드의 머리표). `tags`는 그 항목을 그릴 영문 낱말(앱 밖에서 `lore-<n>` 그림을 만들 때). 둘 다 빠지면 빌드 경고 |
+| `lore` | 키워드북 `[{ keys, text, kind, tags, always, order, not, also }]`. 대화(최근 메시지 3개)에 `keys`가 나오면 `text`를 AI에 전달해요. **고르는 규칙**(`src/js/ai/prompt/lore.js` matchLore 한 곳): `always: true`는 **상시 항목** — 키워드와 상관없이 매 턴 들어가요(그 세계에서 늘 사실인 전제에만, 꼭 필요한 것 하나둘). `also: [낱말…]`은 **보조 키** — `keys` 중 하나와 `also` 중 하나가 함께 나와야 들어가요(흔한 낱말이 엉뚱한 장면에서 걸리는 것을 막음). `not: [낱말…]`은 **제외 낱말** — 이 낱말이 나오면 넣지 않아요. `order`(숫자, 기본 0)는 **우선순위** — 클수록 먼저 담겨요. 한 턴에 들어가는 양은 상시 + 키워드로 걸린 항목을 합쳐 **8개·2,500자**까지(`src/js/core/constants.js` LORE — 넘치는 항목은 자르지 않고 그 턴에 빠짐). 상시 항목에는 `not`·`also`를 쓸 수 없어요. `kind`는 항목 종류 — `person` 인물 · `creature` 동물·존재 · `place` 장소 · `item` 물건 · `event` 사건 · `group` 세력 · `concept` 설정(앱의 `LORE_KINDS`, 상세 페이지 세계관 카드의 머리표). `tags`는 그 항목을 그릴 영문 낱말(앱 밖에서 `lore-<n>` 그림을 만들 때). 둘 다 빠지면 빌드 경고 |
 | `artTags` | 그 세계관의 영문 낱말(시대·장소·조명·분위기, 예: `joseon dynasty, korean royal palace, paper lanterns, night`). 앱 밖에서 표지·세계관 일러스트를 만들 때 붙여 작품마다 분위기를 맞춰요 |
 | `openings` | 시작 상황(게임 모드). 인물이 처음 등장하는 줄 위에 `[[코드0]]`(예: `[[KAS0]]` — 코드가 `cast`에 있고 번호가 0~14인지 빌드가 검사). 예전 `[[img:코드:번호]]` 모양은 더 쓰지 않아요 |
 
@@ -150,6 +152,7 @@ content/<f|m|all>/[<줄>/]<id>/images/
 - `cast[].code`가 영문 대문자 1~4자(숫자 없이, `MP`·`EV` 아님)이고 겹치지 않는지, `of`가 본체 인물의 코드인지(폼의 폼은 안 됨), `desc`가 글인지, `hidden`(비공개 감정 번호)이 1~14 정수 배열이고 겹치지 않는지(0 프로필은 실패), `places`·`cuts` 모양(`hidden`은 참거짓), `commands`의 `cmd`가 공백·`!` 없이 겹치지 않고 앱 명령어 이름이 아닌지
 - 시작 상황의 `[[코드번호]]`: 코드가 `cast`(또는 `MP`·`EV`)에 있고 번호가 범위 안인지. 예전 `[[img:…]]` 모양은 실패
 - `images/`: 파일 이름이 `<코드><번호>`·`cover`·`lore-<n>`인지, 코드와 번호가 위 규칙에 맞는지, 같은 그림·표지가 둘인지, `lore-<n>`이 키워드북 범위 안인지
+- 키워드북 규칙: `always`가 참거짓·`order`가 숫자·`not`/`also`가 글 배열인지, 상시 항목에 `not`·`also`를 썼는지, 한 항목의 `text`가 한 턴 예산(2,500자)보다 긴지, 상시 항목의 합이 예산(8개·2,500자)을 넘는지(절반을 넘으면 경고)
 - 키워드북 `kind`가 `LORE_KINDS`에 없거나, `cast[].tags`·`lookTags`·키워드북 `tags`·`artTags`에 한글이 있으면 실패
 - 경고만: 키워드북 항목에 `kind`·`tags`가 없음, `gauge`가 `fields`에 없음, 시작 상황 `status`의 칸이 `fields`에 없음, `cast`가 있는데 `lookTags`를 씀, 작품이 없는 줄, `images/`의 그림이 아닌 파일·모르는 파일 이름, 남아 있는 `content/codes.json`
 

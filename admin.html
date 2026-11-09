@@ -662,8 +662,8 @@ const CFG = Object.assign({ anthropicUrl: ANTHROPIC_URL, serverKeys: false, chat
   typeof window !== "undefined" && window.HEARTVERSE_CONFIG && typeof window.HEARTVERSE_CONFIG === "object" ? window.HEARTVERSE_CONFIG : {});
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/core/constants.js
-   내보냄: MARK, FREE_DAILY, WELCOME, PLUS_MONTHLY, TIMEOUT, SIT, SIT_TINT, PALETTES, MOTIFS, CATS, EXAMPLE_CAST, EXAMPLE_SIT, DEFAULT_CREATOR, LIMITS
-   쓰는 곳: src/js/core/state.js, src/js/ai/models.js, src/js/core/wallet.js, src/js/core/character.js, src/js/services/supabase.js, src/js/images/codes.js, src/js/images/situations.js, src/js/ai/parse.js, src/js/ai/llm.js, src/js/ai/prompt/input.js, src/js/ai/prompt/rules.js, src/js/ui/cover.js, src/js/ui/codex.js, src/js/ui/faq.js, src/js/ui/home.js, src/js/ui/me.js, src/js/ui/room-drawer.js, src/js/app.js
+   내보냄: MARK, FREE_DAILY, WELCOME, PLUS_MONTHLY, TIMEOUT, SIT, SIT_TINT, PALETTES, MOTIFS, CATS, LORE, EXAMPLE_CAST, EXAMPLE_SIT, DEFAULT_CREATOR, LIMITS
+   쓰는 곳: src/js/core/state.js, src/js/ai/models.js, src/js/core/wallet.js, src/js/core/character.js, src/js/services/supabase.js, src/js/images/codes.js, src/js/images/situations.js, src/js/ai/parse.js, src/js/ai/llm.js, src/js/ai/prompt/lore.js, src/js/ai/prompt/input.js, src/js/ai/prompt/rules.js, src/js/ui/cover.js, src/js/ui/codex.js, src/js/ui/faq.js, src/js/ui/home.js, src/js/ui/me.js, src/js/ui/room-drawer.js, src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 순수 상수: 응답 구분자(MARK), 상황 이름(SIT)·표지 색·무늬·장르, 요금 상수 — 다른 모듈을 import하지 않음 */
 const MARK = "===STATE===";
@@ -680,6 +680,9 @@ const PALETTES = [
 ];
 const MOTIFS = { rain: "비", city: "도시", stars: "별", glow: "불빛", petals: "꽃잎", ash: "잿빛", curtain: "무대" };
 const CATS = ["로맨스", "판타지", "RPG", "미스터리", "일상", "시뮬레이션"];
+/* 키워드북이 한 턴에 AI에게 넘기는 양(2026-11-09 사용자 결정 — 참고: 베이비챗 동시 5개·항목 500자): scan 최근 몇 개의 메시지에서 키워드를 찾는지 ·
+   max·budget 상시(always) + 키워드로 걸린 항목을 합친 개수·글자 수 상한(넘치는 항목은 그 턴에 건너뜀 — ai/prompt/lore.js matchLore). 빌드가 상시 항목의 합을 이 값으로 검사 */
+const LORE = { scan: 3, max: 8, budget: 2500 };
 /* 화면 예시 문구의 기본값 — 예시는 보고 있는 작품의 인물로 만들고(core/character.js exampleCast), 작품이 하나도 없을 때만 이 값. EXAMPLE_SIT은 예시에 쓰는 감정 번호 */
 const EXAMPLE_CAST = { code: "ABC", name: "주인공" }, EXAMPLE_SIT = 3;
 /* 작품이 제작자(work.js creator)를 적지 않았을 때 보이는 이름 */
@@ -2817,15 +2820,34 @@ function errCopy(e) {
 }
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/ai/prompt/lore.js
+   가져옴: src/js/core/constants.js { LORE }
    내보냄: matchLore
    쓰는 곳: src/js/ai/prompt/input.js, src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
-/* 키워드북: 최근 메시지에서 키워드 찾기(matchLore) — 작품의 lore[]는 { keys, text, kind?, tags? } */
+/* 키워드북: 이번 턴에 AI에게 넘길 항목 고르기(matchLore — 순수). 작품의 lore[]는 { keys, text, kind?, tags?, always?, order?, not?, also? }.
+   규칙은 여기 한 곳: 상시(always) 항목은 늘, 그 밖은 최근 글에 keys가 나왔을 때(also가 있으면 그중 하나도 함께, not의 낱말이 나오면 빼고).
+   순서는 order 큰 것부터(같으면 적힌 순서), 예산은 LORE(core/constants.js — 상시 + 키워드 항목을 합쳐 max개·budget자). 넘치는 항목은 자르지 않고 그 턴에 건너뜀 */
+
 /** @typedef {import("../../core/types.js").LoreEntry} LoreEntry */
-/** 최근 글에 키워드가 나온 항목(최대 6개). @param {LoreEntry[]|undefined} lore @param {string[]} texts @returns {LoreEntry[]} */
+
+const has = (hay, words) => (words || []).some((k) => hay.includes(String(k).toLowerCase()));
+/**
+ * 이번 턴에 넘길 키워드북 항목 — 상시 항목이 앞, 키워드로 걸린 항목이 뒤(둘은 e.always로 가름: 상시는 프롬프트 고정부, 걸린 것은 변동부와 말풍선 📖).
+ * @param {LoreEntry[]|undefined} lore @param {string[]} texts 최근 메시지 글(buildInput이 LORE.scan개를 넘김) @returns {LoreEntry[]}
+ */
 function matchLore(lore, texts) {
-  const hay = texts.join("\n").toLowerCase();
-  return (lore || []).filter((e) => e.keys.some((k) => hay.includes(k.toLowerCase()))).slice(0, 6);
+  const hay = (texts || []).join("\n").toLowerCase(), all = (lore || []).map((e, i) => ({ e, i }));
+  // order 큰 것부터, 같으면 적힌 순서(sort가 안정적이지 않은 오래된 엔진에서도 같게 i로 가름)
+  const byOrder = (a, b) => (b.e.order || 0) - (a.e.order || 0) || a.i - b.i;
+  const always = all.filter((x) => x.e.always).sort(byOrder);
+  const hit = all.filter((x) => !x.e.always && has(hay, x.e.keys) && (!(x.e.also || []).length || has(hay, x.e.also)) && !has(hay, x.e.not)).sort(byOrder);
+  const out = []; let chars = 0;
+  for (const x of always.concat(hit)) {
+    const n = String(x.e.text || "").length;
+    if (out.length >= LORE.max || chars + n > LORE.budget) continue; // 넘치면 건너뛰고 더 짧은 다음 항목을 봄
+    out.push(x.e); chars += n;
+  }
+  return out;
 }
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/core/commands.js
@@ -2908,7 +2930,7 @@ function commandList(text, c) {
            src/js/ai/prompt/rules.js { rulesPrompt }
            src/js/core/character.js { getChar }
            src/js/core/commands.js { commandText }
-           src/js/core/constants.js { MARK }
+           src/js/core/constants.js { LORE, MARK }
            src/js/core/rooms.js { curText }
            src/js/images/situations.js { sitHints }
    내보냄: usedOpeners, buildInput
@@ -2949,10 +2971,10 @@ function usedOpeners(hist) {
 function buildInput(r, uptoIdx, statusBefore, direction) {
   const hist = r.msgs.slice(0, uptoIdx).filter((m) => curText(m));
   const recent = hist.slice(-(r.set.mem * 2 + 1));
-  const lore = matchLore(getChar(r.char.id)?.lore || r.char.lore, recent.slice(-3).map((m) => (m.role === "ai" ? curText(m) : m.text) || ""));
+  const lore = matchLore(getChar(r.char.id)?.lore || r.char.lore, recent.slice(-LORE.scan).map((m) => (m.role === "ai" ? curText(m) : m.text) || ""));
   const len = LEN[r.set.len] || LEN.mid;
   const out = [{ role: "user", content: rulesPrompt(r, lore, hist) }];
-  out.lore = lore.map((e) => e.keys[0]);
+  out.lore = lore.filter((e) => !e.always).map((e) => e.keys[0]); // 말풍선 📖에는 키워드로 걸린 것만(상시 항목은 늘 들어가므로 뺌)
   // 직전 응답 하나에는 그때의 상태창을 출력 형식 그대로 붙여 보냄 — 기록 속 응답이 모두 본문으로만 끝나면 그 모양을 따라 상태창을 빼먹는 모델이 많음(2026-11-09 모델 시험).
   // 추천 답변이 없던 응답(시작 상황 등)에는 형식을 보이기 위한 보기 셋을 넣음
   const lastAi = [...recent].reverse().find((m) => m.role === "ai");
@@ -3006,7 +3028,7 @@ function relStage(c, s) {
 }
 /**
  * 시스템 프롬프트 — 작품 설정·연기 규칙·서사 원칙·장면 이미지 번호(0~14)·응답 형식(MARK + status JSON).
- * @param {Room} r @param {LoreEntry[]} [lore] 이번 턴에 맞은 키워드북 @param {Message[]} [hist=r.msgs] @returns {string}
+ * @param {Room} r @param {LoreEntry[]} [lore] 이번 턴에 넘길 키워드북(matchLore — 상시 항목 + 키워드로 걸린 항목) @param {Message[]} [hist=r.msgs] @returns {string}
  */
 function rulesPrompt(r, lore = [], hist = r.msgs) {
   const c = r.char, p = r.persona, len = LEN[r.set.len] || LEN.mid;
@@ -3023,6 +3045,7 @@ function rulesPrompt(r, lore = [], hist = r.msgs) {
   // 장소(MP<n>)·컷씬(EV<n>) 코드 — 최신 작품(getChar)에 적혀 있을 때만(작품을 고치면 열린 방에도 바로)
   const live = getChar(c.id) || c;
   const places = (live.places || []).map((p, i) => `${PLACE}${i + 1}=${p.name}`).join(", ");
+  const loreLine = (list) => list.map((e) => `- ${e.keys[0]}: ${e.text}`).join("\n"), loreAlways = lore.filter((e) => e.always), loreHit = lore.filter((e) => !e.always);
   const cuts = (live.cuts || []).map((e, i) => cutsUsed.has(i + 1) ? "" : `${CUT}${i + 1}=${e.title}${e.when ? "(" + e.when + ")" : ""}`).filter(Boolean).join(", ");
   return `너는 한국어 캐릭터 롤플레이 플랫폼의 연기 엔진이다. 아래 설정의 ${c.world_mode ? "세계관 내레이터로서 모든 인물과 세계를" : "캐릭터 「" + c.name + "」를"} 연기하며 유저와 함께 이야기를 만든다.
 
@@ -3038,13 +3061,13 @@ ${c.speech || "(설정 없음)"}
 
 [숨겨진 설정 — 충분히 가까워지기 전까지는 암시만]
 ${c.secret || "(없음)"}
-${r.directive ? "\n[이 대화의 시작 설정]\n" + r.directive + "\n" : ""}
+${loreAlways.length ? "\n[키워드북 · 상시 — 이 작품에서 늘 사실인 설정]\n" + loreLine(loreAlways) + "\n" : ""}${r.directive ? "\n[이 대화의 시작 설정]\n" + r.directive + "\n" : ""}
 [유저 캐릭터] ${p.name}${p.memo ? " (" + p.memo + ")" : ""}
 ${p.desc || "(설명 없음)"}
 ${r.userNote ? "\n[유저노트 — 유저가 직접 적은 설정. 캐릭터 설정보다 우선한다. 단, 아래 연기 규칙의 안전 항목은 넘지 않는다]\n" + r.userNote + "\n" : ""}
 [장기 기억 — 지금까지의 줄거리. 모순되지 않게 쓰고, 물건·별명·약속·떡밥을 자연스럽게 다시 꺼내 쓴다]
 ${r.memory || "(아직 없음)"}
-${lore.length ? "\n[키워드북 — 이번 장면에 나온 키워드의 설정. 사실로 삼아 자연스럽게 반영하되 설명하듯 늘어놓지 않는다]\n" + lore.map((e) => `- ${e.keys[0]}: ${e.text}`).join("\n") + "\n" : ""}
+${loreHit.length ? "\n[키워드북 — 이번 장면에 나온 키워드의 설정. 사실로 삼아 자연스럽게 반영하되 설명하듯 늘어놓지 않는다]\n" + loreLine(loreHit) + "\n" : ""}
 
 [연기 규칙]
 - 유저 캐릭터(${p.name})의 대사·행동·속마음을 대신 쓰거나 결정하지 않는다. 유저가 한 행동의 결과와 다른 인물·세계의 반응만 쓴다.
