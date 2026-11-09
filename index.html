@@ -2294,7 +2294,7 @@ function rulesParts(r, lore = [], hist = r.msgs) {
   const fields = c.fields.map((f) => `"${f}":${f === c.gauge && typeof r.status?.[f] === "number" ? "0~100 정수" : '"짧은 값"'}`).join(",");
   const cast = c.cast || [], byCode = (code) => cast.find((x) => x.code === code);
   const seen = new Set(), cutsUsed = new Set(), PLACE = seriesCode("place"), CUT = seriesCode("cut");
-  hist.forEach((m) => imgTags(curText(m)).forEach((t) => { if (t.code === CUT) cutsUsed.add(t.sit); else { seen.add(t.code); const f = byCode(t.code); if (f && f.of) seen.add(f.of); } }));
+  hist.forEach((m) => imgTags(curText(m)).forEach((t) => { const f = byCode(t.code); if (t.code === CUT) cutsUsed.add(t.sit); else if (f) { seen.add(t.code); if (f.of) seen.add(f.of); } }));
   const castLine = cast.map((x) => `${x.code}=${x.name}${x.of ? `(${(byCode(x.of) || {}).name || x.of}의 다른 모습 — 그 모습일 때만 이 코드)` : ""}`).join(", ");
   const ex = exampleCast(c);
   const sn = (name) => SIT.indexOf(name) + " " + name;

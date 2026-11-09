@@ -36,7 +36,7 @@ export function rulesParts(r, lore = [], hist = r.msgs) {
   const cast = c.cast || [], byCode = (code) => cast.find((x) => x.code === code);
   // 이미 등장한 인물(폼 태그는 본체도 등장한 것으로)·이미 나온 컷씬 번호
   const seen = new Set(), cutsUsed = new Set(), PLACE = seriesCode("place"), CUT = seriesCode("cut"); // 예약 시리즈 코드(MP·EV)는 codes.js SERIES에서
-  hist.forEach((m) => imgTags(curText(m)).forEach((t) => { if (t.code === CUT) cutsUsed.add(t.sit); else { seen.add(t.code); const f = byCode(t.code); if (f && f.of) seen.add(f.of); } }));
+  hist.forEach((m) => imgTags(curText(m)).forEach((t) => { const f = byCode(t.code); if (t.code === CUT) cutsUsed.add(t.sit); else if (f) { seen.add(t.code); if (f.of) seen.add(f.of); } })); // 장소 태그(MP)·작품에 없는 코드는 인물이 아니므로 뺌
   const castLine = cast.map((x) => `${x.code}=${x.name}${x.of ? `(${(byCode(x.of) || {}).name || x.of}의 다른 모습 — 그 모습일 때만 이 코드)` : ""}`).join(", ");
   const ex = exampleCast(c); // 예시 태그·예시 대사에 쓸 인물 — 이 작품의 첫 인물
   const sn = (name) => SIT.indexOf(name) + " " + name;

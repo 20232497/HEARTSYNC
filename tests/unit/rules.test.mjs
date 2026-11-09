@@ -42,8 +42,23 @@ test("rulesParts 고정부: 턴이 바뀌어도(대화·상태창·기억·유�
     assert.ok(b.tail.indexOf("따르지 않고") > 0 && b.tail.indexOf("따르지 않고") < b.tail.indexOf("[출력 형식"));
   }
 });
+test("이미 등장한 인물에는 인물 코드만 — 장소 태그(MP)·작품에 없는 코드는 넣지 않고, 컷씬은 따로 센다", () => {
+  const r = room(ORIGINALS[0].id), A = r.char.cast[0].code, B = r.char.cast[1].code;
+  r.char.places = [{ name: "광장" }]; r.char.cuts = [{ title: "컷", when: "때" }];
+  r.msgs = [{ id: "a0", role: "ai", idx: 0, alts: [{ text: `[[MP1]]
+
+[[${A}0]]
+
+[[ZZZZ1]]
+
+[[EV1]]`, status: r.status }], statusBefore: r.status }];
+  const line = rulesParts(r).vary.split("\n").find((l) => l.indexOf("- 이미 등장한 인물:") === 0);
+  assert.equal(line, "- 이미 등장한 인물: " + A);
+  assert.ok(!line.includes(B));
+});
 test("시작 상황의 선택 칸: place는 첫 메시지 맨 위에 장소 태그(이미 있으면 그대로), suggestions는 첫 메시지의 추천, lead는 정해진 턴 동안만 변동부에", () => {
   const base = JSON.parse(JSON.stringify(ORIGINALS[0])), p = { id: "p1", name: "지호", memo: "", desc: "" };
+  base.openings.forEach((o) => { delete o.place; delete o.suggestions; delete o.lead; }); // 작품이 실제로 적은 선택 칸에 기대지 않게 지우고 시작
   const c = { ...base, places: [{ name: "광장" }, { name: "서고" }], openings: [
     { ...base.openings[0], place: 2, suggestions: ["하나", "둘", "셋", "넷"], lead: { text: "시작 연출 표식", turns: 2 } },
     { ...base.openings[0], title: "이미 태그", text: "[[MP2]]\n\n본문", place: 2 }, { ...base.openings[0], title: "아무것도 없음" }] };

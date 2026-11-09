@@ -63,7 +63,7 @@ for (const [dev, engine, opts] of [["Desktop Chrome", chromium, {}], ["iPhone 13
     }
     // 비공개(스포일러) 플래그 — 가짜 데이터로 틀만 확인: 인물의 hidden 칸은 잠긴 칩, hidden 장소는 도감 칸에서 그림만 가림(이름은 보임)
     res.hidden = await p.evaluate(() => {
-      const c = { ...normalizeChar(getChar(ORIGINALS[0].id)), id: "zz-test", cast: [{ code: "T", name: "시험", hidden: [3] }], places: [{ name: "비밀의 방", hidden: true }, { name: "광장" }],
+      const c = { ...normalizeChar(getChar(ORIGINALS[0].id)), id: "zz-test", cast: [{ code: "T", name: "시험", hidden: [3] }], places: [{ name: "비밀의 방", hidden: true }, { name: "광장" }], cuts: [], // 작품이 실제로 적은 컷씬에 기대지 않게 비움
         images: { MP: { 1: "content/zz/images/MP1.webp", 2: "content/zz/images/MP2.webp" } } }; // 없는 작품 id라 이 가짜 그림 경로가 그대로 쓰임(글만 만들고 화면에 넣지는 않음)
       castSheet(c, c.cast[0]); const locked = $$(".overlay .chip.locked").length; closeOverlays();
       const html = codexHTML(c);
