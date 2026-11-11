@@ -14,12 +14,16 @@
 // 차례: 로그인 확인 → 요청 모양 → (성인만) 성인 인증(adult_checks — verify-adult.ts가 쓴 것) → (성인만) 미성년 암시(앱과 같은 함수) → 하루 한도(chat_usage, 트랙마다 따로) → 모델 호출.
 // 대화 내용은 저장·기록하지 않는다(남는 것은 계정·날짜·트랙별 호출 수뿐). 모델 이름과 성인 트랙 머리말은 코드가 아니라 환경 변수에 둔다(공개 저장소에 두지 않음):
 //   CHAT_MODELS '{"general":{"quick":"…"},"adult":{"quick":"…","default":"…","complex":"…"}}'(값은 모델 이름, 성인 트랙은 그 모델만의 생각 설정을 붙인 {"model":"…","reasoning":{…}}도)
-//   · 일반: ANTHROPIC_API_KEY · CHAT_FREE_DAILY_LIMIT(기본 80 — 무료 10턴에 요약·추천·다시 쓰기를 더한 넉넉한 상한)
+//   · 일반: ANTHROPIC_API_KEY · CHAT_FREE_DAILY_LIMIT(기본 80 — 무료 10턴에 요약·추천·다시 쓰기를 더한 넉넉한 상한). 생각 설정은 환경 변수가 아니라 아래 THINK(앱과 같은 값)
 //   · 성인: OPENROUTER_API_KEY · CHAT_PREAMBLE_ADULT(선택) · CHAT_DAILY_LIMIT(기본 300) · CHAT_ALLOW_TEST_IDV(시험 채널 인증도 인정하려면 "1")
 
 const OPENROUTER = "https://openrouter.ai/api/v1/chat/completions", ANTHROPIC = "https://api.anthropic.com/v1/messages";
 const ROLES = ["system", "user", "assistant"], TIERS = ["quick", "default", "complex"], TRACKS = ["general", "adult"];
 const MAX_MESSAGES = 200, MAX_CHARS = 600000; // 요청 하나의 크기 한도(기억력 40턴 + 시스템 글보다 넉넉하게)
+// 일반 트랙(Claude)의 생각 설정: 이 세대 Claude는 생각이 기본으로 켜져 있고 생각 토큰도 max_tokens에서 빠짐 — 그대로 두면 본문이 한도에 잘려 상태창이 빠짐.
+// 앱이 자기 키로 부를 때(src/js/ai/llm.js THINKING)와 같은 값이어야 함(단위 시험 chat-gate가 두 값이 같은지 봄): 대화는 effort low,
+// room은 생각 몫으로 출력 한도에 더하는 토큰(쓰지 않은 만큼은 과금 없음). 앱은 관문에 room을 뺀 값(본문 몫)만 보냄
+const THINK = { effort: "low", room: 2000 };
 
 export const CORS = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info", "Access-Control-Allow-Methods": "POST, OPTIONS" };
 const out = (status, body) => new Response(JSON.stringify(body), { status, headers: { ...CORS, "Content-Type": "application/json" } });
@@ -103,12 +107,12 @@ export async function handle(req, get, f = fetch, now = () => new Date(), screen
           // data_collection deny: 입력을 학습·보관하는 제공자를 빼고 고름(맞는 제공자가 없으면 404 → not_configured)
           body: JSON.stringify({ model, messages: [{ role: "system", content: (pre ? pre + "\n\n" : "") + msgs[0].content }, ...rest], max_tokens: maxTokens, stream: true, reasoning, provider: { data_collection: "deny" } }) });
       } else {
-        // 일반 트랙: 앱이 자기 키로 부를 때와 같은 Anthropic Messages 요청(머리말·생각 설정 없음) — 키만 회사 것
+        // 일반 트랙: 앱이 자기 키로 부를 때와 같은 Anthropic Messages 요청(머리말 없음, 생각 설정 THINK도 앱과 같은 값) — 키만 회사 것
         // 프롬프트 캐싱: cache_prefix가 시스템 글 안쪽을 가리키면 고정부(캐시 표시) + 나머지 블록 둘로
         const sysText = msgs[0].content, cut = Number.isInteger(body.cache_prefix) && body.cache_prefix > 0 && body.cache_prefix < sysText.length ? body.cache_prefix : 0;
         const system = cut ? [{ type: "text", text: sysText.slice(0, cut), cache_control: { type: "ephemeral" } }, { type: "text", text: sysText.slice(cut) }] : sysText;
         up = await f(ANTHROPIC, { method: "POST", signal: req.signal, headers: { "x-api-key": modelKey, "anthropic-version": "2023-06-01", "Content-Type": "application/json" },
-          body: JSON.stringify({ model, max_tokens: maxTokens, stream: true, system, messages: rest }) });
+          body: JSON.stringify({ model, max_tokens: maxTokens + THINK.room, output_config: { effort: THINK.effort }, stream: true, system, messages: rest }) });
       }
     } catch { fail(502, "upstream"); }
     if (up.status === 429) fail(429, "rate_limited");
