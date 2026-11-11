@@ -32,7 +32,7 @@ export const TARGETS = {
 /* 폴더 이름이 곧 작품의 aud(관심있는 대화) 값 */
 export const AUD_DIRS = { f: "여성향(남성 캐릭터와의 대화)", m: "남성향(여성 캐릭터와의 대화)", all: "전체(남녀가 섞임)" };
 /* 빌드 검사에 쓰는 앱 규칙 — src/js에서 같은 코드를 꺼내 쓴다(규칙이 두 군데로 갈라지지 않게) */
-const APP_RULES = ["SIT", "CODE_RE", "SERIES", "codebook", "APP_COMMANDS", "PALETTES", "MOTIFS", "CATS", "LIMITS", "LORE", "FREE_DAILY", "MODELS", "guessAud", "personaWho", "personaLook", "castLook", "minorFlags", "minorHint", "settingHint", "LORE_KINDS"];
+const APP_RULES = ["SIT", "CODE_RE", "SERIES", "codebook", "APP_COMMANDS", "PALETTES", "MOTIFS", "CATS", "LIMITS", "LORE", "FREE_DAILY", "MODELS", "guessAud", "personaWho", "personaLook", "castLook", "minorFlags", "minorHint", "settingHint", "LORE_KINDS", "OPENING_ID_RE"];
 /* 오래된 iOS(13 이하)·인앱 브라우저에서 문법 오류가 나는 것들 */
 const OLD_IOS = [[/\|\|=|&&=|\?\?=/, "논리 할당(||= &&= ??=)"], [/\.at\(/, "Array.at()"], [/\(\?<[=!]/, "정규식 lookbehind"],
   [/\bstructuredClone\b/, "structuredClone"], [/\.findLast(?:Index)?\(/, "findLast()"], [/\bObject\.hasOwn\(/, "Object.hasOwn()"]];
@@ -547,6 +547,9 @@ function checkWork(mod, { aud, row, id, wrel, R, errors, warnings }) {
   if (!Array.isArray(c.openings) || !c.openings.length) e("openings(시작 상황)가 하나 이상 있어야 해요");
   else c.openings.forEach((o, i) => {
     if (!isObj(o) || !str(o.title) || !str(o.text)) return e(`openings[${i}]: title·text가 있어야 해요`);
+    // 시작 상황 id: 대화방이 제목이 아니라 이것으로 시작 상황을 기억함(제목은 고쳐도 됨) — 필수, 작품 안에서 겹치지 않게
+    if (typeof o.id !== "string" || !R.OPENING_ID_RE.test(o.id)) e(`openings[${i}](${o.title}).id${o.id === undefined ? "가 없어요" : `("${o.id}")가 모양에 안 맞아요`} — 영문 소문자로 시작하는 소문자·숫자·하이픈 2~24자(예: id: "first-night"). 화면에는 안 보이고, 한 번 공개하면 고치지 않아요`);
+    else if (c.openings.findIndex((x) => isObj(x) && x.id === o.id) !== i) e(`openings[${i}].id("${o.id}")가 앞의 시작 상황과 겹쳐요`);
     if (o.directive !== undefined && typeof o.directive !== "string") e(`openings[${i}].directive는 글이어야 해요`);
     // 시작 상황의 선택 칸: 배경 장소(places의 n번째)·첫 답변 추천(최대 3개)·시작 직후 N턴 동안만 주는 연출 지시
     const nPlaces = Array.isArray(c.places) ? c.places.length : 0;
