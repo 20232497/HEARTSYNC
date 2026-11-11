@@ -9,6 +9,7 @@
     "dev": "node tools/dev.mjs",
     "content:report": "node tools/content-report.mjs",
     "content:lock": "node tools/content-lock.mjs",
+    "content:art": "node tools/content-art.mjs",
     "test": "node --test",
     "e2e": "node tests/run.mjs",
     "serve": "node tests/serve.mjs"
