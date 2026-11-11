@@ -3246,7 +3246,8 @@ function engineName() { return !hasClaudeKey() ? "연결 안 됨" : S.settings.a
 const MODEL_OF = { quick: "claude-haiku-5-5", default: "claude-sonnet-5-5", complex: "claude-opus-5-5" };
 /* 생각(thinking): 이 세대 모델은 생각이 기본으로 켜져 있고(Sonnet 기본 effort high, Haiku·Opus medium — Opus는 끌 수 없음) 생각 토큰도 max_tokens에서 빠짐.
    그대로 두면 본문이 한도에 잘려 상태창이 빠짐(2026-11-10 실측: Sonnet이 출력 3,200토큰 중 2,051을 생각에 씀). 대화는 effort low,
-   room은 생각 몫으로 출력 한도에 더하는 토큰(쓰지 않은 만큼은 과금 없음). 무료 길 관문(docs/edge/chat.ts)은 서버가 요청을 만들어 여기 값을 쓰지 않음 */
+   room은 생각 몫으로 출력 한도에 더하는 토큰(쓰지 않은 만큼은 과금 없음). 무료 길 관문(docs/edge/chat.ts)은 서버가 요청을 만들므로
+   같은 값을 따로 둠(THINK — 관문은 앱 모듈을 가져오지 않음. 단위 시험 chat-gate가 두 값이 같은지 봄) — 여기를 바꾸면 그쪽도 */
 const THINKING = { effort: "low", room: 2000 };
 /** 서버 대화 관문이 돌려주는 오류 코드 중 그대로 안내하는 것(나머지는 upstream_error). */
 const GATE_CODES = ["login", "need_key", "adult_required", "minor_blocked", "too_many", "rate_limited", "not_configured"];

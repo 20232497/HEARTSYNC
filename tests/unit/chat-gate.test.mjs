@@ -2,6 +2,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { A, B, SB_URL, fakeWorld, loadEdge } from "./_idv-fake.mjs";
+import { THINKING } from "../../src/js/ai/llm.js";
 import { messagesMinorHint } from "../../src/js/core/safety.js";
 const { handle } = await loadEdge("chat");
 
@@ -105,7 +106,7 @@ test("요청 모양: 모르는 트랙·등급·잘못된 메시지는 bad_reques
 
 /* 일반 트랙의 무료 길: 성인 인증·미성년 판정 없이 로그인과 하루 한도만 — 회사 키의 Claude로, 서버 설정에 있는 등급만 */
 const FREE = { ANTHROPIC_API_KEY: "ant-key-fake", CHAT_MODELS: JSON.stringify({ general: { quick: "claude-haiku-5-5" }, adult: MODELS.adult }) };
-test("일반 무료 길: 성인 인증 없는 계정도 통과 — Anthropic으로, 머리말·생각 설정 없이", async () => {
+test("일반 무료 길: 성인 인증 없는 계정도 통과 — Anthropic으로, 머리말 없이, 생각 설정은 앱(ai/llm.js THINKING)과 같은 값으로", async () => {
   const w = world({ ...FREE, CHAT_PREAMBLE_ADULT: "[운영자 머리말]" }); // 성인 인증 행 없음
   const msgs = [MSGS[0], { role: "user", content: "중학생 때 얘기 좀 해 줘" }]; // 성인 트랙이면 막힐 말 — 일반 트랙은 판정하지 않음
   const r = await call(w, { track: "general", tier: "quick", messages: msgs });
@@ -114,7 +115,12 @@ test("일반 무료 길: 성인 인증 없는 계정도 통과 — Anthropic으�
   const [c] = w.claudeCalls(), sent = JSON.parse(c.body);
   assert.equal(w.claudeCalls().length, 1); assert.equal(w.modelCalls().length, 0); // 외부 모델 쪽으로는 가지 않음
   assert.equal(c.headers["x-api-key"], "ant-key-fake");
-  assert.deepEqual(sent, { model: "claude-haiku-5-5", max_tokens: 3200, stream: true, system: MSGS[0].content, messages: [msgs[1]] });
+  // 생각 토큰도 출력 한도에서 빠지므로: 요청받은 본문 몫(3200)에 생각 몫을 더하고 effort를 낮춤 — 앱이 자기 키로 부를 때와 같은 값(둘이 어긋나면 무료 길에서만 답이 잘림)
+  assert.deepEqual(sent, { model: "claude-haiku-5-5", max_tokens: 3200 + THINKING.room, output_config: { effort: THINKING.effort }, stream: true, system: MSGS[0].content, messages: [msgs[1]] });
+  assert.ok(THINKING.room > 0 && THINKING.effort === "low");
+  // 본문 몫의 상·하한(256~8000)은 그대로, 생각 몫은 그 위에
+  const w2 = world(FREE); await call(w2, { track: "general", tier: "quick", max_tokens: 5 }); await call(w2, { track: "general", tier: "quick", max_tokens: 999999 });
+  assert.deepEqual(w2.claudeCalls().map((x) => JSON.parse(x.body).max_tokens), [256 + THINKING.room, 8000 + THINKING.room]);
   assert.ok(!c.body.includes(A) && !c.body.includes("tokA") && !c.body.includes("머리말"));
   assert.equal(w.usage[A + "/general"], 1); assert.equal(w.usage[A + "/adult"], undefined);
 });
