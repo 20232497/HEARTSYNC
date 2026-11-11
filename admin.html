@@ -4031,7 +4031,7 @@ function pavHTML(p) { const img = IMG.tag(p.img); return `<div class="pav">${img
            src/js/ui/icons.js { ICON }
            src/js/ui/sheet.js { sheet }
            src/js/ui/shell.js { bindGo, go, topbar }
-   내보냄: castSheet, castGridHTML, bindCast, collectHTML, codexHTML, bindCodex, metaHTML, guideHTML, guideSheet, viewCodex
+   내보냄: castSheet, castGridHTML, bindCast, collectHTML, codexHTML, placesHTML, commandsHTML, bindCodex, metaHTML, guideHTML, guideSheet, viewCodex
    쓰는 곳: src/js/ui/room-drawer.js, src/js/ui/detail.js, src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 도감(코드 안내): 독립 화면 viewCodex(#codex·#codex-<작품id> — 공통 표·공통 명령어·작품 고르기·플레이 가이드·인물·장소·컷씬·작품 명령어), 인물 시트(castSheet — 코드·다른 모습·감정 칩(비공개 🔒)·외형·소개),
@@ -4119,11 +4119,13 @@ function cmdCard(x) {
 }
 const cmdList = (list) => `<div class="cmd-list">${list.map(cmdCard).join("")}</div>`;
 const KIND_LEGEND = Object.keys(COMMAND_KINDS).map((k) => `'${COMMAND_KINDS[k].name}' ${COMMAND_KINDS[k].note}`).join(" · ");
-/** 상세 페이지 아래쪽 칸들: 장소(MP)·컷씬(EV) 목록(작품에 있을 때만)과 명령어 카드(allCommands — 앱·연출·이야기). @param {Work} c @returns {string} */
-function codexHTML(c) {
-  const book = codebook(c);
-  return seriesHTML(c, book) +
-    `<div class="box"><h3>명령어 <small>대화방 입력창에 !를 치면 목록이 떠요</small></h3>${cmdList(allCommands(c))}<p class="note" style="margin-top:8px">${esc(KIND_LEGEND)}</p></div>`;
+/** 장소·컷씬 칸과 명령어 칸을 이어 붙인 것(placesHTML + commandsHTML) — 상세 페이지는 둘을 따로 놓고, 흐름 시험(views)이 이 묶음으로 비공개 칸을 봄. @param {Work} c @returns {string} */
+function codexHTML(c) { return placesHTML(c) + commandsHTML(c); }
+/** 상세 페이지의 장소(MP)·컷씬(EV) 칸 — 작품에 있을 때만. 그림이 있는 칸이라 등장인물 아래에 둠. @param {Work} c @returns {string} */
+function placesHTML(c) { return seriesHTML(c, codebook(c)); }
+/** 상세 페이지의 명령어 칸(allCommands — 앱·연출·이야기). 플레이 가이드 바로 아래에 둠. @param {Work} c @returns {string} */
+function commandsHTML(c) {
+  return `<div class="box"><h3>명령어 <small>대화방 입력창에 !를 치면 목록이 떠요</small></h3>${cmdList(allCommands(c))}<p class="note" style="margin-top:8px">${esc(KIND_LEGEND)}</p></div>`;
 }
 /** codexHTML·viewCodex의 복사 버튼·그림 크게 보기 연결. @param {HTMLElement} v */
 function bindCodex(v) {
@@ -6187,7 +6189,7 @@ on("rooms", renderRailRecent); on("wallet", renderWalletChips); on("route", rout
            src/js/core/util.js { $, $$, ago, esc, toast }
            src/js/core/wallet.js { FREE_DAILY, plan, qShort, quote }
            src/js/services/images.js { IMG }
-           src/js/ui/codex.js { bindCast, bindCodex, castGridHTML, codexHTML, collectHTML, guideHTML, metaHTML }
+           src/js/ui/codex.js { bindCast, bindCodex, castGridHTML, collectHTML, commandsHTML, guideHTML, metaHTML, placesHTML }
            src/js/ui/cover.js { coverHTML, lightbox }
            src/js/ui/home.js { rowHTML }
            src/js/ui/icons.js { ICON }
@@ -6197,7 +6199,8 @@ on("rooms", renderRailRecent); on("wallet", renderWalletChips); on("route", rout
    내보냄: viewDetail
    쓰는 곳: src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
-/* 작품 상세 페이지: 표지·소개·찜·플레이 가이드·세계관 일러스트·등장인물(누르면 도감 인물 시트)·장소·컷씬·명령어·시작 상황 → 새 대화 시작, 아래에 같은 줄의 다른 작품 */
+/* 작품 상세 페이지: 표지·제목·찜 → 시작 상황과 새 대화 시작·내 대화방 → 소개·플레이 가이드·명령어 → 그림이 있는 칸(등장인물·장소·컷씬·세계관 일러스트), 아래에 같은 줄의 다른 작품.
+   새 대화 칸을 소개 위에 둠 — 시작 버튼이 세계관 일러스트·등장인물·도감 아래로 묻혀 있었음(2026-11-11 사용자 요청). 글로 읽는 칸(소개·가이드·명령어)을 먼저, 그림은 그 뒤로 이어서 */
 
 
 
@@ -6236,12 +6239,6 @@ function viewDetail(id) {
         <p class="lead">${esc(c.oneLiner)}</p>
         <div class="tags">${(c.tags || []).map((t) => `<span>#${esc(t)}</span>`).join("")}</div>
         <button class="btn sm ghost like-btn" id="like" aria-pressed="${liked(c.id)}">${likeHTML(liked(c.id))}</button>
-        <div class="box"><h3>소개</h3><p>${esc(c.desc)}</p></div>
-        ${guideHTML(c)}
-        <div class="box" id="wArtBox" ${wa ? "" : 'style="display:none"'}><h3>세계관 일러스트</h3>${wa}</div>
-        <div class="box"><h3>등장인물 <small>누르면 코드·감정 칸 안내</small>${collectHTML(c)} <button class="btn sm ghost" data-go="codex-${esc(c.id)}" style="float:right">도감</button></h3>
-          <div class="cast">${castGridHTML(c)}</div></div>
-        ${codexHTML(c)}
         <div class="box"><h3>${c.world_mode ? "게임 모드 · 시작 상황" : "시작 상황"}</h3><div class="openings">
           ${c.openings.map((o, i) => `<label class="opening"><input type="radio" name="op" value="${i}" ${i === 0 ? "checked" : ""}><b>${esc(o.title)}${o.place && (c.places || [])[o.place - 1] ? ` <span class="pill">장소 · ${esc(c.places[o.place - 1].name)}</span>` : ""}</b>
             <span>${esc(o.text.replace(/\[\[[^\]]*\]\]/g, "").replace(/[*"\[\]]/g, "").replace(/\s+/g, " ").slice(0, 120))}…</span></label>`).join("")}
@@ -6251,6 +6248,13 @@ function viewDetail(id) {
         <p class="note" style="margin-top:8px">새 대화는 ${esc(MODELS[set0.model].name)} 모델(${q0.type === "heart" ? "턴당 ♥" + q0.n : qShort(q0)})로 시작해요 — 대화방에서 바꿀 수 있어요. 라이트 모델은 하루 ${FREE_DAILY}턴 무료. 상태창: ${c.fields.slice(0, 8).map(esc).join(" · ")}${c.fields.length > 8 ? " 외" : ""}</p>
         </div>
         ${rooms.length ? `<div class="box"><h3>내 대화방</h3><div class="cont">${rooms.map((r) => `<button data-room="${esc(r.id)}">${coverHTML(r)}<span class="x"><b>${esc(r.name)}</b><span>${esc(r.last)}</span></span><span class="note">${ago(r.at)}</span></button>`).join("")}</div></div>` : ""}
+        <div class="box"><h3>소개</h3><p>${esc(c.desc)}</p></div>
+        ${guideHTML(c)}
+        ${commandsHTML(c)}
+        <div class="box"><h3>등장인물 <small>누르면 코드·감정 칸 안내</small>${collectHTML(c)} <button class="btn sm ghost" data-go="codex-${esc(c.id)}" style="float:right">도감</button></h3>
+          <div class="cast">${castGridHTML(c)}</div></div>
+        ${placesHTML(c)}
+        <div class="box" id="wArtBox" ${wa ? "" : 'style="display:none"'}><h3>세계관 일러스트</h3>${wa}</div>
       </div>
     </div>
     ${rowHTML("같은 줄의 다른 작품", row ? row.title : "", near, "rowNear")}</div>`;
