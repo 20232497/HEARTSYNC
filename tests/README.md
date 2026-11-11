@@ -4,12 +4,21 @@
 |---|---|---|
 | `npm test` | **단위 테스트** `tests/unit/*.test.mjs` — Node가 `src/js/` 모듈을 바로 import(브라우저 없음). 응답 파싱·키워드북·미성년 인물 막기·그림 태그 읽기와 감정 칸 낱말 점수·네트워크 시간 제한·서버에 남겨 둔 성인 인증 함수 | 1초 |
 | `npm run e2e` | **흐름 시험** `tests/e2e/*.mjs` — Playwright(WebKit iPhone 13·SE, Chromium Galaxy)로 빌드된 `index.html`(사용자 사이트)과 `admin.html`(관리자 도구 — `admin`)을 정적 서버에 띄워 실제 화면 흐름을 돈다. 처음 한 번 `npx playwright install webkit chromium` | 4~5분 |
-| `npm run e2e chatflow` | 흐름 시험 하나만(이름 여러 개 가능) | |
+| `npm run e2e chatflow` | 흐름 시험 하나만(이름 여러 개 가능). `-- --retry`를 붙이면 실패한 시험만 한 번 더 돌림(CI가 씀) | |
 | `npm run serve` | 저장소 루트를 정적 서버로만 띄움(휴대폰에서 같은 Wi-Fi로 열어 볼 때 등) | |
 
 `page.evaluate: Execution context was destroyed, most likely because of a navigation`이 Chromium에서 드물게 나면 먼저 실제 이동인지 본다 — Playwright는 평가의 프로토콜 오류를 모두 이 문구로 바꾸는데, 이동 없이 `Promise was collected`인 경우가 있다(평가가 돌려준 약속이 끝나는 순간 GC가 돎. `DEBUG=pw:protocol`로 진짜 오류가 보임). 그때는 다시 돌리면 되고, 자주 나면 그 `evaluate(async …)`를 시작·기다리기·읽기로 나눈다.
 
 `npm run e2e`는 `npm run build`가 만든 `index.html`·`admin.html`을 시험하므로 **빌드 뒤에** 돌린다(`run.mjs`의 `PAGE`가 시험마다 어느 빌드를 여는지 정함). 스크린샷은 `tests/.shots/`(git에 안 들어감).
+
+## CI(GitHub Actions)에서 도는 것
+| 워크플로 | 언제 | 무엇 |
+|---|---|---|
+| **빌드 확인**(`.github/workflows/build.yml`) | PR마다 · main에 들어갈 때 | `npm ci` → `npm run check`(모듈·작품 검사, `index.html`·`admin.html`이 소스와 같은지, 순서 잠금이 최신인지, **기준 가지의 잠금과 맞는지** — `LOCK_BASE`로 PR이 들어갈 가지를 알려 줌) → `npm test` |
+| **흐름 시험**(`.github/workflows/e2e.yml`) | PR마다 · 직접 실행 | `npm ci` → 브라우저 두 종과 한글 글꼴 설치 → `npm run e2e -- --retry`(실패한 시험만 한 번 더 — 두 번 다 실패해야 실패, 다시 돌려 통과한 시험은 경고 줄로 남음). 실패하면 `tests/.shots`의 스크린샷을 `e2e-shots`로 올려 둠(7일). 시간대는 `Asia/Seoul` |
+
+- **흐름 시험은 처음 두 주(2026-11-26쯤까지) '알림만'** 이에요(2026-11-11 사용자 결정) — 필수 검사가 아니라 실패해도 병합을 막지 않고, 병합 담당이 실패 내용을 보고 판단해요. 헛실패가 드물다는 것이 확인되면 필수 검사로 바꿔요. 지정은 GitHub 저장소 설정이라 **사용자가 직접** 해요: 저장소 → Settings → Branches(또는 Rules → Rulesets) → `main` 규칙 → *Require status checks to pass* → 검사 이름 `e2e`(흐름 시험)와 `check`(빌드 확인)를 고름.
+- 이 PC와 CI의 차이: CI는 리눅스(ubuntu)·`HS_ADMIN_PW` 없음(`gate`의 맞는 비밀번호 입력은 건너뜀). CI에서만 깨지는 시험이 나오면 시험을 느슨하게 고치지 말고 CI 환경 값을 맞춰요(시간대·글꼴 — 워크플로의 `env`).
 
 ## 흐름 시험(e2e)
 - 모든 스크립트는 Supabase·카카오 로그인을 `page.route`로 흉내 내므로 실제 서버·계정은 건드리지 않고, 키·이메일은 모두 시험용 가짜 값이다. 계정을 흉내 내지 않는 시험도 `_offline.mjs`의 `noSupabase()`로 Supabase 요청을 빈 목록으로 받는다(로그인하지 않아도 MY가 공지사항을 확인하므로).

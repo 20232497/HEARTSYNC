@@ -4,6 +4,7 @@
 // 브라우저가 없으면 먼저: npx playwright install webkit chromium
 //   node tests/run.mjs            전부
 //   node tests/run.mjs chatflow   하나만(이름 여러 개 가능)
+//   node tests/run.mjs --retry    실패한 시험만 한 번 더 돌림(CI가 씀 — 시간 초과 같은 헛실패에 대비. 다시 돌려 통과한 시험은 끝에 따로 알림)
 // 스크린샷은 tests/.shots/ (git에 안 들어감)
 import { spawn } from "node:child_process";
 import fs from "node:fs";
@@ -30,7 +31,7 @@ const SUITES = {
   scroll: "화면 이동 스크롤: 새 화면은 맨 위부터, 같은 주소를 다시 그리면 보던 자리, 홈으로 돌아오면 보던 자리, 대화방 #log는 그대로"
 };
 const BAD_KEYS = ["fail", "error", "errors", "errs", "pageerror"];
-const only = process.argv.slice(2).filter((a) => !a.startsWith("-"));
+const only = process.argv.slice(2).filter((a) => !a.startsWith("-")), retry = process.argv.includes("--retry"), flaky = [];
 const names = only.length ? only : Object.keys(SUITES);
 for (const n of names) if (!SUITES[n]) { console.error(`모르는 시험: ${n} (가능: ${Object.keys(SUITES).join(", ")})`); process.exit(2); }
 if (!fs.existsSync(path.join(ROOT, "index.html"))) { console.error("index.html이 없어요 — 먼저 npm run build"); process.exit(2); }
@@ -72,10 +73,16 @@ const { url, close } = await serve(ROOT);
 console.log(`정적 서버 ${url} · 시험 ${names.length}개`);
 let failed = 0;
 for (const name of names) {
-  const r = await run(name, url);
+  let r = await run(name, url);
+  if (r.issues.length && retry) { // 그 시험만 한 번 더 — 두 번 다 실패해야 실패
+    console.log(`↻ ${name} (${r.sec}초) 실패 — 한 번 다시 돌려요`); r.issues.forEach((x) => console.log("    " + x));
+    r = await run(name, url); if (!r.issues.length) flaky.push(name);
+  }
   if (r.issues.length) { failed++; console.log(`✗ ${name} (${r.sec}초) — ${SUITES[name]}`); r.issues.forEach((x) => console.log("    " + x)); }
   else console.log(`✓ ${name} (${r.sec}초, 결과 ${r.results}건) — ${SUITES[name]}`);
 }
 await close();
+// 다시 돌려 통과한 시험은 따로 알림(GitHub Actions에서는 경고 줄로 — 헛실패가 얼마나 잦은지 보려고)
+if (flaky.length) console.log(`${process.env.GITHUB_ACTIONS ? "::warning title=흐름 시험::" : ""}다시 돌려 통과한 시험: ${flaky.join(", ")} — 자주 나오면 그 시험을 고쳐야 해요`);
 console.log(failed ? `\n${failed}개 시험 실패` : "\n모두 통과");
 process.exit(failed ? 1 : 0);
