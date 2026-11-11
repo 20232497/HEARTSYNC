@@ -28,6 +28,7 @@ import { appRules } from "./build/app-rules.mjs";
 import { assemble } from "./build/bundle.mjs";
 import { BUILD_DIR, BuildError, LS, PS, ROOT, SIZE_LIMITS, SRC, TARGETS, readText } from "./build/common.mjs";
 import { buildContent } from "./build/content.mjs";
+import { checkDocs } from "./build/docs-check.mjs";
 import { checkForbidden, checkScripts } from "./build/output-check.mjs";
 import { checkBase, readBaseLocks } from "./content-lock.mjs";
 
@@ -110,6 +111,12 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
       }
     }
     console.log(sizeNote(outs.flatMap((o) => o.sizes)));
+    // 병합 전 검사는 문서도 봄(build/docs-check.mjs): CLAUDE.md의 크기 상한, 지도 표와 영역 문서가 가리키는 경로가 실제로 있는지
+    if (check) {
+      const at = (p) => path.join(ROOT, p), text = (p) => (fs.existsSync(at(p)) ? readText(at(p)) : null), d = checkDocs(text("CLAUDE.md"), (p) => fs.existsSync(at(p)), text);
+      if (d.errors.length) { fail = true; console.error("✗ 문서 검사\n" + d.errors.map((x) => "  - " + x).join("\n")); }
+      else console.log("✓ " + d.note);
+    }
     if (fail) process.exit(1);
   } catch (e) {
     if (!(e instanceof BuildError)) throw e;
