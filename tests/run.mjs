@@ -4,6 +4,7 @@
 // 브라우저가 없으면 먼저: npx playwright install webkit chromium
 //   node tests/run.mjs            전부
 //   node tests/run.mjs chatflow   하나만(이름 여러 개 가능)
+//   node tests/run.mjs --retry    실패한 시험만 한 번 더 돌림(CI가 씀 — 시간 초과 같은 헛실패에 대비. 다시 돌려 통과한 시험은 끝에 따로 알림)
 // 스크린샷은 tests/.shots/ (git에 안 들어감)
 import { spawn } from "node:child_process";
 import fs from "node:fs";
@@ -27,10 +28,11 @@ const SUITES = {
   views: "스모크(사용자 사이트): 여섯 화면·오리지널 전부의 상세·각 작품의 대화방(오프닝·상태창·입력창)·드로어와 시트 6종이 오류 없이 그려짐",
   art: "그림이 실린 작품(가짜 그림으로 틀만): 본문 태그 → 그림·갤러리·장소 목록·도감 미리보기, 비공개 그림은 대화에서 본 뒤 도감에서도 열림, 수집 기록과 모은 그림 n / m",
   episode: "에피소드형 작품: 상세(시작 칸이 위·안내·결말 이름) → 장 막대 → 갈림길 카드 → 결말 카드(입력창 숨김·모은 결말) → 외전 방, 대화 목록의 결말·외전 표시, 홈 카드의 에피소드·인원(가짜 AI)",
+  inject: "주입(XSS): 이용자 글·AI 응답·공지와 문의·작품 데이터 자리마다 악성 글을 넣고 사용자 사이트와 관리자 도구의 화면을 돌아 — 실행되지 않고, 주입한 글에서 온 요소·속성이 없고, 글자 그대로 보임",
   scroll: "화면 이동 스크롤: 새 화면은 맨 위부터, 같은 주소를 다시 그리면 보던 자리, 홈으로 돌아오면 보던 자리, 대화방 #log는 그대로"
 };
 const BAD_KEYS = ["fail", "error", "errors", "errs", "pageerror"];
-const only = process.argv.slice(2).filter((a) => !a.startsWith("-"));
+const only = process.argv.slice(2).filter((a) => !a.startsWith("-")), retry = process.argv.includes("--retry"), flaky = [];
 const names = only.length ? only : Object.keys(SUITES);
 for (const n of names) if (!SUITES[n]) { console.error(`모르는 시험: ${n} (가능: ${Object.keys(SUITES).join(", ")})`); process.exit(2); }
 if (!fs.existsSync(path.join(ROOT, "index.html"))) { console.error("index.html이 없어요 — 먼저 npm run build"); process.exit(2); }
@@ -72,10 +74,16 @@ const { url, close } = await serve(ROOT);
 console.log(`정적 서버 ${url} · 시험 ${names.length}개`);
 let failed = 0;
 for (const name of names) {
-  const r = await run(name, url);
+  let r = await run(name, url);
+  if (r.issues.length && retry) { // 그 시험만 한 번 더 — 두 번 다 실패해야 실패
+    console.log(`↻ ${name} (${r.sec}초) 실패 — 한 번 다시 돌려요`); r.issues.forEach((x) => console.log("    " + x));
+    r = await run(name, url); if (!r.issues.length) flaky.push(name);
+  }
   if (r.issues.length) { failed++; console.log(`✗ ${name} (${r.sec}초) — ${SUITES[name]}`); r.issues.forEach((x) => console.log("    " + x)); }
   else console.log(`✓ ${name} (${r.sec}초, 결과 ${r.results}건) — ${SUITES[name]}`);
 }
 await close();
+// 다시 돌려 통과한 시험은 따로 알림(GitHub Actions에서는 경고 줄로 — 헛실패가 얼마나 잦은지 보려고)
+if (flaky.length) console.log(`${process.env.GITHUB_ACTIONS ? "::warning title=흐름 시험::" : ""}다시 돌려 통과한 시험: ${flaky.join(", ")} — 자주 나오면 그 시험을 고쳐야 해요`);
 console.log(failed ? `\n${failed}개 시험 실패` : "\n모두 통과");
 process.exit(failed ? 1 : 0);

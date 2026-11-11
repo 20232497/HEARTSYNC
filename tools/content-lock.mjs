@@ -9,8 +9,11 @@
 //   npm run content:lock                     모든 작품의 잠금을 지금 내용으로 찍음(뒤에 더한 것·고친 이름 반영). 어긋난 작품이 하나라도 있으면 아무것도 찍지 않고 멈춤
 //   npm run content:lock -- --force <작품 id>  그 작품은 어긋나도 다시 찍음(바뀌는 자리를 표로 먼저 보여 줌) — 이미 만든 대화방이 끊길 수 있어 사용자 승인이 있을 때만(docs/TEAM.md)
 // npm run build는 어긋나면 실패하고, 아직 안 잠긴 것은 한 줄로 알리기만 한다. npm run check(병합 전 검사·CI)는 '잠금이 최신이 아님'도 실패로 본다 — 작품을 고쳤으면 커밋 전에 이 명령을 한 번.
+// npm run check는 **기준 가지(origin/main)의 잠금과도** 견준다(아래 readBaseLocks·checkBase) — 잠금 파일을 지우거나 손으로 고쳐 다시 찍는 우회를 막음.
+//   사용자 승인을 받아 강제로 다시 찍은 가지는 그래서 check가 실패하는 것이 정상이고, 병합 담당이 승인을 확인한 뒤 병합한다(docs/TEAM.md).
 import fs from "node:fs";
 import path from "node:path";
+import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { SERIES } from "../src/js/core/constants.js";
 
@@ -86,6 +89,40 @@ export function forceTable(lock, cur) {
     else for (let i = 0; i < Math.max(was.length, now.length); i++) if (was[i] !== now[i]) rows.push(`${L.code(i + 1)} · ${was[i] === undefined ? "(없음)" : "'" + was[i] + "'"} → ${now[i] === undefined ? "(없어짐)" : "'" + now[i] + "'"}`);
   }
   return rows;
+}
+
+/* ---------------------------------------------------------------- 기준 가지와 견주기(npm run check)
+   작업 폴더의 lock.json만 믿으면, 순서를 바꾼 뒤 그 파일을 지우거나 손으로 고치고 다시 찍어 우회할 수 있다 — 그래서 git에 기록된 잠금과도 견준다.
+   기준은 '지금(HEAD)이 기준 가지에서 갈라진 자리'(merge-base)의 잠금: 가지를 딴 뒤 main에 더해진 항목 때문에 헛실패하지 않게. PR의 CI는 병합한 모습을 받아 오므로 그때는 main 그대로와 견줌 */
+/**
+ * 기준 가지의 잠금들을 git에서 읽음. git이 없거나(압축을 푼 폴더) 가지를 못 읽으면 null.
+ * @param {string} ref 기준 가지(예: origin/main) @param {string} cwd 저장소 폴더
+ * @returns {{ at: string, locks: { id: string, rel: string, lock: Record<string, string[]> }[] } | null} at = 견준 커밋
+ */
+export function readBaseLocks(ref, cwd) {
+  const git = (...a) => execFileSync("git", a, { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"], maxBuffer: 1 << 26 });
+  try {
+    const at = git("merge-base", "HEAD", ref).trim();
+    const files = git("ls-tree", "-r", "--name-only", "-z", at, "--", "content").split("\0").filter((f) => f.endsWith("/" + LOCK_FILE));
+    return { at, locks: files.map((f) => { const rel = f.slice(0, -LOCK_FILE.length - 1); return { id: rel.split("/").pop(), rel, lock: JSON.parse(git("show", `${at}:${f}`).replace(/^﻿/, "")) }; }) };
+  } catch (e) { return null; }
+}
+/**
+ * 기준 가지의 잠금과 지금 작품을 견줌(순수 — 판정은 checkLock 그대로). 작품은 id(폴더 이름)로 짝지음: 폴더를 옮겨도 같은 작품.
+ * errors: 기준 가지에 잠금이 있던 작품의 잠금 파일이 없어졌거나, 지금 작품이 그 잠금과 어긋남. notes: 알리기만 하는 것(작품이 없어짐 — 작품 id는 잠그지 않음)
+ * @param {{ id: string, rel: string, lock: Record<string, string[]> }[]} base readBaseLocks의 locks
+ * @param {{ id: string, rel: string, lock: object|null, cur: Record<string, string[]> }[]} works buildContent가 돌려준 locks
+ * @returns {{ errors: string[], notes: string[] }}
+ */
+export function checkBase(base, works) {
+  const errors = [], notes = [];
+  for (const b of base) {
+    const w = works.find((x) => x.id === b.id);
+    if (!w) { notes.push(`기준 가지에 있던 작품 ${b.id}(${b.rel})이(가) 지금은 없어요 — 작품 id는 잠그지 않지만, 이미 만든 대화방은 이 작품을 찾지 못하게 돼요`); continue; }
+    if (!w.lock) errors.push(`${w.rel}: ${LOCK_FILE}이 없어졌어요 — 잠금 파일은 지우지 않아요(되돌린 뒤 npm run content:lock)`);
+    checkLock(b.lock, w.cur).errors.forEach((x) => errors.push(`${w.rel}: ${x}`));
+  }
+  return { errors, notes };
 }
 
 async function main() {
