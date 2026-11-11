@@ -23,7 +23,7 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 export const ART_SPECS = {
   cover: { name: "표지", file: "cover", size: "960×1280", ratio: "3:4 세로", slot: "3:4(홈 카드·상세) — 좁은 화면의 상세는 4:3으로 잘림", format: "webp", note: "화면 자리와 같음. 1080×1440은 모델 기본 해상도보다 커서 줄임(960×1280 생성 시험 통과)", state: "확정" },
   profile: { name: "인물 프로필", file: "<인물 코드>0", size: "832×1248", ratio: "2:3 세로", slot: "2:3(인물 사진 — 상세·도감) · 대화 속은 받은 그림의 비율 그대로", format: "webp", note: "가슴 위 구도. 화면 자리와 같음. 예전 생성 크기 832×1216(archive/style-*)과 품질 차이 없음을 시험으로 확인", state: "확정" },
-  cast: { name: "인물 감정 칸", file: "<인물 코드><번호 1~14>", size: "1024×1024", ratio: "1:1 정사각", slot: "1:1(대화 속 — 받은 그림의 비율 그대로) · 방 갤러리 칸은 4:5라 양옆이 조금 잘림", format: "webp", note: "머리~허벅지 구도와 감정마다 몸짓(2026-11-11 사용자 결정 — 2:3과 정사각을 30장씩 비교해 정사각)", state: "확정" },
+  cast: { name: "인물 감정 칸", file: "<인물 코드><번호 1~14>", size: "1024×1024", ratio: "1:1 정사각", slot: "1:1(대화 속 — 받은 그림의 비율 그대로 · 방 갤러리 칸도 정사각)", format: "webp", note: "머리~허벅지 구도와 감정마다 몸짓(2026-11-11 사용자 결정 — 2:3과 정사각을 30장씩 비교해 정사각)", state: "확정" },
   place: { name: "장소", file: "<장소 코드><번호>", size: "1248×832", ratio: "3:2 가로", slot: "3:2(도감·상세 카드)", format: "webp", note: "화면 자리와 같음(인물 크기를 눕힌 것)", state: "확정" },
   cut: { name: "컷씬", file: "<컷씬 코드><번호>", size: "1248×832", ratio: "3:2 가로", slot: "3:2(도감·상세 카드)", format: "webp", note: "장소와 같음", state: "확정" },
   lore: { name: "세계관 일러스트", file: "lore-<번호>", size: "1248×832", ratio: "3:2 가로", slot: "3:2(상세의 세계관 카드·세계관 수첩)", format: "webp", note: "화면 자리에 맞춤 — 예전 문서의 16:9(1280×720)는 버림", state: "확정" }
