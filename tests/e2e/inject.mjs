@@ -74,7 +74,7 @@ async function handler(route) {
 const session = (tok) => ({ access_token: tok, refresh_token: "r" + tok, expires_at: Date.now() + 86400000, user: { id: U[tok].id, email: U[tok].email, provider: "email", providers: ["email"] } });
 
 /* 넣는 자리의 이름표 — 여기 적힌 것은 모두 어느 화면에선가 글자 그대로 보여야 함(안 보이면 '넣은 글이 화면에 닿지 않았다'로 실패: 시험이 헛도는 것을 막음) */
-const WORK_TAGS = ["title", "name", "one", "desc", "guide", "maker", "tpl", "wtag", "field", "cast", "cdesc", "look", "place", "pdesc", "cut", "when", "ctit", "cdsc", "ctext", "lkey", "ltext", "otit", "otext", "osug", "oval"];
+const WORK_TAGS = ["title", "name", "one", "desc", "guide", "maker", "tpl", "wtag", "field", "cast", "cdesc", "look", "place", "pdesc", "cut", "when", "ctit", "cdsc", "ctext", "lkey", "ltext", "otit", "otext", "osug", "oval", "btit", "ask", "opt", "opt2", "evt", "end", "end2"];
 const ROOM_TAGS = ["pname", "pmemo", "pdsc", "user", "ai", "aiq", "aiem", "sval", "sug", "note", "mem", "mhl", "mht", "pin", "err", "gen", "gval", "gsug", "live", "q"];
 const SERVER_TAGS = ["ntit", "nbody", "qtit", "qbody", "qans", "qtit2", "atit", "abody", "rwork", "rbody", "rwhy", "email"];
 const ADMIN_TAGS = ["ntit", "nbody", "nhid", "nhidb", "atit", "abody", "qmail", "qua", "qscr", "qapp", "rwork", "rbody", "rwhy", "email"]; // 받은 문의는 답변 대기(open)만 보임
@@ -132,14 +132,22 @@ for (const [dev, engine, opts] of [["Desktop Chrome", chromium, {}], ["iPhone 13
         places: [{ name: P("place"), desc: P("pdesc") }], cuts: [{ title: P("cut"), when: P("when") }],
         commands: [{ cmd: "<u>밑줄", title: P("ctit"), desc: P("cdsc"), text: P("ctext") }],
         lore: [{ keys: [P("lkey"), "둘째 키"], text: P("ltext"), kind: "place" }, ...(live.lore || [])],
-        openings: [{ ...first, title: P("otit"), text: P("otext"), place: 1, suggestions: [P("osug")], status: { ...(first.status || {}), [field]: P("oval") } }, ...live.openings.slice(1)]
+        openings: [{ ...first, title: P("otit"), text: P("otext"), place: 1, suggestions: [P("osug")], status: { ...(first.status || {}), [field]: P("oval") } }, ...live.openings.slice(1)],
+        // 에피소드형 작품의 진행표: 장 제목·갈림길의 물음과 보기·사건 제목·결말 이름이 화면에 보임(goal·text·brief는 AI에게만 감)
+        episode: {
+          beats: [{ id: "one", title: P("btit"), goal: P("goal"), at: [1, 3], choice: { id: "road", ask: P("ask"), options: [{ id: "left", label: P("opt"), default: true }, { id: "right", label: P("opt2") }] } }, { id: "two", title: P("btit2"), goal: P("goal2"), at: [4, 8] }],
+          events: [{ id: "storm", title: P("evt"), text: P("evtx") }],
+          endings: [{ id: "good", title: P("end"), brief: P("brief"), when: { choice: { road: "left" } } }, { id: "plain", title: P("end2"), brief: P("brief2") }]
+        }
       });
+      S.wallet.pro = { until: Date.now() + 86400000 }; // 작품당 방 수 한도(무료 3개)에 걸리지 않게 — 이 시험은 같은 작품으로 방을 여럿 엶
       if (typeof HOME_ROWS !== "undefined" && HOME_ROWS[0]) { HOME_ROWS[0].title = P("row"); HOME_ROWS[0].sub = P("rsub"); }
       const r = newRoom(normalizeChar(getChar(live.id)), 0, me), st = { ...r.status, [field]: P("sval") };
       r.set.model = "lite"; r.userNote = P("note"); r.memory = P("mem"); r.memHist = [{ at: Date.now(), label: P("mhl"), text: P("mht") }];
       r.pins = [{ id: uid("p"), text: P("pin"), at: Date.now() }]; r.lastErr = P("err");
-      const ai = { id: uid("m"), role: "ai", idx: 0, statusBefore: r.status, alts: [{ text: `${P("ai")}\n\n"${P("aiq")}"\n\n*${P("aiem")}*`, status: st, suggestions: [P("sug")], lore: [live.lore[0].keys[0]], cost: P("cost") }] };
+      const ai = { id: uid("m"), role: "ai", idx: 0, statusBefore: r.status, alts: [{ text: `${P("ai")}\n\n"${P("aiq")}"\n\n*${P("aiem")}*`, status: st, suggestions: [P("sug")], lore: [live.lore[0].keys[0]], cost: P("cost"), ev: "storm" }] };
       r.msgs.push({ id: uid("m"), role: "user", text: P("user") }, ai); r.status = st; r.bookmarks = [ai.id];
+      Object.assign(r.ep, { t: 1, ask: "road", askAt: 1, seen: ["storm"] }); // 에피소드: 첫 장에서 사건이 하나 일어났고 갈림길 앞에 선 상태
       saveRoom(r);
       return { id: live.id, rid: r.id };
     });
@@ -156,6 +164,7 @@ for (const [dev, engine, opts] of [["Desktop Chrome", chromium, {}], ["iPhone 13
     await act("새 방의 첫 답변 추천", () => toggleSug(), null, 400);
     // 대화방: 본문·상태창·오류 줄, 추천 답변, 입력창 ! 목록, 드로어의 모든 화면, 시트들
     await go("대화방", "r-" + w.rid, 1000);
+    await act("갈림길 카드(오류 줄이 없을 때만 보임)", () => { room.lastErr = ""; renderLog(true); window.__choice = !!document.querySelector("#log .ep-choice") && !!document.querySelector("#log .ep-ev"); });
     await act("추천 답변", () => toggleSug(), null, 400);
     await act("! 명령어 목록", () => { const i = $("#inp"); i.value = "!"; i.oninput(); });
     await p.evaluate(() => { const i = $("#inp"); i.value = ""; i.oninput(); });
@@ -187,6 +196,24 @@ for (const [dev, engine, opts] of [["Desktop Chrome", chromium, {}], ["iPhone 13
     await sweep("가짜 응답 뒤");
     await act("가짜 응답의 추천 답변", () => toggleSug(), null, 400);
     await act("드로어 status(응답 뒤)", () => openRoomDrawer("status"));
+    // 끝난 에피소드 방: 결말 카드(결말 이름·고른 길) → 외전 고르기 시트(인물 이름) → 외전 방(제목과 첫 장면 제안에 인물 이름이 들어감)
+    await p.evaluate((id) => {
+      const r = newRoom(normalizeChar(getChar(id)), 0, S.personas[0]);
+      r.set.model = "lite";
+      r.msgs.push({ id: uid("m"), role: "user", text: "끝으로" }, { id: uid("m"), role: "ai", idx: 0, statusBefore: r.status, alts: [{ text: "결말 장면.", status: r.status, suggestions: [] }] });
+      Object.assign(r.ep, { t: 9, beat: 2, picks: { road: "left" }, seen: ["storm"], end: "good", over: true });
+      saveRoom(r); location.hash = "r-" + r.id;
+    }, w.id); await wait(900);
+    await sweep("끝난 에피소드 방의 결말 카드");
+    res.ep = { choice: await p.evaluate(() => !!window.__choice), end: await p.evaluate(() => !!document.querySelector("#log .ep-end")) };
+    await p.evaluate(() => { const b = $("#epSide"); if (b) b.click(); }); await wait(400);
+    res.ep.sheet = await p.evaluate(() => !!document.querySelector(".overlay #sideGo"));
+    await sweep("외전 고르기 시트");
+    await p.evaluate(() => { const b = document.querySelector("#sideGo"); if (b) b.click(); }); await wait(900);
+    res.ep.side = await p.evaluate(() => !!(room && room.side) && !!document.querySelector("#log .side-pill"));
+    await sweep("외전 방");
+    if (!res.ep.choice || !res.ep.end || !res.ep.sheet || !res.ep.side) errs.push("에피소드 화면이 열리지 않음(갈림길 카드·결말 카드·외전 시트·외전 방): " + JSON.stringify(res.ep));
+    await act("외전 방의 첫 장면 제안", () => toggleSug(), null, 400);
     // 대화 목록·MY·공지·내 문의
     await go("대화 목록", "chats", 700);
     await go("MY", "me", 900);

@@ -7,8 +7,8 @@ import assert from "node:assert/strict";
 import { ROOT, appRules, checkWork, scanImages, checkForbidden } from "../../tools/build.mjs";
 
 const R = appRules();
-/* 검사 함수 안의 오류 자리 수(맨 아래 '규칙 자리 수' 시험) — 2026-11-12에 자리마다 번호를 달아 재 보니 아래 표가 76곳을 모두 한 번 이상 건드림 */
-const WORK_SITES = 70, IMAGE_SITES = 6;
+/* 검사 함수 안의 오류 자리 수(맨 아래 '규칙 자리 수' 시험) — 2026-11-12에 자리마다 번호를 달아 재 보니 아래 표가 110곳(작품 70 · 그림 6 · 에피소드 34)을 모두 한 번 이상 건드림 */
+const WORK_SITES = 70, IMAGE_SITES = 6, EP_SITES = 34;
 const KIND = Object.keys(R.LORE_KINDS)[0], long = (n) => "가".repeat(n);
 /** 통과하는 가짜 작품 — 선택 칸을 거의 다 채워 둠(인물 둘: 본체 AAA + 그 다른 모습 AAB, 장소 둘, 컷씬 하나, 키워드북 하나, 명령어 둘, 시작 상황 하나) */
 const base = () => ({
@@ -186,6 +186,76 @@ test("checkWork: 경고로만 알리는 것(빌드는 통과)", () => {
   warn((c, x) => { x.aud = "all"; }, /출연진 외모가 모두 남성이에요 — f\/ 폴더가 더 맞을 수 있어요/);
 });
 
+/* 에피소드형 작품의 진행표(work.js episode — checkWork가 checkEpisode로 검사): 통과하는 진행표 하나(장 둘 · 갈림길 하나 · 사건 하나 · 결말 둘)를 한 칸씩 망가뜨림 */
+const episode = () => ({
+  beats: [
+    { id: "one", title: "첫 장", goal: "두 사람이 만난다", at: [1, 3], choice: { id: "road", ask: "어느 길로 갈까?", options: [{ id: "left", label: "왼쪽 길", default: true }, { id: "right", label: "오른쪽 길" }] } },
+    { id: "two", title: "둘째 장", goal: "두 사람이 헤어진다", at: [4, 8] }
+  ],
+  events: [{ id: "storm", title: "폭풍", text: "폭풍이 몰려온다", beat: "one", keys: ["비"], gauge: ">=50" }],
+  endings: [{ id: "good", title: "함께 떠남", brief: "둘이 함께 떠난다", when: { choice: { road: "left" }, gauge: ">= 60", events: ["storm"] } }, { id: "plain", title: "각자의 길", brief: "각자 떠난다" }]
+});
+const runEp = (mut) => run((c) => { const ep = episode(); const swap = mut ? mut(ep) : undefined; c.episode = swap === undefined ? ep : swap; });
+const beat = (title, id, at) => ({ id, title, goal: "목표", at });
+const EP_RULES = [
+  ["episode가 객체가 아님", () => [], /episode는 \{ beats: \[장…\]/],
+  ["장이 하나뿐", (ep) => { ep.beats.pop(); }, /episode\.beats\(장\)는 2~8개예요\(지금 1개\)/],
+  ["장이 아홉", (ep) => { ep.beats = Array.from({ length: 9 }, (_, i) => beat("장 " + i, "b" + i, [i + 1, i + 2])); ep.events = []; }, /episode\.beats\(장\)는 2~8개예요\(지금 9개\)/],
+  ["장에 목표가 없음", (ep) => { delete ep.beats[1].goal; }, /episode\.beats\[1\]: \{ id, title\(장 제목\), goal/],
+  ["장 id에 대문자", (ep) => { ep.beats[1].id = "Two"; }, /episode\.beats\[1\]\.id\("Two"\)가 모양에 안 맞아요/],
+  ["장 id가 없음", (ep) => { delete ep.beats[1].id; }, /episode\.beats\[1\]\.id가 없어요/],
+  ["장의 목표가 너무 김", (ep) => { ep.beats[1].goal = long(301); }, /episode\.beats\[1\]\.goal이 301자예요 — 300자 이내/],
+  ["장의 기간이 0턴부터", (ep) => { ep.beats[0].at = [0, 3]; }, /episode\.beats\[0\]\.at은 \[시작 턴, 마감 턴\]/],
+  ["장의 마감이 시작보다 빠름", (ep) => { ep.beats[1].at = [8, 4]; }, /episode\.beats\[1\]\.at은 \[시작 턴, 마감 턴\]/],
+  ["장의 마감이 120턴을 넘음", (ep) => { ep.beats[1].at = [4, 121]; }, /episode\.beats\[1\]\.at은 \[시작 턴, 마감 턴\]/],
+  ["장의 기간이 숫자 하나", (ep) => { ep.beats[1].at = [4]; }, /episode\.beats\[1\]\.at은 \[시작 턴, 마감 턴\]/],
+  ["뒤 장이 앞 장보다 먼저 열림", (ep) => { ep.beats[0].at = [5, 6]; }, /episode\.beats\[1\]\.at의 시작\(4\)이 앞 장의 시작\(5\)보다 빨라요/],
+  ["갈림길에 물음이 없음", (ep) => { ep.beats[0].choice.ask = ""; }, /episode\.beats\[0\]\.choice는 \{ id, ask\(60자 이내의 물음\)/],
+  ["갈림길의 물음이 너무 김", (ep) => { ep.beats[0].choice.ask = long(61); }, /episode\.beats\[0\]\.choice는 \{ id, ask\(60자 이내의 물음\)/],
+  ["갈림길 id 모양", (ep) => { ep.beats[0].choice.id = "Road"; }, /episode\.beats\[0\]\.choice\.id\("Road"\)가 모양에 안 맞아요/],
+  ["갈림길 id 중복", (ep) => { ep.beats[1].choice = { id: "road", ask: "다시 어느 길로?", options: [{ id: "up", label: "위" }, { id: "down", label: "아래" }] }; }, /episode: 갈림길 id "road"가 겹쳐요/],
+  ["보기가 하나뿐", (ep) => { ep.beats[0].choice.options.pop(); }, /episode\.beats\[0\]\.choice\.options\(보기\)는 2~4개예요/],
+  ["보기에 글이 없음", (ep) => { ep.beats[0].choice.options[1].label = ""; }, /episode\.beats\[0\]\.choice\.options\[1\]: \{ id, label/],
+  ["보기의 글이 너무 김", (ep) => { ep.beats[0].choice.options[1].label = long(R.LIMITS.suggestion + 1); }, /episode\.beats\[0\]\.choice\.options\[1\]: \{ id, label/],
+  ["보기 id 모양", (ep) => { ep.beats[0].choice.options[1].id = "R"; }, /episode\.beats\[0\]\.choice\.options\[1\]\.id\("R"\)가 모양에 안 맞아요/],
+  ["보기 id 중복", (ep) => { ep.beats[0].choice.options[1].id = "left"; }, /episode\.beats\[0\]\.choice: 보기 id "left"가 겹쳐요/],
+  ["default가 true가 아님", (ep) => { ep.beats[0].choice.options[1].default = false; }, /choice\.options\[1\]\.default는 true만/],
+  ["기본 보기가 둘", (ep) => { ep.beats[0].choice.options[1].default = true; }, /episode\.beats\[0\]\.choice: 기본 보기\(default\)는 하나만/],
+  ["장 id 중복", (ep) => { ep.beats[1].id = "one"; }, /episode: 장 id "one"가 겹쳐요/],
+  ["events가 배열이 아님", (ep) => { ep.events = "폭풍"; ep.endings[0].when = { gauge: "<10" }; }, /episode\.events는 사건 배열/],
+  ["사건이 스물하나", (ep) => { ep.events = Array.from({ length: 21 }, (_, i) => ({ id: "ev" + i, title: "사건 " + i, text: "지시" })); ep.endings[0].when = { gauge: "<10" }; }, /episode\.events\(사건\)는 20개까지/],
+  ["사건에 지시 글이 없음", (ep) => { delete ep.events[0].text; }, /episode\.events\[0\]: \{ id, title\(화면의 사건 띠\), text/],
+  ["사건의 지시 글이 너무 김", (ep) => { ep.events[0].text = long(301); }, /episode\.events\[0\]: \{ id, title\(화면의 사건 띠\), text/],
+  ["사건 id 모양", (ep) => { ep.events[0].id = "Storm"; ep.endings[0].when = { gauge: "<10" }; }, /episode\.events\[0\]\.id\("Storm"\)가 모양에 안 맞아요/],
+  ["사건의 장이 없는 id", (ep) => { ep.events[0].beat = "three"; }, /episode\.events\[0\]\.beat\("three"\)는 beats의 장 id/],
+  ["사건의 keys가 빈 배열", (ep) => { ep.events[0].keys = []; }, /episode\.events\[0\]\.keys는 낱말 배열/],
+  ["사건의 게이지 조건 모양", (ep) => { ep.events[0].gauge = "50"; }, /episode\.events\[0\]\.gauge\("50"\)는 "<50"·">=80" 같은 게이지 조건/],
+  ["사건 id 중복", (ep) => { ep.events.push({ id: "storm", title: "또 폭풍", text: "지시" }); }, /episode: 사건 id "storm"가 겹쳐요/],
+  ["결말이 하나뿐", (ep) => { ep.endings.shift(); }, /episode\.endings\(결말\)는 2~8개예요\(지금 1개\)/],
+  ["결말에 줄거리가 없음", (ep) => { delete ep.endings[0].brief; }, /episode\.endings\[0\]: \{ id, title\(결말 이름\), brief/],
+  ["결말의 줄거리가 너무 김", (ep) => { ep.endings[1].brief = long(R.LIMITS.lead + 1); }, /episode\.endings\[1\]: \{ id, title\(결말 이름\), brief/],
+  ["결말 id 모양", (ep) => { ep.endings[1].id = "Plain"; }, /episode\.endings\[1\]\.id\("Plain"\)가 모양에 안 맞아요/],
+  ["마지막 결말에 조건", (ep) => { ep.endings[1].when = { gauge: "<10" }; }, /episode\.endings\[1\]\(마지막 결말\)에는 when을 쓰지 않아요/],
+  ["가운데 결말에 조건이 없음", (ep) => { delete ep.endings[0].when; }, /episode\.endings\[0\]\.when이 필요해요/],
+  ["결말 조건이 빈 객체", (ep) => { ep.endings[0].when = {}; }, /episode\.endings\[0\]\.when이 필요해요/],
+  ["결말 조건의 choice가 빈 객체", (ep) => { ep.endings[0].when = { choice: {}, gauge: "<10" }; }, /episode\.endings\[0\]\.when\.choice는 \{ 갈림길 id: 보기 id \}/],
+  ["결말 조건의 갈림길이 없음", (ep) => { ep.endings[0].when = { choice: { river: "left" } }; }, /episode\.endings\[0\]\.when\.choice: 갈림길 "river"가 없어요/],
+  ["결말 조건의 보기가 없음", (ep) => { ep.endings[0].when = { choice: { road: "up" } }; }, /episode\.endings\[0\]\.when\.choice: 갈림길 "road"에 보기 "up"가 없어요/],
+  ["결말 조건의 게이지 모양", (ep) => { ep.endings[0].when = { gauge: "많이" }; }, /episode\.endings\[0\]\.when\.gauge\("많이"\)는/],
+  ["결말 조건의 사건이 없음", (ep) => { ep.endings[0].when = { events: ["flood"] }; }, /episode\.endings\[0\]\.when\.events는 events의 사건 id 배열/],
+  ["결말 id 중복", (ep) => { ep.endings[1].id = "good"; }, /episode: 결말 id "good"가 겹쳐요/]
+];
+test("checkWork: 바탕 가짜 작품 + 통과하는 에피소드 진행표는 오류·경고 없음(사건·갈림길이 없는 진행표도)", () => {
+  assert.deepEqual(runEp(), { errors: [], warnings: [] });
+  assert.deepEqual(runEp((ep) => { delete ep.events; delete ep.beats[0].choice; ep.endings[0].when = { gauge: "<10" }; }), { errors: [], warnings: [] });
+});
+for (const [name, mut, want] of EP_RULES) {
+  test(`checkWork(episode): ${name} → 실패`, () => {
+    const { errors } = runEp(mut);
+    assert.ok(errors.some((x) => want.test(x)), `기대한 오류(${want})가 없음 — 나온 오류: ${JSON.stringify(errors)}`);
+  });
+}
+
 /* 그림 파일 이름 규칙(scanImages): 저장소 안의 임시 폴더(.build/ — git에 안 들어감)에 빈 파일을 이름만 만들어 넣어 봄 */
 const tmps = [];
 after(() => tmps.forEach((d) => fs.rmSync(d, { recursive: true, force: true })));
@@ -249,8 +319,9 @@ test("checkForbidden: 두 빌드 모두 외부 AI·그림 서비스 주소가 �
 /* 규칙을 새로 더했는데 이 표에 줄을 더하지 않으면 여기서 걸림 — checkWork·scanImages 안의 오류 자리(e(…)·errors.push(…)) 수 */
 test("규칙 자리 수: checkWork의 오류 자리 수가 이 시험이 아는 수와 같음(규칙을 더하면 위 표에 줄을 더하고 이 수를 고침)", () => {
   const src = fs.readFileSync(new URL("../../tools/build.mjs", import.meta.url), "utf8").replace(/\r\n?/g, "\n");
-  const body = (name) => { const i = src.indexOf(`export function ${name}(`), j = src.indexOf("\n}\n", i); assert.ok(i >= 0 && j > i, name + " 를 찾지 못함"); return src.slice(i, j); };
+  const body = (name) => { const i = src.indexOf(`function ${name}(`), j = src.indexOf("\n}\n", i); assert.ok(i >= 0 && j > i, name + " 를 찾지 못함"); return src.slice(i, j); };
   const sites = (text, re) => (text.match(re) || []).length;
   assert.equal(sites(body("checkWork"), /[^\w.]e\(/g), WORK_SITES, "checkWork의 e(…) 자리 수가 바뀜 — 더한 규칙의 줄을 RULES 표에 넣고 WORK_SITES를 고치세요");
+  assert.equal(sites(body("checkEpisode"), /[^\w.]e\(/g), EP_SITES, "checkEpisode의 e(…) 자리 수가 바뀜 — 더한 규칙의 줄을 EP_RULES 표에 넣고 EP_SITES를 고치세요");
   assert.equal(sites(body("scanImages"), /errors\.push\(/g), IMAGE_SITES, "scanImages의 오류 자리 수가 바뀜 — IMAGE_RULES 표에 줄을 넣고 IMAGE_SITES를 고치세요");
 });
