@@ -1,6 +1,6 @@
 /* 대화방 화면 뼈대·입력창·게이지 */
 import { MODELS } from "../../ai/models.js";
-import { getChar } from "../../core/character.js";
+import { liveWork } from "../../core/character.js";
 import { commandHelp, findCommand, parseCommand } from "../../core/commands.js";
 import { migrateRoom, roomKey, saveRoom } from "../../core/rooms.js";
 import { S, gen, room, setRoom } from "../../core/state.js";
@@ -92,7 +92,7 @@ export async function viewChat(id) {
    작품의 즉답 명령어(commands의 text)는 AI 없이 정해진 글을 방에 남김(replyNow). 이 둘은 이름 뒤에 덧붙인 말이 있어도 같음(덧붙인 말은 쓰지 않음).
    앱 연출형(prompt — !시간경과 등)·작품 명령어(work.js commands의 prompt)·모르는 !글은 false → 그대로 AI에 보냄(연출 지시로 바꾸고 덧붙인 말을 붙이는 건 buildInput의 commandText) */
 function runCommand(t) {
-  const live = getChar(room.char.id) || room.char, f = findCommand(parseCommand(t), live);
+  const live = liveWork(room.char), f = findCommand(parseCommand(t), live);
   if (f && f.work && f.work.text) { replyNow(t, f.work); return true; }
   if (!f || !f.app || !f.app.view) return false;
   if (f.app.view === "help") { flashHint("명령어: " + commandHelp(live) + " — 이름 뒤에 말을 덧붙여도 되고, // 로 시작하면 연출 지시"); return true; }

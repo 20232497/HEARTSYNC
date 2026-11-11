@@ -2,7 +2,7 @@
 import { PROMPT_CACHE, trackOf } from "./models.js";
 import { looseJSON } from "./parse.js";
 import { anthropicEvent, openaiEvent, readSSE } from "./stream.js";
-import { getChar } from "../core/character.js";
+import { liveWork } from "../core/character.js";
 import { ANTHROPIC_URL, CFG } from "../core/config.js";
 import { TIMEOUT } from "../core/constants.js";
 import { roomMinorHint } from "../core/safety.js";
@@ -81,7 +81,7 @@ async function viaGateway({ sys, cut, rest, tier, onText, signal, maxTokens }, r
   if (!CFG.chatUrl) throw { code: "no_gateway" };
   if (SB.s) await SB.fresh();
   if (!SB.s) throw { code: adult ? "login" : "login_free" };
-  if (adult && roomMinorHint(r, (getChar(r.char.id) || r.char).lore)) throw { code: "minor_blocked" };
+  if (adult && roomMinorHint(r, liveWork(r.char).lore)) throw { code: "minor_blocked" };
   const T = timeoutSignal(TIMEOUT.connect, signal); let res;
   try {
     res = await fetch(CFG.chatUrl, {

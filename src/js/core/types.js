@@ -207,7 +207,11 @@
  * @typedef {Object} Room
  * @property {string} id
  * @property {boolean} [v2]
- * @property {Work} char 방을 만들 때의 작품 사본(최신 키워드북·그림은 getChar로 따로 봄)
+ * @property {Work} char 방을 만들 때의 작품 사본. **칸마다 어디서 읽는지**(규칙은 core/character.js의 LIVE_FIELDS·liveWork 한 곳 — 방의 작품이 필요한 모듈은 liveWork(r.char)를 씀):
+ *   - 방 사본에 굳는 칸(예전 방의 이야기가 바뀌지 않게): 인물 cast(이름·코드·다른 모습·비공개 감정 칸) · 설정 persona·world·speech·secret · 상태창 fields·gauge · 제목·표지(title·glyph·pal·motif) · 에피소드 진행표 episode · 트랙 track
+ *   - 최신 작품에서 읽는 칸(작품을 고치면 열린 방에도 바로): 키워드북 lore · 장소 places · 컷씬 cuts · 작품 명령어 commands · 플레이 가이드 guide · 유저노트 양식 noteTemplate · 권장 모델 recommend · 그림 images · 세계관 일러스트 loreImages
+ *   - 지금 이렇게 동작함(예외): 그림은 최신 작품에 images가 없으면 방 사본의 것(images/pick.js) · 한 턴의 키워드북은 최신 작품에 lore가 없으면 방 사본의 것(ai/prompt/input.js) ·
+ *     '처음부터 다시'는 새 방을 최신 작품 통째로 만듦(latestWork) · 예전 방을 옮길 때(core/rooms.js upgradeCodes)는 최신 작품의 출연진에서 인물 코드를 찾음 · 작품이 content/에서 빠지면 모든 칸이 방 사본
  * @property {{ id: string, name: string, memo: string, desc: string, img: ImageRef|"" }} persona
  * @property {string} opening 시작 상황 제목(화면 표시용 — 분기한 방은 끝에 ' (분기)')
  * @property {string} [openingId] 시작 상황 id(Opening.id) — '처음부터'가 이것으로 같은 시작 상황을 찾음(core/rooms.js openingIndex). 이 칸이 생기기 전의 방에는 없어 제목으로 찾음

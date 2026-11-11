@@ -1,6 +1,6 @@
 /* 세계관 카드: 상세 페이지의 키워드북 항목별 그림 갤러리(worldArtHTML)와 대화방 드로어의 세계관 수첩(loreSeen·loreCard) — 항목마다 종류(인물·장소…)·이름·설명과 그림(원래 비율 그대로).
    그림은 작품 폴더의 images/lore-<n>.*(빌드가 loreImages로 실음) */
-import { getChar } from "../core/character.js";
+import { liveWork } from "../core/character.js";
 import { esc } from "../core/util.js";
 import { IMG } from "../services/images.js";
 /** @typedef {import("../core/types.js").LoreEntry} LoreEntry */
@@ -9,7 +9,7 @@ import { IMG } from "../services/images.js";
 
 /* 키워드북 항목의 종류(작품 work.js의 lore[].kind) — 상세 카드의 머리표. 빌드가 이 키로 검사(APP_RULES) */
 export const LORE_KINDS = { person: "인물", creature: "동물·존재", place: "장소", item: "물건", event: "사건", group: "세력", concept: "설정" };
-export function loreImg(c, key) { const live = getChar(c.id) || c; return (live.loreImages || {})[key] || ""; }
+export function loreImg(c, key) { return (liveWork(c).loreImages || {})[key] || ""; }
 /**
  * 키워드북 카드 한 장. 그림을 누르면 크게(data-wlb — 쓰는 화면이 lightbox를 연결).
  * @param {Work} c @param {LoreEntry} e @param {boolean} [open] 거짓이면 종류와 ???만(세계관 수첩에서 아직 대화에 안 나온 항목 — 이름·설명·그림은 내보내지 않음)
@@ -22,7 +22,7 @@ export function loreCard(c, e, open = true, ph = true) {
 }
 /** 상세 페이지의 세계관 일러스트 — 키워드북이 없으면 빈 문자열(칸을 숨김). @param {Work} c @returns {string} */
 export function worldArtHTML(c) {
-  const lore = (getChar(c.id) || c).lore || [];
+  const lore = liveWork(c).lore || [];
   return lore.length ? `<div class="wgal">${lore.map((e) => loreCard(c, e)).join("")}</div>` : "";
 }
 /**
