@@ -49,15 +49,19 @@ test("비공개·실림·태그 표시와 합계", () => {
   assert.equal(s.left1 + s.left2 + s.left3, rows.length - 4);
   assert.equal(s.left1, 7 - 2, "1순위 7장 가운데 표지·AAA0이 실림");
 });
-test("규격 표는 모두 초안이고, README '그림 싣기'가 같은 크기를 보여 줌(고칠 곳은 ART_SPECS 한 곳 — 바꾸면 README도)", () => {
+test("규격 표는 모두 확정이고, README '그림 싣기'가 같은 크기를 보여 줌(고칠 곳은 ART_SPECS 한 곳 — 바꾸면 README도)", () => {
   const readme = fs.readFileSync(new URL("../../content/README.md", import.meta.url), "utf8");
   for (const k of Object.keys(ART_SPECS)) {
     const s = ART_SPECS[k];
-    assert.equal(s.state, "초안", k); assert.equal(s.format, "webp", k);
+    assert.equal(s.state, "확정", k); assert.equal(s.format, "webp", k);
     assert.match(s.size, /^\d+×\d+$/, k);
     assert.ok(readme.includes(s.size), `README에 ${s.name}의 크기 ${s.size}가 없음`);
   }
-  // 적힌 비율이 크기와 어긋나지 않는지 — '약'이 붙지 않은 비율은 크기와 정확히 맞아야 함
-  for (const [k, w, h] of [["cover", 3, 4], ["lore", 16, 9]]) { const [x, y] = ART_SPECS[k].size.split("×").map(Number); assert.equal(x * h, y * w, k); assert.ok(!/약/.test(ART_SPECS[k].ratio)); }
-  for (const k of ["cast", "place", "cut"]) assert.match(ART_SPECS[k].ratio, /^약 /, k + ": 정확한 비율이 아니면 '약'을 붙임");
+  // 적힌 비율이 크기와 정확히 맞고 화면 자리(slot의 첫 비율)와도 같은지 — 다르면 화면에서 잘리거나 여백이 생김
+  for (const k of Object.keys(ART_SPECS)) {
+    const s = ART_SPECS[k], [x, y] = s.size.split("×").map(Number), m = s.ratio.match(/^(\d+):(\d+) /), slot = s.slot.match(/(\d+):(\d+)/);
+    assert.ok(m, k + ": 비율은 'W:H 세로|가로'"); assert.equal(x * Number(m[2]), y * Number(m[1]), k + ": 크기와 비율이 어긋남");
+    assert.equal(x * Number(slot[2]), y * Number(slot[1]), k + ": 크기와 화면 자리 비율이 어긋남");
+    assert.ok(x * y <= 1300000, k + ": 모델 기본 해상도(약 100만 화소)보다 많이 큼");
+  }
 });
