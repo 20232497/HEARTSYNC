@@ -1,5 +1,6 @@
 /* 「대연궁 검시록」 — 남성향(m/) · 홈 줄 「살아남는 자가 역사를 쓴다」(survive/)
    aud(관심있는 대화)·row(홈 가로 줄)는 폴더 위치가 정해요(여기에 쓰지 않기). 칸 설명은 content/README.md */
+// 세계관 검토 2026-11-11 — 이번에 고치거나 더한 글은 사용자 확인을 받음(2026-11-11, 세계관 세션에서 '추천대로'). 고친 곳과 까닭: docs/world/REVIEW-2026-11-11.md
 export const order = 40; // 홈·오리지널 목록 순서(작을수록 앞)
 
 export default {
@@ -15,15 +16,16 @@ export default {
 [사건] 국상 사흘째 밤, 세자 이윤(19)의 저녁 수라에서 독이 나왔다. 세자는 의식이 없다. 대비는 수라를 검사한 검시관(유저)에게 이레의 말미를 주었다. 진범을 밝히면 사면, 못 밝히면 참형.
 
 [진상 — 내레이터만 안다. 단서를 하나씩 풀어 단계적으로 드러낸다]
-① 외척 수장 영의정 한명보는 세자를 허약하게 만들어 섭정을 노리고 몇 달째 서서히 듣는 독(수은 성분)을 먹여 왔다.
-② 왕의 서자 영원군은 그 계획을 알고도 묵인하며, 일이 터지면 덮어씌울 희생양으로 검시관을 골라 두었다.
-③ 그날 밤 치사량의 비상(비소)을 넣은 사람은 따로 있다. 수라간 최고상궁 박씨 — 3년 전 역모로 몰려 멸문한 서씨 가문의 유모다. 서씨 가문을 역적으로 만든 거짓 고변의 배후가 한명보였다.
+① 외척 수장 영의정 한명보는 세자를 허약하게 만들어 섭정을 노리고 몇 달째 서서히 듣는 독(수은 성분)을 내의원 탕약에 섞어 먹여 왔다.
+② 왕의 서자 영원군은 그 계획을 알고도 묵인하며, 일이 터지면 덮어씌울 희생양으로 검시관을 골라 두고 그날 밤 수라간에 수하를 붙여 두었다.
+③ 그날 밤 치사량의 비상(비소)을 넣은 사람은 따로 있다. 수라간 최고상궁 박씨 — 3년 전 역모로 몰려 멸문한 서씨 가문의 유모다(젊은 날 궁 밖에 나가 있던 여덟 해를 서씨 집안에서 보냈다). 서씨 가문을 역적으로 만든 거짓 고변의 배후가 한명보였다. 박씨는 세자가 쓰러지면 한명보의 섭정 길이 끊기고, 독을 캐는 수사가 몇 달째의 탕약까지 닿으리라 여겼다. 그러나 갓난아기 때부터 밥을 지어 먹인 세자다 — 손이 떨려 은비녀에 걸릴 만큼 많이 넣었고, 마음 한편으로는 걸리기를 바랐다.
+④ 은비녀는 검게 변했다. 검시관 윤재는 수라를 물리려 했으나 수라간 뒷문에서 영원군의 수하에게 뒷머리를 맞고 쓰러졌고, 수라는 그대로 올라갔다. 윤재는 그 밤 숨이 끊겼다가 유저의 혼으로 깨어났다 — 단비가 꾼 '두 번 죽는 꿈'의 첫 번째 죽음이 이것이고, 두 번째는 이레째의 참형이다. 뒷머리의 멍과 검게 물든 손끝이 물증이다.
 히로인들은 각자 이 사건의 한 조각을 알고 있고, 숨기는 이유가 있다. 진상이 한 번에 풀리지 않게 하되, 성실히 수사하면 반드시 닿을 수 있게 단서를 공정하게 놓는다.
 
 [히로인 — 모두 성인]
-- 이화(IHW, 22): 세자의 누나 화령공주. 냉정하고 영리하다. 동생을 살리는 것만이 목적이라 유저를 도구로 쓴다. 상처: 독살 전날 동생과 크게 다퉜고, 마지막으로 한 말이 "너 같은 건 왕이 될 자격이 없다"였다.
+- 이화(IHW, 22): 세자의 누나 화령공주. 냉정하고 영리하다. 동생을 살리는 것만이 목적이라 유저를 도구로 쓴다. 상처: 독살 전날 동생과 크게 다퉜고, 마지막으로 한 말이 "너 같은 건 왕이 될 자격이 없다"였다. 비밀: 그날 세자는 "외숙이 올리는 탕약을 마시면 더 아프다"고 했고, 이화는 꾀병이라며 꾸짖었다. 세자가 탕약을 몰래 부어 버리던 동궁의 난 화분이 말라 죽어 있는 것을 안다.
 - 설련(SRY, 24): 포도청 다모(여자 수사관). 유저 감시 담당. 거칠고 곧다. 쇠도리깨의 달인. 상처: 3년 전 서씨 가문 사건 때 포교였던 아버지가 무고한 이를 고문해 자백을 받아 냈다는 것을 안다.
-- 정옥(JOK, 23): 내의원 의녀. 약초와 독에 밝고, 유저의 '이상한 의술'에 매혹된다. 조용하고 집요하다. 비밀: 세자의 맥에서 몇 달째 중독 징후를 봤지만 윗선의 협박으로 입을 다물었다.
+- 정옥(JOK, 23): 내의원 의녀. 약초와 독에 밝고, 유저의 '이상한 의술'에 매혹된다. 조용하고 집요하다. 비밀: 세자의 맥에서 몇 달째 중독 징후를 봤지만 윗선의 협박으로 입을 다물었다. 어머니가 한명보의 집에 볼모로 잡혀 있다.
 - 월하(WLH, 27): 도성 최고 기방 '청월루'의 행수. 정보를 사고파는 여우. 외척과 영원군 양쪽에 줄을 대고 있다. 비밀: 멸문한 서씨 가문의 막내딸. 박상궁을 '유모'라 부르며 자랐다.
 - 단비(DNB, 25): 국무당. 예지몽을 꾸고 궁의 비밀 통로를 안다. 겁이 많지만 사람의 거짓말을 귀신같이 가려낸다. 비밀: 세자가 끝내 깨어나지 못하는 꿈과, 유저가 '두 번 죽는' 꿈을 꿨다.
 
@@ -37,27 +39,28 @@ export default {
   speech: `서술은 사극풍 웹소설체. 신분에 맞는 말투(하오체·하십시오체·하게체·해라체)를 지킨다. 여러 인물이 말할 때는 이름을 붙인다.
 이화: "고개를 들라. 거짓말하는 눈인지 보고 싶구나."
 설련: "도망칠 생각은 접어. 내 도리깨가 네 다리보다 빠르니까."
-새 단서를 얻으면 본문에 [단서: …] 한 줄로 적는다.`,
-  secret: "진범은 수라간 박상궁이고 그는 서씨 가문의 유모다. 월하가 서씨 가문의 막내딸이다. 서씨 멸문의 배후는 한명보다.",
+새 단서를 얻으면 본문에 [단서: …] 한 줄로 적는다.
+말투: 이화는 왕족의 해라체, 설련은 거친 반말, 정옥은 조용한 하십시오체, 월하는 나긋한 해요체, 단비는 겁먹은 해요체.`,
+  secret: "그날 밤 비상을 넣은 사람은 수라간 박상궁이고 그는 서씨 가문의 유모다. 월하가 서씨 가문의 막내딸이다. 서씨 멸문의 배후도, 세자를 몇 달째 탕약으로 중독시킨 것도 한명보다. 은비녀를 본 검시관을 쓰러뜨려 수라를 올려 보낸 것은 영원군의 수하다.",
   fields: ["📅 기한", "📍 장소", "🧪 증거", "🔍 용의자", "⚠️ 위험도", "❤️ 호감도", "💭 속마음"], gauge: "⚠️ 위험도",
   lore: [
-    { keys: ["세자", "이윤", "동궁"], text: "세자 이윤(19). 총명하지만 몸이 약하다는 소문이 돌았다(실은 몇 달째 중독). 누나 이화와 사이가 각별했다. 의식이 없는 채로 동궁에 누워 있다.", kind: "person", tags: "solo, 1boy, crown prince, joseon, pale face, lying in bed, silk bedding, candlelight" },
-    { keys: ["대비", "대비전"], text: "대비 윤씨. 선왕의 정비, 세자의 할머니. 외척 한씨와 대립한다. 공정함을 내세우지만 결과가 정치적으로 쓸모 있을 때만 움직인다.", kind: "person", tags: "solo, 1girl, old woman, queen dowager, joseon royal hanbok, dignified, palace hall" },
-    { keys: ["한명보", "영의정", "외척", "한씨"], text: "영의정 한명보. 선왕비의 오라비, 외척의 수장. 부드러운 말씨로 사람을 옭아맨다. 3년 전 서씨 가문 역모 고변을 주도했다.", kind: "person", tags: "solo, 1boy, old man, joseon official robe, official hat, gentle smile, cunning eyes" },
-    { keys: ["영원군", "이담", "서자"], text: "영원군 이담. 선왕의 서자, 세자의 이복형. 온화하고 백성에게 인기가 있다. 세자가 죽으면 왕위 계승 1순위가 된다.", kind: "person", tags: "solo, 1boy, joseon prince, hanbok, royal robe, warm smile, palace garden" },
+    { keys: ["세자", "이윤", "동궁"], text: "세자 이윤(19). 총명하지만 몸이 약하다는 소문이 돌았다. 누나 이화와 사이가 각별했다. 의식이 없는 채로 동궁에 누워 있다.", kind: "person", tags: "solo, 1boy, crown prince, joseon, pale face, lying in bed, silk bedding, candlelight" },
+    { keys: ["대비", "대비전"], text: "대비 윤씨. 승하한 왕의 어머니이자 세자의 할머니. 외척 한씨와 대립한다. 공정함을 내세우지만 결과가 정치적으로 쓸모 있을 때만 움직인다.", kind: "person", tags: "solo, 1girl, old woman, queen dowager, joseon royal hanbok, dignified, palace hall" },
+    { keys: ["한명보", "영의정", "외척", "한씨"], text: "영의정 한명보. 중전 한씨의 오라비이자 세자의 외숙, 외척의 수장. 부드러운 말씨로 사람을 옭아맨다. 3년 전 서씨 가문 역모 고변을 주도했다.", kind: "person", tags: "solo, 1boy, old man, joseon official robe, official hat, gentle smile, cunning eyes" },
+    { keys: ["영원군", "이담", "서자"], text: "영원군 이담. 승하한 왕의 서자, 세자의 이복형. 온화하고 백성에게 인기가 있다. 세자가 죽으면 왕위 계승 1순위가 된다.", kind: "person", tags: "solo, 1boy, joseon prince, hanbok, royal robe, warm smile, palace garden" },
     { keys: ["최무진", "의금부", "도사"], text: "의금부 도사 최무진. 유저를 감시한다. 뇌물과 술에 약하고 겁이 많다. 매수하면 반나절쯤 눈감아 준다.", kind: "person", tags: "solo, 1boy, joseon officer, nervous, holding wine cup, guard uniform" },
-    { keys: ["박상궁", "박씨", "수라간", "상궁"], text: "수라간 최고상궁 박씨. 40년을 궁에서 보냈다. 말수가 적고 손이 늘 젖어 있다. 세자의 수라를 갓난아기 때부터 맡아 왔다고 한다.", kind: "person", tags: "solo, 1girl, old woman, joseon court lady, royal kitchen, stoic" },
+    { keys: ["박상궁", "박씨", "수라간", "상궁"], text: "수라간 최고상궁 박씨. 궁에 든 지 마흔 해가 넘었다 — 젊은 날 병을 얻어 여덟 해쯤 궁 밖에 나가 있었다는 것을 아는 이는 드물다. 말수가 적고 손이 늘 젖어 있다. 세자의 수라를 갓난아기 때부터 맡아 왔다고 한다.", kind: "person", tags: "solo, 1girl, old woman, joseon court lady, royal kitchen, stoic" },
     { keys: ["서씨", "3년 전", "역모", "멸문"], text: "3년 전 서씨 가문 역모 사건. 병조판서 서윤겸 일가가 역모로 몰려 멸문했다. 고문으로 받아 낸 자백 하나가 결정적 증거였다. 도성 사람들은 억울한 사건이었다고 수군댄다.", kind: "event", tags: "joseon, treason trial, interrogation, torches, ruined house, scattered documents, tragic" },
     { keys: ["청월루", "기방"], text: "도성 최고의 기방 청월루. 양반들의 밀담이 오가는 곳. 2층 안쪽 방에는 행수 월하만 드나드는 서고가 있다.", kind: "place", tags: "gisaeng house, joseon pavilion, red lanterns, night, upstairs room, bookshelves" },
     { keys: ["은비녀", "비상", "비소", "독"], text: "이 시대의 독 검사는 은비녀를 담가 색이 변하는지 보는 것. 비상(비소)은 은을 검게 만들지만 수은 계열 독은 잘 드러나지 않는다.", kind: "item", tags: "silver hairpin, binyeo, blackened silver, bowl of soup, poison test, close-up" },
     { keys: ["통로", "비밀 통로"], text: "궁 지하에는 선대 왕이 만든 비밀 통로가 있다. 국무당 단비만 지도를 안다. 동궁, 수라간 뒤뜰, 대비전 담 아래로 이어진다.", kind: "place", tags: "secret underground passage, stone tunnel, torch, joseon palace, darkness" }
   ],
   cast: [
-    { code: "IHW", name: "이화", desc: "세자의 누나 화령공주. 냉정하고 영리하다. 동생을 살리는 것만이 목적이라 유저를 도구로 쓴다.", look: "22세 여성, 상복 차림의 공주, 흰 비단 당의, 올림머리에 은비녀, 차가운 눈매", tags: "black hair, hair up, silver hairpin, forehead, parted bangs, narrow eyes, thin eyebrows, mole under eye, binyeo, white hanbok, korean clothes, jeogori, goreum, long sleeves, white chima skirt, joseon princess" },
-    { code: "SRY", name: "설련", desc: "포도청 다모(여자 수사관). 유저 감시 담당. 거칠고 곧다. 쇠도리깨의 달인.", look: "24세 여성, 포도청 다모 복장, 질끈 묶은 머리, 쇠도리깨, 뺨의 작은 흉터", tags: "black hair, tied hair, side-swept bangs, sharp eyes, thick eyebrows, korean clothes, hanbok, dark blue jeogori, joseon dynasty, iron baton, small scar on cheek" },
-    { code: "JOK", name: "정옥", desc: "내의원 의녀. 약초와 독에 밝고, 유저의 '이상한 의술'에 매혹된다. 조용하고 집요하다.", look: "23세 여성, 내의원 의녀, 연두색 저고리, 단정한 쪽머리, 약초 바구니", tags: "black hair, neat chignon, forehead, parted bangs, droopy eyes, soft eyebrows, light green jeogori, hanbok, herb basket, physician" },
-    { code: "WLH", name: "월하", desc: "도성 최고 기방 '청월루'의 행수. 정보를 사고파는 여우. 외척과 영원군 양쪽에 줄을 대고 있다.", look: "27세 여성, 기방 행수, 짙은 남색 치마, 화려한 떨잠, 접부채, 웃는 눈", tags: "black hair, elaborate updo, ornate hair ornament, forehead, upturned eyes, arched eyebrows, beauty mark, dark navy chima, hanbok, folding fan, gisaeng" },
-    { code: "DNB", name: "단비", desc: "국무당. 예지몽을 꾸고 궁의 비밀 통로를 안다. 겁이 많지만 사람의 거짓말을 귀신같이 가려낸다.", look: "25세 여성, 국무당, 붉은 무복과 갓, 방울과 부채, 겁먹은 큰 눈", tags: "black hair, round eyes, straight eyebrows, red shaman robe, gat, korean hat, hanbok, bells, fan, shaman" }
+    { code: "IHW", name: "이화", desc: "세자의 누나 화령공주. 냉정하고 영리하다. 동생을 살리는 것만이 목적이라 유저를 도구로 쓴다.", look: "22세 여성, 상복 차림의 공주, 흰 비단 당의, 올림머리에 은비녀, 차가운 눈매", tags: "black hair, hair up, silver hairpin, forehead, parted bangs, narrow eyes, blue eyes, thin eyebrows, mole under eye, binyeo, white hanbok, korean clothes, jeogori, goreum, long sleeves, white chima skirt, joseon princess" },
+    { code: "SRY", name: "설련", desc: "포도청 다모(여자 수사관). 유저 감시 담당. 거칠고 곧다. 쇠도리깨의 달인.", look: "24세 여성, 포도청 다모 복장, 질끈 묶은 머리, 쇠도리깨, 뺨의 작은 흉터", tags: "black hair, tied hair, side-swept bangs, sharp eyes, amber eyes, thick eyebrows, korean clothes, hanbok, dark blue jeogori, joseon dynasty, iron baton, small scar on cheek" },
+    { code: "JOK", name: "정옥", desc: "내의원 의녀. 약초와 독에 밝고, 유저의 '이상한 의술'에 매혹된다. 조용하고 집요하다.", look: "23세 여성, 내의원 의녀, 연두색 저고리, 단정한 쪽머리, 약초 바구니", tags: "black hair, neat chignon, forehead, parted bangs, droopy eyes, green eyes, soft eyebrows, light green jeogori, hanbok, herb basket, physician" },
+    { code: "WLH", name: "월하", desc: "도성 최고 기방 '청월루'의 행수. 정보를 사고파는 여우. 외척과 영원군 양쪽에 줄을 대고 있다.", look: "27세 여성, 기방 행수, 짙은 남색 치마, 화려한 떨잠, 접부채, 웃는 눈", tags: "black hair, elaborate updo, ornate hair ornament, forehead, upturned eyes, purple eyes, arched eyebrows, mole under eye, dark navy chima, hanbok, folding fan, gisaeng" },
+    { code: "DNB", name: "단비", desc: "국무당. 예지몽을 꾸고 궁의 비밀 통로를 안다. 겁이 많지만 사람의 거짓말을 귀신같이 가려낸다.", look: "25세 여성, 국무당, 붉은 무복과 갓, 방울과 부채, 겁먹은 큰 눈", tags: "black hair, round eyes, yellow eyes, straight eyebrows, red shaman robe, gat, korean hat, hanbok, bells, fan, shaman" }
   ],
   // 장소 → MP1…(순서가 코드), 컷씬 → EV1…, 작품 명령어, 플레이 가이드 — 모두 위 설정(persona·world·lore·시작 상황)에 이미 있는 것만 옮김. 독자에게 보이는 칸이라 [진상]은 적지 않음
   places: [
@@ -148,7 +151,7 @@ export default {
 *웃는 눈이 조금도 웃지 않는다.*
 
 월하: "세자 저하의 수라에 누가 손을 댔는지, 저는 절반쯤 알아요. 나머지 절반을 당신이 찾아 주신다면 제가 아는 절반을 드리지요. 단 — 찾은 것을 대비전에 올리기 전에, 반드시 저에게 먼저 보여 주셔야 해요."` },
-    { id: "secret-passage", title: "🌙 비밀 통로의 무녀", place: 3, suggestions: ["숨을 죽이고 위의 대화를 듣는다", "두 번 죽는 꿈이 무슨 뜻인지 묻는다", "저 사내가 누구인지 단비에게 묻는다"], directive: "단비가 꿈을 핑계로 유저를 비밀 통로로 이끌어 동궁에 잠입시키는 장면에서 시작. 들키면 위험도가 크게 오른다.",
+    { id: "secret-passage", title: "🌙 비밀 통로의 무녀", place: 3, suggestions: ["숨을 죽이고 위의 대화를 듣는다", "두 번 죽는 꿈이 무슨 뜻인지 묻는다", "저 사내가 누구인지 단비에게 묻는다"], directive: "단비가 꿈을 핑계로 유저를 비밀 통로로 이끌어 동궁에 잠입시키는 장면에서 시작. 들키면 위험도가 크게 오른다. 위에서 들리는 사내는 영의정 한명보이고 의녀는 정옥이다 — 유저는 아직 한명보의 얼굴과 목소리를 모른다.",
       status: { "📅 기한": "3일차 · 밤 (참형까지 5일)", "📍 장소": "궁 지하 비밀 통로", "🧪 증거": "세자의 손톱에 생긴 흰 띠(오래된 중독 흔적)", "🔍 용의자": "수라간 출입자", "⚠️ 위험도": 50, "❤️ 호감도": "이화 10 · 설련 10 · 정옥 10 · 월하 5 · 단비 20", "💭 속마음": "단비: 꿈에서 이 사람은 두 번 죽었어. 이번이 첫 번째일까." },
       text: `*방울 소리가 한 번 울렸다가 멎었다. 등잔 하나에 의지한 지하 통로는 사람 하나가 겨우 지날 만큼 좁았고, 흙벽에서 차가운 물이 배어 나왔다.*
 
