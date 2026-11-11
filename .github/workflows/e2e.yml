@@ -13,7 +13,9 @@ concurrency:
   cancel-in-progress: true
 jobs:
   e2e:
-    runs-on: ubuntu-latest
+    # ubuntu-latest가 아니라 24.04로 고정: 지금 쓰는 Playwright(package-lock의 1.56.1)는 ubuntu 26.04에 WebKit과 시스템 라이브러리를 깔지 못함
+    # (2026-11-12 첫 실행이 설치 단계에서 실패). Playwright를 올릴 때 그 판이 지원하는 ubuntu로 같이 올림
+    runs-on: ubuntu-24.04
     timeout-minutes: 45
     env:
       TZ: Asia/Seoul # 이 PC와 같은 시간대(날짜가 바뀌는 자리의 시험이 흔들리지 않게). 화면의 날짜·숫자는 앱이 늘 ko-KR로 적어 언어 설정과 무관
