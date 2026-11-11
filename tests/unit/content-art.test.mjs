@@ -28,6 +28,8 @@ test("artRows: 한 줄 = 그림 한 장 — 표지 1 + 인물마다 감정 칸 �
   assert.deepEqual([row(rows, "AAA3").name, row(rows, "MP2").name, row(rows, "EV1").name, row(rows, "lore-2").name], ["가람 · " + SIT[3], "밀실", "재회", "검"]);
   // 넣을 경로는 작품 폴더(content/<aud>/[<줄>/]<id>/images/)와 코드 그대로의 파일 이름
   assert.equal(row(rows, "MP2").path, "content/f/fate/zz-art-test/images/MP2.webp");
+  // 규격: 0번 칸(프로필)은 2:3, 감정 칸 1~14는 정사각 — 다른 모습도 같음
+  assert.deepEqual(["AAA0", "AAA1", "AAA14", "AAB0", "AAB3", "MP1", "cover"].map((c) => row(rows, c).spec), ["profile", "cast", "cast", "profile", "cast", "place", "cover"]);
   const solo = work(); delete solo.row; solo.aud = "m";
   assert.equal(row(artRows(solo), "cover").path, "content/m/zz-art-test/images/cover.webp");
 });
