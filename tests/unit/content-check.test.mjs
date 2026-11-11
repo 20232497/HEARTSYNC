@@ -1,4 +1,4 @@
-// 작품 검사 규칙(tools/build.mjs — checkWork·scanImages·checkForbidden): 통과하는 가짜 작품 하나를 바탕으로 **한 칸씩만 망가뜨려** 규칙마다 기대한 오류가 나는지 봄.
+// 작품 검사 규칙(tools/build/ 의 work-check·episode-check·images-scan·output-check — checkWork·checkEpisode·scanImages·checkForbidden, tools/build.mjs가 내보냄): 통과하는 가짜 작품 하나를 바탕으로 **한 칸씩만 망가뜨려** 규칙마다 기대한 오류가 나는지 봄.
 // 규칙 하나가 조용히 꺼지면 그 줄이 실패하고, 규칙을 새로 더하면 맨 아래 '규칙 자리 수' 시험이 실패해 이 표에 줄을 더하게 함. 작품 이름·코드는 실제 작품에서 가져오지 않음.
 import fs from "node:fs";
 import path from "node:path";
@@ -318,7 +318,7 @@ test("checkForbidden: 두 빌드 모두 외부 AI·그림 서비스 주소가 �
 
 /* 규칙을 새로 더했는데 이 표에 줄을 더하지 않으면 여기서 걸림 — checkWork·scanImages 안의 오류 자리(e(…)·errors.push(…)) 수 */
 test("규칙 자리 수: checkWork의 오류 자리 수가 이 시험이 아는 수와 같음(규칙을 더하면 위 표에 줄을 더하고 이 수를 고침)", () => {
-  const src = fs.readFileSync(new URL("../../tools/build.mjs", import.meta.url), "utf8").replace(/\r\n?/g, "\n");
+  const src = ["work-check", "episode-check", "images-scan"].map((f) => fs.readFileSync(new URL(`../../tools/build/${f}.mjs`, import.meta.url), "utf8").replace(/\r\n?/g, "\n")).join("\n"); // 검사 함수가 든 파일들
   const body = (name) => { const i = src.indexOf(`function ${name}(`), j = src.indexOf("\n}\n", i); assert.ok(i >= 0 && j > i, name + " 를 찾지 못함"); return src.slice(i, j); };
   const sites = (text, re) => (text.match(re) || []).length;
   assert.equal(sites(body("checkWork"), /[^\w.]e\(/g), WORK_SITES, "checkWork의 e(…) 자리 수가 바뀜 — 더한 규칙의 줄을 RULES 표에 넣고 WORK_SITES를 고치세요");
