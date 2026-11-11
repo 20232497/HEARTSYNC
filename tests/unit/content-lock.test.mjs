@@ -14,8 +14,9 @@ const locked = () => lockOf(work());
 const judge = (change) => { const c = work(); change(c); return checkLock(locked(), lockOf(c)); };
 
 test("lockOf: 자리로 세는 목록은 이름(장소 이름·컷씬 제목·키워드북 첫 키), 이름표로 세는 목록은 시작 상황 id·인물 코드", () => {
-  assert.deepEqual(locked(), { places: ["광장", "서고", "온실"], cuts: ["첫 만남", "이별"], lore: ["왕", "검"], openings: ["first", "second"], cast: ["AAA", "BBB"] });
-  assert.deepEqual(lockOf({}), { places: [], cuts: [], lore: [], openings: [], cast: [] });
+  assert.deepEqual(locked(), { places: ["광장", "서고", "온실"], cuts: ["첫 만남", "이별"], lore: ["왕", "검"], openings: ["first", "second"], cast: ["AAA", "BBB"], endings: [] });
+  assert.deepEqual(lockOf({}), { places: [], cuts: [], lore: [], openings: [], cast: [], endings: [] });
+  assert.deepEqual(lockOf({ episode: { endings: [{ id: "good" }, { id: "bad" }] } }).endings, ["good", "bad"]); // 결말 id는 에피소드 안에서 꺼냄
   assert.deepEqual(Object.keys(JSON.parse(lockText(locked()))), ["_", ...Object.keys(LOCK_LISTS)]);
 });
 test("그대로면 통과이고 최신 — 찍을 것 없음", () => {

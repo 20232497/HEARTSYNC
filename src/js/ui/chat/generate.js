@@ -5,6 +5,8 @@ import { dropEcho, parseState, splitReply } from "../../ai/parse.js";
 import { buildInput } from "../../ai/prompt/input.js";
 import { maybeSummarize } from "../../ai/prompt/memory.js";
 import { exampleCast } from "../../core/character.js";
+import { epAfter, epPick } from "../../core/episode.js";
+import { markEnding } from "../../core/shelf.js";
 import { curText, saveRoom } from "../../core/rooms.js";
 import { gen, room, setGen } from "../../core/state.js";
 import { $, esc, uid } from "../../core/util.js";
@@ -21,11 +23,16 @@ import { ensurePay } from "../pay.js";
 import { collectSeen } from "../room-tools.js";
 import { closeOverlays, sheet } from "../sheet.js";
 
-export async function sendTurn(text, { cont = false } = {}) {
-  if (gen) return false;
+/* 에피소드 진행 상태의 사본 — 메시지마다 ep0(그 메시지 직전)·ep1(그 응답 뒤)로 적어 두고 다시 쓰기·삭제·버전 바꾸기가 되돌림 */
+export const epCopy = (st) => JSON.parse(JSON.stringify(st));
+/* 한 턴 보내기. pick: 에피소드 갈림길 카드로 보낸 것이면 그 보기 id — 진행 상태를 먼저 고른 뒤로 바꿔 놓고 응답을 받음(이번 응답은 다음 장에서 시작). 끝난 에피소드 방에서는 보내지 않음 */
+export async function sendTurn(text, { cont = false, pick = "" } = {}) {
+  if (gen || (room.ep && room.ep.over)) return false;
   const q = await ensurePay(room); if (!q) return false;
   room.lastErr = "";
-  room.msgs.push(cont ? { id: uid("m"), role: "user", text: "(이어서)", sys: true } : { id: uid("m"), role: "user", text });
+  const u = cont ? { id: uid("m"), role: "user", text: "(이어서)", sys: true } : { id: uid("m"), role: "user", text };
+  if (room.ep) { u.ep0 = epCopy(room.ep); if (pick) room.ep = epPick(room.char.episode, room.ep, pick, room.status?.[room.char.gauge]); }
+  room.msgs.push(u);
   hideSug();
   generate(null, q);
   return true;
@@ -43,6 +50,7 @@ export async function regen(i, direction = "") {
   if (gen) return;
   const q = await ensurePay(room); if (!q) return;
   room.msgs = room.msgs.slice(0, i + 1);
+  if (room.ep && room.msgs[i].ep0) room.ep = epCopy(room.msgs[i].ep0); // 에피소드: 이 응답 직전 상태에서 다시
   generate(room.msgs[i], q, direction);
 }
 /* 매 응답, 장면에 나온 인물마다 그림 한 장: AI가 [[코드번호]]를 빠뜨린 인물은 그 인물이 처음 말하거나(이름: …) 지문에 나오는 줄 위에 붙임.
@@ -91,7 +99,7 @@ export async function generate(target, q, direction = "", isEdit = false) {
   if (!msg) {
     const prev = lastAi(r);
     const before = prev ? (prev.alts[prev.idx].status || prev.statusBefore) : r.status;
-    msg = { id: uid("m"), role: "ai", idx: 0, alts: [{ text: "" }], statusBefore: before };
+    msg = { id: uid("m"), role: "ai", idx: 0, alts: [{ text: "" }], statusBefore: before, ...(r.ep ? { ep0: epCopy(r.ep) } : {}) };
     r.msgs.push(msg); altIdx = 0;
   } else { msg.alts.push({ text: "" }); altIdx = msg.alts.length - 1; msg.idx = altIdx; }
   const input = buildInput(r, r.msgs.indexOf(msg), msg.statusBefore, direction);
@@ -116,8 +124,17 @@ export async function generate(target, q, direction = "", isEdit = false) {
     show(text);
     const parsed = parseState(text, c, msg.statusBefore), prevMsgs = r.msgs.slice(0, r.msgs.indexOf(msg));
     const bodyText = msg.alts[altIdx].text ? addCastImages(msg.alts[altIdx].text, r, prevMsgs, said) : "(빈 응답)";
+    const rep = parsed.ep; delete parsed.ep;
     Object.assign(msg.alts[altIdx], parsed, { text: bodyText, cost: qShort(q), lore: input.lore });
     r.status = parsed.status;
+    // 에피소드: 이번 지시(input.ep)와 AI의 보고(_ep)로 다음 상태 — 사건 띠(ev)와 이 버전 뒤의 상태(ep1)를 응답에 적고, 결말까지 끝났으면 '모은 결말'에
+    if (r.ep && c.episode && input.ep) {
+      const a = msg.alts[altIdx];
+      r.ep = epAfter(c.episode, r.ep, input.ep, rep, parsed.status[c.gauge]);
+      if (input.ep.event) a.ev = input.ep.event.id;
+      a.ep1 = epCopy(r.ep);
+      if (r.ep.over) markEnding(c.id, r.ep.end);
+    }
     if (!target && !isEdit) { r.turn = (r.turn || 0) + 1; r.sinceMem = (r.sinceMem || 0) + 1; }
   } catch (e) {
     // 사용자가 멈췼거나 스트림이 중간에 끊긴(timeout) 경우: 받은 본문까지 남김(하트 환불 없음). 끊긴 거면 '다시 시도'(= 다시 쓰기) 안내

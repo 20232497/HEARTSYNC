@@ -122,7 +122,29 @@
  * @property {string} [creator] 제작자 이름 — 없으면 core/constants.js DEFAULT_CREATOR. 상세 페이지 머리·도감 작품 칸(ui/codex.js metaHTML)
  * @property {boolean} [exclusive] 독점 작품이면 true — '독점' 배지(지금은 표시만; 보상 가산은 서버 원장이 생긴 뒤 — docs/ROADMAP.md)
  * @property {string} [publishedAt] 공개일 "YYYY-MM-DD"(빌드가 실제 날짜인지 검사)
+ * @property {Episode} [episode] 있으면 에피소드형 작품(끝이 있는 이야기 — 장·사건·결말), 없으면 자유형 작품. 방을 만들 때 사본(r.char)에 굳음(2026-11-11 사용자 결정: 작품마다 둘 중 하나)
  */
+/**
+ * 에피소드형 작품의 진행표(work.js episode — core/episode.js가 읽음, 빌드가 모양을 검사). 분량은 마지막 장의 at[1](epLength).
+ * @typedef {Object} Episode
+ * @property {EpBeat[]} beats 장 — 순서대로 지나감
+ * @property {EpEvent[]} [events] 사건 — 조건이 맞을 때 한 턴에 하나, 한 번씩
+ * @property {EpEnding[]} endings 결말 — 위에서부터 판정, 마지막은 조건(when) 없는 기본 결말. id는 순서 잠금(lock.json endings)이 지킴(내 서재의 모은 결말)
+ */
+/**
+ * 장 하나. at [a, b]: 이 장의 기간(에피소드 전체에서 몇 번째 응답인지 — a턴 전엔 서두르지 않고, b턴엔 반드시 매듭).
+ * @typedef {{ id: string, title: string, goal: string, at: [number, number], choice?: EpChoice }} EpBeat
+ */
+/** 갈림길 — 장의 목표를 이룬 뒤 카드로 보임. 보기 2~4개, default가 없으면 첫 보기가 기본(EP.wait턴 동안 안 고르면). @typedef {{ id: string, ask: string, options: { id: string, label: string, default?: boolean }[] }} EpChoice */
+/** 사건 — text는 AI에게 주는 지시(화면에는 title만). beat가 있으면 그 장에서만, keys(최근 글의 낱말)나 gauge("<50" 같은 조건) 중 하나가 맞으면, 둘 다 없으면 한동안 사건이 없을 때. @typedef {{ id: string, title: string, text: string, beat?: string, keys?: string[], gauge?: string }} EpEvent */
+/** 결말 — when의 조건이 모두 맞으면(choice: 갈림길 id → 보기 id, gauge: 게이지 조건, events: 본 사건 id). brief는 결말 장면에서 AI에게 주는 줄거리. @typedef {{ id: string, title: string, brief: string, when?: { choice?: Record<string, string>, gauge?: string, events?: string[] } }} EpEnding */
+/**
+ * 에피소드 방의 진행 상태(Room.ep — core/episode.js만 바꿈). t 끝난 응답 수 · beat 지금 장 번호(0부터) · picks 갈림길 id → 고른 보기 · seen 일어난 사건 id ·
+ * ask 고르기를 기다리는 갈림길 id(askAt 그 턴) · evAt 마지막 사건의 턴 · end 정해진 결말 id(다음 응답이 결말 장면) · over 결말까지 끝남.
+ * @typedef {{ t: number, beat: number, picks: Record<string, string>, seen: string[], ask: string, askAt: number, evAt: number, end: string, over: boolean }} EpState
+ */
+/** 이번 응답에 줄 지시(core/episode.js epPlan) — phase: early 서두르지 않음 · open 흐름이 닿으면 · due 반드시 매듭. @typedef {{ turn: number, n: number, beat: EpBeat|null, phase: ""|"early"|"open"|"due", event: EpEvent|null, ask: EpChoice|null, ending: EpEnding|null }} EpPlan */
+/** 외전 — 끝난 에피소드 방을 이어받은 자유 대화방(core/rooms.js sideRoom). kind: talk 그 인물과 더 이야기 · pov 그 인물의 시점 · after 결말 뒤. picks·seen은 원래 방의 고른 길·본 사건(프롬프트의 '있었던 일'). @typedef {{ kind: "talk"|"pov"|"after", who?: string, from: string, ending: string, endTitle: string, picks: Record<string, string>, seen: string[] }} Side */
 /**
  * 내 페르소나(대화에서 내가 연기하는 인물).
  * @typedef {Object} Persona
@@ -142,6 +164,7 @@
  * @property {boolean} [sys]
  * @property {boolean} [editing]
  * @property {boolean} [canned] 즉답 명령어로 남은 메시지(유저의 !이름과 그 정해진 글 — AI 메시지에도 같은 표시): 턴으로 세지 않고 다시 쓰기·좋아요가 없음
+ * @property {EpState} [ep0] 에피소드: 이 메시지 직전의 진행 상태(갈림길 카드로 보낸 메시지를 지우면 고르기 전으로)
  */
 /**
  * AI 응답 한 버전(다시 쓰기마다 하나).
@@ -153,6 +176,8 @@
  * @property {string[]} [lore] 이 응답에 반영된 키워드
  * @property {boolean} [opening] 시작 상황 본문이면 true
  * @property {1|-1|0} [fb] 독자 피드백: 1 좋아요 · -1 아쉬워요 · 0(또는 없음) 없음 — 이 기기·계정에 저장만, 프롬프트에는 쓰지 않음
+ * @property {string} [ev] 에피소드: 이 응답에 일어난 사건 id(말풍선 위 사건 띠)
+ * @property {EpState} [ep1] 에피소드: 이 응답 뒤의 진행 상태(버전을 바꿔 보면 그 버전의 상태로)
  */
 /**
  * AI 메시지. alts[idx]가 현재 보이는 버전.
@@ -162,6 +187,7 @@
  * @property {number} idx
  * @property {Alt[]} alts
  * @property {StatusMap} statusBefore 이 응답 직전 상태창(되돌리기·비교에 씀)
+ * @property {EpState} [ep0] 에피소드: 이 응답 직전의 진행 상태(다시 쓰기·삭제가 되돌림 — 유저 메시지에도 같은 칸)
  * @property {boolean} [editing]
  */
 /** @typedef {UserMessage|AiMessage} Message */
@@ -201,6 +227,9 @@
  * @property {number} created
  * @property {string} [lastErr] 마지막 오류 안내(대화방 아래 오류 줄 + 다시 시도)
  * @property {{ roomId: string, msgId: string }} [forkedFrom] 분기한 방이면 원래 방과 갈라진 메시지(core/rooms.js forkRoom) — opening 끝에 ' (분기)'
+ * @property {EpState} [ep] 에피소드 방의 진행 상태(작품에 episode가 있을 때 newRoom이 만듦). 메시지마다 ep0(그 메시지 직전 상태)를 적어 두어 다시 쓰기·삭제가 되돌림
+ * @property {Side} [side] 외전 방(끝난 에피소드에서 이어받은 자유 대화) — sideAfter(메시지 id) 뒤부터가 외전
+ * @property {string} [sideAfter]
  */
 /**
  * 대화방 목록 항목(S.rooms, core/rooms.js indexRoom이 만듦) — 표지를 그릴 수 있게 작품 정보 일부를 복사해 둠.
@@ -216,6 +245,8 @@
  * @property {number} at
  * @property {string} last 마지막 줄 미리보기
  * @property {boolean} [fork] 분기한 방(대화 목록 카드의 '분기' 표시)
+ * @property {string} [ep] 에피소드 방의 진행 표시("2장" · "결말") — 대화 목록 카드
+ * @property {boolean} [side] 외전 방
  */
 /** @typedef {{ at: number, d: number, label: string }} LedgerItem 하트 장부 한 줄(d는 변화량) */
 /**
@@ -252,6 +283,7 @@
  * @property {Record<string, number>} unlikes 작품 id → 찜을 푼 시각(likes보다 늦으면 찜이 아님 — 다른 기기에도 전해지게 남겨 둠)
  * @property {Record<string, number>} recent 작품 id → 상세 페이지를 마지막으로 본 시각(SHELF.recent개까지)
  * @property {Record<string, string[]>} seen 작품 id → 대화에서 본 그림 코드("HSY3"·"MP1"·"EV2") — 도감의 수집 기록
+ * @property {Record<string, string[]>} ends 작품 id → 본 결말 id(에피소드형 작품의 '모은 결말') — seen처럼 합집합
  */
 /**
  * 전역 상태 S(core/state.js). 저장은 KV — 바꾼 모듈이 save…()로 씀.

@@ -12,7 +12,7 @@ export const S = {
   wallet: { hearts: 0, freeDay: today(), freeUsed: 0, pro: null, history: [], ledger: [], ack: {} },
   personas: [{ id: "p1", name: "유저", memo: "", desc: "", img: "", def: true }],
   rooms: [],
-  shelf: { likes: {}, unlikes: {}, recent: {}, seen: {} },
+  shelf: { likes: {}, unlikes: {}, recent: {}, seen: {}, ends: {} },
   settings: { fs: 15.5, chatLh: 1.8, narrFont: "serif", enterSend: true, sceneImg: true, apiKey: "", memCfg: { auto: true, every: 5, limit: LIMITS.memory, guide: "auto", custom: "" } },
   cat: "전체", q: ""
 };

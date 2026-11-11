@@ -76,7 +76,7 @@ function flatValue(o) { const p = multiPairs(o); return (p.length ? p.map(([k, n
 /**
  * 응답에서 상태창·추천 답변 읽기 — 빈 값은 직전 값 유지, 게이지는 한 턴에 -10~+8, 다인원 칸은 빠진 인물을 직전 값으로.
  * @param {string} text 응답 전체 @param {Work} c @param {StatusMap} [before] 직전 상태창
- * @returns {{ status: StatusMap, suggestions: string[] }}
+ * @returns {{ status: StatusMap, suggestions: string[], ep?: { done: boolean, pick: string } }} ep는 에피소드 방의 보고(_ep) — 없으면 빠짐
  */
 export function parseState(text, c, before) {
   const out = { status: { ...(before || {}) }, suggestions: [] };
@@ -98,5 +98,8 @@ export function parseState(text, c, before) {
     }
   }
   if (Array.isArray(v.suggestions)) out.suggestions = v.suggestions.filter((s) => typeof s === "string").map((s) => s.replace(/^\s*\d+[.)]\s*/, "").slice(0, 80)).filter(Boolean).slice(0, 3);
+  // 에피소드 방의 보고(장 목표를 이뤘는지·갈림길에서 가까운 보기) — status 안에 넣어 보낸 모델도 받아 줌. 맞는지는 core/episode.js epAfter가 다시 봄
+  const ep = v._ep && typeof v._ep === "object" ? v._ep : st && st._ep && typeof st._ep === "object" ? st._ep : null;
+  if (ep) out.ep = { done: ep.done === true || ep.done === "true", pick: typeof ep.pick === "string" ? ep.pick.trim() : "" };
   return out;
 }
