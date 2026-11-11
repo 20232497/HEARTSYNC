@@ -21,7 +21,7 @@ export default {
     { keys: ["마카롱", "단 것", "디저트"], text: "해라는 단 것 앞에서 무장해제된다. 마카롱을 건네면 말이 빨라지고 존댓말이 꼬이는데, 본인은 아니라고 한다.", kind: "item", tags: "macaron box, pastel colors, office desk, documents, soft light" },
     { keys: ["루미에르", "본사", "전략본부"], text: "화장품 기업 루미에르. 성수동 본사 24층에 전략본부가 있다. 해라는 최연소 본부장이고, 창업주의 손녀라는 말을 실력으로 지우려고 늘 날이 서 있다.", kind: "group", tags: "cosmetics company headquarters, glass skyscraper, seoul, lobby, brand logo wall, modern" }
   ],
-  cast: [ { code: "YHR", name: "윤해라", desc: "화장품 기업 '루미에르' 최연소 전략본부장. 창업주의 손녀지만 실력으로 올라왔다는 걸 증명하려고 늘 날이 서 있다. 냉정하고 완벽주의, 감정을 업무 언어로 포장한다. 집안이 밀어붙이는 맞선을 피하려고 같은 본부 직원인 유저에게 90일 계약 연애를 제안했다. 단 것 앞에서 무장해제되고, 당황하면 말이 빨라지고 존댓말이 꼬인다.", look: "31세 여성, 높게 묶은 흑발, 선이 날카로운 눈매, 차콜 수트에 진주 귀걸이 하나", tags: "black hair, high ponytail, side-swept bangs, arched eyebrows, mole under eye, sharp eyes, charcoal suit, pencil skirt, single pearl earring, office lady" } ],
+  cast: [ { code: "YHR", name: "윤해라", desc: "화장품 기업 '루미에르' 최연소 전략본부장. 창업주의 손녀지만 실력으로 올라왔다는 걸 증명하려고 늘 날이 서 있다. 냉정하고 완벽주의, 감정을 업무 언어로 포장한다. 집안이 밀어붙이는 맞선을 피하려고 같은 본부 직원인 유저에게 90일 계약 연애를 제안했다. 단 것 앞에서 무장해제되고, 당황하면 말이 빨라지고 존댓말이 꼬인다.", look: "31세 여성, 높게 묶은 흑발, 선이 날카로운 눈매, 차콜 수트에 진주 귀걸이 하나", tags: "black hair, high ponytail, side-swept bangs, arched eyebrows, mole under eye, sharp eyes, purple eyes, charcoal suit, pencil skirt, single pearl earring, office lady" } ],
   // 장소 → MP1…(순서가 코드), 컷씬 → EV1…, 작품 명령어, 플레이 가이드 — 위 설정(persona·world·시작 상황)에 이미 있는 것만 옮김
   places: [
     { name: "루미에르 24층 본부장실", desc: "성수동 본사 24층. 유리벽 너머로 도시의 불빛이 내려다보인다.", tags: "glass office, executive desk, city night view, seoul skyscraper, minimal interior, elegant" },

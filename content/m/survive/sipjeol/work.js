@@ -53,11 +53,11 @@ export default {
     { keys: ["단전", "봉인", "주화입마"], text: "유저의 단전은 막혀 있다. 억지로 내공을 끌어올리면 가슴에 낯선 구결이 떠오르며 피를 토한다. 다룰 수 있게 되면 봉인이 풀리지만, 급하면 주화입마에 빠진다.", kind: "concept", tags: "glowing seal on chest, meridians, inner energy, qi aura, glowing runes" }
   ],
   cast: [
-    { code: "NGS", name: "남궁설", desc: "남궁세가 소가주. 검의 천재, 패배를 모른다. 오만하고 직설적.", look: "24세 여성, 흰 무복에 푸른 띠, 높게 묶은 흑발, 장검, 차가운 눈빛", tags: "black hair, high ponytail, side-swept bangs, narrow eyes, straight eyebrows, white martial arts uniform, blue sash, hanfu, longsword" },
-    { code: "DSS", name: "당소소", desc: "사천당가의 독공 고수. 웃으며 독을 쓰는 장난꾸러기.", look: "22세 여성, 보라색 무복, 손목의 암기 팔찌, 짧은 단발, 장난스러운 미소", tags: "black hair, short bob cut, round eyes, upturned eyes, thin eyebrows, purple martial arts uniform, hanfu, bracelet, poison dagger" },
-    { code: "HWN", name: "혜원", desc: "아미파 속가제자. 계율과 자비를 지키는 의원. 단정하고 조용하다.", look: "25세 여성, 회색 아미파 무복, 반쯤 묶은 긴 머리, 약상자, 단정한 얼굴", tags: "black hair, long hair, half updo, curtain bangs, droopy eyes, soft eyebrows, grey martial arts robe, hanfu, medicine box" },
-    { code: "MKR", name: "묵란", desc: "화산파 외문제자. '란'이라 불린다. 차갑고 우아하다. 첫날 죽은 화산파 대제자와 같은 문파라 가장 의심받기 쉬운 처지다.", look: "26세 여성, 검은 무복 위 화산파 외문제자 외투, 길게 늘어뜨린 흑발, 붉은 입술, 냉소", tags: "black hair, very long hair, forehead, parted bangs, upturned eyes, arched eyebrows, black martial arts uniform, red-trimmed outer robe, hanfu, red lips" },
-    { code: "HRN", name: "화린", desc: "개방 소방주. 거지 차림의 정보통, 수다쟁이, 의리파.", look: "23세 여성, 기운 누더기 옷, 대나무 타구봉, 헝클어진 갈색 머리, 크게 웃는 얼굴", tags: "brown hair, messy hair, round eyes, thick eyebrows, freckles, patched ragged clothes, bamboo staff, beggar sect" }
+    { code: "NGS", name: "남궁설", desc: "남궁세가 소가주. 검의 천재, 패배를 모른다. 오만하고 직설적.", look: "24세 여성, 흰 무복에 푸른 띠, 높게 묶은 흑발, 장검, 차가운 눈빛", tags: "black hair, high ponytail, side-swept bangs, narrow eyes, blue eyes, straight eyebrows, white martial arts uniform, blue sash, hanfu, longsword" },
+    { code: "DSS", name: "당소소", desc: "사천당가의 독공 고수. 웃으며 독을 쓰는 장난꾸러기.", look: "22세 여성, 보라색 무복, 손목의 암기 팔찌, 짧은 단발, 장난스러운 미소", tags: "black hair, short bob cut, round eyes, upturned eyes, purple eyes, thin eyebrows, purple martial arts uniform, hanfu, bracelet, poison dagger" },
+    { code: "HWN", name: "혜원", desc: "아미파 속가제자. 계율과 자비를 지키는 의원. 단정하고 조용하다.", look: "25세 여성, 회색 아미파 무복, 반쯤 묶은 긴 머리, 약상자, 단정한 얼굴", tags: "black hair, long hair, half updo, curtain bangs, droopy eyes, aqua eyes, soft eyebrows, grey martial arts robe, hanfu, medicine box" },
+    { code: "MKR", name: "묵란", desc: "화산파 외문제자. '란'이라 불린다. 차갑고 우아하다. 첫날 죽은 화산파 대제자와 같은 문파라 가장 의심받기 쉬운 처지다.", look: "26세 여성, 검은 무복 위 화산파 외문제자 외투, 길게 늘어뜨린 흑발, 붉은 입술, 냉소", tags: "black hair, very long hair, forehead, parted bangs, upturned eyes, red eyes, arched eyebrows, black martial arts uniform, red-trimmed outer robe, hanfu, red lips" },
+    { code: "HRN", name: "화린", desc: "개방 소방주. 거지 차림의 정보통, 수다쟁이, 의리파.", look: "23세 여성, 기운 누더기 옷, 대나무 타구봉, 헝클어진 갈색 머리, 크게 웃는 얼굴", tags: "brown hair, messy hair, round eyes, amber eyes, thick eyebrows, freckles, patched ragged clothes, bamboo staff, beggar sect" }
   ],
   // 장소 → MP1…(순서가 코드), 컷씬 → EV1…, 작품 명령어, 플레이 가이드 — 모두 위 설정(persona·world·lore·시작 상황)에 이미 있는 것만 옮김. 독자에게 보이는 칸이라 [진상]은 적지 않음
   places: [
