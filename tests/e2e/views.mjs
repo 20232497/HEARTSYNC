@@ -94,6 +94,18 @@ for (const [dev, engine, opts] of [["Desktop Chrome", chromium, {}], ["iPhone 13
       return { pill, tag, card };
     });
     if (!res.opening.pill.includes("시험 광장") || !res.opening.tag || !res.opening.card) errs.push("시작 상황의 배경 장소가 다름: " + JSON.stringify(res.opening));
+    // 시작 상황 id — '처음부터 다시'가 제목이 아니라 id로 같은 시작 상황을 찾음: 방을 만든 뒤 작품이 그 시작 상황의 제목을 고치고 순서를 바꿔도 같은 장면으로 시작(예전에는 제목이 바뀌면 조용히 첫 시작 상황으로 갔음)
+    res.restart = await p.evaluate(async () => {
+      const nap = (ms) => new Promise((r) => setTimeout(r, ms)), live = ORIGINALS.slice().reverse().find((c) => c.openings.length > 1), keep = live.openings.slice();
+      const r = newRoom(normalizeChar(live), 1, S.personas[0]), want = keep[1].text.slice(0, 30);
+      live.openings = [keep[1], keep[0]].concat(keep.slice(2)).map((o) => ({ ...o, title: o.title + " (고친 제목)" }));
+      location.hash = "r-" + r.id; await nap(600);
+      openRoomDrawer("main"); await nap(150); $("#qNew").click(); await nap(150); document.querySelector(".overlay #ok").click(); await nap(700);
+      const out = { id: r.openingId, wantId: keep[1].id, fresh: room.id !== r.id, sameId: room.openingId === r.openingId, sameScene: curText(room.msgs[0]).includes(want), title: room.opening, wantTitle: keep[1].title + " (고친 제목)" };
+      live.openings = keep;
+      return out;
+    });
+    { const s = res.restart; if (!s.id || s.id !== s.wantId || !s.fresh || !s.sameId || !s.sameScene || s.title !== s.wantTitle) errs.push("제목을 고친 뒤의 '처음부터 다시'가 같은 시작 상황으로 가지 않음: " + JSON.stringify(s)); }
     // 유저 설정 상한 — 페르소나 상세·유저노트 입력 칸의 maxlength와 "n / 한도" 카운터가 상수(LIMITS)를 따름, 장기기억 기본 한도도
     res.limits = await p.evaluate(() => {
       personaSheet(S.personas[0]); const pd = $("#pd").maxLength, pc = $("#pdCnt").textContent; closeOverlays();

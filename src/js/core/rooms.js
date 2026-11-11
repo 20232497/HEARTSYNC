@@ -73,6 +73,7 @@ function upgradeCodes(r) {
 export function defaultSet(c) { return { model: recommendOf(c), len: "mid", mem: 10, rerollAsk: false }; }
 /**
  * 새 대화방 — 작품 사본·시작 상황 본문을 첫 AI 메시지로, 게이지가 없으면 10, 설정은 defaultSet. 바로 저장함.
+ * 방은 시작 상황을 id(openingId)로 기억하고 제목(opening)은 화면에 보이는 글로만 씀 — 다시 찾을 때는 openingIndex.
  * 시작 상황의 선택 칸: place(배경 장소 — 본문에 그 장소 태그가 없으면 맨 위에 넣음) · suggestions(첫 메시지의 추천 답변) · lead(시작 직후 N턴 동안만 주는 연출 지시 — 방에 복사해 둠).
  * @param {Work} c @param {number} openingIdx 시작 상황 번호 @param {Persona} persona @returns {Room}
  */
@@ -85,7 +86,7 @@ export function newRoom(c, openingIdx, persona) {
   const text = placeTag && !op.text.includes(placeTag) ? placeTag + "\n\n" + op.text : op.text;
   const r = {
     id: uid("r"), v2: true, char: JSON.parse(JSON.stringify(c)), persona: { id: persona.id, name: persona.name, memo: persona.memo || "", desc: persona.desc || "", img: persona.img || "" },
-    opening: op.title, directive: op.directive || "", userNote: "", memory: "", memHist: [], pins: [], sinceMem: 0, turn: 0, status: st, bookmarks: [],
+    opening: op.title, ...(op.id ? { openingId: op.id } : {}), directive: op.directive || "", userNote: "", memory: "", memHist: [], pins: [], sinceMem: 0, turn: 0, status: st, bookmarks: [],
     set: defaultSet(c),
     ...(op.lead ? { lead: { text: op.lead.text, turns: op.lead.turns } } : {}),
     msgs: [{ id: uid("m"), role: "ai", idx: 0, alts: [{ text, status: st, suggestions: (op.suggestions || []).slice(0, 3), opening: true }], statusBefore: st }],
@@ -112,7 +113,18 @@ const FORK_MARK = " (분기)";
 /** 시작 상황의 원래 제목(분기 표시를 뗌) — '처음부터'가 같은 시작 상황을 찾을 때. @param {Room} r @returns {string} */
 export function baseOpening(r) { const t = r.opening || ""; return t.slice(-FORK_MARK.length) === FORK_MARK ? t.slice(0, -FORK_MARK.length) : t; }
 /**
- * 분기: 그 메시지까지를 깊은 복사한 새 대화방 — 같은 작품 사본·페르소나·설정·유저노트, 상태창은 그 시점의 것, 시작 상황 제목에 '(분기)', forkedFrom에 출처.
+ * 방의 시작 상황이 작품의 몇 번째인지 — 찾는 순서는 여기 한 곳: 방에 적힌 id(openingId) → 제목(id가 없던 예전 방이거나 id를 못 찾을 때, 분기 표시는 떼고) → 첫 시작 상황.
+ * 작품이 시작 상황의 제목을 고쳐도 id가 같으면 같은 시작 상황으로 감. '처음부터 다시'(ui/room-drawer.js)가 씀.
+ * @param {Work} c 최신 작품 @param {Room} r @returns {number}
+ */
+export function openingIndex(c, r) {
+  const ops = (c && c.openings) || [];
+  let i = r.openingId ? ops.findIndex((o) => o.id === r.openingId) : -1;
+  if (i < 0) i = ops.findIndex((o) => o.title === baseOpening(r));
+  return Math.max(0, i);
+}
+/**
+ * 분기: 그 메시지까지를 깊은 복사한 새 대화방 — 같은 작품 사본·페르소나·설정·유저노트·시작 상황 id(openingId), 상태창은 그 시점의 것, 시작 상황 제목에 '(분기)', forkedFrom에 출처.
  * 장기기억은 분기한 턴보다 뒤에 시작하는 구간([a-b턴])을 빼고 복사(2026-11-09 사용자 결정 — 아직 안 일어난 일이 따라오지 않게. 머리표가 없으면 통째로).
  * 턴 번호는 원래 방의 것을 이어 씀(지운 메시지가 있어도 구간 머리표와 어긋나지 않게). 원래 방은 건드리지 않고 새 방을 바로 저장함(지운 방·MAX_MSGS_KEEP 규칙은 saveRoom 그대로).
  * @param {Room} r @param {string} msgId 이 메시지까지 가져감 @returns {Room|null} 메시지를 못 찾으면 null

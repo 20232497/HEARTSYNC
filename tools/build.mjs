@@ -19,6 +19,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import * as espree from "espree";
 import * as scope from "eslint-scope";
 import { BROWSER_GLOBALS } from "./globals.mjs";
+import { LOCK_FILE, checkLock, lockOf, readLock } from "./content-lock.mjs";
 
 export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const SRC = path.join(ROOT, "src"), JS = path.join(SRC, "js"), CONTENT = path.join(ROOT, "content");
@@ -32,7 +33,7 @@ export const TARGETS = {
 /* 폴더 이름이 곧 작품의 aud(관심있는 대화) 값 */
 export const AUD_DIRS = { f: "여성향(남성 캐릭터와의 대화)", m: "남성향(여성 캐릭터와의 대화)", all: "전체(남녀가 섞임)" };
 /* 빌드 검사에 쓰는 앱 규칙 — src/js에서 같은 코드를 꺼내 쓴다(규칙이 두 군데로 갈라지지 않게) */
-const APP_RULES = ["SIT", "CODE_RE", "SERIES", "codebook", "APP_COMMANDS", "PALETTES", "MOTIFS", "CATS", "LIMITS", "LORE", "FREE_DAILY", "MODELS", "guessAud", "personaWho", "personaLook", "castLook", "minorFlags", "minorHint", "settingHint", "LORE_KINDS"];
+const APP_RULES = ["SIT", "CODE_RE", "SERIES", "codebook", "APP_COMMANDS", "PALETTES", "MOTIFS", "CATS", "LIMITS", "LORE", "FREE_DAILY", "MODELS", "guessAud", "personaWho", "personaLook", "castLook", "minorFlags", "minorHint", "settingHint", "LORE_KINDS", "OPENING_ID_RE"];
 /* 오래된 iOS(13 이하)·인앱 브라우저에서 문법 오류가 나는 것들 */
 const OLD_IOS = [[/\|\|=|&&=|\?\?=/, "논리 할당(||= &&= ??=)"], [/\.at\(/, "Array.at()"], [/\(\?<[=!]/, "정규식 lookbehind"],
   [/\bstructuredClone\b/, "structuredClone"], [/\.findLast(?:Index)?\(/, "findLast()"], [/\bObject\.hasOwn\(/, "Object.hasOwn()"]];
@@ -253,7 +254,7 @@ function bundleModules(entry, t, page) {
 }
 
 /* ---------------------------------------------------------------- 앱 규칙 꺼내기(작품 검사용) */
-function appRules() {
+export function appRules() {
   const files = [];
   (function walk(d) { for (const e of fs.readdirSync(d, { withFileTypes: true })) { const p = path.join(d, e.name); if (e.isDirectory()) walk(p); else if (e.name.endsWith(".js") && p !== GEN_FILE) files.push(p); } })(JS);
   const lines = files.flatMap((f) => readText(f).split("\n")), parts = [];
@@ -283,8 +284,9 @@ function plainData(v, at, bad) {
   bad.push(at);
 }
 
-async function buildContent(R) {
-  const errors = [], warnings = [], works = [], rows = [];
+/* opt.enforceLock(기본 참): 순서 잠금(작품 폴더의 lock.json — tools/content-lock.mjs)과 어긋나면 실패. 잠금 명령은 거짓으로 불러 작품마다의 판정(locks)만 받아 감 */
+export async function buildContent(R, opt = {}) {
+  const errors = [], warnings = [], works = [], rows = [], locks = [], enforce = opt.enforceLock !== false;
   if (!fs.existsSync(CONTENT)) throw new BuildError(["content/ 폴더가 없어요"]);
   for (const f of fs.readdirSync(CONTENT, { withFileTypes: true })) {
     if (f.isDirectory() && visible(f.name) && !AUD_DIRS[f.name]) errors.push(`content/${f.name}: 이 자리에는 ${Object.keys(AUD_DIRS).map((k) => `${k}/(${AUD_DIRS[k]})`).join("·")} 폴더만 둘 수 있어요`);
@@ -298,7 +300,14 @@ async function buildContent(R) {
     const c = checkWork(mod, { aud, row, id, wrel, R, errors, warnings });
     const dup = works.find((w) => w.c.id === id);
     if (dup) errors.push(`${wrel}: id "${id}"가 ${dup.rel}에도 있어요`);
-    if (errors.length === before) { works.push({ c, aud, row, rel: wrel, order: mod.order }); if (row) row.n++; }
+    if (errors.length !== before) return;
+    works.push({ c, aud, row, rel: wrel, order: mod.order }); if (row) row.n++;
+    // 순서 잠금: 공개된 장소·컷씬·키워드북의 자리와 시작 상황 id·인물 코드가 그대로인지(판정은 content-lock.mjs checkLock 하나)
+    let lock = null;
+    try { lock = readLock(dir); } catch (e2) { return errors.push(`${wrel}/${LOCK_FILE}: 읽지 못했어요 — ${e2.message}. 손으로 고쳤다면 되돌리고 npm run content:lock`); }
+    const cur = lockOf(c), res = checkLock(lock, cur);
+    locks.push({ id, rel: wrel, dir, lock, cur, res });
+    if (enforce) res.errors.forEach((x) => errors.push(`${wrel}: 순서 잠금 — ${x}. 일부러 바꾸는 것이면 npm run content:lock -- --force ${id}`));
   };
   const readRow = (dir, grel, key) => {
     let r;
@@ -362,7 +371,8 @@ ${rows.map((r) => "  " + JSON.stringify({ key: r.key, title: r.title, sub: r.sub
 `;
   writeIfChanged(GEN_FILE, jsSafe(code));
   const count = (a) => works.filter((w) => w.aud === a).length, pics = works.reduce((a, w) => a + Object.values(w.images || {}).reduce((b, m) => b + Object.keys(m).length, 0) + (w.img ? 1 : 0) + Object.keys(w.loreImages || {}).length, 0);
-  return { warnings, stats: { works: works.length, f: count("f"), m: count("m"), all: count("all"), rows: rows.length, pics } };
+  const stale = locks.filter((w) => w.res.stale);
+  return { warnings, locks, stats: { works: works.length, f: count("f"), m: count("m"), all: count("all"), rows: rows.length, pics, unlocked: stale.reduce((n, w) => n + Math.max(1, w.res.changes.length), 0), stale: stale.map((w) => w.id) } };
 }
 
 /* 그림 코드(글자 + 번호)가 이 작품에서 맞는지 검사하는 함수를 만듦 — 틀리면 이유 글, 맞으면 "".
@@ -479,6 +489,11 @@ function checkWork(mod, { aud, row, id, wrel, R, errors, warnings }) {
     e('places(장소)는 [{ name: "장소 이름", desc?: "설명", tags?: "영문 태그", hidden?: true(비공개) }, …] — 순서대로 MP1, MP2…');
   if (c.cuts !== undefined && (!Array.isArray(c.cuts) || c.cuts.some((x) => !isObj(x) || !str(x.title) || (x.when !== undefined && typeof x.when !== "string") || !engOk(x.tags) || !boolOk(x.hidden))))
     e('cuts(컷씬)는 [{ title: "제목", when?: "나오는 조건", tags?: "영문 태그", hidden?: true(비공개) }, …] — 순서대로 EV1, EV2…');
+  // 장소 이름·컷씬 제목·키워드북 첫 키는 작품 안에서 겹치지 않게 — 순서 잠금이 이름으로 '밀렸는지·이름만 고쳤는지'를 가리고(tools/content-lock.mjs), 키워드북 그림은 첫 키로 이어짐
+  for (const [k, pick, what] of [["places", (x) => x.name, "장소 이름"], ["cuts", (x) => x.title, "컷씬 제목"], ["lore", (x) => (Array.isArray(x.keys) ? x.keys[0] : ""), "키워드북의 첫 키"]]) {
+    const names = (Array.isArray(c[k]) ? c[k] : []).map((x) => (isObj(x) ? pick(x) : "")), dup = names.find((x, i) => str(x) && names.indexOf(x) !== i);
+    if (dup) e(`${k}: ${what} "${dup}"이(가) 두 번 나와요 — 작품 안에서 겹치지 않게 적어 주세요`);
+  }
   // 본문의 그림 태그는 [[코드번호]] 한 토큰 — 코드가 cast(대문자)·places(MP)·cuts(EV)에 있고 번호가 범위 안인지(시작 상황 본문·즉답 명령어의 글이 같이 씀)
   const tagRange = codeRange({ ...c, cast }, R);
   const checkTags = (text, at) => {
@@ -547,6 +562,9 @@ function checkWork(mod, { aud, row, id, wrel, R, errors, warnings }) {
   if (!Array.isArray(c.openings) || !c.openings.length) e("openings(시작 상황)가 하나 이상 있어야 해요");
   else c.openings.forEach((o, i) => {
     if (!isObj(o) || !str(o.title) || !str(o.text)) return e(`openings[${i}]: title·text가 있어야 해요`);
+    // 시작 상황 id: 대화방이 제목이 아니라 이것으로 시작 상황을 기억함(제목은 고쳐도 됨) — 필수, 작품 안에서 겹치지 않게
+    if (typeof o.id !== "string" || !R.OPENING_ID_RE.test(o.id)) e(`openings[${i}](${o.title}).id${o.id === undefined ? "가 없어요" : `("${o.id}")가 모양에 안 맞아요`} — 영문 소문자로 시작하는 소문자·숫자·하이픈 2~24자(예: id: "first-night"). 화면에는 안 보이고, 한 번 공개하면 고치지 않아요`);
+    else if (c.openings.findIndex((x) => isObj(x) && x.id === o.id) !== i) e(`openings[${i}].id("${o.id}")가 앞의 시작 상황과 겹쳐요`);
     if (o.directive !== undefined && typeof o.directive !== "string") e(`openings[${i}].directive는 글이어야 해요`);
     // 시작 상황의 선택 칸: 배경 장소(places의 n번째)·첫 답변 추천(최대 3개)·시작 직후 N턴 동안만 주는 연출 지시
     const nPlaces = Array.isArray(c.places) ? c.places.length : 0;
@@ -661,6 +679,12 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     const s = content.stats;
     console.log(`작품 ${s.works}개(여성향 ${s.f} · 남성향 ${s.m} · 전체 ${s.all}), 홈 줄 ${s.rows}개, 실린 그림 ${s.pics}장`);
     let fail = false;
+    // 순서 잠금이 지금 내용보다 뒤처져 있으면(뒤에 더한 항목·고친 이름): 빌드는 알리기만 하고, 병합 전 검사(--check)는 실패로 — main에 들어간 것은 모두 잠긴 상태가 되게(2026-11-11 사용자 결정)
+    if (s.stale.length) {
+      const what = `순서 잠금: 아직 안 잠긴 것 ${s.unlocked}개(작품 ${s.stale.join(", ")})`;
+      if (check) { fail = true; console.error(`✗ ${what} — npm run content:lock을 돌려 lock.json을 같이 커밋하세요.`); }
+      else console.log(`${what} — 커밋 전에 npm run content:lock`);
+    }
     for (const o of outs) {
       const cur = fs.existsSync(o.out) ? readText(o.out) : null, same = cur === o.html;
       const info = `${(Buffer.byteLength(o.html) / 1024).toFixed(0)}KB · CSS ${o.css}개 · 모듈 ${o.modules}개`;

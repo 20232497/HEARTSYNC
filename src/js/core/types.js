@@ -36,7 +36,8 @@
 /**
  * 시작 상황(오프닝).
  * @typedef {Object} Opening
- * @property {string} title
+ * @property {string} id 시작 상황 id(OPENING_ID_RE — 영문 소문자·숫자·하이픈 2~24자, 작품 안에서 겹치지 않게). 화면에는 안 보이고 대화방이 이것으로 시작 상황을 기억함. 한 번 공개하면 고치지 않음(순서 잠금)
+ * @property {string} title 화면에 보이는 제목 — 고쳐도 됨
  * @property {string} text 첫 장면 본문([[HSY0]] 같은 그림 태그 포함 가능 — 인물 코드 + 감정 번호 0~14)
  * @property {string} [directive] AI에게만 주는 지시
  * @property {StatusMap} [status] 시작 상태창
@@ -182,7 +183,8 @@
  * @property {boolean} [v2]
  * @property {Work} char 방을 만들 때의 작품 사본(최신 키워드북·그림은 getChar로 따로 봄)
  * @property {{ id: string, name: string, memo: string, desc: string, img: ImageRef|"" }} persona
- * @property {string} opening 시작 상황 제목
+ * @property {string} opening 시작 상황 제목(화면 표시용 — 분기한 방은 끝에 ' (분기)')
+ * @property {string} [openingId] 시작 상황 id(Opening.id) — '처음부터'가 이것으로 같은 시작 상황을 찾음(core/rooms.js openingIndex). 이 칸이 생기기 전의 방에는 없어 제목으로 찾음
  * @property {string} directive
  * @property {{ text: string, turns: number }} [lead] 시작 연출(시작 상황의 lead 사본) — r.turn이 turns에 닿기 전까지만 프롬프트 변동부의 [지금 상태]에
  * @property {string} userNote 유저노트(LIMITS.userNote자까지 — 방마다 하나)

@@ -1,0 +1,26 @@
+{
+  "_": "빌드가 지키는 순서 잠금 — 손으로 고치지 말고 npm run content:lock (content/README.md '순서 잠금')",
+  "places": [
+    "흑우 탐정사무소",
+    "1층 순댓국집",
+    "을지로 뒷골목"
+  ],
+  "cuts": [
+    "무릎 위의 경위",
+    "덮어 둔 사건 파일"
+  ],
+  "lore": [
+    "경위",
+    "순댓국",
+    "파트너",
+    "강력계",
+    "박하사탕"
+  ],
+  "openings": [
+    "rainy-client",
+    "assistant-interview"
+  ],
+  "cast": [
+    "SDY"
+  ]
+}

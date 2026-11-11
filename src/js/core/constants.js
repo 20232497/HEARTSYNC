@@ -27,6 +27,8 @@ export const EXAMPLE_CAST = { code: "ABC", name: "주인공" }, EXAMPLE_SIT = 3;
 /* 작품이 제작자(work.js creator)를 적지 않았을 때 보이는 이름 */
 /** 내 서재(찜·최근 본·수집 기록, core/shelf.js): recent 최근 본 작품을 몇 개까지 · syncFrom 계정에도 올리기 시작하는 날(개인정보처리방침 시행일과 같은 날 — 미루려면 이 날짜와 privacy.html의 시행일을 같이) */
 export const SHELF = { recent: 12, syncFrom: "2026-11-23" };
+/** 시작 상황 id 모양(work.js openings[].id): 영문 소문자로 시작하는 소문자·숫자·하이픈 2~24자. 대화방이 시작 상황을 제목이 아니라 이것으로 기억함 — 제목은 고쳐도 되고 id는 고치지 않음(순서 잠금이 지킴) */
+export const OPENING_ID_RE = /^[a-z][a-z0-9-]{1,23}$/;
 export const DEFAULT_CREATOR = "HEART SYNC 스튜디오";
 /* 글자 수 상한 — 작품 데이터는 빌드가 검사하고(APP_RULES), 화면의 입력 칸은 maxlength와 "n / 한도"에 씀.
    guide 작품의 플레이 가이드(work.js guide) · personaDesc 페르소나 상세 정보 · userNote 유저노트(대화방마다 하나) ·

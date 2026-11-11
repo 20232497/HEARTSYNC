@@ -192,6 +192,7 @@ archive/style-mdaily/             남성향 일상 화풍 보관본(앱이 쓰�
 | 문서 | 내용 |
 |---|---|
 | [ARCHITECTURE.md](docs/ARCHITECTURE.md) | 층 규칙, 두 빌드, 그림을 싣는 길, 주석 정책 |
+| [TEAM.md](docs/TEAM.md) | 여러 Claude 세션이 함께 일하는 규칙 — 역할 표, 사용자 승인이 필요한 일, 커밋·병합 흐름 |
 | [SETUP.md](docs/SETUP.md) | 배포 주소, 관리자 계정, Supabase·소셜 로그인, 고객센터, Vercel |
 | [content/README.md](content/README.md) | 작품 폴더 만드는 법, 그림 싣기 |
 | [tests/README.md](tests/README.md) | 시험 목록과 돌리는 법 |

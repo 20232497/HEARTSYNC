@@ -5,7 +5,7 @@ import { maybeSummarize, memCfg, pushHist } from "../ai/prompt/memory.js";
 import { speakerName } from "../ai/prompt/rules.js";
 import { exampleCast, getChar, normalizeChar } from "../core/character.js";
 import { LIMITS } from "../core/constants.js";
-import { baseOpening, curText, newRoom, saveRoom } from "../core/rooms.js";
+import { baseOpening, curText, newRoom, openingIndex, saveRoom } from "../core/rooms.js";
 import { saveSettings } from "../core/settings.js";
 import { seenSet } from "../core/shelf.js";
 import { S, room, setRoom } from "../core/state.js";
@@ -81,7 +81,7 @@ export function openRoomDrawer(view = "main") {
     $("#qExport", body).onclick = () => exportRoom(r);
     $("#qNew", body).onclick = () => confirmSheet("처음부터 다시 시작할까요?", "같은 작품·씬으로 새 대화방을 만들어요. 지금 대화는 목록에 남아요.", "새로 시작", () => {
       const c0 = normalizeChar(getChar(c.id) || c); if (S.rooms.filter((x) => x.charId === c0.id).length >= plan().rooms) return plusSheet("rooms");
-      setRoom(newRoom(c0, Math.max(0, c0.openings.findIndex((o) => o.title === baseOpening(r))), r.persona)); go("r-" + room.id); });
+      setRoom(newRoom(c0, openingIndex(c0, r), r.persona)); go("r-" + room.id); });
     $("#delRoom", body).onclick = () => confirmSheet("이 대화방을 삭제할까요?", "메시지와 기억이 모두 지워지고 되돌릴 수 없어요.", "삭제", () => deleteRoom(r.id));
   }
   else if (view === "persona") {
