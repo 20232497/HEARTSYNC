@@ -1,0 +1,26 @@
+{
+  "_": "빌드가 지키는 순서 잠금 — 손으로 고치지 말고 npm run content:lock (content/README.md '순서 잠금')",
+  "places": [
+    "아르케온 대신전",
+    "황성 성벽",
+    "북쪽 가도"
+  ],
+  "cuts": [
+    "기사의 맹세",
+    "정화의 빛"
+  ],
+  "lore": [
+    "잿빛 군단",
+    "맹세",
+    "정화의 빛",
+    "리세",
+    "브란"
+  ],
+  "openings": [
+    "ruined-temple",
+    "wall-night"
+  ],
+  "cast": [
+    "KAEL"
+  ]
+}

@@ -45,6 +45,7 @@
 | `commands.test.mjs` | 대화방 명령어(`core/commands.js` — 앱·연출·이야기·즉답 구분, 입력창 ! 목록, AI에 보낼 글) |
 | `rooms.test.mjs` | 대화방(`core/rooms.js`): 방이 시작 상황을 찾는 순서 `openingIndex`(id 우선 · 제목 대체 · 못 찾으면 첫째), 분기한 방이 id를 가져가는지, 작품의 시작 상황 id가 모양에 맞고 겹치지 않는지 |
 | `shelf.test.mjs` | 내 서재(`core/shelf.js` — 여러 기기 값을 합치는 mergeShelf, 계정 동기화 날짜 관문 shelfSyncOn과 **개인정보처리방침 시행일이 같은 날인지**, 찜 켜고 끄기·최근 본·수집 기록) |
+| `content-lock.test.mjs` | 순서 잠금(`tools/content-lock.mjs`)의 판정 `checkLock`: 맨 뒤에 더하기·이름 고치기·새 시작 상황과 인물은 통과(잠금만 뒤처짐), 중간에 끼우기·지우기·순서 바꾸기·id와 코드 없애기는 어긋남, 잠금 없는 새 작품, 알려진 한계, 강제 다시 찍기의 표 |
 | `content-report.test.mjs` | 작품 완성도 보고서(`tools/content-report.mjs`)의 셈과 얕은 칸 판정 |
 | `parse.test.mjs` | 응답 파싱(`ai/parse.js` — 구분자 변형·끊긴 JSON·다인원 칸) |
 | `safety.test.mjs` | 미성년 인물 막기(`core/safety.js` minorFlags·minorHint) |
