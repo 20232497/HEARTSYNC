@@ -11,10 +11,12 @@
 .codex-chips .chip { padding:5px 10px; font-size:12.5px; display:inline-flex; align-items:center; gap:6px; cursor:pointer; }
 .codex-chips .chip code { font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:11.5px; font-weight:700; }
 .codex-chips .chip.ready::after { content:"●"; font-size:8px; color:var(--ok); }
+.codex-chips .chip.seen::after { content:"✓"; font-size:10px; font-weight:800; color:var(--accent); } /* 대화에서 본 칸 — 내 서재의 수집 기록 */
 .codex-chips .chip.locked::after { content:"🔒"; font-size:10px; } /* 비공개(스포일러) 칸 — cast[].hidden */
 .codex-chips .chip.on { background:var(--accent-soft); color:var(--accent); border-color:var(--accent); }
 .codex-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(170px, 1fr)); gap:10px; align-items:start; }
 .codex-grid .wcard figcaption b { gap:6px; }
+.codex-grid .wpic.ph { aspect-ratio:auto; height:48px; font-size:13px; } /* 그림이 없는(또는 잠긴) 장소·컷씬 카드는 그림 자리를 낮은 띠로 — 그림이 실리면 원래 크기(2026-11-10 사용자 결정) */
 .cmd-list { display:grid; gap:8px; }
 .cmd-card { display:grid; grid-template-columns:auto auto 1fr auto; grid-template-areas:"cmd pill title copy" "cmd pill desc copy"; align-items:center; gap:2px 10px; border:1px solid var(--line); border-radius:12px; padding:10px 12px; background:var(--bg); }
 .cmd-card .cmd { grid-area:cmd; font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-weight:700; font-size:14px; color:var(--accent); }

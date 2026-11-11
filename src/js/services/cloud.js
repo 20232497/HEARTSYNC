@@ -1,6 +1,7 @@
 /* 계정 저장(CLOUD): KV를 계정 kv 표에 모아 올리고 받기, 기기별 설정 분리 */
 import { emit, on } from "../core/events.js";
 import { roomKey } from "../core/rooms.js";
+import { mergeShelf, shelfSyncOn } from "../core/shelf.js";
 import { S, room } from "../core/state.js";
 import { IDB, KV } from "../core/storage.js";
 import { ago } from "../core/util.js";
@@ -16,19 +17,22 @@ const DEVICE_SETTINGS = ["fs", "enterSend"];
 const KEY_FIELDS = ["apiKey", "runwareKey", "openRouterKey"];
 /* 계정과 주고받는 KV 키. 예전 빌드가 남긴 행(그림 묶음·내 작품·잠근 키 등)은 받지도 올리지도 않음 */
 const SYNCED_RE = /^(wallet|personas|rooms|memcfg|room-.+)$/;
+/* 내 서재(찜·최근 본·수집 기록)는 정해진 날짜부터만 계정과 주고받음(shelfSyncOn) — 그 전에는 이 기기에만. 다른 키와 달리 받은 값으로 덮지 않고 합침(takeShelf) */
+const SHELF_KEY = "shelf";
+const synced = (k) => SYNCED_RE.test(k) || (k === SHELF_KEY && shelfSyncOn());
 const IMG_KEY_RE = /^img[a-z0-9]{6,30}$/;
 /**
  * 계정 저장(Supabase kv 표). start()/stop() 로그인·로그아웃 때 · put(k, v) 0.8초 모아 upsert(KV.remote 고리) · flush() 바로 올림 · pull() → Promise<number> 바뀐 행 받아 적용
  * getOne(k) 그림 본문 받기 · pushAll(keys) 처음 로그인에 기기 데이터 올리기 · wipe() 계정 행 전부 삭제 · state: ""|"sync"|"ok"|"err"|"notable"("cloud" 이벤트)
  */
 export const CLOUD = {
-  on: false, uid: null, pending: {}, timer: null, state: "", at: 0, pulledAt: 0, noTable: false,
+  on: false, uid: null, pending: {}, timer: null, state: "", at: 0, pulledAt: 0, noTable: false, shelfUp: false,
   lastKey() { return "hv1_cloudlast_" + this.uid; },
-  start() { this.on = SB.on() && !!(SB.s && SB.s.user && SB.s.user.id); this.uid = this.on ? SB.s.user.id : null; this.noTable = false; },
+  start() { this.on = SB.on() && !!(SB.s && SB.s.user && SB.s.user.id); this.uid = this.on ? SB.s.user.id : null; this.noTable = false; this.shelfUp = false; },
   stop() { this.on = false; this.uid = null; this.pending = {}; clearTimeout(this.timer); this.setState(""); },
   setState(s) { this.state = s; if (s === "ok") this.at = Date.now(); emit("cloud"); },
   put(k, v) {
-    if (!this.on || this.noTable || !(k === "settings" || SYNCED_RE.test(k) || IMG_KEY_RE.test(k))) return;
+    if (!this.on || this.noTable || !(k === "settings" || synced(k) || IMG_KEY_RE.test(k))) return;
     this.pending[k] = v === undefined ? null : { v };
     clearTimeout(this.timer); this.timer = setTimeout(() => this.flush(), 800);
   },
@@ -88,6 +92,7 @@ export const CLOUD = {
     const open = room && location.hash === "#r-" + room.id ? roomKey(room.id) : "";
     rows.forEach((x) => {
       if (x.updated_at && x.updated_at > (localStorage.getItem(this.lastKey()) || "")) try { localStorage.setItem(this.lastKey(), x.updated_at); } catch {}
+      if (x.key === SHELF_KEY) { if (shelfSyncOn() && this.takeShelf(x.value)) n++; return; } // 보내지 못한 것이 있어도 합침
       if (x.key in this.pending || x.key === open) return;
       if (x.key === "settings") { mergeCloudSettings(x.value); n++; return; }
       if (!SYNCED_RE.test(x.key)) return;
@@ -96,7 +101,20 @@ export const CLOUD = {
     this.pulledAt = Date.now();
     return n;
   },
-  async pull() { return this.apply(await this.rows(localStorage.getItem(this.lastKey()) || "")); },
+  // 계정의 서재와 이 기기의 서재를 합침: 이 기기에만 있던 것은 계정으로 올리고, 이 기기 값이 바뀌었으면 true
+  takeShelf(remote) {
+    const local = KV.getLocal(SHELF_KEY), m = mergeShelf(local, remote), s = JSON.stringify(m);
+    if (s !== JSON.stringify(mergeShelf(remote))) this.put(SHELF_KEY, m);
+    if (s === JSON.stringify(mergeShelf(local))) return false;
+    KV.setLocal(SHELF_KEY, m); S.shelf = m;
+    return true;
+  },
+  async pull() {
+    let n = this.apply(await this.rows(localStorage.getItem(this.lastKey()) || ""));
+    // 로그인한 뒤(또는 날짜가 된 뒤) 처음 한 번: 바뀐 행만 받는 pull에는 서재 행이 안 올 수 있어 따로 받아 합침 — 날짜 전에 이 기기에만 쌓인 것이 이때 계정으로
+    if (!this.shelfUp && shelfSyncOn()) { this.shelfUp = true; if (this.takeShelf(await this.getOne(SHELF_KEY))) n++; }
+    return n;
+  },
   // 이 기기의 모든 데이터를 계정에 올림(계정이 비었을 때·합칠 때). 그림은 계정에 없는 것만 한 장씩 읽어 묶어 보냄
   // (그림 본문은 IndexedDB에, IndexedDB가 막힌 브라우저에서는 localStorage에 있음)
   async pushAll(keys) {
@@ -130,7 +148,7 @@ KV.remote = (k, v) => CLOUD.put(k, v);
 on("settings", () => CLOUD.put("settings", cloudSettings()));
 // 이 기기 KV 키 중 계정과 주고받는 것(그림은 pushAll이 따로, 설정은 "settings" 키로 따로)
 function localKVKeys() {
-  try { return Object.keys(localStorage).filter((k) => k.indexOf("hv1_") === 0).map((k) => k.slice(4)).filter((k) => SYNCED_RE.test(k)); } catch { return []; }
+  try { return Object.keys(localStorage).filter((k) => k.indexOf("hv1_") === 0).map((k) => k.slice(4)).filter(synced); } catch { return []; }
 }
 /** 계정에 올릴 설정 — 기기별 칸(fs·enterSend)과 API 키 칸은 뺌(서버 제약 kv_no_plain_keys). @returns {Partial<Settings>} */
 export function cloudSettings() {

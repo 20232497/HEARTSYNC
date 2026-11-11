@@ -10,15 +10,15 @@ import path from "node:path";
 import { AsyncLocalStorage } from "node:async_hooks";
 import { llm } from "../src/js/ai/llm.js";
 import { LEN } from "../src/js/ai/models.js";
-import { dropEcho, looseJSON, parseState, splitReply } from "../src/js/ai/parse.js";
+import { parseState } from "../src/js/ai/parse.js";
 import { buildInput } from "../src/js/ai/prompt/input.js";
 import { ORIGINALS } from "../src/js/content/index.js";
 import { CFG } from "../src/js/core/config.js";
 import { newRoom } from "../src/js/core/rooms.js";
 import { messagesMinorHint } from "../src/js/core/safety.js";
-import { codebook, imgTags } from "../src/js/images/codes.js";
 import { SB } from "../src/js/services/supabase.js";
 import { A, fakeWorld, loadEdge } from "../tests/unit/_idv-fake.mjs";
+import { measure } from "./bench-measure.mjs";
 
 const arg = (name, def) => { const i = process.argv.indexOf("--" + name); return i > 0 ? process.argv[i + 1] : def; };
 const models = String(arg("models", "")).split(",").map((s) => s.trim()).filter(Boolean);
@@ -63,16 +63,6 @@ globalThis.fetch = (url, opt = {}) => String(url) === GATE ? handle(new Request(
 CFG.chatUrl = GATE;
 SB.s = { access_token: "tokA", refresh_token: "r", expires_at: Date.now() + 864e5, user: { id: A, email: "" } };
 
-const count = (s, re) => (s.match(re) || []).length;
-function measure(text, c, said, persona) {
-  const { json } = splitReply(text), body = dropEcho(splitReply(text).body, said).trim(), plain = body.replace(/\[\[[^\]]*\]\]/g, "");
-  const v = looseJSON(json), st = v && typeof v === "object" ? (v.status && typeof v.status === "object" ? v.status : v) : null, book = codebook(c), tags = imgTags(body);
-  const ko = count(plain, /[가-힣]/g), latin = count(plain, /[A-Za-z]/g), han = count(plain, /[一-鿿]/g), kana = count(plain, /[぀-ヿ]/g), other = count(plain, /[Ѐ-ӿ฀-๿؀-ۿ]/g);
-  return { body, chars: plain.length, state: !!json, json: !!st, fields: st ? c.fields.filter((f) => st[f] !== undefined && st[f] !== "").length + "/" + c.fields.length : "0/" + c.fields.length,
-    sug: v && Array.isArray(v.suggestions) ? v.suggestions.length : 0, tags: tags.length, badTags: tags.filter((t) => !book[t.code] || t.sit < book[t.code].min || t.sit > book[t.code].max).length,
-    ko: ko + latin + han + kana + other ? Math.round((ko / (ko + latin + han + kana + other)) * 100) : 0, latin, han, kana, other,
-    lines: count(plain, /^.*["“].*$/gm), asUser: count(plain, new RegExp("^\\s*" + persona + "\\s*:", "gm")), echo: body.length < splitReply(text).body.trim().length };
-}
 async function runModel(model) {
   const r = newRoom(JSON.parse(JSON.stringify(work)), 0, { id: "p1", name: "지호", memo: "", desc: "" }), rows = [], log = [`# ${model} — ${work.title}`, "", "## 시작 상황", r.msgs[0].alts[0].text];
   r.set.len = "mid";

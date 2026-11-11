@@ -32,7 +32,7 @@ export const TARGETS = {
 /* 폴더 이름이 곧 작품의 aud(관심있는 대화) 값 */
 export const AUD_DIRS = { f: "여성향(남성 캐릭터와의 대화)", m: "남성향(여성 캐릭터와의 대화)", all: "전체(남녀가 섞임)" };
 /* 빌드 검사에 쓰는 앱 규칙 — src/js에서 같은 코드를 꺼내 쓴다(규칙이 두 군데로 갈라지지 않게) */
-const APP_RULES = ["SIT", "CODE_RE", "SERIES", "codebook", "APP_COMMANDS", "PALETTES", "MOTIFS", "CATS", "LIMITS", "FREE_DAILY", "MODELS", "guessAud", "personaWho", "personaLook", "castLook", "minorFlags", "minorHint", "settingHint", "LORE_KINDS"];
+const APP_RULES = ["SIT", "CODE_RE", "SERIES", "codebook", "APP_COMMANDS", "PALETTES", "MOTIFS", "CATS", "LIMITS", "LORE", "FREE_DAILY", "MODELS", "guessAud", "personaWho", "personaLook", "castLook", "minorFlags", "minorHint", "settingHint", "LORE_KINDS"];
 /* 오래된 iOS(13 이하)·인앱 브라우저에서 문법 오류가 나는 것들 */
 const OLD_IOS = [[/\|\|=|&&=|\?\?=/, "논리 할당(||= &&= ??=)"], [/\.at\(/, "Array.at()"], [/\(\?<[=!]/, "정규식 lookbehind"],
   [/\bstructuredClone\b/, "structuredClone"], [/\.findLast(?:Index)?\(/, "findLast()"], [/\bObject\.hasOwn\(/, "Object.hasOwn()"]];
@@ -479,12 +479,23 @@ function checkWork(mod, { aud, row, id, wrel, R, errors, warnings }) {
     e('places(장소)는 [{ name: "장소 이름", desc?: "설명", tags?: "영문 태그", hidden?: true(비공개) }, …] — 순서대로 MP1, MP2…');
   if (c.cuts !== undefined && (!Array.isArray(c.cuts) || c.cuts.some((x) => !isObj(x) || !str(x.title) || (x.when !== undefined && typeof x.when !== "string") || !engOk(x.tags) || !boolOk(x.hidden))))
     e('cuts(컷씬)는 [{ title: "제목", when?: "나오는 조건", tags?: "영문 태그", hidden?: true(비공개) }, …] — 순서대로 EV1, EV2…');
-  // 작품 명령어(선택): 대화방에서 !cmd를 치면 prompt가 AI에 연출 지시로 감(core/commands.js). 앱 명령어 이름·별칭(APP_COMMANDS)과 겹치면 안 됨
+  // 본문의 그림 태그는 [[코드번호]] 한 토큰 — 코드가 cast(대문자)·places(MP)·cuts(EV)에 있고 번호가 범위 안인지(시작 상황 본문·즉답 명령어의 글이 같이 씀)
+  const tagRange = codeRange({ ...c, cast }, R);
+  const checkTags = (text, at) => {
+    for (const m of String(text).matchAll(/\[\[([^\]]*)\]\]/g)) {
+      const tok = m[1], t = tok.match(/^([A-Za-z]+)(\d{1,2})$/);
+      if (!t) { e(`${at}: [[${tok}]] — 그림 태그는 [[코드번호]] 한 토큰이에요(예: [[${(cast[0] || {}).code || "HSY"}0]])${/^img:/i.test(tok) ? ". 예전 [[img:코드:번호]] 모양은 더 쓰지 않아요" : ""}`); continue; }
+      const why = tagRange(t[1], +t[2]); if (why) e(`${at}: [[${tok}]] — ${why}`);
+    }
+  };
+  // 작품 명령어(선택): 대화방에서 !cmd를 치면 prompt가 AI에 연출 지시로 가거나(이야기), text를 AI 없이 바로 보여 줌(즉답) — 둘 중 하나(core/commands.js). 앱 명령어 이름·별칭(APP_COMMANDS)과 겹치면 안 됨
   if (c.commands !== undefined) {
     const reserved = new Set(R.APP_COMMANDS.flatMap((x) => [x.cmd, ...x.alias]).map((s) => s.toLowerCase())), seenCmd = new Set();
-    if (!Array.isArray(c.commands)) e('commands(명령어)는 [{ cmd: "이름", title: "제목", desc?: "설명", prompt: "AI 지시" }, …]');
+    if (!Array.isArray(c.commands)) e('commands(명령어)는 [{ cmd: "이름", title: "제목", desc?: "설명", prompt: "AI 지시" 또는 text: "바로 보여 줄 글" }, …]');
     else c.commands.forEach((x, i) => {
-      if (!isObj(x) || !str(x.cmd) || !str(x.title) || !str(x.prompt) || (x.desc !== undefined && typeof x.desc !== "string")) return e(`commands[${i}]: { cmd, title, desc?, prompt } 모양이어야 해요(cmd·title·prompt는 글)`);
+      if (!isObj(x) || !str(x.cmd) || !str(x.title) || (x.desc !== undefined && typeof x.desc !== "string")) return e(`commands[${i}]: { cmd, title, desc?, prompt 또는 text } 모양이어야 해요(cmd·title은 글)`);
+      if ((x.prompt !== undefined) === (x.text !== undefined) || !str(x.prompt !== undefined ? x.prompt : x.text)) return e(`commands[${i}](${x.cmd}): prompt(AI에게 주는 지시)와 text(AI 없이 바로 보여 줄 글) 중 하나만, 글로 적어요`);
+      if (x.text !== undefined) { if (x.text.length > R.LIMITS.reply) e(`commands[${i}](${x.cmd}).text가 ${x.text.length}자예요 — 즉답 글은 ${R.LIMITS.reply}자 이내`); checkTags(x.text, `commands[${i}](${x.cmd}).text`); }
       if (!/^[^\s!！/]+$/.test(x.cmd)) e(`commands[${i}].cmd "${x.cmd}" — 공백·!·/ 없이 이름만 적어요(예: "퀘스트" → 대화에서 !퀘스트)`);
       const k = x.cmd.toLowerCase();
       if (reserved.has(k)) e(`commands[${i}].cmd "${x.cmd}"는 앱 명령어 이름이에요(${[...reserved].join("·")}) — 다른 이름으로`);
@@ -509,7 +520,24 @@ function checkWork(mod, { aud, row, id, wrel, R, errors, warnings }) {
   if (c.lookTags !== undefined && c.cast !== undefined) w("cast가 있으면 lookTags는 쓰이지 않아요 — cast[].tags에 적어 주세요");
   if (c.lore !== undefined && (!Array.isArray(c.lore) || c.lore.some((x) => !isObj(x) || !Array.isArray(x.keys) || !x.keys.length || x.keys.some((k) => !str(k)) || !str(x.text) || (x.tags !== undefined && typeof x.tags !== "string"))))
     e("lore(키워드북)는 [{ keys: [\"키워드\", …], text: \"설명\", kind?: \"종류\", tags?: \"영문 태그\" }, …]");
-  else (c.lore || []).forEach((x, i) => {
+  else {
+    // 키워드북 규칙(ai/prompt/lore.js matchLore와 같은 상수 LORE): 상시(always)·우선순위(order)·제외 낱말(not)·보조 키(also)
+    const strs = (v) => v === undefined || (Array.isArray(v) && v.length > 0 && v.every(str));
+    (c.lore || []).forEach((x, i) => {
+      const at = `lore[${i}](${x.keys[0]})`;
+      if (x.always !== undefined && typeof x.always !== "boolean") e(`${at}.always(상시 주입)는 참거짓이어야 해요`);
+      if (x.order !== undefined && !Number.isFinite(x.order)) e(`${at}.order(우선순위 — 클수록 먼저)는 숫자여야 해요`);
+      if (!strs(x.not)) e(`${at}.not(이 낱말이 나오면 넣지 않음)은 글 배열이어야 해요`);
+      if (!strs(x.also)) e(`${at}.also(keys와 함께 나와야 하는 낱말)는 글 배열이어야 해요`);
+      if (x.always === true && (x.not !== undefined || x.also !== undefined)) e(`${at}: 상시(always) 항목에는 not·also를 쓸 수 없어요 — 상시 항목은 조건 없이 늘 들어가요`);
+      if (x.text.length > R.LORE.budget) e(`${at}.text가 ${x.text.length}자예요 — 한 턴 예산(${R.LORE.budget}자)보다 길어 한 번도 들어가지 못해요`);
+    });
+    const al = (c.lore || []).filter((x) => x.always === true), sum = al.reduce((n, x) => n + x.text.length, 0);
+    if (al.length > R.LORE.max || sum > R.LORE.budget) e(`키워드북의 상시(always) 항목이 ${al.length}개·${sum}자예요 — 한 턴 예산(${R.LORE.max}개·${R.LORE.budget}자) 안이어야 늘 들어갈 수 있어요`);
+    else if (al.length && sum > R.LORE.budget / 2) w(`키워드북의 상시(always) 항목이 ${sum}자로 한 턴 예산(${R.LORE.budget}자)의 절반을 넘어요 — 키워드로 걸리는 항목이 들어갈 자리가 줄어요`);
+  }
+  (Array.isArray(c.lore) ? c.lore : []).forEach((x, i) => {
+    if (!isObj(x) || !Array.isArray(x.keys) || !str(x.text)) return; // 모양 오류는 위에서 이미 알림
     // 세계관 일러스트: 종류(kind)는 상세 카드 머리표·AI 구도를 정하고, tags는 번역 없이 그대로 프롬프트에 들어가므로 영문만
     if (x.kind !== undefined && !R.LORE_KINDS[x.kind]) e(`lore[${i}](${x.keys[0]}).kind("${x.kind}")는 ${Object.keys(R.LORE_KINDS).join("·")} 중 하나`);
     if (typeof x.tags === "string" && /[가-힣]/.test(x.tags)) e(`lore[${i}](${x.keys[0]}).tags는 영문 태그 글이어야 해요(한국어 설명은 text에)`);
@@ -520,19 +548,18 @@ function checkWork(mod, { aud, row, id, wrel, R, errors, warnings }) {
   else c.openings.forEach((o, i) => {
     if (!isObj(o) || !str(o.title) || !str(o.text)) return e(`openings[${i}]: title·text가 있어야 해요`);
     if (o.directive !== undefined && typeof o.directive !== "string") e(`openings[${i}].directive는 글이어야 해요`);
+    // 시작 상황의 선택 칸: 배경 장소(places의 n번째)·첫 답변 추천(최대 3개)·시작 직후 N턴 동안만 주는 연출 지시
+    const nPlaces = Array.isArray(c.places) ? c.places.length : 0;
+    if (o.place !== undefined && !(Number.isInteger(o.place) && o.place >= 1 && o.place <= nPlaces)) e(`openings[${i}].place(${o.place}) — 배경 장소는 places의 1~${nPlaces}번째 번호예요${nPlaces ? "" : "(places가 없으면 쓸 수 없어요)"}`);
+    if (o.suggestions !== undefined && (!Array.isArray(o.suggestions) || !o.suggestions.length || o.suggestions.length > 3 || o.suggestions.some((s) => !str(s) || s.length > R.LIMITS.suggestion))) e(`openings[${i}].suggestions(첫 답변 추천)는 글 1~3개, 각 ${R.LIMITS.suggestion}자 이내`);
+    if (o.lead !== undefined && !(isObj(o.lead) && str(o.lead.text) && o.lead.text.length <= R.LIMITS.lead && Number.isInteger(o.lead.turns) && o.lead.turns >= 1 && o.lead.turns <= R.LIMITS.leadTurns)) e(`openings[${i}].lead(시작 연출)는 { text: "지시"(${R.LIMITS.lead}자 이내), turns: 1~${R.LIMITS.leadTurns} }`);
     if (o.status !== undefined && (!isObj(o.status) || Object.values(o.status).some((v) => typeof v !== "string" && typeof v !== "number")))
       e(`openings[${i}].status는 { "칸 이름": 글 또는 숫자 }`);
     else if (o.status && Array.isArray(c.fields)) {
       const miss = Object.keys(o.status).filter((k) => !c.fields.includes(k));
       if (miss.length) w(`openings[${i}].status의 ${miss.join(", ")} 칸이 fields에 없어요`);
     }
-    // 그림 태그는 [[코드번호]] 한 토큰 — 코드가 cast(대문자)·places(MP)·cuts(EV)에 있고 번호가 범위 안인지
-    const range = codeRange({ ...c, cast }, R);
-    for (const m of o.text.matchAll(/\[\[([^\]]*)\]\]/g)) {
-      const tok = m[1], t = tok.match(/^([A-Za-z]+)(\d{1,2})$/);
-      if (!t) { e(`openings[${i}]: [[${tok}]] — 그림 태그는 [[코드번호]] 한 토큰이에요(예: [[${(cast[0] || {}).code || "HSY"}0]])${/^img:/i.test(tok) ? ". 예전 [[img:코드:번호]] 모양은 더 쓰지 않아요" : ""}`); continue; }
-      const why = range(t[1], +t[2]); if (why) e(`openings[${i}]: [[${tok}]] — ${why}`);
-    }
+    checkTags(o.text, `openings[${i}]`);
   });
 
   // 공개 저장소의 작품은 일반 트랙만 — 성인 트랙 작품은 서버 쪽 비공개 데이터로만 둠(CLAUDE.md 원칙)

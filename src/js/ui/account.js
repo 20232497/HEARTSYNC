@@ -1,5 +1,6 @@
 /* MY → 계정 칸: 처음 로그인 합치기(firstSync), 동기화 상태·로그아웃·계정 삭제 */
 import { on } from "../core/events.js";
+import { likedIds, mergeShelf, resetShelf } from "../core/shelf.js";
 import { S } from "../core/state.js";
 import { $, esc, toast } from "../core/util.js";
 import { CLOUD, cloudStateText } from "../services/cloud.js";
@@ -8,7 +9,8 @@ import { mergeGuest, reloadFromCloud, wipeDevice } from "../services/sync.js";
 import { viewMe } from "./me.js";
 import { confirmSheet, sheet } from "./sheet.js";
 
-/* 처음 로그인: 계정이 비었으면 이 기기 데이터를 올리고, 이 기기에만 있는 대화가 있으면 합칠지 물음 */
+/* 처음 로그인: 계정이 비었으면 이 기기 데이터를 올리고, 이 기기에만 있는 대화나 찜한 작품이 있으면 합칠지 물음(2026-11-10 사용자 결정: 찜도 묻기 —
+   '계정 것만 쓰기'를 고르면 이 기기의 서재(찜·최근 본·수집 기록)를 버림. 최근 본·수집 기록만 있을 때는 묻지 않고 합침) */
 export async function firstSync() {
   try { localStorage.removeItem(CLOUD.lastKey()); } catch {}
   const rows = await CLOUD.rows("");
@@ -17,19 +19,22 @@ export async function firstSync() {
   const local = { rooms: S.rooms, personas: S.personas };
   const has = (list, id) => (Array.isArray(list) ? list : []).some((x) => x && x.id === id);
   const onlyRooms = local.rooms.filter((r) => !has(remote.rooms, r.id));
+  // 이 기기에서 찜한 작품 가운데 계정에 없는 것 — 계정의 서재 행은 동기화 날짜(SHELF.syncFrom) 뒤에만 있으므로 그 전에는 이 기기의 찜 전부
+  const rs = mergeShelf(remote.shelf), onlyLikes = likedIds().filter((id) => !((rs.likes[id] || 0) > (rs.unlikes[id] || 0)));
   const use = async (merge) => {
     CLOUD.apply(rows);
     if (merge) { mergeGuest(remote, local); await CLOUD.pushAll([]); }
     await reloadFromCloud();
     toast(merge ? "이 기기의 데이터를 계정에 합쳤어요" : "계정 데이터를 불러왔어요");
   };
-  if (!onlyRooms.length) return use(false);
-  const ov = sheet(`<h2>이 기기의 대화를 합칠까요?</h2><p class="sub">계정에 이미 저장된 데이터가 있어요. 이 기기에만 있는 대화 ${onlyRooms.length}개를 계정에 합칠 수 있어요. 계정에 있던 것은 그대로 남아요.</p>
+  if (!onlyRooms.length && !onlyLikes.length) return use(false);
+  const what = [onlyRooms.length ? `대화 ${onlyRooms.length}개` : "", onlyLikes.length ? `찜한 작품 ${onlyLikes.length}개` : ""].filter(Boolean).join("와 ");
+  const ov = sheet(`<h2>이 기기의 ${onlyRooms.length ? "대화를" : "찜을"} 합칠까요?</h2><p class="sub">계정에 이미 저장된 데이터가 있어요. 이 기기에만 있는 ${what}를 계정에 합칠 수 있어요. 계정에 있던 것은 그대로 남아요.</p>
     <div class="cta-row"><button class="btn ghost" id="mNo">계정 것만 쓰기</button><span class="spacer"></span><button class="btn pri" id="mYes">합치기</button></div>`);
   return new Promise((res) => {
     let done = false;
     const pick = async (merge) => { if (done) return; done = true; ov.remove(); await use(merge); res(); };
-    $("#mYes", ov).onclick = () => pick(true); $("#mNo", ov).onclick = () => pick(false);
+    $("#mYes", ov).onclick = () => pick(true); $("#mNo", ov).onclick = () => { resetShelf(); pick(false); }; // 이 기기의 찜·최근 본도 합치지 않음
     ov.addEventListener("click", (e) => { if (e.target === ov) pick(true); }); // 그냥 닫으면 아무것도 잃지 않게 합침
   });
 }

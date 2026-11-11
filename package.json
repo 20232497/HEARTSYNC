@@ -7,6 +7,7 @@
     "build": "node tools/build.mjs",
     "check": "node tools/build.mjs --check",
     "dev": "node tools/dev.mjs",
+    "content:report": "node tools/content-report.mjs",
     "test": "node --test",
     "e2e": "node tests/run.mjs",
     "serve": "node tests/serve.mjs"

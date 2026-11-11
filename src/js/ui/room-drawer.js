@@ -7,6 +7,7 @@ import { exampleCast, getChar, normalizeChar } from "../core/character.js";
 import { LIMITS } from "../core/constants.js";
 import { baseOpening, curText, newRoom, saveRoom } from "../core/rooms.js";
 import { saveSettings } from "../core/settings.js";
+import { seenSet } from "../core/shelf.js";
 import { S, room, setRoom } from "../core/state.js";
 import { $, $$, clamp, esc, num, toast } from "../core/util.js";
 import { FREE_DAILY, PLAN, freeLeft, isPro, plan, qShort, quote } from "../core/wallet.js";
@@ -22,6 +23,7 @@ import { ICON } from "./icons.js";
 import { personaSheet } from "./me.js";
 import { openModelSheet } from "./model-sheet.js";
 import { plusSheet } from "./pay.js";
+import { bindPins, pinsHTML } from "./pins.js";
 import { deleteRoom, exportRoom, exportText, galleryItems, jumpTo } from "./room-tools.js";
 import { closeOverlays, confirmSheet } from "./sheet.js";
 import { go } from "./shell.js";
@@ -55,7 +57,7 @@ export function openRoomDrawer(view = "main") {
       <div class="menu-list">
         <button data-v="persona">내 페르소나<span class="v">${esc(r.persona.name)}</span></button>
         <div class="grp"></div>
-        <button data-v="memory">장기기억<span class="v">${cfg.auto ? `${Math.max(0, cfg.every - (r.sinceMem || 0))}턴 뒤 요약` : "자동 요약 꺼짐"}</span></button>
+        <button data-v="memory">장기기억<span class="v">${(r.pins || []).length ? `📌 ${r.pins.length} · ` : ""}${cfg.auto ? `${Math.max(0, cfg.every - (r.sinceMem || 0))}턴 뒤 요약` : "자동 요약 꺼짐"}</span></button>
         <button data-v="note">유저노트<span class="v">${r.userNote ? "작성됨" : "비어 있음"}</span></button>
         <div class="grp"></div>
         <button id="mModel">AI 모델<span class="v">${MODELS[r.set.model].name}</span></button>
@@ -99,7 +101,7 @@ export function openRoomDrawer(view = "main") {
   else if (view === "memory") {
     let tab = "cur";
     const paint = () => {
-      const tabs = `<div class="tabs" role="tablist">${[["cur", "현재 기억"], ["hist", "히스토리"], ["cfg", "요약 설정"]].map(([k, l]) => `<button role="tab" data-tab="${k}" class="${tab === k ? "on" : ""}">${l}</button>`).join("")}</div>`;
+      const tabs = `<div class="tabs" role="tablist">${[["cur", "현재 기억"], ["pin", "고정 기억"], ["hist", "히스토리"], ["cfg", "요약 설정"]].map(([k, l]) => `<button role="tab" data-tab="${k}" class="${tab === k ? "on" : ""}">${l}</button>`).join("")}</div>`;
       if (tab === "cur") {
         body.innerHTML = tabs + `<b>현재 대화방에 적용 중인 기억이에요</b><p class="note" style="margin:4px 0 12px">설정한 요약 주기마다 지금까지 나눈 대화를 자동으로 요약해 업데이트해요.</p>
           <div class="setcard"><div class="toggle"><label for="mAuto">자동 업데이트</label><input type="checkbox" id="mAuto" ${cfg.auto ? "checked" : ""}></div>
@@ -111,6 +113,9 @@ export function openRoomDrawer(view = "main") {
         $("#mAuto", body).onchange = (e) => { S.settings.memCfg.auto = e.target.checked; saveSettings(); openRoomDrawer("memory"); };
         $("#memSave", body).onclick = () => { if (ta.value !== (r.memory || "")) { pushHist(r, r.memory, "수정 전 기억"); r.memory = ta.value.slice(0, cfg.limit); saveRoom(r); } toast("저장했어요. 다음 턴부터 반영돼요."); };
         $("#memNow", body).onclick = async () => { r.memory = ta.value; ov.remove(); await maybeSummarize(r, true); };
+      } else if (tab === "pin") {
+        body.innerHTML = tabs + pinsHTML(r);
+        bindPins(body, r, () => { openRoomDrawer("memory"); const b = $('[data-tab="pin"]'); if (b) b.click(); }); // 시트가 드로어를 닫으므로 다시 열어 이 탭으로
       } else if (tab === "hist") {
         const h = r.memHist || [];
         let sel = -1;
@@ -193,8 +198,8 @@ export function openRoomDrawer(view = "main") {
   }
   else if (view === "places") {
     // 작품의 장소(places → 예약 시리즈 코드 MP1…, 코드 글자는 codes.js SERIES에서) — !지도 명령어로도 열림. 그림은 작품 폴더 images/MP<n>.webp. 목록은 최신 작품에서
-    // 비공개(hidden) 장소는 이 대화에 그 코드가 나오기 전까지 그림만 가림(이름·설명은 보임 — codebook의 hidden)
-    const live = getChar(c.id) || c, list = live.places || [], MP = seriesCode("place"), book = codebook(live)[MP], hid = book.hidden, seen = new Set(galleryItems(r).map((it) => it.code + it.sit));
+    // 비공개(hidden) 장소는 대화에서 그 코드를 보기 전까지 그림만 가림(이름·설명은 보임 — codebook의 hidden). 본 기록은 내 서재의 수집 기록(이 방 것은 방을 열 때·응답이 끝날 때 적힘)
+    const live = getChar(c.id) || c, list = live.places || [], MP = seriesCode("place"), book = codebook(live)[MP], hid = book.hidden, seen = seenSet(c.id);
     const lock = (i) => hid.includes(i + 1) && !seen.has(MP + (i + 1));
     body.innerHTML = list.length ? `<p class="note" style="margin-bottom:10px">이 작품의 장소 ${list.length}곳. 대화에서는 [[${MP}번호]] 코드로 나와요.</p><div class="gallery">${list.map((p, i) => {
       const ref = lock(i) ? null : pickImg(c, MP, i + 1);

@@ -2,20 +2,21 @@
 import { MODELS } from "../../ai/models.js";
 import { getChar } from "../../core/character.js";
 import { commandHelp, findCommand, parseCommand } from "../../core/commands.js";
-import { migrateRoom, roomKey } from "../../core/rooms.js";
+import { migrateRoom, roomKey, saveRoom } from "../../core/rooms.js";
 import { S, gen, room, setRoom } from "../../core/state.js";
 import { KV } from "../../core/storage.js";
-import { $, esc, num } from "../../core/util.js";
+import { $, esc, num, uid } from "../../core/util.js";
 import { FREE_DAILY, freeLeft, isPro, listPrice, qShort, quote } from "../../core/wallet.js";
 import { sendTurn, stopGen } from "./generate.js";
 import { cmdKey, updateCmdList } from "./cmdlist.js";
 import { bindStick, renderLog } from "./log.js";
 import { barPct } from "./render.js";
-import { toggleSug } from "./suggest.js";
+import { hideSug, toggleSug } from "./suggest.js";
 import { coverHTML } from "../cover.js";
 import { ICON } from "../icons.js";
 import { openModelSheet } from "../model-sheet.js";
 import { openRoomDrawer } from "../room-drawer.js";
+import { collectSeen } from "../room-tools.js";
 import { bindGo, go, topbar } from "../shell.js";
 
 export async function viewChat(id) {
@@ -27,6 +28,7 @@ export async function viewChat(id) {
     if (!r) { v.innerHTML = `<div class="page">${topbar()}<div class="empty">대화방을 찾을 수 없어요.<br><button class="btn sm" data-go="chats">대화 목록</button></div></div>`; bindGo(v); return; }
     setRoom(migrateRoom(r));
   }
+  collectSeen(room); // 이 방에 나온 그림 코드를 수집 기록에(새 방의 첫 장면, 이 기능 전에 만든 방, 다른 기기에서 온 방)
   const c = room.char;
   v.innerHTML = `<div class="chat">
     <div class="chat-bg">${coverHTML(c)}</div>
@@ -86,12 +88,22 @@ export async function viewChat(id) {
   renderLog(true); updateMeter(); updateComposer();
 }
 /* !명령어(core/commands.js): 앱 화면형 명령어(view가 있는 것 — !상태창·!갤러리·!지도·!도움말)는 AI를 부르지 않고 드로어를 엶(하트·턴을 쓰지 않음).
-   앱 연출형(prompt — !시간경과 등)·작품 명령어(work.js commands)·모르는 !글은 false → 그대로 AI에 보냄(연출 지시로 바꾸는 건 buildInput의 commandText) */
+   작품의 즉답 명령어(commands의 text)는 AI 없이 정해진 글을 방에 남김(replyNow). 이 둘은 이름 뒤에 덧붙인 말이 있어도 같음(덧붙인 말은 쓰지 않음).
+   앱 연출형(prompt — !시간경과 등)·작품 명령어(work.js commands의 prompt)·모르는 !글은 false → 그대로 AI에 보냄(연출 지시로 바꾸고 덧붙인 말을 붙이는 건 buildInput의 commandText) */
 function runCommand(t) {
   const live = getChar(room.char.id) || room.char, f = findCommand(parseCommand(t), live);
+  if (f && f.work && f.work.text) { replyNow(t, f.work); return true; }
   if (!f || !f.app || !f.app.view) return false;
-  if (f.app.view === "help") { flashHint("명령어: " + commandHelp(live) + " — // 로 시작하면 연출 지시"); return true; }
+  if (f.app.view === "help") { flashHint("명령어: " + commandHelp(live) + " — 이름 뒤에 말을 덧붙여도 되고, // 로 시작하면 연출 지시"); return true; }
   openRoomDrawer(f.app.view); return true;
+}
+/* 즉답: 유저 말풍선과 정해진 글의 AI 메시지를 방에 남김 — 하트·턴을 쓰지 않고 상태창은 직전 값 그대로. 두 메시지에 canned 표시
+   (다시 쓰기·좋아요 없음, 분기의 턴 계산에서 빠짐). 다음 턴의 대화 기록에는 그대로 들어가 AI가 그 글을 본 것으로 이어 감 */
+function replyNow(t, cmd) {
+  const a = lastAi(room), st = a ? (a.alts[a.idx] || {}).status || a.statusBefore : room.status;
+  room.lastErr = "";
+  room.msgs.push({ id: uid("m"), role: "user", text: t, canned: true }, { id: uid("m"), role: "ai", idx: 0, canned: true, alts: [{ text: cmd.text, status: st, suggestions: [], cost: "무료" }], statusBefore: st });
+  saveRoom(room); collectSeen(room); hideSug(); renderLog(true);
 }
 let hintTimer = null;
 export function flashHint(msg) {

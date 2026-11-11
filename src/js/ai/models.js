@@ -16,6 +16,12 @@ export const MODELS = {
   story:  { tier: "default", name: "스토리", badge: "추천", desc: "풍부한 묘사와 안정적인 캐릭터 연기", base: 4, memStep: 1 },
   master: { tier: "complex", name: "마스터", badge: "최고 품질", desc: "한 편의 소설 같은 몰입감. 복잡한 세계관과 전투 계산에 강해요", base: 8, memStep: 2 }
 };
+/**
+ * 프롬프트 캐싱 스위치 — on이면 Anthropic으로 가는 길(내 키 직행·프록시·무료 길 관문)에서 시스템 프롬프트의 고정부(ai/prompt/rules.js rulesParts의 fixed) 끝에 캐시 표시를 붙임.
+ * 캐시는 5분 유지(읽을 때마다 연장)·쓰기 1.25배·읽기 0.1배라, 턴 간격이 5분 안인 대화에서만 이득이고 그보다 뜸하면 고정부를 매번 1.25배로 냄 — 실측(tools/model-bench.mjs --direct)으로 절감이 확인되기 전에는 꺼 둠.
+ * 객체인 이유: 시험 도구가 켜고 끄며 잴 수 있게.
+ */
+export const PROMPT_CACHE = { on: false };
 /** 앱의 기본 추천 모델 — 작품이 권장 모델(work.js recommend)을 적지 않았을 때 새 대화방이 시작하는 모델. MODELS의 그 모델 badge가 '추천'(바꾸면 badge도 같이) */
 export const RECOMMEND_DEFAULT = "story";
 /** 작품이 권장 모델을 직접 적었으면 그 키, 아니면 "" — 모델 선택 시트의 '권장' 배지는 이때만 붙음. @param {{recommend?: string}|null|undefined} c @returns {ModelKey|""} */

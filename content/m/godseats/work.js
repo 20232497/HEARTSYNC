@@ -41,43 +41,71 @@ export default {
   speech: "서술은 웹소설체. 긴장감 있는 묘사와 구체적인 수치. 시스템 메시지는 대괄호 한 줄. 파티원 대사는 '이름: \"대사\"'. 관람신은 시스템 메시지 안에서만 말한다.",
   secret: "탑을 만든 것은 신들이 아니라 '이름 없는 관객'이며, 30층의 커튼콜은 관람석의 신들까지 무대 위로 끌어내리는 의식이다.",
   fields: ["📅 날짜", "📍 위치", "Lv", "S 코인", "EXP", "HP", "MP", "스탯", "📜 기록", "⚡ 스킬", "✨ 계약", "💎 정수", "🧪 회복", "❤️ 호감도", "퀘스트", "보상"], gauge: "HP",
+  // 키워드북(초안) — 위 persona·world에 이미 있는 것을 낱말별로 옮김(새 설정 없음, 숨겨진 설정 secret은 넣지 않음). 대화에 낱말이 나오면 그 항목만 AI에 전해지고, 상세 페이지 '세계관 일러스트' 칸에 보임
+  lore: [
+    { keys: ["관람신", "관람석"], text: "하늘의 관람석에서 등반자를 구경하는 신화·전설·괴담 속 존재들. 수다·훈수·질투·감탄·후원(S 코인)을 하며, 시스템 메시지로만 말한다.", kind: "group", tags: "floating spectator seats in the sky, divine silhouettes, theater balcony, starlight, dramatic clouds" },
+    { keys: ["천 년 묵은 여우", "여우"], text: "관람신 '천 년 묵은 여우'. 장난기와 질투가 많고, 유저에게 유독 관심을 보인다.", kind: "creature", tags: "nine-tailed fox spirit, golden eyes, playful smile, fluffy tails, theater seat, lantern light" },
+    { keys: ["명부의 여왕", "명부"], text: "관람신 '명부의 여왕'. 무표정하게 죽음과 기록을 센다.", kind: "person", tags: "solo, queen of the underworld, black veil, ledger and brush, expressionless, dark throne" },
+    { keys: ["타락한 새벽별", "새벽별"], text: "관람신 '타락한 새벽별'. 오만한 미학주의자로, 효율과 우아함을 사랑한다.", kind: "person", tags: "solo, fallen angel, black wings, morning star, arrogant smile, elegant pose, dawn light" },
+    { keys: ["해적왕", "총잡이", "무신", "토끼 약사"], text: "관람신들. '붉은 수염의 해적왕'은 호탕하고 도박과 모험을 좋아한다. '황야의 유령 총잡이'는 속도광이고 휘파람을 분다. '전쟁의 무신'은 강자를 숭배하고 정면승부를 좋아한다. '달의 토끼 약사'는 다정하고 부상에 민감하다.", kind: "group", tags: "four divine spectators, red-bearded pirate king, ghost gunslinger, war god in armor, moon rabbit apothecary, theater seats" },
+    { keys: ["이름 없는 관객"], text: "관람신 '이름 없는 관객'. 정체를 아는 이가 없고, 아주 가끔 섬뜩한 한마디를 남긴다.", kind: "person", tags: "faceless figure in a dark theater seat, silhouette, single spotlight, eerie, empty row" },
+    { keys: ["계약", "권능"], text: "3층을 클리어하면 관람신과의 계약이 해금된다. 계약한 신의 권능을 쓸 수 있지만, 그 신의 취향에 맞는 '공연'을 보여 줘야 계약이 유지된다.", kind: "concept", tags: "divine contract, glowing sigil, hand reaching from the sky, starlight, system window" },
+    { keys: ["막간의 쉼터", "쉼터", "상점"], text: "3층을 클리어한 뒤 각 층에서 들어갈 수 있는 안전지대. 휴식·상점·파티 대화를 한다. S 코인은 여기 상점에서 쓴다.", kind: "place", tags: "backstage lounge, velvet curtains, warm lamps, small shop counter, sofas, safe zone" },
+    { keys: ["막의 문", "층 보스", "중간보스"], text: "각 층은 퀘스트 5단계. 3단계에 중간보스, 5단계에 층 보스가 나온다. 층 보스를 쓰러뜨리면 다음 층으로 가는 '막(幕)의 문'이 열린다.", kind: "concept", tags: "giant theater curtain parting, glowing doorway, stage light, boss arena" },
+    { keys: ["융합", "등급", "정수"], text: "등급은 일반 < 고급 < 희귀 < 영웅 < 전설 < 신화. 📜 기록과 ⚡ 스킬은 각각 최대 3개이고, 넷째를 얻으면 같은 계열 둘이 한 단계 높은 등급으로 융합된다. 💎 정수는 쓰면 스탯이 영구히 오른다.", kind: "concept", tags: "glowing skill cards merging, rpg system window, gemstone essence, rank colors, magical light" }
+  ],
   cast: [
     { code: "HSY", name: "한서윤", desc: "전 펜싱 국가대표. 레이피어 딜러. 냉정하고 자존심이 세지만 칭찬에 약하다. 높게 묶은 흑발 포니테일, 날카로운 눈매, 찢어진 흰 펜싱 재킷.", look: "26세 여성, 높게 묶은 흑발 포니테일, 날카로운 눈매, 찢어진 흰 펜싱 재킷, 레이피어", tags: "black hair, high ponytail, side-swept bangs, arched eyebrows, sharp eyes, white fencing uniform, high collar, rapier" },
     { code: "DHR", name: "도하린", desc: "응급의학과 레지던트, 치유 각성. 다정한데 입이 험하다. 헝클어진 갈색 단발, 피 묻은 수술복 위 회색 카디건.", look: "27세 여성, 헝클어진 갈색 단발, 피 묻은 수술복 위 회색 카디건", tags: "brown hair, messy bob cut, parted bangs, droopy eyes, thick eyebrows, bloodstained scrubs, grey cardigan" },
     { code: "RGN", name: "류건", desc: "전직 소방관, 방패 탱커. 우직하고 말수가 적다. 짧은 머리, 넓은 어깨, 그을린 방화복.", look: "29세 남성, 짧은 머리, 넓은 어깨, 그을린 방화복, 버스 문짝 방패", tags: "black hair, very short hair, broad shoulders, scorched firefighter jacket, improvised shield, rectangular metal shield" },
     { code: "SRN", name: "세레나 바이스", desc: "3층 해적 군도 출신 항해사, '무대 사고'로 1층에 떨어졌다. 쌍권총. 능청스럽고 도박을 좋아한다. 은발 웨이브, 삼각모, 붉은 코트.", look: "27세 여성, 은발 웨이브, 삼각모, 붉은 코트, 쌍권총", tags: "silver hair, wavy hair, side-swept bangs, upturned eyes, arched eyebrows, beauty mark, pirate hat, red coat, pirate, dual wielding, pistols" },
-    { code: "YNH", name: "연화", desc: "2층 무림 객잔의 점소이, 실은 마교의 첩자. 암기와 독. 웃는 얼굴로 거짓말한다. 검은 땋은 머리, 소매 속 비수.", look: "25세 여성, 검은 땋은 머리, 무림 객잔 점소이 복장, 소매 속 비수", tags: "black hair, single braid, narrow eyes, upturned eyes, thin eyebrows, hanfu, chinese clothes, inn servant, hidden dagger" },
+    { code: "YNH", name: "연화", desc: "2층 무림 객잔의 점소이. 암기와 독을 다룬다. 늘 생글생글 웃어 속을 알기 어렵다. 검은 땋은 머리, 소매 속 비수.", look: "25세 여성, 검은 땋은 머리, 무림 객잔 점소이 복장, 소매 속 비수", tags: "black hair, single braid, narrow eyes, upturned eyes, thin eyebrows, hanfu, chinese clothes, inn servant, hidden dagger" },
     { code: "YCI", name: "윤채이", desc: "범죄심리 프로파일러. 분석·약점 간파. 냉소적이고 커피 중독. 둥근 안경, 낡은 트렌치코트.", look: "30세 여성, 둥근 안경, 낡은 트렌치코트, 커피 텀블러", tags: "black hair, parted bangs, narrow eyes, thin eyebrows, round eyewear, glasses, worn trench coat, journalist" },
     { code: "KYL", name: "카일 노스", desc: "4층 황야 출신 현상금 사냥꾼, 리볼버. 과묵하고 의리가 있다. 모래색 머리, 판초, 턱의 흉터.", look: "26세 남성, 모래색 머리, 판초, 턱의 흉터, 리볼버", tags: "sandy blonde hair, brown cape, cloak, white shirt, brown vest, small chin scar, revolver, gunslinger" },
     { code: "BYU", name: "백여울", desc: "무당 집안 막내. 부적·퇴마·소환. 겁이 많지만 귀신 앞에선 단호하다. 붉은 댕기, 개량 한복 점퍼.", look: "25세 여성, 붉은 댕기, 개량 한복 점퍼, 손에 든 부적", tags: "black hair, long braid, red ribbon on braid, round eyes, straight eyebrows, mole under eye, modern hanbok, korean clothes, cropped jacket" }
   ],
   // 플레이 가이드 — 제작자가 독자에게 주는 안내문(상세·도감·대화방 메뉴에 줄바꿈 그대로 보임, 1,000자 이내)
-  guide: "1층 붕괴한 서울에서 시작해 30층 '커튼콜'을 향해 오르는 탑 등반 RPG예요. 시작 상황(게임 모드)이 난이도와 첫 파티를 정하고, 전투는 HP·MP가 실제로 계산돼요. 막히면 !퀘스트로 지금 목표를, !관람석으로 신들의 반응을 확인해 보세요. 커스텀 모드는 대화방 메뉴의 유저노트에 설정을 적은 뒤 첫 메시지로 \"커스텀 모드\"를 보내면 시작돼요.",
+  guide: "1층 붕괴한 서울에서 시작해 30층 '커튼콜'을 향해 오르는 탑 등반 RPG예요. 시작 상황(게임 모드)이 난이도와 첫 파티를 정하고, 전투는 HP·MP가 실제로 계산돼요. 막히면 !퀘스트로 지금 목표를, !관람석으로 신들의 반응을 확인해 보세요. 성장과 층의 규칙은 !규칙으로 바로 볼 수 있어요. 커스텀 모드는 대화방 메뉴의 유저노트에 설정을 적은 뒤 첫 메시지로 \"커스텀 모드\"를 보내면 시작돼요.",
   // 유저노트 양식 — 대화방 메뉴 → 유저노트의 '이 작품의 양식 넣기'가 넣는 글(커스텀 모드 시작 상황이 이 양식을 읽음)
   noteTemplate: "## 커스텀 모드\n- 시작 위치: 1층 붕괴한 서울\n- 초기 파티: \n- 상황: \n- 파티원과의 관계: \n- 특전: ",
   // 작품 명령어(!이름) — 상세 페이지 명령어 카드에 보이고, 대화방에서 치면 prompt가 AI에 연출 지시로 감(core/commands.js). 앱 명령어(!상태창·!갤러리·!지도·!도움말)와 다른 이름으로
   commands: [
     { cmd: "퀘스트", title: "퀘스트 정리", desc: "지금 층의 퀘스트 단계·목표·보상과 남은 적을 정리해 보여 줘요.", prompt: "장면을 진행하지 말고, 현재 층의 퀘스트 단계(n/5)·목표·보상·남은 적을 시스템 메시지 [대괄호]로 정리한 뒤 유저가 고를 다음 행동 셋을 제시한다." },
     { cmd: "관람석", title: "관람석 중계", desc: "하늘의 관람신들이 지금까지의 활약을 두고 떠드는 장면을 봐요.", prompt: "유저의 최근 행동을 두고 관람신 3~4명이 관람석에서 수다·훈수·내기를 하는 시스템 메시지 장면을 쓴다. 후원(S 코인)이 있으면 금액을 적고 상태창에 반영한다. 무대 위 장면은 진행하지 않는다." },
-    { cmd: "쉼터", title: "막간의 쉼터", desc: "안전지대로 가서 휴식·상점·파티원 대화를 해요(3층 클리어 뒤부터).", prompt: "3층을 클리어했으면 파티를 막간의 쉼터로 옮겨 휴식·상점·파티원 대화 장면을 연다. 아직이면 시스템 메시지로 조건을 알리고 지금 장면은 그대로 둔다." }
+    { cmd: "쉼터", title: "막간의 쉼터", desc: "안전지대로 가서 휴식·상점·파티원 대화를 해요(3층 클리어 뒤부터).", prompt: "3층을 클리어했으면 파티를 막간의 쉼터로 옮겨 휴식·상점·파티원 대화 장면을 연다. 아직이면 시스템 메시지로 조건을 알리고 지금 장면은 그대로 둔다." },
+    // text가 있는 명령어는 '즉답' — AI를 부르지 않고 이 글을 바로 보여 줌(하트·턴을 쓰지 않음)
+    { cmd: "규칙", title: "탑의 규칙", desc: "성장·층·계약의 규칙을 바로 보여 줘요.", text: "[성장]\n· 레벨업마다 SP 3 — 체력·근력·민첩·마력·매력\n· 등급: 일반 < 고급 < 희귀 < 영웅 < 전설 < 신화\n· 📜 기록(패시브)과 ⚡ 스킬(액티브)은 각각 최대 3개 — 넷째를 얻으면 같은 계열 둘이 한 단계 높은 등급으로 융합돼요\n· 💎 정수는 스탯을 영구히 올리고, 🧪 회복 아이템은 HP·MP를 채워요\n· S 코인은 후원과 퀘스트로 얻고 쉼터 상점에서 써요\n\n[층]\n· 층마다 퀘스트 5단계 — 3단계에 중간보스, 5단계에 층 보스\n· 층 보스를 쓰러뜨리면 다음 층으로 가는 '막(幕)의 문'이 열려요\n· 3층을 클리어하면 ✨ 관람신과의 계약과 막간의 쉼터가 열려요" }
+  ],
+  // 장소 → MP1…(순서가 코드), 컷씬 → EV1… — 위 world에 이미 있는 층과 장치만 옮김
+  places: [
+    { name: "1층 · 붕괴한 광화문", desc: "극장의 막처럼 갈라진 하늘 아래, 무너진 광화문 사거리. 탑 '시어터'의 첫 무대.", tags: "ruined gwanghwamun plaza, cracked asphalt, sky split like theater curtains, floating spectator seats, modern seoul apocalypse, dramatic light" },
+    { name: "2층 · 무림 객잔 거리", desc: "객잔과 등롱이 늘어선 무림의 거리.", tags: "wuxia inn street, red lanterns, wooden inns, martial artists, misty night" },
+    { name: "3층 · 대항해 해적 군도", desc: "범선과 섬이 흩어진 해적의 바다.", tags: "pirate archipelago, sailing ships, tropical islands, harbor town, sunset sea" },
+    { name: "4층 · 황야의 철도 마을", desc: "모래바람 속 철길 옆에 선 황야의 마을.", tags: "wild west railroad town, desert wind, wooden saloon, steam locomotive, dusty street" },
+    { name: "막간의 쉼터", desc: "3층을 넘으면 열리는 안전지대. 휴식·상점·파티 대화를 하는 곳.", tags: "backstage lounge, velvet curtains, warm lamps, small shop counter, sofas, safe zone" }
+  ],
+  cuts: [
+    { title: "막의 문", when: "유저가 층 보스를 처음 쓰러뜨려 다음 층으로 가는 막(幕)의 문이 열리는 순간", tags: "giant theater curtain parting, glowing doorway, stage light, defeated boss dissolving, party silhouettes" },
+    { title: "첫 계약", when: "3층을 클리어한 뒤 유저가 관람신과 처음 계약을 맺는 순간", tags: "divine contract, glowing sigil, hand reaching from spectator seat in the sky, starlight, system window" },
+    { title: "커튼콜", when: "30층 꼭대기, 커튼콜이 시작되는 순간", tags: "top of the tower, vast stage, spotlight, countless spectator seats, falling curtain, epic", hidden: true }
   ],
   openings: [
-    { title: "😊 이지 모드 · 든든한 첫 파티", directive: "이지 모드. 초기 파티: 한서윤, 도하린, 류건. 셋 모두 유저에게 우호적이다. 전투 난이도는 낮게, 보상은 넉넉하게.",
+    { title: "😊 이지 모드 · 든든한 첫 파티", place: 1, suggestions: ["서윤 옆에서 하운드 A를 노린다", "하린을 도와 쓰러진 시민을 옮긴다", "건의 방패 뒤에서 상황을 살핀다"], directive: "이지 모드. 초기 파티: 한서윤, 도하린, 류건. 셋 모두 유저에게 우호적이다. 전투 난이도는 낮게, 보상은 넉넉하게.",
       status: { ...RPG_STATUS, "❤️ 호감도": "한서윤 10 · 도하린 15 · 류건 20" },
       text: RPG_HEAD + "\n\n*아스팔트가 비명처럼 갈라지고, 지하철 입구에서 검은 개 형상의 괴수들이 기어 나온다. 그때 당신 옆에서 누군가 부러진 우산대를 검처럼 고쳐 쥐었다.*\n\n[[HSY0]]\n\n한서윤: \"멍하니 서 있을 거면 비켜요. 방해되니까.\"\n\n*그 뒤로 방화복 차림의 거구가 넘어진 버스 문짝을 방패처럼 들어 올리고, 피 묻은 수술복의 여자가 쓰러진 시민의 목에 손가락을 댄다.*\n\n류건: \"…셋. 앞으로 셋 온다. 뒤로.\"\n\n도하린: \"아 진짜, 맥박 없는 사람 하나 더 늘리지 말라고요. 거기 당신! 다쳤어요?\"\n\n[어둠의 하운드 A - HP 50/50] [어둠의 하운드 B - HP 50/50] [어둠의 하운드 C - HP 50/50]\n[1층 퀘스트 1/5 개시: 광화문의 하운드 무리를 처치하고 생존자를 확보하라.]" },
-    { title: "😐 일반 모드 · 수상한 동행", directive: "일반 모드. 초기 파티: 세레나 바이스, 윤채이, 백여울. 서로 초면이고 반쯤 경계한다. 표준 난이도.",
+    { title: "😐 일반 모드 · 수상한 동행", place: 1, suggestions: ["이 동네 사람이 맞다며 길을 안내한다", "여울에게 원혼 냄새가 뭔지 묻는다", "일단 셋에게 같이 싸우자고 한다"], directive: "일반 모드. 초기 파티: 세레나 바이스, 윤채이, 백여울. 서로 초면이고 반쯤 경계한다. 표준 난이도.",
       status: { ...RPG_STATUS, "❤️ 호감도": "세레나 5 · 윤채이 0 · 백여울 10" },
       text: RPG_HEAD + "\n\n*광장 한복판, 하늘에서 떨어진 낡은 범선의 돛대가 아스팔트에 꽂혀 있다. 그 그늘 아래 세 사람이 서로를 노려보고 있었다.*\n\n[[SRN0]]\n\n세레나 바이스: \"자자, 총 내리자고. 여긴 내 바다가 아니라서 길을 모르거든. 거기 당신, 이 동네 사람이지?\"\n\n윤채이: \"방금 저 여자가 하늘에서 배랑 같이 떨어졌어요. 그걸 '이 동네'라고 부를 수 있으면 그렇겠죠.\" *그녀가 식은 커피를 한 모금 마신다.*\n\n백여울: \"저, 저기요… 지하철역에서 나오는 거, 개가 아니에요. 원혼 냄새가 나요.\" *붉은 댕기를 맨 여자가 부적을 쥔 손을 떨면서도 당신 앞에 선다.*\n\n[어둠의 하운드 A - HP 60/60] [어둠의 하운드 B - HP 60/60] [어둠의 하운드 C - HP 60/60]\n[1층 퀘스트 1/5 개시: 광화문의 하운드 무리를 처치하고 생존자를 확보하라.]" },
-    { title: "🔥 하드 모드 · 믿을 수 없는 둘", directive: "하드 모드. 초기 파티: 연화, 카일 노스. 둘 다 유저를 믿지 않고 각자 꿍꿍이가 있다. 연화는 마교 첩자라는 사실을 숨긴다. 적은 강하고 보상은 박하다. 시작 HP 80.",
+    { title: "🔥 하드 모드 · 믿을 수 없는 둘", suggestions: ["현상금을 누가 걸었는지 묻는다", "케이블타이를 몰래 끊어 본다", "길 안내를 조건으로 거래를 건다"], directive: "하드 모드. 초기 파티: 연화, 카일 노스. 둘 다 유저를 믿지 않고 각자 꿍꿍이가 있다. 연화는 마교 첩자라는 사실을 숨긴다. 적은 강하고 보상은 박하다. 시작 HP 80.",
       status: { ...RPG_STATUS, "HP": "80/100", "S 코인": "500S", "🧪 회복": "없음", "❤️ 호감도": "연화 0 · 카일 노스 0" },
       text: RPG_HEAD + "\n[관람신 '전쟁의 무신'이 난이도 조정을 요구합니다. 요구가 승인되었습니다.]\n\n*당신이 눈을 뜬 곳은 무너진 교보문고 지하. 손목이 케이블타이로 묶여 있다. 맞은편 계단에 판초 차림의 남자가 리볼버를 무릎에 올려놓고 앉아 있었다.*\n\n[[KYL0]]\n\n카일 노스: \"깼군. 현상금 목록에 네 얼굴이 떴어. '1층 첫 생존자, 산 채로 5,000S.' 누가 걸었는진 모르겠고.\"\n\n*서가 그림자에서 땋은 머리의 여자가 생글생글 웃으며 나온다. 소매 끝에서 얇은 비수가 반짝였다 사라진다.*\n\n연화: \"어머, 카우보이 오라버니. 산 채로라면서요? 그럼 저랑 반띵해요. 이분 깨어나신 김에 길 안내도 시키고요.\"\n\n*천장 너머에서 하운드들의 울음소리가 점점 가까워진다.*\n\n[1층 퀘스트 1/5 개시: 결박에서 벗어나 살아서 지상으로 나가라.]" },
-    { title: "👹 헬 모드 · 혼자, 맨손으로", directive: "헬 모드. 초기 파티 없음, 장비 없음. 시작 HP 60. 적은 강하고 실수 한 번이 치명적이다. 파티원은 이야기 진행 중 어렵게 만나게 한다.",
+    { title: "👹 헬 모드 · 혼자, 맨손으로", place: 1, suggestions: ["깨진 유리 조각을 집어 든다", "뒤돌아 건물 안으로 달린다", "하운드의 움직임을 보며 물러선다"], directive: "헬 모드. 초기 파티 없음, 장비 없음. 시작 HP 60. 적은 강하고 실수 한 번이 치명적이다. 파티원은 이야기 진행 중 어렵게 만나게 한다.",
       status: { ...RPG_STATUS, "HP": "60/100", "S 코인": "0S", "📜 기록": "없음", "⚡ 스킬": "없음", "🧪 회복": "없음", "❤️ 호감도": "없음", "퀘스트": "1/5 · 첫 밤을 살아남아라", "보상": "생존" },
       text: RPG_HEAD + "\n[관람신 '이름 없는 관객'이 당신에게 아무것도 주지 말 것을 요청합니다. 요청이 승인되었습니다.]\n[시작 보상이 회수되었습니다.]\n\n*지갑도, 휴대폰도, 신발 한 짝도 사라졌다. 맨발 아래 깨진 유리가 서걱거린다. 지하철 입구에서 다섯 쌍의 붉은 눈이 동시에 당신을 향했다.*\n\n[어둠의 하운드 x5 - HP 60/60]\n[관람신 '명부의 여왕'이 장부에 당신의 이름을 미리 적어 둡니다.]\n[관람신 '천 년 묵은 여우'가 \"잠깐, 저 아이는 아직 죽으면 안 되는데\"라며 몸을 앞으로 기울입니다.]\n\n[1층 퀘스트 1/5 개시: 첫 밤을 살아남아라.]" },
-    { title: "🎲 랜덤 모드 · 운명의 매칭", directive: "랜덤 모드. 첫 응답에서 파티원 후보 8명 중 무작위로 3명을 골라 극적으로 합류시키고, 각자의 첫 등장 이미지를 보여준다. 표준 난이도.",
+    { title: "🎲 랜덤 모드 · 운명의 매칭", place: 1, suggestions: ["다가오는 세 사람을 기다린다", "가까운 발소리 쪽으로 달려간다", "먼저 하운드 쪽으로 몸을 낮춘다"], directive: "랜덤 모드. 첫 응답에서 파티원 후보 8명 중 무작위로 3명을 골라 극적으로 합류시키고, 각자의 첫 등장 이미지를 보여준다. 표준 난이도.",
       status: { ...RPG_STATUS },
       text: RPG_HEAD + "\n\n[무작위 파티 매칭을 시작합니다…]\n[관람신 '붉은 수염의 해적왕'이 매칭 결과에 500S를 겁니다. \"누가 나오든 재밌겠군!\"]\n\n*광장 곳곳에서 사람들이 비명을 지르며 흩어진다. 그 와중에 세 갈래의 발소리가 당신 쪽으로 다가오고 있었다.*\n\n[1층 퀘스트 1/5 개시: 광화문의 하운드 무리를 처치하고 생존자를 확보하라.]" },
-    { title: "🛠️ 커스텀 모드 · 내가 정한 시작", directive: "커스텀 모드. 유저노트에 적힌 커스텀 모드 설정(시작 위치, 초기 파티, 상황, 관계, 특전)을 그대로 따라 첫 장면을 다시 연출한다. 유저노트가 비어 있으면 설정을 적어 달라고 시스템 메시지로 안내한다.",
+    { title: "🛠️ 커스텀 모드 · 내가 정한 시작", suggestions: ["커스텀 모드"], directive: "커스텀 모드. 유저노트에 적힌 커스텀 모드 설정(시작 위치, 초기 파티, 상황, 관계, 특전)을 그대로 따라 첫 장면을 다시 연출한다. 유저노트가 비어 있으면 설정을 적어 달라고 시스템 메시지로 안내한다.",
       status: { ...RPG_STATUS },
       text: "[커스텀 모드 대기 중]\n[대화방 메뉴 → 유저노트에 아래 양식을 채운 뒤, 첫 메시지로 \"커스텀 모드\"를 보내 주세요.]\n\n*시작 위치: 1층 붕괴한 서울*\n*초기 파티: (원하는 파티원 이름)*\n*상황: (예: 대붕괴의 폭발에 휘말려 텅 빈 지하철역에서 홀로 깨어난다)*\n*관계: (예: 모든 파티원은 초면이고 서로를 경계한다)*\n*특전: (예: [고급] 지원형 기록 1개와 5,000S를 가지고 시작한다)*" }
   ]

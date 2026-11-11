@@ -140,6 +140,20 @@ try {
   await B.page.evaluate(() => CLOUD.flush()); await B.page.waitForTimeout(300);
   const room2 = await B.page.evaluate(() => window.__room2);
   res.pcPull = await A.page.evaluate(async (id) => { const n = await CLOUD.pull(); await reloadFromCloud(); return { n, has: S.rooms.some((r) => r.id === id), roomBody: !!KV.getLocal(roomKey(id)) }; }, room2);
+  // 내 서재(찜·최근 본)의 날짜 관문 — 날짜 전에는 계정으로 가지 않고, 날짜가 되면 이 기기에만 쌓인 것이 올라가 다른 기기의 것과 합쳐짐(덮지 않음). 찜을 푼 것도 전해짐. 시험은 날짜 상수를 바꿔 양쪽을 모두 봄
+  const shelfRow = () => (db.rows.find((r) => r.key === "shelf") || {}).value;
+  await A.page.evaluate(async () => { SHELF.syncFrom = "2999-01-01"; toggleLike("lethe"); await CLOUD.pull(); await CLOUD.flush(); });
+  await B.page.evaluate(async () => { SHELF.syncFrom = "2999-01-01"; toggleLike("hasuk"); await CLOUD.pull(); await CLOUD.flush(); });
+  res.shelfBefore = { server: shelfRow() === undefined, pc: await A.page.evaluate(() => likedIds()), phone: await B.page.evaluate(() => likedIds()) };
+  await A.page.evaluate(async () => { SHELF.syncFrom = "2000-01-01"; await CLOUD.pull(); await CLOUD.flush(); });
+  const up1 = Object.keys((shelfRow() || { likes: {} }).likes);
+  await B.page.evaluate(async () => { SHELF.syncFrom = "2000-01-01"; await CLOUD.pull(); await CLOUD.flush(); });
+  const up2 = Object.keys((shelfRow() || { likes: {} }).likes).sort(), phoneLikes = await B.page.evaluate(() => likedIds().slice().sort());
+  await B.page.evaluate(async () => { toggleLike("lethe"); await CLOUD.flush(); });
+  res.shelfAfter = { up1, up2, phoneLikes, pc: await A.page.evaluate(async () => { const n = await CLOUD.pull(); await reloadFromCloud(); return { n, likes: likedIds().slice().sort(), kv: Object.keys(KV.getLocal("shelf").unlikes) }; }) };
+  { const b = res.shelfBefore, a = res.shelfAfter;
+    if (!b.server || b.pc.join() !== "lethe" || b.phone.join() !== "hasuk" || a.up1.join() !== "lethe" || a.up2.join() !== "hasuk,lethe" || a.phoneLikes.join() !== "hasuk,lethe" || !a.pc.n || a.pc.likes.join() !== "hasuk" || a.pc.kv.join() !== "lethe")
+      errs.push("내 서재의 계정 동기화(날짜 관문·합치기)가 다름: " + JSON.stringify({ b, a })); }
   // API 키는 계정에 올라가지 않음 — 휴대폰에는 대화는 넘어오되 키는 비어 있음(MY에서 따로 넣음)
   res.keys = { server: JSON.stringify(db.rows).includes("sk-ant-test-fake"), phone: await B.page.evaluate(() => S.settings.apiKey) };
   if (res.keys.server || res.keys.phone) errs.push("API 키가 계정을 거쳐 넘어감: " + JSON.stringify(res.keys));
@@ -162,6 +176,17 @@ try {
   await C.page.click("#mYes"); await C.page.waitForTimeout(2000);
   res.merged = { local: await C.page.evaluate(() => S.rooms.map((r) => r.charId)), server: (db.rows.find((r) => r.key === "rooms") || {}).value?.map((r) => r.charId), room3Body: db.rows.some((r) => r.key === "room-" + room3), aud: await C.page.evaluate(() => S.settings.audience) };
   await C.browser.close();
+  // ---------- 또 다른 기기: 대화는 없고 찜만 있는 게스트가 같은 계정에 로그인 → 찜도 합칠지 물음, '계정 것만 쓰기'를 고르면 이 기기의 찜은 버리고 계정의 찜만(날짜 관문은 지난 것으로)
+  const D = await device(chromium, "Desktop Chrome");
+  await D.page.goto(url, { waitUntil: "load" }); await D.page.waitForTimeout(900);
+  await D.page.click("#lguest"); await D.page.waitForTimeout(300); await D.page.click(".overlay [data-aud=all]");
+  await D.page.evaluate(() => { SHELF.syncFrom = "2000-01-01"; toggleLike("daeyeon"); location.hash = "login"; }); await D.page.waitForTimeout(400);
+  await D.page.fill("#lmail", "tester@example.test"); await D.page.fill("#lpw", "test-pass-1"); await D.page.click("#lgo"); await D.page.waitForTimeout(1500);
+  const likeSheet = await D.page.evaluate(() => document.querySelector(".overlay h2")?.textContent + " / " + document.querySelector(".overlay .sub")?.textContent);
+  await D.page.click("#mNo"); await D.page.waitForTimeout(2000);
+  res.likeMerge = { sheet: likeSheet, local: await D.page.evaluate(() => likedIds().slice().sort()), server: Object.keys((shelfRow() || { likes: {} }).likes).sort() };
+  if (!/^이 기기의 찜을 합칠까요\? \/ .*찜한 작품 1개를/.test(likeSheet) || res.likeMerge.local.join() !== "hasuk" || res.likeMerge.server.includes("daeyeon")) errs.push("찜만 있는 기기의 처음 로그인(묻기·계정 것만 쓰기)이 다름: " + JSON.stringify(res.likeMerge));
+  await D.browser.close();
   // PC: 계정 삭제
   await A.page.evaluate(() => { location.hash = "me"; }); await A.page.waitForTimeout(400);
   await A.page.click("#cDel"); await A.page.waitForTimeout(200); await A.page.click(".overlay #ok"); await A.page.waitForTimeout(800);

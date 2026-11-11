@@ -63,7 +63,7 @@ export function roomMinorHint(r, lore = r.char?.lore) {
   const c = r.char || {}, text = (m) => (m.role === "ai" ? m.alts?.[m.idx]?.text : m.text) || "";
   const msgs = (r.msgs || []).filter(text);
   if (minorFlags(c).length) return true;
-  if (minorHint([r.userNote, ...Object.entries(r.status || {}).map(([k, v]) => k + ": " + v), ...msgs.slice(-((r.set?.mem || 10) * 2 + 1)).map(text)].join("\n"))) return true;
+  if (minorHint([r.userNote, ...(r.pins || []).map((p) => p.text), ...Object.entries(r.status || {}).map(([k, v]) => k + ": " + v), ...msgs.slice(-((r.set?.mem || 10) * 2 + 1)).map(text)].join("\n"))) return true;
   return settingHint([c.title, c.oneLiner, c.desc, ...(c.tags || []), c.persona, c.world, c.speech, c.secret, r.directive, r.persona?.memo, r.persona?.desc, r.memory,
     ...(lore || []).filter((e) => e.kind !== "creature").flatMap((e) => [...(e.keys || []), e.text]), ...msgs.filter((m) => m.role === "user").map(text)].join("\n"));
 }

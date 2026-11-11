@@ -56,11 +56,37 @@ export default {
     { code: "NGS", name: "남궁설", desc: "남궁세가 소가주. 검의 천재, 패배를 모른다. 오만하고 직설적.", look: "24세 여성, 흰 무복에 푸른 띠, 높게 묶은 흑발, 장검, 차가운 눈빛", tags: "black hair, high ponytail, side-swept bangs, narrow eyes, straight eyebrows, white martial arts uniform, blue sash, hanfu, longsword" },
     { code: "DSS", name: "당소소", desc: "사천당가의 독공 고수. 웃으며 독을 쓰는 장난꾸러기.", look: "22세 여성, 보라색 무복, 손목의 암기 팔찌, 짧은 단발, 장난스러운 미소", tags: "black hair, short bob cut, round eyes, upturned eyes, thin eyebrows, purple martial arts uniform, hanfu, bracelet, poison dagger" },
     { code: "HWN", name: "혜원", desc: "아미파 속가제자. 계율과 자비를 지키는 의원. 단정하고 조용하다.", look: "25세 여성, 회색 아미파 무복, 반쯤 묶은 긴 머리, 약상자, 단정한 얼굴", tags: "black hair, long hair, half updo, curtain bangs, droopy eyes, soft eyebrows, grey martial arts robe, hanfu, medicine box" },
-    { code: "MKR", name: "묵란", desc: "화산파 외문제자 '란'으로 위장한 마교 소교주. 차갑고 우아하다. 목적은 『천외비록』으로 교주인 아버지를 넘어서는 것. 첫날 죽은 화산파 대제자가 그의 정체를 눈치챘었기에 가장 의심받기 쉬운 처지다.", look: "26세 여성, 검은 무복 위 화산파 외문제자 외투, 길게 늘어뜨린 흑발, 붉은 입술, 냉소", tags: "black hair, very long hair, forehead, parted bangs, upturned eyes, arched eyebrows, black martial arts uniform, red-trimmed outer robe, hanfu, red lips" },
+    { code: "MKR", name: "묵란", desc: "화산파 외문제자. '란'이라 불린다. 차갑고 우아하다. 첫날 죽은 화산파 대제자와 같은 문파라 가장 의심받기 쉬운 처지다.", look: "26세 여성, 검은 무복 위 화산파 외문제자 외투, 길게 늘어뜨린 흑발, 붉은 입술, 냉소", tags: "black hair, very long hair, forehead, parted bangs, upturned eyes, arched eyebrows, black martial arts uniform, red-trimmed outer robe, hanfu, red lips" },
     { code: "HRN", name: "화린", desc: "개방 소방주. 거지 차림의 정보통, 수다쟁이, 의리파.", look: "23세 여성, 기운 누더기 옷, 대나무 타구봉, 헝클어진 갈색 머리, 크게 웃는 얼굴", tags: "brown hair, messy hair, round eyes, thick eyebrows, freckles, patched ragged clothes, bamboo staff, beggar sect" }
   ],
+  // 장소 → MP1…(순서가 코드), 컷씬 → EV1…, 작품 명령어, 플레이 가이드 — 모두 위 설정(persona·world·lore·시작 상황)에 이미 있는 것만 옮김. 독자에게 보이는 칸이라 [진상]은 적지 않음
+  places: [
+    { name: "낙혼폭 아래", desc: "넋이 떨어진다는 폭포 아래. 물안개가 계곡 바닥을 기어 다닌다.", tags: "tall waterfall, misty valley floor, wet rocks, dawn, wuxia, mountain cliffs" },
+    { name: "십절루 연회장", desc: "계곡 중앙 객잔 십절루의 1층. 열 개 문파가 탁자 열 개에 나뉘어 앉는다.", tags: "wuxia inn banquet hall, wooden tables, wine jars, lanterns, martial artists seated, tense atmosphere" },
+    { name: "낙혼폭 뒤 동굴", desc: "물장막 뒤에 숨은 동굴. 오래전 누군가 일부러 막아 둔 흔적이 있다.", tags: "hidden cave behind waterfall, water curtain, oil lamp, carved stone wall, damp, night" },
+    { name: "비무대", desc: "열흘마다 비무가 열리는 돌 무대.", tags: "martial arts stage, stone platform, mountain valley, banners, spectators, duel" },
+    { name: "고검총", desc: "옛 검객들의 검이 꽂힌 무덤. 출입 금지 구역이다.", tags: "sword graveyard, swords stuck in the ground, mist, moonlight, ancient graves" }
+  ],
+  cuts: [
+    { title: "첫 비무", when: "유저가 처음으로 비무대에 올라 상대와 맞서는 순간", tags: "stone duel platform, two martial artists facing each other, wind, banners, crowd, drawn sword" },
+    { title: "일류의 문턱", when: "내공 해방이 30을 넘어 유저가 처음으로 일류의 힘을 쓰는 순간", tags: "qi aura bursting, glowing runes on chest, swirling wind, martial arts stance, night valley" },
+    { title: "가면 뒤의 얼굴", when: "연쇄 살인의 범인이 유저 앞에서 처음 정체를 드러내는 순간", tags: "masked figure removing mask, moonlight, mist, sword graveyard, back view, ominous", hidden: true }
+  ],
+  commands: [
+    { cmd: "단서", title: "단서·판세 정리", desc: "지금까지의 단서와 남은 문파, 다음 비무를 정리해요", prompt: "지금까지 본문에 [단서: …]로 나온 단서와 상태창의 생존 문파, 다음 비무까지 남은 날을 내레이터가 한 번 정리해 보여 준다. 새 단서를 지어내거나 진상을 앞질러 밝히지 않는다. 정리 뒤에 유저가 해 볼 수 있는 일을 두세 가지 짚어 준다." },
+    { cmd: "수련", title: "수련하기", desc: "외공·보법을 닦거나 막힌 단전을 두드려요", prompt: "유저가 수련에 들어간다. 외공·보법을 닦거나 막힌 단전을 조심스럽게 두드리는 장면을 그리고, 깨달음이 있으면 [내공 해방 n → m]으로 조금 올린다. 급하게 끌어올리면 주화입마의 조짐을 보인다. 수련을 지켜보거나 끼어드는 인물이 있으면 그 반응도 그린다." },
+    { cmd: "규칙", title: "십절회의 규칙", desc: "봉문 백 일의 규칙과 경지를 바로 보여 줘요", text: "[십절회의 규칙]\n· 봉문석이 백 일 동안 닫혀요\n· 열흘마다 비무 — 진 문파는 탈락해 십절루 지하 석실에 갇혀요\n· 살인은 금지, 어기면 그 문파는 실격\n· 식량은 계곡에서 스스로 구해요\n· 마지막까지 남은 문파가 무림맹주의 자리와 『천외비록』을 가져요\n\n[경지]\n삼류 < 이류 < 일류 < 절정 < 초절정 < 화경" }
+  ],
+  guide: `봉쇄된 계곡에서 백 일을 버티며 연쇄 살인의 범인을 찾는 무협 추리 군상극이에요.
+
+· 열흘마다 비무가 열려요. 지면 탈락이라, 비무와 수사를 함께 풀어 가야 해요.
+· 당신은 단전이 막혀 삼류 취급을 받아요. 🔥 내공 해방이 오를수록 힘이 풀리지만, 급하게 끌어올리면 주화입마에 빠져요. !수련으로 조금씩 닦을 수 있어요.
+· 무공의 변화와 단서는 본문에 [내공 해방 12 → 18], [단서: …]처럼 [대괄호]로 적혀요. !단서로 정리해 볼 수 있어요.
+· 살인은 비무 일정과 맞물려 일어나요. '⚔️ 생존 문파'가 줄어드는 것을 지켜보세요.
+· 다섯 여인은 저마다 다른 문파의 사정을 안고 있어요. ❤️ 호감도가 오르면 숨긴 정보와 상처를 꺼내 놓아요.
+· 결말은 진실을 어떻게 다루고 누구와 손을 잡는지에 따라 갈려요.`,
   openings: [
-    { title: "🍂 첫날 밤의 시체", directive: "기본 시작. 첫날 새벽 낙혼폭 근처에서 화산파 대제자의 시체가 발견되고, 유저가 가장 먼저 발견한 사람으로 의심받는다. 남궁설과 화린이 현장에 있다.",
+    { title: "🍂 첫날 밤의 시체", place: 1, suggestions: ["물을 길으러 나왔을 뿐이라고 답한다", "시체의 소매 끝을 살펴본다", "화린에게 무엇을 봤는지 묻는다"], directive: "기본 시작. 첫날 새벽 낙혼폭 근처에서 화산파 대제자의 시체가 발견되고, 유저가 가장 먼저 발견한 사람으로 의심받는다. 남궁설과 화린이 현장에 있다.",
       status: { "📅 날짜": "봉문 1일 · 새벽 (D-100)", "📍 위치": "낙혼폭 아래", "🗡️ 경지": "삼류 (봉인)", "🔥 내공 해방": 5, "⚔️ 생존 문파": "10 / 10", "📜 단서": "없음", "❤️ 호감도": "남궁설 0 · 당소소 0 · 혜원 0 · 묵란 0 · 화린 5", "💭 속마음": "화린: 저 소매… 어디서 봤더라." },
       text: `*물안개가 계곡 바닥을 기어 다녔다. 낙혼폭의 굉음이 귀를 먹먹하게 한다. 새벽 물을 길으러 나온 당신의 발끝에 무언가가 걸렸다.*
 
@@ -75,7 +101,7 @@ export default {
 *누더기 차림의 여자가 타구봉을 어깨에 걸치고 폭포 쪽 바위에서 뛰어내렸다. 웃고 있지만 눈은 시체의 소매 끝에 머물러 있다.*
 
 *멀리서 북소리가 울렸다. 십절루에서 각 문파를 소집하는 소리다. 살인 금지의 규칙이 깨진 첫날 아침. 이제 열 개 문파가 서로를 의심하기 시작할 것이다. 그리고 가장 만만한 의심의 과녁은 — 당신이다.*` },
-    { title: "🍶 십절루의 첫 술자리", directive: "살인이 일어나기 전날 밤, 각 문파가 모인 환영연에서 시작. 유저를 비웃는 분위기 속에서 히로인들이 각자 다른 이유로 유저에게 관심을 보인다. 장면 끝에 비명이 들리게 한다.",
+    { title: "🍶 십절루의 첫 술자리", place: 2, suggestions: ["찻잔을 받아 그대로 마신다", "구석의 여자와 눈을 마주친다", "청운문을 아느냐고 되묻는다"], directive: "살인이 일어나기 전날 밤, 각 문파가 모인 환영연에서 시작. 유저를 비웃는 분위기 속에서 히로인들이 각자 다른 이유로 유저에게 관심을 보인다. 장면 끝에 비명이 들리게 한다.",
       status: { "📅 날짜": "봉문 전야 · 밤 (D-100)", "📍 위치": "십절루 1층 연회장", "🗡️ 경지": "삼류 (봉인)", "🔥 내공 해방": 3, "⚔️ 생존 문파": "10 / 10", "📜 단서": "없음", "❤️ 호감도": "남궁설 0 · 당소소 5 · 혜원 5 · 묵란 0 · 화린 10", "💭 속마음": "묵란: 청운문이라. 죽은 문파가 왜 여기에." },
       text: `*십절루 연회장은 술 냄새와 기세로 가득했다. 열 개 문파의 후계자들이 탁자 열 개에 나뉘어 앉아 서로를 재고 있다. 당신의 탁자에만 술병이 없다.*
 
@@ -94,7 +120,7 @@ export default {
 *상석의 노도인 현명진인이 일어나 잔을 들었다.*
 
 현명진인: "백 일 동안 서로의 검을 존중하시길. 피를 보는 자는 실격입니다."` },
-    { title: "🌊 낙혼폭 아래의 동굴", directive: "봉문 11일째, 첫 비무 직후 누군가에게 습격당해 폭포에 떨어진 유저가 폭포 뒤 동굴에서 혜원과 묵란에게 발견된 장면에서 시작. 동굴 벽에서 청운문의 표식을 발견할 수 있다.",
+    { title: "🌊 낙혼폭 아래의 동굴", place: 3, suggestions: ["밀친 사람의 모습을 떠올려 본다", "동굴 벽의 표식으로 다가간다", "처음 온 곳이 맞다고 답한다"], directive: "봉문 11일째, 첫 비무 직후 누군가에게 습격당해 폭포에 떨어진 유저가 폭포 뒤 동굴에서 혜원과 묵란에게 발견된 장면에서 시작. 동굴 벽에서 청운문의 표식을 발견할 수 있다.",
       status: { "📅 날짜": "봉문 11일 · 밤 (D-90)", "📍 위치": "낙혼폭 뒤 동굴", "🗡️ 경지": "삼류 → 이류의 문턱", "🔥 내공 해방": 15, "⚔️ 생존 문파": "8 / 10", "📜 단서": "목 없는 시체 2구, 은빛 실밥", "❤️ 호감도": "남궁설 10 · 당소소 10 · 혜원 15 · 묵란 10 · 화린 20", "💭 속마음": "혜원: 이 상처는 정파의 검이야. 마교가 아니야." },
       text: `*차가운 물이 폐에서 쏟아져 나왔다. 기침을 할 때마다 가슴 한가운데가 불에 덴 듯 뜨겁다. 막혀 있던 단전 어딘가에서, 처음 보는 글자들이 타오르고 있었다.*
 

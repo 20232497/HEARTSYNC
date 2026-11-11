@@ -3,15 +3,12 @@
    예약 시리즈(SERIES): MP<n> 장소(작품 places의 n번째), EV<n> 컷씬(작품 cuts의 n번째) — 번호는 1부터. 다른 모습(폼)은 별도 인물 코드(cast[].of가 본체).
    코드를 해석하는 곳(프롬프트·렌더러·갤러리·빌드 검사·도감)은 모두 codebook(c) 하나를 씀 — 시리즈를 더하려면 SERIES에 한 줄.
    예전 대화의 [[img:p1:3]]·조합 태그([[img:ks:3,404,501]])·세 자리 코드도 읽음(처음 나오는 0~14 번호, 없으면 1) — 방을 열 때 migrateRoom(core/rooms.js)이 새 코드로 바꿈 */
-import { SIT } from "../core/constants.js";
+import { SERIES, SIT } from "../core/constants.js";
+
+export { SERIES }; // 예약 시리즈 표(MP 장소 · EV 컷씬)는 core/constants.js에 — 쓰던 곳은 그대로 여기서 가져감
 
 /** 인물 코드 모양: 영문 대문자 1~4자(번호와 붙여 써도 갈라지게 숫자는 안 됨) */
 export const CODE_RE = /^[A-Z]{1,4}$/;
-/** 예약 시리즈(인물 코드로 못 씀): 코드 글자 → { kind 종류, field 작품의 목록 칸, label 사람이 보는 이름, nameKey 항목의 이름 칸 }. 번호는 목록의 n번째(1부터) */
-export const SERIES = {
-  MP: { kind: "place", field: "places", label: "장소", nameKey: "name" },
-  EV: { kind: "cut", field: "cuts", label: "컷씬", nameKey: "title" }
-};
 /** 종류로 예약 시리즈의 코드 글자 찾기 — seriesCode("place") → "MP", seriesCode("cut") → "EV"(없으면 ""). 'MP'·'EV'를 다른 모듈에 직접 쓰지 않게. @param {string} kind @returns {string} */
 export function seriesCode(kind) { return Object.keys(SERIES).find((k) => SERIES[k].kind === kind) || ""; }
 /** 본문의 그림 태그: 새 모양 [[HSY3]]·[[img:HSY3]], 또는 예전 모양 [[img:p1:3]]·[[img:ks:3,404,501]] */

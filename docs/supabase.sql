@@ -127,7 +127,7 @@ grant delete on public.notices to authenticated;
 create table if not exists public.inquiries (
   id bigint generated always as identity primary key,
   user_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
-  category text not null default 'etc' check (category in ('account', 'pay', 'chat', 'image', 'adult', 'bug', 'suggest', 'etc')),
+  category text not null default 'etc',
   title text not null check (char_length(title) between 1 and 100),
   body text not null check (char_length(body) between 1 and 4000),
   reply_to text check (reply_to is null or char_length(reply_to) <= 120),
@@ -138,6 +138,10 @@ create table if not exists public.inquiries (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+-- 분류 제약(앱의 ASK_CATS와 같은 값): 'adult'는 예전 문의 때문에 남김, 'report'는 메시지 신고(2026-11-09 추가).
+-- 이미 표가 있는 프로젝트는 이 두 줄만 다시 실행하면 됨(전체를 다시 실행해도 같음) — 실행 전에는 앱이 신고를 '기타' 분류로 접수함
+alter table public.inquiries drop constraint if exists inquiries_category_check;
+alter table public.inquiries add constraint inquiries_category_check check (category in ('account', 'pay', 'chat', 'image', 'adult', 'bug', 'suggest', 'report', 'etc'));
 create index if not exists inquiries_user on public.inquiries (user_id, created_at desc);
 create index if not exists inquiries_status on public.inquiries (status, created_at desc);
 

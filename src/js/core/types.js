@@ -28,6 +28,10 @@
  * @property {string} text
  * @property {string} [kind] 항목 종류(ui/worldart.js LORE_KINDS: person·creature·place·item·event·group·concept) — 상세 페이지 세계관 카드의 머리표
  * @property {string} [tags] 그 항목을 그릴 영문 낱말 — 앱은 쓰지 않음(앱 밖에서 lore-<n> 그림을 만들 때)
+ * @property {boolean} [always] 상시 주입 — 키워드와 상관없이 매 턴 넘김(프롬프트 고정부). not·also와 함께 쓸 수 없음
+ * @property {number} [order] 우선순위 — 클수록 먼저 담김(예산이 모자랄 때 살아남는 순서, 기본 0·같으면 적힌 순서)
+ * @property {string[]} [not] 제외 낱말 — 최근 글에 이 중 하나가 나오면 넣지 않음
+ * @property {string[]} [also] 보조 키 — keys 중 하나와 이 중 하나가 모두 나와야 넣음
  */
 /**
  * 시작 상황(오프닝).
@@ -36,6 +40,9 @@
  * @property {string} text 첫 장면 본문([[HSY0]] 같은 그림 태그 포함 가능 — 인물 코드 + 감정 번호 0~14)
  * @property {string} [directive] AI에게만 주는 지시
  * @property {StatusMap} [status] 시작 상태창
+ * @property {number} [place] 배경 장소 — places의 n번째(1부터). 새 방의 첫 메시지 맨 위에 그 장소 태그가 붙고(본문에 이미 있으면 그대로), 상세 페이지 카드에 장소 이름
+ * @property {string[]} [suggestions] 첫 답변 추천(최대 3개, 각 LIMITS.suggestion자) — 새 방의 첫 메시지에 실려 '✦ AI 추천'을 누르면 AI 호출 없이 보임
+ * @property {{ text: string, turns: number }} [lead] 시작 연출 — 이야기를 연 뒤 turns턴 동안만 AI에 주는 지시(directive는 방이 끝날 때까지, 이것은 잠깐)
  */
 /**
  * 장소(코드 MP<n>, places의 n번째 — 1부터). 그림은 images/MP<n>.*
@@ -69,7 +76,8 @@
  * @property {string} cmd 이름(공백·!·/ 없이) — 대화에서 !이름
  * @property {string} title 도감 카드 제목
  * @property {string} [desc] 도감 카드 설명(독자용)
- * @property {string} prompt AI에게 주는 지시
+ * @property {string} [prompt] AI에게 주는 지시('이야기' — 한 턴을 씀). prompt와 text 중 하나만
+ * @property {string} [text] AI 없이 바로 보여 주는 정해진 글('즉답' — 하트·턴을 쓰지 않음, 그림 태그 허용, LIMITS.reply자까지)
  */
 /** @typedef {Record<string, Record<string, ImageRef>>} ImagesMap 코드 글자 부분(인물 코드·MP·EV) → 번호(인물은 감정 칸 "0"~"14", MP·EV는 "1"부터) → 그림 참조 */
 /**
@@ -132,6 +140,7 @@
  * @property {string} text
  * @property {boolean} [sys]
  * @property {boolean} [editing]
+ * @property {boolean} [canned] 즉답 명령어로 남은 메시지(유저의 !이름과 그 정해진 글 — AI 메시지에도 같은 표시): 턴으로 세지 않고 다시 쓰기·좋아요가 없음
  */
 /**
  * AI 응답 한 버전(다시 쓰기마다 하나).
@@ -165,6 +174,7 @@
  * @property {boolean} [autoScroll]
  */
 /** @typedef {{ at: number, label: string, text: string }} MemHist 장기기억 히스토리 한 건 */
+/** @typedef {{ id: string, text: string, at: number, msgId?: string }} Pin 고정 기억 한 줄(LIMITS.pin자까지) — msgId는 고정한 메시지(직접 적었으면 없음; 분기하면 그 메시지까지에서 고정한 것만 따라감) */
 /**
  * 대화방(KV "room-<id>"). 목록용 요약은 RoomIndex(S.rooms).
  * @typedef {Object} Room
@@ -174,9 +184,11 @@
  * @property {{ id: string, name: string, memo: string, desc: string, img: ImageRef|"" }} persona
  * @property {string} opening 시작 상황 제목
  * @property {string} directive
+ * @property {{ text: string, turns: number }} [lead] 시작 연출(시작 상황의 lead 사본) — r.turn이 turns에 닿기 전까지만 프롬프트 변동부의 [지금 상태]에
  * @property {string} userNote 유저노트(LIMITS.userNote자까지 — 방마다 하나)
  * @property {string} memory 장기기억(memCfg().limit자를 넘으면 압축 — 기본 LIMITS.memory, 요금제 memoMax까지)
  * @property {MemHist[]} memHist
+ * @property {Pin[]} [pins] 고정 기억 — 요약·압축과 무관하게 프롬프트 변동부의 [고정 기억]으로 매 턴 그대로(개수 plan().pins, ui/pins.js)
  * @property {number} sinceMem 마지막 요약 뒤 지난 턴
  * @property {number} turn
  * @property {StatusMap} status
@@ -216,7 +228,7 @@
  * @property {Record<string, boolean>} ack
  */
 /** @typedef {{ type: "free"|"plus"|"heart", n: number, list: number }} Quote 한 턴 견적 — n은 낼 하트, list는 정가 */
-/** @typedef {{ memTurns: number, memoMax: number, hist: number, rooms: number }} Plan 요금제 한도(core/wallet.js PLAN) */
+/** @typedef {{ memTurns: number, memoMax: number, hist: number, rooms: number, pins: number }} Plan 요금제 한도(core/wallet.js PLAN) — pins는 대화방마다 고정 기억 개수 */
 /** @typedef {{ auto: boolean, every: number, limit: number, guide: "auto"|"custom", custom: string }} MemCfg 장기기억 요약 설정 */
 /**
  * 설정(S.settings, localStorage hv1_settings). API 키(apiKey)는 이 브라우저에만 — 계정에는 올리지 않음(services/cloud.js가 빼고, 서버 표 제약 kv_no_plain_keys도 거부).
@@ -232,17 +244,26 @@
  * @property {Aud} [audience]
  */
 /**
+ * 내 서재(core/shelf.js, KV "shelf") — 시각은 Date.now() 값. 여러 기기의 값은 mergeShelf로 합침(작품마다 더 늦은 시각, seen은 합집합).
+ * @typedef {Object} Shelf
+ * @property {Record<string, number>} likes 작품 id → 찜한 시각
+ * @property {Record<string, number>} unlikes 작품 id → 찜을 푼 시각(likes보다 늦으면 찜이 아님 — 다른 기기에도 전해지게 남겨 둠)
+ * @property {Record<string, number>} recent 작품 id → 상세 페이지를 마지막으로 본 시각(SHELF.recent개까지)
+ * @property {Record<string, string[]>} seen 작품 id → 대화에서 본 그림 코드("HSY3"·"MP1"·"EV2") — 도감의 수집 기록
+ */
+/**
  * 전역 상태 S(core/state.js). 저장은 KV — 바꾼 모듈이 save…()로 씀.
  * @typedef {Object} State
  * @property {Wallet} wallet
  * @property {Persona[]} personas
  * @property {RoomIndex[]} rooms
+ * @property {Shelf} shelf
  * @property {Settings} settings
  * @property {string} cat 홈 장르 필터(ui/home.js)
  * @property {string} q 홈 검색어
  */
 /** @typedef {{ anthropicUrl: string, supabaseUrl?: string, supabaseKey?: string, serverKeys?: boolean, chatUrl?: string }} Config window.HEARTVERSE_CONFIG로 덮는 연결 설정 — serverKeys면 프록시가 키를 가짐, chatUrl은 서버 대화 관문(성인 트랙, 그리고 키 없는 로그인 이용자의 일반 무료 길 — 비면 꺼짐) */
-/** @typedef {{ role: "system"|"user"|"assistant", content: string }} LLMMessage AI 요청 메시지(첫 메시지 = 시스템) */
+/** @typedef {{ role: "system"|"user"|"assistant", content: string, cut?: number }} LLMMessage AI 요청 메시지(첫 메시지 = 시스템 — cut은 그 글에서 고정부의 글자 수, 프롬프트 캐시의 경계) */
 /**
  * llm() 옵션.
  * @typedef {Object} LLMOptions
@@ -280,7 +301,7 @@
  * @typedef {Object} Inquiry
  * @property {number} id
  * @property {string} user_id 쓴 계정(서버가 auth.uid()로 채움)
- * @property {string} category services/support.js ASK_CATS
+ * @property {string} category services/support.js ASK_CATS('report'는 메시지 신고 — ui/report.js)
  * @property {string} title 100자까지
  * @property {string} body 4000자까지
  * @property {string|null} reply_to 답변 받을 이메일(선택)

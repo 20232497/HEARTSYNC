@@ -1,4 +1,4 @@
-// 공지·고객센터 시험: Supabase를 page.route로 흉내 냄(실제 서버로는 아무것도 안 감 — docs/supabase.sql의 RLS·열 권한·트리거와 같은 규칙을 메모리로).
+// 공지·고객센터 시험(끝에 메시지 신고 — 대화방 말풍선의 '신고'가 문의 표에 접수되는 흐름): Supabase를 page.route로 흉내 냄(실제 서버로는 아무것도 안 감 — docs/supabase.sql의 RLS·열 권한·트리거와 같은 규칙을 메모리로).
 // 사용자 사이트(index.html): MY의 고객센터·약관 칸과 '새 공지' → 공지 메뉴(공개만·고정 먼저·메뉴 표시·예전 주소 #help-notice) → 자주 묻는 질문 찾기 → 둘러보기면 로그인 안내 →
 //   로그인한 사람의 문의 남기기(보내는 칸은 열 권한 안의 것만)·하루 5건 제한·지우기 → 관리자 기능이 없음. 휴대폰(iPhone 13 WebKit)에서 가로 넘침 없음.
 // 관리자 도구(admin.html, 같은 서버의 /admin.html): 로그인 안 함·관리자가 아닌 계정은 공지를 읽기만 하고 로그인 안내(SQL·계정 id는 안 보임) → 관리자 계정은 공지 메뉴를 누르면 바로 비공개 공지·새 공지·고치기·지우기 →
@@ -7,7 +7,7 @@ import { chromium, webkit, devices } from "playwright";
 const [, , url, out] = process.argv;
 const site = url.replace(/[^/]*$/, ""); // 저장소 루트(…/index.html이면 그 폴더)
 const SB = "https://mblvphojbmxiuqnlxisi.supabase.co";
-const U = { tokA: { id: "aaaaaaaa-0000-4000-8000-00000000000a", email: "user@example.test" }, tokB: { id: "bbbbbbbb-0000-4000-8000-00000000000b", email: "admin@example.test" } };
+const U = { tokA: { id: "aaaaaaaa-0000-4000-8000-00000000000a", email: "user@example.test" }, tokB: { id: "bbbbbbbb-0000-4000-8000-00000000000b", email: "admin@example.test" }, tokC: { id: "cccccccc-0000-4000-8000-00000000000c", email: "reporter@example.test" } };
 const iso = (minAgo) => new Date(Date.now() - minAgo * 60000).toISOString();
 const db = {
   admins: [U.tokB.id], n: 10,
@@ -16,7 +16,8 @@ const db = {
     { id: 2, title: "점검 공지(고정)", body: "11월 6일 새벽 점검", pinned: true, published: true, created_at: iso(500), updated_at: iso(500) },
     { id: 3, title: "준비 중인 공지", body: "아직 비공개", pinned: false, published: false, created_at: iso(10), updated_at: iso(10) }
   ],
-  inquiries: [], posts: [], patches: []
+  inquiries: [], posts: [], patches: [],
+  cats: ["account", "pay", "chat", "image", "adult", "bug", "suggest", "etc"] // 문의 분류 제약 — 처음엔 2026-11-05의 것('report' 없음), 신고 시험이 docs/SETUP.md의 SQL을 실행한 것처럼 'report'를 더함
 };
 const json = (route, status, body) => route.fulfill({ status, contentType: "application/json", headers: { "access-control-allow-origin": "*" }, body: body === undefined ? "" : JSON.stringify(body) });
 const who = (req) => { const t = (req.headers()["authorization"] || "").replace("Bearer ", ""); return U[t] ? U[t].id : null; };
@@ -50,6 +51,7 @@ async function handler(route) {
       db.posts.push(Object.keys(body).sort().join(","));
       if (Object.keys(body).some((k) => !["category", "title", "body", "reply_to", "meta"].includes(k))) return json(route, 403, { code: "42501", message: "permission denied for table inquiries" }); // 열 권한
       if (db.inquiries.filter((a) => a.user_id === uid).length >= 5) return json(route, 400, { code: "P0001", message: "too_many_inquiries", hint: "문의는 하루 5건까지" });
+      if (!db.cats.includes(body.category)) return json(route, 400, { code: "23514", message: 'new row for relation "inquiries" violates check constraint "inquiries_category_check"' });
       const a = Object.assign({ id: ++db.n, user_id: uid, status: "open", answer: null, answered_at: null, created_at: new Date().toISOString() }, body); db.inquiries.push(a); return json(route, 201, [a]);
     }
     const a = db.inquiries.find((x) => x.id === id && mine(x));
@@ -232,6 +234,50 @@ try {
   await hash(B, "notice", 800);
   if (out) await B.screenshot({ path: `${out}/notice_admin_desktop.png` });
   if (out) await AA.screenshot({ path: `${out}/notice_notadmin_desktop.png` });
+
+  // ---------- 메시지 신고(사용자 C): AI 말풍선의 '신고' → 사유·덧붙일 말·'앞부분 함께 보내기'(기본 켜짐) → 문의 표에.
+  // 서버 제약이 예전 것이면 '기타'로 접수(제목 [신고]), SQL을 실행한 뒤에는 '신고' 분류. 끄면 메시지 앞부분은 안 감. 관리자 목록에 신고 배지. 로그인 안 했으면 안내만
+  const C = await open(chromium, "Desktop Chrome", "index.html", "tokC");
+  const reportOpen = (pg) => pg.evaluate(async () => {
+    const nap = (ms) => new Promise((r) => setTimeout(r, ms));
+    if (!room) { const r = newRoom(normalizeChar(ORIGINALS[0]), 0, S.personas[0]); location.hash = "r-" + r.id; await nap(900); }
+    document.querySelector('#log [data-act="report"]').click(); await nap(200);
+    const pv = document.querySelector("#rpPv"), q = document.querySelector("#rpQuote");
+    return { title: (document.querySelector(".overlay h2") || {}).textContent, checked: q ? q.checked : null, pv: pv ? pv.textContent : null, text: document.querySelector(".overlay").textContent.replace(/\s+/g, " ").slice(0, 200), login: !!document.querySelector(".overlay [data-go=login]"), mail: !!document.querySelector('.overlay a[href^="mailto:"]') };
+  });
+  const sheet1 = await reportOpen(C), n0 = db.inquiries.length, p0 = db.posts.length;
+  // 사유는 미리 골라 두지 않음 — 고르지 않고 보내면 안내만 하고 서버로 가지 않음. 사유는 일곱 가지(REPORT_REASONS)
+  await C.click("#rpSend"); await C.waitForTimeout(200);
+  res.reportNoReason = await C.evaluate(() => ({ err: document.querySelector("#rpErr").textContent, chips: document.querySelectorAll("#rpWhy [data-why]").length, on: document.querySelectorAll("#rpWhy .on").length, want: REPORT_REASONS.length }));
+  expect(/사유를 골라/.test(res.reportNoReason.err) && db.posts.length === p0 && res.reportNoReason.chips === res.reportNoReason.want && res.reportNoReason.chips === 7 && res.reportNoReason.on === 0, "사유를 고르지 않으면 보내지 않음·사유 일곱 가지 " + JSON.stringify(res.reportNoReason));
+  await C.click('.overlay [data-why="error"]'); await C.fill("#rpNote", "같은 말을 되풀이해요"); await C.click("#rpSend"); await C.waitForTimeout(900);
+  const first = db.inquiries[db.inquiries.length - 1] || {};
+  res.reportOld = { sheet: { title: sheet1.title, checked: sheet1.checked, pvLen: (sheet1.pv || "").length, tag: /\[\[/.test(sheet1.pv || "") }, added: db.inquiries.length - n0, tries: db.posts.length - p0, category: first.category, title: first.title, body: first.body, closed: await C.evaluate(() => !document.querySelector("#rpSend")) };
+  expect(sheet1.title === "이 메시지 신고" && sheet1.checked === true && res.reportOld.sheet.pvLen > 10 && res.reportOld.sheet.pvLen <= 300 && !res.reportOld.sheet.tag, "신고 시트: 앞부분 미리보기(300자 이내·그림 태그 없음)·기본 켜짐 " + JSON.stringify(res.reportOld.sheet));
+  expect(res.reportOld.added === 1 && res.reportOld.tries === 2 && first.category === "etc" && /^\[신고\] 오류·이상한 응답 — /.test(first.title || "") && res.reportOld.closed, "예전 서버 제약이면 '기타'로 접수 " + JSON.stringify([res.reportOld.added, res.reportOld.tries, first.category, first.title]));
+  expect(/^사유: 오류·이상한 응답\n작품: /.test(first.body || "") && first.body.includes("같은 말을 되풀이해요") && first.body.includes("[신고한 메시지 앞부분]\n" + sheet1.pv), "신고 내용: 사유·작품·덧붙일 말·메시지 앞부분");
+  db.cats.push("report"); // docs/SETUP.md '메시지 신고 분류'의 SQL을 실행한 뒤
+  await reportOpen(C); await C.uncheck("#rpQuote");
+  const pvHidden = await C.evaluate(() => document.querySelector("#rpPv").hidden);
+  await C.click('.overlay [data-why="minor"]'); await C.click("#rpSend"); await C.waitForTimeout(900);
+  const second = db.inquiries[db.inquiries.length - 1] || {};
+  res.reportNew = { category: second.category, title: second.title, quote: (second.body || "").includes("[신고한 메시지 앞부분]"), pvHidden };
+  expect(second.category === "report" && /^\[신고\] 미성년자 관련 성적 내용 — /.test(second.title || "") && !res.reportNew.quote && pvHidden, "SQL 실행 뒤에는 '신고' 분류·끄면 메시지 앞부분은 안 감 " + JSON.stringify(res.reportNew));
+  await hash(C, "help-ask", 900);
+  res.reportMine = await C.evaluate(() => [...document.querySelectorAll("#askList details.ask")].map((d) => (d.querySelector(".pill.err") ? "우선" : d.querySelector(".pill.gold") ? "신고" : "")));
+  expect(res.reportMine.length === 2 && res.reportMine.slice().sort().join() === "신고,우선", "내 문의에 신고 2건(배지 — 하나는 우선 신고) " + JSON.stringify(res.reportMine));
+  await hash(B, "help-faq", 200); await hash(B, "help-ask", 1200);
+  // 관리자의 받은 문의: 우선 처리할 신고(미성년자 관련·자해·자살 조장)는 맨 위에 따로, 그 밖의 신고는 받은 순서 자리에 '신고' 배지
+  res.reportInbox = await B.evaluate(() => { const ds = [...document.querySelectorAll("#inbox details.ask")], kind = (d) => (d.querySelector(".pill.err") ? "우선" : d.querySelector(".pill.gold") ? "신고" : "");
+    return { first: kind(ds[0]), firstTitle: ds[0].querySelector("b").textContent.slice(0, 18), head: (document.querySelector("#inUrgent") || {}).textContent || "", headFirst: document.querySelector("#inbox").firstElementChild.id, kinds: ds.map(kind).filter(Boolean) }; });
+  expect(res.reportInbox.first === "우선" && res.reportInbox.firstTitle === "[신고] 미성년자 관련 성적 내용" && /우선 처리할 신고 1건/.test(res.reportInbox.head) && res.reportInbox.headFirst === "inUrgent" && res.reportInbox.kinds.slice().sort().join() === "신고,우선", "관리자의 받은 문의: 우선 신고가 맨 위에 따로 " + JSON.stringify(res.reportInbox));
+  await hash(B, "me", 1200);
+  res.reportAdminMe = await B.evaluate(() => (document.querySelector("#inOpen") || {}).textContent);
+  expect(/우선 신고 1건/.test(res.reportAdminMe || ""), "MY의 답변 대기 수에 우선 신고 수: " + res.reportAdminMe);
+  const GR = await open(chromium, "Desktop Chrome", "index.html", null);
+  const guest = await reportOpen(GR);
+  res.reportGuest = { title: guest.title, form: guest.checked !== null, login: guest.login, mail: guest.mail };
+  expect(guest.title === "이 메시지 신고" && guest.checked === null && guest.login && guest.mail, "로그인 안 했으면 신고 폼 대신 로그인·메일 안내 " + JSON.stringify(res.reportGuest));
 } catch (e) { errs.push("script: " + (e && e.stack || e).toString().slice(0, 400)); }
 for (const b of browsers) await b.close().catch(() => {});
 res.fail = fail; res.errs = errs;

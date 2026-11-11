@@ -63,7 +63,7 @@ for (const [dev, engine, opts] of [["Desktop Chrome", chromium, {}], ["iPhone 13
     }
     // 비공개(스포일러) 플래그 — 가짜 데이터로 틀만 확인: 인물의 hidden 칸은 잠긴 칩, hidden 장소는 도감 칸에서 그림만 가림(이름은 보임)
     res.hidden = await p.evaluate(() => {
-      const c = { ...normalizeChar(getChar(ORIGINALS[0].id)), id: "zz-test", cast: [{ code: "T", name: "시험", hidden: [3] }], places: [{ name: "비밀의 방", hidden: true }, { name: "광장" }],
+      const c = { ...normalizeChar(getChar(ORIGINALS[0].id)), id: "zz-test", cast: [{ code: "T", name: "시험", hidden: [3] }], places: [{ name: "비밀의 방", hidden: true }, { name: "광장" }], cuts: [], // 작품이 실제로 적은 컷씬에 기대지 않게 비움
         images: { MP: { 1: "content/zz/images/MP1.webp", 2: "content/zz/images/MP2.webp" } } }; // 없는 작품 id라 이 가짜 그림 경로가 그대로 쓰임(글만 만들고 화면에 넣지는 않음)
       castSheet(c, c.cast[0]); const locked = $$(".overlay .chip.locked").length; closeOverlays();
       const html = codexHTML(c);
@@ -80,6 +80,20 @@ for (const [dev, engine, opts] of [["Desktop Chrome", chromium, {}], ["iPhone 13
       return { how, all, f, m };
     });
     { const x = res.example; if (!x.how || x.all[0] !== x.all[1] || x.f[0] !== x.f[1] || x.m[0] !== x.m[1] || x.f[0] === x.m[0]) errs.push("예시 문구가 데이터와 다름: " + JSON.stringify(x)); }
+    // 시작 상황의 배경 장소 — 가짜 데이터로 틀만: place가 있는 시작 상황 카드에 장소 이름이 보이고, 그 시작 상황으로 연 방의 첫 메시지 맨 위에 장소 카드
+    res.opening = await p.evaluate(async () => {
+      const nap = (ms) => new Promise((r) => setTimeout(r, ms)), live = ORIGINALS[0], keep = [live.places, live.openings[0].place];
+      live.places = [{ name: "시험 광장" }]; live.openings[0].place = 1;
+      location.hash = "home"; await nap(150); location.hash = "c-" + live.id; await nap(400);
+      const pill = ($(".opening .pill") || {}).textContent || "";
+      const r = newRoom(normalizeChar(live), 0, S.personas[0]), tag = r.msgs[0].alts[0].text.indexOf("[[" + seriesCode("place") + "1]]") === 0;
+      location.hash = "r-" + r.id; await nap(600);
+      const card = !!$("#log .scene-img.place");
+      if (keep[0] === undefined) delete live.places; else live.places = keep[0];
+      if (keep[1] === undefined) delete live.openings[0].place; else live.openings[0].place = keep[1];
+      return { pill, tag, card };
+    });
+    if (!res.opening.pill.includes("시험 광장") || !res.opening.tag || !res.opening.card) errs.push("시작 상황의 배경 장소가 다름: " + JSON.stringify(res.opening));
     // 유저 설정 상한 — 페르소나 상세·유저노트 입력 칸의 maxlength와 "n / 한도" 카운터가 상수(LIMITS)를 따름, 장기기억 기본 한도도
     res.limits = await p.evaluate(() => {
       personaSheet(S.personas[0]); const pd = $("#pd").maxLength, pc = $("#pdCnt").textContent; closeOverlays();
@@ -87,6 +101,24 @@ for (const [dev, engine, opts] of [["Desktop Chrome", chromium, {}], ["iPhone 13
       return { pd, pc, nt, nc, mem: PLAN.free.memoMax, want: LIMITS, end: [" / " + num(LIMITS.personaDesc), " / " + num(LIMITS.userNote)] };
     });
     { const l = res.limits; if (l.pd !== l.want.personaDesc || l.nt !== l.want.userNote || l.mem !== l.want.memory || l.pc.slice(-l.end[0].length) !== l.end[0] || l.nc.slice(-l.end[1].length) !== l.end[1]) errs.push("설정 상한이 상수와 다름: " + JSON.stringify(l)); }
+    // 내 서재 — 상세의 찜 버튼 → 홈의 '찜한 작품' 줄, 상세를 열면 '최근 본 작품' 줄, 같은 홈 줄의 다른 작품(줄이 있는 작품만), 관심있는 대화로 거름, 찜을 풀면 줄이 사라짐
+    res.shelf = await p.evaluate(async () => {
+      const nap = (ms) => new Promise((r) => setTimeout(r, ms)), was = { hash: location.hash, shelf: JSON.stringify(S.shelf), aud: S.settings.audience };
+      const c = ORIGINALS.find((x) => x.row), solo = ORIGINALS.find((x) => !x.row), ids = (sel) => { const h = document.querySelector(sel); return h ? [...h.nextElementSibling.querySelectorAll("[data-char]")].map((b) => b.dataset.char) : null; };
+      S.shelf = mergeShelf(); S.settings.audience = "all"; S.cat = "전체"; S.q = "";
+      location.hash = "c-" + solo.id; await nap(300); const soloNear = !!document.querySelector("#rowNear");
+      location.hash = "c-" + c.id; await nap(300);
+      const near = ids("#rowNear"), wantNear = ORIGINALS.filter((x) => x.row === c.row && x.id !== c.id).map((x) => x.id), off = $("#like").getAttribute("aria-pressed");
+      $("#like").click(); const on = $("#like").getAttribute("aria-pressed"), label = $("#like").textContent, saved = !!(KV.getLocal("shelf") || { likes: {} }).likes[c.id];
+      location.hash = "home"; await nap(300); const likes = ids("#rowLikes"), recent = ids("#rowRecent");
+      S.settings.audience = audOf(c) === "f" ? "m" : "f"; viewHome(); const other = [ids("#rowLikes"), (ids("#rowRecent") || []).includes(c.id)];
+      S.settings.audience = "all"; location.hash = "c-" + c.id; await nap(300); const still = $("#like").getAttribute("aria-pressed"); $("#like").click();
+      location.hash = "home"; await nap(300); const gone = ids("#rowLikes");
+      S.settings.audience = was.aud; location.hash = was.hash; await nap(400); S.shelf = JSON.parse(was.shelf); KV.setLocal("shelf", S.shelf); // 돌아간 화면이 상세면 최근 본에 적히므로 그 뒤에 되돌림
+      return { soloNear, near, wantNear, off, on, label, saved, likes, recent, want: [c.id, solo.id], other, still, gone };
+    });
+    { const s = res.shelf; if (s.soloNear || JSON.stringify(s.near) !== JSON.stringify(s.wantNear) || !s.wantNear.length || s.off !== "false" || s.on !== "true" || s.label !== "찜한 작품" || !s.saved || JSON.stringify(s.likes) !== JSON.stringify([s.want[0]])
+      || JSON.stringify(s.recent) !== JSON.stringify(s.want) || s.other[0] !== null || s.other[1] || s.still !== "true" || s.gone !== null) errs.push("내 서재(찜·최근 본·같은 줄)가 다름: " + JSON.stringify(s)); }
     // 작품 메타 한 줄 — 가짜 데이터로 틀만: 제작자 기본값, 공개일·독점 배지
     res.meta = await p.evaluate(() => ({ def: metaHTML({}) === esc(DEFAULT_CREATOR), full: metaHTML({ creator: "시험 <제작자>", exclusive: true, publishedAt: "2026-11-09" }) }));
     if (!res.meta.def || res.meta.full.indexOf("시험 &lt;제작자&gt; · ") !== 0 || !res.meta.full.includes("2026.11.09 공개") || !res.meta.full.includes('<span class="pill gold">독점</span>')) errs.push("작품 메타 줄이 다름: " + JSON.stringify(res.meta));
@@ -113,7 +145,8 @@ for (const [dev, engine, opts] of [["Desktop Chrome", chromium, {}], ["iPhone 13
     });
     await wait(250); if (out) await p.screenshot({ path: `${out}/${tag}_views_lorebook.png` });
     res.lorebook.plain = await p.evaluate(() => {
-      closeOverlays(); const w = ORIGINALS.find((c) => !(c.lore || []).length); setRoom(newRoom(normalizeChar(getChar(w.id)), 0, S.personas[0]));
+      // 키워드북 없는 작품은 가짜 사본으로 — 지금 오리지널은 모두 키워드북이 있음(없는 id라 getChar가 이 사본을 씀)
+      closeOverlays(); setRoom(newRoom({ ...normalizeChar(getChar(ORIGINALS[0].id)), id: "zz-plain", lore: [] }, 0, S.personas[0]));
       openRoomDrawer("main"); const has = !!$('[data-v="lore"]'); closeOverlays(); return has;
     });
     { const l = res.lorebook; if (!l.menu.includes(`1 / ${l.n}`) || l.cards !== l.n || l.locked !== l.n - 1 || !l.open || l.leak.length || l.plain) errs.push("세계관 수첩이 다름: " + JSON.stringify(l)); }

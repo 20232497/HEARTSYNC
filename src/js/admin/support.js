@@ -4,7 +4,7 @@
    사용자 화면(ui/help.js)이 그릴 때마다 불리므로(공지는 기기 사본 → 서버 목록으로 두 번) 이미 넣었으면 다시 넣지 않고, 기다리는 사이 화면이 바뀌었으면 그만둔다 */
 import { $, $$, esc, toast } from "../core/util.js";
 import { SB, acctName } from "../services/supabase.js";
-import { ASK_STATUS, SUPPORT, supportErr } from "../services/support.js";
+import { ASK_STATUS, SUPPORT, supportErr, urgentReport } from "../services/support.js";
 import { EXT } from "../ui/ext.js";
 import { askHTML, viewNotice } from "../ui/help.js";
 import { ICON } from "../ui/icons.js";
@@ -67,7 +67,9 @@ async function loadInbox(box) {
   let list;
   try { list = await SUPPORT.inbox(inboxStatus); } catch (e) { el.innerHTML = `<p class="note">${esc(supportErr(e))}</p>`; return; }
   if (!list.length) { el.innerHTML = `<div class="empty">${inboxStatus ? esc(ASK_STATUS[inboxStatus]) + " 문의가 없어요." : "받은 문의가 없어요."}</div>`; return; }
-  el.innerHTML = list.map((a) => askHTML(a, inboxExtra(a))).join("");
+  // 우선 처리할 신고(미성년자 관련·자해·자살 조장)는 맨 위에 따로 — 나머지는 받은 순서 그대로
+  const top = list.filter(urgentReport), rest = list.filter((a) => !urgentReport(a)), row = (a) => askHTML(a, inboxExtra(a));
+  el.innerHTML = (top.length ? `<p class="note" id="inUrgent" style="margin:0 0 6px"><b>우선 처리할 신고 ${top.length}건</b> — 미성년자 관련·자해·자살 조장 사유예요. 먼저 확인해 주세요.</p>${top.map(row).join("")}${rest.length ? '<hr style="border:0;border-top:1px solid var(--line);margin:12px 0">' : ""}` : "") + rest.map(row).join("");
   $$("details.ask", el).forEach((d) => {
     const a = list.find((x) => +x.id === +d.dataset.aid); if (!a) return;
     $("[data-save]", d).onclick = async (e) => {
@@ -119,6 +121,6 @@ EXT.me.push((v) => {
     <div class="box"><div class="menu-list"><button data-hgo="help-ask">받은 문의<span class="v" id="inOpen">확인 중…</span></button><button data-hgo="notice">공지 쓰기·고치기</button></div></div>`);
   $$("[data-hgo]", box).forEach((b) => b.onclick = () => go(b.dataset.hgo));
   const out = (t) => { const el = $("#inOpen", box); if (el) el.textContent = t; };
-  SUPPORT.amAdmin().then((yes) => yes ? SUPPORT.inbox("open").then((l) => out(l.length ? `답변 대기 ${l.length}건` : "대기 없음")) : out("관리자 계정 아님"))
+  SUPPORT.amAdmin().then((yes) => yes ? SUPPORT.inbox("open").then((l) => { const u = l.filter(urgentReport).length; out(l.length ? `답변 대기 ${l.length}건${u ? ` · 우선 신고 ${u}건` : ""}` : "대기 없음"); }) : out("관리자 계정 아님"))
     .catch((e) => out(supportErr(e).slice(0, 24)));
 });

@@ -31,10 +31,13 @@ for (const [dev, engine] of [["Desktop Chrome", chromium], ["iPhone 13", webkit]
     // 돌아오면 보던 자리: 상단 뒤로 버튼·브라우저 뒤로, 앞으로 가면 다시 맨 위
     await down(300); await page.click(".topbar [data-go=home]"); await hashIs("#home");
     same("상단 뒤로 → 홈", await y(), homeAt, 2);
+    // 작품을 처음 보고 오면 홈에 '최근 본 작품' 줄이 생겨 카드가 한 줄만큼 내려가 있음 — 다시 화면 가운데로 넣고(누를 때 Playwright가 스크롤해 자리가 바뀌지 않게) 그 자리를 기준으로 봄
+    if (!(await page.$("#rowRecent"))) res.errors.push("홈에 최근 본 작품 줄이 없음");
+    await page.evaluate(() => document.querySelector(".grid .card").scrollIntoView({ block: "center" })); const homeAt2 = await y();
     await page.click(".grid .card"); await hashIs("#c-" + id);
     same("다시 상세", await y(), 0);
     await down(200); await page.goBack(); await hashIs("#home");
-    same("브라우저 뒤로 → 홈", await y(), homeAt, 2);
+    same("브라우저 뒤로 → 홈", await y(), homeAt2, 2);
     await page.goForward(); await hashIs("#c-" + id);
     same("브라우저 앞으로 → 상세", await y(), 0);
 

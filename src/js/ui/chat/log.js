@@ -1,4 +1,4 @@
-/* 메시지 로그 그리기·스크롤 따라가기·말풍선 메뉴(수정·삭제·북마크·좋아요/아쉬워요·분기) */
+/* 메시지 로그 그리기·스크롤 따라가기·말풍선 메뉴(수정·삭제·북마크·고정·좋아요/아쉬워요·분기) */
 import { speakerName } from "../../ai/prompt/rules.js";
 import { curText, forkRoom, saveRoom } from "../../core/rooms.js";
 import { S, gen, room, setRoom } from "../../core/state.js";
@@ -11,6 +11,8 @@ import { flashHint, lastAi, updateMeter } from "./view.js";
 import { coverHTML, pavHTML, zoomPic } from "../cover.js";
 import { plan } from "../../core/wallet.js";
 import { ensurePay, plusSheet } from "../pay.js";
+import { pinSheet } from "../pins.js";
+import { reportSheet } from "../report.js";
 import { confirmSheet } from "../sheet.js";
 import { go } from "../shell.js";
 
@@ -48,7 +50,7 @@ export function renderLog(scroll) {
       const ooc = m.text.startsWith("//");
       html += `<div class="msg me ${ooc ? "ooc" : ""}" data-id="${m.id}">${ooc ? "" : pavHTML(r.persona)}<div class="col">
         ${m.editing ? editBox(m.text, i) : `<div class="bubble">${ooc ? esc(m.text) : fmt(m.text, c, r.persona)}</div>
-        <div class="tools-row"><button data-act="edit" data-i="${i}">수정</button><button data-act="del" data-i="${i}">삭제</button></div>`}
+        <div class="tools-row">${m.canned ? "" : `<button data-act="edit" data-i="${i}">수정</button>`}<button data-act="del" data-i="${i}">삭제</button>${ooc || m.canned ? "" : `<button data-act="pin" data-i="${i}" title="이 내용을 고정 기억으로 — 매 턴 그대로 AI에게 전해요">📌 고정</button>`}</div>`}
       </div></div>`;
       return;
     }
@@ -62,11 +64,12 @@ export function renderLog(scroll) {
       html += statusBlock(c, alt.status, m.statusBefore, { open: isLast, live: isLast });
       html += `<div class="tools-row">
         ${m.alts.length > 1 ? `<button data-act="prev" data-i="${i}" ${m.idx === 0 ? "disabled" : ""} aria-label="이전 버전">‹</button><span class="sw">${m.idx + 1}/${m.alts.length}</span><button data-act="next" data-i="${i}" ${m.idx === m.alts.length - 1 ? "disabled" : ""} aria-label="다음 버전">›</button>` : ""}
-        ${isLast && !alt.opening ? `<button data-act="regen" data-i="${i}">↻ 다시 쓰기</button>` : ""}
+        ${isLast && !alt.opening && !m.canned ? `<button data-act="regen" data-i="${i}">↻ 다시 쓰기</button>` : ""}
         <button data-act="bm" data-i="${i}" class="${bm ? "on" : ""}" aria-pressed="${bm}">${bm ? "★" : "☆"} 북마크</button>
-        <button data-act="editai" data-i="${i}">수정</button><button data-act="copy" data-i="${i}">복사</button>
+        <button data-act="pin" data-i="${i}" title="이 장면을 고정 기억으로 — 매 턴 그대로 AI에게 전해요">📌 고정</button>
+        <button data-act="editai" data-i="${i}">수정</button><button data-act="copy" data-i="${i}">복사</button><button data-act="report" data-i="${i}" title="이 메시지를 운영자에게 신고해요">신고</button>
         ${i > 0 ? `<button data-act="fork" data-i="${i}" title="이 메시지까지를 새 대화방으로 복사해요">분기</button><button data-act="del" data-i="${i}">삭제</button>` : ""}
-        ${alt.opening ? "" : fbBtn(i, 1, alt.fb) + fbBtn(i, -1, alt.fb)}
+        ${alt.opening || m.canned ? "" : fbBtn(i, 1, alt.fb) + fbBtn(i, -1, alt.fb)}
         ${alt.lore?.length ? `<span class="lore-used" title="이 응답에 반영된 키워드북">📖 ${esc(alt.lore.join(" · "))}</span>` : ""}
         ${alt.cost ? `<span class="rcpt" title="이 응답에 쓴 비용">${esc(alt.cost)}</span>` : ""}
       </div>`;
@@ -100,11 +103,13 @@ function bindLog(box) {
   };
   $$("[data-act]", box).forEach((b) => b.onclick = () => {
     const i = +b.dataset.i, m = room.msgs[i], act = b.dataset.act;
-    if (gen && !["copy", "bm", "up", "down"].includes(act)) return flashHint("응답이 끝난 뒤에 할 수 있어요.");
+    if (gen && !["copy", "bm", "up", "down", "pin"].includes(act)) return flashHint("응답이 끝난 뒤에 할 수 있어요.");
     if (act === "prev" || act === "next") { m.idx = clamp(m.idx + (act === "next" ? 1 : -1), 0, m.alts.length - 1); restoreStatus(); saveRoom(room); renderLog(); }
     else if (act === "regen") regenAsk(i);
     else if (act === "copy") copyText(curText(m).replace(/\[\[img:[^\]]*\]\]\n?/g, ""), "복사했어요");
     else if (act === "bm") { const s = new Set(room.bookmarks || []); s.has(m.id) ? s.delete(m.id) : s.add(m.id); room.bookmarks = [...s]; saveRoom(room); renderLog(); toast(s.has(m.id) ? "북마크에 담았어요" : "북마크에서 뺐어요"); }
+    else if (act === "pin") pinSheet(room, m);
+    else if (act === "report") reportSheet(room, m);
     else if (act === "up" || act === "down") { const a = m.alts[m.idx], v = act === "up" ? 1 : -1; a.fb = a.fb === v ? 0 : v; saveRoom(room); renderLog(); }
     else if (act === "fork") {
       if (S.rooms.filter((x) => x.charId === room.char.id).length >= plan().rooms) return plusSheet("rooms");

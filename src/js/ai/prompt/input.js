@@ -1,10 +1,10 @@
 /* 유저 메시지 끝에 붙는 [이번 응답] 지시(buildInput)와 [이미 쓴 문장](usedOpeners) */
 import { LEN } from "../models.js";
 import { matchLore } from "./lore.js";
-import { rulesPrompt } from "./rules.js";
+import { rulesParts } from "./rules.js";
 import { getChar } from "../../core/character.js";
 import { commandText } from "../../core/commands.js";
-import { MARK } from "../../core/constants.js";
+import { LORE, MARK } from "../../core/constants.js";
 import { curText } from "../../core/rooms.js";
 import { sitHints } from "../../images/situations.js";
 /** @typedef {import("../../core/types.js").LLMMessage} LLMMessage */
@@ -28,15 +28,16 @@ export function usedOpeners(hist) {
 /**
  * 한 턴의 AI 요청 메시지 묶음(시스템 규칙 + 기억력만큼의 대화 + [이번 응답] 지시).
  * @param {Room} r @param {number} uptoIdx 이 번호 앞의 메시지까지 @param {StatusMap} statusBefore @param {string} [direction] 다시 쓰기 방향
- * @returns {LLMMessage[] & { lore?: string[] }} lore는 반영된 키워드(말풍선 아래 📖)
+ * @returns {LLMMessage[] & { lore?: string[] }} lore는 반영된 키워드(말풍선 아래 📖). 첫 메시지(시스템)의 cut은 고정부의 글자 수 — llm()이 그 자리에 캐시 표시를 붙임
  */
 export function buildInput(r, uptoIdx, statusBefore, direction) {
   const hist = r.msgs.slice(0, uptoIdx).filter((m) => curText(m));
   const recent = hist.slice(-(r.set.mem * 2 + 1));
-  const lore = matchLore(getChar(r.char.id)?.lore || r.char.lore, recent.slice(-3).map((m) => (m.role === "ai" ? curText(m) : m.text) || ""));
+  const lore = matchLore(getChar(r.char.id)?.lore || r.char.lore, recent.slice(-LORE.scan).map((m) => (m.role === "ai" ? curText(m) : m.text) || ""));
   const len = LEN[r.set.len] || LEN.mid;
-  const out = [{ role: "user", content: rulesPrompt(r, lore, hist) }];
-  out.lore = lore.map((e) => e.keys[0]);
+  const sys = rulesParts(r, lore, hist);
+  const out = [{ role: "user", content: sys.fixed + sys.vary + sys.tail, cut: sys.fixed.length }];
+  out.lore = lore.filter((e) => !e.always).map((e) => e.keys[0]); // 말풍선 📖에는 키워드로 걸린 것만(상시 항목은 늘 들어가므로 뺌)
   // 직전 응답 하나에는 그때의 상태창을 출력 형식 그대로 붙여 보냄 — 기록 속 응답이 모두 본문으로만 끝나면 그 모양을 따라 상태창을 빼먹는 모델이 많음(2026-11-09 모델 시험).
   // 추천 답변이 없던 응답(시작 상황 등)에는 형식을 보이기 위한 보기 셋을 넣음
   const lastAi = [...recent].reverse().find((m) => m.role === "ai");
