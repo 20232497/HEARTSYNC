@@ -5,6 +5,7 @@ import { multiPairs } from "../parse.js";
 import { usedOpeners } from "./input.js";
 import { exampleCast, getChar } from "../../core/character.js";
 import { MARK, SIT } from "../../core/constants.js";
+import { SIDE, choiceOf, epPlan } from "../../core/episode.js";
 import { curText } from "../../core/rooms.js";
 import { plan } from "../../core/wallet.js";
 import { imgTags, seriesCode } from "../../images/codes.js";
@@ -51,6 +52,8 @@ export function rulesParts(r, lore = [], hist = r.msgs) {
   const cutsDone = liveCuts.map((e, i) => (cutsUsed.has(i + 1) ? CUT + (i + 1) : "")).filter(Boolean);
   const loreLine = (list) => list.map((e) => `- ${e.keys[0]}: ${e.text}`).join("\n"), loreAlways = lore.filter((e) => e.always), loreHit = lore.filter((e) => !e.always);
   const used = usedOpeners(hist);
+  // 에피소드 방: 이번 응답의 지시(core/episode.js epPlan — 사건의 낱말은 직전 응답과 이번 입력에서 찾음). 같은 것을 buildInput이 돌려줘 응답 뒤 epAfter에 넘김
+  const ep = r.ep && c.episode ? epPlan(c.episode, r.ep, hist.slice(-2).map(curText).join("\n"), r.status?.[c.gauge]) : null;
 
   const fixed = `너는 한국어 캐릭터 롤플레이 플랫폼의 연기 엔진이다. 아래 설정의 ${c.world_mode ? "세계관 내레이터로서 모든 인물과 세계를" : "캐릭터 「" + c.name + "」를"} 연기하며 유저와 함께 이야기를 만든다.
 
@@ -95,7 +98,7 @@ ${loreAlways.length ? "\n[키워드북 · 상시 — 이 작품에서 늘 사실
 - 번호는 그 순간 그 인물의 표정·상황으로 고르고, 유저의 말과 행동에 대한 반응을 먼저 본다: 놀림·짓궂은 장난 → ${sn("부끄러움")}·${sn("삐침")}, 칭찬·농담 → ${sn("웃음")}, 고백·스킨십 → ${sn("설렘")}·${sn("부끄러움")}, 무례·배신 → ${sn("분노")}, 위협·괴물 → ${sn("공포")}·${sn("놀람")}, 싸움·무기를 겨눔 → ${sn("공격")}(맨손·무기 모두), 다침 → ${sn("부상")}.
 - 인물이 이야기에 처음 등장하는 순간은 0번(프로필). 이미 등장한 인물은 아래 [지금 상태]에 있다.${ready.length ? `\n- 그림이 준비된 번호(되도록 이 안에서 고른다): ${ready.join(" / ")}` : ""}
 - 같은 인물은 한 응답에 한 장(감정이 크게 뒤집히면 두 장까지). 감정이 이어지면 직전과 같은 번호를 써도 된다.${places ? `\n- 장소 코드(장면의 장소가 바뀌거나 처음 보일 때 본문 첫 줄에 한 장, 그 장소에 있는 동안은 다시 쓰지 않는다): ${places}` : ""}${cuts ? `\n- 컷씬 코드(괄호의 조건이 처음 이루어지는 순간 그 줄 위에 한 장, 이야기 전체에서 한 번만 — 이미 나온 컷씬은 아래 [지금 상태]에 있다): ${cuts}` : ""}
-`;
+${modeHead(r)}`;
 
   const vary = `
 [유저 캐릭터] ${p.name}${p.memo ? " (" + p.memo + ")" : ""}
@@ -106,7 +109,7 @@ ${r.memory || "(아직 없음)"}
 ${loreHit.length ? "\n[키워드북 — 이번 장면에 나온 키워드의 설정. 사실로 삼아 자연스럽게 반영하되 설명하듯 늘어놓지 않는다]\n" + loreLine(loreHit) + "\n" : ""}
 [지금 상태]
 - 이미 등장한 인물: ${[...seen].join(", ") || "없음"}${cutsDone.length ? `\n- 이미 나온 컷씬(다시 쓰지 않는다): ${cutsDone.join(", ")}` : ""}${relStage(c, r.status)}${r.lead && (r.turn || 0) < r.lead.turns ? `\n- 시작 연출(이야기를 연 뒤 ${r.lead.turns}턴 동안만 따른다 — 지금 ${(r.turn || 0) + 1}번째): ${r.lead.text}` : ""}
-${used.length ? `\n[이미 쓴 문장 — 이렇게 시작하거나 같은 묘사를 되풀이하지 않는다]\n${used.map((s) => "- " + s + "…").join("\n")}\n` : ""}`;
+${epProgress(c.episode, r.ep, ep)}${used.length ? `\n[이미 쓴 문장 — 이렇게 시작하거나 같은 묘사를 되풀이하지 않는다]\n${used.map((s) => "- " + s + "…").join("\n")}\n` : ""}`;
 
   const tail = `
 [연기 규칙 재확인]
@@ -116,10 +119,48 @@ ${used.length ? `\n[이미 쓴 문장 — 이렇게 시작하거나 같은 묘�
 1) 장면 본문
 2) 한 줄에 ${MARK}
 3) JSON 한 개 (코드블록 금지)
-{"status":{${fields}},"suggestions":["…","…","…"]}
+{"status":{${fields}},"suggestions":["…","…","…"]${ep && !ep.ending ? `,"_ep":{"done":false${ep.ask ? ',"pick":""' : ""}}` : ""}}${ep && !ep.ending ? `\n- _ep.done: 이번 응답에서 지금 장의 목표가 이뤄졌으면 true, 아니면 false.${ep.ask ? " _ep.pick: 위 [에피소드 진행]의 갈림길에서 유저의 이번 입력에 가까운 보기 id(어느 쪽도 아니면 \"\")." : ""}` : ""}
 - status는 이번 장면이 끝난 시점의 값. 모든 항목을 채운다.${typeof r.status?.[c.gauge] === "number" ? ` "${c.gauge}"는 0~100 정수이고 한 턴에 -10~+8 범위에서만 움직인다.` : ""}${c.fields.some((f) => f.includes("속마음")) ? ' "속마음"은 인물의 진짜 속마음 한 문장.' : ""}${(() => { const mf = c.fields.filter((f) => multiPairs(r.status?.[f]).length >= 2); return mf.length ? ` ${mf.map((f) => `"${f}"`).join("·")}는 '이름 숫자 · 이름 숫자' 형식과 인물 순서를 그대로 지키고 한 명도 빼지 않는다(한 사람당 한 턴에 -10~+8).` : ""; })()}
 - suggestions: 유저(${p.name})가 다음에 할 만한 행동이나 대사 3개. 서로 다른 방향(다정·도발·신중 등), 각 35자 이내, 유저 시점.`;
-  return { fixed, vary, tail };
+  return { fixed, vary, tail, ep };
+}
+/* 고정부 끝의 방 갈래 머리: 에피소드 방은 장 목록과 '결말은 앱이 알릴 때만'(결말 목록은 보내지 않음 — 미리 알면 그쪽으로 몰아감), 외전 방은 이어받은 결말과 외전 갈래(SIDE). 방이 정해지면 바뀌지 않음 */
+function modeHead(r) {
+  const c = r.char, ep = c.episode;
+  if (r.ep && ep) return `
+[에피소드 — 끝이 있는 이야기]
+- 이 방은 정해진 장을 차례로 지나 결말에서 끝나는 이야기다. 장을 건너뛰거나 다음 장의 일을 앞당기지 않는다.
+- 결말은 앱이 아래 [에피소드 진행]에서 알릴 때만 쓴다. 그 전에는 이야기를 닫거나 결말을 단정하지 않는다.
+- 장: ${ep.beats.map((b, i) => `${i + 1}. 「${b.title}」 ${b.goal}`).join(" / ")}
+`;
+  const s = r.side, K = s && SIDE[s.kind];
+  if (!K) return "";
+  const name = ((c.cast || []).find((x) => x.code === s.who) || {}).name || "";
+  return `
+[외전 — ${K.label}${name ? " · " + name : ""}]
+- 이 방은 「${c.title}」의 결말${s.endTitle ? ` 「${s.endTitle}」` : ""} 뒤에 이어지는 외전이다. 그 결말과 지금까지의 대화는 실제로 일어난 일이다. 되돌리거나 결말을 다시 내지 않는다.
+- 끝이 정해지지 않은 자유 대화로 이어 간다. ${K.line(name)}
+`;
+}
+/* 변동부의 [에피소드 진행] — 이번 응답의 지시(epPlan). 결말을 정한 턴은 결말 장면만 */
+function epProgress(ep, st, plan) {
+  if (!plan || st.over) return "";
+  const L = ["", "[에피소드 진행 — 앱이 정한 순서. 반드시 따른다]"];
+  if (plan.ending) {
+    L.push(`- 이번 응답으로 이야기를 끝낸다. 결말 「${plan.ending.title}」: ${plan.ending.brief}`, "- 결말 장면을 서두르지 말고 충분히 쓴다. 인물들의 마지막 말과 여운으로 맺고, 이번에는 유저에게 다음 행동을 묻는 말로 끝내지 않는다.");
+    return L.join("\n") + "\n";
+  }
+  const b = plan.beat, picked = Object.keys(st.picks).map((id) => { const ch = choiceOf(ep, id), o = ch && ch.options.find((x) => x.id === st.picks[id]); return ch && o ? `'${ch.ask}' → ${o.label}` : ""; }).filter(Boolean);
+  if (!b) return "";
+  L.push(`- 지금 ${plan.n}장 / ${ep.beats.length}장 「${b.title}」 — 이 장의 목표: ${b.goal}`);
+  if (picked.length) L.push(`- 유저가 고른 갈림길(이야기는 이 선택의 결과를 따른다): ${picked.join(" / ")}`);
+  if (plan.ask) L.push(`- 이 장의 목표는 이뤘고 유저가 갈림길 '${plan.ask.ask}' 앞에 있다(보기: ${plan.ask.options.map((o) => `${o.id}=${o.label}`).join(", ")}). 유저의 이번 입력을 받아 장면을 잇는다.`);
+  else {
+    L.push(plan.phase === "early" ? "- 이 장은 막 열렸다. 목표를 서두르지 말고 장면과 관계를 쌓는다." : plan.phase === "open" ? "- 흐름이 닿으면 이 장의 목표를 이룬다. 억지로 끌고 가지는 않는다." : "- 이번 응답에서 이 장의 목표를 반드시 매듭짓는다.");
+    if (b.choice && plan.phase !== "early") L.push(`- 이 장의 목표를 이루는 응답은 유저가 '${b.choice.ask}'를 정해야 하는 순간에서 멈춘다(보기를 나열하지 않는다).`);
+  }
+  if (plan.event) L.push(`- 이번 응답에 이 사건을 일으킨다 — 지금 흐름과 장소에 맞게 자연스럽게: ${plan.event.text}`);
+  return L.join("\n") + "\n";
 }
 /**
  * 시스템 프롬프트 한 덩어리(고정부 + 변동부 + 꼬리) — 관문처럼 글 하나로 보내는 길과 시험이 씀.

@@ -52,3 +52,12 @@
 .wcard.locked { border-style:dashed; background:var(--surface2); }
 .wcard.locked figcaption b, .wcard.locked figcaption span { color:var(--muted); }
 .wcard.locked .wkind { color:var(--muted); background:var(--bg); }
+/* 접는 칸(세계관 일러스트) — 휴대폰에서 시작 버튼 아래를 짧게 */
+details.box > summary { cursor:pointer; list-style:none; display:flex; align-items:center; gap:6px; }
+details.box > summary::-webkit-details-marker { display:none; }
+details.box > summary h3 { margin:0; flex:1; }
+details.box > summary::after { content:"▾"; color:var(--muted); }
+details.box[open] > summary { margin-bottom:10px; }
+details.box[open] > summary::after { content:"▴"; }
+.ep-info p { margin-bottom:10px; }
+.ep-info .note { display:block; margin-top:8px; }

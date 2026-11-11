@@ -1,7 +1,8 @@
-/* 대화방 저장·목록·이전(migrateRoom)·새 방 만들기(newRoom)·분기(forkRoom), 메시지의 현재 버전 글(curText) */
+/* 대화방 저장·목록·이전(migrateRoom)·새 방 만들기(newRoom)·분기(forkRoom)·외전(sideRoom), 메시지의 현재 버전 글(curText) */
 import { recommendOf } from "../ai/models.js";
 import { getChar, normalizeChar } from "./character.js";
 import { SERIES } from "./constants.js";
+import { SIDE, epInit } from "./episode.js";
 import { emit } from "./events.js";
 import { S } from "./state.js";
 import { KV } from "./storage.js";
@@ -18,6 +19,7 @@ export function roomKey(id) { return "room-" + id; }
 function indexRoom(r) {
   const c = r.char, lastAi = [...r.msgs].reverse().find((m) => curText(m));
   const entry = { id: r.id, charId: c.id, name: c.name, title: c.title, glyph: c.glyph, pal: c.pal, motif: c.motif, img: c.img || "", at: r.at, fork: !!r.forkedFrom,
+    ep: r.ep ? (r.ep.end ? "결말" : r.ep.beat + 1 + "장") : "", side: !!r.side,
     last: (lastAi ? curText(lastAi) : "").replace(/\[\[[^\]]*\]\]/g, "").replace(/[*"\[\]]/g, "").replace(/\s+/g, " ").trim().slice(0, 70) };
   S.rooms = [entry, ...S.rooms.filter((x) => x.id !== r.id)].sort((a, b) => b.at - a.at);
   KV.set("rooms", S.rooms); emit("rooms");
@@ -89,6 +91,7 @@ export function newRoom(c, openingIdx, persona) {
     opening: op.title, ...(op.id ? { openingId: op.id } : {}), directive: op.directive || "", userNote: "", memory: "", memHist: [], pins: [], sinceMem: 0, turn: 0, status: st, bookmarks: [],
     set: defaultSet(c),
     ...(op.lead ? { lead: { text: op.lead.text, turns: op.lead.turns } } : {}),
+    ...(c.episode ? { ep: epInit() } : {}), // 에피소드형 작품: 진행 상태(core/episode.js) — 장·사건·결말은 방의 작품 사본(r.char.episode)에서
     msgs: [{ id: uid("m"), role: "ai", idx: 0, alts: [{ text, status: st, suggestions: (op.suggestions || []).slice(0, 3), opening: true }], statusBefore: st }],
     at: Date.now(), created: Date.now()
   };
@@ -140,5 +143,22 @@ export function forkRoom(r, msgId) {
   f.turn = turn; f.memory = mem[0]; f.sinceMem = mem[2] ? Math.max(0, turn - mem[1]) : Math.max(0, (r.sinceMem || 0) - after);
   f.memHist = []; f.lastErr = ""; f.bookmarks = (r.bookmarks || []).filter((b) => ids.has(b)); f.created = Date.now();
   f.pins = (r.pins || []).filter((p) => !p.msgId || ids.has(p.msgId)).map((p) => ({ ...p })); // 고정 기억은 그 메시지까지에서 고정한 것만(직접 적은 것은 모두)
+  saveRoom(f); return f;
+}
+/**
+ * 외전: 결말까지 끝난 에피소드 방을 통째로 이어받은 새 자유 대화방 — 분기(forkRoom)처럼 대화·장기기억·고정 기억·상태창을 깊은 복사하고, 진행 상태(ep)를 떼고 side에 어떤 외전인지 적음.
+ * 그래서 AI는 그 대화와 결말을 그대로 읽고(프롬프트 고정부의 [외전] — ai/prompt/rules.js), 끝이 없는 자유 대화로 이어 감. 원래 방은 그대로(끝난 채). 첫 추천은 외전 갈래의 SIDE.sug.
+ * @param {Room} r 끝난 에피소드 방 @param {"after"|"pov"|"again"} kind @param {string} [who] 인물 코드(pov·again) @returns {Room|null}
+ */
+export function sideRoom(r, kind, who) {
+  const K = SIDE[kind], last = r.msgs[r.msgs.length - 1];
+  if (!K || !r.ep || !r.ep.over || !last || (K.who && !who)) return null;
+  const f = forkRoom(r, last.id), name = ((r.char.cast || []).find((x) => x.code === who) || {}).name || "";
+  const end = (r.char.episode.endings || []).find((x) => x.id === r.ep.end) || {};
+  delete f.ep; delete f.forkedFrom;
+  f.side = { kind, ...(K.who ? { who } : {}), from: r.id, ending: r.ep.end, endTitle: end.title || "" };
+  f.sideAfter = last.id; f.opening = K.title(name); // 외전 구분선은 이 메시지 뒤(오래된 메시지가 잘려도 어긋나지 않게 id로)
+  const ai = [...f.msgs].reverse().find((m) => m.role === "ai");
+  if (ai) ai.alts[ai.idx].suggestions = K.sug(name); // ✦ AI 추천이 부르지 않고 보여 줌
   saveRoom(f); return f;
 }

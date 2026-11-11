@@ -23,14 +23,18 @@ export const LOCK_LISTS = {
   cuts: { by: "pos", name: "컷씬", pick: (x) => x.title, code: (n) => seriesOf("cuts") + n },
   lore: { by: "pos", name: "키워드북", pick: (x) => (Array.isArray(x.keys) ? x.keys[0] : undefined), code: (n) => "lore-" + n },
   openings: { by: "id", name: "시작 상황", pick: (x) => x.id },
-  cast: { by: "id", name: "인물 코드", pick: (x) => x.code }
+  cast: { by: "id", name: "인물 코드", pick: (x) => x.code },
+  endings: { by: "id", name: "결말", pick: (x) => x.id, of: (c) => c.episode && c.episode.endings } // 에피소드형 작품의 결말 — 내 서재의 '모은 결말'이 id로 기억함
 };
 const list = (v) => (Array.isArray(v) ? v.filter((x) => typeof x === "string") : []);
 
-/** 작품의 지금 식별자들(잠금 파일에 적히는 모양) — { places: [이름…], cuts: [제목…], lore: [첫 키…], openings: [id…], cast: [코드…] }. @param {object} c 작품 */
+/** 작품의 지금 식별자들(잠금 파일에 적히는 모양) — { places: [이름…], cuts: [제목…], lore: [첫 키…], openings: [id…], cast: [코드…], endings: [결말 id…] }. @param {object} c 작품 */
 export function lockOf(c) {
   const out = {};
-  for (const k of Object.keys(LOCK_LISTS)) out[k] = (Array.isArray(c && c[k]) ? c[k] : []).map((x) => (x && typeof x === "object" ? LOCK_LISTS[k].pick(x) : undefined)).map((s) => (typeof s === "string" ? s : ""));
+  for (const k of Object.keys(LOCK_LISTS)) {
+    const L = LOCK_LISTS[k], v = c && (L.of ? L.of(c) : c[k]);
+    out[k] = (Array.isArray(v) ? v : []).map((x) => (x && typeof x === "object" ? L.pick(x) : undefined)).map((s) => (typeof s === "string" ? s : ""));
+  }
   return out;
 }
 /**
