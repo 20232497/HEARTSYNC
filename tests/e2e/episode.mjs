@@ -15,10 +15,10 @@ for (const [dev, engine] of targets) {
     // 상세: 시작 버튼이 등장인물·도감보다 위, 에피소드 안내와 결말 ???, 세계관 일러스트는 접힌 칸
     res.detail = await p.evaluate(() => {
       const top = (el) => el ? el.getBoundingClientRect().top + $("#view").scrollTop : -1, start = $("#start");
-      return { label: start.textContent, info: !!$(".ep-info"), locked: $$(".ep-info .ep-ends span").filter((s) => s.textContent === "???").length, ends: ORIGINALS.find((c) => c.id === "daeyeon").episode.endings.length,
+      return { label: start.textContent, info: !!$(".ep-info"), names: $$(".ep-info .ep-ends span").map((s) => s.textContent).join("|"), want: ORIGINALS.find((c) => c.id === "daeyeon").episode.endings.map((x) => x.title).join("|"), ends: ORIGINALS.find((c) => c.id === "daeyeon").episode.endings.length,
         startTop: Math.round(top(start)), castTop: Math.round(top($(".cast"))), screens: +(top(start) / innerHeight).toFixed(2), art: $("#wArtBox") ? $("#wArtBox").tagName + ($("#wArtBox").open ? " open" : "") : "" };
     });
-    { const d = res.detail; if (d.label !== "에피소드 시작" || !d.info || d.locked !== d.ends || !(d.startTop < d.castTop) || (d.art && d.art !== "DETAILS")) errs.push("상세가 다름: " + JSON.stringify(d)); }
+    { const d = res.detail; if (d.label !== "에피소드 시작" || !d.info || d.names !== d.want || !(d.startTop < d.castTop) || (d.art && d.art !== "DETAILS")) errs.push("상세가 다름: " + JSON.stringify(d)); }
     await p.screenshot({ path: `${out}/${dev.replace(/\W+/g, "_")}_episode_detail.png` });
     await p.evaluate(() => $("#start").click()); await p.waitForTimeout(900);
     res.bar = await p.evaluate(() => ({ hidden: $("#epBar").hidden, text: $("#epBar").textContent, ep: !!room.ep }));
@@ -47,25 +47,26 @@ for (const [dev, engine] of targets) {
     await p.evaluate(() => sendTurn("마지막으로 말한다")); await settle();
     res.end = await p.evaluate(() => {
       const a = room.msgs[room.msgs.length - 1];
-      return { over: room.ep.over, card: !!$(".ep-end"), title: ($(".ep-end .ep-title") || {}).textContent, locked: $$(".ep-end .ep-ends span").filter((s) => s.textContent === "???").length, composer: getComputedStyle($(".composer")).display,
+      return { over: room.ep.over, card: !!$(".ep-end"), title: ($(".ep-end .ep-title") || {}).textContent, chips: $$(".ep-end .ep-ends span").length, seen: $$(".ep-end .ep-ends span.on").map((s) => s.textContent).join(), hidden: $("#view").textContent.includes("???"), composer: getComputedStyle($(".composer")).display,
         prompt: window.__lastInput[0].content.includes("이번 응답으로 이야기를 끝낸다"), shelf: (S.shelf.ends.daeyeon || []).join(), ep1: !!(a.alts[a.idx].ep1 && a.alts[a.idx].ep1.over), ep0: !!a.ep0, again: sendTurnBlocked() };
       function sendTurnBlocked() { return room.ep.over; }
     });
-    if (!res.end.over || !res.end.card || res.end.title !== "생존 · 덮어 둔 진상" || res.end.locked !== 4 || res.end.composer !== "none" || !res.end.prompt || res.end.shelf !== "survival" || !res.end.ep1 || !res.end.ep0) errs.push("결말 카드가 다름: " + JSON.stringify(res.end));
+    if (!res.end.over || !res.end.card || res.end.title !== "생존 · 덮어 둔 진상" || res.end.chips !== 5 || res.end.seen !== "✓ 생존 · 덮어 둔 진상" || res.end.hidden || res.end.composer !== "none" || !res.end.prompt || res.end.shelf !== "survival" || !res.end.ep1 || !res.end.ep0) errs.push("결말 카드가 다름: " + JSON.stringify(res.end));
     await p.evaluate(() => $(".ep-end").scrollIntoView({ block: "center" })); await p.waitForTimeout(200);
     await p.screenshot({ path: `${out}/${dev.replace(/\W+/g, "_")}_episode_end.png` });
     // 외전: 다른 인물과 다시 → 새 자유 대화방(장 막대 없음·입력창 보임·구분 표시·첫 추천)
     res.side = await p.evaluate(async () => {
       const nap = (ms) => new Promise((r) => setTimeout(r, ms)), src = room.id, n0 = S.rooms.length, cast = room.char.cast.filter((x) => !x.of)[1];
       $("#epSide").click(); await nap(200);
-      const kinds = $$(".overlay .side-kind").length, whoHidden0 = $("#sideWho").hidden;
-      document.querySelector('.overlay [data-k="again"]').click(); document.querySelector(`.overlay [data-who="${cast.code}"]`).click();
+      const kinds = $$(".overlay .side-kind").length, first = document.querySelector('.overlay .side-kind[aria-checked="true"]').dataset.k, whoHidden0 = $("#sideWho").hidden;
+      document.querySelector('.overlay [data-k="after"]').click(); const whoAfter = $("#sideWho").hidden;
+      document.querySelector('.overlay [data-k="pov"]').click(); document.querySelector(`.overlay [data-who="${cast.code}"]`).click();
       const whoHidden1 = $("#sideWho").hidden; $("#sideGo").click(); await nap(900);
-      return { kinds, whoHidden0, whoHidden1, moved: room.id !== src && location.hash === "#r-" + room.id, rooms: S.rooms.length - n0, ep: room.ep === undefined, kind: room.side && room.side.kind, who: room.side && room.side.who === cast.code,
-        opening: room.opening === "외전 · " + cast.name + "의 이야기", bar: $("#epBar").hidden, composer: getComputedStyle($(".composer")).display !== "none", pill: !!$(".side-pill"), sug: (room.msgs[room.msgs.length - 1].alts[0].suggestions || []).length,
-        fixed: (rulesParts(room).fixed.match(/\[외전 — 다른 인물과 다시 · /) || []).length };
+      return { kinds, first, whoHidden0, whoAfter, whoHidden1, moved: room.id !== src && location.hash === "#r-" + room.id, rooms: S.rooms.length - n0, ep: room.ep === undefined, kind: room.side && room.side.kind, recap: rulesParts(room).fixed.includes("에피소드에서 있었던 일"), who: room.side && room.side.who === cast.code,
+        opening: room.opening === "외전 · " + cast.name + "의 시점", bar: $("#epBar").hidden, composer: getComputedStyle($(".composer")).display !== "none", pill: !!$(".side-pill"), sug: (room.msgs[room.msgs.length - 1].alts[0].suggestions || []).length,
+        fixed: (rulesParts(room).fixed.match(/\[외전 — 그 인물의 눈으로 다시 보기 · /) || []).length };
     });
-    { const s = res.side; if (s.kinds !== 3 || !s.whoHidden0 || s.whoHidden1 || !s.moved || s.rooms !== 1 || !s.ep || s.kind !== "again" || !s.who || !s.opening || !s.bar || !s.composer || !s.pill || s.sug !== 3 || s.fixed !== 1) errs.push("외전이 다름: " + JSON.stringify(s)); }
+    { const s = res.side; if (s.kinds !== 3 || s.first !== "talk" || s.whoHidden0 || !s.whoAfter || !s.recap || s.whoHidden1 || !s.moved || s.rooms !== 1 || !s.ep || s.kind !== "pov" || !s.who || !s.opening || !s.bar || !s.composer || !s.pill || s.sug !== 3 || s.fixed !== 1) errs.push("외전이 다름: " + JSON.stringify(s)); }
     await p.evaluate(() => { location.hash = "chats"; }); await p.waitForTimeout(600);
     res.chats = await p.evaluate(() => { const t = $("#view").textContent; return { end: t.includes("결말"), side: t.includes("외전") }; });
     if (!res.chats.end || !res.chats.side) errs.push("대화 목록 표시가 다름: " + JSON.stringify(res.chats));

@@ -129,7 +129,7 @@ details.stat[open] summary::after { content:"▴"; }
 .ep-opt { text-align:left; border:1px solid var(--line); background:var(--bg); border-radius:12px; padding:9px 13px; font-size:14px; }
 .ep-opt:hover { border-color:var(--accent); background:var(--accent-soft); }
 .ep-ends { display:flex; flex-wrap:wrap; gap:6px; }
-.ep-ends span { font-size:12px; border:1px dashed var(--line); color:var(--muted); border-radius:999px; padding:3px 10px; }
+.ep-ends span { font-size:12px; border:1px solid var(--line); color:var(--muted); border-radius:999px; padding:3px 10px; }
 .ep-ends span.on { border-style:solid; border-color:var(--accent); color:var(--accent); background:var(--accent-soft); font-weight:600; }
 .ep-card .cta-row { display:flex; gap:8px; flex-wrap:wrap; }
 .chat.ep-over .composer { display:none; }

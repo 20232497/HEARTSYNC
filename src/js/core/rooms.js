@@ -156,7 +156,7 @@ export function sideRoom(r, kind, who) {
   const f = forkRoom(r, last.id), name = ((r.char.cast || []).find((x) => x.code === who) || {}).name || "";
   const end = (r.char.episode.endings || []).find((x) => x.id === r.ep.end) || {};
   delete f.ep; delete f.forkedFrom;
-  f.side = { kind, ...(K.who ? { who } : {}), from: r.id, ending: r.ep.end, endTitle: end.title || "" };
+  f.side = { kind, ...(K.who ? { who } : {}), from: r.id, ending: r.ep.end, endTitle: end.title || "", picks: { ...r.ep.picks }, seen: r.ep.seen.slice() };
   f.sideAfter = last.id; f.opening = K.title(name); // 외전 구분선은 이 메시지 뒤(오래된 메시지가 잘려도 어긋나지 않게 id로)
   const ai = [...f.msgs].reverse().find((m) => m.role === "ai");
   if (ai) ai.alts[ai.idx].suggestions = K.sug(name); // ✦ AI 추천이 부르지 않고 보여 줌

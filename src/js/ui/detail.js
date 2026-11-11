@@ -11,6 +11,7 @@ import { S, room, setRoom } from "../core/state.js";
 import { $, $$, ago, esc, toast } from "../core/util.js";
 import { FREE_DAILY, plan, qShort, quote } from "../core/wallet.js";
 import { IMG } from "../services/images.js";
+import { endsHTML } from "./chat/episode.js";
 import { bindCast, bindCodex, castGridHTML, codexHTML, collectHTML, guideHTML, metaHTML } from "./codex.js";
 import { coverHTML, lightbox } from "./cover.js";
 import { rowHTML } from "./home.js";
@@ -72,12 +73,12 @@ export function viewDetail(id) {
   };
 }
 
-/** 에피소드형 작품의 안내 칸 — 장 수·결말 수·대략의 턴 수와 모은 결말(본 것만 이름, 나머지 ???). 자유형이면 "". @param {import("../core/types.js").Work} c */
+/** 에피소드형 작품의 안내 칸 — 장 수·결말 수·대략의 턴 수와 결말 이름(모두 보이고 본 것에 ✓). 자유형이면 "". @param {import("../core/types.js").Work} c */
 function epInfoHTML(c) {
   const ep = c.episode; if (!ep) return "";
   const got = endsSet(c.id), n = ep.endings.filter((x) => got.has(x.id)).length;
   return `<div class="box ep-info"><h3>에피소드 <small>끝이 있는 이야기</small></h3>
-    <p>${ep.beats.length}장 · 결말 ${ep.endings.length}개 · 약 ${epLength(ep)}턴 — 고른 길과 행동에 따라 결말이 갈려요. 결말을 본 뒤에는 그 대화를 이어받아 외전(자유 대화)으로 이어 갈 수 있어요. 요금은 자유 대화와 같은 턴당 하트예요.</p>
-    <div class="ep-ends" aria-label="모은 결말 ${n} / ${ep.endings.length}">${ep.endings.map((x) => `<span class="${got.has(x.id) ? "on" : ""}">${got.has(x.id) ? esc(x.title) : "???"}</span>`).join("")}</div>
+    <p>${ep.beats.length}장 · 결말 ${ep.endings.length}개 · 약 ${epLength(ep)}턴 — 고른 길과 행동에 따라 결말이 갈려요. 결말을 본 뒤에는 그 대화를 이어받아 외전 — 인물과 더 나누는 이야기, 다른 인물의 눈으로 다시 보는 사건 — 으로 이어 갈 수 있어요. 요금은 자유 대화와 같은 턴당 하트예요.</p>
+    ${endsHTML(ep, got)}
     <span class="note">모은 결말 ${n} / ${ep.endings.length}</span></div>`;
 }

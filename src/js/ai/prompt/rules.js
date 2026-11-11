@@ -140,7 +140,19 @@ function modeHead(r) {
 [외전 — ${K.label}${name ? " · " + name : ""}]
 - 이 방은 「${c.title}」의 결말${s.endTitle ? ` 「${s.endTitle}」` : ""} 뒤에 이어지는 외전이다. 그 결말과 지금까지의 대화는 실제로 일어난 일이다. 되돌리거나 결말을 다시 내지 않는다.
 - 끝이 정해지지 않은 자유 대화로 이어 간다. ${K.line(name)}
-`;
+${sideRecap(c.episode, s)}`;
+}
+/* 외전의 '있었던 일' — 원래 에피소드의 장(제목·목표)·고른 길·본 사건·결말 줄거리. 오래된 대화가 기억력 밖으로 밀려도 이 요약은 늘 고정부에(시점 외전이 사건을 차례로 다시 그릴 재료). 방마다 정해진 값이라 고정부에 둠 */
+function sideRecap(ep, s) {
+  if (!ep) return "";
+  const path = Object.keys(s.picks || {}).map((id) => { const ch = choiceOf(ep, id), o = ch && ch.options.find((x) => x.id === s.picks[id]); return ch && o ? `'${ch.ask}' → ${o.label}` : ""; }).filter(Boolean);
+  const evs = (s.seen || []).map((id) => (ep.events || []).find((x) => x.id === id)).filter(Boolean).map((x) => x.title);
+  const end = ep.endings.find((x) => x.id === s.ending);
+  return [`- 에피소드에서 있었던 일(대화 기록·장기 기억과 함께 사실로 다룬다):`,
+    ...ep.beats.map((b, i) => `  ${i + 1}장 「${b.title}」 ${b.goal}`),
+    path.length ? `  유저가 고른 길: ${path.join(" / ")}` : "",
+    evs.length ? `  일어난 사건: ${evs.join(", ")}` : "",
+    end ? `  결말 「${end.title}」: ${end.brief}` : ""].filter(Boolean).join("\n") + "\n";
 }
 /* 변동부의 [에피소드 진행] — 이번 응답의 지시(epPlan). 결말을 정한 턴은 결말 장면만 */
 function epProgress(ep, st, plan) {

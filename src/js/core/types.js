@@ -144,7 +144,7 @@
  * @typedef {{ t: number, beat: number, picks: Record<string, string>, seen: string[], ask: string, askAt: number, evAt: number, end: string, over: boolean }} EpState
  */
 /** 이번 응답에 줄 지시(core/episode.js epPlan) — phase: early 서두르지 않음 · open 흐름이 닿으면 · due 반드시 매듭. @typedef {{ turn: number, n: number, beat: EpBeat|null, phase: ""|"early"|"open"|"due", event: EpEvent|null, ask: EpChoice|null, ending: EpEnding|null }} EpPlan */
-/** 외전 — 끝난 에피소드 방을 이어받은 자유 대화방(core/rooms.js sideRoom). kind: after 결말 뒤 · pov 다른 인물의 시점 · again 다른 인물과 다시. @typedef {{ kind: "after"|"pov"|"again", who?: string, from: string, ending: string, endTitle: string }} Side */
+/** 외전 — 끝난 에피소드 방을 이어받은 자유 대화방(core/rooms.js sideRoom). kind: talk 그 인물과 더 이야기 · pov 그 인물의 시점 · after 결말 뒤. picks·seen은 원래 방의 고른 길·본 사건(프롬프트의 '있었던 일'). @typedef {{ kind: "talk"|"pov"|"after", who?: string, from: string, ending: string, endTitle: string, picks: Record<string, string>, seen: string[] }} Side */
 /**
  * 내 페르소나(대화에서 내가 연기하는 인물).
  * @typedef {Object} Persona

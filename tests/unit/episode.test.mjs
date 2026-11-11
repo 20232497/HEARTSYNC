@@ -86,7 +86,8 @@ test("외전: 끝난 에피소드 방만 — 대화를 그대로 이어받고 �
   assert.equal(sideRoom(r, "pov", ""), null, "인물이 필요한 갈래");
   assert.ok(f && f.id !== r.id);
   assert.equal(f.ep, undefined); assert.equal(f.forkedFrom, undefined);
-  assert.deepEqual(f.side, { kind: "pov", who: who.code, from: r.id, ending: "plain", endTitle: "기본 끝" });
+  assert.deepEqual(f.side, { kind: "pov", who: who.code, from: r.id, ending: "plain", endTitle: "기본 끝", picks: {}, seen: [] });
+  assert.equal(Object.keys(SIDE)[0], "talk", "인물과 더 이야기하기가 기본(첫째)");
   assert.equal(f.sideAfter, "a1"); assert.equal(f.msgs.length, r.msgs.length);
   assert.equal(f.opening, SIDE.pov.title(who.name));
   assert.deepEqual(f.msgs[f.msgs.length - 1].alts[0].suggestions, SIDE.pov.sug(who.name));
@@ -108,6 +109,8 @@ test("프롬프트: 에피소드 방은 고정부에 장 목록(진행이 바뀌
   r.msgs.push({ id: "a9", role: "ai", idx: 0, alts: [{ text: "끝", status: r.status, suggestions: [] }], statusBefore: r.status });
   const f = sideRoom(r, "after"), s = rulesParts(f);
   assert.ok(s.fixed.includes("[외전 — 결말 뒤의 이야기]") && s.fixed.includes("「왼쪽 끝」"));
+  assert.ok(s.fixed.includes("에피소드에서 있었던 일") && s.fixed.includes("1장 「하나」 첫 장 목표") && s.fixed.includes("'어느 길로?' → 왼쪽") && s.fixed.includes("결말 「왼쪽 끝」: 왼쪽 줄거리"), "외전 고정부에 원래 에피소드의 요약");
+  const t = rulesParts(sideRoom(r, "talk", r.char.cast[0].code)); assert.ok(t.fixed.includes("[외전 — 그 인물과 더 이야기하기 · " + r.char.cast[0].name + "]"));
   assert.ok(!s.fixed.includes("[에피소드 —") && !s.vary.includes("[에피소드 진행") && !s.tail.includes('"_ep"'));
 });
 test("작품: 에피소드를 적은 작품은 결말이 둘 이상이고 마지막 결말만 조건이 없음(빌드 검사와 같은 규칙)", () => {
