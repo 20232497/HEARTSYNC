@@ -1,0 +1,293 @@
+{
+  "id": "manime",
+  "name": "남성향 애니",
+  "version": "v6",
+  "decided": "2026-11-11",
+  "status": "확정",
+  "model": {
+    "id": "civitai:1188071@1408658",
+    "name": "Animagine XL 4.0",
+    "license": "CreativeML Open RAIL++-M — 그림 판매 O, 앱 안 생성 O, 작가 표기 불필요"
+  },
+  "gen": {
+    "steps": 28,
+    "scheduler": "Euler a",
+    "cfg": 5,
+    "width": 832,
+    "height": 1248,
+    "promptWeighting": "sdEmbeds(가중치가 있을 때)"
+  },
+  "order": "인원·성인 → 수위 → 인물 태그(×1.15, 머리색·머리 모양·눈색 ×1.3) → 소품(charm.prop — 0번 칸·전신) → 장면·표정(×1.15) → 배경 → 남자 짧은 머리 → 화풍 → 품질(맨 끝)",
+  "subject": {
+    "f": "1girl, solo, (adult woman:1.1)",
+    "m": "1boy, solo, (adult man:1.2), (mature male:1.15)"
+  },
+  "rating": "safe",
+  "contentWeight": 1.15,
+  "hairWeight": {
+    "weight": 1.3,
+    "rule": "인물 태그의 첫 머리색 태그(… hair)와 묶은 머리 태그(ponytail·updo·bun·braid·hair up·tied hair·chignon)를 1.3으로"
+  },
+  "bg": "(black background:1.2), simple background, sparkle, glowing particles, glint, (backlighting:0.9)",
+  "style": {
+    "f": "game cg, official art, illustration, (sharp lineart:1.2), (detailed hair strands:1.2), (beautiful detailed eyes:1.2), (hatching \\(texture\\):1.1), soft lighting, (blush:0.6), (nose blush:0.5), pink lips, detailed hair, (detailed eyes:1.2), detailed iris, long eyelashes, (fair skin:1.2), depth of field",
+    "m": "game cg, official art, illustration, (sharp lineart:1.2), (detailed hair strands:1.2), (beautiful detailed eyes:1.2), lower eyelashes, (hatching \\(texture\\):1.1), soft lighting, detailed hair, (detailed eyes:1.2), detailed iris, long eyelashes, (fair skin:1.2), depth of field"
+  },
+  "quality": "masterpiece, high score, great score, absurdres, year 2024",
+  "maleShortHair": {
+    "pos": "(short hair:1.3)",
+    "neg": "long hair, ponytail"
+  },
+  "negative": {
+    "f": "lowres, bad anatomy, bad hands, text, error, missing fingers, extra digits, fewer digits, cropped, worst quality, low quality, low score, bad score, average score, signature, watermark, username, blurry, child, loli, shota, underage, toddler, aged down, nsfw, sensitive, cleavage, revealing clothes, (large breasts:1.2), huge breasts, curvy, ass focus, (anime coloring:1.2), anime screencap, flat color, key, keychain, dark skin, tanned skin, (shadow over face:1.2), glowing eyes, red skin, colored skin, rainbow, realistic, 3d, baby face, round face, chibi, dark-skinned male, dark-skinned female, (tan:1.1), (shaded face:1.2), face in shadow, (blank eyes:1.2), (empty eyes:1.1), no pupils, eyeshadow, (eyeliner:1.1), (multicolored hair:1.2), streaked hair, colored inner hair, gradient hair",
+    "m": "lowres, bad anatomy, bad hands, text, error, missing fingers, extra digits, fewer digits, cropped, worst quality, low quality, low score, bad score, average score, signature, watermark, username, blurry, child, loli, shota, underage, toddler, aged down, nsfw, sensitive, cleavage, revealing clothes, (large breasts:1.2), huge breasts, curvy, ass focus, (anime coloring:1.2), anime screencap, flat color, key, keychain, dark skin, tanned skin, (shadow over face:1.2), glowing eyes, red skin, colored skin, rainbow, realistic, 3d, long hair, ponytail, (baby face:1.2), (round face:1.1), (blush:1.1), chibi, dark-skinned male, dark-skinned female, (tan:1.1), (shaded face:1.2), face in shadow, (blank eyes:1.2), (empty eyes:1.1), no pupils, eyeshadow, (eyeliner:1.1), (multicolored hair:1.2), streaked hair, colored inner hair, gradient hair",
+    "rule": "장면 태그가 부른 낱말(3·14번 blush 등)은 네거티브에서 뺌",
+    "streak": "(multicolored hair:1.2), streaked hair, colored inner hair, gradient hair — 눈색이 검은 머리에 브릿지처럼 번지는 것을 줄임(작품에 투톤 머리 인물이 생기면 그 인물만 뺄 것)"
+  },
+  "sceneTags": {
+    "0": "(portrait:1.1), upper body, head tilt, looking at viewer, light smile, closed mouth",
+    "1": "upper body, looking at viewer, relaxed expression, half-lidded eyes, closed mouth, soft gaze",
+    "2": "upper body, looking at viewer, happy, smile, half-lidded eyes, closed mouth",
+    "3": "upper body, looking to the side, blush, embarrassed, shy smile, half-lidded eyes, closed mouth",
+    "4": "upper body, looking at viewer, sad, (tears:1.2), teary eyes, downturned eyes, parted lips",
+    "5": "upper body, looking at viewer, surprised, wide eyes, raised eyebrows, parted lips",
+    "6": "upper body, looking at viewer, angry, furrowed brow, glaring, frown, closed mouth",
+    "7": "upper body, looking to the side, pout, annoyed, furrowed brow, crossed arms",
+    "8": "upper body, looking at viewer, scared, worried, wide eyes, raised inner eyebrows, parted lips, sweat",
+    "9": "upper body, looking at viewer, injured, bandages, bruise, pained expression, parted lips",
+    "10": "upper body, looking at viewer, relieved, gentle smile, half-lidded eyes, relaxed expression, soft light",
+    "11": "sleeping, closed eyes, lying down, peaceful, pillow",
+    "12": "fighting stance, clenched hands, action pose, determined, intense gaze, closed mouth",
+    "13": "upper body, (detailed iris:1.2), aura, magic, floating hair, intense gaze, (lightning:1.1), electricity",
+    "14": "upper body, looking at viewer, blush, gentle smile, half-lidded eyes, soft gaze, relaxed expression"
+  },
+  "effects": {
+    "lightning": "(lightning:1.1), electricity — 13번(각성) 칸에 들어 있음. 다른 칸에 늘 넣지는 않음"
+  },
+  "examples": [
+    {
+      "code": "HSY",
+      "kind": "upper",
+      "slot": 0,
+      "positive": "1girl, solo, (adult woman:1.1), safe, (black hair:1.3), (high ponytail:1.3), (side-swept bangs:1.15), (arched eyebrows:1.15), (sharp eyes:1.15), (amber eyes:1.3), (white fencing uniform:1.15), (high collar:1.15), (rapier:1.15), (portrait:1.1), (upper body:1.15), (head tilt:1.15), (looking at viewer:1.15), (smirk:1.1), (closed mouth:1.15), (from side:0.6), (hair over shoulder:1.2), (from above:0.6), (black background:1.2), simple background, sparkle, glowing particles, glint, (backlighting:0.9), game cg, official art, illustration, (sharp lineart:1.2), (detailed hair strands:1.2), (beautiful detailed eyes:1.2), (hatching \\(texture\\):1.1), soft lighting, (blush:0.6), (nose blush:0.5), pink lips, detailed hair, (detailed eyes:1.2), detailed iris, long eyelashes, (fair skin:1.2), depth of field, masterpiece, high score, great score, absurdres, year 2024",
+      "negative": "lowres, bad anatomy, bad hands, text, error, missing fingers, extra digits, fewer digits, cropped, worst quality, low quality, low score, bad score, average score, signature, watermark, username, blurry, child, loli, shota, underage, toddler, aged down, nsfw, sensitive, cleavage, revealing clothes, (large breasts:1.2), huge breasts, curvy, ass focus, (anime coloring:1.2), anime screencap, flat color, key, keychain, dark skin, tanned skin, (shadow over face:1.2), glowing eyes, red skin, colored skin, rainbow, realistic, 3d, baby face, round face, chibi, dark-skinned male, dark-skinned female, (tan:1.1), (shaded face:1.2), face in shadow, (blank eyes:1.2), (empty eyes:1.1), no pupils, eyeshadow, (eyeliner:1.1), (multicolored hair:1.2), streaked hair, colored inner hair, gradient hair"
+    },
+    {
+      "code": "RGN",
+      "kind": "upper",
+      "slot": 0,
+      "positive": "1boy, solo, (adult man:1.2), (mature male:1.15), safe, (black hair:1.3), (very short hair:1.15), (orange eyes:1.3), (broad shoulders:1.15), (black t-shirt:1.15), (scorched firefighter jacket:1.15), (improvised shield:1.15), (rectangular metal shield:1.15), (portrait:1.1), (upper body:1.15), (head tilt:1.15), (looking at viewer:1.15), (light smile:1.15), (closed mouth:1.15), (black background:1.2), simple background, sparkle, glowing particles, glint, (backlighting:0.9), (short hair:1.3), game cg, official art, illustration, (sharp lineart:1.2), (detailed hair strands:1.2), (beautiful detailed eyes:1.2), lower eyelashes, (hatching \\(texture\\):1.1), soft lighting, detailed hair, (detailed eyes:1.2), detailed iris, long eyelashes, (fair skin:1.2), depth of field, masterpiece, high score, great score, absurdres, year 2024",
+      "negative": "lowres, bad anatomy, bad hands, text, error, missing fingers, extra digits, fewer digits, cropped, worst quality, low quality, low score, bad score, average score, signature, watermark, username, blurry, child, loli, shota, underage, toddler, aged down, nsfw, sensitive, cleavage, revealing clothes, (large breasts:1.2), huge breasts, curvy, ass focus, (anime coloring:1.2), anime screencap, flat color, key, keychain, dark skin, tanned skin, (shadow over face:1.2), glowing eyes, red skin, colored skin, rainbow, realistic, 3d, long hair, ponytail, (baby face:1.2), (round face:1.1), (blush:1.1), chibi, dark-skinned male, dark-skinned female, (tan:1.1), (shaded face:1.2), face in shadow, (blank eyes:1.2), (empty eyes:1.1), no pupils, eyeshadow, (eyeliner:1.1), (multicolored hair:1.2), streaked hair, colored inner hair, gradient hair"
+    },
+    {
+      "code": "SRN",
+      "kind": "upper",
+      "slot": 12,
+      "positive": "1girl, solo, (adult woman:1.1), safe, (silver hair:1.3), (wavy hair:1.15), (side-swept bangs:1.15), (upturned eyes:1.15), (purple eyes:1.3), (arched eyebrows:1.15), (mole under eye:1.15), (pirate hat:1.15), (red coat:1.15), (pirate:1.15), (dual wielding:1.15), (pistols:1.15), (fighting stance:1.15), (clenched hands:1.15), (action pose:1.15), (determined:1.15), (intense gaze:1.15), (closed mouth:1.15), (black background:1.2), simple background, sparkle, glowing particles, glint, (backlighting:0.9), game cg, official art, illustration, (sharp lineart:1.2), (detailed hair strands:1.2), (beautiful detailed eyes:1.2), (hatching \\(texture\\):1.1), soft lighting, (blush:0.6), (nose blush:0.5), pink lips, detailed hair, (detailed eyes:1.2), detailed iris, long eyelashes, (fair skin:1.2), depth of field, masterpiece, high score, great score, absurdres, year 2024",
+      "negative": "lowres, bad anatomy, bad hands, text, error, missing fingers, extra digits, fewer digits, cropped, worst quality, low quality, low score, bad score, average score, signature, watermark, username, blurry, child, loli, shota, underage, toddler, aged down, nsfw, sensitive, cleavage, revealing clothes, (large breasts:1.2), huge breasts, curvy, ass focus, (anime coloring:1.2), anime screencap, flat color, key, keychain, dark skin, tanned skin, (shadow over face:1.2), glowing eyes, red skin, colored skin, rainbow, realistic, 3d, baby face, round face, chibi, dark-skinned male, dark-skinned female, (tan:1.1), (shaded face:1.2), face in shadow, (blank eyes:1.2), (empty eyes:1.1), no pupils, eyeshadow, (eyeliner:1.1), (multicolored hair:1.2), streaked hair, colored inner hair, gradient hair"
+    },
+    {
+      "code": "HSY",
+      "kind": "full",
+      "slot": 0,
+      "positive": "1girl, solo, (adult woman:1.2), safe, (black hair:1.3), (high ponytail:1.3), (side-swept bangs:1.15), (arched eyebrows:1.15), (sharp eyes:1.15), (amber eyes:1.3), (white fencing uniform:1.15), (high collar:1.15), (rapier:1.15), (full body:1.2), (standing:1.15), (fencing stance:1.15), (holding rapier:1.15), (looking at viewer:1.15), (smirk:1.1), (closed mouth:1.15), (from side:0.6), (hair over shoulder:1.2), (black background:1.2), simple background, sparkle, glowing particles, glint, (backlighting:0.9), game cg, official art, illustration, (sharp lineart:1.2), (detailed hair strands:1.2), (beautiful detailed eyes:1.2), (hatching \\(texture\\):1.1), soft lighting, (blush:0.6), (nose blush:0.5), pink lips, detailed hair, (detailed eyes:1.2), detailed iris, long eyelashes, (fair skin:1.2), depth of field, masterpiece, high score, great score, absurdres, year 2024",
+      "negative": "lowres, bad anatomy, bad hands, text, error, missing fingers, extra digits, fewer digits, cropped, worst quality, low quality, low score, bad score, average score, signature, watermark, username, blurry, child, loli, shota, underage, toddler, aged down, nsfw, sensitive, cleavage, revealing clothes, (large breasts:1.2), huge breasts, curvy, ass focus, (anime coloring:1.2), anime screencap, flat color, key, keychain, dark skin, tanned skin, (shadow over face:1.2), glowing eyes, red skin, colored skin, rainbow, realistic, 3d, baby face, round face, chibi, dark-skinned male, dark-skinned female, (tan:1.1), (shaded face:1.2), face in shadow, (blank eyes:1.2), (empty eyes:1.1), no pupils, eyeshadow, (eyeliner:1.1), (upper body:1.1), (portrait:1.1), close-up, cowboy shot, feet out of frame, (chibi:1.3), super deformed, (multicolored hair:1.2), streaked hair, colored inner hair, gradient hair"
+    }
+  ],
+  "changesFromV1": [
+    "결: 광택 태그 (glossy hair:1.3)·(shiny hair highlights:1.2)와 soft shading·gradient shading을 빼고 (hatching (texture):1.1) — 매끈한 광택 대신 머리에 먹선 획이 생김",
+    "표정(0번 칸만): 눈매가 sharp·narrow·upturned면 (smirk:1.1), round·droopy면 (smile:1.1), 그 밖은 light smile",
+    "높은 포니테일(0번 칸, ponytail이 든 인물만): (from side:0.6), (hair over shoulder:1.2) — 땋은 머리는 정면에서도 보여 그대로",
+    "여성 인물만 (makeup:0.7), lips — 성숙한 인상",
+    "질감 LoRA는 쓰지 않음(그림 판매 허용 넷을 시험 — 결이 거의 안 바뀌고 값이 두 배)"
+  ],
+  "exprRule": {
+    "first": "charm의 expr(인물별 — 외형 글의 표정)",
+    "then": {
+      "sharp eyes|narrow eyes|upturned eyes": "(smirk:1.1), closed mouth",
+      "round eyes|droopy eyes": "(smile:1.1), closed mouth",
+      "else": "light smile, closed mouth"
+    },
+    "slots": [
+      0
+    ]
+  },
+  "ponytailRule": {
+    "when": "인물 태그에 ponytail",
+    "add": "(from side:0.6), (hair over shoulder:1.2)",
+    "slots": [
+      0
+    ]
+  },
+  "changesFromV2": [
+    "네거티브에 (shaded face:1.2), face in shadow, (blank eyes:1.2), (empty eyes:1.1), no pupils를 더함 — 그늘진 얼굴·홍채 없는 눈을 막음",
+    "일상 화풍에서 물려받은 네거티브 thick outlines·bold outlines를 뺌 — 먹선이 조금 더 굵어짐",
+    "배경에 (backlighting:0.9) — 머리 가장자리가 밝게 빛남얼굴 그늘 네거티브와 함께라 v1 때처럼 얼굴이 어두워지지 않음",
+    "선택: 배경에 (lightning:0.8), electricity를 더하면 인물마다 기운 효과(lightningOption)"
+  ],
+  "sizes": {
+    "cast": "832x1248",
+    "place": "1248x832",
+    "cut": "1248x832",
+    "lore": "1248x832",
+    "cover": "960x1280"
+  },
+  "changesFromV3": [
+    "여성 인물만 성숙 태그를 낮춤: (adult woman:1.2), (mature female:1.15) → (adult woman:1.1)",
+    "여성 인물만 네거티브 (baby face:1.2), (round face:1.1), (blush:1.1), chibi → baby face, round face, chibi (홍조 금지는 뺌)",
+    "여성 인물의 화장: (makeup:0.7), lips → (blush:0.6), (nose blush:0.5), pink lips, 아랫속눈썹(lower eyelashes) 뺌",
+    "네거티브에 eyeshadow, (eyeliner:1.1) 더함(진한 눈 화장 대신 옅게 — 남녀 모두)",
+    "여성 인물의 0번 칸에 (from above:0.6) — 턱이 짧아 보이는 각도",
+    "표정은 v3의 눈매 규칙 그대로(다양하게 — 사용자 결정)",
+    "성인 표시(adult woman)와 네거티브 child·loli·shota·underage·toddler·aged down·baby face는 그대로",
+    "인물마다 눈색(작품 태그, 가중 1.3) — 전에는 태그에 눈색이 없어 그림마다 바뀌었음",
+    "0번 칸에 외형 글의 특징(소품)·표정(charm) — 표정은 인물별 expr이 있으면 그것, 없으면 눈매 규칙",
+    "네거티브에 머리 번짐 막기(negative.streak)",
+    "전신 그림 규칙(fullBody) 새로",
+    "생성 크기 832×1216 → 832×1248(그림 규격 확정 — 2:3)"
+  ],
+  "adultNeg": {
+    "f": "baby face, round face, chibi",
+    "m": "(baby face:1.2), (round face:1.1), (blush:1.1), chibi"
+  },
+  "makeup": {
+    "f": "(blush:0.6), (nose blush:0.5), pink lips",
+    "m": ""
+  },
+  "fullBody": {
+    "size": "832x1248",
+    "scene": "(full body:1.2), standing, <자세 — charm.pose>, looking at viewer, <표정>",
+    "subjectF": "1girl, solo, (adult woman:1.2)",
+    "negExtra": "(upper body:1.1), (portrait:1.1), close-up, cowboy shot, feet out of frame, (chibi:1.3), super deformed",
+    "note": "전신은 위에서 본 각도(from above)를 넣지 않음. 성인 가중 1.2와 치비 네거티브는 아이 같은 비율(2026-11-11 시험에서 겁먹은 큰 눈 + 둥근 눈 인물)을 막으려고 — 빼지 말 것"
+  },
+  "eyeColor": {
+    "weight": 1.3,
+    "rule": "작품 태그의 눈색(색 + eyes — 눈매 태그 sharp·narrow·round·droopy·upturned·tired·bright eyes는 아님)을 머리색처럼 1.3으로. 눈색은 작품의 tags에 있음(2026-11-11 커밋)"
+  },
+  "charm": {
+    "godseats/HSY": {
+      "eye": "amber eyes (작품 태그에 있음)",
+      "pose": "fencing stance, holding rapier"
+    },
+    "godseats/DHR": {
+      "eye": "green eyes (작품 태그에 있음)",
+      "pose": "hands in pockets"
+    },
+    "godseats/RGN": {
+      "eye": "orange eyes (작품 태그에 있음)",
+      "pose": "holding shield, standing firm"
+    },
+    "godseats/SRN": {
+      "eye": "purple eyes (작품 태그에 있음)",
+      "pose": "dual wielding, hand on hip"
+    },
+    "godseats/YNH": {
+      "eye": "red eyes (작품 태그에 있음)",
+      "pose": "arms behind back"
+    },
+    "godseats/YCI": {
+      "eye": "blue eyes (작품 태그에 있음)",
+      "prop": "holding tumbler",
+      "pose": "hand in pocket"
+    },
+    "godseats/KYL": {
+      "eye": "aqua eyes (작품 태그에 있음)",
+      "pose": "holding revolver, hand on hip"
+    },
+    "godseats/BYU": {
+      "eye": "pink eyes (작품 태그에 있음)",
+      "prop": "holding talisman",
+      "pose": "outstretched arm"
+    },
+    "hangyeoul/HGU": {
+      "eye": "green eyes (작품 태그에 있음)",
+      "prop": "paint on hands",
+      "pose": "holding paintbrush"
+    },
+    "baekya/SHJ": {
+      "eye": "orange eyes (작품 태그에 있음)",
+      "prop": "burn scar",
+      "pose": "holding wrench, wrench over shoulder"
+    },
+    "baekya/HRN": {
+      "eye": "yellow eyes (작품 태그에 있음)",
+      "expr": "(smug:1.1), closed mouth",
+      "pose": "arms crossed"
+    },
+    "baekya/CYR": {
+      "eye": "light blue eyes (작품 태그에 있음)",
+      "pose": "holding sniper rifle, rifle over shoulder"
+    },
+    "baekya/MSO": {
+      "eye": "green eyes (작품 태그에 있음)",
+      "expr": "(smile:1.1), open mouth",
+      "pose": "own hands clasped"
+    },
+    "baekya/YDG": {
+      "eye": "purple eyes (작품 태그에 있음)",
+      "prop": "holding bottle",
+      "pose": "hand in pocket"
+    },
+    "daeyeon/IHW": {
+      "eye": "blue eyes (작품 태그에 있음)",
+      "expr": "expressionless, closed mouth",
+      "pose": "hands in opposite sleeves"
+    },
+    "daeyeon/SRY": {
+      "eye": "amber eyes (작품 태그에 있음)",
+      "pose": "fighting stance, holding weapon"
+    },
+    "daeyeon/JOK": {
+      "eye": "green eyes (작품 태그에 있음)",
+      "pose": "holding basket"
+    },
+    "daeyeon/WLH": {
+      "eye": "purple eyes (작품 태그에 있음)",
+      "expr": "(half-closed eyes:0.8), smile, closed mouth",
+      "pose": "holding folding fan"
+    },
+    "daeyeon/DNB": {
+      "eye": "yellow eyes (작품 태그에 있음)",
+      "expr": "nervous smile, closed mouth",
+      "pose": "holding bells, holding fan"
+    },
+    "sipjeol/NGS": {
+      "eye": "blue eyes (작품 태그에 있음)",
+      "expr": "expressionless, closed mouth",
+      "pose": "holding sword, sword at side"
+    },
+    "sipjeol/DSS": {
+      "eye": "purple eyes (작품 태그에 있음)",
+      "expr": "(smirk:1.1), one eye closed",
+      "pose": "hand on hip"
+    },
+    "sipjeol/HWN": {
+      "eye": "aqua eyes (작품 태그에 있음)",
+      "pose": "carrying box"
+    },
+    "sipjeol/MKR": {
+      "eye": "red eyes (작품 태그에 있음)",
+      "expr": "(smirk:1.1), (half-closed eyes:0.8)",
+      "pose": "arms crossed"
+    },
+    "sipjeol/HRN": {
+      "eye": "amber eyes (작품 태그에 있음)",
+      "expr": "(grin:1.1), open mouth",
+      "pose": "holding staff, staff over shoulder"
+    },
+    "yunhaera/YHR": {
+      "eye": "purple eyes (작품 태그에 있음)",
+      "pose": "hand on hip"
+    }
+  },
+  "charmNote": "prop은 0번 칸·전신에 더하는 소품(작품 태그에 이미 있으면 겹쳐 넣지 않음 — paint on hands·burn scar는 태그로 옮겼음). expr은 0번 칸 표정, pose는 전신 자세. 감정 칸 1~14는 sceneTags 그대로",
+  "tagFixes": {
+    "done": "2026-11-11 커밋 — 25명 tags에 눈색, HGU paint on hands·SHJ burn scar, SRN·WLH beauty mark → mole under eye"
+  },
+  "lightningOption": {
+    "bg": "(black background:1.2), simple background, sparkle, glowing particles, glint, (backlighting:0.9), (lightning:0.8), electricity",
+    "note": "모든 프로필 그림에 번개가 들어감 — 사용자가 고름",
+    "status": "확정 화풍 위에서 다시 시험 예정(2026-11-11 사용자: 번개는 화풍 확정 뒤)"
+  }
+}
