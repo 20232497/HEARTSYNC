@@ -172,6 +172,8 @@ test("오리지널 작품의 실제 요청(프롬프트 틀 포함)은 서버 �
     const sent = [{ role: "system", content: input[0].content }, ...input.slice(1)]; // ai/llm.js가 관문에 보내는 모양
     assert.equal(messagesMinorHint(sent), false, `${c.id} · ${c.openings[i].title} · ${track || "general"}`);
     assert.equal(/암전/.test(input[0].content), !track, `${c.id}: 암전 지시는 일반 트랙에만`);
-    assert.match(input[0].content, /모든 등장인물은 성인이다/);
+    // '모두 성인' 지정은 성인 트랙만, 전체이용가(일반 트랙)는 나이 제한 없이 연애·성적 장면만 막음(2026-11-11 사용자 결정)
+    assert.equal(/모든 등장인물은 성인이다/.test(input[0].content), !!track, `${c.id}: '모두 성인'은 성인 트랙에만`);
+    assert.equal(/성인이 아니거나 그렇게 보이는 인물\(유저 캐릭터 포함\)이 끼는 연애·성적인 관계나 장면은 쓰지 않는다/.test(input[0].content), !track, `${c.id}: 일반 트랙의 연애·성적 장면 금지`);
   }
 });
