@@ -1,0 +1,104 @@
+{
+  "id": "fdaily",
+  "name": "여성향 일상(남성 인물)",
+  "decided": "2026-11-06",
+  "model": {
+    "id": "civitai:548016@861939",
+    "name": "세미리얼 PonyXL (Run七八造 v2)",
+    "arch": "pony"
+  },
+  "lora": [
+    {
+      "model": "civitai:390892@1286572",
+      "weight": 0.1
+    },
+    {
+      "model": "civitai:690861@773211",
+      "weight": 0.3
+    },
+    {
+      "model": "civitai:468265@539667",
+      "weight": 0.8
+    }
+  ],
+  "gen": {
+    "cfg": 4.5,
+    "steps": 35,
+    "scheduler": "DPM++ 2M Karras",
+    "modelNeg": false
+  },
+  "prompt": "adult man, (facing viewer:1.7), (straight-on:1.6), (front view:1.4), (head straight:1.3), (thick neck:1.4), (trapezius:1.25), (muscular male:1.3), (broad shoulders:1.4), (thick arms:1.2), (broad chest:1.2), (short hair:1.15), (hair reaching neck:1.25), (parted bangs:1.3), (curtained hair:1.3), (sidelocks:1.2), (long bangs:1.2), (ends curving outward:1.25), (layered hair:1.2), source_anime, (digital illustration:1.5), (anime illustration:1.45), (anime coloring:1.25), (soft painting:1.35), (colored lineart:1.25), (soft edges:1.2), korean, 2d, (simple shading:1.35), (flat color:1.25), (soft cel shading:1.2), low contrast, soft warm palette, gentle lighting, (mature male:1.45), (masculine features:1.4), (sharp jawline:1.3), almond eyes, (33 years old:1.3), (simple nose:1.35), (fine hair strands:1.3), (soft hair:1.25), (pale skin:1.3), (smooth skin:1.3), soft diffused light, brighter exposure, lifted shadows, (eye highlights:1.2), (soft colors:1.1), soft bloom, (cowboy shot:1.3)",
+  "coolPrompt": "adult man, (facing viewer:1.7), (straight-on:1.6), (front view:1.4), (head straight:1.3), (thick neck:1.4), (trapezius:1.25), (muscular male:1.3), (broad shoulders:1.4), (thick arms:1.2), (broad chest:1.2), (short hair:1.15), (hair reaching neck:1.25), (parted bangs:1.3), (curtained hair:1.3), (sidelocks:1.2), (long bangs:1.2), (ends curving outward:1.25), (layered hair:1.2), source_anime, (digital illustration:1.5), (anime illustration:1.45), (anime coloring:1.25), (soft painting:1.35), (colored lineart:1.25), (soft edges:1.2), korean, 2d, (simple shading:1.35), (flat color:1.25), (soft cel shading:1.2), low contrast, soft cool palette, gentle lighting, (mature male:1.45), (masculine features:1.4), (sharp jawline:1.3), almond eyes, (33 years old:1.3), (simple nose:1.35), (fine hair strands:1.3), (soft hair:1.25), (pale skin:1.35), (smooth skin:1.3), soft diffused light, brighter exposure, lifted shadows, (eye highlights:1.2), (soft colors:1.1), soft bloom, cool lighting, (cowboy shot:1.3)",
+  "blackTag": "(black hair:1.45), (cool-toned hair:1.1)",
+  "paleTag": "(mature male:1.5), (mature face:1.45), (sharp jawline:1.45), (prominent jawline:1.3), (narrow eyes:1.35), (small eyes:1.2), (thick eyebrows:1.2), (33 years old:1.35), (masculine:1.4)",
+  "neg": "(3d, cgi, plastic skin, doll:1.2), high contrast, underexposed, glowing eyes, (earrings:1.4), (see-through clothes:1.3), thin hair, clumped hair, (baby face:1.3), (childish face:1.2), round face, chubby cheeks, (graphic print:1.5), (text on clothes:1.5), (print on clothes:1.5), (shirt print:1.4), tanned skin, dark skin, (realistic:1.5), photo, (photorealistic:1.5), skin pores, skin texture, source_cartoon, monochrome, greyscale, (long hair:1.5), old man, wrinkles, (necklace:1.4), necktie, red eyeshadow, eye makeup, nose blush, teenage, (tired:1.3), (eye bags:1.3), (dark circles:1.3), (red eyelids:1.2), (bloodshot eyes:1.2), gaunt, hollow cheeks, curly hair, (large eyes:1.4), big eyes, (sparkling eyes:1.2), (bob cut:1.4), (androgynous:1.3), (red lips:1.2), lipstick, (pretty boy:1.3), (bishounen:1.3), boyish, youthful, (young:1.3), (teen:1.4), adolescent, (narrow shoulders:1.4), skinny, slender, small frame, (open shirt:1.4), unbuttoned shirt, (bare chest:1.5), (cleavage:1.4), (shirtless:1.5), (topless:1.5), (nipples:1.5), (pectorals:1.3), swept back hair, (bowl cut:1.4), (feminine:1.4), (feminine face:1.4), (school uniform:1.4), (thin neck:1.4), (long neck:1.3), lanky, (blurry background:1.2), (blue hair:1.4), (gradient hair:1.5), (multicolored hair:1.5), (turtleneck:1.4), (stubble:1.5), (facial hair:1.5), (beard:1.4), (low ponytail:1.5), (2boys:1.5), (multiple boys:1.4), (animal ears:1.5), nose shadow, (heavy shading:1.3), (hard shadows:1.3), (forehead:1.2), (hair bun:1.4), (framed picture:1.5), (picture frame:1.5), (ornate frame:1.5), (gold frame:1.4), (painting (object):1.4), (wall art:1.3), (framed:1.4), border, poster, (outstretched hand:1.3), (wavy hair:1.3), fangs, (eyeshadow:1.3), (under-eye shadow:1.2), (messy hair:1.3), (tousled hair:1.3), (stray hairs:1.3), (flyaway hair:1.3), (thick outlines:1.3), (bold lineart:1.3), (black outlines:1.2)",
+  "contentWeight": 1.3,
+  "exprWeight": 1.15,
+  "fits": [
+    {
+      "when": "/(^|[^a-z])(?:suit|tuxedo)\\b/i",
+      "swap": [
+        "(thick neck:1.4), (trapezius:1.25)",
+        "(long neck:1.3), (thick neck:1.25)"
+      ],
+      "negDrop": [
+        "(long neck:1.3)"
+      ]
+    },
+    {
+      "when": "/(^|[^a-z])(?:(?:very )?short hair|medium hair|(?:very )?long hair|permed hair|slicked back hair|hair slicked back|swept back hair|(?:low |high )?ponytail|half updo|updo|hair bun|hair tied up|tied hair|braids?|twintails|undercut|buzz cut|crew cut|bob cut|bowl cut|mullet|mohawk|pompadour|afro|bald|shaved head|hair over eyes|hair over one eye|forehead)\\b/i",
+      "drop": [
+        "(short hair:1.15), (hair reaching neck:1.25), (parted bangs:1.3), (curtained hair:1.3), (sidelocks:1.2), (long bangs:1.2), (ends curving outward:1.25), (layered hair:1.2)"
+      ],
+      "negDrop": [
+        "(forehead:1.2)",
+        "swept back hair"
+      ]
+    },
+    {
+      "when": "/(^|[^a-z])(?:slicked back hair|hair slicked back|swept back hair)\\b/i",
+      "put": "(slicked back hair:1.5), (forehead:1.3)"
+    },
+    {
+      "when": "/(^|[^a-z])(?:very short hair|buzz cut|crew cut)\\b/i",
+      "put": "(very short hair:1.5)"
+    },
+    {
+      "when": "/(^|[^a-z])(?:close-up|portrait|upper body|waist up|full body|lower body|cowboy shot|lying|sleeping|action pose)\\b/i",
+      "drop": [
+        "(cowboy shot:1.3)"
+      ]
+    },
+    {
+      "when": "/(^|[^a-z])(?:from behind|from above|from below|from side|three-quarter view|profile|lying|sleeping)\\b/i",
+      "moves": true,
+      "drop": [
+        "(facing viewer:1.7), (straight-on:1.6), (front view:1.4), (head straight:1.3)"
+      ]
+    },
+    {
+      "moves": true,
+      "negDrop": [
+        "(outstretched hand:1.3)"
+      ]
+    }
+  ],
+  "post": {
+    "lift": "rgb(18,18,22)",
+    "soft": 0.12,
+    "blurK": 3,
+    "blurA": 0.6,
+    "veil": {
+      "center": 0.03,
+      "edge": 0.3,
+      "mul": "rgb(242,242,244)",
+      "a": 0.04,
+      "color": "rgb(128,128,132)"
+    }
+  },
+  "noHumans": {
+    "model": "civitai:827184@1761560",
+    "modelName": "애니 일러스트 (WAI Illustrious v14)",
+    "prompt": "(digital illustration:1.3), (soft painting:1.2), painterly, (flat color:1.1), soft edges, low contrast, soft warm palette, gentle lighting, soft diffused light, soft bloom"
+  }
+}
