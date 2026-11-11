@@ -1,5 +1,6 @@
 /* 「서촌 오월 하숙집」 — 여성향(f/) · 홈 줄 「다섯 남자, 하나의 비밀」(fate/)
    aud(관심있는 대화)·row(홈 가로 줄)는 폴더 위치가 정해요(여기에 쓰지 않기). 칸 설명은 content/README.md */
+// 세계관 검토 2026-11-11 — 이번에 고치거나 더한 글은 초안(세계관 세션 확인 전). 고친 곳과 까닭: docs/world/REVIEW-2026-11-11.md
 export const order = 20; // 홈·오리지널 목록 순서(작을수록 앞)
 
 export default {
@@ -19,6 +20,7 @@ export default {
 ② 재개발 시행사 '도담건설'의 대표 한도준(58)은 할머니의 큰아들, 유저의 큰아버지다. 30년 전 겨울밤 할아버지가 마당에서 쓰러져 돌아가셨을 때 술에 취해 늦게 온 자신을 할머니가 원망한다고 믿고 집을 나갔다. 그는 이 집을 허물어 그날을 지우고 싶어 한다.
 ③ 할머니는 아들을 원망한 적이 없다. 아들에게 해마다 한 통씩 쓰고 부치지 못한 편지 서른 통을 마당 감나무 아래 장독에 넣어 두었다. 유저가 어릴 때 할머니와 같이 묻은 타임캡슐도 같은 곳에 있다.
 ④ '마지막 편지'는 손주와 큰아들 두 사람 앞으로 쓴 것이다. 서른 날의 조건은 손주가 이 집에서 다시 '식구'를 만나고, 큰아들이 돌아올 시간을 벌기 위한 것이었다.
+⑤ 가족사진에서 얼굴이 찢긴 사람은 한도준이다. 집을 나가던 날 제 손으로 찢었고, 할머니는 그 조각을 버리지 않고 장독 속 편지 묶음 맨 위에 넣어 두었다. 15일차 장마철 정전의 밤, 마당에 몰래 들어와 장독의 철사를 푼 사람도 한도준이다. 집을 허물기 전에 아버지가 쓰러진 자리를 한 번 보러 왔다가 장독을 건드렸고, 보리가 짖자 편지는 꺼내지 못한 채 달아났다(진흙에 구두 자국이 남는다). 이 집에 귀신이나 요괴는 없다 — 이상한 소리와 기척은 모두 사람과 날씨의 일이다.
 남주들은 각자 이 이야기의 한 조각을 알고 있다. 한 번에 풀리지 않게 하되, 함께 밥을 먹고 집을 돌보며 마음을 열면 반드시 닿을 수 있게 단서를 놓는다. 큰아버지는 악당이 아니라 상처 입은 사람으로 그린다.
 
 [남주 — 모두 성인]
@@ -47,7 +49,7 @@ export default {
     { keys: ["보리", "진돗개"], text: "마당의 늙은 진돗개 보리. 할머니가 떠난 뒤로 밥을 잘 안 먹고 할머니 방 툇마루 밑에서만 잔다. 낯선 사람에게도 짖지 않는데, 도담건설 사람에게만 짖는다.", kind: "creature", tags: "jindo dog, old dog, white fur, lying under wooden porch, hanok, sad eyes" },
     { keys: ["감나무", "장독", "평상"], text: "마당 한가운데의 오래된 감나무와 그 아래 평상. 할머니는 비밀이 생기면 '감나무한테 말해라'고 했다. 감나무 뿌리 옆 장독 하나는 뚜껑이 철사로 묶여 있다.", kind: "place", tags: "persimmon tree, hanok courtyard, wooden platform bench, earthenware jars, jangdokdae, autumn, dappled sunlight" },
     { keys: ["도담건설", "재개발", "차민서"], text: "서촌 일대 재개발을 추진하는 시행사. 실장 차민서가 매일 찾아와 시세의 두 배를 제안한다. 이 골목에서 아직 도장을 찍지 않은 집은 '오월'과 복덕슈퍼뿐이다.", kind: "group", tags: "construction company office, redevelopment blueprints, city model, demolition notice, cold office lighting" },
-    { keys: ["한도준", "큰아버지", "대표"], text: "도담건설 대표 한도준(58). 할머니의 큰아들. 30년 전 집을 나간 뒤 장례식에도 오지 않았다. 유저는 어릴 때 사진으로만 얼굴을 봤다.", kind: "person", tags: "solo, 1boy, middle-aged man, graying hair, stern face, expensive suit, ceo office, cold eyes" },
+    { keys: ["한도준", "큰아버지", "대표"], text: "도담건설 대표 한도준(58). 서촌 재개발을 밀어붙이는 사람. 직접 나서는 일이 없고 늘 실장 차민서를 보낸다. 다른 골목은 다 놔두고 유독 '오월'부터 허물려 한다는 말이 돈다.", kind: "person", tags: "solo, 1boy, middle-aged man, graying hair, stern face, expensive suit, ceo office, cold eyes" },
     { keys: ["레시피 노트", "레시피"], text: "할머니가 손글씨로 쓴 레시피 노트. 된장찌개부터 하숙인마다 좋아하는 반찬까지 적혀 있다. 지금은 강태하가 부엌 서랍에 보관한다.", kind: "item", tags: "handwritten recipe notebook, old notebook, wooden kitchen table, korean side dishes, warm light" },
     { keys: ["오월의 여름", "웹툰"], text: "요즘 인기 순위에 오른 웹툰. 시골 한옥에서 할머니와 여름을 보내는 아이의 이야기. 작가 필명은 '결'.", kind: "item", tags: "smartphone screen, webtoon panel, summer countryside, hanok, blue sky, watercolor, nostalgic" },
     { keys: ["복덕슈퍼", "슈퍼 할아버지"], text: "골목 입구의 복덕슈퍼. 주인 할아버지는 할머니와 오십 년 지기이고 동네 소문은 다 이곳을 거친다. 막걸리 한 병이면 옛날 얘기가 술술 나온다.", kind: "place", tags: "old corner store, korean neighborhood shop, alley entrance, makgeolli bottles, plastic chairs, evening" },
@@ -149,7 +151,7 @@ export default {
 차민서: "…오랜만이네요, 서 변호사님. 여기 계실 줄은 몰랐어요."
 
 *두 사람 사이에 짧은 침묵이 흘렀다. 그 침묵은 처음 보는 사이의 것이 아니었다.*` },
-    { id: "blackout", title: "🌧️ 장마철 정전", place: 1, suggestions: ["도현의 이야기를 끝까지 듣는다", "우산을 들고 감나무 아래로 나간다", "한결에게 지금 말해 달라고 한다"], directive: "15일차 밤, 장마철 폭우로 골목 전체가 정전된 밤에서 시작. 촛불을 켜고 마루에 모인 하숙인들 가운데 이한결이 처음으로 웹툰 이야기를 꺼내려다 망설이고, 백도현은 할머니의 마지막 몇 달을 말하려 한다. 감나무 아래 장독에서 이상한 소리가 난다.",
+    { id: "blackout", title: "🌧️ 장마철 정전", place: 1, suggestions: ["도현의 이야기를 끝까지 듣는다", "우산을 들고 감나무 아래로 나간다", "한결에게 지금 말해 달라고 한다"], directive: "15일차 밤, 장마철 폭우로 골목 전체가 정전된 밤에서 시작. 촛불을 켜고 마루에 모인 하숙인들 가운데 이한결이 처음으로 웹툰 이야기를 꺼내려다 망설이고, 백도현은 할머니의 마지막 몇 달을 말하려 한다. 감나무 아래 장독에서 이상한 소리가 난다. 장독 뚜껑을 벗긴 것은 사람이다(진상 ⑤) — 첫 장면에서는 진흙에 찍힌 구두 자국까지만 보여 준다.",
       status: { "📅 날짜": "15일차 · 밤 (남은 날 16일)", "📍 장소": "정전된 하숙집 마루", "🍚 밥상": "촛불 아래 라면 · 남은 수육", "📮 흔적": "레시피 노트 · 얼굴 부분이 찢긴 가족사진", "🏠 재개발": 65, "❤️ 호감도": "강태하 30 · 윤시후 25 · 백도현 30 · 이한결 20 · 서진혁 15", "💭 속마음": "이한결: 지금 말 안 하면 계속 못 할 거야." },
       text: `*빗소리가 기와를 두드리다 못해 마당을 통째로 삼키고 있었다. 번쩍, 하고 하늘이 갈라지는 순간 골목의 불이 한꺼번에 꺼졌다.*
 
