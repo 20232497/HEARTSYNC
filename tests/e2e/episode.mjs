@@ -1,4 +1,4 @@
-// 에피소드형 작품: 상세(시작 칸이 위로·에피소드 안내·모은 결말 ???·세계관 일러스트 접힘) → 대화방 장 막대 → 갈림길 카드 → 결말 카드(입력창 숨김·모은 결말) → 외전 방,
+// 에피소드형 작품: 상세(시작 칸이 위로·에피소드 안내·결말 이름) → 대화방 장 막대 → 갈림길 카드 → 결말 카드(입력창 숨김·모은 결말) → 외전 방,
 // 대화 목록의 '결말'·'외전' 표시, 홈 카드의 '에피소드'와 인원(폼 빼고). AI는 가짜(llm을 바꿔 끼움) — 진행은 앱이 정하므로 턴 수만 당겨 놓고 돌림
 import { webkit, chromium, devices } from "playwright";
 import { noSupabase } from "./_offline.mjs";
@@ -12,13 +12,13 @@ for (const [dev, engine] of targets) {
   try {
     await p.goto(url, { waitUntil: "load" }); await p.waitForTimeout(1200);
     await p.evaluate(() => { closeOverlays(); S.settings.audience = "all"; location.hash = "c-daeyeon"; }); await p.waitForTimeout(700);
-    // 상세: 시작 버튼이 등장인물·도감보다 위, 에피소드 안내와 결말 ???, 세계관 일러스트는 접힌 칸
+    // 상세: 시작 버튼이 등장인물·도감보다 위, 에피소드 안내와 결말 이름(세계관 일러스트는 #71 순서대로 접지 않음)
     res.detail = await p.evaluate(() => {
       const top = (el) => el ? el.getBoundingClientRect().top + $("#view").scrollTop : -1, start = $("#start");
       return { label: start.textContent, info: !!$(".ep-info"), names: $$(".ep-info .ep-ends span").map((s) => s.textContent).join("|"), want: ORIGINALS.find((c) => c.id === "daeyeon").episode.endings.map((x) => x.title).join("|"), ends: ORIGINALS.find((c) => c.id === "daeyeon").episode.endings.length,
         startTop: Math.round(top(start)), castTop: Math.round(top($(".cast"))), screens: +(top(start) / innerHeight).toFixed(2), art: $("#wArtBox") ? $("#wArtBox").tagName + ($("#wArtBox").open ? " open" : "") : "" };
     });
-    { const d = res.detail; if (d.label !== "에피소드 시작" || !d.info || d.names !== d.want || !(d.startTop < d.castTop) || (d.art && d.art !== "DETAILS")) errs.push("상세가 다름: " + JSON.stringify(d)); }
+    { const d = res.detail; if (d.label !== "에피소드 시작" || !d.info || d.names !== d.want || !(d.startTop < d.castTop)) errs.push("상세가 다름: " + JSON.stringify(d)); }
     await p.screenshot({ path: `${out}/${dev.replace(/\W+/g, "_")}_episode_detail.png` });
     await p.evaluate(() => $("#start").click()); await p.waitForTimeout(900);
     res.bar = await p.evaluate(() => ({ hidden: $("#epBar").hidden, text: $("#epBar").textContent, ep: !!room.ep }));
