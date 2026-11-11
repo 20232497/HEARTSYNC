@@ -19,7 +19,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import * as espree from "espree";
 import * as scope from "eslint-scope";
 import { BROWSER_GLOBALS } from "./globals.mjs";
-import { LOCK_FILE, checkLock, lockOf, readLock } from "./content-lock.mjs";
+import { LOCK_FILE, checkBase, checkLock, lockOf, readBaseLocks, readLock } from "./content-lock.mjs";
 
 export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const SRC = path.join(ROOT, "src"), JS = path.join(SRC, "js"), CONTENT = path.join(ROOT, "content");
@@ -684,6 +684,22 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
       const what = `순서 잠금: 아직 안 잠긴 것 ${s.unlocked}개(작품 ${s.stale.join(", ")})`;
       if (check) { fail = true; console.error(`✗ ${what} — npm run content:lock을 돌려 lock.json을 같이 커밋하세요.`); }
       else console.log(`${what} — 커밋 전에 npm run content:lock`);
+    }
+    // 병합 전 검사는 기준 가지의 잠금과도 견줌(content-lock.mjs checkBase) — 작업 폴더의 lock.json을 지우거나 손으로 고쳐 다시 찍는 우회를 막음.
+    // 기준 가지는 origin/main, CI는 LOCK_BASE로 알려 줌(그때는 못 읽으면 실패). git이 없는 폴더에서는 건너뛰고 알리기만
+    if (check) {
+      const ref = process.env.LOCK_BASE || "origin/main", base = readBaseLocks(ref, ROOT);
+      if (!base && process.env.LOCK_BASE) { fail = true; console.error(`✗ 순서 잠금: 기준 가지(${ref})를 읽지 못했어요 — 가지를 받아 왔는지(기록 전체) 확인하세요.`); }
+      else if (!base) console.log(`순서 잠금: 기준 가지(${ref})를 읽지 못해 견주기를 건너뛰었어요(git이 없거나 가지를 받아 오지 않음)`);
+      else {
+        const r = checkBase(base.locks, content.locks), at = `${ref} ${base.at.slice(0, 7)}`;
+        r.notes.forEach((x) => console.log("순서 잠금: " + x));
+        if (r.errors.length) {
+          fail = true;
+          console.error(`✗ 순서 잠금이 기준 가지(${at})의 잠금과 어긋나요 — 잠금 파일을 지우거나 고쳐 다시 찍어도 이미 공개된 자리는 바뀌지 않아요\n` + r.errors.map((x) => "  - " + x).join("\n") +
+            "\n  새 항목은 맨 뒤에 더하고 순서는 그대로 두세요. 사용자 승인을 받아 강제로 다시 찍은 것이면 이 검사는 실패하는 것이 정상이에요 — 병합 담당이 승인을 확인하고 병합해요(docs/TEAM.md).");
+        } else console.log(`✓ 순서 잠금이 기준 가지(${at})의 잠금 ${base.locks.length}개와 맞아요`);
+      }
     }
     for (const o of outs) {
       const cur = fs.existsSync(o.out) ? readText(o.out) : null, same = cur === o.html;
