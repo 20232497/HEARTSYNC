@@ -6,18 +6,18 @@ import { SHELF } from "../../src/js/core/constants.js";
 import { liked, likedIds, markSeen, mergeShelf, recentIds, seenSet, shelfSyncOn, toggleLike, touchRecent } from "../../src/js/core/shelf.js";
 import { S } from "../../src/js/core/state.js";
 
-test("mergeShelf: 작품마다 더 늦은 시각 — 다른 기기에서 찜을 푼 것도 전해지고, 수집 기록은 합집합", () => {
-  const pc = { likes: { a: 10, b: 20 }, unlikes: {}, recent: { a: 5 }, seen: { a: ["HSY3", "HSY0"] } };
-  const phone = { likes: { a: 10, c: 30 }, unlikes: { a: 40 }, recent: { a: 9, c: 7 }, seen: { a: ["HSY0", "MP1"], c: ["EV1"] } };
+test("mergeShelf: 작품마다 더 늦은 시각 — 다른 기기에서 찜을 푼 것도 전해지고, 수집 기록·모은 결말은 합집합", () => {
+  const pc = { likes: { a: 10, b: 20 }, unlikes: {}, recent: { a: 5 }, seen: { a: ["HSY3", "HSY0"] }, ends: { a: ["justice"] } };
+  const phone = { likes: { a: 10, c: 30 }, unlikes: { a: 40 }, recent: { a: 9, c: 7 }, seen: { a: ["HSY0", "MP1"], c: ["EV1"] }, ends: { a: ["escape", "justice"] } };
   const m = mergeShelf(pc, phone);
-  assert.deepEqual(m, { likes: { a: 10, b: 20, c: 30 }, unlikes: { a: 40 }, recent: { a: 9, c: 7 }, seen: { a: ["HSY0", "HSY3", "MP1"], c: ["EV1"] } });
+  assert.deepEqual(m, { likes: { a: 10, b: 20, c: 30 }, unlikes: { a: 40 }, recent: { a: 9, c: 7 }, seen: { a: ["HSY0", "HSY3", "MP1"], c: ["EV1"] }, ends: { a: ["escape", "justice"] } });
   // 합치는 순서와 무관하고(JSON 글까지 같음), 다시 합쳐도 그대로 — 기기끼리 주고받다 멈춤
   assert.equal(JSON.stringify(mergeShelf(phone, pc)), JSON.stringify(m));
   assert.equal(JSON.stringify(mergeShelf(m, pc)), JSON.stringify(m));
   assert.equal(JSON.stringify(mergeShelf(m)), JSON.stringify(m));
 });
 test("mergeShelf: 빈 값·깨진 값은 빈 서재로, 최근 본은 SHELF.recent개까지(늦게 본 것부터 남김)", () => {
-  const empty = { likes: {}, unlikes: {}, recent: {}, seen: {} };
+  const empty = { likes: {}, unlikes: {}, recent: {}, seen: {}, ends: {} };
   assert.deepEqual(mergeShelf(), empty);
   assert.deepEqual(mergeShelf(null, "글"), empty);
   assert.deepEqual(mergeShelf({ likes: ["a"], recent: 3, seen: { a: "HSY1" } }, undefined), { ...empty, seen: { a: [] } });

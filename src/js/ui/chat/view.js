@@ -40,6 +40,7 @@ export async function viewChat(id) {
       <button class="model-chip" id="modelChip" aria-label="AI 모델 선택"></button>
       <button class="icon-btn" id="info" aria-label="대화방 관리">${ICON.menu}</button>
     </header>
+    <div class="ep-bar" id="epBar" hidden></div>
     <div class="chat-log" id="log"><div class="log-inner" id="logInner"></div><div class="jump-wrap"><button class="jump" id="jumpBtn" type="button" hidden>↓ 맨 아래로</button></div></div>
     <div class="composer"><div class="inner">
       <div class="sug-panel" id="sugPanel" hidden></div>
@@ -130,9 +131,11 @@ export function updateComposer() {
   if (h && !hintTimer) {
     if (gen) h.textContent = "응답을 쓰는 중이에요 · 다음 입력은 미리 써 둘 수 있어요 · Esc 또는 ■ 중지";
     else if (q.type === "free" && freeLeft() <= 3) h.textContent = `오늘 무료 턴이 ${freeLeft()}번 남았어요. 다 쓰면 라이트 모델은 턴당 ♥${listPrice("lite", room.set.len, room.set.mem)}이에요.`;
-    else h.textContent = (S.settings.enterSend !== false ? "Enter 전송 · Shift+Enter 줄바꿈" : "Ctrl+Enter 전송 · Enter 줄바꿈") + " · // 연출 지시 · ! 명령어";
+    else h.textContent = (touchOnly() ? "" : (S.settings.enterSend !== false ? "Enter 전송 · Shift+Enter 줄바꿈" : "Ctrl+Enter 전송 · Enter 줄바꿈") + " · ") + "// 연출 지시 · ! 명령어"; // 터치 기기에서는 키 안내를 빼고
   }
 }
+/* 키보드 없는 터치 기기(휴대폰)인지 — 입력창 아래 키 안내를 뺄 때 */
+function touchOnly() { return typeof matchMedia === "function" && matchMedia("(hover: none) and (pointer: coarse)").matches; }
 export function lastAi(r) { for (let i = r.msgs.length - 1; i >= 0; i--) if (r.msgs[i].role === "ai") return r.msgs[i]; return null; }
 export function gaugeView(c, s) {
   const v = s?.[c.gauge]; if (v === undefined) return null;

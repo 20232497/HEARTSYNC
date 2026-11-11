@@ -30,6 +30,13 @@ import { go } from "./shell.js";
 import { loreCard, loreSeen } from "./worldart.js";
 
 /* ---------------------------------------------------------------- 대화방 관리 드로어 */
+/** 처음부터 다시: 확인 뒤 같은 작품(최신)·같은 시작 상황으로 새 방 — 작품당 방 수 한도를 넘으면 PLUS 안내. 드로어와 에피소드의 결말 카드가 씀. @param {import("../core/types.js").Room} r */
+export function restartRoom(r) {
+  confirmSheet("처음부터 다시 시작할까요?", "같은 작품·씬으로 새 대화방을 만들어요. 지금 대화는 목록에 남아요.", "새로 시작", () => {
+    const c0 = normalizeChar(getChar(r.char.id) || r.char); if (S.rooms.filter((x) => x.charId === c0.id).length >= plan().rooms) return plusSheet("rooms");
+    setRoom(newRoom(c0, openingIndex(c0, r), r.persona)); go("r-" + room.id);
+  });
+}
 export function openRoomDrawer(view = "main") {
   closeOverlays();
   const r = room, c = r.char;
@@ -79,9 +86,7 @@ export function openRoomDrawer(view = "main") {
     $("#mModel", body).onclick = () => openModelSheet();
     $("#qCopy", body).onclick = () => copyText(exportText(r), "대화 전체를 복사했어요");
     $("#qExport", body).onclick = () => exportRoom(r);
-    $("#qNew", body).onclick = () => confirmSheet("처음부터 다시 시작할까요?", "같은 작품·씬으로 새 대화방을 만들어요. 지금 대화는 목록에 남아요.", "새로 시작", () => {
-      const c0 = normalizeChar(getChar(c.id) || c); if (S.rooms.filter((x) => x.charId === c0.id).length >= plan().rooms) return plusSheet("rooms");
-      setRoom(newRoom(c0, openingIndex(c0, r), r.persona)); go("r-" + room.id); });
+    $("#qNew", body).onclick = () => restartRoom(r);
     $("#delRoom", body).onclick = () => confirmSheet("이 대화방을 삭제할까요?", "메시지와 기억이 모두 지워지고 되돌릴 수 없어요.", "삭제", () => deleteRoom(r.id));
   }
   else if (view === "persona") {
