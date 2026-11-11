@@ -45,6 +45,8 @@ content/
 
 ## 새 세계관 추가 — 폴더 하나 복사
 
+이 문서는 칸의 **모양**을 다뤄요. 칸에 담기는 **이야기의 뼈대와 판정 기준**(진상·인물의 조각·떡밥과 답·독자에게 보이는 칸)은 [docs/world/FRAME.md](../docs/world/FRAME.md), 쓰는 순서와 작법·빈 뼈대는 [docs/world/GUIDE.md](../docs/world/GUIDE.md)에 있어요 — 새 작품은 그 아홉 걸음을 따라 쓰고, 넘기기 전에 스스로 판정해요.
+
 1. 가장 비슷한 작품 폴더를 복사해요.
    - 여성향 남주 군상극을 「다섯 남자, 하나의 비밀」 줄에 → `f/fate/hwanghu/`를 `f/fate/새id/`로
    - 남성향 히로인 군상극을 「살아남는 자가 역사를 쓴다」 줄에 → `m/survive/daeyeon/`을 `m/survive/새id/`로
