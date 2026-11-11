@@ -390,7 +390,7 @@ function codeRange(c, R) {
 /* 작품 폴더의 images/ → 작품의 images(코드 글자 → 번호 → content/… 경로)·img(cover.*)·loreImages(lore-<n>.* → n번째 키워드북 항목).
    파일 이름: <코드><번호>.webp|png|jpg — 인물 코드 + 감정 번호 0~14(HSY3.webp), 장소 MP<n>, 컷씬 EV<n>; cover.*, lore-<n>.* */
 const IMG_EXT = /\.(webp|png|jpe?g)$/i;
-function scanImages(w, R, errors, warnings) {
+export function scanImages(w, R, errors, warnings) {
   const dir = path.join(ROOT, w.rel, "images");
   if (!fs.existsSync(dir)) return;
   const c = w.c, lore = c.lore || [], range = codeRange(c, R);
@@ -421,7 +421,7 @@ function scanImages(w, R, errors, warnings) {
   if (Object.keys(loreImages).length) w.loreImages = loreImages;
 }
 
-function checkWork(mod, { aud, row, id, wrel, R, errors, warnings }) {
+export function checkWork(mod, { aud, row, id, wrel, R, errors, warnings }) {
   const e = (m) => errors.push(`${wrel}: ${m}`), w = (m) => warnings.push(`${wrel}: ${m}`);
   const c = mod.default;
   if (!isObj(c)) { e("work.js는 export default { … } 로 작품 하나를 내보내야 해요"); return null; }

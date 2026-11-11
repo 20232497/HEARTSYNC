@@ -46,6 +46,7 @@
 | `rooms.test.mjs` | 대화방(`core/rooms.js`): 방이 시작 상황을 찾는 순서 `openingIndex`(id 우선 · 제목 대체 · 못 찾으면 첫째), 분기한 방이 id를 가져가는지, 작품의 시작 상황 id가 모양에 맞고 겹치지 않는지 |
 | `shelf.test.mjs` | 내 서재(`core/shelf.js` — 여러 기기 값을 합치는 mergeShelf, 계정 동기화 날짜 관문 shelfSyncOn과 **개인정보처리방침 시행일이 같은 날인지**, 찜 켜고 끄기·최근 본·수집 기록) |
 | `content-lock.test.mjs` | 순서 잠금(`tools/content-lock.mjs`)의 판정 `checkLock`: 맨 뒤에 더하기·이름 고치기·새 시작 상황과 인물은 통과(잠금만 뒤처짐), 중간에 끼우기·지우기·순서 바꾸기·id와 코드 없애기는 어긋남, 잠금 없는 새 작품, 알려진 한계, 강제 다시 찍기의 표 |
+| `content-check.test.mjs` | 작품 검사 규칙(`tools/build.mjs` `checkWork`·`scanImages`·`checkForbidden`): 통과하는 가짜 작품 하나를 **한 칸씩만 망가뜨려** 규칙마다 기대한 오류가 나는지(작품 규칙 115줄 — 모듈 모양·필수 칸·출연진 코드와 폼·비공개 칸·장소와 컷씬·본문 그림 태그·명령어·메타·키워드북·시작 상황·트랙·미성년 인물·폴더와 성별, 그림 파일 이름 11줄), 경고로만 알리는 것, 통과해야 하는 모양, 금지 주소와 사용자 빌드의 관리자 모듈 머리. 규칙을 새로 더하면 '규칙 자리 수' 시험이 실패하므로 표에 줄을 더하고 수를 고친다. 폴더 구조 검사(`buildContent`의 줄 폴더·`_row.json`)와 모듈 번들 검사는 아직 시험이 없음 |
 | `content-art.test.mjs` | 그림 의뢰 목록(`tools/content-art.mjs`): 가짜 작품 하나로 줄 수·종류·넣을 경로·우선순위(직접 적힌 그림·배경 장소)·비공개·실림·태그 표시와 합계, 규격 표가 모두 초안이고 README '그림 싣기'와 같은 크기인지·적힌 비율이 크기와 맞는지 |
 | `content-report.test.mjs` | 작품 완성도 보고서(`tools/content-report.mjs`)의 셈과 얕은 칸 판정 |
 | `parse.test.mjs` | 응답 파싱(`ai/parse.js` — 구분자 변형·끊긴 JSON·다인원 칸) |
