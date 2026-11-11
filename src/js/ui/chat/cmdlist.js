@@ -1,6 +1,6 @@
 /* 대화방 입력창의 ! 명령어 목록: !로 시작하는 낱말을 치는 동안 입력창 위에 "!이름 — 제목" 목록(앱 → 작품)을 띄우고, 고르면 입력창에 채움(↑↓ 고르기 · Enter 채우기 · Esc 닫기).
    목록은 core/commands.js의 commandList 하나로 만듦 — 작품이 commands를 더하면 그대로 나옴 */
-import { getChar } from "../../core/character.js";
+import { liveWork } from "../../core/character.js";
 import { COMMAND_KINDS, commandList } from "../../core/commands.js";
 import { room } from "../../core/state.js";
 import { $, $$, esc } from "../../core/util.js";
@@ -17,7 +17,7 @@ function paint(inp) {
 function fill(inp, x) { inp.value = fullOf(x); inp.oninput(); inp.focus(); }
 /** 입력이 바뀔 때마다 부름: 목록을 다시 만들고 그림. 다 친 명령어 하나만 남으면(고른 직후 포함) 닫음. @param {HTMLTextAreaElement} inp */
 export function updateCmdList(inp) {
-  const list = room ? commandList(inp.value, getChar(room.char.id) || room.char) : [];
+  const list = room ? commandList(inp.value, liveWork(room.char)) : [];
   shown = list.length === 1 && inp.value.trim() === fullOf(list[0]) ? [] : list;
   sel = Math.min(sel, Math.max(0, shown.length - 1));
   paint(inp);

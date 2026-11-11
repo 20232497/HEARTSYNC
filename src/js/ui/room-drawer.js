@@ -3,7 +3,7 @@ import { engineName } from "../ai/llm.js";
 import { LEN, MODELS } from "../ai/models.js";
 import { maybeSummarize, memCfg, pushHist } from "../ai/prompt/memory.js";
 import { speakerName } from "../ai/prompt/rules.js";
-import { exampleCast, getChar, normalizeChar } from "../core/character.js";
+import { exampleCast, latestWork, liveWork, normalizeChar } from "../core/character.js";
 import { LIMITS } from "../core/constants.js";
 import { baseOpening, curText, newRoom, openingIndex, saveRoom } from "../core/rooms.js";
 import { saveSettings } from "../core/settings.js";
@@ -33,7 +33,7 @@ import { loreCard, loreSeen } from "./worldart.js";
 /** 처음부터 다시: 확인 뒤 같은 작품(최신)·같은 시작 상황으로 새 방 — 작품당 방 수 한도를 넘으면 PLUS 안내. 드로어와 에피소드의 결말 카드가 씀. @param {import("../core/types.js").Room} r */
 export function restartRoom(r) {
   confirmSheet("처음부터 다시 시작할까요?", "같은 작품·씬으로 새 대화방을 만들어요. 지금 대화는 목록에 남아요.", "새로 시작", () => {
-    const c0 = normalizeChar(getChar(r.char.id) || r.char); if (S.rooms.filter((x) => x.charId === c0.id).length >= plan().rooms) return plusSheet("rooms");
+    const c0 = normalizeChar(latestWork(r.char)); if (S.rooms.filter((x) => x.charId === c0.id).length >= plan().rooms) return plusSheet("rooms");
     setRoom(newRoom(c0, openingIndex(c0, r), r.persona)); go("r-" + room.id);
   });
 }
@@ -49,7 +49,7 @@ export function openRoomDrawer(view = "main") {
   const body = $("#dBody", ov), cfg = memCfg(), q = quote(r.set);
   if (view === "main") {
     const src = r.forkedFrom && S.rooms.some((x) => x.id === r.forkedFrom.roomId); // 분기한 방이고 원래 방이 아직 있으면 '원래 대화방' 버튼
-    const liveWork = getChar(c.id) || c, guide = liveWork.guide; // 플레이 가이드는 최신 작품에서(예전 방의 사본에는 없을 수 있음)
+    const live = liveWork(c), guide = live.guide; // 플레이 가이드는 최신 작품에서(예전 방의 사본에는 없을 수 있음)
     body.innerHTML = `<div class="quick">
         <button id="qCopy">${ICON.copy}대화 복사</button><button id="qExport">${ICON.down}대화 내보내기</button><button id="qNew">${ICON.redo}처음부터</button></div>
       <div class="sheet-head"><h3 class="lbl" style="flex:1;margin:0">내 재화</h3><button class="btn sm pri" id="topup">충전</button></div>
@@ -72,7 +72,7 @@ export function openRoomDrawer(view = "main") {
         <div class="grp"></div>
         <button data-v="status">상태창</button>
         <button data-v="gallery">갤러리<span class="v">${galleryItems(r).length}장</span></button>
-        ${(liveWork.lore || []).length ? `<button data-v="lore">세계관 수첩<span class="v">${loreSeen(r, liveWork.lore).size} / ${liveWork.lore.length}</span></button>` : ""}
+        ${(live.lore || []).length ? `<button data-v="lore">세계관 수첩<span class="v">${loreSeen(r, live.lore).size} / ${live.lore.length}</span></button>` : ""}
         <button data-v="bookmarks">북마크<span class="v">${(r.bookmarks || []).length}개</span></button>
         ${guide ? `<div class="grp"></div><button id="mGuide">플레이 가이드<span class="v">제작자의 안내</span></button>` : ""}
       </div>
@@ -82,7 +82,7 @@ export function openRoomDrawer(view = "main") {
     $("#topup", body).onclick = () => go("store");
     $("#compo", body).onclick = () => go("c-" + c.id);
     if (src) $("#forkSrc", body).onclick = () => go("r-" + r.forkedFrom.roomId);
-    if (guide) $("#mGuide", body).onclick = () => guideSheet(liveWork);
+    if (guide) $("#mGuide", body).onclick = () => guideSheet(live);
     $("#mModel", body).onclick = () => openModelSheet();
     $("#qCopy", body).onclick = () => copyText(exportText(r), "대화 전체를 복사했어요");
     $("#qExport", body).onclick = () => exportRoom(r);
@@ -157,7 +157,7 @@ export function openRoomDrawer(view = "main") {
     paint();
   }
   else if (view === "note") {
-    const tplText = (getChar(c.id) || c).noteTemplate; // 작품이 준 유저노트 양식(work.js noteTemplate) — 있을 때만 '양식 넣기'
+    const tplText = liveWork(c).noteTemplate; // 작품이 준 유저노트 양식(work.js noteTemplate) — 있을 때만 '양식 넣기'
     body.innerHTML = `<p class="note">AI가 매 턴 가장 먼저 참고하는 메모예요. 관계 설정, 피하고 싶은 전개, 원하는 분위기 등을 적어 두세요.</p>
       <div class="field"><label for="noteTa">유저노트</label><textarea id="noteTa" maxlength="${LIMITS.userNote}" style="min-height:260px" placeholder="예: 나는 ${esc(exampleCast(c).name)}의 오랜 친구다. / 대화 위주로, 장면 전환은 천천히.">${esc(r.userNote || "")}</textarea><div class="memo-count" id="nCnt"></div></div>
       ${tplText ? `<button class="btn sm ghost" id="tpl" style="margin-top:6px">이 작품의 양식 넣기</button>` : ""}
@@ -204,7 +204,7 @@ export function openRoomDrawer(view = "main") {
   else if (view === "places") {
     // 작품의 장소(places → 예약 시리즈 코드 MP1…, 코드 글자는 codes.js SERIES에서) — !지도 명령어로도 열림. 그림은 작품 폴더 images/MP<n>.webp. 목록은 최신 작품에서
     // 비공개(hidden) 장소는 대화에서 그 코드를 보기 전까지 그림만 가림(이름·설명은 보임 — codebook의 hidden). 본 기록은 내 서재의 수집 기록(이 방 것은 방을 열 때·응답이 끝날 때 적힘)
-    const live = getChar(c.id) || c, list = live.places || [], MP = seriesCode("place"), book = codebook(live)[MP], hid = book.hidden, seen = seenSet(c.id);
+    const live = liveWork(c), list = live.places || [], MP = seriesCode("place"), book = codebook(live)[MP], hid = book.hidden, seen = seenSet(c.id);
     const lock = (i) => hid.includes(i + 1) && !seen.has(MP + (i + 1));
     body.innerHTML = list.length ? `<p class="note" style="margin-bottom:10px">이 작품의 장소 ${list.length}곳. 대화에서는 [[${MP}번호]] 코드로 나와요.</p><div class="gallery">${list.map((p, i) => {
       const ref = lock(i) ? null : pickImg(c, MP, i + 1);
@@ -222,7 +222,7 @@ export function openRoomDrawer(view = "main") {
   }
   else if (view === "lore") {
     // 세계관 수첩: 작품의 키워드북(최신 작품) 가운데 이 대화에서 AI가 꺼내 쓴 항목만 이름·설명까지, 나머지는 종류만 — 대화가 이어질수록 채워짐(worldart.js loreSeen)
-    const live = getChar(c.id) || c, lore = live.lore || [], seen = loreSeen(r, lore);
+    const live = liveWork(c), lore = live.lore || [], seen = loreSeen(r, lore);
     body.innerHTML = lore.length ? `<p class="note" style="margin-bottom:10px">이 대화에서 펼친 세계관 ${seen.size} / ${lore.length}. 대화에 그 낱말이 나오면 AI가 설정을 꺼내 쓰고(말풍선 아래 📖), 여기에 채워져요.</p>
       <div class="wgal lore-book">${lore.map((e, i) => loreCard(live, e, seen.has(i), false)).join("")}</div>`
       : `<div class="empty">이 작품에는 키워드북이 없어요.</div>`;

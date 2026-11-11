@@ -1,5 +1,5 @@
 /* 표지·장면 그림 HTML(coverHTML·figHTML·portraitHTML·artHTML — 그림이 없으면 색 카드), 그림 태그 해석(tagInfo), 라이트박스 */
-import { getChar } from "../core/character.js";
+import { liveWork } from "../core/character.js";
 import { MOTIFS, PALETTES, SIT_TINT } from "../core/constants.js";
 import { esc } from "../core/util.js";
 import { codebook } from "../images/codes.js";
@@ -26,7 +26,7 @@ export function artHTML(c, cast, sit, label) {
  */
 export function tagInfo(c, t) {
   // 인물은 방 안의 작품 사본(예전 방도 그 인물로 그림), 장소·컷씬 목록은 최신 작품에서(작품을 고치면 열린 방에도 바로)
-  const live = getChar(c.id), e = codebook(live ? { ...c, places: live.places, cuts: live.cuts } : c)[t.code];
+  const e = codebook(liveWork(c))[t.code];
   if (!e) return null;
   if (e.kind === "cast") {
     const sit = t.sit <= e.max ? t.sit : 1;

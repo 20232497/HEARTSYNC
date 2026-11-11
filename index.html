@@ -1713,7 +1713,7 @@ for (const c of ORIGINALS) {
   c.cast = [{ code: "C", name: c.name, look }];
   c.openings.forEach((o) => { o.text = o.text.replace(/\n\n/, "\n\n[[C0]]\n\n"); });
 }
-/* ── src/js/core/character.js — 작품 찾기·정규화: normalizeChar, id로 찾기(getChar — 오리지널), 화면 예시 문구에 쓸 인물(exampleCast) */
+/* ── src/js/core/character.js — 작품 찾기·정규화: normalizeChar, id로 찾기(getChar — 오리지널), 방의 작품을 지금 읽을 모양으로(liveWork — 어느 칸을 최신 작품에서 읽는지는… */
 function normalizeChar(c) {
   if (!c) return c;
   if (!Array.isArray(c.fields) || !c.fields.length) c.fields = ["호감도", "속마음"];
@@ -1724,6 +1724,15 @@ function normalizeChar(c) {
   return c;
 }
 function getChar(id) { return ORIGINALS.find((c) => c.id === id); }
+const LIVE_FIELDS = ["lore", "places", "cuts", "commands", "guide", "noteTemplate", "recommend", "images", "loreImages"];
+function liveWork(c) {
+  const live = getChar(c.id);
+  if (!live) return c;
+  const out = { ...c };
+  for (const k of LIVE_FIELDS) out[k] = live[k];
+  return out;
+}
+function latestWork(c) { return getChar(c.id) || c; }
 function exampleCast(c) {
   const w = c || ORIGINALS.find(audOK), cast = (w && Array.isArray(w.cast) && w.cast) || [], x = cast.find((y) => !y.of) || cast[0];
   return x ? { code: x.code, name: x.name } : EXAMPLE_CAST;
@@ -2500,7 +2509,7 @@ function codeKind(letters, c) { const e = codebook(c)[letters]; return e ? e.kin
 function fallbackSits(n, code) { return SERIES[code] ? [n] : [...new Set([n, 1, 0])]; }
 /* ── src/js/images/pick.js — 코드별 그림 찾기(imagesOf·pickImg): 작품 폴더에 실린 그림(content/…/images/<코드><번호>.webp → 작품의 images[코드][번호]) */
 function imagesOf(c) {
-  const live = getChar(c.id) || c, base = live.images || c.images || {};
+  const base = liveWork(c).images || c.images || {};
   const out = {};
   for (const k of Object.keys(base)) out[k] = { ...base[k] };
   for (const x of c.cast || []) out[x.code] = out[x.code] || {};
@@ -2686,7 +2695,7 @@ async function viaGateway({ sys, cut, rest, tier, onText, signal, maxTokens }, r
   if (!CFG.chatUrl) throw { code: "no_gateway" };
   if (SB.s) await SB.fresh();
   if (!SB.s) throw { code: adult ? "login" : "login_free" };
-  if (adult && roomMinorHint(r, (getChar(r.char.id) || r.char).lore)) throw { code: "minor_blocked" };
+  if (adult && roomMinorHint(r, liveWork(r.char).lore)) throw { code: "minor_blocked" };
   const T = timeoutSignal(TIMEOUT.connect, signal); let res;
   try {
     res = await fetch(CFG.chatUrl, {
@@ -2817,7 +2826,7 @@ function usedOpeners(hist) {
 function buildInput(r, uptoIdx, statusBefore, direction) {
   const hist = r.msgs.slice(0, uptoIdx).filter((m) => curText(m));
   const recent = hist.slice(-(r.set.mem * 2 + 1));
-  const lore = matchLore(getChar(r.char.id)?.lore || r.char.lore, recent.slice(-LORE.scan).map((m) => (m.role === "ai" ? curText(m) : m.text) || ""));
+  const lore = matchLore(liveWork(r.char).lore || r.char.lore, recent.slice(-LORE.scan).map((m) => (m.role === "ai" ? curText(m) : m.text) || ""));
   const len = LEN[r.set.len] || LEN.mid;
   const sys = rulesParts(r, lore, hist);
   const out = [{ role: "user", content: sys.fixed + sys.vary + sys.tail, cut: sys.fixed.length }];
@@ -2828,7 +2837,7 @@ function buildInput(r, uptoIdx, statusBefore, direction) {
   recent.forEach((m, i) => {
     const last = i === recent.length - 1;
     if (m.role === "ai") { out.push({ role: "assistant", content: curText(m) + (m === lastAi ? stateTail(m) : "") }); return; }
-    let t = m.sys ? "// 직전 장면에서 자연스럽게 이어서 다음 장면을 써라. 유저의 행동은 쓰지 않는다." : commandText(m.text, getChar(r.char.id) || r.char);
+    let t = m.sys ? "// 직전 장면에서 자연스럽게 이어서 다음 장면을 써라. 유저의 행동은 쓰지 않는다." : commandText(m.text, liveWork(r.char));
     if (last) t = `[현재 상태창 — 이번 장면은 여기서 출발한다]\n${JSON.stringify(statusBefore || {})}\n\n[${r.persona.name}의 입력]\n${t}${direction ? "\n\n// 다시 쓰기 지침: " + direction : ""}\n\n[이번 응답] 위 입력을 본문에 다시 옮겨 적지 말고 그 직후의 반응부터 쓴다. 본문 ${len.chars}, 대사 ${len.lines}줄 이상을 주고받고, 직전 응답과 다른 새 전개를 넣는다. 나오는 인물마다 [[코드번호]]를 한 장씩 넣는다${(() => { const h = m.sys ? [] : sitHints(m.text); return h.length ? `(유저 입력에 맞는 번호 후보: ${h.join(", ")})` : ""; })()}. 본문이 끝나면 한 줄에 ${MARK}를 쓰고 그 아래 상태 JSON 한 개로 응답을 마친다(빠뜨리지 않는다).`;
     out.push({ role: "user", content: t });
   });
@@ -2853,7 +2862,7 @@ function rulesParts(r, lore = [], hist = r.msgs) {
   const ex = exampleCast(c);
   const sn = (name) => SIT.indexOf(name) + " " + name;
   const ready = cast.map((x) => { const m = imagesOf(c)[x.code] || {}; const ns = Object.keys(m).filter((k) => validRef(m[k])).map(Number).filter((n) => n >= 0 && n < SIT.length).sort((a, b) => a - b); return ns.length ? `${x.name} ${ns.join("·")}` : ""; }).filter(Boolean);
-  const live = getChar(c.id) || c, liveCuts = live.cuts || [];
+  const live = liveWork(c), liveCuts = live.cuts || [];
   const places = (live.places || []).map((x, i) => `${PLACE}${i + 1}=${x.name}`).join(", ");
   const cuts = liveCuts.map((e, i) => `${CUT}${i + 1}=${e.title}${e.when ? "(" + e.when + ")" : ""}`).join(", ");
   const cutsDone = liveCuts.map((e, i) => (cutsUsed.has(i + 1) ? CUT + (i + 1) : "")).filter(Boolean);
@@ -3067,7 +3076,7 @@ function paint(inp) {
 }
 function fill(inp, x) { inp.value = fullOf(x); inp.oninput(); inp.focus(); }
 function updateCmdList(inp) {
-  const list = room ? commandList(inp.value, getChar(room.char.id) || room.char) : [];
+  const list = room ? commandList(inp.value, liveWork(room.char)) : [];
   shown = list.length === 1 && inp.value.trim() === fullOf(list[0]) ? [] : list;
   sel = Math.min(sel, Math.max(0, shown.length - 1));
   paint(inp);
@@ -3094,7 +3103,7 @@ function artHTML(c, cast, sit, label) {
   return `<div class="artcard" style="--c1:${pal[0]};--c2:${pal[1]};--c3:${pal[2]};--tint:${SIT_TINT[sit] || "#c9b8ff"}"><span class="ac-g">${esc((cast.name || "?").slice(0, 1))}</span><span class="ac-s">${esc(label || sitName(sit))}</span><span class="ac-n">${esc(cast.name)}</span></div>`;
 }
 function tagInfo(c, t) {
-  const live = getChar(c.id), e = codebook(live ? { ...c, places: live.places, cuts: live.cuts } : c)[t.code];
+  const e = codebook(liveWork(c))[t.code];
   if (!e) return null;
   if (e.kind === "cast") {
     const sit = t.sit <= e.max ? t.sit : 1;
@@ -3935,14 +3944,14 @@ function deleteRoom(id) {
 }
 /* ── src/js/ui/worldart.js — 세계관 카드: 상세 페이지의 키워드북 항목별 그림 갤러리(worldArtHTML)와 대화방 드로어의 세계관 수첩(loreSeen·loreCard) — 항목마다… */
 const LORE_KINDS = { person: "인물", creature: "동물·존재", place: "장소", item: "물건", event: "사건", group: "세력", concept: "설정" };
-function loreImg(c, key) { const live = getChar(c.id) || c; return (live.loreImages || {})[key] || ""; }
+function loreImg(c, key) { return (liveWork(c).loreImages || {})[key] || ""; }
 function loreCard(c, e, open = true, ph = true) {
   const key = e.keys[0], kind = LORE_KINDS[e.kind] || "", ref = open ? loreImg(c, key) : "";
   const pic = ref ? `<button class="wpic" data-wlb="${esc(key)}" aria-label="${esc(key)} 크게 보기">${IMG.tag(ref)}</button>` : open && ph ? `<div class="wpic ph">${esc(key)}</div>` : "";
   return `<figure class="wcard${open ? "" : " locked"}">${pic}<figcaption><b>${kind ? `<small class="wkind">${kind}</small>` : ""}${open ? esc(key) : "???"}</b>${open ? `<span>${esc(e.text)}</span>` : ""}</figcaption></figure>`;
 }
 function worldArtHTML(c) {
-  const lore = (getChar(c.id) || c).lore || [];
+  const lore = liveWork(c).lore || [];
   return lore.length ? `<div class="wgal">${lore.map((e) => loreCard(c, e)).join("")}</div>` : "";
 }
 function loreSeen(r, lore) {
@@ -3955,7 +3964,7 @@ function loreSeen(r, lore) {
 /* ── src/js/ui/room-drawer.js — 대화방 관리 드로어(대화 구성·페르소나·장기기억·유저노트·출력 설정·상태창·갤러리·장소·북마크·세계관 수첩) — 내보내기·삭제·그림 모으기는 room-tools.js, 세계관… */
 function restartRoom(r) {
   confirmSheet("처음부터 다시 시작할까요?", "같은 작품·씬으로 새 대화방을 만들어요. 지금 대화는 목록에 남아요.", "새로 시작", () => {
-    const c0 = normalizeChar(getChar(r.char.id) || r.char); if (S.rooms.filter((x) => x.charId === c0.id).length >= plan().rooms) return plusSheet("rooms");
+    const c0 = normalizeChar(latestWork(r.char)); if (S.rooms.filter((x) => x.charId === c0.id).length >= plan().rooms) return plusSheet("rooms");
     setRoom(newRoom(c0, openingIndex(c0, r), r.persona)); go("r-" + room.id);
   });
 }
@@ -3971,7 +3980,7 @@ function openRoomDrawer(view = "main") {
   const body = $("#dBody", ov), cfg = memCfg(), q = quote(r.set);
   if (view === "main") {
     const src = r.forkedFrom && S.rooms.some((x) => x.id === r.forkedFrom.roomId);
-    const liveWork = getChar(c.id) || c, guide = liveWork.guide;
+    const live = liveWork(c), guide = live.guide;
     body.innerHTML = `<div class="quick">
         <button id="qCopy">${ICON.copy}대화 복사</button><button id="qExport">${ICON.down}대화 내보내기</button><button id="qNew">${ICON.redo}처음부터</button></div>
       <div class="sheet-head"><h3 class="lbl" style="flex:1;margin:0">내 재화</h3><button class="btn sm pri" id="topup">충전</button></div>
@@ -3994,7 +4003,7 @@ function openRoomDrawer(view = "main") {
         <div class="grp"></div>
         <button data-v="status">상태창</button>
         <button data-v="gallery">갤러리<span class="v">${galleryItems(r).length}장</span></button>
-        ${(liveWork.lore || []).length ? `<button data-v="lore">세계관 수첩<span class="v">${loreSeen(r, liveWork.lore).size} / ${liveWork.lore.length}</span></button>` : ""}
+        ${(live.lore || []).length ? `<button data-v="lore">세계관 수첩<span class="v">${loreSeen(r, live.lore).size} / ${live.lore.length}</span></button>` : ""}
         <button data-v="bookmarks">북마크<span class="v">${(r.bookmarks || []).length}개</span></button>
         ${guide ? `<div class="grp"></div><button id="mGuide">플레이 가이드<span class="v">제작자의 안내</span></button>` : ""}
       </div>
@@ -4004,7 +4013,7 @@ function openRoomDrawer(view = "main") {
     $("#topup", body).onclick = () => go("store");
     $("#compo", body).onclick = () => go("c-" + c.id);
     if (src) $("#forkSrc", body).onclick = () => go("r-" + r.forkedFrom.roomId);
-    if (guide) $("#mGuide", body).onclick = () => guideSheet(liveWork);
+    if (guide) $("#mGuide", body).onclick = () => guideSheet(live);
     $("#mModel", body).onclick = () => openModelSheet();
     $("#qCopy", body).onclick = () => copyText(exportText(r), "대화 전체를 복사했어요");
     $("#qExport", body).onclick = () => exportRoom(r);
@@ -4079,7 +4088,7 @@ function openRoomDrawer(view = "main") {
     paint();
   }
   else if (view === "note") {
-    const tplText = (getChar(c.id) || c).noteTemplate;
+    const tplText = liveWork(c).noteTemplate;
     body.innerHTML = `<p class="note">AI가 매 턴 가장 먼저 참고하는 메모예요. 관계 설정, 피하고 싶은 전개, 원하는 분위기 등을 적어 두세요.</p>
       <div class="field"><label for="noteTa">유저노트</label><textarea id="noteTa" maxlength="${LIMITS.userNote}" style="min-height:260px" placeholder="예: 나는 ${esc(exampleCast(c).name)}의 오랜 친구다. / 대화 위주로, 장면 전환은 천천히.">${esc(r.userNote || "")}</textarea><div class="memo-count" id="nCnt"></div></div>
       ${tplText ? `<button class="btn sm ghost" id="tpl" style="margin-top:6px">이 작품의 양식 넣기</button>` : ""}
@@ -4124,7 +4133,7 @@ function openRoomDrawer(view = "main") {
     $$("[data-g]", body).forEach((b) => b.onclick = () => { const it = items[+b.dataset.g], im = $("img", b); if (im && im.src) lightbox(im.src); else { ov.remove(); jumpTo(it.id); } });
   }
   else if (view === "places") {
-    const live = getChar(c.id) || c, list = live.places || [], MP = seriesCode("place"), book = codebook(live)[MP], hid = book.hidden, seen = seenSet(c.id);
+    const live = liveWork(c), list = live.places || [], MP = seriesCode("place"), book = codebook(live)[MP], hid = book.hidden, seen = seenSet(c.id);
     const lock = (i) => hid.includes(i + 1) && !seen.has(MP + (i + 1));
     body.innerHTML = list.length ? `<p class="note" style="margin-bottom:10px">이 작품의 장소 ${list.length}곳. 대화에서는 [[${MP}번호]] 코드로 나와요.</p><div class="gallery">${list.map((p, i) => {
       const ref = lock(i) ? null : pickImg(c, MP, i + 1);
@@ -4141,7 +4150,7 @@ function openRoomDrawer(view = "main") {
     $$("[data-j]", body).forEach((b) => b.onclick = () => { ov.remove(); jumpTo(b.dataset.j); });
   }
   else if (view === "lore") {
-    const live = getChar(c.id) || c, lore = live.lore || [], seen = loreSeen(r, lore);
+    const live = liveWork(c), lore = live.lore || [], seen = loreSeen(r, lore);
     body.innerHTML = lore.length ? `<p class="note" style="margin-bottom:10px">이 대화에서 펼친 세계관 ${seen.size} / ${lore.length}. 대화에 그 낱말이 나오면 AI가 설정을 꺼내 쓰고(말풍선 아래 📖), 여기에 채워져요.</p>
       <div class="wgal lore-book">${lore.map((e, i) => loreCard(live, e, seen.has(i), false)).join("")}</div>`
       : `<div class="empty">이 작품에는 키워드북이 없어요.</div>`;
@@ -4152,7 +4161,7 @@ function openRoomDrawer(view = "main") {
 /* ── src/js/ui/model-sheet.js — 모델 선택 시트: 모델마다 턴당 하트·무료 턴 안내, 앱 기본 추천(스토리 '추천')과 작품이 직접 고른 모델의 '권장' 배지(work.js recommend) */
 function setModel(k) { room.set.model = k; saveRoom(room); updateComposer(); }
 function openModelSheet() {
-  const r = room, rec = recommendSet(getChar(r.char.id) || r.char);
+  const r = room, rec = recommendSet(liveWork(r.char));
   const card = (k) => {
     const m = MODELS[k], q = quote({ ...r.set, model: k });
     const price = q.type === "free" ? `오늘 무료 ${freeLeft()}턴 남음 · 이후 턴당 ♥${q.list}` : q.type === "plus" ? `PLUS 무제한 <s>턴당 ♥${q.list}</s>` : (isPro() && q.n < q.list ? `턴당 <s>♥${q.list}</s>♥${q.n}` : `턴당 ♥${q.n}`);
@@ -4240,7 +4249,7 @@ async function viewChat(id) {
   renderLog(true); updateMeter(); updateComposer();
 }
 function runCommand(t) {
-  const live = getChar(room.char.id) || room.char, f = findCommand(parseCommand(t), live);
+  const live = liveWork(room.char), f = findCommand(parseCommand(t), live);
   if (f && f.work && f.work.text) { replyNow(t, f.work); return true; }
   if (!f || !f.app || !f.app.view) return false;
   if (f.app.view === "help") { flashHint("명령어: " + commandHelp(live) + " — 이름 뒤에 말을 덧붙여도 되고, // 로 시작하면 연출 지시"); return true; }

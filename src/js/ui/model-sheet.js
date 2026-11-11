@@ -1,6 +1,6 @@
 /* 모델 선택 시트: 모델마다 턴당 하트·무료 턴 안내, 앱 기본 추천(스토리 '추천')과 작품이 직접 고른 모델의 '권장' 배지(work.js recommend) */
 import { LEN, MODELS, recommendSet } from "../ai/models.js";
-import { getChar } from "../core/character.js";
+import { liveWork } from "../core/character.js";
 import { saveRoom } from "../core/rooms.js";
 import { S, room } from "../core/state.js";
 import { $, $$, esc, num, toast } from "../core/util.js";
@@ -14,7 +14,7 @@ import { go } from "./shell.js";
 /* 모델 선택 시트 */
 export function setModel(k) { room.set.model = k; saveRoom(room); updateComposer(); }
 export function openModelSheet() {
-  const r = room, rec = recommendSet(getChar(r.char.id) || r.char); // 작품이 직접 적은 권장 모델(없으면 배지 없음) — 최신 작품에서
+  const r = room, rec = recommendSet(liveWork(r.char)); // 작품이 직접 적은 권장 모델(없으면 배지 없음) — 최신 작품에서
   const card = (k) => {
     const m = MODELS[k], q = quote({ ...r.set, model: k }); // q.list = 정가(listPrice), q.n = 지금 낼 하트
     const price = q.type === "free" ? `오늘 무료 ${freeLeft()}턴 남음 · 이후 턴당 ♥${q.list}` : q.type === "plus" ? `PLUS 무제한 <s>턴당 ♥${q.list}</s>` : (isPro() && q.n < q.list ? `턴당 <s>♥${q.list}</s>♥${q.n}` : `턴당 ♥${q.n}`);

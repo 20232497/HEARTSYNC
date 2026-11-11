@@ -56,6 +56,7 @@
 | `rules.test.mjs` | 프롬프트 세 블록(`ai/prompt/rules.js` rulesParts — 고정부가 턴이 바뀌어도 글자 하나까지 같은지, 이용자가 쓴 글은 변동부에만, 이미 등장한 인물에는 인물 코드만), 시작 상황의 선택 칸(place·suggestions·lead), 프롬프트 캐싱 스위치(`ai/llm.js`) |
 | `commands.test.mjs` | 대화방 명령어(`core/commands.js` — 앱·연출·이야기·즉답 구분, 입력창 ! 목록, AI에 보낼 글) |
 | `rooms.test.mjs` | 대화방(`core/rooms.js`): 방이 시작 상황을 찾는 순서 `openingIndex`(id 우선 · 제목 대체 · 못 찾으면 첫째), 분기한 방이 id를 가져가는지, 작품의 시작 상황 id가 모양에 맞고 겹치지 않는지 |
+| `live-work.test.mjs` | 방의 작품을 지금 읽을 모양으로(`core/character.js` `liveWork`·`latestWork`·`LIVE_FIELDS`): 최신 작품에서 읽는 칸과 방 사본에 굳는 칸, 작품이 `content/`에서 빠지면 방 사본 그대로, '처음부터 다시'는 최신 작품 통째로. **지킴이**: `getChar` 호출과 `ORIGINALS` 사용이 허용한 모듈(방이 없는 화면·예전 방 옮기기)에만 있는지 — 방의 작품을 다른 길로 찾는 모듈이 생기면 실패 |
 | `shelf.test.mjs` | 내 서재(`core/shelf.js` — 여러 기기 값을 합치는 mergeShelf, 계정 동기화 날짜 관문 shelfSyncOn과 **개인정보처리방침 시행일이 같은 날인지**, 찜 켜고 끄기·최근 본·수집 기록) |
 | `content-lock.test.mjs` | 순서 잠금(`tools/content-lock.mjs`)의 판정 `checkLock`: 맨 뒤에 더하기·이름 고치기·새 시작 상황과 인물은 통과(잠금만 뒤처짐), 중간에 끼우기·지우기·순서 바꾸기·id와 코드 없애기는 어긋남, 잠금 없는 새 작품, 알려진 한계, 강제 다시 찍기의 표 |
 | `content-lock-base.test.mjs` | 순서 잠금 — 기준 가지와 견주기(`tools/content-lock.mjs` `checkBase`·`readBaseLocks`, `npm run check`가 부름): 순서를 바꾸고 작업 폴더의 잠금을 다시 찍어도(파일을 지우고 찍거나 손으로 고쳐도) 걸리는지, 잠금 파일이 없어지면 실패·작품이 없어지면 알리기만, 뒤에 더하기·이름 고치기·폴더 옮기기는 통과, 임시 git 저장소에서 '갈라진 자리'의 잠금을 읽는지(그 뒤 기준 가지에 더해진 것은 견주지 않음·못 읽으면 null) |
