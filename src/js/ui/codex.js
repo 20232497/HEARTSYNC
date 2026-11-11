@@ -83,11 +83,13 @@ function cmdCard(x) {
 }
 const cmdList = (list) => `<div class="cmd-list">${list.map(cmdCard).join("")}</div>`;
 const KIND_LEGEND = Object.keys(COMMAND_KINDS).map((k) => `'${COMMAND_KINDS[k].name}' ${COMMAND_KINDS[k].note}`).join(" · ");
-/** 상세 페이지 아래쪽 칸들: 장소(MP)·컷씬(EV) 목록(작품에 있을 때만)과 명령어 카드(allCommands — 앱·연출·이야기). @param {Work} c @returns {string} */
-export function codexHTML(c) {
-  const book = codebook(c);
-  return seriesHTML(c, book) +
-    `<div class="box"><h3>명령어 <small>대화방 입력창에 !를 치면 목록이 떠요</small></h3>${cmdList(allCommands(c))}<p class="note" style="margin-top:8px">${esc(KIND_LEGEND)}</p></div>`;
+/** 장소·컷씬 칸과 명령어 칸을 이어 붙인 것(placesHTML + commandsHTML) — 상세 페이지는 둘을 따로 놓고, 흐름 시험(views)이 이 묶음으로 비공개 칸을 봄. @param {Work} c @returns {string} */
+export function codexHTML(c) { return placesHTML(c) + commandsHTML(c); }
+/** 상세 페이지의 장소(MP)·컷씬(EV) 칸 — 작품에 있을 때만. 그림이 있는 칸이라 등장인물 아래에 둠. @param {Work} c @returns {string} */
+export function placesHTML(c) { return seriesHTML(c, codebook(c)); }
+/** 상세 페이지의 명령어 칸(allCommands — 앱·연출·이야기). 플레이 가이드 바로 아래에 둠. @param {Work} c @returns {string} */
+export function commandsHTML(c) {
+  return `<div class="box"><h3>명령어 <small>대화방 입력창에 !를 치면 목록이 떠요</small></h3>${cmdList(allCommands(c))}<p class="note" style="margin-top:8px">${esc(KIND_LEGEND)}</p></div>`;
 }
 /** codexHTML·viewCodex의 복사 버튼·그림 크게 보기 연결. @param {HTMLElement} v */
 export function bindCodex(v) {
