@@ -6,6 +6,7 @@
 - 정한 과정: 2026-11-05 사용자와 19라운드 비교 생성으로 확정, 2026-11-06 정면·표정·얼굴 다양화 보정
 - 원래 위치: `src/js/images/styles.js`(값), `src/js/images/style-fit.js`(인물에 맞추기), `src/js/images/runware.js`(조립·후처리), `src/js/images/prompt.js`(장면 태그)
 - 정리 직전 전체 코드는 git 태그 `archive/before-reset-2026-11-08`에 그대로 있습니다
+- **v6(2026-11-10 확정)**: 배경·마감·얼굴을 다듬은 판 — 아래 v6 절. **그림은 v6 값으로 만듭니다.** 짝인 여성향 일상(남성 인물)은 `archive/style-fdaily/`
 
 ## 파일
 
@@ -13,9 +14,41 @@
 | --- | --- |
 | `mdaily.json` | 화풍의 모든 값: 모델·LoRA·생성 설정·프롬프트(따뜻한/차가운 색조)·네거티브·조건(fits)·후처리·고정 태그·장면 태그(칸 0~14) |
 | `prompts.json` | 남성향 작품 여성 인물 23명 × 칸 0(프로필)·1(기본) = 46개의 **완성된** 긍정·부정 프롬프트. 외부 도구에 그대로 붙여 넣으면 됨 |
-| `samples/` | 이 화풍으로 만든 견본 3장(384px) |
+| `samples/` | 이 화풍으로 만든 견본 3장(384px). `mdaily-v6-1~3.jpg`는 v6 견본 |
+| `mdaily-v6.json` | **v6 확정 값.** 프롬프트·네거티브·후처리 전부와 배경 규칙(`bg`). 바꾸지 않은 칸(사람 없는 그림·고정 태그·장면 태그)은 `mdaily.json` |
+| `prompts-v6.json` | v6로 조립한 완성 프롬프트 — 여성 인물 25명 × 칸 0·1 = 50개 |
 | `code/style-fit.js` | 인물 태그에 맞춰 화풍 문구를 고르는 순수 함수(`fitStyle`·`weighTags`) 사본 |
 | `code/post.js` | 그림을 받은 뒤 캔버스에서 입히는 후처리(`stylePost`) 사본 |
+
+## v6 — 2026-11-10 확정(그림은 이 값으로)
+
+원래 값(아래 '생성 설정'부터의 설명)에서 배경·마감·얼굴을 다듬은 판입니다. 여성향 일상 v7(`archive/style-fdaily/`)과 함께 정했습니다. 모델·LoRA·샘플러·크기·조건(`fits`)·고정 태그·사람 없는 그림은 원래 값 그대로입니다.
+
+**조립 순서:** 원래 순서에서 인물 태그와 화풍 문구 사이에 **배경**이 들어갑니다(`bg`).
+- `(blurry background:1.5), (depth of field:1.3), light haze, (<장소 낱말>:0.8)`
+- 장소 낱말은 작품의 artTags·장소(MP)에서 고릅니다. 네온·보케·술병처럼 센 낱말은 흐려지지 않고 또렷하게 그려져 뺍니다.
+- `hanok`은 모델이 몰라 서양 아치를 그리므로 `traditional korean house`로 씁니다.
+- 배경을 흐리게 넣으므로 규격 네거티브(`IMG_NEG`)의 `blurry`는 뺍니다.
+
+**바꾼 것(원래 대비)**
+
+| 무엇 | 뺀 것 | 더한 것 |
+| --- | --- | --- |
+| 각도 | `(straight-on:1.25)`, `(front view:1.1)` | `(head tilt:1.1)` — 정면은 남기고 고개만 살짝 |
+| 색·마감 | `muted … palette`, `(muted eye color:1.2)`, `natural eyes`, `(pastel colors:1.1)` | `… palette`, `(shiny hair:1.05)`, `hair highlights`, `(eye highlights:1.1)`, `light blush` |
+| 얼굴 | `small nose`, `small mouth` | `(small face:1.2)`, `(small head:1.15)`, `(defined facial features:1.2)`, `(sharp features:1.1)`, `(defined eyes:1.2)`, `(sharp nose:1.1)`, `(double eyelids:1.1)`, `(beautiful face:1.2)`, `(beautiful detailed eyes:1.15)`, `(glossy lips:1.05)`, `(charming:1.1)` |
+| 몸 | | `(slender body:1.25)`, `(slim:1.15)`, `(narrow shoulders:1.1)` |
+| 네거티브 | | 머리색 번짐 `(gradient hair:1.3)`, `(multicolored hair:1.3)` · 노출 `(cleavage:1.5)`, `revealing clothes`, `(low neckline:1.3)`, `(breast focus:1.3)`, `(collarbone:1.2)`, `(large breasts:1.2)`, `sleeveless`, `bare shoulders` · 몸 `(broad shoulders:1.3)`, `(muscular female:1.3)`, `(thick arms:1.2)`, `(wide face:1.2)`, `(vest:1.1)` · 목 `(long neck:1.2)` · 조명 `(rim light:1.1)`, `(detailed background:1.2)` |
+
+- 목: 세라나(SRN)의 목이 길어 보여, 긍정의 긴 목 문구를 빼고 네거티브에 `(long neck:1.2)`를 넣었습니다. 좁은 어깨도 1.2 → 1.1로 낮췄습니다(목이 더 길어 보임).
+- 머리 윤기 문구는 옷 색을 머리로 번지게 해서(연두 저고리 → 연두 머리) 머리색 네거티브를 같이 넣었습니다.
+
+**후처리:** 원래 후처리(`lift`·`soft`·`blur`)에 **가장자리 채도 빼기**를 더했습니다. `veil: { center: 0, edge: 0.4, mul: "rgb(255,255,255)", a: 0 }` — 어둡게 하거나 회색을 덮지 않고, 가운데에서 멀수록 채도만 최대 40% 뺍니다. 배경이 인물보다 가라앉아 경계가 부드러워집니다. 코드는 `code/post.js` 그대로입니다.
+
+**v6에서 본 한계**
+- 나이 많은 인물이 젊게 나옴(홍 여사 40대): 화풍의 성숙 태그가 나이를 하나로 정하기 때문입니다. 인물 나이를 쓰는 조립 규칙이 따로 필요합니다(아직 없음).
+- 미소(MSO)의 `gear pendant`(톱니 문양 목걸이)가 십자가로 나옴
+- 세라나는 몇몇 시드에서 깃이 V자로 열림(가슴골은 없음 — 그대로 둠)
 
 ## 생성 설정
 
