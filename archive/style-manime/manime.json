@@ -28,7 +28,11 @@
     "weight": 1.3,
     "rule": "인물 태그의 첫 머리색 태그(… hair)와 묶은 머리 태그(ponytail·updo·bun·braid·hair up·tied hair·chignon)를 1.3으로"
   },
-  "bg": "(black background:1.2), simple background, sparkle, glowing particles, glint, (backlighting:0.9)",
+  "bg": {
+    "default": "(black background:1.2), simple background, sparkle, glowing particles, glint, (backlighting:0.9)",
+    "profile": "(black background:1.2), simple background, sparkle, glowing particles, glint, (backlighting:0.9), (lightning:0.8), electricity",
+    "rule": "0번 칸(프로필)은 profile — 약한 번개 (lightning:0.8), electricity. 감정 칸 1~14와 전신은 default(13번 각성 칸은 장면 태그에 번개가 원래 있음)"
+  },
   "style": {
     "f": "game cg, official art, illustration, (sharp lineart:1.2), (detailed hair strands:1.2), (beautiful detailed eyes:1.2), (hatching \\(texture\\):1.1), soft lighting, (blush:0.6), (nose blush:0.5), pink lips, detailed hair, (detailed eyes:1.2), detailed iris, long eyelashes, (fair skin:1.2), depth of field",
     "m": "game cg, official art, illustration, (sharp lineart:1.2), (detailed hair strands:1.2), (beautiful detailed eyes:1.2), lower eyelashes, (hatching \\(texture\\):1.1), soft lighting, detailed hair, (detailed eyes:1.2), detailed iris, long eyelashes, (fair skin:1.2), depth of field"
@@ -62,21 +66,21 @@
     "14": "upper body, looking at viewer, blush, gentle smile, half-lidded eyes, soft gaze, relaxed expression"
   },
   "effects": {
-    "lightning": "(lightning:1.1), electricity — 13번(각성) 칸에 들어 있음. 다른 칸에 늘 넣지는 않음"
+    "lightning": "13번(각성) 칸 장면 태그에 (lightning:1.1), electricity · 0번 칸 배경에 (lightning:0.8), electricity(bg.profile) · 그 밖의 칸과 전신에는 없음"
   },
   "examples": [
     {
       "code": "HSY",
       "kind": "upper",
       "slot": 0,
-      "positive": "1girl, solo, (adult woman:1.1), safe, (black hair:1.3), (high ponytail:1.3), (side-swept bangs:1.15), (arched eyebrows:1.15), (sharp eyes:1.15), (amber eyes:1.3), (white fencing uniform:1.15), (high collar:1.15), (rapier:1.15), (portrait:1.1), (upper body:1.15), (head tilt:1.15), (looking at viewer:1.15), (smirk:1.1), (closed mouth:1.15), (from side:0.6), (hair over shoulder:1.2), (from above:0.6), (black background:1.2), simple background, sparkle, glowing particles, glint, (backlighting:0.9), game cg, official art, illustration, (sharp lineart:1.2), (detailed hair strands:1.2), (beautiful detailed eyes:1.2), (hatching \\(texture\\):1.1), soft lighting, (blush:0.6), (nose blush:0.5), pink lips, detailed hair, (detailed eyes:1.2), detailed iris, long eyelashes, (fair skin:1.2), depth of field, masterpiece, high score, great score, absurdres, year 2024",
+      "positive": "1girl, solo, (adult woman:1.1), safe, (black hair:1.3), (high ponytail:1.3), (side-swept bangs:1.15), (arched eyebrows:1.15), (sharp eyes:1.15), (amber eyes:1.3), (white fencing uniform:1.15), (high collar:1.15), (rapier:1.15), (portrait:1.1), (upper body:1.15), (head tilt:1.15), (looking at viewer:1.15), (smirk:1.1), (closed mouth:1.15), (from side:0.6), (hair over shoulder:1.2), (from above:0.6), (black background:1.2), simple background, sparkle, glowing particles, glint, (backlighting:0.9), (lightning:0.8), electricity, game cg, official art, illustration, (sharp lineart:1.2), (detailed hair strands:1.2), (beautiful detailed eyes:1.2), (hatching \\(texture\\):1.1), soft lighting, (blush:0.6), (nose blush:0.5), pink lips, detailed hair, (detailed eyes:1.2), detailed iris, long eyelashes, (fair skin:1.2), depth of field, masterpiece, high score, great score, absurdres, year 2024",
       "negative": "lowres, bad anatomy, bad hands, text, error, missing fingers, extra digits, fewer digits, cropped, worst quality, low quality, low score, bad score, average score, signature, watermark, username, blurry, child, loli, shota, underage, toddler, aged down, nsfw, sensitive, cleavage, revealing clothes, (large breasts:1.2), huge breasts, curvy, ass focus, (anime coloring:1.2), anime screencap, flat color, key, keychain, dark skin, tanned skin, (shadow over face:1.2), glowing eyes, red skin, colored skin, rainbow, realistic, 3d, baby face, round face, chibi, dark-skinned male, dark-skinned female, (tan:1.1), (shaded face:1.2), face in shadow, (blank eyes:1.2), (empty eyes:1.1), no pupils, eyeshadow, (eyeliner:1.1), (multicolored hair:1.2), streaked hair, colored inner hair, gradient hair"
     },
     {
       "code": "RGN",
       "kind": "upper",
       "slot": 0,
-      "positive": "1boy, solo, (adult man:1.2), (mature male:1.15), safe, (black hair:1.3), (very short hair:1.15), (orange eyes:1.3), (broad shoulders:1.15), (black t-shirt:1.15), (scorched firefighter jacket:1.15), (improvised shield:1.15), (rectangular metal shield:1.15), (portrait:1.1), (upper body:1.15), (head tilt:1.15), (looking at viewer:1.15), (light smile:1.15), (closed mouth:1.15), (black background:1.2), simple background, sparkle, glowing particles, glint, (backlighting:0.9), (short hair:1.3), game cg, official art, illustration, (sharp lineart:1.2), (detailed hair strands:1.2), (beautiful detailed eyes:1.2), lower eyelashes, (hatching \\(texture\\):1.1), soft lighting, detailed hair, (detailed eyes:1.2), detailed iris, long eyelashes, (fair skin:1.2), depth of field, masterpiece, high score, great score, absurdres, year 2024",
+      "positive": "1boy, solo, (adult man:1.2), (mature male:1.15), safe, (black hair:1.3), (very short hair:1.15), (orange eyes:1.3), (broad shoulders:1.15), (black t-shirt:1.15), (scorched firefighter jacket:1.15), (improvised shield:1.15), (rectangular metal shield:1.15), (portrait:1.1), (upper body:1.15), (head tilt:1.15), (looking at viewer:1.15), (light smile:1.15), (closed mouth:1.15), (black background:1.2), simple background, sparkle, glowing particles, glint, (backlighting:0.9), (lightning:0.8), electricity, (short hair:1.3), game cg, official art, illustration, (sharp lineart:1.2), (detailed hair strands:1.2), (beautiful detailed eyes:1.2), lower eyelashes, (hatching \\(texture\\):1.1), soft lighting, detailed hair, (detailed eyes:1.2), detailed iris, long eyelashes, (fair skin:1.2), depth of field, masterpiece, high score, great score, absurdres, year 2024",
       "negative": "lowres, bad anatomy, bad hands, text, error, missing fingers, extra digits, fewer digits, cropped, worst quality, low quality, low score, bad score, average score, signature, watermark, username, blurry, child, loli, shota, underage, toddler, aged down, nsfw, sensitive, cleavage, revealing clothes, (large breasts:1.2), huge breasts, curvy, ass focus, (anime coloring:1.2), anime screencap, flat color, key, keychain, dark skin, tanned skin, (shadow over face:1.2), glowing eyes, red skin, colored skin, rainbow, realistic, 3d, long hair, ponytail, (baby face:1.2), (round face:1.1), (blush:1.1), chibi, dark-skinned male, dark-skinned female, (tan:1.1), (shaded face:1.2), face in shadow, (blank eyes:1.2), (empty eyes:1.1), no pupils, eyeshadow, (eyeliner:1.1), (multicolored hair:1.2), streaked hair, colored inner hair, gradient hair"
     },
     {
@@ -144,7 +148,8 @@
     "0번 칸에 외형 글의 특징(소품)·표정(charm) — 표정은 인물별 expr이 있으면 그것, 없으면 눈매 규칙",
     "네거티브에 머리 번짐 막기(negative.streak)",
     "전신 그림 규칙(fullBody) 새로",
-    "생성 크기 832×1216 → 832×1248(그림 규격 확정 — 2:3)"
+    "생성 크기 832×1216 → 832×1248(그림 규격 확정 — 2:3)",
+    "0번 칸(프로필) 배경에만 약한 번개 (lightning:0.8), electricity(bg.profile — 사용자 결정)"
   ],
   "adultNeg": {
     "f": "baby face, round face, chibi",
@@ -285,9 +290,9 @@
   "tagFixes": {
     "done": "2026-11-11 커밋 — 25명 tags에 눈색, HGU paint on hands·SHJ burn scar, SRN·WLH beauty mark → mole under eye"
   },
-  "lightningOption": {
-    "bg": "(black background:1.2), simple background, sparkle, glowing particles, glint, (backlighting:0.9), (lightning:0.8), electricity",
-    "note": "모든 프로필 그림에 번개가 들어감 — 사용자가 고름",
-    "status": "확정 화풍 위에서 다시 시험 예정(2026-11-11 사용자: 번개는 화풍 확정 뒤)"
+  "lightning": {
+    "decided": "2026-11-11",
+    "where": "0번 칸(프로필)에만",
+    "why": "번개가 인물 눈색을 따라가 인물마다 다른 기운처럼 보임. 감정 칸은 대화 속에 계속 나와 번잡하고, 전신에서는 옷이 바뀌는 일이 있었음(당소소 보라 무복 → 흰 바지)"
   }
 }
