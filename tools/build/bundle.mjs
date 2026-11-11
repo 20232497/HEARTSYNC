@@ -5,7 +5,7 @@ import path from "node:path";
 import * as espree from "espree";
 import * as scope from "eslint-scope";
 import { BROWSER_GLOBALS } from "../globals.mjs";
-import { BuildError, SRC, readText, rel, visible } from "./common.mjs";
+import { BuildError, GEN_FILE, SIZE_LIMITS, SRC, readText, rel, visible } from "./common.mjs";
 
 /* ---------------------------------------------------------------- 주석 벗기기(사용자 빌드) */
 const KEEP_CSS = /\/\*(?!!)[\s\S]*?\*\//g;          // 지울 CSS 주석(/*! 는 남김)
@@ -211,5 +211,7 @@ function bundleModules(entry, t, page) {
     if (t.strip) { const c = compact(text), s = summaryOf(m); return { rel: m.rel, header: `/* ── ${m.rel}${s ? " — " + s : ""} */\n`, text: c.text, src: c.src }; }
     return { rel: m.rel, header: t.doc ? docHeader(m, order) : `/* ── ${m.rel} */\n`, text, src: null };
   });
-  return { pieces, warnings, count: order.length };
+  // 크기 재기(common.mjs SIZE_LIMITS — 알림용): 모듈마다 용량과 기준보다 긴 줄 수. 빌드가 만든 작품 데이터(generated.js)는 빼고
+  const sizes = order.filter((m) => m.file !== GEN_FILE).map((m) => ({ rel: m.rel, bytes: Buffer.byteLength(m.code), long: m.code.split("\n").filter((l) => l.length > SIZE_LIMITS.lineChars).length }));
+  return { pieces, warnings, count: order.length, sizes };
 }

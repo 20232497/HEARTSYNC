@@ -26,7 +26,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { appRules } from "./build/app-rules.mjs";
 import { assemble } from "./build/bundle.mjs";
-import { BUILD_DIR, BuildError, LS, PS, ROOT, SRC, TARGETS, readText } from "./build/common.mjs";
+import { BUILD_DIR, BuildError, LS, PS, ROOT, SIZE_LIMITS, SRC, TARGETS, readText } from "./build/common.mjs";
 import { buildContent } from "./build/content.mjs";
 import { checkForbidden, checkScripts } from "./build/output-check.mjs";
 import { checkBase, readBaseLocks } from "./content-lock.mjs";
@@ -50,7 +50,13 @@ export async function build(name = "user") {
   if (errors.length) throw new BuildError(errors);
   fs.mkdirSync(BUILD_DIR, { recursive: true });
   fs.writeFileSync(path.join(BUILD_DIR, t.linemap), JSON.stringify(map));
-  return { name, out: path.join(ROOT, t.out), file: t.out, html, map, css, modules: bundle.count, warnings: bundle.warnings };
+  return { name, out: path.join(ROOT, t.out), file: t.out, html, map, css, modules: bundle.count, warnings: bundle.warnings, sizes: bundle.sizes };
+}
+/** 크기 기준 요약 한 줄(알림 — 경고·실패 아님): 용량 기준을 넘는 모듈 수(큰 것 셋의 이름)와 기준보다 긴 줄 수. 두 빌드에 같이 든 모듈은 한 번만 셈. @param {{ rel: string, bytes: number, long: number }[]} sizes */
+export function sizeNote(sizes) {
+  const all = [...new Map(sizes.map((s) => [s.rel, s])).values()], kb = (n) => (n / 1024).toFixed(1) + "KB";
+  const big = all.filter((s) => s.bytes > SIZE_LIMITS.moduleBytes).sort((a, b) => b.bytes - a.bytes), long = all.filter((s) => s.long), lines = long.reduce((n, s) => n + s.long, 0);
+  return `크기 기준(알림): ${kb(SIZE_LIMITS.moduleBytes)}를 넘는 모듈 ${big.length}개${big.length ? `(${big.slice(0, 3).map((s) => `${s.rel.replace("src/js/", "")} ${kb(s.bytes)}`).join(", ")}${big.length > 3 ? " …" : ""})` : ""} · ${SIZE_LIMITS.lineChars}자를 넘는 줄 ${lines}개(모듈 ${long.length}/${all.length}개)`;
 }
 /* content/ 검사·생성 한 번 + 대상들 */
 export async function buildAll(names = Object.keys(TARGETS)) {
@@ -103,6 +109,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
         console.log(`${same ? "= " + o.file + " 그대로" : "✓ " + o.file + " 만듦"} (${info} · ${TARGETS[o.name].label})`);
       }
     }
+    console.log(sizeNote(outs.flatMap((o) => o.sizes)));
     if (fail) process.exit(1);
   } catch (e) {
     if (!(e instanceof BuildError)) throw e;
