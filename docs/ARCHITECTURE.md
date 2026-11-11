@@ -1,5 +1,7 @@
 # HEART SYNC 아키텍처 — 두 빌드와 층 규칙
 
+> 이 문서는 **큰 그림**이에요. 꼭 지킬 규칙은 [CLAUDE.md](../CLAUDE.md)에, 영역마다의 자세한 설명은 CLAUDE.md의 지도 표가 가리키는 영역 문서(docs/app/ — 빌드는 [build.md](app/build.md))에, 결정의 날짜와 경위는 [DECISIONS.md](DECISIONS.md)에 있어요(2026-11-12 문서 개편). 겹치는 내용이 어긋나면 영역 문서가 기준이에요.
+
 2026-11-08에 지금 개발에 필요한 부분만 남기고 정리했다(그림 생성·이미지 스튜디오·움짤·코드 표·성인 모드·API 키 금고·커뮤니티·휴대폰 인증 화면을 걷어 냄). 정리 전 코드와 그때까지의 점검 기록(2026-11-04 A단계 점검, 그림 흐름, 관리자 그림 생성 권한 등)은 git 태그 `archive/before-reset-2026-11-08`에 있다.
 
 ## 1. 한눈에
@@ -21,12 +23,12 @@
 ## 2. 층과 규칙
 
 ```
-core      config(잎) · constants · util · events · storage · state · shelf(내 서재 — 찜·최근 본·수집 기록) · target · cast · audience · wallet · character · safety · rooms · settings · migrate · commands(순수)  (types.js는 문서만 — 번들에 안 들어감)
+core      config(잎) · constants · util · events · storage · state · shelf(내 서재 — 찜·최근 본·수집 기록) · target · cast · audience · wallet · character(방의 작품 liveWork) · safety · episode(에피소드 진행 — 순수) · rooms · settings · migrate · commands(순수)  (types.js는 문서만 — 번들에 안 들어감)
 content   index.js — 빌드가 만든 generated.js(ORIGINALS · HOME_ROWS)
 services  supabase · cloud · sync · load · images · support
 images    codes(그림 태그 읽기 — 순수) · situations(감정 칸 0~14 이름·낱말 점수 — 순수) · pick(인물·칸별 그림 찾기)
-ai        models · llm · parse · prompt/{lore,rules,input,memory}
-ui        icons · sheet · ext · shell · cover · home · detail · codex · chat/{render,log,cmdlist,view,generate,suggest} · pay · pins(고정 기억) · report(메시지 신고) · model-sheet · room-tools · room-drawer(드로어의 틀) · drawer/{main,memory,settings,browse} · worldart(보기) · chats · store · login · account · me · help · faq
+ai        models · llm · stream · parse · prompt/{lore,rules,episode,input,memory}
+ui        icons · sheet · ext · shell · cover · home · detail · codex · chat/{render,log,cmdlist,view,generate,suggest,episode} · pay · pins(고정 기억) · report(메시지 신고) · model-sheet · room-tools · room-drawer(드로어의 틀) · drawer/{main,memory,settings,browse} · worldart(보기) · chats · store · login · account · me · help · faq
 admin     gate · support   (관리자 빌드만)
 boot.js → app.js(USER_VIEWS · USER_NAVS) → main.js | admin.js
 ```
@@ -65,7 +67,7 @@ boot.js → app.js(USER_VIEWS · USER_NAVS) → main.js | admin.js
 
 그래서 **모듈 첫 줄 주석의 첫 문장**이 사용자 빌드에 남는 유일한 설명이다 — 짧고 정확하게 쓴다. 줄 번호는 `.build/linemap.json`(사용자, 빈 줄을 지워 한 모듈이 여러 구간)·`linemap-admin.json`(관리자)으로 원본에 맞춘다(`npm run dev`가 콘솔에 원본 파일:줄을 찍음).
 
-CSS는 `src/css/`의 12조각(10-base … 72-help)이 두 빌드 공통이고, 관리자 빌드만 `src/css/admin/`의 58-gate·73-support를 더한다.
+CSS는 `src/css/`의 13조각(10-base … 72-help)이 두 빌드 공통이고, 관리자 빌드만 `src/css/admin/`의 58-gate·73-support를 더한다.
 
 ## 5. 결정과 남은 일
 

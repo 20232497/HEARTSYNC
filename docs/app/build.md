@@ -1,0 +1,25 @@
+# 빌드·소스 구조·시험
+
+두 빌드의 구성, CSS·모듈의 층, 번들러, 개발 서버, 시험 — 빌드가 강제하는 규칙 자체(층 규칙·모듈 규칙·빌드 검사)는 CLAUDE.md에, 큰 그림은 [docs/ARCHITECTURE.md](../ARCHITECTURE.md)에, 시험마다의 설명은 [tests/README.md](../../tests/README.md)에 있어요.
+
+> CLAUDE.md의 지도 표가 가리키는 **영역 문서**예요. 이 영역의 코드를 고치기 전에 읽고, 고친 뒤에는 같은 커밋에서 이 문서의 해당 항목을 고쳐요. 항목은 2026-11-12에 CLAUDE.md의 '앱 구조'·'소스 구조·빌드' 절에서 문장 그대로 옮긴 것이고, 결정의 날짜와 경위를 모은 색인은 [docs/DECISIONS.md](../DECISIONS.md)에 있어요.
+
+**이 문서가 다루는 모듈**: `tools/build.mjs` · `tools/build/` · `tools/dev.mjs` · `tools/globals.mjs` · `tests/run.mjs` · `src/page.html` · `src/admin.html` · `src/css/` · `src/js/app.js` · `src/js/main.js` · `src/js/admin.js` · `src/js/boot.js` · `src/js/ui/ext.js`
+
+## 두 빌드 — 관리자 도구가 사용자 사이트에 더하는 것
+
+- 관리자 도구 = 사용자 사이트 + admin/gate.js(관문·잠그기 버튼) + admin/support.js(고객센터 관리: 공지 쓰기·고치기·삭제, 받은 문의 답변·상태, MY에 답변 대기 수). CSS는 src/css/admin/(58-gate·73-support)
+- 사용자 화면은 자리만 두고 관리자 모듈이 EXT 고리(ui/ext.js — **me·help 둘**)로 채움: MY의 #meExt, 고객센터 탭을 그린 뒤 runExt("help", tab, box, list)
+- 빌드 검사 checkForbidden(tools/build.mjs): 두 빌드 모두 openrouter.ai·runware.ai 주소가 있으면 실패, index.html에 관리자 모듈 머리(`/* ── src/js/admin/`)가 있으면 실패
+
+## 소스 구조
+
+- src/css/NN-이름.css 13개(10-base 색 토큰 → 15-shell → 20-buttons → 25-cover → 30-home → 35-detail → 37-codex → 40-scene → 45-chat → 50-sheets → 60-store → 70-my → 72-help)
+- **src/js: ES 모듈(사용자 74개·관리자 76개 — 수는 npm run build가 출력), 파일 첫 줄 주석이 그 모듈의 책임.** 층: core/(config 잎 모듈·constants·util·events·storage·state·shelf·target·cast·audience·wallet·character·safety·episode·rooms·settings·migrate·commands) → content/index.js(빌드가 만든 generated.js의 ORIGINALS·HOME_ROWS — 출연진 없는 1:1 작품에 cast를 만듦) → services/(supabase·cloud·sync·load·images·support) · images/(codes·situations·pick — 그림 고르기만) · ai/(models·llm·stream·parse, prompt/lore·rules·episode(에피소드·외전 방의 프롬프트 조각)·input·memory) → ui/(icons·sheet·ext·shell·cover·home·detail·codex·chat/{render,log,cmdlist,view,generate,suggest,episode}·pay·pins·report·model-sheet·room-tools·room-drawer(드로어의 틀)·drawer/{main,memory,settings,browse}(드로어 화면별)·worldart·chats·store·login·account·me·help·faq) → admin/(관리자만 gate·support) → boot.js → app.js → main.js / admin.js
+- 번들(tools/build.mjs — 진입점. 2026-11-12 프레임 5차에 역할별로 나눔: tools/build/의 common 폴더·대상·도우미 · bundle 뼈대 펼치기와 모듈 번들러 · app-rules 앱 규칙 꺼내기 · content 작품 읽기 · work-check 작품 검사 · episode-check 에피소드 진행표 · images-scan 그림 파일 · output-check 결과 검사 · docs-check 문서 지킴이(CLAUDE.md 크기 상한·지도 표의 경로 — check만). 다른 도구·시험이 쓰는 이름은 전처럼 build.mjs가 내보냄): 진입점에서 import를 깊이 우선으로 따라가 의존 모듈이 먼저(진입점이 맨 뒤), import 줄은 빈 줄로·export 키워드만 벗겨 이어 붙임. 결과는 **클래식 스크립트 하나** — 전역 함수·S·room 그대로(Playwright가 전역을 건드림). 순환 import는 되지만 **맨 윗단에서 뒤에 오는 모듈의 const/class를 쓰면 빌드 실패**(TDZ) — 그래서 core/config.js는 잎 모듈. 번들러·패키지를 런타임에 더하지 않음
+
+## 개발 서버·시험·그 밖의 도구
+
+- npm run dev(tools/dev.mjs): http://localhost:5173, 저장할 때마다 새 프로세스로 빌드 → SSE 새로 고침, 실패하면 화면 아래 오류, 런타임 오류는 linemap으로 원본 파일:줄
+- 시험(tests/README.md): npm test = 단위(node:test, tests/unit/ — images/codes·situations, ai/parse·stream·prompt/lore·input·rules(세 블록·캐시 스위치), core/commands·rooms(시작 상황 찾는 순서·작품의 id)·character(live-work — 방의 작품을 어느 칸은 최신 작품에서 읽는지 + getChar를 직접 부르는 모듈이 늘지 않게 지킴)·episode(장·사건·갈림길·결말·외전과 프롬프트 자리)·safety·shelf·util, tools/content-report(셈)·content-lock(순서 잠금 판정)·content-lock-base(기준 가지와 견주기)·build-size(크기 기준 재기와 요약 줄)·docs-check(문서 지킴이 — CLAUDE.md 상한·지도 표와 영역 문서의 경로)·content-check(**작품 검사 규칙** — 가짜 작품을 한 칸씩 망가뜨려 checkWork·checkEpisode·scanImages·checkForbidden의 규칙마다 기대한 오류가 나는지; 규칙을 더하면 '규칙 자리 수' 시험이 실패하니 표에 줄을 더함)·content-art(그림 의뢰 목록·규격 표), docs/edge/verify-adult·chat(도우미 _idv-fake.mjs)). npm run e2e = 흐름 시험 16종(tests/run.mjs가 정적 서버를 띄움 — gate·admin(admin.html)·social·cloud2·help·audience·firstvisit·chatflow·tracks·mobile·file·views·art(가짜 그림을 주입해 그림이 실린 상태의 본문·갤러리·도감·수집률)·scroll·episode(가짜 AI로 상세 → 장 막대 → 갈림길 → 결말 카드 → 외전)·inject(**주입(XSS)** — 이용자 글·AI 응답·공지와 문의·작품 데이터(에피소드 진행표 포함) 자리마다 악성 글을 넣고 사용자 사이트·관리자 도구의 화면을 돌아 실행·새어 나온 요소가 없고 글자 그대로 보이는지; 새 화면·데이터 칸을 더하면 이 시험에도)), 결과 JSON의 fail·error·errors·errs·pageerror 칸으로 판정, 스크린샷 tests/.shots/. Supabase는 page.route로 흉내 — 실제 계정·서버는 안 건드림. 처음엔 npx playwright install webkit chromium. 컴퓨터가 잠들면 시험이 '5분 시간 초과'로 실패하니 다시 돌려 볼 것
+- 코드 지식 그래프(선택, 이 PC): graphify(PyPI graphifyy)가 깔려 있으면 graphify-out/(gitignore)에 지도가 있고 .git/hooks가 커밋·브랜치 전환 뒤 뒤에서 다시 만듦(LLM 호출 없음, 약 10초). 위치가 헷갈릴 때만 `graphify query "…"`로 직접 물음 — 클로드 훅·스킬은 도구 호출마다 0.5초씩 느려져 뺌. 없는 환경에서는 그냥 grep·Read

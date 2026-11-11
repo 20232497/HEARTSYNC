@@ -1,5 +1,5 @@
 // 응답 파싱(src/js/ai/parse.js) 단위 테스트 — npm test (node --test가 **/*.test.mjs를 찾음)
-// 모듈을 Node에서 바로 import한다(브라우저 없이). 요청·응답 형식(MARK·status JSON)은 CLAUDE.md '응답 형식'
+// 모듈을 Node에서 바로 import한다(브라우저 없이). 요청·응답 형식(MARK·status JSON)은 docs/app/prompt.md '응답 형식'
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { splitReply, multiPairs, parseState, dropEcho, looseJSON } from "../../src/js/ai/parse.js";
