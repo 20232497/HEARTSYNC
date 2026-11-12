@@ -28,7 +28,7 @@ export default {
 - 세레나 바이스(SRN, 27, 여): 3층 해적 군도 출신 항해사, '무대 사고'로 1층에 떨어졌다. 쌍권총. 능청스럽고 도박을 좋아한다. 은발 웨이브, 삼각모, 붉은 코트. 개인 퀘스트: 3층에 두고 온 배와 선원들 — 그 배의 키를 건 내기가 아직 끝나지 않았다.
 - 연화(YNH, 25, 여): 2층 무림 객잔의 점소이, 실은 마교의 첩자. 암기와 독. 웃는 얼굴로 거짓말한다. 검은 땋은 머리, 소매 속 비수. 개인 퀘스트: 마교의 명은 '등반자를 2층 교주 앞으로 데려오라'. 유저와 가까워질수록 흔들린다.
 - 윤채이(YCI, 30, 여): 범죄심리 프로파일러. 분석·약점 간파. 냉소적이고 커피 중독. 둥근 안경, 낡은 트렌치코트. 개인 퀘스트: 하늘이 갈라지기 전 쫓던 연쇄 사건의 범인이 등반자가 되어 탑을 오르고 있다.
-- 카일 노스(KYL, 26, 남): 4층 황야 출신 현상금 사냥꾼, 리볼버. 과묵하고 의리가 있다. 짧은 모래색 머리, 판초, 턱의 흉터. 개인 퀘스트: 4층에서 제 마을을 태운 현상범을 쫓다가 1층까지 떨어졌다.
+- 카일 노스(KYL, 35, 남): 4층 황야 출신 현상금 사냥꾼, 리볼버. 과묵하고 의리가 있다. 짧은 모래색 머리, 옅은 수염, 모자 달린 긴 갈색 망토, 턱의 흉터. 개인 퀘스트: 4층에서 제 마을을 태운 현상범을 쫓다가 1층까지 떨어졌다.
 - 백여울(BYU, 25, 여): 무당 집안 막내. 부적·퇴마·소환. 겁이 많지만 귀신 앞에선 단호하다. 붉은 댕기, 개량 한복 점퍼. 개인 퀘스트: 집안이 대대로 모신 몸주신이 관람석에 앉아 있다. 왜 무당들을 두고 관객이 되었는지 묻고 싶다.
 
 [진상 — 내레이터만 안다. 층을 오를수록 조금씩 드러낸다]
@@ -69,7 +69,7 @@ export default {
     { code: "SRN", name: "세레나 바이스", desc: "3층 해적 군도 출신 항해사, '무대 사고'로 1층에 떨어졌다. 쌍권총. 능청스럽고 도박을 좋아한다. 은발 웨이브, 삼각모, 붉은 코트.", look: "27세 여성, 은발 웨이브, 삼각모, 붉은 코트, 쌍권총", tags: "silver hair, wavy hair, side-swept bangs, upturned eyes, purple eyes, arched eyebrows, mole under eye, pirate hat, red coat, white collared shirt, black pants, pirate, dual wielding, flintlock pistol" },
     { code: "YNH", name: "연화", desc: "2층 무림 객잔의 점소이. 암기와 독을 다룬다. 늘 생글생글 웃어 속을 알기 어렵다. 검은 땋은 머리, 소매 속 비수.", look: "25세 여성, 검은 땋은 머리, 무림 객잔 점소이 복장, 소매 속 비수", tags: "black hair, single braid, narrow eyes, upturned eyes, red eyes, thin eyebrows, hanfu, white undershirt, chinese clothes, inn servant, hidden dagger" },
     { code: "YCI", name: "윤채이", desc: "범죄심리 프로파일러. 분석·약점 간파. 냉소적이고 커피 중독. 둥근 안경, 낡은 트렌치코트.", look: "30세 여성, 둥근 안경, 낡은 트렌치코트, 커피 텀블러", tags: "black hair, parted bangs, narrow eyes, blue eyes, thin eyebrows, round eyewear, glasses, worn trench coat, black turtleneck, black pants, journalist" },
-    { code: "KYL", name: "카일 노스", desc: "4층 황야 출신 현상금 사냥꾼, 리볼버. 과묵하고 의리가 있다. 짧은 모래색 머리, 판초, 턱의 흉터.", look: "26세 남성, 짧은 모래색 머리, 판초, 턱의 흉터, 리볼버", tags: "sandy blonde hair, short hair, aqua eyes, brown poncho, white shirt, brown vest, blue jeans, small chin scar, revolver, gunslinger" },
+    { code: "KYL", name: "카일 노스", desc: "4층 황야 출신 현상금 사냥꾼, 리볼버. 과묵하고 의리가 있다. 짧은 모래색 머리, 옅은 수염, 모자 달린 긴 갈색 망토, 턱의 흉터.", look: "35세 남성, 짧은 모래색 머리, 옅은 수염, 모자 달린 긴 갈색 망토, 턱의 흉터, 리볼버", tags: "sandy blonde hair, short hair, aqua eyes, stubble, brown hooded cloak, hood down, long cloak, white shirt, blue jeans, small chin scar, revolver, gunslinger" },
     { code: "BYU", name: "백여울", desc: "무당 집안 막내. 부적·퇴마·소환. 겁이 많지만 귀신 앞에선 단호하다. 붉은 댕기, 개량 한복 점퍼.", look: "25세 여성, 붉은 댕기, 개량 한복 점퍼, 손에 든 부적", tags: "black hair, long braid, red ribbon on braid, round eyes, pink eyes, straight eyebrows, mole under eye, modern hanbok, korean clothes, cropped jacket" }
   ],
   // 플레이 가이드 — 제작자가 독자에게 주는 안내문(상세·도감·대화방 메뉴에 줄바꿈 그대로 보임, 1,000자 이내)
@@ -89,7 +89,7 @@ export default {
     { name: "1층 · 붕괴한 광화문", desc: "극장의 막처럼 갈라진 하늘 아래, 무너진 광화문 사거리. 탑 '시어터'의 첫 무대.", tags: "ruined gwanghwamun plaza, collapsed buildings, cracked asphalt, rubble, modern seoul apocalypse, daytime, dramatic light, split sky, distant floating spectator stands" },
     { name: "2층 · 무림 객잔 거리", desc: "객잔과 등롱이 늘어선 무림의 거리.", tags: "wuxia inn street, red lanterns, wooden inns, martial artists, misty night" },
     { name: "3층 · 대항해 해적 군도", desc: "범선과 섬이 흩어진 해적의 바다.", tags: "pirate archipelago, sailing ships, tropical islands, harbor town, sunset sea" },
-    { name: "4층 · 황야의 철도 마을", desc: "모래바람 속 철길 옆에 선 황야의 마을.", tags: "wild west railroad town, desert wind, wooden saloon, steam locomotive, dusty street, afternoon, harsh sunlight" },
+    { name: "4층 · 황야의 철도 마을", desc: "모래바람 속 철길 옆에 선 황야의 마을.", tags: "wild west railroad town, wooden saloon, wooden buildings, wooden porch, dusty street, steam locomotive, night, moonlight, lantern light" },
     { name: "막간의 쉼터", desc: "3층을 넘으면 열리는 안전지대. 휴식·상점·파티 대화를 하는 곳.", tags: "backstage lounge, velvet curtains, warm lamps, small shop counter, sofas, safe zone" }
   ],
   cuts: [
@@ -106,7 +106,7 @@ export default {
       text: RPG_HEAD + "\n\n*광장 한복판, 하늘에서 떨어진 낡은 범선의 돛대가 아스팔트에 꽂혀 있다. 그 그늘 아래 세 사람이 서로를 노려보고 있었다.*\n\n[[SRN0]]\n\n세레나 바이스: \"자자, 총 내리자고. 여긴 내 바다가 아니라서 길을 모르거든. 거기 당신, 이 동네 사람이지?\"\n\n윤채이: \"방금 저 여자가 하늘에서 배랑 같이 떨어졌어요. 그걸 '이 동네'라고 부를 수 있으면 그렇겠죠.\" *그녀가 식은 커피를 한 모금 마신다.*\n\n백여울: \"저, 저기요… 지하철역에서 나오는 거, 개가 아니에요. 원혼 냄새가 나요.\" *붉은 댕기를 맨 여자가 부적을 쥔 손을 떨면서도 당신 앞에 선다.*\n\n[어둠의 하운드 A - HP 60/60] [어둠의 하운드 B - HP 60/60] [어둠의 하운드 C - HP 60/60]\n[1층 퀘스트 1/5 개시: 광화문의 하운드 무리를 처치하고 생존자를 확보하라.]" },
     { id: "hard", title: "🔥 하드 모드 · 믿을 수 없는 둘", suggestions: ["현상금을 누가 걸었는지 묻는다", "케이블타이를 몰래 끊어 본다", "길 안내를 조건으로 거래를 건다"], directive: "하드 모드. 초기 파티: 연화, 카일 노스. 둘 다 유저를 믿지 않고 각자 꿍꿍이가 있다. 연화는 마교 첩자라는 사실을 숨긴다. 적은 강하고 보상은 박하다. 시작 HP 80.",
       status: { ...RPG_STATUS, "HP": "80/100", "S 코인": "500S", "🧪 회복": "없음", "❤️ 호감도": "연화 0 · 카일 노스 0" },
-      text: RPG_HEAD + "\n[관람신 '전쟁의 무신'이 난이도 조정을 요구합니다. 요구가 승인되었습니다.]\n\n*당신이 눈을 뜬 곳은 무너진 교보문고 지하. 손목이 케이블타이로 묶여 있다. 맞은편 계단에 판초 차림의 남자가 리볼버를 무릎에 올려놓고 앉아 있었다.*\n\n[[KYL0]]\n\n카일 노스: \"깼군. 현상금 목록에 네 얼굴이 떴어. '1층 첫 생존자, 산 채로 5,000S.' 누가 걸었는진 모르겠고.\"\n\n*서가 그림자에서 땋은 머리의 여자가 생글생글 웃으며 나온다. 소매 끝에서 얇은 비수가 반짝였다 사라진다.*\n\n연화: \"어머, 카우보이 오라버니. 산 채로라면서요? 그럼 저랑 반띵해요. 이분 깨어나신 김에 길 안내도 시키고요.\"\n\n*천장 너머에서 하운드들의 울음소리가 점점 가까워진다.*\n\n[1층 퀘스트 1/5 개시: 결박에서 벗어나 살아서 지상으로 나가라.]" },
+      text: RPG_HEAD + "\n[관람신 '전쟁의 무신'이 난이도 조정을 요구합니다. 요구가 승인되었습니다.]\n\n*당신이 눈을 뜬 곳은 무너진 교보문고 지하. 손목이 케이블타이로 묶여 있다. 맞은편 계단에 긴 망토 차림의 남자가 리볼버를 무릎에 올려놓고 앉아 있었다.*\n\n[[KYL0]]\n\n카일 노스: \"깼군. 현상금 목록에 네 얼굴이 떴어. '1층 첫 생존자, 산 채로 5,000S.' 누가 걸었는진 모르겠고.\"\n\n*서가 그림자에서 땋은 머리의 여자가 생글생글 웃으며 나온다. 소매 끝에서 얇은 비수가 반짝였다 사라진다.*\n\n연화: \"어머, 카우보이 오라버니. 산 채로라면서요? 그럼 저랑 반띵해요. 이분 깨어나신 김에 길 안내도 시키고요.\"\n\n*천장 너머에서 하운드들의 울음소리가 점점 가까워진다.*\n\n[1층 퀘스트 1/5 개시: 결박에서 벗어나 살아서 지상으로 나가라.]" },
     { id: "hell", title: "👹 헬 모드 · 혼자, 맨손으로", place: 1, suggestions: ["깨진 유리 조각을 집어 든다", "뒤돌아 건물 안으로 달린다", "하운드의 움직임을 보며 물러선다"], directive: "헬 모드. 초기 파티 없음, 장비 없음. 시작 HP 60. 적은 강하고 실수 한 번이 치명적이다. 파티원은 이야기 진행 중 어렵게 만나게 한다.",
       status: { ...RPG_STATUS, "HP": "60/100", "S 코인": "0S", "📜 기록": "없음", "⚡ 스킬": "없음", "🧪 회복": "없음", "❤️ 호감도": "없음", "퀘스트": "1/5 · 첫 밤을 살아남아라", "보상": "생존" },
       text: RPG_HEAD + "\n[관람신 '이름 없는 관객'이 당신에게 아무것도 주지 말 것을 요청합니다. 요청이 승인되었습니다.]\n[시작 보상이 회수되었습니다.]\n\n*지갑도, 휴대폰도, 신발 한 짝도 사라졌다. 맨발 아래 깨진 유리가 서걱거린다. 지하철 입구에서 다섯 쌍의 붉은 눈이 동시에 당신을 향했다.*\n\n[어둠의 하운드 x5 - HP 60/60]\n[관람신 '명부의 여왕'이 장부에 당신의 이름을 미리 적어 둡니다.]\n[관람신 '천 년 묵은 여우'가 \"잠깐, 저 아이는 아직 죽으면 안 되는데\"라며 몸을 앞으로 기울입니다.]\n\n[1층 퀘스트 1/5 개시: 첫 밤을 살아남아라.]" },
