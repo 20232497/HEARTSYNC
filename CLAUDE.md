@@ -33,7 +33,7 @@
 
 - index.html(사용자 사이트) · admin.html(관리자 도구) — 둘 다 커밋·배포. 같은 src/에서 진입점만 다름(src/js/main.js ↔ src/js/admin.js, 뼈대 src/page.html ↔ src/admin.html, 공통 모듈 묶음 src/js/app.js의 USER_VIEWS·USER_NAVS)
 - **index.html·admin.html은 빌드 결과물 — 직접 고치지 않기.** src/·content/를 고친 뒤 npm run build(둘 다 만듦), 바뀐 결과를 같이 커밋. npm run check는 둘이 소스 빌드 결과와 같은지만. GitHub Actions '빌드 확인'(.github/workflows/build.yml)이 PR·main마다 npm ci → npm run check → npm test, '흐름 시험'(e2e.yml)이 PR마다 npm run e2e -- --retry(실패한 시험만 한 번 더 · 처음 두 주(2026-11-26쯤까지)는 알림만, 그 뒤 필수 검사로 — 2026-11-11 사용자 결정, tests/README.md 'CI')
-- npm install은 devDependencies만(빌드 검사용 espree·eslint-scope, 흐름 시험용 playwright). 앱 런타임 의존성 0. package.json "type": "module"은 지우지 않기(src/js와 content/**/work.js를 Node가 ESM으로 읽음)
+- npm install은 devDependencies만(빌드 검사용 espree·eslint-scope, 흐름 시험용 playwright, 코드 정렬용 prettier — 버전 고정). 앱 런타임 의존성 0. package.json "type": "module"은 지우지 않기(src/js와 content/**/work.js를 Node가 ESM으로 읽음)
 - 뼈대 src/page.html(사용자)·src/admin.html(관리자): doctype·메타·마크업·부팅 안내 ES5 스크립트. `<!-- @include css/*.css -->` 자리에 CSS 조각(이름 순), `<!-- @script js/main.js -->` 자리에 모듈 번들. 맨 위 <!doctype html>·<html lang="ko">·charset·viewport는 지우지 않기(없으면 쿼크 모드)
 - 주석 정책: 소스에는 설명을 자세히. 사용자 빌드는 주석·빈 줄을 벗기고(`//!`·`/*!`·`<!--!`만 남김) 모듈마다 `/* ── 파일 — 첫 줄 주석의 첫 문장 */` 한 줄 → **모듈 첫 줄 주석의 첫 문장이 곧 사용자 빌드에 남는 설명**. 관리자 빌드는 주석을 모두 남기고 모듈마다 가져옴·내보냄·쓰는 곳 머리를 붙임. 결과 파일은 둘 다 직접 고치지 않음
 - JSDoc 타입: 데이터 모양은 src/js/core/types.js의 @typedef(아무도 import하지 않아 번들에 안 들어감 — 문서). 모듈은 `/** @typedef {import("../core/types.js").Room} Room */`로 끌어 씀. jsconfig.json(checkJs false). 칸이 바뀌면 types.js와 만드는 곳(core/state.js S 기본값·core/rooms.js newRoom·content/README.md)을 같이
@@ -52,7 +52,7 @@
 - 이벤트는 JS에서 .onclick / addEventListener. 마크업에 onclick="…" 쓰지 않기
 - 데이터를 innerHTML·템플릿 문자열에 넣을 땐 항상 esc(). toast()는 textContent라 그대로
 - 모달은 sheet()(열 때 다른 오버레이를 모두 닫음). 시트 위에 겹칠 창은 overlay를 따로
-- **크기 기준**(2026-11-11 사용자 결정 — tools/build/common.mjs SIZE_LIMITS): 모듈 하나 16KB · 한 줄 160자. 지금은 빌드가 넘는 수를 '크기 기준(알림)' 한 줄로 알리기만 하고(2026-11-12: 16KB를 넘는 모듈은 프롬프트 글이 든 ai/prompt/rules.js 하나, 160자를 넘는 줄 375개), 다른 가지가 조용할 때 전체를 다시 정렬한 뒤 실패로 바꿈 — 새로 쓰는 줄은 160자 안으로, 모듈이 16KB에 가까워지면 역할로 나눔. 모듈은 작으니 고칠 모듈만 읽고 그 함수·CSS 블록만 고치기 — 다른 모듈의 것을 쓰면 import 줄을 더하고(빠지면 빌드가 파일:줄로 알려 줌), 새로 내보내려면 선언 앞에 export
+- **크기 기준**(2026-11-11 사용자 결정 — tools/build/common.mjs SIZE_LIMITS): 모듈 하나 16KB · 한 줄 160자. **한 줄 길이는 정렬 도구가 맞춘다** — 커밋 전에 `npm run format`(prettier, 설정 .prettierrc.json — src/js·tools·tests의 .js/.mjs만, 작품의 글·CSS·HTML·문서는 건드리지 않음). 정렬이 안 된 파일이 있으면 병합 전 검사(npm run check)가 실패한다. 정렬 도구가 나누지 못하는 긴 줄(프롬프트 글·SVG 문자열·FAQ 글·긴 정규식)은 SIZE_LIMITS.longLines에 적힌 모듈·개수만 예외이고 늘면 check가 실패 — **긴 HTML 템플릿은 `` `…` + `…` ``로 이어 붙여 끊는다**(템플릿 안에 줄바꿈을 넣으면 화면 글에 빈칸이 생길 수 있음). 모듈 용량은 빌드가 '크기 기준(알림)' 한 줄로 알리기만 함(16KB를 넘는 것은 프롬프트 글이 든 ai/prompt/rules.js 하나) — 모듈이 16KB에 가까워지면 역할로 나눔. 모듈은 작으니 고칠 모듈만 읽고 그 함수·CSS 블록만 고치기 — 다른 모듈의 것을 쓰면 import 줄을 더하고(빠지면 빌드가 파일:줄로 알려 줌), 새로 내보내려면 선언 앞에 export
 
 ## 세션 운영
 
@@ -67,6 +67,6 @@
 
 - 답변과 UI 문구는 한국어
 - 수위: **전체이용가(일반 트랙)는 등장인물 나이 제한 없음, 성인용(성인 트랙)에만 '모든 등장인물은 성인'**(2026-11-11 사용자 결정 — 약관 terms.html(11-23 시행본)의 한눈에 보기·제8조와 docs/legal(terms.md 제9조 5항 · youth-protection §1 · operation-policy §2 B)에 반영됨, 작품 검사 minorFlags(출연진은 성인)는 그대로). 일반 트랙에서도 미성년(성인이 아니거나 그렇게 보이는 인물)의 성적 묘사는 어떤 경우에도 금지, 성인과 미성년 사이의 연애·성적 장면 금지(유저 캐릭터도 — 나이를 밝히지 않았으면 성인으로 봄), 미성년끼리의 연애는 고백·데이트·손잡기·포옹까지(같은 날 사용자 결정 — 약관과 docs/legal의 같은 자리에 반영됨). 지금 앱은 노골적 성적 묘사를 하지 않음(암전 처리). 미성년(또는 미성년으로 보이는) 인물의 성적 묘사·그림은 어떤 경우에도 막음. 성인 지시를 Claude에 보내지 않기. 성인 기능은 서버 쪽에 다시 세움(docs/ROADMAP.md — 대화 경로의 틀은 docs/app/ai.md '대화 트랙') — 성인 수위 글·프롬프트·코드 표는 Claude가 쓰지 않고 공개 저장소·배포물에 넣지 않음
-- 수정 후: npm run build(모듈·문법·작품 규칙 검사 포함) → (작품을 고쳤으면) npm run content:lock → npm test → npm run e2e(화면이 바뀌었을 때 — 관리자 화면은 admin·gate·help) → npm run check → 커밋(lock.json도 같이). 아티팩트 publish처럼 사용자 승인이 필요한 일은 위 '세션 운영' ④
+- 수정 후: npm run format(코드 정렬 — 줄 모양만 맞춤) → npm run build(모듈·문법·작품 규칙 검사 포함) → (작품을 고쳤으면) npm run content:lock → npm test → npm run e2e(화면이 바뀌었을 때 — 관리자 화면은 admin·gate·help) → npm run check → 커밋(lock.json도 같이). 아티팩트 publish처럼 사용자 승인이 필요한 일은 위 '세션 운영' ④
 - 모바일: 오래된 iOS(13 이하)·인앱 브라우저도 돌도록 아주 새 문법(||=, Array.at, lookbehind, structuredClone 등)은 쓰지 않기. #view의 bootMsg와 앞쪽 ES5 스크립트가 앱 스크립트가 멈추면 이유를 보여 줌. 휴대폰은 파일이 아니라 웹 주소로. 시험은 Playwright WebKit(iPhone 13·SE)·Chromium(Galaxy)
 - 배포물은 늘 빌드로 합친 단일 index.html. 파일(file://)로 열면 <script type="module" src>가 막히므로 다른 js·css 파일을 불러오게 바꾸지 않기. 빌드 도구는 의존성 없는 Node(tools/) 그대로

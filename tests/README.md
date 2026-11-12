@@ -14,7 +14,7 @@
 ## CI(GitHub Actions)에서 도는 것
 | 워크플로 | 언제 | 무엇 |
 |---|---|---|
-| **빌드 확인**(`.github/workflows/build.yml`) | PR마다 · main에 들어갈 때 | `npm ci` → `npm run check`(모듈·작품 검사, `index.html`·`admin.html`이 소스와 같은지, 순서 잠금이 최신인지, **기준 가지의 잠금과 맞는지** — `LOCK_BASE`로 PR이 들어갈 가지를 알려 줌) → `npm test` |
+| **빌드 확인**(`.github/workflows/build.yml`) | PR마다 · main에 들어갈 때 | `npm ci` → `npm run check`(모듈·작품 검사, `index.html`·`admin.html`이 소스와 같은지, 순서 잠금이 최신인지, **기준 가지의 잠금과 맞는지**, 코드 정렬(`npm run format`)이 맞는지와 긴 줄이 예외 표 안인지, CLAUDE.md 상한과 지도 표의 경로 — `LOCK_BASE`로 PR이 들어갈 가지를 알려 줌) → `npm test` |
 | **흐름 시험**(`.github/workflows/e2e.yml`) | PR마다 · 직접 실행 | `npm ci` → 브라우저 두 종과 한글 글꼴 설치 → `npm run e2e -- --retry`(실패한 시험만 한 번 더 — 두 번 다 실패해야 실패, 다시 돌려 통과한 시험은 경고 줄로 남음). 실패하면 `tests/.shots`의 스크린샷을 `e2e-shots`로 올려 둠(7일). 시간대는 `Asia/Seoul` |
 
 - **흐름 시험은 처음 두 주(2026-11-26쯤까지) '알림만'** 이에요(2026-11-11 사용자 결정) — 필수 검사가 아니라 실패해도 병합을 막지 않고, 병합 담당이 실패 내용을 보고 판단해요. 헛실패가 드물다는 것이 확인되면 필수 검사로 바꿔요. 지정은 GitHub 저장소 설정이라 **사용자가 직접** 해요: 저장소 → Settings → Branches(또는 Rules → Rulesets) → `main` 규칙 → *Require status checks to pass* → 검사 이름 `e2e`(흐름 시험)와 `check`(빌드 확인)를 고름.
@@ -62,7 +62,7 @@
 | `content-lock-base.test.mjs` | 순서 잠금 — 기준 가지와 견주기(`tools/content-lock.mjs` `checkBase`·`readBaseLocks`, `npm run check`가 부름): 순서를 바꾸고 작업 폴더의 잠금을 다시 찍어도(파일을 지우고 찍거나 손으로 고쳐도) 걸리는지, 잠금 파일이 없어지면 실패·작품이 없어지면 알리기만, 뒤에 더하기·이름 고치기·폴더 옮기기는 통과, 임시 git 저장소에서 '갈라진 자리'의 잠금을 읽는지(그 뒤 기준 가지에 더해진 것은 견주지 않음·못 읽으면 null) |
 | `content-check.test.mjs` | 작품 검사 규칙(`tools/build/`의 `work-check`·`episode-check`·`images-scan`·`output-check` — `checkWork`·`checkEpisode`·`scanImages`·`checkForbidden`): 통과하는 가짜 작품 하나를 **한 칸씩만 망가뜨려** 규칙마다 기대한 오류가 나는지(작품 규칙 115줄 — 모듈 모양·필수 칸·출연진 코드와 폼·비공개 칸·장소와 컷씬·본문 그림 태그·명령어·메타·키워드북·시작 상황·트랙·미성년 인물·폴더와 성별, 에피소드 진행표 `checkEpisode` 46줄 — 장·갈림길과 보기·사건·결말과 그 조건, 그림 파일 이름 11줄), 경고로만 알리는 것, 통과해야 하는 모양, 금지 주소와 사용자 빌드의 관리자 모듈 머리. 규칙을 새로 더하면 '규칙 자리 수' 시험이 실패하므로 표에 줄을 더하고 수를 고친다. 폴더 구조 검사(`buildContent`의 줄 폴더·`_row.json`)와 모듈 번들 검사는 아직 시험이 없음 |
 | `docs-check.test.mjs` | 문서 지킴이(`tools/build/docs-check.mjs` — `npm run check`가 부름): CLAUDE.md의 크기 상한(`CLAUDE_MAX` 20KB), 지도 표('## 지도')와 영역 문서(docs/app/)의 '이 문서가 다루는 모듈'이 가리키는 경로가 실제로 있는지 — 가짜 문서로 판정을 보고, 지금 저장소의 문서가 통과하는지도 봄(CLAUDE.md가 다시 불어나거나 모듈을 옮기고 문서를 안 고치면 걸림) |
-| `build-size.test.mjs` | 빌드의 크기 기준(`tools/build/common.mjs` `SIZE_LIMITS` — 모듈 16KB·한 줄 160자): 번들에 든 모듈마다 용량과 긴 줄 수를 재는지(빌드가 만든 `generated.js`는 빼고), 요약 한 줄 `sizeNote`의 셈. 지금은 알림만이라 '넘으면 실패'는 보지 않음 |
+| `build-size.test.mjs` | 빌드의 크기 기준(`tools/build/common.mjs` `SIZE_LIMITS` — 모듈 16KB·한 줄 160자): 번들에 든 모듈마다 용량과 긴 줄 수를 재는지(빌드가 만든 `generated.js`는 빼고), 요약 한 줄 `sizeNote`의 셈. 긴 줄 지킴이 `longLineErrors`(정렬 도구가 나누지 못해 예외로 둔 줄 — 예외 표 `SIZE_LIMITS.longLines`에 적힌 모듈·개수를 넘으면 오류)와 지금 저장소의 긴 줄이 그 표와 같은지, 코드 정렬(`tools/format.mjs` `runFormat` — prettier)이 맞는지 |
 | `content-art.test.mjs` | 그림 의뢰 목록(`tools/content-art.mjs`): 가짜 작품 하나로 줄 수·종류·넣을 경로·우선순위(직접 적힌 그림·배경 장소)·비공개·실림·태그 표시와 합계, 규격 표가 모두 초안이고 README '그림 싣기'와 같은 크기인지·적힌 비율이 크기와 맞는지 |
 | `content-report.test.mjs` | 작품 완성도 보고서(`tools/content-report.mjs`)의 셈과 얕은 칸 판정 |
 | `parse.test.mjs` | 응답 파싱(`ai/parse.js` — 구분자 변형·끊긴 JSON·다인원 칸) |

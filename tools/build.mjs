@@ -31,6 +31,7 @@ import { buildContent } from "./build/content.mjs";
 import { checkDocs } from "./build/docs-check.mjs";
 import { checkForbidden, checkScripts } from "./build/output-check.mjs";
 import { checkBase, readBaseLocks } from "./content-lock.mjs";
+import { runFormat } from "./format.mjs";
 
 export { appRules } from "./build/app-rules.mjs";
 export { AUD_DIRS, BuildError, ROOT, TARGETS } from "./build/common.mjs";
@@ -58,7 +59,7 @@ export async function build(name = "user") {
   fs.writeFileSync(path.join(BUILD_DIR, t.linemap), JSON.stringify(map));
   return { name, out: path.join(ROOT, t.out), file: t.out, html, map, css, modules: bundle.count, warnings: bundle.warnings, sizes: bundle.sizes };
 }
-/** 크기 기준 요약 한 줄(알림 — 경고·실패 아님): 용량 기준을 넘는 모듈 수(큰 것 셋의 이름)와 기준보다 긴 줄 수. 두 빌드에 같이 든 모듈은 한 번만 셈. @param {{ rel: string, bytes: number, long: number }[]} sizes */
+/** 크기 기준 요약 한 줄(알림): 용량 기준을 넘는 모듈 수(큰 것 셋의 이름)와 기준보다 긴 줄 수(예외로 둔 것 — 늘면 longLineErrors가 잡음). 두 빌드에 같이 든 모듈은 한 번만 셈. @param {{ rel: string, bytes: number, long: number }[]} sizes */
 export function sizeNote(sizes) {
   const all = [...new Map(sizes.map((s) => [s.rel, s])).values()],
     kb = (n) => (n / 1024).toFixed(1) + "KB";
@@ -73,6 +74,15 @@ export function sizeNote(sizes) {
           .join(", ")}${big.length > 3 ? " …" : ""})`
       : ""
   } · ${SIZE_LIMITS.lineChars}자를 넘는 줄 ${lines}개(모듈 ${long.length}/${all.length}개)`;
+}
+/** 긴 줄 지킴이(병합 전 검사): 모듈마다 160자를 넘는 줄 수가 허용한 수(SIZE_LIMITS.longLines — 없으면 0)를 넘으면 오류 글. @param {{ rel: string, long: number }[]} sizes @returns {string[]} */
+export function longLineErrors(sizes) {
+  return [...new Map(sizes.map((s) => [s.rel, s])).values()]
+    .filter((s) => s.long > (SIZE_LIMITS.longLines[s.rel.replace("src/js/", "")] || 0))
+    .map((s) => {
+      const ok = SIZE_LIMITS.longLines[s.rel.replace("src/js/", "")] || 0;
+      return `${s.rel}: ${SIZE_LIMITS.lineChars}자를 넘는 줄이 ${s.long}개예요(둬도 되는 수 ${ok}개) — 새로 쓴 줄을 나눠 주세요. 긴 HTML 템플릿은 \`…\` + \`…\`로 이어 붙이면 글이 바뀌지 않아요(tools/build/common.mjs SIZE_LIMITS)`;
+    });
 }
 /* content/ 검사·생성 한 번 + 대상들 */
 export async function buildAll(names = Object.keys(TARGETS)) {
@@ -142,6 +152,27 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
       }
     }
     console.log(sizeNote(outs.flatMap((o) => o.sizes)));
+    // 병합 전 검사는 코드 정렬(tools/format.mjs — prettier, 한 줄 160자)과 긴 줄의 예외 수도 봄
+    if (check) {
+      const f = runFormat(false),
+        long = longLineErrors(outs.flatMap((o) => o.sizes));
+      if (f.missing) {
+        fail = true;
+        console.error("✗ 정렬 도구(prettier)가 깔려 있지 않아요 — npm ci");
+      } else if (!f.ok) {
+        fail = true;
+        console.error(
+          f.files.length
+            ? `✗ 정렬이 안 된 파일 ${f.files.length}개 — npm run format을 돌리고 같이 커밋하세요(코드는 그대로고 줄 모양만 맞춰요)\n` +
+                f.files.map((x) => "  - " + x).join("\n")
+            : "✗ 정렬 도구가 실패했어요\n" + f.err
+        );
+      } else console.log(`✓ 코드 정렬이 맞아요(한 줄 ${SIZE_LIMITS.lineChars}자)`);
+      if (long.length) {
+        fail = true;
+        console.error("✗ 긴 줄\n" + long.map((x) => "  - " + x).join("\n"));
+      }
+    }
     // 병합 전 검사는 문서도 봄(build/docs-check.mjs): CLAUDE.md의 크기 상한, 지도 표와 영역 문서가 가리키는 경로가 실제로 있는지
     if (check) {
       const at = (p) => path.join(ROOT, p),

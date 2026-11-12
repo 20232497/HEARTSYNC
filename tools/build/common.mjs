@@ -48,6 +48,22 @@ export const str = (v) => typeof v === "string" && v.trim() !== "";
 export const LS = String.fromCharCode(0x2028),
   PS = String.fromCharCode(0x2029);
 /* 크기 기준(2026-11-11 사용자 결정 — 프레임 5차): src/js 모듈 하나의 용량과 한 줄의 글자 수. 줄 수만으로는 크기를 못 잡아서(줄이 길면 여러 세션이 같은 줄을 고쳐 병합 충돌이 커짐).
-   지금은 빌드가 넘는 수를 요약 한 줄로 **알리기만** 한다(경고·실패 아님). 전체 코드 재정렬(2부) 뒤에 실패로 바꿈. 작품의 글(content/)과 빌드가 만든 파일은 재지 않음 */
-export const SIZE_LIMITS = { moduleBytes: 16 * 1024, lineChars: 160 };
+   한 줄 길이는 정렬 도구(prettier — tools/format.mjs)가 맞추고 병합 전 검사가 지킨다(2026-11-12 전체 재정렬 뒤). 정렬 도구가 나누지 못하는 줄(긴 문자열·정규식·템플릿 글)은
+   longLines에 적힌 모듈·개수만 예외 — 넘으면 병합 전 검사가 실패. 새 HTML 템플릿이 길면 `…` + `…`로 이어 붙여 끊는다(줄바꿈을 템플릿 안에 넣지 않으므로 글이 바뀌지 않음).
+   모듈 용량은 알리기만 한다. 작품의 글(content/)과 빌드가 만든 파일은 재지 않음 */
+export const SIZE_LIMITS = {
+  moduleBytes: 16 * 1024,
+  lineChars: 160,
+  // 160자를 넘는 줄을 둬도 되는 모듈과 개수(그 밖의 모듈은 0) — 프롬프트 글(한 문장이 한 줄)·외전 안내 글·SVG 아이콘 문자열·FAQ 글·안전 규칙의 긴 정규식
+  longLines: {
+    "ai/prompt/rules.js": 11,
+    "ai/prompt/input.js": 1,
+    "ai/prompt/memory.js": 1,
+    "core/episode.js": 2,
+    "core/safety.js": 3,
+    "services/supabase.js": 3,
+    "ui/icons.js": 7,
+    "ui/faq.js": 2
+  }
+};
 export const jsSafe = (s) => s.replace(/<\//g, "<\\/").split(LS).join("\\u2028").split(PS).join("\\u2029");

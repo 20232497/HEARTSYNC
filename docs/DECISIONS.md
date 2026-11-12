@@ -78,3 +78,4 @@
 |---|---|---|---|
 | 2026-11-12 | CLAUDE.md는 규칙과 지도만 — 앱 구조 설명은 영역 문서(docs/app/)로, 날짜별 결정은 이 문서로. CLAUDE.md가 상한을 넘으면 병합 전 검사(npm run check)가 실패 | 사용자(2026-11-11 구조 평가 뒤) | CLAUDE.md 머리말·지도 표, tools/build/docs-check.mjs |
 | 2026-11-12 | CLAUDE.md 원칙의 수위 줄에서 상태 문구만 고침 — "법률 세션 검토 중"과 법률 세션 가지 이름을 "약관 terms.html(11-23 시행본)과 docs/legal에 반영됨"으로(PR #74로 main에 들어감). 수위 규칙 자체는 그대로 | 사용자(법률 세션 제안) | CLAUDE.md 원칙 |
+| 2026-11-12 | 전체 코드 재정렬 — 정렬 도구 prettier 3.9.10(개발용 의존성, 버전 고정)·한 줄 160자. 정렬 안 된 파일과 예외 표(SIZE_LIMITS.longLines)를 넘는 긴 줄은 병합 전 검사가 실패. 모듈 용량 16KB는 알림 그대로 | 사용자(2026-11-11 prettier·160자 결정, 2026-11-12 시작 지시) | CLAUDE.md 코딩 규칙과 원칙의 수정 후 줄, docs/app/build.md, tools/format.mjs, tools/build/common.mjs |

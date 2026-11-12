@@ -6,6 +6,8 @@
   "scripts": {
     "build": "node tools/build.mjs",
     "check": "node tools/build.mjs --check",
+    "format": "node tools/format.mjs",
+    "format:check": "node tools/format.mjs --check",
     "dev": "node tools/dev.mjs",
     "content:report": "node tools/content-report.mjs",
     "content:lock": "node tools/content-lock.mjs",
