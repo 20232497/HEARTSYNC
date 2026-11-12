@@ -1,0 +1,20 @@
+# 정렬 대상은 src/js·tools·tests의 .js/.mjs뿐(npm run format이 그 경로만 넘김) — 아래는 편집기나 손으로 prettier를 돌려도 건드리지 않게 막아 두는 것
+# 빌드 결과물·빌드가 만든 작품 데이터·작품의 글·문서·스타일·설정
+index.html
+admin.html
+src/js/content/generated.js
+content/
+docs/
+archive/
+icons/
+.build/
+.github/
+.claude/
+graphify-out/
+tests/.shots/
+node_modules/
+*.md
+*.html
+*.css
+*.json
+*.yml
