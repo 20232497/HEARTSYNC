@@ -6,9 +6,19 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const TYPES = { ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".mjs": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8",
-  ".json": "application/json; charset=utf-8", ".png": "image/png", ".jpg": "image/jpeg", ".webp": "image/webp", ".svg": "image/svg+xml", ".ico": "image/x-icon", ".txt": "text/plain; charset=utf-8" };
-
+const TYPES = {
+  ".html": "text/html; charset=utf-8",
+  ".js": "text/javascript; charset=utf-8",
+  ".mjs": "text/javascript; charset=utf-8",
+  ".css": "text/css; charset=utf-8",
+  ".json": "application/json; charset=utf-8",
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".webp": "image/webp",
+  ".svg": "image/svg+xml",
+  ".ico": "image/x-icon",
+  ".txt": "text/plain; charset=utf-8"
+};
 
 /* 서버를 띄우고 { url, close } 를 돌려줌. root는 띄울 폴더(기본 저장소 루트) */
 export function serve(root = ROOT, port = 0) {
@@ -17,9 +27,15 @@ export function serve(root = ROOT, port = 0) {
       let p = decodeURIComponent(new URL(req.url, "http://x").pathname);
       if (p.endsWith("/")) p += "index.html";
       const file = path.resolve(root, "." + p);
-      if (!file.startsWith(root + path.sep) || /(^|[\\/])\./.test(path.relative(root, file))) { res.writeHead(403).end(); return; }
+      if (!file.startsWith(root + path.sep) || /(^|[\\/])\./.test(path.relative(root, file))) {
+        res.writeHead(403).end();
+        return;
+      }
       fs.readFile(file, (err, buf) => {
-        if (err) { res.writeHead(404, { "content-type": "text/plain; charset=utf-8" }).end("없는 파일: " + p); return; }
+        if (err) {
+          res.writeHead(404, { "content-type": "text/plain; charset=utf-8" }).end("없는 파일: " + p);
+          return;
+        }
         res.writeHead(200, { "content-type": TYPES[path.extname(file).toLowerCase()] || "application/octet-stream", "cache-control": "no-store" }).end(buf);
       });
     });

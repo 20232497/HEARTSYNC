@@ -45,7 +45,12 @@ export async function build(name = "user") {
   if (!t) throw new BuildError([`모르는 빌드 대상 ${name} (가능: ${Object.keys(TARGETS).join(", ")})`]);
   if (!fs.existsSync(path.join(SRC, t.page))) throw new BuildError([`src/${t.page}이 없어요`]);
   const { html: raw, map, css, bundle } = await assemble(t);
-  const html = raw.replace(/<\/script(?![\s>])/gi, "<\\/script").split(LS).join("\\u2028").split(PS).join("\\u2029");
+  const html = raw
+    .replace(/<\/script(?![\s>])/gi, "<\\/script")
+    .split(LS)
+    .join("\\u2028")
+    .split(PS)
+    .join("\\u2029");
   const errors = checkScripts(html, map, t.out);
   errors.push(...checkForbidden(html, name));
   if (errors.length) throw new BuildError(errors);
@@ -55,9 +60,19 @@ export async function build(name = "user") {
 }
 /** 크기 기준 요약 한 줄(알림 — 경고·실패 아님): 용량 기준을 넘는 모듈 수(큰 것 셋의 이름)와 기준보다 긴 줄 수. 두 빌드에 같이 든 모듈은 한 번만 셈. @param {{ rel: string, bytes: number, long: number }[]} sizes */
 export function sizeNote(sizes) {
-  const all = [...new Map(sizes.map((s) => [s.rel, s])).values()], kb = (n) => (n / 1024).toFixed(1) + "KB";
-  const big = all.filter((s) => s.bytes > SIZE_LIMITS.moduleBytes).sort((a, b) => b.bytes - a.bytes), long = all.filter((s) => s.long), lines = long.reduce((n, s) => n + s.long, 0);
-  return `크기 기준(알림): ${kb(SIZE_LIMITS.moduleBytes)}를 넘는 모듈 ${big.length}개${big.length ? `(${big.slice(0, 3).map((s) => `${s.rel.replace("src/js/", "")} ${kb(s.bytes)}`).join(", ")}${big.length > 3 ? " …" : ""})` : ""} · ${SIZE_LIMITS.lineChars}자를 넘는 줄 ${lines}개(모듈 ${long.length}/${all.length}개)`;
+  const all = [...new Map(sizes.map((s) => [s.rel, s])).values()],
+    kb = (n) => (n / 1024).toFixed(1) + "KB";
+  const big = all.filter((s) => s.bytes > SIZE_LIMITS.moduleBytes).sort((a, b) => b.bytes - a.bytes),
+    long = all.filter((s) => s.long),
+    lines = long.reduce((n, s) => n + s.long, 0);
+  return `크기 기준(알림): ${kb(SIZE_LIMITS.moduleBytes)}를 넘는 모듈 ${big.length}개${
+    big.length
+      ? `(${big
+          .slice(0, 3)
+          .map((s) => `${s.rel.replace("src/js/", "")} ${kb(s.bytes)}`)
+          .join(", ")}${big.length > 3 ? " …" : ""})`
+      : ""
+  } · ${SIZE_LIMITS.lineChars}자를 넘는 줄 ${lines}개(모듈 ${long.length}/${all.length}개)`;
 }
 /* content/ 검사·생성 한 번 + 대상들 */
 export async function buildAll(names = Object.keys(TARGETS)) {
@@ -69,7 +84,9 @@ export async function buildAll(names = Object.keys(TARGETS)) {
 
 /* ---------------------------------------------------------------- 명령줄 */
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const argv = process.argv.slice(2), check = argv.includes("--check"), oi = argv.indexOf("--only");
+  const argv = process.argv.slice(2),
+    check = argv.includes("--check"),
+    oi = argv.indexOf("--only");
   const names = oi >= 0 ? [argv[oi + 1]] : Object.keys(TARGETS);
   try {
     const { content, outs } = await buildAll(names);
@@ -80,31 +97,45 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     // 순서 잠금이 지금 내용보다 뒤처져 있으면(뒤에 더한 항목·고친 이름): 빌드는 알리기만 하고, 병합 전 검사(--check)는 실패로 — main에 들어간 것은 모두 잠긴 상태가 되게(2026-11-11 사용자 결정)
     if (s.stale.length) {
       const what = `순서 잠금: 아직 안 잠긴 것 ${s.unlocked}개(작품 ${s.stale.join(", ")})`;
-      if (check) { fail = true; console.error(`✗ ${what} — npm run content:lock을 돌려 lock.json을 같이 커밋하세요.`); }
-      else console.log(`${what} — 커밋 전에 npm run content:lock`);
+      if (check) {
+        fail = true;
+        console.error(`✗ ${what} — npm run content:lock을 돌려 lock.json을 같이 커밋하세요.`);
+      } else console.log(`${what} — 커밋 전에 npm run content:lock`);
     }
     // 병합 전 검사는 기준 가지의 잠금과도 견줌(content-lock.mjs checkBase) — 작업 폴더의 lock.json을 지우거나 손으로 고쳐 다시 찍는 우회를 막음.
     // 기준 가지는 origin/main, CI는 LOCK_BASE로 알려 줌(그때는 못 읽으면 실패). git이 없는 폴더에서는 건너뛰고 알리기만
     if (check) {
-      const ref = process.env.LOCK_BASE || "origin/main", base = readBaseLocks(ref, ROOT);
-      if (!base && process.env.LOCK_BASE) { fail = true; console.error(`✗ 순서 잠금: 기준 가지(${ref})를 읽지 못했어요 — 가지를 받아 왔는지(기록 전체) 확인하세요.`); }
-      else if (!base) console.log(`순서 잠금: 기준 가지(${ref})를 읽지 못해 견주기를 건너뛰었어요(git이 없거나 가지를 받아 오지 않음)`);
+      const ref = process.env.LOCK_BASE || "origin/main",
+        base = readBaseLocks(ref, ROOT);
+      if (!base && process.env.LOCK_BASE) {
+        fail = true;
+        console.error(`✗ 순서 잠금: 기준 가지(${ref})를 읽지 못했어요 — 가지를 받아 왔는지(기록 전체) 확인하세요.`);
+      } else if (!base) console.log(`순서 잠금: 기준 가지(${ref})를 읽지 못해 견주기를 건너뛰었어요(git이 없거나 가지를 받아 오지 않음)`);
       else {
-        const r = checkBase(base.locks, content.locks), at = `${ref} ${base.at.slice(0, 7)}`;
+        const r = checkBase(base.locks, content.locks),
+          at = `${ref} ${base.at.slice(0, 7)}`;
         r.notes.forEach((x) => console.log("순서 잠금: " + x));
         if (r.errors.length) {
           fail = true;
-          console.error(`✗ 순서 잠금이 기준 가지(${at})의 잠금과 어긋나요 — 잠금 파일을 지우거나 고쳐 다시 찍어도 이미 공개된 자리는 바뀌지 않아요\n` + r.errors.map((x) => "  - " + x).join("\n") +
-            "\n  새 항목은 맨 뒤에 더하고 순서는 그대로 두세요. 사용자 승인을 받아 강제로 다시 찍은 것이면 이 검사는 실패하는 것이 정상이에요 — 병합 담당이 승인을 확인하고 병합해요(docs/TEAM.md).");
+          console.error(
+            `✗ 순서 잠금이 기준 가지(${at})의 잠금과 어긋나요 — 잠금 파일을 지우거나 고쳐 다시 찍어도 이미 공개된 자리는 바뀌지 않아요\n` +
+              r.errors.map((x) => "  - " + x).join("\n") +
+              "\n  새 항목은 맨 뒤에 더하고 순서는 그대로 두세요. 사용자 승인을 받아 강제로 다시 찍은 것이면 이 검사는 실패하는 것이 정상이에요 — 병합 담당이 승인을 확인하고 병합해요(docs/TEAM.md)."
+          );
         } else console.log(`✓ 순서 잠금이 기준 가지(${at})의 잠금 ${base.locks.length}개와 맞아요`);
       }
     }
     for (const o of outs) {
-      const cur = fs.existsSync(o.out) ? readText(o.out) : null, same = cur === o.html;
+      const cur = fs.existsSync(o.out) ? readText(o.out) : null,
+        same = cur === o.html;
       const info = `${(Buffer.byteLength(o.html) / 1024).toFixed(0)}KB · CSS ${o.css}개 · 모듈 ${o.modules}개`;
       if (check) {
-        if (!same) { fail = true; console.error(`✗ ${o.file}이 src/·content/로 만든 결과와 달라요. ${o.file}을 직접 고쳤거나 빌드를 안 했어요 → npm run build 후 ${o.file}도 같이 커밋하세요.`); }
-        else console.log(`✓ ${o.file}이 소스와 같아요 (${info})`);
+        if (!same) {
+          fail = true;
+          console.error(
+            `✗ ${o.file}이 src/·content/로 만든 결과와 달라요. ${o.file}을 직접 고쳤거나 빌드를 안 했어요 → npm run build 후 ${o.file}도 같이 커밋하세요.`
+          );
+        } else console.log(`✓ ${o.file}이 소스와 같아요 (${info})`);
       } else {
         if (!same) fs.writeFileSync(o.out, o.html);
         console.log(`${same ? "= " + o.file + " 그대로" : "✓ " + o.file + " 만듦"} (${info} · ${TARGETS[o.name].label})`);
@@ -113,9 +144,13 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     console.log(sizeNote(outs.flatMap((o) => o.sizes)));
     // 병합 전 검사는 문서도 봄(build/docs-check.mjs): CLAUDE.md의 크기 상한, 지도 표와 영역 문서가 가리키는 경로가 실제로 있는지
     if (check) {
-      const at = (p) => path.join(ROOT, p), text = (p) => (fs.existsSync(at(p)) ? readText(at(p)) : null), d = checkDocs(text("CLAUDE.md"), (p) => fs.existsSync(at(p)), text);
-      if (d.errors.length) { fail = true; console.error("✗ 문서 검사\n" + d.errors.map((x) => "  - " + x).join("\n")); }
-      else console.log("✓ " + d.note);
+      const at = (p) => path.join(ROOT, p),
+        text = (p) => (fs.existsSync(at(p)) ? readText(at(p)) : null),
+        d = checkDocs(text("CLAUDE.md"), (p) => fs.existsSync(at(p)), text);
+      if (d.errors.length) {
+        fail = true;
+        console.error("✗ 문서 검사\n" + d.errors.map((x) => "  - " + x).join("\n"));
+      } else console.log("✓ " + d.note);
     }
     if (fail) process.exit(1);
   } catch (e) {

@@ -11,11 +11,13 @@ const lore = [
 ];
 
 test("loreSeen: 응답마다 저장된 📖 키워드(다시 쓴 버전 포함)와 상시 항목만 펼친 것으로", () => {
-  const r = { msgs: [
-    { role: "user", text: "그림자가 이상해요" },                       // 유저가 낱말을 써도 AI가 꺼내 쓰기 전엔 아님
-    { role: "ai", idx: 1, alts: [{ lore: ["번호표"] }, { lore: [] }] }, // 지금 안 보이는 버전도 한 번 본 것
-    { role: "ai", idx: 0, alts: [{ text: "📖 없음" }] }
-  ] };
+  const r = {
+    msgs: [
+      { role: "user", text: "그림자가 이상해요" }, // 유저가 낱말을 써도 AI가 꺼내 쓰기 전엔 아님
+      { role: "ai", idx: 1, alts: [{ lore: ["번호표"] }, { lore: [] }] }, // 지금 안 보이는 버전도 한 번 본 것
+      { role: "ai", idx: 0, alts: [{ text: "📖 없음" }] }
+    ]
+  };
   assert.deepEqual([...loreSeen(r, lore)].sort(), [0, 1]);
 });
 

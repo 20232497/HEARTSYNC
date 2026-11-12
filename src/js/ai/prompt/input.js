@@ -20,7 +20,11 @@ export function usedOpeners(hist) {
     for (const p of curText(m).split(/\n+/)) {
       const t = p.replace(/\[\[[^\]]*\]\]/g, "").trim();
       if (t.startsWith("[")) continue;
-      const s = t.replace(/^[^:"“*]{1,14}:\s*/, "").replace(/^[*"“\s]+/, "").replace(/[*"”\s]+$/, "").trim();
+      const s = t
+        .replace(/^[^:"“*]{1,14}:\s*/, "")
+        .replace(/^[*"“\s]+/, "")
+        .replace(/[*"”\s]+$/, "")
+        .trim();
       if (s.length >= 8) out.push(s.slice(0, 24));
     }
   return [...new Set(out)].slice(-12);
@@ -28,12 +32,16 @@ export function usedOpeners(hist) {
 /**
  * 한 턴의 AI 요청 메시지 묶음(시스템 규칙 + 기억력만큼의 대화 + [이번 응답] 지시).
  * @param {Room} r @param {number} uptoIdx 이 번호 앞의 메시지까지 @param {StatusMap} statusBefore @param {string} [direction] 다시 쓰기 방향
- * @returns {LLMMessage[] & { lore?: string[], ep?: import("../../core/types.js").EpPlan|null }} lore는 반영된 키워드(말풍선 아래 📖), ep는 에피소드 방의 이번 지시. 첫 메시지(시스템)의 cut은 고정부의 글자 수 — llm()이 그 자리에 캐시 표시를 붙임
+ * @returns {LLMMessage[] & { lore?: string[], ep?: import("../../core/types.js").EpPlan|null }} lore는 반영된 키워드(말풍선 아래 📖), ep는 에피소드 방의 이번 지시. 첫 메시지(시스템)의 cut은
+ * 고정부의 글자 수 — llm()이 그 자리에 캐시 표시를 붙임
  */
 export function buildInput(r, uptoIdx, statusBefore, direction) {
   const hist = r.msgs.slice(0, uptoIdx).filter((m) => curText(m));
   const recent = hist.slice(-(r.set.mem * 2 + 1));
-  const lore = matchLore(liveWork(r.char).lore || r.char.lore, recent.slice(-LORE.scan).map((m) => (m.role === "ai" ? curText(m) : m.text) || ""));
+  const lore = matchLore(
+    liveWork(r.char).lore || r.char.lore,
+    recent.slice(-LORE.scan).map((m) => (m.role === "ai" ? curText(m) : m.text) || "")
+  );
   const len = LEN[r.set.len] || LEN.mid;
   const sys = rulesParts(r, lore, hist);
   const out = [{ role: "user", content: sys.fixed + sys.vary + sys.tail, cut: sys.fixed.length }];
@@ -42,14 +50,31 @@ export function buildInput(r, uptoIdx, statusBefore, direction) {
   // 직전 응답 하나에는 그때의 상태창을 출력 형식 그대로 붙여 보냄 — 기록 속 응답이 모두 본문으로만 끝나면 그 모양을 따라 상태창을 빼먹는 모델이 많음(2026-11-09 모델 시험).
   // 추천 답변이 없던 응답(시작 상황 등)에는 형식을 보이기 위한 보기 셋을 넣음
   const lastAi = [...recent].reverse().find((m) => m.role === "ai");
-  const stateTail = (m) => { const a = m.alts[m.idx] || {}; return `\n${MARK}\n` + JSON.stringify({ status: a.status || m.statusBefore || {}, suggestions: (a.suggestions || []).length ? a.suggestions : ["조금 더 가까이 다가간다", "솔직하게 속마음을 말한다", "화제를 돌려 상황을 살핀다"], ...(sys.ep && !sys.ep.ending ? { _ep: { done: false } } : {}) }); }; // 에피소드 방은 _ep 칸도 같은 모양으로 보여 줌
+  const stateTail = (m) => {
+    const a = m.alts[m.idx] || {};
+    return (
+      `\n${MARK}\n` +
+      JSON.stringify({
+        status: a.status || m.statusBefore || {},
+        suggestions: (a.suggestions || []).length ? a.suggestions : ["조금 더 가까이 다가간다", "솔직하게 속마음을 말한다", "화제를 돌려 상황을 살핀다"],
+        ...(sys.ep && !sys.ep.ending ? { _ep: { done: false } } : {})
+      })
+    );
+  }; // 에피소드 방은 _ep 칸도 같은 모양으로 보여 줌
   recent.forEach((m, i) => {
     const last = i === recent.length - 1;
-    if (m.role === "ai") { out.push({ role: "assistant", content: curText(m) + (m === lastAi ? stateTail(m) : "") }); return; }
+    if (m.role === "ai") {
+      out.push({ role: "assistant", content: curText(m) + (m === lastAi ? stateTail(m) : "") });
+      return;
+    }
     // 앱 연출형 명령어(!시간경과 등)·작품 명령어(!퀘스트 등)는 그 명령의 prompt를 연출 지시(//)로 바꿔 보냄 — 화면의 말풍선은 친 그대로
     let t = m.sys ? "// 직전 장면에서 자연스럽게 이어서 다음 장면을 써라. 유저의 행동은 쓰지 않는다." : commandText(m.text, liveWork(r.char));
     // 분량·대화·새 전개 지시는 시스템 프롬프트에도 있지만, 모델이 가장 잘 따르는 마지막 입력 옆에 한 번 더
-    if (last) t = `[현재 상태창 — 이번 장면은 여기서 출발한다]\n${JSON.stringify(statusBefore || {})}\n\n[${r.persona.name}의 입력]\n${t}${direction ? "\n\n// 다시 쓰기 지침: " + direction : ""}\n\n[이번 응답] 위 입력을 본문에 다시 옮겨 적지 말고 그 직후의 반응부터 쓴다. 본문 ${len.chars}, 대사 ${len.lines}줄 이상을 주고받고, 직전 응답과 다른 새 전개를 넣는다. 나오는 인물마다 [[코드번호]]를 한 장씩 넣는다${(() => { const h = m.sys ? [] : sitHints(m.text); return h.length ? `(유저 입력에 맞는 번호 후보: ${h.join(", ")})` : ""; })()}. 본문이 끝나면 한 줄에 ${MARK}를 쓰고 그 아래 상태 JSON 한 개로 응답을 마친다(빠뜨리지 않는다).`;
+    if (last)
+      t = `[현재 상태창 — 이번 장면은 여기서 출발한다]\n${JSON.stringify(statusBefore || {})}\n\n[${r.persona.name}의 입력]\n${t}${direction ? "\n\n// 다시 쓰기 지침: " + direction : ""}\n\n[이번 응답] 위 입력을 본문에 다시 옮겨 적지 말고 그 직후의 반응부터 쓴다. 본문 ${len.chars}, 대사 ${len.lines}줄 이상을 주고받고, 직전 응답과 다른 새 전개를 넣는다. 나오는 인물마다 [[코드번호]]를 한 장씩 넣는다${(() => {
+        const h = m.sys ? [] : sitHints(m.text);
+        return h.length ? `(유저 입력에 맞는 번호 후보: ${h.join(", ")})` : "";
+      })()}. 본문이 끝나면 한 줄에 ${MARK}를 쓰고 그 아래 상태 JSON 한 개로 응답을 마친다(빠뜨리지 않는다).`;
     out.push({ role: "user", content: t });
   });
   return out;

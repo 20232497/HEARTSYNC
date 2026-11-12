@@ -35,7 +35,8 @@ const list = (v) => (Array.isArray(v) ? v.filter((x) => typeof x === "string") :
 export function lockOf(c) {
   const out = {};
   for (const k of Object.keys(LOCK_LISTS)) {
-    const L = LOCK_LISTS[k], v = c && (L.of ? L.of(c) : c[k]);
+    const L = LOCK_LISTS[k],
+      v = c && (L.of ? L.of(c) : c[k]);
     out[k] = (Array.isArray(v) ? v : []).map((x) => (x && typeof x === "object" ? L.pick(x) : undefined)).map((s) => (typeof s === "string" ? s : ""));
   }
   return out;
@@ -47,12 +48,20 @@ export function lockOf(c) {
  * @returns {{ errors: string[], changes: { key: string, code: string, from?: string, to: string }[], stale: boolean }}
  */
 export function checkLock(lock, cur) {
-  const errors = [], changes = [];
+  const errors = [],
+    changes = [];
   for (const key of Object.keys(LOCK_LISTS)) {
-    const L = LOCK_LISTS[key], was = list(lock && lock[key]), now = list(cur[key]), bad = [];
+    const L = LOCK_LISTS[key],
+      was = list(lock && lock[key]),
+      now = list(cur[key]),
+      bad = [];
     if (L.by === "id") {
-      was.forEach((id) => { if (!now.includes(id)) bad.push(`${L.name} ${id}이(가) 없어졌어요 — 이미 만든 대화방이 이것을 가리켜요. 고치지 말고 그대로 두세요`); });
-      now.forEach((id) => { if (!was.includes(id)) changes.push({ key, code: id, to: id }); });
+      was.forEach((id) => {
+        if (!now.includes(id)) bad.push(`${L.name} ${id}이(가) 없어졌어요 — 이미 만든 대화방이 이것을 가리켜요. 고치지 말고 그대로 두세요`);
+      });
+      now.forEach((id) => {
+        if (!was.includes(id)) changes.push({ key, code: id, to: id });
+      });
     } else {
       was.forEach((name, i) => {
         const code = L.code(i + 1);
@@ -60,7 +69,8 @@ export function checkLock(lock, cur) {
         if (now[i] === name) return;
         const moved = now.indexOf(name);
         if (moved >= 0) return bad.push(`${code} '${name}'이(가) ${L.code(moved + 1)} 자리로 밀렸어요 — 새 항목은 맨 뒤에 더하고 순서는 바꾸지 않아요`);
-        if (was.includes(now[i])) return bad.push(`${code} '${name}'이(가) 지워져 뒤의 번호가 당겨졌어요(지금 그 자리는 '${now[i]}') — 공개된 항목은 지우지 않아요`);
+        if (was.includes(now[i]))
+          return bad.push(`${code} '${name}'이(가) 지워져 뒤의 번호가 당겨졌어요(지금 그 자리는 '${now[i]}') — 공개된 항목은 지우지 않아요`);
         changes.push({ key, code, from: name, to: now[i] }); // 이름 고치기 — 통과
       });
       now.slice(was.length).forEach((name, j) => changes.push({ key, code: L.code(was.length + j + 1), to: name }));
@@ -84,9 +94,14 @@ export const lockText = (cur) => JSON.stringify({ _: NOTE, ...cur }, null, 2) + 
 export function forceTable(lock, cur) {
   const rows = [];
   for (const key of Object.keys(LOCK_LISTS)) {
-    const L = LOCK_LISTS[key], was = list(lock && lock[key]), now = list(cur[key]);
+    const L = LOCK_LISTS[key],
+      was = list(lock && lock[key]),
+      now = list(cur[key]);
     if (L.by === "id") was.filter((id) => !now.includes(id)).forEach((id) => rows.push(`${L.name} ${id} · 없어짐`));
-    else for (let i = 0; i < Math.max(was.length, now.length); i++) if (was[i] !== now[i]) rows.push(`${L.code(i + 1)} · ${was[i] === undefined ? "(없음)" : "'" + was[i] + "'"} → ${now[i] === undefined ? "(없어짐)" : "'" + now[i] + "'"}`);
+    else
+      for (let i = 0; i < Math.max(was.length, now.length); i++)
+        if (was[i] !== now[i])
+          rows.push(`${L.code(i + 1)} · ${was[i] === undefined ? "(없음)" : "'" + was[i] + "'"} → ${now[i] === undefined ? "(없어짐)" : "'" + now[i] + "'"}`);
   }
   return rows;
 }
@@ -103,9 +118,19 @@ export function readBaseLocks(ref, cwd) {
   const git = (...a) => execFileSync("git", a, { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"], maxBuffer: 1 << 26 });
   try {
     const at = git("merge-base", "HEAD", ref).trim();
-    const files = git("ls-tree", "-r", "--name-only", "-z", at, "--", "content").split("\0").filter((f) => f.endsWith("/" + LOCK_FILE));
-    return { at, locks: files.map((f) => { const rel = f.slice(0, -LOCK_FILE.length - 1); return { id: rel.split("/").pop(), rel, lock: JSON.parse(git("show", `${at}:${f}`).replace(/^﻿/, "")) }; }) };
-  } catch (e) { return null; }
+    const files = git("ls-tree", "-r", "--name-only", "-z", at, "--", "content")
+      .split("\0")
+      .filter((f) => f.endsWith("/" + LOCK_FILE));
+    return {
+      at,
+      locks: files.map((f) => {
+        const rel = f.slice(0, -LOCK_FILE.length - 1);
+        return { id: rel.split("/").pop(), rel, lock: JSON.parse(git("show", `${at}:${f}`).replace(/^﻿/, "")) };
+      })
+    };
+  } catch (e) {
+    return null;
+  }
 }
 /**
  * 기준 가지의 잠금과 지금 작품을 견줌(순수 — 판정은 checkLock 그대로). 작품은 id(폴더 이름)로 짝지음: 폴더를 옮겨도 같은 작품.
@@ -115,10 +140,14 @@ export function readBaseLocks(ref, cwd) {
  * @returns {{ errors: string[], notes: string[] }}
  */
 export function checkBase(base, works) {
-  const errors = [], notes = [];
+  const errors = [],
+    notes = [];
   for (const b of base) {
     const w = works.find((x) => x.id === b.id);
-    if (!w) { notes.push(`기준 가지에 있던 작품 ${b.id}(${b.rel})이(가) 지금은 없어요 — 작품 id는 잠그지 않지만, 이미 만든 대화방은 이 작품을 찾지 못하게 돼요`); continue; }
+    if (!w) {
+      notes.push(`기준 가지에 있던 작품 ${b.id}(${b.rel})이(가) 지금은 없어요 — 작품 id는 잠그지 않지만, 이미 만든 대화방은 이 작품을 찾지 못하게 돼요`);
+      continue;
+    }
     if (!w.lock) errors.push(`${w.rel}: ${LOCK_FILE}이 없어졌어요 — 잠금 파일은 지우지 않아요(되돌린 뒤 npm run content:lock)`);
     checkLock(b.lock, w.cur).errors.forEach((x) => errors.push(`${w.rel}: ${x}`));
   }
@@ -126,30 +155,70 @@ export function checkBase(base, works) {
 }
 
 async function main() {
-  const argv = process.argv.slice(2), fi = argv.indexOf("--force"), force = fi >= 0 ? argv[fi + 1] || "" : "";
-  if (fi >= 0 && !force) { console.error("--force 뒤에 작품 id를 적어 주세요(예: npm run content:lock -- --force hwanghu)"); process.exit(1); }
+  const argv = process.argv.slice(2),
+    fi = argv.indexOf("--force"),
+    force = fi >= 0 ? argv[fi + 1] || "" : "";
+  if (fi >= 0 && !force) {
+    console.error("--force 뒤에 작품 id를 적어 주세요(예: npm run content:lock -- --force hwanghu)");
+    process.exit(1);
+  }
   const { buildContent, appRules, BuildError } = await import("./build.mjs"); // 작품을 읽고 검사하는 길은 빌드와 같은 것(잠금 판정만 여기서)
   let locks;
-  try { locks = (await buildContent(appRules(), { enforceLock: false })).locks; }
-  catch (e) { if (!(e instanceof BuildError)) throw e; console.error("✗ 작품 검사에 걸려 잠금을 찍지 않았어요\n" + e.list.map((x) => "  - " + x).join("\n")); process.exit(1); }
-  if (force && !locks.some((w) => w.id === force)) { console.error(`✗ 작품 "${force}"가 없어요 (있는 작품: ${locks.map((w) => w.id).join(", ")})`); process.exit(1); }
+  try {
+    locks = (await buildContent(appRules(), { enforceLock: false })).locks;
+  } catch (e) {
+    if (!(e instanceof BuildError)) throw e;
+    console.error("✗ 작품 검사에 걸려 잠금을 찍지 않았어요\n" + e.list.map((x) => "  - " + x).join("\n"));
+    process.exit(1);
+  }
+  if (force && !locks.some((w) => w.id === force)) {
+    console.error(`✗ 작품 "${force}"가 없어요 (있는 작품: ${locks.map((w) => w.id).join(", ")})`);
+    process.exit(1);
+  }
   const blocked = locks.filter((w) => w.res.errors.length && w.id !== force);
   if (blocked.length) {
-    console.error("✗ 순서 잠금과 어긋난 작품이 있어 아무것도 찍지 않았어요\n" + blocked.flatMap((w) => w.res.errors.map((x) => `  - ${w.rel}: ${x}`)).join("\n") +
-      "\n  새 항목은 목록 맨 뒤에 더해 주세요. 정말 순서를 바꿔야 하면(이미 만든 대화방이 끊길 수 있어요) npm run content:lock -- --force <작품 id>");
+    console.error(
+      "✗ 순서 잠금과 어긋난 작품이 있어 아무것도 찍지 않았어요\n" +
+        blocked.flatMap((w) => w.res.errors.map((x) => `  - ${w.rel}: ${x}`)).join("\n") +
+        "\n  새 항목은 목록 맨 뒤에 더해 주세요. 정말 순서를 바꿔야 하면(이미 만든 대화방이 끊길 수 있어요) npm run content:lock -- --force <작품 id>"
+    );
     process.exit(1);
   }
   let n = 0;
   for (const w of locks) {
     const forced = w.id === force && w.res.errors.length > 0;
     if (!forced && !w.res.stale) continue;
-    if (forced) console.log(`! ${w.rel}: 어긋난 채로 다시 찍어요 — 바뀌는 자리\n` + forceTable(w.lock, w.cur).map((x) => "    " + x).join("\n"));
+    if (forced)
+      console.log(
+        `! ${w.rel}: 어긋난 채로 다시 찍어요 — 바뀌는 자리\n` +
+          forceTable(w.lock, w.cur)
+            .map((x) => "    " + x)
+            .join("\n")
+      );
     fs.writeFileSync(path.join(w.dir, LOCK_FILE), lockText(w.cur));
-    const ch = w.res.changes, added = ch.filter((x) => x.from === undefined), renamed = ch.filter((x) => x.from !== undefined);
-    console.log(`✓ ${w.rel}/${LOCK_FILE}` + (forced ? " (강제)" : `${added.length ? ` · 새로 잠금 ${added.length}개(${added.slice(0, 4).map((x) => x.code).join(", ")}${added.length > 4 ? " …" : ""})` : ""}${renamed.length ? ` · 고친 이름 ${renamed.length}개` : ""}${!ch.length ? " · 순서만 맞춤" : ""}`));
+    const ch = w.res.changes,
+      added = ch.filter((x) => x.from === undefined),
+      renamed = ch.filter((x) => x.from !== undefined);
+    console.log(
+      `✓ ${w.rel}/${LOCK_FILE}` +
+        (forced
+          ? " (강제)"
+          : `${
+              added.length
+                ? ` · 새로 잠금 ${added.length}개(${added
+                    .slice(0, 4)
+                    .map((x) => x.code)
+                    .join(", ")}${added.length > 4 ? " …" : ""})`
+                : ""
+            }${renamed.length ? ` · 고친 이름 ${renamed.length}개` : ""}${!ch.length ? " · 순서만 맞춤" : ""}`)
+    );
     n++;
   }
   console.log(n ? `잠금 파일 ${n}개를 찍었어요 — 같이 커밋해 주세요` : `모든 작품(${locks.length}개)의 잠금이 최신이에요`);
 }
 // 맨 윗단에서 기다리지 않음(await 없음): main이 불러오는 build.mjs가 이 파일을 다시 import하므로, 여기서 기다리면 서로를 기다리다 멈춤
-if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main().catch((e) => { console.error(e); process.exit(1); });
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url))
+  main().catch((e) => {
+    console.error(e);
+    process.exit(1);
+  });

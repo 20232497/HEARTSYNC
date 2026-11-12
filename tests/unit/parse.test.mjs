@@ -12,7 +12,7 @@ test("splitReply: 구분자로 본문과 상태 JSON을 나눈다", () => {
   assert.equal(r.body, "본문 한 줄\n");
   assert.deepEqual(JSON.parse(r.json), { status: { "📍 장소": "궁" } });
 });
-test("splitReply: 변형 구분자(== STATE ==)와 구분자 없는 {\"status\"…}도 찾는다", () => {
+test('splitReply: 변형 구분자(== STATE ==)와 구분자 없는 {"status"…}도 찾는다', () => {
   assert.equal(JSON.parse(splitReply('본문\n== STATE ==\n{"status":{}}').json).status !== undefined, true);
   // ```json 울타리는 json 조각에 그대로 남고 looseJSON이 첫 {부터 읽는다(parseState가 그렇게 씀)
   assert.ok(looseJSON(splitReply('본문\n```json\n{"status":{}}').json).status);
@@ -28,8 +28,14 @@ test("splitReply: JSON 뒤에 붙은 그림 태그([[HSY0]]·예전 [[img:ks:0]]
 });
 
 test("multiPairs: '이름 n · …' 다인원 칸을 읽고, 숫자만 있는 값(60/100)은 인물로 보지 않는다", () => {
-  assert.deepEqual(multiPairs("이화 5 · 설련 0"), [["이화", 5], ["설련", 0]]);
-  assert.deepEqual(multiPairs({ 이화: 5, 설련: "7" }), [["이화", 5], ["설련", 7]]);
+  assert.deepEqual(multiPairs("이화 5 · 설련 0"), [
+    ["이화", 5],
+    ["설련", 0]
+  ]);
+  assert.deepEqual(multiPairs({ 이화: 5, 설련: "7" }), [
+    ["이화", 5],
+    ["설련", 7]
+  ]);
   assert.deepEqual(multiPairs("60/100"), []);
   assert.deepEqual(multiPairs(42), []);
 });

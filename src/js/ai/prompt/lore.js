@@ -10,16 +10,19 @@ const has = (hay, words) => (words || []).some((k) => hay.includes(String(k).toL
  * @param {LoreEntry[]|undefined} lore @param {string[]} texts 최근 메시지 글(buildInput이 LORE.scan개를 넘김) @returns {LoreEntry[]}
  */
 export function matchLore(lore, texts) {
-  const hay = (texts || []).join("\n").toLowerCase(), all = (lore || []).map((e, i) => ({ e, i }));
+  const hay = (texts || []).join("\n").toLowerCase(),
+    all = (lore || []).map((e, i) => ({ e, i }));
   // order 큰 것부터, 같으면 적힌 순서(sort가 안정적이지 않은 오래된 엔진에서도 같게 i로 가름)
   const byOrder = (a, b) => (b.e.order || 0) - (a.e.order || 0) || a.i - b.i;
   const always = all.filter((x) => x.e.always).sort(byOrder);
   const hit = all.filter((x) => !x.e.always && has(hay, x.e.keys) && (!(x.e.also || []).length || has(hay, x.e.also)) && !has(hay, x.e.not)).sort(byOrder);
-  const out = []; let chars = 0;
+  const out = [];
+  let chars = 0;
   for (const x of always.concat(hit)) {
     const n = String(x.e.text || "").length;
     if (out.length >= LORE.max || chars + n > LORE.budget) continue; // 넘치면 건너뛰고 더 짧은 다음 항목을 봄
-    out.push(x.e); chars += n;
+    out.push(x.e);
+    chars += n;
   }
   return out;
 }

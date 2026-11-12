@@ -2,5 +2,8 @@
    모듈은 되도록 이 값으로 갈라지지 말고 EXT 고리·화면 등록(ui/shell.js의 registerViews)으로 나뉜다 — 여기는 문구·로고 배지처럼 작은 차이에만 */
 export let TARGET = "user";
 /** @param {"user"|"admin"} t @returns {"user"|"admin"} */
-export function setTarget(t) { TARGET = t === "admin" ? "admin" : "user"; return TARGET; }
+export function setTarget(t) {
+  TARGET = t === "admin" ? "admin" : "user";
+  return TARGET;
+}
 export const isAdmin = () => TARGET === "admin";

@@ -13,7 +13,8 @@ test("크기 재기: 번들에 든 모듈마다 용량·긴 줄 수를 재고, �
   assert.deepEqual(SIZE_LIMITS, { moduleBytes: 16 * 1024, lineChars: 160 }, "기준 값(사용자 결정) — 바꾸면 CLAUDE.md '코딩 규칙'도");
 });
 test("sizeNote: 기준을 넘는 모듈 수와 큰 것 셋의 이름, 긴 줄 수 — 두 빌드에 같이 든 모듈은 한 번만", () => {
-  const big = SIZE_LIMITS.moduleBytes + 1024, m = (rel, bytes, long) => ({ rel: "src/js/" + rel, bytes, long });
+  const big = SIZE_LIMITS.moduleBytes + 1024,
+    m = (rel, bytes, long) => ({ rel: "src/js/" + rel, bytes, long });
   const note = sizeNote([m("a.js", 100, 0), m("b.js", big, 2), m("c.js", big + 2048, 0), m("d.js", big + 1, 5), m("e.js", big + 4096, 0), m("b.js", big, 2)]);
   assert.equal(note, "크기 기준(알림): 16.0KB를 넘는 모듈 4개(e.js 21.0KB, c.js 19.0KB, d.js 17.0KB …) · 160자를 넘는 줄 7개(모듈 2/5개)");
   assert.equal(sizeNote([m("a.js", 100, 0)]), "크기 기준(알림): 16.0KB를 넘는 모듈 0개 · 160자를 넘는 줄 0개(모듈 0/1개)");

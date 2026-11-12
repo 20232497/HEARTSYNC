@@ -8,16 +8,25 @@ import { sitName } from "../images/situations.js";
 import { IMG } from "../services/images.js";
 
 export function coverHTML(c, cls = "", opts = {}) {
-  const pal = PALETTES[c.pal] || PALETTES[0], img = IMG.tag(c.img);
+  const pal = PALETTES[c.pal] || PALETTES[0],
+    img = IMG.tag(c.img);
   const motif = MOTIFS[c.motif] ? c.motif : "glow";
-  return `<div class="cover m-${motif} ${img ? "has-img" : ""} ${cls}" style="--c1:${pal[0]};--c2:${pal[1]};--c3:${pal[2]}" aria-hidden="true">${img}` +
+  return (
+    `<div class="cover m-${motif} ${img ? "has-img" : ""} ${cls}" style="--c1:${pal[0]};--c2:${pal[1]};--c3:${pal[2]}" aria-hidden="true">${img}` +
     `<span class="glyph">${esc((c.glyph || c.name || "?").slice(0, 1))}</span>` +
-    (opts.vt ? `<span class="vt">${esc(c.title)}</span>` : "") + (opts.cat ? `<span class="cat">${esc(c.cat)}</span>` : "") + `</div>`;
+    (opts.vt ? `<span class="vt">${esc(c.title)}</span>` : "") +
+    (opts.cat ? `<span class="cat">${esc(c.cat)}</span>` : "") +
+    `</div>`
+  );
 }
 /* 그림이 없을 때의 아트 카드 — 칸 번호의 색과 이름(label을 주면 칸 이름 대신: 장소·컷씬) */
 export function artHTML(c, cast, sit, label) {
   const pal = PALETTES[c.pal] || PALETTES[0];
-  return `<div class="artcard" style="--c1:${pal[0]};--c2:${pal[1]};--c3:${pal[2]};--tint:${SIT_TINT[sit] || "#c9b8ff"}"><span class="ac-g">${esc((cast.name || "?").slice(0, 1))}</span><span class="ac-s">${esc(label || sitName(sit))}</span><span class="ac-n">${esc(cast.name)}</span></div>`;
+  return (
+    `<div class="artcard" style="--c1:${pal[0]};--c2:${pal[1]};--c3:${pal[2]};--tint:${SIT_TINT[sit] || "#c9b8ff"}">` +
+    `<span class="ac-g">${esc((cast.name || "?").slice(0, 1))}</span><span class="ac-s">${esc(label || sitName(sit))}</span>` +
+    `<span class="ac-n">${esc(cast.name)}</span></div>`
+  );
 }
 /**
  * 그림 태그(imgTags의 한 항목) 해석 — 인물이면 감정 칸(모르는 번호는 1 기본), MP면 작품 places의 n번째, EV면 cuts의 n번째. 작품에 없는 코드는 null.
@@ -38,8 +47,16 @@ export function tagInfo(c, t) {
 }
 /* 본문 태그 [[코드번호]]의 그림: 인물은 그 칸 → 1 → 0 순으로 있는 그림, 장소·컷씬은 그 번호의 그림, 없으면 아트 카드. 작품에 없는 코드는 빈 문자열 */
 export function figHTML(c, t) {
-  const i = tagInfo(c, t); if (!i) return "";
-  return `<figure class="scene-img${i.kind === "cast" ? "" : " " + i.kind}" data-code="${esc(i.code)}" data-sit="${i.sit}">${i.ref ? `${IMG.tag(i.ref)}<figcaption>${esc(i.name)} · ${esc(i.label)}</figcaption>` : artHTML(c, { name: i.name }, i.sit, i.kind === "cast" ? "" : i.label)}</figure>`;
+  const i = tagInfo(c, t);
+  if (!i) return "";
+  return (
+    `<figure class="scene-img${i.kind === "cast" ? "" : " " + i.kind}" data-code="${esc(i.code)}" data-sit="${i.sit}">` +
+    `${
+      i.ref
+        ? `${IMG.tag(i.ref)}<figcaption>${esc(i.name)} ` + `· ${esc(i.label)}</figcaption>`
+        : artHTML(c, { name: i.name }, i.sit, i.kind === "cast" ? "" : i.label)
+    }</figure>`
+  );
 }
 export function portraitHTML(c, cast) {
   const ref = pickImg(c, cast.code, 0);
@@ -47,10 +64,18 @@ export function portraitHTML(c, cast) {
 }
 /* 크게 보기 */
 export function lightbox(src) {
-  const lb = document.createElement("div"); lb.className = "lightbox";
+  const lb = document.createElement("div");
+  lb.className = "lightbox";
   lb.innerHTML = `<img src="${esc(src)}" alt="확대 이미지">`;
-  lb.onclick = () => lb.remove(); document.body.append(lb);
+  lb.onclick = () => lb.remove();
+  document.body.append(lb);
 }
 /* 그림 칸을 누르면 크게 */
-export function zoomPic(box) { const i = box.querySelector("img"); if (i && i.src) lightbox(i.src); }
-export function pavHTML(p) { const img = IMG.tag(p.img); return `<div class="pav">${img || esc((p.name || "?").slice(0, 1))}</div>`; }
+export function zoomPic(box) {
+  const i = box.querySelector("img");
+  if (i && i.src) lightbox(i.src);
+}
+export function pavHTML(p) {
+  const img = IMG.tag(p.img);
+  return `<div class="pav">${img || esc((p.name || "?").slice(0, 1))}</div>`;
+}

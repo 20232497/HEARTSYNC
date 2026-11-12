@@ -13,11 +13,25 @@ export const S = {
   personas: [{ id: "p1", name: "유저", memo: "", desc: "", img: "", def: true }],
   rooms: [],
   shelf: { likes: {}, unlikes: {}, recent: {}, seen: {}, ends: {} },
-  settings: { fs: 15.5, chatLh: 1.8, narrFont: "serif", enterSend: true, sceneImg: true, apiKey: "", memCfg: { auto: true, every: 5, limit: LIMITS.memory, guide: "auto", custom: "" } },
-  cat: "전체", q: ""
+  settings: {
+    fs: 15.5,
+    chatLh: 1.8,
+    narrFont: "serif",
+    enterSend: true,
+    sceneImg: true,
+    apiKey: "",
+    memCfg: { auto: true, every: 5, limit: LIMITS.memory, guide: "auto", custom: "" }
+  },
+  cat: "전체",
+  q: ""
 };
-export let room = null, gen = null;
+export let room = null,
+  gen = null;
 /** 진행 중인 응답 생성(없으면 null). @param {{ ctl: AbortController, msgId: string }|null} v @returns {typeof v} */
-export function setGen(v) { return (gen = v); }
+export function setGen(v) {
+  return (gen = v);
+}
 /** 지금 열린 대화방(없으면 null). @param {Room|null} v @returns {Room|null} */
-export function setRoom(v) { return (room = v); }
+export function setRoom(v) {
+  return (room = v);
+}

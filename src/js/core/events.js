@@ -9,6 +9,17 @@
 /** @typedef {import("./types.js").EventName} EventName */
 const handlers = {};
 /** 이벤트 구독. @param {EventName} name @param {(v?: unknown) => void} fn @returns {Function} 넘긴 fn 그대로 */
-export function on(name, fn) { (handlers[name] = handlers[name] || []).push(fn); return fn; }
+export function on(name, fn) {
+  (handlers[name] = handlers[name] || []).push(fn);
+  return fn;
+}
 /** 이벤트 알림 — 구독자 하나가 던져도 나머지는 돈다(콘솔에 기록). @param {EventName} name @param {unknown} [v] @returns {void} */
-export function emit(name, v) { (handlers[name] || []).forEach((fn) => { try { fn(v); } catch (e) { console.error("[event " + name + "]", e); } }); }
+export function emit(name, v) {
+  (handlers[name] || []).forEach((fn) => {
+    try {
+      fn(v);
+    } catch (e) {
+      console.error("[event " + name + "]", e);
+    }
+  });
+}

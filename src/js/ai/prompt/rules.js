@@ -16,12 +16,23 @@ import { validRef } from "../../services/images.js";
 /** @typedef {import("../../core/types.js").Message} Message */
 /** @typedef {import("../../core/types.js").Room} Room */
 
-export function speakerName(r) { return r.char.world_mode ? "내레이터" : r.char.name; }
+export function speakerName(r) {
+  return r.char.world_mode ? "내레이터" : r.char.name;
+}
 /* 관계형 게이지(호감·신뢰 등)가 숫자일 때만 지금 단계에 맞는 태도를 알려 줌 — 상태창에 따라 달라지므로 변동부 */
 function relStage(c, s) {
   const v = s?.[c.gauge];
   if (typeof v !== "number" || !/호감|신뢰|충성|인연|애정|유대/.test(c.gauge)) return "";
-  const st = v < 20 ? "경계 — 아직 마음을 열지 않았다. 친절에도 이유를 의심한다." : v < 40 ? "호기심 — 관심은 있지만 선을 긋는다. 사적인 질문은 피한다." : v < 60 ? "신뢰의 시작 — 약한 모습이나 진심을 조금씩 흘린다." : v < 80 ? "마음을 엶 — 상대를 위해 손해를 감수한다. 숨겨진 설정을 일부 털어놓을 수 있다." : "깊은 유대 — 서로의 상처를 안다. 숨겨진 설정이 드러나도 된다. 그래도 갈등은 사라지지 않는다.";
+  const st =
+    v < 20
+      ? "경계 — 아직 마음을 열지 않았다. 친절에도 이유를 의심한다."
+      : v < 40
+        ? "호기심 — 관심은 있지만 선을 긋는다. 사적인 질문은 피한다."
+        : v < 60
+          ? "신뢰의 시작 — 약한 모습이나 진심을 조금씩 흘린다."
+          : v < 80
+            ? "마음을 엶 — 상대를 위해 손해를 감수한다. 숨겨진 설정을 일부 털어놓을 수 있다."
+            : "깊은 유대 — 서로의 상처를 안다. 숨겨진 설정이 드러나도 된다. 그래도 갈등은 사라지지 않는다.";
   return `\n- 지금 관계 단계(${c.gauge} ${v}): ${st} 이 단계를 건너뛰는 급격한 태도 변화는 그만한 사건이 있을 때만 쓴다.`;
 }
 /**
@@ -34,24 +45,54 @@ function relStage(c, s) {
  * @returns {{ fixed: string, vary: string, tail: string }}
  */
 export function rulesParts(r, lore = [], hist = r.msgs) {
-  const c = r.char, p = r.persona, len = LEN[r.set.len] || LEN.mid;
+  const c = r.char,
+    p = r.persona,
+    len = LEN[r.set.len] || LEN.mid;
   const fields = c.fields.map((f) => `"${f}":${f === c.gauge && typeof r.status?.[f] === "number" ? "0~100 정수" : '"짧은 값"'}`).join(",");
-  const cast = c.cast || [], byCode = (code) => cast.find((x) => x.code === code);
+  const cast = c.cast || [],
+    byCode = (code) => cast.find((x) => x.code === code);
   const pins = (r.pins || []).slice(0, plan().pins); // 고정 기억은 지금 요금제 한도 안의 앞쪽 줄만 보냄 — PLUS가 끝나 한도가 줄면 넘는 줄은 방에 남기되 보내지 않음(2026-11-10 사용자 결정)
   // 이미 등장한 인물(폼 태그는 본체도 등장한 것으로)·이미 나온 컷씬 번호
-  const seen = new Set(), cutsUsed = new Set(), PLACE = seriesCode("place"), CUT = seriesCode("cut"); // 예약 시리즈 코드(MP·EV)는 codes.js SERIES에서
-  hist.forEach((m) => imgTags(curText(m)).forEach((t) => { const f = byCode(t.code); if (t.code === CUT) cutsUsed.add(t.sit); else if (f) { seen.add(t.code); if (f.of) seen.add(f.of); } })); // 장소 태그(MP)·작품에 없는 코드는 인물이 아니므로 뺌
-  const castLine = cast.map((x) => `${x.code}=${x.name}${x.of ? `(${(byCode(x.of) || {}).name || x.of}의 다른 모습 — 그 모습일 때만 이 코드)` : ""}`).join(", ");
+  const seen = new Set(),
+    cutsUsed = new Set(),
+    PLACE = seriesCode("place"),
+    CUT = seriesCode("cut"); // 예약 시리즈 코드(MP·EV)는 codes.js SERIES에서
+  hist.forEach((m) =>
+    imgTags(curText(m)).forEach((t) => {
+      const f = byCode(t.code);
+      if (t.code === CUT) cutsUsed.add(t.sit);
+      else if (f) {
+        seen.add(t.code);
+        if (f.of) seen.add(f.of);
+      }
+    })
+  ); // 장소 태그(MP)·작품에 없는 코드는 인물이 아니므로 뺌
+  const castLine = cast
+    .map((x) => `${x.code}=${x.name}${x.of ? `(${(byCode(x.of) || {}).name || x.of}의 다른 모습 — 그 모습일 때만 이 코드)` : ""}`)
+    .join(", ");
   const ex = exampleCast(c); // 예시 태그·예시 대사에 쓸 인물 — 이 작품의 첫 인물
   const sn = (name) => SIT.indexOf(name) + " " + name;
   // 인물별로 그림이 들어 있는 칸 번호(준비된 그림 안에서 고르게)
-  const ready = cast.map((x) => { const m = imagesOf(c)[x.code] || {}; const ns = Object.keys(m).filter((k) => validRef(m[k])).map(Number).filter((n) => n >= 0 && n < SIT.length).sort((a, b) => a - b); return ns.length ? `${x.name} ${ns.join("·")}` : ""; }).filter(Boolean);
+  const ready = cast
+    .map((x) => {
+      const m = imagesOf(c)[x.code] || {};
+      const ns = Object.keys(m)
+        .filter((k) => validRef(m[k]))
+        .map(Number)
+        .filter((n) => n >= 0 && n < SIT.length)
+        .sort((a, b) => a - b);
+      return ns.length ? `${x.name} ${ns.join("·")}` : "";
+    })
+    .filter(Boolean);
   // 장소(MP<n>)·컷씬(EV<n>) 코드 — 최신 작품(liveWork)에 적혀 있을 때만(작품을 고치면 열린 방에도 바로). 목록은 고정부, 이미 나온 컷씬 번호는 변동부
-  const live = liveWork(c), liveCuts = live.cuts || [];
+  const live = liveWork(c),
+    liveCuts = live.cuts || [];
   const places = (live.places || []).map((x, i) => `${PLACE}${i + 1}=${x.name}`).join(", ");
   const cuts = liveCuts.map((e, i) => `${CUT}${i + 1}=${e.title}${e.when ? "(" + e.when + ")" : ""}`).join(", ");
   const cutsDone = liveCuts.map((e, i) => (cutsUsed.has(i + 1) ? CUT + (i + 1) : "")).filter(Boolean);
-  const loreLine = (list) => list.map((e) => `- ${e.keys[0]}: ${e.text}`).join("\n"), loreAlways = lore.filter((e) => e.always), loreHit = lore.filter((e) => !e.always);
+  const loreLine = (list) => list.map((e) => `- ${e.keys[0]}: ${e.text}`).join("\n"),
+    loreAlways = lore.filter((e) => e.always),
+    loreHit = lore.filter((e) => !e.always);
   const used = usedOpeners(hist);
   // 에피소드 방: 이번 응답의 지시(core/episode.js epPlan — 사건의 낱말은 직전 응답과 이번 입력에서 찾음). 같은 것을 buildInput이 돌려줘 응답 뒤 epAfter에 넘김
   const ep = r.ep && c.episode ? epPlan(c.episode, r.ep, hist.slice(-2).map(curText).join("\n"), r.status?.[c.gauge]) : null;
@@ -120,8 +161,13 @@ ${epProgress(c.episode, r.ep, ep)}${used.length ? `\n[이미 쓴 문장 — 이�
 1) 장면 본문
 2) 한 줄에 ${MARK}
 3) JSON 한 개 (코드블록 금지)
-{"status":{${fields}},"suggestions":["…","…","…"]${ep && !ep.ending ? `,"_ep":{"done":false${ep.ask ? ',"pick":""' : ""}}` : ""}}${ep && !ep.ending ? `\n- _ep.done: 이번 응답에서 지금 장의 목표가 이뤄졌으면 true, 아니면 false.${ep.ask ? " _ep.pick: 위 [에피소드 진행]의 갈림길에서 유저의 이번 입력에 가까운 보기 id(어느 쪽도 아니면 \"\")." : ""}` : ""}
-- status는 이번 장면이 끝난 시점의 값. 모든 항목을 채운다.${typeof r.status?.[c.gauge] === "number" ? ` "${c.gauge}"는 0~100 정수이고 한 턴에 -10~+8 범위에서만 움직인다.` : ""}${c.fields.some((f) => f.includes("속마음")) ? ' "속마음"은 인물의 진짜 속마음 한 문장.' : ""}${(() => { const mf = c.fields.filter((f) => multiPairs(r.status?.[f]).length >= 2); return mf.length ? ` ${mf.map((f) => `"${f}"`).join("·")}는 '이름 숫자 · 이름 숫자' 형식과 인물 순서를 그대로 지키고 한 명도 빼지 않는다(한 사람당 한 턴에 -10~+8).` : ""; })()}
+{"status":{${fields}},"suggestions":["…","…","…"]${ep && !ep.ending ? `,"_ep":{"done":false${ep.ask ? ',"pick":""' : ""}}` : ""}}${ep && !ep.ending ? `\n- _ep.done: 이번 응답에서 지금 장의 목표가 이뤄졌으면 true, 아니면 false.${ep.ask ? ' _ep.pick: 위 [에피소드 진행]의 갈림길에서 유저의 이번 입력에 가까운 보기 id(어느 쪽도 아니면 "").' : ""}` : ""}
+- status는 이번 장면이 끝난 시점의 값. 모든 항목을 채운다.${typeof r.status?.[c.gauge] === "number" ? ` "${c.gauge}"는 0~100 정수이고 한 턴에 -10~+8 범위에서만 움직인다.` : ""}${c.fields.some((f) => f.includes("속마음")) ? ' "속마음"은 인물의 진짜 속마음 한 문장.' : ""}${(() => {
+    const mf = c.fields.filter((f) => multiPairs(r.status?.[f]).length >= 2);
+    return mf.length
+      ? ` ${mf.map((f) => `"${f}"`).join("·")}는 '이름 숫자 · 이름 숫자' 형식과 인물 순서를 그대로 지키고 한 명도 빼지 않는다(한 사람당 한 턴에 -10~+8).`
+      : "";
+  })()}
 - suggestions: 유저(${p.name})가 다음에 할 만한 행동이나 대사 3개. 서로 다른 방향(다정·도발·신중 등), 각 35자 이내, 유저 시점.`;
   return { fixed, vary, tail, ep };
 }
@@ -129,4 +175,7 @@ ${epProgress(c.episode, r.ep, ep)}${used.length ? `\n[이미 쓴 문장 — 이�
  * 시스템 프롬프트 한 덩어리(고정부 + 변동부 + 꼬리) — 관문처럼 글 하나로 보내는 길과 시험이 씀.
  * @param {Room} r @param {LoreEntry[]} [lore] @param {Message[]} [hist=r.msgs] @returns {string}
  */
-export function rulesPrompt(r, lore = [], hist = r.msgs) { const p = rulesParts(r, lore, hist); return p.fixed + p.vary + p.tail; }
+export function rulesPrompt(r, lore = [], hist = r.msgs) {
+  const p = rulesParts(r, lore, hist);
+  return p.fixed + p.vary + p.tail;
+}

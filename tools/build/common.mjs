@@ -4,8 +4,11 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
-export const SRC = path.join(ROOT, "src"), JS = path.join(SRC, "js"), CONTENT = path.join(ROOT, "content");
-export const GEN_FILE = path.join(JS, "content", "generated.js"), BUILD_DIR = path.join(ROOT, ".build");
+export const SRC = path.join(ROOT, "src"),
+  JS = path.join(SRC, "js"),
+  CONTENT = path.join(ROOT, "content");
+export const GEN_FILE = path.join(JS, "content", "generated.js"),
+  BUILD_DIR = path.join(ROOT, ".build");
 
 /* 빌드 대상: page(뼈대, src/ 아래) → out(저장소 루트). strip이면 주석·빈 줄을 벗기고, doc이면 모듈마다 설명 머리를 붙임 */
 export const TARGETS = {
@@ -15,17 +18,35 @@ export const TARGETS = {
 /* 폴더 이름이 곧 작품의 aud(관심있는 대화) 값 */
 export const AUD_DIRS = { f: "여성향(남성 캐릭터와의 대화)", m: "남성향(여성 캐릭터와의 대화)", all: "전체(남녀가 섞임)" };
 
-export class BuildError extends Error { constructor(list) { super(list.join("\n")); this.list = list; } }
+export class BuildError extends Error {
+  constructor(list) {
+    super(list.join("\n"));
+    this.list = list;
+  }
+}
 
 export const readText = (p) => fs.readFileSync(p, "utf8").replace(/^﻿/, "").replace(/\r\n?/g, "\n");
 export const rel = (p) => path.relative(ROOT, p).split(path.sep).join("/");
 export const visible = (name) => !name.startsWith(".") && !name.startsWith("_");
-export const subdirs = (dir) => fs.readdirSync(dir, { withFileTypes: true }).filter((d) => d.isDirectory() && visible(d.name)).map((d) => d.name).sort();
-export const writeIfChanged = (p, text) => { if (!fs.existsSync(p) || readText(p) !== text) { fs.mkdirSync(path.dirname(p), { recursive: true }); fs.writeFileSync(p, text); return true; } return false; };
+export const subdirs = (dir) =>
+  fs
+    .readdirSync(dir, { withFileTypes: true })
+    .filter((d) => d.isDirectory() && visible(d.name))
+    .map((d) => d.name)
+    .sort();
+export const writeIfChanged = (p, text) => {
+  if (!fs.existsSync(p) || readText(p) !== text) {
+    fs.mkdirSync(path.dirname(p), { recursive: true });
+    fs.writeFileSync(p, text);
+    return true;
+  }
+  return false;
+};
 export const isObj = (v) => !!v && typeof v === "object" && !Array.isArray(v) && Object.getPrototypeOf(v) === Object.prototype;
 export const str = (v) => typeof v === "string" && v.trim() !== "";
 /* <script> 안에 넣어도 안전하게: "</script"가 태그를 닫지 않게, U+2028·2029(오래된 브라우저에서 문자열 안 줄바꿈 오류)는 이스케이프 */
-export const LS = String.fromCharCode(0x2028), PS = String.fromCharCode(0x2029);
+export const LS = String.fromCharCode(0x2028),
+  PS = String.fromCharCode(0x2029);
 /* 크기 기준(2026-11-11 사용자 결정 — 프레임 5차): src/js 모듈 하나의 용량과 한 줄의 글자 수. 줄 수만으로는 크기를 못 잡아서(줄이 길면 여러 세션이 같은 줄을 고쳐 병합 충돌이 커짐).
    지금은 빌드가 넘는 수를 요약 한 줄로 **알리기만** 한다(경고·실패 아님). 전체 코드 재정렬(2부) 뒤에 실패로 바꿈. 작품의 글(content/)과 빌드가 만든 파일은 재지 않음 */
 export const SIZE_LIMITS = { moduleBytes: 16 * 1024, lineChars: 160 };

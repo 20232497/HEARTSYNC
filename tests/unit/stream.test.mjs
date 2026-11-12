@@ -4,23 +4,53 @@ import assert from "node:assert/strict";
 import { trackOf } from "../../src/js/ai/models.js";
 import { anthropicEvent, openaiEvent, readSSE } from "../../src/js/ai/stream.js";
 
-const stream = (chunks) => new ReadableStream({ start(c) { const e = new TextEncoder(); chunks.forEach((x) => c.enqueue(typeof x === "string" ? e.encode(x) : x)); c.close(); } });
+const stream = (chunks) =>
+  new ReadableStream({
+    start(c) {
+      const e = new TextEncoder();
+      chunks.forEach((x) => c.enqueue(typeof x === "string" ? e.encode(x) : x));
+      c.close();
+    }
+  });
 
 test("readSSE: 줄이 조각 사이에서 끊겨도 data 줄마다 한 번, 깨진 줄·[DONE]·onData 오류는 넘어감, 주석 줄은 시간 제한을 되돌리지 않음", async () => {
-  const got = []; let ticks = 0;
+  const got = [];
+  let ticks = 0;
   const han = new TextEncoder().encode('data: {"t":"한글"}\n'); // 한글 글자 중간에서 끊긴 조각
-  await readSSE(stream(['event: x\ndata: {"t":1}\n\ndata: {"t"', ':2}\r\n', "data: {broken\n", "data: [DONE]\n", han.slice(0, 12), han.slice(12), ': comment\ndata:{"t":3}\n']),
-    (ev) => { got.push(ev.t); if (ev.t === 2) throw new Error("화면 오류"); }, () => ticks++);
+  await readSSE(
+    stream([
+      'event: x\ndata: {"t":1}\n\ndata: {"t"',
+      ":2}\r\n",
+      "data: {broken\n",
+      "data: [DONE]\n",
+      han.slice(0, 12),
+      han.slice(12),
+      ': comment\ndata:{"t":3}\n'
+    ]),
+    (ev) => {
+      got.push(ev.t);
+      if (ev.t === 2) throw new Error("화면 오류");
+    },
+    () => ticks++
+  );
   assert.deepEqual(got, [1, 2, "한글", 3]);
   assert.equal(ticks, 6); // data 줄 6개(깨진 줄·[DONE] 포함) — event·주석 줄은 세지 않음
-  let alive = 0; await readSSE(stream([": OPENROUTER PROCESSING\n\n", ": OPENROUTER PROCESSING\n\n"]), () => {}, () => alive++);
+  let alive = 0;
+  await readSSE(
+    stream([": OPENROUTER PROCESSING\n\n", ": OPENROUTER PROCESSING\n\n"]),
+    () => {},
+    () => alive++
+  );
   assert.equal(alive, 0);
 });
 
 test("anthropicEvent: 글 조각·끝난 이유·거절 분류", () => {
   assert.deepEqual(anthropicEvent({ type: "content_block_delta", delta: { type: "text_delta", text: "안" } }), { delta: "안" });
   assert.deepEqual(anthropicEvent({ type: "message_delta", delta: { stop_reason: "end_turn" } }), { stop: "end_turn", category: null });
-  assert.deepEqual(anthropicEvent({ type: "message_delta", delta: { stop_reason: "refusal", stop_details: { category: "cyber" } } }), { stop: "refusal", category: "cyber" });
+  assert.deepEqual(anthropicEvent({ type: "message_delta", delta: { stop_reason: "refusal", stop_details: { category: "cyber" } } }), {
+    stop: "refusal",
+    category: "cyber"
+  });
   assert.deepEqual(anthropicEvent({ type: "ping" }), {});
   assert.deepEqual(anthropicEvent({ type: "error", error: { type: "overloaded_error", message: "Overloaded" } }), { failed: true });
 });
@@ -29,18 +59,37 @@ test("llm: 끝난 이유가 온 스트림만 답 — 중간의 오류 조각·�
   const { llm } = await import("../../src/js/ai/llm.js");
   const { S } = await import("../../src/js/core/state.js");
   S.settings.apiKey = "sk-ant-test";
-  const d = (o) => "data: " + JSON.stringify(o) + "\n\n", delta = (t) => d({ type: "content_block_delta", delta: { type: "text_delta", text: t } });
+  const d = (o) => "data: " + JSON.stringify(o) + "\n\n",
+    delta = (t) => d({ type: "content_block_delta", delta: { type: "text_delta", text: t } });
   let sent = null;
-  const run = (body) => { globalThis.fetch = async (u, o) => { sent = JSON.parse(o.body); return new Response(stream([body])); }; return llm([{ role: "system", content: "s" }, { role: "user", content: "u" }], { tier: "quick", maxTokens: 3200 }); };
+  const run = (body) => {
+    globalThis.fetch = async (u, o) => {
+      sent = JSON.parse(o.body);
+      return new Response(stream([body]));
+    };
+    return llm(
+      [
+        { role: "system", content: "s" },
+        { role: "user", content: "u" }
+      ],
+      { tier: "quick", maxTokens: 3200 }
+    );
+  };
   try {
     assert.equal(await run(delta("안녕") + d({ type: "message_delta", delta: { stop_reason: "end_turn" } })), "안녕");
     // 생각 토큰이 본문 몫을 먹지 않게: effort low + 출력 한도에 생각 몫(THINKING.room)
     const { THINKING } = await import("../../src/js/ai/llm.js");
     assert.deepEqual(sent.output_config, { effort: THINKING.effort });
     assert.equal(sent.max_tokens, 3200 + THINKING.room);
-    await assert.rejects(run(delta("삼백… 년.") + d({ type: "error", error: { type: "overloaded_error" } })), (e) => e.code === "upstream_error" && e.text === "삼백… 년.");
+    await assert.rejects(
+      run(delta("삼백… 년.") + d({ type: "error", error: { type: "overloaded_error" } })),
+      (e) => e.code === "upstream_error" && e.text === "삼백… 년."
+    );
     await assert.rejects(run(delta("*한 번")), (e) => e.code === "upstream_error" && e.text === "*한 번");
-  } finally { delete globalThis.fetch; S.settings.apiKey = ""; }
+  } finally {
+    delete globalThis.fetch;
+    S.settings.apiKey = "";
+  }
 });
 
 test("openaiEvent: 글 조각·끝·내용 필터는 거절·오류", () => {
@@ -56,5 +105,6 @@ test("openaiEvent: 글 조각·끝·내용 필터는 거절·오류", () => {
 
 test("trackOf: 작품 사본의 track이 adult일 때만 성인 트랙", () => {
   assert.equal(trackOf({ char: { track: "adult" } }), "adult");
-  for (const r of [null, undefined, {}, { char: {} }, { char: { track: "general" } }, { char: { track: "ADULT" } }, { track: "adult", char: {} }]) assert.equal(trackOf(r), "general");
+  for (const r of [null, undefined, {}, { char: {} }, { char: { track: "general" } }, { char: { track: "ADULT" } }, { track: "adult", char: {} }])
+    assert.equal(trackOf(r), "general");
 });

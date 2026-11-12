@@ -26,16 +26,27 @@ export async function boot() {
   bootBack(askLogin); // 작품 주소로 처음 들어왔으면 로그인·둘러보기 뒤 그 작품으로
   route();
   window.addEventListener("hashchange", route);
-  if (SB.s) afterLogin(!!authType).then(() => { if (authType === "recovery") newPasswordSheet(); else askAud(); });
+  if (SB.s)
+    afterLogin(!!authType).then(() => {
+      if (authType === "recovery") newPasswordSheet();
+      else askAud();
+    });
   else if (!askLogin) askAud();
   // 다른 기기에서 바꾼 것: 이 탭으로 돌아올 때 받아 오고, 떠날 때 못 올린 것을 올림
   document.addEventListener("visibilitychange", () => {
     if (!CLOUD.on) return;
     if (document.hidden) CLOUD.flush();
-    else if (Date.now() - CLOUD.pulledAt > 20000 && !gen) CLOUD.pull().then((n) => { if (n) reloadFromCloud(); }).catch(() => {});
+    else if (Date.now() - CLOUD.pulledAt > 20000 && !gen)
+      CLOUD.pull()
+        .then((n) => {
+          if (n) reloadFromCloud();
+        })
+        .catch(() => {});
   });
   document.addEventListener("keydown", (e) => {
     if (e.key !== "Escape") return;
-    if ($(".lightbox")) $(".lightbox").remove(); else if ($(".overlay")) closeOverlays(); else if (gen) stopGen();
+    if ($(".lightbox")) $(".lightbox").remove();
+    else if ($(".overlay")) closeOverlays();
+    else if (gen) stopGen();
   });
 }
