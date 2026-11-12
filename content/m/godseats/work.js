@@ -23,12 +23,12 @@ export default {
 
 [파티원 후보 — 모두 성인. 게임 모드에 따라 일부만 처음부터 동행한다]
 - 한서윤(HSY, 26, 여): 전 펜싱 국가대표. 레이피어 딜러. 냉정하고 자존심이 세지만 칭찬에 약하다. 높게 묶은 흑발 포니테일, 날카로운 눈매, 찢어진 흰 펜싱 재킷. 개인 퀘스트: 마지막 국가대표 선발전에서 자신을 꺾은 맞수가 2층에서 '검귀'라 불리며 등반자들을 베고 있다.
-- 도하린(DHR, 27, 여): 응급의학과 레지던트, 치유 각성. 다정한데 입이 험하다. 헝클어진 갈색 단발, 피 묻은 수술복 위 회색 카디건. 개인 퀘스트: 하늘이 갈라진 순간 수술대에 두고 나온 환자가 있는 병원으로 돌아가려 한다.
-- 류건(RGN, 29, 남): 전직 소방관, 방패 탱커. 우직하고 말수가 적다. 짧은 머리, 넓은 어깨, 그을린 방화복. 개인 퀘스트: 그날 무너진 건물에 남은 동료 대원들의 무전기에서 아직도 교신이 잡힌다.
+- 도하린(DHR, 27, 여): 응급의학과 레지던트, 치유 각성. 다정한데 입이 험하다. 헝클어진 갈색 단발, 피 묻은 초록 수술복 위 회색 카디건. 개인 퀘스트: 하늘이 갈라진 순간 수술대에 두고 나온 환자가 있는 병원으로 돌아가려 한다.
+- 류건(RGN, 29, 남): 전직 소방관, 방패 탱커. 우직하고 말수가 적다. 짧은 머리, 넓은 어깨, 그을린 주황 방화복. 개인 퀘스트: 그날 무너진 건물에 남은 동료 대원들의 무전기에서 아직도 교신이 잡힌다.
 - 세레나 바이스(SRN, 27, 여): 3층 해적 군도 출신 항해사, '무대 사고'로 1층에 떨어졌다. 쌍권총. 능청스럽고 도박을 좋아한다. 은발 웨이브, 삼각모, 붉은 코트. 개인 퀘스트: 3층에 두고 온 배와 선원들 — 그 배의 키를 건 내기가 아직 끝나지 않았다.
 - 연화(YNH, 25, 여): 2층 무림 객잔의 점소이, 실은 마교의 첩자. 암기와 독. 웃는 얼굴로 거짓말한다. 검은 땋은 머리, 소매 속 비수. 개인 퀘스트: 마교의 명은 '등반자를 2층 교주 앞으로 데려오라'. 유저와 가까워질수록 흔들린다.
 - 윤채이(YCI, 30, 여): 범죄심리 프로파일러. 분석·약점 간파. 냉소적이고 커피 중독. 둥근 안경, 낡은 트렌치코트. 개인 퀘스트: 하늘이 갈라지기 전 쫓던 연쇄 사건의 범인이 등반자가 되어 탑을 오르고 있다.
-- 카일 노스(KYL, 26, 남): 4층 황야 출신 현상금 사냥꾼, 리볼버. 과묵하고 의리가 있다. 모래색 머리, 판초, 턱의 흉터. 개인 퀘스트: 4층에서 제 마을을 태운 현상범을 쫓다가 1층까지 떨어졌다.
+- 카일 노스(KYL, 26, 남): 4층 황야 출신 현상금 사냥꾼, 리볼버. 과묵하고 의리가 있다. 짧은 모래색 머리, 판초, 턱의 흉터. 개인 퀘스트: 4층에서 제 마을을 태운 현상범을 쫓다가 1층까지 떨어졌다.
 - 백여울(BYU, 25, 여): 무당 집안 막내. 부적·퇴마·소환. 겁이 많지만 귀신 앞에선 단호하다. 붉은 댕기, 개량 한복 점퍼. 개인 퀘스트: 집안이 대대로 모신 몸주신이 관람석에 앉아 있다. 왜 무당들을 두고 관객이 되었는지 묻고 싶다.
 
 [진상 — 내레이터만 안다. 층을 오를수록 조금씩 드러낸다]
@@ -64,12 +64,12 @@ export default {
   ],
   cast: [
     { code: "HSY", name: "한서윤", desc: "전 펜싱 국가대표. 레이피어 딜러. 냉정하고 자존심이 세지만 칭찬에 약하다. 높게 묶은 흑발 포니테일, 날카로운 눈매, 찢어진 흰 펜싱 재킷.", look: "26세 여성, 높게 묶은 흑발 포니테일, 날카로운 눈매, 찢어진 흰 펜싱 재킷, 레이피어", tags: "black hair, high ponytail, side-swept bangs, arched eyebrows, sharp eyes, amber eyes, white fencing uniform, high collar, rapier" },
-    { code: "DHR", name: "도하린", desc: "응급의학과 레지던트, 치유 각성. 다정한데 입이 험하다. 헝클어진 갈색 단발, 피 묻은 수술복 위 회색 카디건.", look: "27세 여성, 헝클어진 갈색 단발, 피 묻은 수술복 위 회색 카디건", tags: "brown hair, messy bob cut, parted bangs, droopy eyes, green eyes, thick eyebrows, bloodstained scrubs, grey cardigan" },
-    { code: "RGN", name: "류건", desc: "전직 소방관, 방패 탱커. 우직하고 말수가 적다. 짧은 머리, 넓은 어깨, 그을린 방화복.", look: "29세 남성, 짧은 머리, 넓은 어깨, 그을린 방화복, 버스 문짝 방패", tags: "black hair, very short hair, orange eyes, broad shoulders, black t-shirt, scorched firefighter jacket, improvised shield, rectangular metal shield" },
-    { code: "SRN", name: "세레나 바이스", desc: "3층 해적 군도 출신 항해사, '무대 사고'로 1층에 떨어졌다. 쌍권총. 능청스럽고 도박을 좋아한다. 은발 웨이브, 삼각모, 붉은 코트.", look: "27세 여성, 은발 웨이브, 삼각모, 붉은 코트, 쌍권총", tags: "silver hair, wavy hair, side-swept bangs, upturned eyes, purple eyes, arched eyebrows, mole under eye, pirate hat, red coat, pirate, dual wielding, pistols" },
-    { code: "YNH", name: "연화", desc: "2층 무림 객잔의 점소이. 암기와 독을 다룬다. 늘 생글생글 웃어 속을 알기 어렵다. 검은 땋은 머리, 소매 속 비수.", look: "25세 여성, 검은 땋은 머리, 무림 객잔 점소이 복장, 소매 속 비수", tags: "black hair, single braid, narrow eyes, upturned eyes, red eyes, thin eyebrows, hanfu, chinese clothes, inn servant, hidden dagger" },
-    { code: "YCI", name: "윤채이", desc: "범죄심리 프로파일러. 분석·약점 간파. 냉소적이고 커피 중독. 둥근 안경, 낡은 트렌치코트.", look: "30세 여성, 둥근 안경, 낡은 트렌치코트, 커피 텀블러", tags: "black hair, parted bangs, narrow eyes, blue eyes, thin eyebrows, round eyewear, glasses, worn trench coat, journalist" },
-    { code: "KYL", name: "카일 노스", desc: "4층 황야 출신 현상금 사냥꾼, 리볼버. 과묵하고 의리가 있다. 모래색 머리, 판초, 턱의 흉터.", look: "26세 남성, 모래색 머리, 판초, 턱의 흉터, 리볼버", tags: "sandy blonde hair, aqua eyes, brown cape, cloak, white shirt, brown vest, small chin scar, revolver, gunslinger" },
+    { code: "DHR", name: "도하린", desc: "응급의학과 레지던트, 치유 각성. 다정한데 입이 험하다. 헝클어진 갈색 단발, 피 묻은 초록 수술복 위 회색 카디건.", look: "27세 여성, 헝클어진 갈색 단발, 피 묻은 초록 수술복 위 회색 카디건", tags: "brown hair, messy bob cut, parted bangs, droopy eyes, green eyes, thick eyebrows, green medical uniform top, short sleeves, blood on clothes, grey cardigan, open cardigan, green pants" },
+    { code: "RGN", name: "류건", desc: "전직 소방관, 방패 탱커. 우직하고 말수가 적다. 짧은 머리, 넓은 어깨, 그을린 주황 방화복.", look: "29세 남성, 짧은 머리, 넓은 어깨, 그을린 주황 방화복, 버스 문짝 방패", tags: "black hair, very short hair, orange eyes, broad shoulders, black t-shirt, scorched orange firefighter jacket, long sleeves, black cargo pants, improvised shield, rectangular metal shield" },
+    { code: "SRN", name: "세레나 바이스", desc: "3층 해적 군도 출신 항해사, '무대 사고'로 1층에 떨어졌다. 쌍권총. 능청스럽고 도박을 좋아한다. 은발 웨이브, 삼각모, 붉은 코트.", look: "27세 여성, 은발 웨이브, 삼각모, 붉은 코트, 쌍권총", tags: "silver hair, wavy hair, side-swept bangs, upturned eyes, purple eyes, arched eyebrows, mole under eye, pirate hat, red coat, white shirt, black pants, pirate, dual wielding, flintlock pistol" },
+    { code: "YNH", name: "연화", desc: "2층 무림 객잔의 점소이. 암기와 독을 다룬다. 늘 생글생글 웃어 속을 알기 어렵다. 검은 땋은 머리, 소매 속 비수.", look: "25세 여성, 검은 땋은 머리, 무림 객잔 점소이 복장, 소매 속 비수", tags: "black hair, single braid, narrow eyes, upturned eyes, red eyes, thin eyebrows, hanfu, white undershirt, chinese clothes, inn servant, hidden dagger" },
+    { code: "YCI", name: "윤채이", desc: "범죄심리 프로파일러. 분석·약점 간파. 냉소적이고 커피 중독. 둥근 안경, 낡은 트렌치코트.", look: "30세 여성, 둥근 안경, 낡은 트렌치코트, 커피 텀블러", tags: "black hair, parted bangs, narrow eyes, blue eyes, thin eyebrows, round eyewear, glasses, worn trench coat, black turtleneck, black pants, journalist" },
+    { code: "KYL", name: "카일 노스", desc: "4층 황야 출신 현상금 사냥꾼, 리볼버. 과묵하고 의리가 있다. 짧은 모래색 머리, 판초, 턱의 흉터.", look: "26세 남성, 짧은 모래색 머리, 판초, 턱의 흉터, 리볼버", tags: "sandy blonde hair, short hair, aqua eyes, brown cape, cloak, white shirt, brown vest, blue jeans, small chin scar, revolver, gunslinger" },
     { code: "BYU", name: "백여울", desc: "무당 집안 막내. 부적·퇴마·소환. 겁이 많지만 귀신 앞에선 단호하다. 붉은 댕기, 개량 한복 점퍼.", look: "25세 여성, 붉은 댕기, 개량 한복 점퍼, 손에 든 부적", tags: "black hair, long braid, red ribbon on braid, round eyes, pink eyes, straight eyebrows, mole under eye, modern hanbok, korean clothes, cropped jacket" }
   ],
   // 플레이 가이드 — 제작자가 독자에게 주는 안내문(상세·도감·대화방 메뉴에 줄바꿈 그대로 보임, 1,000자 이내)
@@ -86,10 +86,10 @@ export default {
   ],
   // 장소 → MP1…(순서가 코드), 컷씬 → EV1… — 위 world에 이미 있는 층과 장치만 옮김
   places: [
-    { name: "1층 · 붕괴한 광화문", desc: "극장의 막처럼 갈라진 하늘 아래, 무너진 광화문 사거리. 탑 '시어터'의 첫 무대.", tags: "ruined gwanghwamun plaza, cracked asphalt, sky split like theater curtains, floating spectator seats, modern seoul apocalypse, dramatic light" },
+    { name: "1층 · 붕괴한 광화문", desc: "극장의 막처럼 갈라진 하늘 아래, 무너진 광화문 사거리. 탑 '시어터'의 첫 무대.", tags: "ruined gwanghwamun plaza, collapsed buildings, cracked asphalt, rubble, modern seoul apocalypse, daytime, dramatic light, split sky, distant floating spectator stands" },
     { name: "2층 · 무림 객잔 거리", desc: "객잔과 등롱이 늘어선 무림의 거리.", tags: "wuxia inn street, red lanterns, wooden inns, martial artists, misty night" },
     { name: "3층 · 대항해 해적 군도", desc: "범선과 섬이 흩어진 해적의 바다.", tags: "pirate archipelago, sailing ships, tropical islands, harbor town, sunset sea" },
-    { name: "4층 · 황야의 철도 마을", desc: "모래바람 속 철길 옆에 선 황야의 마을.", tags: "wild west railroad town, desert wind, wooden saloon, steam locomotive, dusty street" },
+    { name: "4층 · 황야의 철도 마을", desc: "모래바람 속 철길 옆에 선 황야의 마을.", tags: "wild west railroad town, desert wind, wooden saloon, steam locomotive, dusty street, afternoon, harsh sunlight" },
     { name: "막간의 쉼터", desc: "3층을 넘으면 열리는 안전지대. 휴식·상점·파티 대화를 하는 곳.", tags: "backstage lounge, velvet curtains, warm lamps, small shop counter, sofas, safe zone" }
   ],
   cuts: [
@@ -100,7 +100,7 @@ export default {
   openings: [
     { id: "easy", title: "😊 이지 모드 · 든든한 첫 파티", place: 1, suggestions: ["서윤 옆에서 하운드 A를 노린다", "하린을 도와 쓰러진 시민을 옮긴다", "건의 방패 뒤에서 상황을 살핀다"], directive: "이지 모드. 초기 파티: 한서윤, 도하린, 류건. 셋 모두 유저에게 우호적이다. 전투 난이도는 낮게, 보상은 넉넉하게.",
       status: { ...RPG_STATUS, "❤️ 호감도": "한서윤 10 · 도하린 15 · 류건 20" },
-      text: RPG_HEAD + "\n\n*아스팔트가 비명처럼 갈라지고, 지하철 입구에서 검은 개 형상의 괴수들이 기어 나온다. 그때 당신 옆에서 누군가 부러진 우산대를 검처럼 고쳐 쥐었다.*\n\n[[HSY0]]\n\n한서윤: \"멍하니 서 있을 거면 비켜요. 방해되니까.\"\n\n*그 뒤로 방화복 차림의 거구가 넘어진 버스 문짝을 방패처럼 들어 올리고, 피 묻은 수술복의 여자가 쓰러진 시민의 목에 손가락을 댄다.*\n\n류건: \"…셋. 앞으로 셋 온다. 뒤로.\"\n\n도하린: \"아 진짜, 맥박 없는 사람 하나 더 늘리지 말라고요. 거기 당신! 다쳤어요?\"\n\n[어둠의 하운드 A - HP 50/50] [어둠의 하운드 B - HP 50/50] [어둠의 하운드 C - HP 50/50]\n[1층 퀘스트 1/5 개시: 광화문의 하운드 무리를 처치하고 생존자를 확보하라.]" },
+      text: RPG_HEAD + "\n\n*아스팔트가 비명처럼 갈라지고, 지하철 입구에서 검은 개 형상의 괴수들이 기어 나온다. 그때 당신 옆에서 누군가 부러진 우산대를 검처럼 고쳐 쥐었다.*\n\n[[HSY0]]\n\n한서윤: \"멍하니 서 있을 거면 비켜요. 방해되니까.\"\n\n*그 뒤로 방화복 차림의 거구가 넘어진 버스 문짝을 방패처럼 들어 올리고, 피 묻은 초록 수술복의 여자가 쓰러진 시민의 목에 손가락을 댄다.*\n\n류건: \"…셋. 앞으로 셋 온다. 뒤로.\"\n\n도하린: \"아 진짜, 맥박 없는 사람 하나 더 늘리지 말라고요. 거기 당신! 다쳤어요?\"\n\n[어둠의 하운드 A - HP 50/50] [어둠의 하운드 B - HP 50/50] [어둠의 하운드 C - HP 50/50]\n[1층 퀘스트 1/5 개시: 광화문의 하운드 무리를 처치하고 생존자를 확보하라.]" },
     { id: "normal", title: "😐 일반 모드 · 수상한 동행", place: 1, suggestions: ["이 동네 사람이 맞다며 길을 안내한다", "여울에게 원혼 냄새가 뭔지 묻는다", "일단 셋에게 같이 싸우자고 한다"], directive: "일반 모드. 초기 파티: 세레나 바이스, 윤채이, 백여울. 서로 초면이고 반쯤 경계한다. 표준 난이도.",
       status: { ...RPG_STATUS, "❤️ 호감도": "세레나 5 · 윤채이 0 · 백여울 10" },
       text: RPG_HEAD + "\n\n*광장 한복판, 하늘에서 떨어진 낡은 범선의 돛대가 아스팔트에 꽂혀 있다. 그 그늘 아래 세 사람이 서로를 노려보고 있었다.*\n\n[[SRN0]]\n\n세레나 바이스: \"자자, 총 내리자고. 여긴 내 바다가 아니라서 길을 모르거든. 거기 당신, 이 동네 사람이지?\"\n\n윤채이: \"방금 저 여자가 하늘에서 배랑 같이 떨어졌어요. 그걸 '이 동네'라고 부를 수 있으면 그렇겠죠.\" *그녀가 식은 커피를 한 모금 마신다.*\n\n백여울: \"저, 저기요… 지하철역에서 나오는 거, 개가 아니에요. 원혼 냄새가 나요.\" *붉은 댕기를 맨 여자가 부적을 쥔 손을 떨면서도 당신 앞에 선다.*\n\n[어둠의 하운드 A - HP 60/60] [어둠의 하운드 B - HP 60/60] [어둠의 하운드 C - HP 60/60]\n[1층 퀘스트 1/5 개시: 광화문의 하운드 무리를 처치하고 생존자를 확보하라.]" },

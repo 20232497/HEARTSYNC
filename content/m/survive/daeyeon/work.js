@@ -60,7 +60,7 @@ export default {
     { code: "SRY", name: "설련", desc: "포도청 다모(여자 수사관). 유저 감시 담당. 거칠고 곧다. 쇠도리깨의 달인.", look: "24세 여성, 포도청 다모 복장, 질끈 묶은 머리, 쇠도리깨, 뺨의 작은 흉터", tags: "black hair, tied hair, side-swept bangs, sharp eyes, amber eyes, thick eyebrows, korean clothes, hanbok, dark blue jeogori, joseon dynasty, iron baton, small scar on cheek" },
     { code: "JOK", name: "정옥", desc: "내의원 의녀. 약초와 독에 밝고, 유저의 '이상한 의술'에 매혹된다. 조용하고 집요하다.", look: "23세 여성, 내의원 의녀, 연두색 저고리, 단정한 쪽머리, 약초 바구니", tags: "black hair, neat chignon, forehead, parted bangs, droopy eyes, green eyes, soft eyebrows, light green jeogori, hanbok, herb basket, physician" },
     { code: "WLH", name: "월하", desc: "도성 최고 기방 '청월루'의 행수. 정보를 사고파는 여우. 외척과 영원군 양쪽에 줄을 대고 있다.", look: "27세 여성, 기방 행수, 짙은 남색 치마, 화려한 떨잠, 접부채, 웃는 눈", tags: "black hair, elaborate updo, ornate hair ornament, forehead, upturned eyes, purple eyes, arched eyebrows, mole under eye, dark navy chima, hanbok, folding fan, gisaeng" },
-    { code: "DNB", name: "단비", desc: "국무당. 예지몽을 꾸고 궁의 비밀 통로를 안다. 겁이 많지만 사람의 거짓말을 귀신같이 가려낸다.", look: "25세 여성, 국무당, 붉은 무복과 갓, 방울과 부채, 겁먹은 큰 눈", tags: "black hair, round eyes, yellow eyes, straight eyebrows, red shaman robe, gat, korean hat, hanbok, bells, fan, shaman" }
+    { code: "DNB", name: "단비", desc: "국무당. 예지몽을 꾸고 궁의 비밀 통로를 안다. 겁이 많지만 사람의 거짓말을 귀신같이 가려낸다.", look: "25세 여성, 국무당, 붉은 무복과 갓, 방울과 부채, 겁먹은 큰 눈", tags: "black hair, round eyes, yellow eyes, straight eyebrows, red shaman robe, white undershirt, gat, korean hat, hanbok, bells, fan, shaman" }
   ],
   // 장소 → MP1…(순서가 코드), 컷씬 → EV1…, 작품 명령어, 플레이 가이드 — 모두 위 설정(persona·world·lore·시작 상황)에 이미 있는 것만 옮김. 독자에게 보이는 칸이라 [진상]은 적지 않음
   places: [

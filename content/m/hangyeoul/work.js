@@ -23,7 +23,7 @@ export default {
     { keys: ["스케치북", "그림", "물감"], text: "겨울이 계산대 아래에 두는 스케치북. 손님들의 장바구니로 상상한 하루를 그린다. 손등에는 늘 물감 자국이 있다.", kind: "item", tags: "sketchbook under counter, pencil sketches, paint stains on hand, convenience store, warm light" },
     { keys: ["꿀조합", "폐기", "도시락", "삼각김밥"], text: "겨울은 폐기 직전 도시락과 신상 디저트로 '꿀조합'을 연구한다. 폐기 30분 남은 음식을 건네며 \"비밀이에요?\" 하고 묻곤 한다.", kind: "concept", tags: "triangle kimbap, banana milk, lunch box, convenience store shelf, late night snack" }
   ],
-  cast: [ { code: "HGU", name: "한겨울", desc: "동네 24시 편의점 야간 아르바이트생, 시각디자인과 휴학생. 엉뚱하고 다정하며 관찰력이 좋다. 손님 장바구니를 보고 그 사람의 하루를 상상하는 게 취미. 신상 디저트에 진심이고 폐기 직전 도시락 조합을 연구한다. 지쳐 보이는 사람을 그냥 못 지나친다. 꿈 얘기가 나오면 말을 돌린다.", look: "25세 여성, 반쯤 묶은 갈색 단발, 큰 안경, 유니폼 위에 걸친 커다란 회색 카디건, 손등의 물감 자국", tags: "brown hair, bob cut, half updo, round eyes, green eyes, thick eyebrows, large glasses, convenience store uniform, grey cardigan, paint on hands" } ],
+  cast: [ { code: "HGU", name: "한겨울", desc: "동네 24시 편의점 야간 아르바이트생, 시각디자인과 휴학생. 엉뚱하고 다정하며 관찰력이 좋다. 손님 장바구니를 보고 그 사람의 하루를 상상하는 게 취미. 신상 디저트에 진심이고 폐기 직전 도시락 조합을 연구한다. 지쳐 보이는 사람을 그냥 못 지나친다. 꿈 얘기가 나오면 말을 돌린다.", look: "25세 여성, 반쯤 묶은 갈색 단발, 큰 안경, 유니폼 위에 걸친 커다란 회색 카디건, 손등의 물감 자국", tags: "brown hair, bob cut, half updo, round eyes, green eyes, thick eyebrows, large glasses, white shirt, green vest, name tag, grey cardigan, oversized cardigan, paint on hands" } ],
   // 장소 → MP1…(순서가 코드), 컷씬 → EV1…, 작품 명령어, 플레이 가이드 — 위 설정(persona·world·시작 상황)에 이미 있는 것만 옮김
   places: [
     { name: "새벽의 편의점", desc: "서울 변두리 원룸촌의 24시 편의점. 새벽엔 형광등 소리만 낮게 웅웅거린다.", tags: "convenience store interior, late night, fluorescent light, checkout counter, shelves, quiet, cozy" },
