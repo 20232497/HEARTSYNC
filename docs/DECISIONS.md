@@ -78,3 +78,4 @@
 |---|---|---|---|
 | 2026-11-12 | CLAUDE.md는 규칙과 지도만 — 앱 구조 설명은 영역 문서(docs/app/)로, 날짜별 결정은 이 문서로. CLAUDE.md가 상한을 넘으면 병합 전 검사(npm run check)가 실패 | 사용자(2026-11-11 구조 평가 뒤) | CLAUDE.md 머리말·지도 표, tools/build/docs-check.mjs |
 | 2026-11-12 | CLAUDE.md 원칙의 수위 줄에서 상태 문구만 고침 — "법률 세션 검토 중"과 법률 세션 가지 이름을 "약관 terms.html(11-23 시행본)과 docs/legal에 반영됨"으로(PR #74로 main에 들어감). 수위 규칙 자체는 그대로 | 사용자(법률 세션 제안) | CLAUDE.md 원칙 |
+| 2026-11-12 | 남성향 애니 화풍(archive/style-manime/)을 비우고 처음부터 다시 정함 — v7(Animagine XL 4.0)의 값·완성 프롬프트·견본을 걷어 냄(예전 값은 git 기록 180fcb7). 그림체 기준을 먼저 글로 적고 모델부터 다시 고름 | 사용자 | archive/style-manime/README.md·manime.json |
