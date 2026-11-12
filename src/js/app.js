@@ -56,5 +56,23 @@ import { viewMe } from "./ui/me.js";
 import { viewHelp, viewNotice } from "./ui/help.js";
 
 /* 해시 앞부분 → 화면. 상세(c-<id>)·대화방(r-<id>)·도감(codex-<id>)·고객센터(help-<탭>)는 "-" 뒤를 인자로 받음 */
-export const USER_VIEWS = { home: viewHome, c: viewDetail, r: viewChat, chats: viewChats, codex: viewCodex, notice: viewNotice, store: viewStore, me: viewMe, login: viewLogin, help: viewHelp };
-export const USER_NAVS = [["home", "홈", "home"], ["chats", "대화", "chat"], ["codex", "도감", "book"], ["notice", "공지", "bell"], ["store", "스토어", "heart"], ["me", "MY", "user"]];
+export const USER_VIEWS = {
+  home: viewHome,
+  c: viewDetail,
+  r: viewChat,
+  chats: viewChats,
+  codex: viewCodex,
+  notice: viewNotice,
+  store: viewStore,
+  me: viewMe,
+  login: viewLogin,
+  help: viewHelp
+};
+export const USER_NAVS = [
+  ["home", "홈", "home"],
+  ["chats", "대화", "chat"],
+  ["codex", "도감", "book"],
+  ["notice", "공지", "bell"],
+  ["store", "스토어", "heart"],
+  ["me", "MY", "user"]
+];

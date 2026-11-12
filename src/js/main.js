@@ -3,5 +3,6 @@ import { USER_NAVS, USER_VIEWS } from "./app.js";
 import { registerViews, setNavs } from "./ui/shell.js";
 import { boot } from "./boot.js";
 
-registerViews(USER_VIEWS); setNavs(USER_NAVS);
+registerViews(USER_VIEWS);
+setNavs(USER_NAVS);
 boot();

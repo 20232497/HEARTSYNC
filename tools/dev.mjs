@@ -11,9 +11,21 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const BUILD = path.join(ROOT, "tools", "build.mjs");
 const pi = process.argv.indexOf("--port");
 const PORT = +(pi > 0 ? process.argv[pi + 1] : process.env.PORT) || 5173;
-const TYPES = { ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".mjs": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8",
-  ".json": "application/json; charset=utf-8", ".png": "image/png", ".jpg": "image/jpeg", ".webp": "image/webp", ".svg": "image/svg+xml", ".ico": "image/x-icon",
-  ".md": "text/plain; charset=utf-8", ".txt": "text/plain; charset=utf-8", ".sql": "text/plain; charset=utf-8" };
+const TYPES = {
+  ".html": "text/html; charset=utf-8",
+  ".js": "text/javascript; charset=utf-8",
+  ".mjs": "text/javascript; charset=utf-8",
+  ".css": "text/css; charset=utf-8",
+  ".json": "application/json; charset=utf-8",
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".webp": "image/webp",
+  ".svg": "image/svg+xml",
+  ".ico": "image/x-icon",
+  ".md": "text/plain; charset=utf-8",
+  ".txt": "text/plain; charset=utf-8",
+  ".sql": "text/plain; charset=utf-8"
+};
 
 /* 브라우저 쪽: 빌드가 끝나면 새로 고침, 실패하면 오류 표시, 런타임 오류는 index.html 줄 번호를 원본 모듈 파일:줄로 바꿔 콘솔에 보여 줌
    (.build/linemap.json, 관리자 도구는 linemap-admin.json). 오래된 브라우저에서도 돌게 ES5. 디스크의 index.html·admin.html에는 넣지 않고 응답에만 붙임 */
@@ -30,15 +42,19 @@ const send = (event, data) => clients.forEach((res) => res.write(`event: ${event
 let lastError = "";
 
 /* 빌드는 매번 새 프로세스로(작품 work.js를 import하므로 같은 프로세스면 고친 내용이 캐시에 남음) */
-let running = false, again = false;
+let running = false,
+  again = false;
 function rebuild(reason) {
-  if (running) { again = true; return; }
+  if (running) {
+    again = true;
+    return;
+  }
   running = true;
   const t = Date.now();
   const p = spawn(process.execPath, [BUILD], { cwd: ROOT });
   let out = "";
-  p.stdout.on("data", (d) => out += d);
-  p.stderr.on("data", (d) => out += d);
+  p.stdout.on("data", (d) => (out += d));
+  p.stderr.on("data", (d) => (out += d));
   p.on("close", (code) => {
     running = false;
     const text = out.trim();
@@ -51,7 +67,10 @@ function rebuild(reason) {
       console.error(`${reason ? `[${reason}] ` : ""}${text}`);
       send("fail", text);
     }
-    if (again) { again = false; rebuild("이어서"); }
+    if (again) {
+      again = false;
+      rebuild("이어서");
+    }
   });
 }
 
@@ -66,43 +85,67 @@ for (const dir of ["src", "content"]) {
   });
 }
 
-http.createServer((req, res) => {
-  const url = new URL(req.url, "http://localhost");
-  if (url.pathname === "/__dev/events") {
-    res.writeHead(200, { "content-type": "text/event-stream", "cache-control": "no-store", connection: "keep-alive" });
-    res.write("retry: 1000\n\n");
-    if (lastError) res.write(`event: fail\ndata: ${JSON.stringify(lastError)}\n\n`);
-    clients.add(res);
-    req.on("close", () => clients.delete(res));
-    return;
-  }
-  // 개발 전용: 브라우저에서 만든 그림(그림체 비교 생성 등)을 .build/samples/<이름>에 저장 — API 키는 페이지 안에 두고 결과 파일만 꺼내 보려고(git에는 안 들어감)
-  if (url.pathname === "/__dev/save" && req.method === "POST") {
-    const name = String(url.searchParams.get("name") || "").replace(/[^\w.\-가-힣]/g, "_").slice(0, 80);
-    if (!name) { res.writeHead(400).end("name"); return; }
-    const dir = path.join(ROOT, ".build", "samples"); fs.mkdirSync(dir, { recursive: true });
-    const chunks = []; req.on("data", (c) => chunks.push(c));
-    req.on("end", () => { fs.writeFileSync(path.join(dir, name), Buffer.concat(chunks)); res.writeHead(200, { "cache-control": "no-store" }).end("ok"); });
-    return;
-  }
-  if (url.pathname === "/__dev/linemap") {
-    fs.readFile(path.join(ROOT, ".build", url.searchParams.get("p") === "admin" ? "linemap-admin.json" : "linemap.json"), (err, buf) => {
-      if (err) { res.writeHead(404).end("[]"); return; }
-      res.writeHead(200, { "content-type": "application/json", "cache-control": "no-store" }).end(buf);
+http
+  .createServer((req, res) => {
+    const url = new URL(req.url, "http://localhost");
+    if (url.pathname === "/__dev/events") {
+      res.writeHead(200, { "content-type": "text/event-stream", "cache-control": "no-store", connection: "keep-alive" });
+      res.write("retry: 1000\n\n");
+      if (lastError) res.write(`event: fail\ndata: ${JSON.stringify(lastError)}\n\n`);
+      clients.add(res);
+      req.on("close", () => clients.delete(res));
+      return;
+    }
+    // 개발 전용: 브라우저에서 만든 그림(그림체 비교 생성 등)을 .build/samples/<이름>에 저장 — API 키는 페이지 안에 두고 결과 파일만 꺼내 보려고(git에는 안 들어감)
+    if (url.pathname === "/__dev/save" && req.method === "POST") {
+      const name = String(url.searchParams.get("name") || "")
+        .replace(/[^\w.\-가-힣]/g, "_")
+        .slice(0, 80);
+      if (!name) {
+        res.writeHead(400).end("name");
+        return;
+      }
+      const dir = path.join(ROOT, ".build", "samples");
+      fs.mkdirSync(dir, { recursive: true });
+      const chunks = [];
+      req.on("data", (c) => chunks.push(c));
+      req.on("end", () => {
+        fs.writeFileSync(path.join(dir, name), Buffer.concat(chunks));
+        res.writeHead(200, { "cache-control": "no-store" }).end("ok");
+      });
+      return;
+    }
+    if (url.pathname === "/__dev/linemap") {
+      fs.readFile(path.join(ROOT, ".build", url.searchParams.get("p") === "admin" ? "linemap-admin.json" : "linemap.json"), (err, buf) => {
+        if (err) {
+          res.writeHead(404).end("[]");
+          return;
+        }
+        res.writeHead(200, { "content-type": "application/json", "cache-control": "no-store" }).end(buf);
+      });
+      return;
+    }
+    let rel = decodeURIComponent(url.pathname);
+    if (rel.endsWith("/")) rel += "index.html";
+    const file = path.resolve(ROOT, "." + rel);
+    if (!file.startsWith(ROOT + path.sep) || /(^|[\\/])\./.test(path.relative(ROOT, file))) {
+      res.writeHead(403).end("forbidden");
+      return;
+    }
+    fs.readFile(file, (err, buf) => {
+      if (err) {
+        res.writeHead(404, { "content-type": "text/plain; charset=utf-8" }).end("없는 파일: " + rel);
+        return;
+      }
+      const type = TYPES[path.extname(file).toLowerCase()] || "application/octet-stream";
+      if (file === path.join(ROOT, "index.html") || file === path.join(ROOT, "admin.html"))
+        buf = Buffer.from(buf.toString("utf8").replace(/<\/html>\s*$/, CLIENT + "\n</html>\n"));
+      res.writeHead(200, { "content-type": type, "cache-control": "no-store" }).end(buf);
     });
-    return;
-  }
-  let rel = decodeURIComponent(url.pathname);
-  if (rel.endsWith("/")) rel += "index.html";
-  const file = path.resolve(ROOT, "." + rel);
-  if (!file.startsWith(ROOT + path.sep) || /(^|[\\/])\./.test(path.relative(ROOT, file))) { res.writeHead(403).end("forbidden"); return; }
-  fs.readFile(file, (err, buf) => {
-    if (err) { res.writeHead(404, { "content-type": "text/plain; charset=utf-8" }).end("없는 파일: " + rel); return; }
-    const type = TYPES[path.extname(file).toLowerCase()] || "application/octet-stream";
-    if (file === path.join(ROOT, "index.html") || file === path.join(ROOT, "admin.html")) buf = Buffer.from(buf.toString("utf8").replace(/<\/html>\s*$/, CLIENT + "\n</html>\n"));
-    res.writeHead(200, { "content-type": type, "cache-control": "no-store" }).end(buf);
+  })
+  .listen(PORT, "127.0.0.1", () => {
+    console.log(
+      `HEART SYNC 개발 서버: http://localhost:${PORT}/  관리자 도구 http://localhost:${PORT}/admin.html  (src/·content/를 고치면 다시 빌드하고 새로 고침, 끄려면 Ctrl+C)`
+    );
+    rebuild("시작");
   });
-}).listen(PORT, "127.0.0.1", () => {
-  console.log(`HEART SYNC 개발 서버: http://localhost:${PORT}/  관리자 도구 http://localhost:${PORT}/admin.html  (src/·content/를 고치면 다시 빌드하고 새로 고침, 끄려면 Ctrl+C)`);
-  rebuild("시작");
-});

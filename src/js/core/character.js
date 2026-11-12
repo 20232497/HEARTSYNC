@@ -14,8 +14,13 @@ export function normalizeChar(c) {
   if (!Array.isArray(c.lore)) c.lore = [];
   return c;
 }
-/** id로 작품 찾기(오리지널) — 방이 없는 화면(상세·도감·로그인 뒤 돌아갈 곳)에서. **방의 작품은 이것을 직접 부르지 않고 liveWork·latestWork로**(단위 시험 live-work가 지킴). @param {string} id @returns {Work|undefined} */
-export function getChar(id) { return ORIGINALS.find((c) => c.id === id); }
+/**
+ * id로 작품 찾기(오리지널) — 방이 없는 화면(상세·도감·로그인 뒤 돌아갈 곳)에서. **방의 작품은 이것을 직접 부르지 않고 liveWork·latestWork로**(단위 시험 live-work가 지킴). @param {string} id
+ * @returns {Work|undefined}
+ */
+export function getChar(id) {
+  return ORIGINALS.find((c) => c.id === id);
+}
 /**
  * 방의 작품 사본(r.char)에서 굳지 않고 **최신 작품(content/)에서 읽는 칸** — 작품을 고치면 이미 열린 방에도 바로 닿는 것들:
  * 키워드북 · 장소 · 컷씬 · 작품 명령어 · 플레이 가이드 · 유저노트 양식 · 권장 모델 · 그림(images) · 세계관 일러스트(loreImages).
@@ -35,13 +40,17 @@ export function liveWork(c) {
   return out;
 }
 /** 새 방을 만들 때 쓸 작품('처음부터 다시') — 방 사본이 아니라 최신 작품 통째로, content/에서 빠졌으면 방 사본. @param {Work} c @returns {Work} */
-export function latestWork(c) { return getChar(c.id) || c; }
+export function latestWork(c) {
+  return getChar(c.id) || c;
+}
 /**
  * 화면 예시 문구(도감 '코드 읽는 법'·FAQ·MY 미리보기·입력 칸 예시·프롬프트 예시)에 쓸 인물 — 특정 작품 이름을 코드에 박지 않으려고 데이터에서 뽑음.
  * 작품을 주면 그 작품의 첫 인물(폼이 아닌 본체), 안 주면 관심있는 대화에 맞는 첫 작품의 첫 인물, 그것도 없으면 EXAMPLE_CAST.
  * @param {Work|null} [c] @returns {{ code: string, name: string }}
  */
 export function exampleCast(c) {
-  const w = c || ORIGINALS.find(audOK), cast = (w && Array.isArray(w.cast) && w.cast) || [], x = cast.find((y) => !y.of) || cast[0];
+  const w = c || ORIGINALS.find(audOK),
+    cast = (w && Array.isArray(w.cast) && w.cast) || [],
+    x = cast.find((y) => !y.of) || cast[0];
   return x ? { code: x.code, name: x.name } : EXAMPLE_CAST;
 }

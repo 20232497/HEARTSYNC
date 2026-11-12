@@ -7,7 +7,9 @@
 /** @typedef {"lite"|"story"|"master"} ModelKey 대화방이 고르는 모델(ai/models.js MODELS) */
 /** @typedef {"short"|"mid"|"long"} LenKey 출력량(ai/models.js LEN) */
 /** @typedef {"rooms"|"wallet"|"settings"|"cloud"|"route"|"session"} EventName core/events.js의 이벤트 이름 */
-/** @typedef {string} ImageRef 그림 참조 — "kv:img…"(IndexedDB·계정 — 페르소나 사진) · "data:image/…" · "content/…/images/x.webp"(빌드가 실은 그림). 검사는 services/images.js validRef */
+/**
+ * @typedef {string} ImageRef 그림 참조 — "kv:img…"(IndexedDB·계정 — 페르소나 사진) · "data:image/…" · "content/…/images/x.webp"(빌드가 실은 그림). 검사는 services/images.js validRef
+ */
 /** @typedef {Record<string, string|number>} StatusMap 상태창 { "칸 이름": 값 } — 게이지 칸은 0~100 숫자, 다인원 칸은 "이름 n · 이름 n" 문자열 */
 
 /**
@@ -98,7 +100,8 @@
  * @property {string} desc
  * @property {string} [guide] 플레이 가이드 — 제작자가 독자에게 주는 안내문(줄바꿈만, LIMITS.guide자 이내). 상세 페이지·도감·대화방 드로어에 보임(AI에는 보내지 않음)
  * @property {string} [noteTemplate] 유저노트 양식 — 대화방 유저노트의 '이 작품의 양식 넣기'가 넣는 글(LIMITS.userNote자 이내). 있을 때만 버튼이 뜸
- * @property {ModelKey} [recommend] 권장 모델 — 새 대화방이 이 모델로 시작하고(core/rooms.js defaultSet), 모델 선택 시트에서 '권장' 배지가 붙음. 없으면 앱 기본 추천(ai/models.js RECOMMEND_DEFAULT "story")으로 시작하고 배지는 없음
+ * @property {ModelKey} [recommend] 권장 모델 — 새 대화방이 이 모델로 시작하고(core/rooms.js defaultSet), 모델 선택 시트에서 '권장' 배지가 붙음. 없으면 앱 기본 추천(ai/models.js RECOMMEND_DEFAULT
+ * "story")으로 시작하고 배지는 없음
  * @property {string} persona AI에게 주는 인물·진상 설정
  * @property {string} [world]
  * @property {string} [speech]
@@ -114,7 +117,8 @@
  * @property {string} [artTags] 그 세계관의 영문 낱말(시대·장소·분위기) — 앱은 쓰지 않음(앱 밖에서 표지·세계관 일러스트를 만들 때)
  * @property {Opening[]} openings
  * @property {Aud} [aud] 오리지널은 폴더가 정함, 없으면 guessAud
- * @property {"general"|"adult"} [track] 대화 경로(ai/models.js trackOf) — 없으면 general(Claude). adult는 서버 대화 관문 뒤의 외부 모델로만 가고, 공개 저장소의 content/에는 둘 수 없음(빌드가 막음). 방을 만들 때 사본(r.char)에 굳음
+ * @property {"general"|"adult"} [track] 대화 경로(ai/models.js trackOf) — 없으면 general(Claude). adult는 서버 대화 관문 뒤의 외부 모델로만 가고, 공개 저장소의 content/에는 둘 수 없음(빌드가 막음). 방을
+ * 만들 때 사본(r.char)에 굳음
  * @property {string} [row] 홈 가로 줄(폴더 이름)
  * @property {ImagesMap} [images] 작품 폴더 images/의 그림
  * @property {ImageRef} [img] 대표 일러스트(표지, images/cover.*)
@@ -135,16 +139,32 @@
  * 장 하나. at [a, b]: 이 장의 기간(에피소드 전체에서 몇 번째 응답인지 — a턴 전엔 서두르지 않고, b턴엔 반드시 매듭).
  * @typedef {{ id: string, title: string, goal: string, at: [number, number], choice?: EpChoice }} EpBeat
  */
-/** 갈림길 — 장의 목표를 이룬 뒤 카드로 보임. 보기 2~4개, default가 없으면 첫 보기가 기본(EP.wait턴 동안 안 고르면). @typedef {{ id: string, ask: string, options: { id: string, label: string, default?: boolean }[] }} EpChoice */
-/** 사건 — text는 AI에게 주는 지시(화면에는 title만). beat가 있으면 그 장에서만, keys(최근 글의 낱말)나 gauge("<50" 같은 조건) 중 하나가 맞으면, 둘 다 없으면 한동안 사건이 없을 때. @typedef {{ id: string, title: string, text: string, beat?: string, keys?: string[], gauge?: string }} EpEvent */
-/** 결말 — when의 조건이 모두 맞으면(choice: 갈림길 id → 보기 id, gauge: 게이지 조건, events: 본 사건 id). brief는 결말 장면에서 AI에게 주는 줄거리. @typedef {{ id: string, title: string, brief: string, when?: { choice?: Record<string, string>, gauge?: string, events?: string[] } }} EpEnding */
+/**
+ * 갈림길 — 장의 목표를 이룬 뒤 카드로 보임. 보기 2~4개, default가 없으면 첫 보기가 기본(EP.wait턴 동안 안 고르면). @typedef {{ id: string, ask: string, options: { id: string, label: string,
+ * default?: boolean }[] }} EpChoice
+ */
+/**
+ * 사건 — text는 AI에게 주는 지시(화면에는 title만). beat가 있으면 그 장에서만, keys(최근 글의 낱말)나 gauge("<50" 같은 조건) 중 하나가 맞으면, 둘 다 없으면 한동안 사건이 없을 때. @typedef {{ id: string, title:
+ * string, text: string, beat?: string, keys?: string[], gauge?: string }} EpEvent
+ */
+/**
+ * 결말 — when의 조건이 모두 맞으면(choice: 갈림길 id → 보기 id, gauge: 게이지 조건, events: 본 사건 id). brief는 결말 장면에서 AI에게 주는 줄거리. @typedef {{ id: string, title: string, brief:
+ * string, when?: { choice?: Record<string, string>, gauge?: string, events?: string[] } }} EpEnding
+ */
 /**
  * 에피소드 방의 진행 상태(Room.ep — core/episode.js만 바꿈). t 끝난 응답 수 · beat 지금 장 번호(0부터) · picks 갈림길 id → 고른 보기 · seen 일어난 사건 id ·
  * ask 고르기를 기다리는 갈림길 id(askAt 그 턴) · evAt 마지막 사건의 턴 · end 정해진 결말 id(다음 응답이 결말 장면) · over 결말까지 끝남.
- * @typedef {{ t: number, beat: number, picks: Record<string, string>, seen: string[], ask: string, askAt: number, evAt: number, end: string, over: boolean }} EpState
+ * @typedef {{ t: number, beat: number, picks: Record<string, string>, seen: string[], ask: string, askAt: number, evAt: number, end: string, over: boolean }}
+ * EpState
  */
-/** 이번 응답에 줄 지시(core/episode.js epPlan) — phase: early 서두르지 않음 · open 흐름이 닿으면 · due 반드시 매듭. @typedef {{ turn: number, n: number, beat: EpBeat|null, phase: ""|"early"|"open"|"due", event: EpEvent|null, ask: EpChoice|null, ending: EpEnding|null }} EpPlan */
-/** 외전 — 끝난 에피소드 방을 이어받은 자유 대화방(core/rooms.js sideRoom). kind: talk 그 인물과 더 이야기 · pov 그 인물의 시점 · after 결말 뒤. picks·seen은 원래 방의 고른 길·본 사건(프롬프트의 '있었던 일'). @typedef {{ kind: "talk"|"pov"|"after", who?: string, from: string, ending: string, endTitle: string, picks: Record<string, string>, seen: string[] }} Side */
+/**
+ * 이번 응답에 줄 지시(core/episode.js epPlan) — phase: early 서두르지 않음 · open 흐름이 닿으면 · due 반드시 매듭. @typedef {{ turn: number, n: number, beat: EpBeat|null, phase:
+ * ""|"early"|"open"|"due", event: EpEvent|null, ask: EpChoice|null, ending: EpEnding|null }} EpPlan
+ */
+/**
+ * 외전 — 끝난 에피소드 방을 이어받은 자유 대화방(core/rooms.js sideRoom). kind: talk 그 인물과 더 이야기 · pov 그 인물의 시점 · after 결말 뒤. picks·seen은 원래 방의 고른 길·본 사건(프롬프트의 '있었던 일').
+ * @typedef {{ kind: "talk"|"pov"|"after", who?: string, from: string, ending: string, endTitle: string, picks: Record<string, string>, seen: string[] }} Side
+ */
 /**
  * 내 페르소나(대화에서 내가 연기하는 인물).
  * @typedef {Object} Persona
@@ -208,8 +228,10 @@
  * @property {string} id
  * @property {boolean} [v2]
  * @property {Work} char 방을 만들 때의 작품 사본. **칸마다 어디서 읽는지**(규칙은 core/character.js의 LIVE_FIELDS·liveWork 한 곳 — 방의 작품이 필요한 모듈은 liveWork(r.char)를 씀):
- *   - 방 사본에 굳는 칸(예전 방의 이야기가 바뀌지 않게): 인물 cast(이름·코드·다른 모습·비공개 감정 칸) · 설정 persona·world·speech·secret · 상태창 fields·gauge · 제목·표지(title·glyph·pal·motif) · 에피소드 진행표 episode · 트랙 track
- *   - 최신 작품에서 읽는 칸(작품을 고치면 열린 방에도 바로): 키워드북 lore · 장소 places · 컷씬 cuts · 작품 명령어 commands · 플레이 가이드 guide · 유저노트 양식 noteTemplate · 권장 모델 recommend · 그림 images · 세계관 일러스트 loreImages
+ * - 방 사본에 굳는 칸(예전 방의 이야기가 바뀌지 않게): 인물 cast(이름·코드·다른 모습·비공개 감정 칸) · 설정 persona·world·speech·secret · 상태창 fields·gauge · 제목·표지(title·glyph·pal·motif) · 에피소드 진행표
+ * episode · 트랙 track
+ * - 최신 작품에서 읽는 칸(작품을 고치면 열린 방에도 바로): 키워드북 lore · 장소 places · 컷씬 cuts · 작품 명령어 commands · 플레이 가이드 guide · 유저노트 양식 noteTemplate · 권장 모델 recommend · 그림 images ·
+ * 세계관 일러스트 loreImages
  *   - 지금 이렇게 동작함(예외): 그림은 최신 작품에 images가 없으면 방 사본의 것(images/pick.js) · 한 턴의 키워드북은 최신 작품에 lore가 없으면 방 사본의 것(ai/prompt/input.js) ·
  *     '처음부터 다시'는 새 방을 최신 작품 통째로 만듦(latestWork) · 예전 방을 옮길 때(core/rooms.js upgradeCodes)는 최신 작품의 출연진에서 인물 코드를 찾음 · 작품이 content/에서 빠지면 모든 칸이 방 사본
  * @property {{ id: string, name: string, memo: string, desc: string, img: ImageRef|"" }} persona
@@ -300,7 +322,10 @@
  * @property {string} cat 홈 장르 필터(ui/home.js)
  * @property {string} q 홈 검색어
  */
-/** @typedef {{ anthropicUrl: string, supabaseUrl?: string, supabaseKey?: string, serverKeys?: boolean, chatUrl?: string }} Config window.HEARTVERSE_CONFIG로 덮는 연결 설정 — serverKeys면 프록시가 키를 가짐, chatUrl은 서버 대화 관문(성인 트랙, 그리고 키 없는 로그인 이용자의 일반 무료 길 — 비면 꺼짐) */
+/**
+ * @typedef {{ anthropicUrl: string, supabaseUrl?: string, supabaseKey?: string, serverKeys?: boolean, chatUrl?: string }} Config window.HEARTVERSE_CONFIG로 덮는
+ * 연결 설정 — serverKeys면 프록시가 키를 가짐, chatUrl은 서버 대화 관문(성인 트랙, 그리고 키 없는 로그인 이용자의 일반 무료 길 — 비면 꺼짐)
+ */
 /** @typedef {{ role: "system"|"user"|"assistant", content: string, cut?: number }} LLMMessage AI 요청 메시지(첫 메시지 = 시스템 — cut은 그 글에서 고정부의 글자 수, 프롬프트 캐시의 경계) */
 /**
  * llm() 옵션.

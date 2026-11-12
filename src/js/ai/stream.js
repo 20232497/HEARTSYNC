@@ -1,5 +1,8 @@
 /* AI 응답 스트림 읽기: SSE 줄 읽기(readSSE)와 공급자별 조각 해석(anthropicEvent·openaiEvent) — 순수 함수라 단위 테스트가 그대로 import */
-/** @typedef {{ delta?: string, stop?: string, category?: string|null, failed?: boolean }} StreamPart 조각 하나의 뜻 — delta 더할 글, stop 끝난 이유(거절은 "refusal"), category 거절 분류, failed 스트림 안의 오류 */
+/**
+ * @typedef {{ delta?: string, stop?: string, category?: string|null, failed?: boolean }} StreamPart 조각 하나의 뜻 — delta 더할 글, stop 끝난 이유(거절은 "refusal"), category
+ * 거절 분류, failed 스트림 안의 오류
+ */
 
 /**
  * SSE 본문을 끝까지 읽어 `data:` 줄의 JSON마다 onData. 읽을 수 없는 줄과 onData 안의 오류는 넘어감(조각 하나가 깨져도 스트림은 계속).
@@ -9,16 +12,22 @@
  * @returns {Promise<void>}
  */
 export async function readSSE(body, onData, onChunk) {
-  const reader = body.getReader(), dec = new TextDecoder(); let buf = "";
+  const reader = body.getReader(),
+    dec = new TextDecoder();
+  let buf = "";
   for (;;) {
-    const { value, done } = await reader.read(); if (done) break;
+    const { value, done } = await reader.read();
+    if (done) break;
     buf += dec.decode(value, { stream: true });
     let i;
     while ((i = buf.indexOf("\n")) >= 0) {
-      const line = buf.slice(0, i).trim(); buf = buf.slice(i + 1);
+      const line = buf.slice(0, i).trim();
+      buf = buf.slice(i + 1);
       if (!line.startsWith("data:")) continue;
       onChunk && onChunk();
-      try { onData(JSON.parse(line.slice(5))); } catch {}
+      try {
+        onData(JSON.parse(line.slice(5)));
+      } catch {}
     }
   }
 }
@@ -35,7 +44,8 @@ export function anthropicEvent(ev) {
 /** OpenAI 호환 chat completions 스트림의 조각 하나(서버 대화 관문이 중계하는 모양). 내용 필터로 끝나면 거절로 봄. @param {any} ev @returns {StreamPart} */
 export function openaiEvent(ev) {
   if (ev.error) return { failed: true };
-  const c = ev.choices && ev.choices[0], out = {};
+  const c = ev.choices && ev.choices[0],
+    out = {};
   if (!c) return out;
   if (c.delta && typeof c.delta.content === "string" && c.delta.content) out.delta = c.delta.content;
   if (c.finish_reason === "error") out.failed = true;

@@ -11,7 +11,13 @@ test("CODE_RE: 인물 코드는 영문 대문자 1~4자(숫자·소문자 안 �
   assert.deepEqual([SERIES.MP.kind, SERIES.MP.field, SERIES.EV.kind, SERIES.EV.field], ["place", "places", "cut", "cuts"]);
 });
 test("codebook: 인물 코드는 0~14(폼은 of), MP·EV는 목록 길이만큼 1부터(목록이 없으면 max 0) — 해석의 단일 출처", () => {
-  const c = { cast: [{ code: "HSY", name: "한서윤" }, { code: "HSYA", name: "각성한 한서윤", of: "HSY" }], places: [{ name: "광장", desc: "첫 전장" }] };
+  const c = {
+    cast: [
+      { code: "HSY", name: "한서윤" },
+      { code: "HSYA", name: "각성한 한서윤", of: "HSY" }
+    ],
+    places: [{ name: "광장", desc: "첫 전장" }]
+  };
   const b = codebook(c);
   assert.deepEqual([b.HSY.kind, b.HSY.min, b.HSY.max, b.HSY.name, b.HSY.of], ["cast", 0, 14, "한서윤", ""]);
   assert.equal(b.HSYA.of, "HSY");
@@ -27,8 +33,17 @@ test("seriesCode: 종류로 예약 시리즈의 코드 글자를 찾음(다른 �
   for (const k of Object.keys(SERIES)) assert.equal(seriesCode(SERIES[k].kind), k);
 });
 test("codebook.hidden: 비공개(스포일러) 번호 — 인물은 cast[].hidden의 감정 번호, 장소·컷씬은 hidden: true인 항목의 번호(1부터), 없으면 빈 배열", () => {
-  const b = codebook({ cast: [{ code: "HSY", name: "한서윤", hidden: [13, 9] }, { code: "DHR", name: "도하린" }],
-    places: [{ name: "광장" }, { name: "숨은 방", hidden: true }], cuts: [{ title: "결말", hidden: true }, { title: "첫 만남", hidden: false }] });
+  const b = codebook({
+    cast: [
+      { code: "HSY", name: "한서윤", hidden: [13, 9] },
+      { code: "DHR", name: "도하린" }
+    ],
+    places: [{ name: "광장" }, { name: "숨은 방", hidden: true }],
+    cuts: [
+      { title: "결말", hidden: true },
+      { title: "첫 만남", hidden: false }
+    ]
+  });
   assert.deepEqual(b.HSY.hidden, [13, 9]);
   assert.deepEqual(b.DHR.hidden, []);
   assert.deepEqual(b.MP.hidden, [2]);

@@ -5,11 +5,24 @@ import { KV } from "./storage.js";
 /** @typedef {import("./types.js").Shelf} Shelf */
 
 const obj = (v) => (v && typeof v === "object" && !Array.isArray(v) ? v : {});
-const sorted = (o) => { const out = {}; Object.keys(o).sort().forEach((k) => { out[k] = o[k]; }); return out; };
+const sorted = (o) => {
+  const out = {};
+  Object.keys(o)
+    .sort()
+    .forEach((k) => {
+      out[k] = o[k];
+    });
+  return out;
+};
 // 시각 표 둘을 합침 — 같은 작품이면 더 늦은 시각
 function later(a, b) {
   const out = {};
-  [obj(a), obj(b)].forEach((o) => Object.keys(o).forEach((k) => { const t = +o[k] || 0; if (t > (out[k] || 0)) out[k] = t; }));
+  [obj(a), obj(b)].forEach((o) =>
+    Object.keys(o).forEach((k) => {
+      const t = +o[k] || 0;
+      if (t > (out[k] || 0)) out[k] = t;
+    })
+  );
   return out;
 }
 /**
@@ -19,16 +32,32 @@ function later(a, b) {
  * @param {Partial<Shelf>|null} [a] @param {Partial<Shelf>|null} [b] @returns {Shelf}
  */
 export function mergeShelf(a, b) {
-  const x = obj(a), y = obj(b), all = later(x.recent, y.recent), recent = {};
-  Object.keys(all).sort((p, q) => all[q] - all[p] || (p < q ? -1 : 1)).slice(0, SHELF.recent).forEach((k) => { recent[k] = all[k]; });
+  const x = obj(a),
+    y = obj(b),
+    all = later(x.recent, y.recent),
+    recent = {};
+  Object.keys(all)
+    .sort((p, q) => all[q] - all[p] || (p < q ? -1 : 1))
+    .slice(0, SHELF.recent)
+    .forEach((k) => {
+      recent[k] = all[k];
+    });
   const union = (key) => {
     const out = {};
-    [obj(x[key]), obj(y[key])].forEach((o) => Object.keys(o).forEach((id) => {
-      out[id] = Array.from(new Set((out[id] || []).concat(Array.isArray(o[id]) ? o[id].map(String) : []))).sort();
-    }));
+    [obj(x[key]), obj(y[key])].forEach((o) =>
+      Object.keys(o).forEach((id) => {
+        out[id] = Array.from(new Set((out[id] || []).concat(Array.isArray(o[id]) ? o[id].map(String) : []))).sort();
+      })
+    );
     return sorted(out);
   };
-  return { likes: sorted(later(x.likes, y.likes)), unlikes: sorted(later(x.unlikes, y.unlikes)), recent: sorted(recent), seen: union("seen"), ends: union("ends") };
+  return {
+    likes: sorted(later(x.likes, y.likes)),
+    unlikes: sorted(later(x.unlikes, y.unlikes)),
+    recent: sorted(recent),
+    seen: union("seen"),
+    ends: union("ends")
+  };
 }
 /** 서재를 계정에도 올리는 날짜가 됐는지(이 기기의 날짜로 SHELF.syncFrom부터). @param {Date} [now] @returns {boolean} */
 export function shelfSyncOn(now) {
@@ -42,7 +71,10 @@ const newestFirst = (o) => Object.keys(o).sort((p, q) => o[q] - o[p]);
 export const likedIds = () => newestFirst(S.shelf.likes).filter(liked);
 /** 최근 본 작품 id — 방금 본 것 먼저. @returns {string[]} */
 export const recentIds = () => newestFirst(S.shelf.recent);
-function save() { S.shelf = mergeShelf(S.shelf); KV.set("shelf", S.shelf); }
+function save() {
+  S.shelf = mergeShelf(S.shelf);
+  KV.set("shelf", S.shelf);
+}
 /** 찜 켜고 끄기 — 바뀐 뒤의 상태를 돌려줌. @param {string} id @returns {boolean} */
 export function toggleLike(id) {
   const on = !liked(id);
@@ -53,15 +85,18 @@ export function toggleLike(id) {
 /** 상세 페이지를 열 때 '최근 본 작품'에 적음(이미 맨 앞이면 그대로 — 같은 화면을 다시 그릴 때 저장을 되풀이하지 않게). @param {string} id */
 export function touchRecent(id) {
   if (recentIds()[0] === id) return;
-  S.shelf.recent[id] = Date.now(); save();
+  S.shelf.recent[id] = Date.now();
+  save();
 }
 /** 이 작품의 대화에서 본 그림 코드들("HSY3"·"MP1"…) — 도감의 수집 기록. @param {string} id @returns {Set<string>} */
 export const seenSet = (id) => new Set(S.shelf.seen[id] || []);
 /** 대화에 나온 그림 코드를 수집 기록에 더함 — 새 코드가 있을 때만 저장하고 true. @param {string} id @param {string[]} codes @returns {boolean} */
 export function markSeen(id, codes) {
-  const have = seenSet(id), add = codes.filter((k) => !have.has(k));
+  const have = seenSet(id),
+    add = codes.filter((k) => !have.has(k));
   if (!add.length) return false;
-  S.shelf.seen[id] = (S.shelf.seen[id] || []).concat(add); save();
+  S.shelf.seen[id] = (S.shelf.seen[id] || []).concat(add);
+  save();
   return true;
 }
 /** 이 작품에서 본 결말 id들 — 에피소드형 작품의 '모은 결말'. @param {string} id @returns {Set<string>} */
@@ -70,7 +105,11 @@ export const endsSet = (id) => new Set((S.shelf.ends || {})[id] || []);
 export function markEnding(id, end) {
   if (!end || endsSet(id).has(end)) return;
   S.shelf.ends = S.shelf.ends || {};
-  S.shelf.ends[id] = (S.shelf.ends[id] || []).concat(end); save();
+  S.shelf.ends[id] = (S.shelf.ends[id] || []).concat(end);
+  save();
 }
 /** 이 기기의 서재를 비움(계정에는 보내지 않음) — 처음 로그인에서 '계정 것만 쓰기'를 골랐을 때. */
-export function resetShelf() { S.shelf = mergeShelf(); KV.setLocal("shelf", undefined); }
+export function resetShelf() {
+  S.shelf = mergeShelf();
+  KV.setLocal("shelf", undefined);
+}
