@@ -54,17 +54,17 @@ export const ART_SPECS = {
   place: {
     name: "장소",
     file: "<장소 코드><번호>",
-    size: "1248×832",
+    size: "1152×768",
     ratio: "3:2 가로",
     slot: "3:2(도감·상세 카드)",
     format: "webp",
-    note: "화면 자리와 같음(인물 크기를 눕힌 것)",
+    note: "화면 자리와 같음. Runware는 64의 배수만 받아 1248×832는 만들 수 없음 — 1728×1152로 키워 다시 그림(archive/style-works)",
     state: "확정"
   },
   cut: {
     name: "컷씬",
     file: "<컷씬 코드><번호>",
-    size: "1248×832",
+    size: "1152×768",
     ratio: "3:2 가로",
     slot: "3:2(도감·상세 카드)",
     format: "webp",
@@ -74,7 +74,7 @@ export const ART_SPECS = {
   lore: {
     name: "세계관 일러스트",
     file: "lore-<번호>",
-    size: "1248×832",
+    size: "1152×768",
     ratio: "3:2 가로",
     slot: "3:2(상세의 세계관 카드·세계관 수첩)",
     format: "webp",

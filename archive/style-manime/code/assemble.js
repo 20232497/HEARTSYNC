@@ -135,7 +135,11 @@ const NEG_ARMS = ", (holding gun:1.2), (holding weapon:1.1), (aiming:1.2)";
 const NEG_DAY = ", (day:1.2), (daylight:1.1), (blue sky:1.1)";
 const NEG_HAIR_BLEED = ", (multicolored hair:1.2), streaked hair, colored inner hair, gradient hair"; // 눈색 가중이 높아 눈색이 머리로 번짐
 const NEG_TRAIN = ", (train:1.3), (locomotive:1.3), (railroad tracks:1.2)";
+// 물가 장소(폭포·강·비)는 흰 옷을 젖어 비치게 그림(십절곡 낙혼폭 — 2026-11-14) → 젖은 옷·비치는 옷을 막음
+const NEG_WET = ", (wet clothes:1.4), (see-through:1.5), (wet shirt:1.4), (wet:1.1)";
 const NEG_SHORT_CAPE = ", (capelet:1.4), (short cape:1.3), (shoulder cape:1.3)";
+// 누더기 옷(patched ragged clothes)은 가슴께가 찢어져 살이 보임(화린 — 2026-11-14) → 기운 옷으로만
+const NEG_TORN = ", (torn clothes:1.4), (clothing cutout:1.4), (torn shirt:1.4)";
 const TWO_TONE = /multicolored hair|streaked hair|gradient hair|two-tone hair|colored inner hair/;
 
 /* ── 인물 칸 ── 작품 태그 그대로 ×1.1, 눈색 ×1.4, 수염 ×0.7 + 앞머리·속옷 규칙 */
@@ -184,12 +188,14 @@ function person(c, tags) {
   const pos = castTags(hr.tags) + (hr.add ? ", " + hr.add : "") + ", " + HAIR_ALL + (OUTER.test(tags) && !TOP.test(tags) ? ", (shirt:1.1)" : "");
   let sex = man ? NEG_M : NEG_F;
   if (man && tags.split(", ").some((t) => FACIAL.test(t))) sex = sex.replace(", facial hair, beard, stubble,", ", (long beard:1.2), (mustache:1.1),"); // 수염이 설정인 인물
-  const tail = hr.neg + (TWO_TONE.test(tags) ? "" : NEG_HAIR_BLEED) + (/long (cloak|cape|poncho)/.test(tags) ? NEG_SHORT_CAPE : "");
+  const tail =
+    hr.neg + (TWO_TONE.test(tags) ? "" : NEG_HAIR_BLEED) + (/long (cloak|cape|poncho)/.test(tags) ? NEG_SHORT_CAPE : "") + (/ragged|tattered|torn/.test(tags) ? NEG_TORN : "");
   return { tier, man, g: man ? "m" : "f", pos, negHead: NEG_BASE(man ? "m" : "f") + sex + NEG_SKIN + NEG_LINE, negTail: tail };
 }
 
 /* ── 장소 칸(감정 그림) ── 작품의 장소 태그 ×1.1. 사람·클로즈업·기차 낱말은 뺀다(혼자 서 있는 그림). 시간 낱말이 없으면 밤 */
 const PLACE_DROP = /martial artists|spectators|duel|crowd|couple|woman|\bman\b|people|figure|silhouette|hands|close-up|back view/;
+const WATER = /waterfall|river|\bsea\b|ocean|\blake\b|\brain|\bwet\b|pond|beach|\bpool\b|hot spring|\bbath|stream/;
 const VEHICLE = /^(steam locomotive|locomotive|steam train|train)$/; // 기차 그 자체만 — 'train car infirmary'처럼 열차 안인 장소는 그대로
 const TIME = /night|dawn|dusk|sunset|sunrise|morning|afternoon|evening|midnight|twilight|moonlight|\bday\b|daytime|noon|sunlight/;
 const DARK = /night|moonlight|midnight|dusk|twilight|evening/;
@@ -231,6 +237,7 @@ export function emotionJob(c, place, slot, o = {}) {
   const neg =
     p.negHead + p.negTail + (!p.man && !E.hard ? NEG_SOFT : "") + (p.man ? "" : NEG_NECK) + (day ? "" : NEG_DAY) + NEG_POSE + (E.armed ? "" : NEG_ARMS) + (E.neg || "") +
     (place.tags.split(", ").some((t) => VEHICLE.test(t)) ? NEG_TRAIN : "") +
+    (WATER.test(place.tags) ? NEG_WET : "") +
     (p.man ? NEG_PROPORTION + (E.negM || "") : "");
   return job("emotion", pos, neg, o.seed || seedOf(c));
 }
