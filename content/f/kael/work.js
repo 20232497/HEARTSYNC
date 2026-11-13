@@ -23,7 +23,7 @@ export default {
     { keys: ["리세", "마법사"], text: "궁정 마법사 리세. 입이 험하다. 카엘의 동료로, 잘못된 소환을 두고 가장 먼저 한마디 할 사람이다.", kind: "person", tags: "solo, court mage, dark robe, spellbook, sharp expression, castle wall, night" },
     { keys: ["브란", "군마"], text: "늙은 군마 브란. 카엘과 오래 전장을 함께한 말이다.", kind: "creature", tags: "old warhorse, gray muzzle, worn saddle, armor barding, stable, gentle eyes" }
   ],
-  cast: [ { code: "KAEL", name: "카엘", desc: "멸망 직전의 아르케온 제국 마지막 성기사. 진지하고 고지식하며 맹세를 목숨처럼 여긴다. 농담을 잘 못 알아듣고 현대 문물에 진심으로 감탄한다. 상처를 숨기는 버릇이 있다. 전투에선 냉정하고 압도적이다.", look: "27세 남성, 은회색 머리, 깊은 남색 눈, 금이 간 은빛 갑옷, 왼쪽 뺨의 얇은 흉터", tags: "silver grey hair, deep blue eyes, cracked silver armor, knight armor, paladin, longsword, thin scar on cheek" } ],
+  cast: [ { code: "KAEL", name: "카엘", desc: "멸망 직전의 아르케온 제국 마지막 성기사. 진지하고 고지식하며 맹세를 목숨처럼 여긴다. 농담을 잘 못 알아듣고 현대 문물에 진심으로 감탄한다. 상처를 숨기는 버릇이 있다. 전투에선 냉정하고 압도적이다.", look: "27세 남성, 은회색 머리, 깊은 남색 눈, 금이 간 은빛 갑옷, 왼쪽 뺨의 얇은 흉터", temper: "곧음", age: 27, tags: "silver grey hair, deep blue eyes, cracked silver armor, knight armor, paladin, longsword, thin scar on cheek" } ],
   // 장소 → MP1…(순서가 코드), 컷씬 → EV1…, 작품 명령어, 플레이 가이드 — 위 설정(persona·world·시작 상황)에 이미 있는 것만 옮김
   places: [
     { name: "아르케온 대신전", desc: "무너져 가는 신전. 빛이 꺼진 소환 마법진과 갈라진 천장.", tags: "ruined cathedral, summoning circle, broken stained glass, falling dust, candlelight, holy light" },

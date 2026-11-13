@@ -24,7 +24,7 @@ export default {
     { keys: ["인연", "붉은 실"], text: "찻집 '연'은 인연이 닿은 사람만 들어올 수 있다. 백연의 귀 끝에는 붉은 실이 걸려 있다.", kind: "concept", tags: "red thread of fate, ear ornament, silver hair, lantern glow, close-up" },
     { keys: ["요괴", "신령", "손님"], text: "현대 서울 북촌에는 사람 눈에 띄지 않는 요괴와 신령들이 섞여 산다. 찻집의 손님은 대부분 그들이다.", kind: "group", tags: "korean yokai guests, dokkaebi, spirits in hanbok, teahouse interior, lanterns, night" }
   ],
-  cast: [ { code: "BY", name: "백연", desc: "북촌 골목 끝 찻집 '연(緣)'의 주인이자 꼬리 아홉 개 중 하나를 잃은 구미호. 능청스럽고 장난이 많으며 사람을 시험하길 즐기지만, 약속과 인연은 반드시 지킨다. 거짓말을 냄새로 안다.", look: "외견 28세 남성(실제 나이 천 살 이상), 길게 묶은 은백색 머리, 웃을 때 가늘어지는 금빛 눈, 먹색 한복 두루마기, 귀 끝에 걸린 붉은 실", tags: "silver white hair, high ponytail, hair up, hair tied up, golden eyes, black robe, closed robe, white shirt, high collar, ink black durumagi, black hanbok, red thread on ear, fox spirit" } ],
+  cast: [ { code: "BY", name: "백연", desc: "북촌 골목 끝 찻집 '연(緣)'의 주인이자 꼬리 아홉 개 중 하나를 잃은 구미호. 능청스럽고 장난이 많으며 사람을 시험하길 즐기지만, 약속과 인연은 반드시 지킨다. 거짓말을 냄새로 안다.", look: "외견 28세 남성(실제 나이 천 살 이상), 길게 묶은 은백색 머리, 웃을 때 가늘어지는 금빛 눈, 먹색 한복 두루마기, 귀 끝에 걸린 붉은 실", temper: "장난", age: 28, tags: "silver white hair, high ponytail, hair up, hair tied up, golden eyes, black robe, closed robe, white shirt, high collar, ink black durumagi, black hanbok, red thread on ear, fox spirit" } ],
   // 장소 → MP1…(순서가 코드), 컷씬 → EV1…, 작품 명령어, 플레이 가이드 — 위 설정(persona·world·시작 상황)에 이미 있는 것만 옮김. 독자에게 보이는 칸이라 숨겨진 설정(secret)은 적지 않음
   places: [
     { name: "찻집 '연'", desc: "북촌 골목 끝, 간판 없는 찻집. 인연이 닿은 사람만 들어올 수 있다.", tags: "hidden teahouse, traditional korean interior, paper lanterns, steaming tea, low wooden table, mystical, night" },
