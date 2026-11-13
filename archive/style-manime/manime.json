@@ -12,7 +12,7 @@
   },
   "gen": { "steps": 28, "scheduler": "Euler a", "cfg": 4, "promptWeighting": "sdEmbeds(가중치가 있을 때)" },
   "size": {
-    "profile": { "width": 832, "height": 1216, "hires": { "w": 1216, "h": 1792, "strength": 0.4 } },
+    "profile": { "width": 768, "height": 1152, "hires": { "w": 1152, "h": 1728, "strength": 0.4 } },
     "emotion": { "width": 1024, "height": 1024, "hires": { "w": 1536, "h": 1536, "strength": 0.4 } },
     "note": "Runware는 64의 배수만 — 첫 그림을 hires 크기로 키워 같은 프롬프트로 다시 그림"
   },

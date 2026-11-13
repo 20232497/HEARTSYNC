@@ -34,11 +34,11 @@ export const ART_SPECS = {
   profile: {
     name: "인물 프로필",
     file: "<인물 코드>0",
-    size: "832×1248",
+    size: "768×1152",
     ratio: "2:3 세로",
     slot: "2:3(인물 사진 — 상세·도감) · 대화 속은 받은 그림의 비율 그대로",
     format: "webp",
-    note: "가슴 위 구도. 화면 자리와 같음. 예전 생성 크기 832×1216(archive/style-*)과 품질 차이 없음을 시험으로 확인",
+    note: "얼굴 가까운 구도. 화면 자리와 같음. Runware는 64의 배수만 받아 832×1248은 만들 수 없음 — 화풍이 1152×1728로 키워 다시 그림(archive/style-manime)",
     state: "확정"
   },
   cast: {

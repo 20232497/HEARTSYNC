@@ -3,9 +3,9 @@
    profileJob(인물, 장소) → 프로필(칸 0) · emotionJob(인물, 장소, 칸 1~14) → 감정 그림. 앱은 이 파일을 쓰지 않는다(그림은 앱 밖에서 만듦) */
 
 export const MODEL = { air: "civitai:967405@1428332", name: "Nova Orange XL v6.0", steps: 28, cfg: 4, scheduler: "Euler a" };
-/* 크기는 64의 배수(Runware) — 프로필 832×1216, 감정 1024×1024. 첫 그림을 hires 크기로 키워 같은 프롬프트로 다시 그린다(strength 0.4) */
+/* 크기는 64의 배수(Runware) — 프로필 768×1152(2:3), 감정 1024×1024. 첫 그림을 hires 크기로 키워 같은 프롬프트로 다시 그린다(strength 0.4) */
 export const SIZE = {
-  profile: { width: 832, height: 1216, hires: { w: 1216, h: 1792, strength: 0.4 } },
+  profile: { width: 768, height: 1152, hires: { w: 1152, h: 1728, strength: 0.4 } },
   emotion: { width: 1024, height: 1024, hires: { w: 1536, h: 1536, strength: 0.4 } },
 };
 /* 후처리(post.js): 채도·대비 → 빛 번짐 → 부드러운 초점 → 밝은 곳에 연보라빛 */
@@ -21,6 +21,10 @@ const FIN =
   "(shiny hair:1.4), (hair strands:1.4), (detailed hair:1.3), (pale skin:1.2), (soft shading:1.3), (painterly:1.3), (semi-realistic:0.3), " +
   "(soft focus:0.4), (thin lineart:1.3), (depth of field:0.7), (vivid colors:0.8)";
 const BODY = { f: { profile: "(large breasts:0.5), (narrow waist:0.6)", emotion: "(large breasts:0.6), (narrow waist:0.6)" }, m: "slender, (bishounen:1.0)", elder: "(broad shoulders:0.5)" };
+/* 남성의 감정 그림 비율: 어깨가 넓고 머리가 작게(류건이 기준 — 사용자 2026-11-13). 태그에 broad shoulders가 없는 인물에만 붙인다. 프로필은 얼굴 구도라 그대로 */
+const SHOULDERS = "(broad shoulders:1.1)";
+const BODY_M_EMOTION = { m: "slender, (bishounen:1.0)", elder: "" };
+const NEG_PROPORTION = ", (large head:1.3), (narrow shoulders:1.2)";
 const FRAME = {
   profile: "(fully clothed:1.2), (close-up:1.0), (portrait:1.2), (from above:0.4), (head tilt:0.8), looking at viewer",
   emotion: "(fully clothed:1.2), (standing:1.0), (upper body:1.1), (from above:0.2), (head tilt:0.5), looking at viewer",
@@ -222,12 +226,15 @@ export function emotionJob(c, place, slot, o = {}) {
   const emo = slot === 1 || !E.emo ? ch.emo : (typeof E.emo === "function" ? E.emo(c) : E.emo[g]) + (E.sym && o.symbols !== false ? ", " + E.sym : "");
   const frame = E.look ? FRAME.emotion.replace("looking at viewer", LOOK[E.look]) : FRAME.emotion;
   const day = TIME.test(place.tags) && !DARK.test(place.tags);
-  const body = p.man ? BODY[p.tier] : BODY.f.emotion;
-  let pos = [SUBJ[p.tier], p.pos, emo, frame, placeBlock(place.tags), eyes + ", " + face, body, FIN, day ? BG.emotion.replace("(dim lighting:0.8), ", "") : BG.emotion, Q].join(", ");
+  const body = p.man ? [/broad shoulders/.test(c.tags) ? "" : SHOULDERS, BODY_M_EMOTION[p.tier]].filter(Boolean).join(", ") : BODY.f.emotion;
+  let pos = [SUBJ[p.tier], p.pos, emo, frame, placeBlock(place.tags), eyes + ", " + face, body, FIN, day ? BG.emotion.replace("(dim lighting:0.8), ", "") : BG.emotion, Q]
+    .filter(Boolean)
+    .join(", ");
   if (E.noEyeColor) pos = pos.replace(/\((?:[a-z ]+) eyes:1\.4\), /, ""); // 자는 칸은 눈색 태그를 뺌(눈을 뜨게 함)
   const neg =
     p.negHead + p.negTail + (!p.man && !E.hard ? NEG_SOFT : "") + (p.man ? "" : NEG_NECK) + (day ? "" : NEG_DAY) + NEG_POSE + (E.armed ? "" : NEG_ARMS) + (E.neg || "") +
-    (place.tags.split(", ").some((t) => VEHICLE.test(t)) ? NEG_TRAIN : "");
+    (place.tags.split(", ").some((t) => VEHICLE.test(t)) ? NEG_TRAIN : "") +
+    (p.man ? NEG_PROPORTION : "");
   return job("emotion", pos, neg, o.seed || seedOf(c));
 }
 
