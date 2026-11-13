@@ -3,6 +3,9 @@
 import { AUD_DIRS, isObj, str } from "./common.mjs";
 import { checkEpisode } from "./episode-check.mjs";
 
+/** 인물의 성격(work.js cast[].temper)에 적을 수 있는 값 — 그림의 기본 표정·손동작을 고르는 칸(앱은 쓰지 않음). 화풍 코드(archive/style-manime/code/assemble.js의 성격 표)의 키와 같게 유지(단위 시험 content-check가 견줌) */
+export const CAST_TEMPERS = ["도도", "장난", "해맑음", "수줍음", "다정", "냉소", "곧음", "차가움"];
+
 export function plainData(v, at, bad) {
   if (v === null || typeof v === "string" || typeof v === "boolean") return;
   if (typeof v === "number") {
@@ -84,6 +87,15 @@ export function checkWork(mod, { aud, row, id, wrel, R, errors, warnings }) {
     if (x.desc !== undefined && typeof x.desc !== "string") e(`cast[${i}].desc(도감 소개)는 글이어야 해요`);
     if (x.tags !== undefined && (typeof x.tags !== "string" || /[가-힣]/.test(x.tags)))
       e(`cast[${i}].tags는 영문 Danbooru 태그 글이어야 해요(한국어 외모는 look에)`);
+    // 그림용 칸 둘(선택 — 앱은 쓰지 않고, 앱 밖에서 그림을 만들 때 읽음): 성격 temper는 기본 표정을 고르는 값(CAST_TEMPERS 중 하나), 나이 age는 겉보기 나이(그림의 나이대)
+    if (x.temper !== undefined && !CAST_TEMPERS.includes(x.temper))
+      e(`cast[${i}](${x.name}).temper("${x.temper}")는 ${CAST_TEMPERS.join("·")} 중 하나예요(성격 — 그림의 기본 표정을 고르는 칸)`);
+    if (x.age !== undefined && !(Number.isInteger(x.age) && x.age >= 1 && x.age <= 120))
+      e(`cast[${i}](${x.name}).age(${x.age})는 겉보기 나이 — 1~120의 정수예요(사람이 아닌 인물도 겉으로 보이는 나이를 적어요)`);
+    // AI는 look의 글을 읽고 그림은 age를 읽으므로 둘이 달라지지 않게: look에 두 자리 'N세'가 있으면 age와 같아야 함('900살'·'겉보기 20대' 같은 표현은 견주지 않음)
+    const said = typeof x.look === "string" && x.look.match(/(?:^|\D)(\d{2})\s*세/);
+    if (Number.isInteger(x.age) && said && +said[1] !== x.age)
+      e(`cast[${i}](${x.name}): look에 적힌 ${said[1]}세와 age(${x.age})가 달라요 — 둘을 같게 적어 주세요`);
     // 비공개(스포일러) 감정 칸: 도감·상세에서 가리고 대화에 나온 방에서만 보임(images/codes.js codebook의 hidden). 0 프로필은 인물 카드라 숨길 수 없음
     if (x.hidden !== undefined) {
       const max = R.SIT.length - 1;

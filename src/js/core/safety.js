@@ -7,7 +7,8 @@
 /** 19세 미만·학생으로 보이는 인물 이름들(비면 통과). 저장·공개·빌드 검사가 같은 함수를 씀. @param {Work|{ cast?: CastMember[], persona?: string }} c @returns {string[]} */
 export function minorFlags(c) {
   const out = [];
-  for (const x of c.cast || []) if (minorHint([x.look, x.tags].join("\n"))) out.push(x.name || x.code);
+  // 출연진: 외모 글·영문 태그의 나이·학생 표현, 그리고 나이 칸(cast[].age — 겉보기 나이)이 19 미만이면
+  for (const x of c.cast || []) if ((typeof x.age === "number" && x.age < 19) || minorHint([x.look, x.tags].join("\n"))) out.push(x.name || x.code);
   // 설정은 첫머리만 본다(뒤에 나오는 가족·과거 인물 언급은 막지 않음): 첫 "이름(나이", 그 밖의 첫머리 글
   const head = String(c.persona || "").slice(0, 120),
     pm = head.match(/([가-힣A-Za-z]{1,10})\s*\((\d{1,2}|열[가-힣]{1,2})\s*[,，)]/);

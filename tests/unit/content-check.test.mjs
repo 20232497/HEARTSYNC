@@ -8,8 +8,8 @@ import assert from "node:assert/strict";
 import { ROOT, appRules, checkWork, scanImages, checkForbidden } from "../../tools/build.mjs";
 
 const R = appRules();
-/* 검사 함수 안의 오류 자리 수(맨 아래 '규칙 자리 수' 시험) — 2026-11-12에 자리마다 번호를 달아 재 보니 아래 표가 110곳(작품 70 · 그림 6 · 에피소드 34)을 모두 한 번 이상 건드림 */
-const WORK_SITES = 70,
+/* 검사 함수 안의 오류 자리 수(맨 아래 '규칙 자리 수' 시험) — 2026-11-12에 자리마다 번호를 달아 재 보니 아래 표가 110곳(작품 70 · 그림 6 · 에피소드 34)을 모두 한 번 이상 건드림. 그 뒤 더한 것: 인물의 성격·나이 칸 3곳(2026-11-13) */
+const WORK_SITES = 73,
   IMAGE_SITES = 6,
   EP_SITES = 34;
 const KIND = Object.keys(R.LORE_KINDS)[0],
@@ -271,6 +271,34 @@ const RULES = [
       c.cast[0].tags = "검은 머리";
     },
     /cast\[0\]\.tags는 영문 Danbooru 태그/
+  ],
+  [
+    "성격(temper)이 목록 밖",
+    (c) => {
+      c.cast[0].temper = "츤데레";
+    },
+    /cast\[0\]\(가람\)\.temper\("츤데레"\)는 도도·장난·해맑음·수줍음·다정·냉소·곧음·차가움 중 하나/
+  ],
+  [
+    "나이(age)가 정수가 아님",
+    (c) => {
+      c.cast[0].age = "27";
+    },
+    /cast\[0\]\(가람\)\.age\(27\)는 겉보기 나이 — 1~120의 정수/
+  ],
+  [
+    "나이(age)가 범위 밖",
+    (c) => {
+      c.cast[0].age = 0;
+    },
+    /cast\[0\]\(가람\)\.age\(0\)는 겉보기 나이 — 1~120의 정수/
+  ],
+  [
+    "look의 나이와 age가 다름",
+    (c) => {
+      c.cast[0].age = 31;
+    },
+    /cast\[0\]\(가람\): look에 적힌 27세와 age\(31\)가 달라요/
   ],
   [
     "hidden이 배열이 아님",
@@ -823,6 +851,14 @@ const RULES = [
     /19세 미만이거나 학생으로 보이는 인물이 있어요: 가람\(각성\)/
   ],
   [
+    "19세 미만 출연진(나이 칸 — 외모 글에는 나이가 없음)",
+    (c) => {
+      c.cast[0].look = "남성, 검은 머리";
+      c.cast[0].age = 17;
+    },
+    /19세 미만이거나 학생으로 보이는 인물이 있어요: 가람 /
+  ],
+  [
     "설정 첫머리의 미성년 나이",
     (c) => {
       c.persona = "가람(17, 견습 기사)\n외모: 검은 머리의 남성";
@@ -854,12 +890,29 @@ for (const [name, mut, want] of RULES) {
     );
   });
 }
-test("checkWork: 통과해야 하는 모양 — track general, cast 없는 1:1 작품(코드 C), 전체(all) 폴더의 혼성 출연진, 줄 폴더와 같은 row", () => {
+test("checkWork: 통과해야 하는 모양 — track general, cast 없는 1:1 작품(코드 C), 전체(all) 폴더의 혼성 출연진, 줄 폴더와 같은 row, 성격·나이 칸", () => {
   assert.deepEqual(
     run((c) => {
       c.track = "general";
     }).errors,
     []
+  );
+  // 성격·나이 칸: 목록 안의 성격, look의 두 자리 'N세'와 같은 나이. look에 'N세'가 없거나('900살'·'겉보기 20대') 세 자리면 견주지 않음
+  assert.deepEqual(
+    run((c) => {
+      c.cast[0].temper = "도도";
+      c.cast[0].age = 27;
+      c.cast[1].look = "겉보기 20대 남성, 흰 머리. 900살 용";
+      c.cast[1].age = 24;
+    }),
+    { errors: [], warnings: [] }
+  );
+  assert.deepEqual(
+    run((c) => {
+      c.cast[1].look = "900세 남성, 흰 머리";
+      c.cast[1].age = 30;
+    }),
+    { errors: [], warnings: [] }
   );
   assert.deepEqual(
     run((c) => {
@@ -1381,6 +1434,17 @@ test("checkForbidden: 두 빌드 모두 외부 AI·그림 서비스 주소가 �
 });
 
 /* 규칙을 새로 더했는데 이 표에 줄을 더하지 않으면 여기서 걸림 — checkWork·scanImages 안의 오류 자리(e(…)·errors.push(…)) 수 */
+test("성격 목록: 빌드 검사의 CAST_TEMPERS와 화풍 코드의 성격 표(그림의 기본 표정)가 같은 값", async () => {
+  const { CAST_TEMPERS } = await import("../../tools/build/work-check.mjs");
+  const style = await import("../../archive/style-manime/code/assemble.js");
+  // PERSONA는 표의 예전 이름 — 화풍 코드가 TEMPERS로 바꾼 커밋이 main에 들어오기 전에도 통과하도록 둘 다 봄
+  const table = style.TEMPERS || style.PERSONA;
+  assert.deepEqual(
+    Object.keys(table).sort(),
+    [...CAST_TEMPERS].sort(),
+    "한쪽에만 있는 성격 값이 있음 — work-check.mjs CAST_TEMPERS와 화풍 코드의 표를 같이 고치세요"
+  );
+});
 test("규칙 자리 수: checkWork의 오류 자리 수가 이 시험이 아는 수와 같음(규칙을 더하면 위 표에 줄을 더하고 이 수를 고침)", () => {
   const src = ["work-check", "episode-check", "images-scan"]
     .map((f) => fs.readFileSync(new URL(`../../tools/build/${f}.mjs`, import.meta.url), "utf8").replace(/\r\n?/g, "\n"))
