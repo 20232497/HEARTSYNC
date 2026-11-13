@@ -1,4 +1,4 @@
-/* 표지 후처리 — 화풍 후처리(style-*/code/post.js)까지 끝난 표지 그림 위에 한 번 더 입힌다(브라우저 캔버스). 2026-11-14 사용자가 네 단계를 보고 '빛 번짐과 입자까지'를 고름.
+/* 표지 후처리 — 화풍 후처리(각 화풍 폴더의 code/post.js)까지 끝난 표지 그림 위에 한 번 더 입힌다(브라우저 캔버스). 2026-11-14 사용자가 네 단계를 보고 '빛 번짐과 입자까지'를 고름.
    색·대비를 조금 올리고(filter) → 밝은 곳이 번지게(bloom) → 작품 색(pal: [어두운, 중간, 강조])을 위에서 아래로 은은하게(grade) → 작품 무늬(motif)의 입자 → 가장자리를 작품의 어두운 색으로(vignette).
    ctx.filter를 쓴다 — Safari에서는 안 되니 그림을 만드는 PC의 크롬 계열에서만 돌린다(앱은 이 파일을 쓰지 않는다) */
 export const COVER_POST = { filter: "saturate(1.18) contrast(1.14)", bloom: { k: 5, a: 0.28 }, grade: 0.3, vignette: 0.5, particles: true };

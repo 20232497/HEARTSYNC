@@ -10,6 +10,10 @@ import { pathToFileURL, fileURLToPath } from "node:url";
 import { placeJob, assertPlace, styleOf } from "./place.js";
 import { coverJob, assertCover, LEADS } from "./cover.js";
 import { LOGOS } from "./logos.js";
+// 브라우저에서만 도는 캔버스 코드도 여기서 한 번 읽어 문법이 깨지지 않았는지 본다(그리지는 않음)
+import { COVER_POST } from "./cover-post.js";
+import { FONT_FAMILIES } from "./logo.js";
+if (!COVER_POST.filter || !FONT_FAMILIES.length) throw new Error("표지 후처리·로고 글꼴 값이 비었어요");
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
 const args = process.argv.slice(2),
