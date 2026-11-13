@@ -25,6 +25,8 @@ const BODY = { f: { profile: "(large breasts:0.5), (narrow waist:0.6)", emotion:
 const SHOULDERS = "(broad shoulders:1.1)";
 const BODY_M_EMOTION = { m: "slender, (bishounen:1.0)", elder: "" };
 const NEG_PROPORTION = ", (large head:1.3), (narrow shoulders:1.2)";
+// 남자의 놀람·공포 — 이 악문 입과 이마 주름을 막음(성숙한 얼굴에서 과장돼 보임 — 사용자 2026-11-13)
+const NEG_CALM_M = ", (forehead wrinkles:1.3), (clenched teeth:1.1)";
 const FRAME = {
   profile: "(fully clothed:1.2), (close-up:1.0), (portrait:1.2), (from above:0.4), (head tilt:0.8), looking at viewer",
   emotion: "(fully clothed:1.2), (standing:1.0), (upper body:1.1), (from above:0.2), (head tilt:0.5), looking at viewer",
@@ -90,13 +92,13 @@ export const EMOTIONS = {
     emo: { f: "(embarrassed:1.3), (shy:1.0), (blush:1.7), (full-face blush:0.6), (wavy mouth:0.7), (hand on own cheek:0.9)", m: "(embarrassed:1.2), (blush:1.1), (wavy mouth:0.5), (scratching head:0.8)" } },
   4: { name: "슬픔", look: "down", eyes: both("(half-closed eyes:0.5)"), neg: ", (streaming tears:1.2), (sobbing:1.1)", // 눈물이 맺힌 정도
     emo: { f: "(sad:1.3), (tearing up:1.4), (teary eyes:1.2), (tears:1.0), (frown:0.8), closed mouth, (hand on own chest:0.6)", m: "(sad:1.2), (tearing up:1.2), (teary eyes:1.0), (tears:0.7), (frown:0.8), closed mouth" } },
-  5: { name: "놀람", eyes: { f: "(wide-eyed:1.2)", m: "(wide-eyed:1.0), (pupils:1.1)" }, sym: "(^^^:1.1)", neg: ", (day:1.2), (blue sky:1.1)",
-    emo: { f: "(surprised:1.4), (open mouth:1.0), (raised eyebrows:0.8), (hands up:0.6)", m: "(surprised:1.3), (open mouth:0.8), (raised eyebrows:0.8)" } },
+  5: { name: "놀람", eyes: { f: "(wide-eyed:1.2)", m: "(wide-eyed:0.9), (pupils:1.0)" }, sym: "(^^^:1.1)", neg: ", (day:1.2), (blue sky:1.1)", negM: NEG_CALM_M,
+    emo: { f: "(surprised:1.4), (open mouth:1.0), (raised eyebrows:0.8), (hands up:0.6)", m: "(surprised:1.3), (open mouth:0.5), (raised eyebrows:0.8)" } },
   6: { name: "분노", eyes: both("(glaring:1.0), (v-shaped eyebrows:1.1)"), hard: true, lowBlush: true, sym: "(anger vein:1.4)", emo: both("(angry:1.4), (frown:1.2), (clenched teeth:0.9), (crossed arms:0.8)") },
   7: { name: "삐침", look: "away", sym: "(anger vein:0.8), (squiggle:0.9)",
     emo: { f: "(pout:1.3), (puffed cheeks:0.9), (annoyed:0.9), (crossed arms:0.9)", m: "(annoyed:1.1), (frown:0.9), (pout:0.5), closed mouth, (crossed arms:0.9)" } },
-  8: { name: "공포", eyes: { f: "(wide-eyed:1.1)", m: "(wide-eyed:0.9), (constricted pupils:0.7)" }, lowBlush: true, sym: "(sweatdrop:1.1)",
-    emo: { f: "(scared:1.4), (trembling:0.9), (sweat:0.9), (turn pale:0.7), (open mouth:0.6), (hands on own chest:0.8)", m: "(scared:1.3), (sweat:0.9), (turn pale:0.6), (clenched teeth:0.7)" } },
+  8: { name: "공포", eyes: { f: "(wide-eyed:1.1)", m: "(wide-eyed:0.8), (pupils:1.0)" }, lowBlush: true, sym: "(sweatdrop:1.1)", negM: NEG_CALM_M,
+    emo: { f: "(scared:1.4), (trembling:0.9), (sweat:0.9), (turn pale:0.7), (open mouth:0.6), (hands on own chest:0.8)", m: "(scared:1.2), (sweat:0.9), (turn pale:0.5), (parted lips:0.8), (raised eyebrows:0.6)" } },
   9: { name: "부상", eyes: both("(one eye closed:0.9)"), lowBlush: true, neg: ", blood, gore", // 팔 붕대는 소매를 걷게 해 겉옷이 사라짐 → 머리·볼·손
     emo: both("(pain:1.2), (grimace:0.9), (injury:0.9), (bandaged head:1.2), (bandaid on cheek:1.1), (bandaged hand:1.1), (holding own arm:1.0)") },
   10: { name: "회복", emo: both("(relieved:1.1), (gentle smile:1.1), closed mouth, (bandaid on cheek:1.1), (bandaged hand:0.9)") },
@@ -234,7 +236,7 @@ export function emotionJob(c, place, slot, o = {}) {
   const neg =
     p.negHead + p.negTail + (!p.man && !E.hard ? NEG_SOFT : "") + (p.man ? "" : NEG_NECK) + (day ? "" : NEG_DAY) + NEG_POSE + (E.armed ? "" : NEG_ARMS) + (E.neg || "") +
     (place.tags.split(", ").some((t) => VEHICLE.test(t)) ? NEG_TRAIN : "") +
-    (p.man ? NEG_PROPORTION : "");
+    (p.man ? NEG_PROPORTION + (E.negM || "") : "");
   return job("emotion", pos, neg, o.seed || seedOf(c));
 }
 
