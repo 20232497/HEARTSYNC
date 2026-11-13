@@ -1961,7 +1961,7 @@ function exampleCast(c) {
 /* ── src/js/core/safety.js — 안전: 미성년 인물 막기(minorFlags·minorHint·settingHint·roomMinorHint·messagesMinorHint) — 순수 함수라 빌드의 작품… */
 function minorFlags(c) {
   const out = [];
-  for (const x of c.cast || []) if (minorHint([x.look, x.tags].join("\n"))) out.push(x.name || x.code);
+  for (const x of c.cast || []) if ((typeof x.age === "number" && x.age < 19) || minorHint([x.look, x.tags].join("\n"))) out.push(x.name || x.code);
   const head = String(c.persona || "").slice(0, 120),
     pm = head.match(/([가-힣A-Za-z]{1,10})\s*\((\d{1,2}|열[가-힣]{1,2})\s*[,，)]/);
   if (pm && minorHint(pm[2] + "살")) out.push(pm[1]);

@@ -18,6 +18,12 @@ test("minorFlags: 출연진 외모의 19세 미만 나이·학생 신분, 설정
     ["A"]
   );
   assert.deepEqual(minorFlags({ cast: [{ code: "a", name: "A", look: "여고생 교복" }], persona: "" }), ["A"]);
+  // 나이 칸(cast[].age — 겉보기 나이): 외모 글에 나이가 없어도 19 미만이면 잡고, 19 이상은 통과
+  const aged = [
+    { code: "a", name: "A", look: "단발의 여성", age: 17 },
+    { code: "b", name: "B", look: "단발의 여성", age: 19 }
+  ];
+  assert.deepEqual(minorFlags({ cast: aged, persona: "" }), ["A"]);
   assert.deepEqual(minorFlags({ cast: [], persona: "한겨울(16, 여). 편의점 알바" }), ["한겨울"]);
   assert.deepEqual(minorFlags({ cast: [{ code: "c", name: "서도윤", look: "29세 남성" }], persona: "서도윤(29, 남). 탐정" }), []);
 });
