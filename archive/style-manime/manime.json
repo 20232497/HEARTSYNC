@@ -1,8 +1,44 @@
 {
   "id": "manime",
   "name": "남성향 애니",
-  "version": null,
-  "status": "비움 — 다시 정하는 중",
-  "reset": "2026-11-12",
-  "note": "v7(2026-11-11 확정, Animagine XL 4.0)을 사용자 결정으로 비움. 예전 값은 git 기록(커밋 180fcb7). 새 값이 정해질 때까지 이 화풍으로 그림을 만들지 않음"
+  "version": "v8",
+  "decided": "2026-11-13",
+  "status": "확정 — 본 생성 전(인물마다 시드 하나로 확인)",
+  "source": "값의 원본은 code/assemble.js — 이 파일은 요약",
+  "model": {
+    "id": "civitai:967405@1428332",
+    "name": "Nova Orange XL v6.0",
+    "license": "Civitai 표시 기준 그림 판매 허용 · 작가 표기 의무 없음(법률 검토는 아님)"
+  },
+  "gen": { "steps": 28, "scheduler": "Euler a", "cfg": 4, "promptWeighting": "sdEmbeds(가중치가 있을 때)" },
+  "size": {
+    "profile": { "width": 832, "height": 1216, "hires": { "w": 1216, "h": 1792, "strength": 0.4 } },
+    "emotion": { "width": 1024, "height": 1024, "hires": { "w": 1536, "h": 1536, "strength": 0.4 } },
+    "note": "Runware는 64의 배수만 — 첫 그림을 hires 크기로 키워 같은 프롬프트로 다시 그림"
+  },
+  "post": {
+    "filter": "saturate(1.4) contrast(1.06)",
+    "bloom": { "k": 8, "a": 0.3 },
+    "blurK": 4,
+    "blurA": 0.1,
+    "tint": { "mode": "soft-light", "color": "#c4b6ff", "a": 0.6 }
+  },
+  "slots": {
+    "0": "프로필",
+    "1": "기본",
+    "2": "웃음",
+    "3": "부끄러움",
+    "4": "슬픔",
+    "5": "놀람",
+    "6": "분노",
+    "7": "삐침",
+    "8": "공포",
+    "9": "부상",
+    "10": "회복",
+    "11": "휴식",
+    "12": "공격",
+    "13": "각성",
+    "14": "설렘"
+  },
+  "persona": ["도도", "장난", "해맑음", "수줍음", "다정", "냉소", "곧음", "차가움"]
 }
