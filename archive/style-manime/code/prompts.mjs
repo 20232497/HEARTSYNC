@@ -5,7 +5,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { pathToFileURL, fileURLToPath } from "node:url";
-import { profileJob, emotionJob, assertSafe, personaOf, tierOf, EMOTIONS } from "./assemble.js";
+import { profileJob, emotionJob, assertSafe, temperOf, tierOf, EMOTIONS } from "./assemble.js";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
 const args = process.argv.slice(2), all = args.includes("all"), only = args.find((a) => a !== "all");
@@ -15,8 +15,10 @@ for (const f of walk(path.join(root, "content", "m"))) {
   const id = path.basename(path.dirname(f));
   if (only && only !== id) continue;
   const work = (await import(pathToFileURL(f).href)).default, place = (work.places || [])[0];
-  for (const c of work.cast || []) {
-    const row = { work: id, code: c.code, name: c.name, tier: tierOf(c), persona: personaOf(c) || "(눈매 규칙)", slots: {} };
+  for (const c0 of work.cast || []) {
+    const base = c0.of ? (work.cast || []).find((x) => x.code === c0.of) : null; // 다른 모습(폼)은 성격·나이가 없으면 본체 값
+    const c = base ? { ...c0, temper: c0.temper || base.temper, age: c0.age === undefined ? base.age : c0.age } : c0;
+    const row = { work: id, code: c.code, name: c.name, tier: tierOf(c), temper: temperOf(c) || "(눈매 규칙)", slots: {} };
     row.slots[0] = assertSafe(profileJob(c, place));
     if (place) for (const s of all ? [1, ...Object.keys(EMOTIONS).map(Number)] : [1]) row.slots[s] = assertSafe(emotionJob(c, place, s));
     out.push(row);
