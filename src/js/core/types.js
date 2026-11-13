@@ -21,6 +21,8 @@
  * @property {string} [desc] 도감(상세 페이지 인물 시트)에 보이는 소개 — 독자용이라 비밀·진상은 persona에만 적음
  * @property {string} [look] 한국어 외모(성별·나이 포함 — AI가 읽고, guessAud가 성별을 봄)
  * @property {string} [tags] 영문 Danbooru 외모 태그 — 앱은 쓰지 않음. 앱 밖에서 그림을 만들 때 같은 인물을 맞추는 기준(빌드가 한글을 막음)
+ * @property {"도도"|"장난"|"해맑음"|"수줍음"|"다정"|"냉소"|"곧음"|"차가움"} [temper] 성격 — 앱은 쓰지 않음. 그림의 기본 표정·손동작을 고르는 값(목록은 tools/build/work-check.mjs CAST_TEMPERS)
+ * @property {number} [age] 겉보기 나이(1~120 정수) — 앱 밖에서 그림의 나이대를 고르는 값. 19 미만이면 작품 검사(minorFlags)가 막고, look에 두 자리 'N세'가 있으면 같은 수여야 함
  * @property {number[]} [hidden] 비공개(스포일러) 감정 번호들(1~14, 0 프로필은 안 됨) — 도감·상세에서 그 칸 그림을 가리고, 대화에 그 코드가 나온 방에서만 보임(codebook의 hidden)
  */
 /**
