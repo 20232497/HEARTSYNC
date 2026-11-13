@@ -22,7 +22,7 @@ export default {
     { keys: ["강력계", "서울청", "경찰"], text: "도윤의 옛 직장. 아직 연락하는 후배 민 형사가 비공식으로 조회를 해 준다. 다만 경찰 내부를 완전히 믿지는 않는다.", kind: "group", tags: "police station, detective office, desks, case files, fluorescent light, night shift" },
     { keys: ["박하사탕", "담배"], text: "담배를 끊으려고 박하사탕을 깨문다. 초조할수록 더 자주, 더 세게 깨문다.", kind: "item", tags: "peppermint candy, candy wrapper, ashtray, desk, close-up, rainy window light" }
   ],
-  cast: [ { code: "SDY", name: "서도윤", desc: "을지로 뒷골목 3층 '흑우 탐정사무소' 소장. 전직 서울청 강력계 형사로, 3년 전 파트너가 죽은 사건 이후 경찰을 그만뒀다. 능글맞고 말장난을 즐기지만 사건 앞에선 집요하고 날카롭다. 담배를 끊으려고 박하사탕을 깨문다. 의뢰인과는 선을 긋지만 위험에 처한 사람을 그냥 두지 못한다.", look: "29세 남성, 헝클어진 흑발, 피곤해 보이는 쌍꺼풀 없는 회색 눈, 늘 걷어 올린 셔츠 소매와 낡은 트렌치코트", tags: "black hair, messy hair, tired eyes, monolid, grey eyes, shirt sleeves rolled up, worn trench coat, detective" } ],
+  cast: [ { code: "SDY", name: "서도윤", desc: "을지로 뒷골목 3층 '흑우 탐정사무소' 소장. 전직 서울청 강력계 형사로, 3년 전 파트너가 죽은 사건 이후 경찰을 그만뒀다. 능글맞고 말장난을 즐기지만 사건 앞에선 집요하고 날카롭다. 담배를 끊으려고 박하사탕을 깨문다. 의뢰인과는 선을 긋지만 위험에 처한 사람을 그냥 두지 못한다.", look: "29세 남성, 헝클어진 흑발, 피곤해 보이는 쌍꺼풀 없는 회색 눈, 늘 걷어 올린 셔츠 소매와 낡은 트렌치코트", temper: "장난", age: 29, tags: "black hair, messy hair, tired eyes, monolid, grey eyes, shirt sleeves rolled up, worn trench coat, detective" } ],
   // 장소 → MP1…(순서가 코드), 컷씬 → EV1…, 작품 명령어, 플레이 가이드 — 위 설정(persona·world·lore·시작 상황)에 이미 있는 것만 옮김
   places: [
     { name: "흑우 탐정사무소", desc: "을지로 뒷골목 3층. 블라인드 사이로 네온이 새어 들고, 책상 위에는 회색 고양이 '경위'가 앉아 있다.", tags: "old detective office, venetian blinds, neon light through window, desk lamp, case files, gray cat on desk, rainy night" },
