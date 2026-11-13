@@ -53,25 +53,20 @@ const EYE_RULE = [
 const EYE_DEFAULT = { eyes: "(half-closed eyes:0.6)", emo: "(light smile:0.7), (parted lips:0.4)" };
 const eyeRule = (tags) => (EYE_RULE.find(([re]) => re.test(tags)) || [0, EYE_DEFAULT])[1];
 
-/* ── 성격 → 기본 표정·손동작(칸 0·1) ── cast[].temper가 있으면 그 값, 없으면 TEMPER_FIX(이름), 그다음 성격 글(desc)의 낱말.
-   낱말 규칙은 잘못 가릴 수 있다('약초에 밝고' → 해맑음) — 작품에 temper 값이 다 채워지면 TEMPER_FIX와 낱말 규칙은 없앤다.
+/* ── 성격 → 기본 표정·손동작(칸 0·1) ── cast[].temper 값 그대로(작품이 정함). 값이 없으면 눈매 규칙의 기본 표정.
+   성격 글(desc)의 낱말로 짐작하던 규칙은 없앴다 — 잘못 가릴 수 있었음('약초에 밝고' → 해맑음).
    TEMPERS의 키 여덟 개가 곧 temper 칸의 값 목록(빌드의 작품 검사와 같아야 함) */
 export const TEMPERS = {
-  도도: { re: /오만|자존심|패배를 모른/, f: "(smug:0.7), (smirk:0.5), closed mouth", m: "(smirk:0.5), closed mouth", hand: "(hand on own chin:0.6)" },
-  장난: { re: /능청|장난|생글생글|여우|수다/, f: "(smirk:0.4), (one eye closed:0.5), (parted lips:0.4)", m: "(grin:0.5)", hand: "(finger to mouth:0.7)" },
-  해맑음: { re: /해맑|엉뚱/, f: "(smile:1.0), (open mouth:0.5), (happy:0.6)", m: "(smile:0.8)", hand: "(waving:0.5)" },
-  수줍음: { re: /겁이 많/, f: "(nervous smile:0.7), (shy:0.6), closed mouth", m: "(nervous smile:0.6)", hand: "(own hands together:0.8)" },
-  다정: { re: /다정|온화|자비/, f: "(gentle smile:1.0), closed mouth", m: "(gentle smile:0.8), closed mouth", hand: "(hand on own chest:0.6)" },
-  냉소: { re: /냉소|술을/, f: "(smirk:0.5), (tired:0.5), closed mouth", m: "(smirk:0.4), closed mouth", hand: "(head rest:0.5)" },
-  곧음: { re: /거칠|곧다|우직/, f: "(serious:0.6), (light smile:0.4), closed mouth", m: "(serious:0.5), (light smile:0.4), closed mouth", hand: "" },
-  차가움: { re: /냉정|차갑|무뚝뚝|과묵|말수가 적|조용|단정/, f: "(expressionless:0.5), (light smile:0.3), closed mouth", m: "(expressionless:0.4), (light smile:0.3), closed mouth", hand: "(tucking hair:0.6)" },
+  도도: { f: "(smug:0.7), (smirk:0.5), closed mouth", m: "(smirk:0.5), closed mouth", hand: "(hand on own chin:0.6)" },
+  장난: { f: "(smirk:0.4), (one eye closed:0.5), (parted lips:0.4)", m: "(grin:0.5)", hand: "(finger to mouth:0.7)" },
+  해맑음: { f: "(smile:1.0), (open mouth:0.5), (happy:0.6)", m: "(smile:0.8)", hand: "(waving:0.5)" },
+  수줍음: { f: "(nervous smile:0.7), (shy:0.6), closed mouth", m: "(nervous smile:0.6)", hand: "(own hands together:0.8)" },
+  다정: { f: "(gentle smile:1.0), closed mouth", m: "(gentle smile:0.8), closed mouth", hand: "(hand on own chest:0.6)" },
+  냉소: { f: "(smirk:0.5), (tired:0.5), closed mouth", m: "(smirk:0.4), closed mouth", hand: "(head rest:0.5)" },
+  곧음: { f: "(serious:0.6), (light smile:0.4), closed mouth", m: "(serious:0.5), (light smile:0.4), closed mouth", hand: "" },
+  차가움: { f: "(expressionless:0.5), (light smile:0.3), closed mouth", m: "(expressionless:0.4), (light smile:0.3), closed mouth", hand: "(tucking hair:0.6)" },
 };
-export const TEMPER_FIX = { 화린: "해맑음", 정옥: "곧음", 윤해라: "도도" }; // 세계관 세션이 고쳐 준 분류(2026-11-13)
-export function temperOf(c) {
-  const fixed = c.temper || TEMPER_FIX[c.name];
-  if (fixed && TEMPERS[fixed]) return fixed;
-  return Object.keys(TEMPERS).find((k) => TEMPERS[k].re.test(c.desc || "")) || "";
-}
+export const temperOf = (c) => (c.temper && TEMPERS[c.temper] ? c.temper : "");
 const PROP_HAND = [[/glasses|eyewear/, "(adjusting eyewear:0.9)"], [/folding fan|\bfan\b/, "(holding fan:0.9)"]]; // 소품이 있으면 그 손동작이 먼저
 /** 기본 표정(칸 0·1)과 눈 모양. 남자는 손동작을 넣지 않는다(소품만) */
 export function charm(c) {
