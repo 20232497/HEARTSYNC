@@ -42,8 +42,8 @@ export const LEADS = {
   yunhaera: { code: "YHR", shot: "tuck" },
   sipjeol: { code: "NGS", shot: "hilt" },
   daeyeon: { code: "IHW", shot: "above", gpos: ", (white hanbok:1.3), (white jeogori:1.3)", gneg: ", (blue hanbok:1.4), (blue clothes:1.3), (blue shirt:1.3)", pos: ", (white hanbok:1.3), (white jeogori:1.3)", neg: ", (blue hanbok:1.4), (blue clothes:1.3)", gseed: 5 }, // 한복이 하늘색으로 나옴
-  // 홍 여사의 머리는 사용자가 '촘촘한 일자 앞머리(풀뱅)·반묶음'으로 정함 — 세계관 세션이 인물 태그를 바꾸면 tags 칸을 지운다. 눈이 붉게 나와 금빛을 올림
-  minwon: { code: "HME", shot: "hush", tags: ["hair bun, hairpin", "(blunt bangs:1.3), (straight bangs:1.2), (full bangs:1.2), (half updo:1.3), long hair, straight hair, hairpin"], eyes: ["(golden eyes:0.7)", "(golden eyes:1.1), (yellow eyes:1.0)"], neg: ", (red eyes:1.4)" },
+  // 홍 여사: 눈이 붉게 나와 금빛을 올림(머리 모양 — 일자 앞머리·반묶음 — 은 2026-11-16 작품 태그에 들어가 표지용 덮어쓰기를 지움)
+  minwon: { code: "HME", shot: "hush", eyes: ["(golden eyes:0.7)", "(golden eyes:1.1), (yellow eyes:1.0)"], neg: ", (red eyes:1.4)" },
   baekya: { code: "SHJ", shot: "goggles" },
   hwanghu: { code: "KAS", shot: "throne" },
   kael: { code: "KAEL", shot: "vow" },
