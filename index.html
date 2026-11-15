@@ -428,6 +428,10 @@ details.stat[open] summary::after { content:"▴"; }
 .memo-flag { position:absolute; z-index:3; top:64px; left:50%; transform:translateX(-50%); font-size:12px; color:var(--muted); background:var(--surface); border:1px solid var(--line); border-radius:999px; padding:3px 12px; white-space:nowrap; }
 .ep-bar { position:relative; z-index:2; display:flex; align-items:center; gap:8px; padding:6px max(14px, env(safe-area-inset-right,0px)) 6px max(14px, env(safe-area-inset-left,0px)); font-size:12.5px; border-bottom:1px solid var(--line); background:color-mix(in srgb, var(--surface) 88%, transparent); }
 .ep-bar[hidden] { display:none; }
+.chat-head .who .ai-badge { display:inline-block; margin-right:6px; padding:0 6px; border:1px solid var(--line); border-radius:6px; font-size:10.5px; font-weight:600; line-height:16px; color:var(--muted); background:var(--surface2); vertical-align:1px; }
+.ai-note { position:relative; z-index:2; display:flex; align-items:center; gap:10px; padding:8px max(14px, env(safe-area-inset-right,0px)) 8px max(14px, env(safe-area-inset-left,0px)); font-size:12.5px; line-height:1.5; color:var(--narr); border-bottom:1px solid var(--line); background:var(--surface); }
+.ai-note span { flex:1; min-width:0; }
+.ai-note .btn { flex:none; }
 .ep-tag { flex:none; font-size:11px; font-weight:700; color:var(--accent); background:var(--accent-soft); border-radius:999px; padding:2px 9px; }
 .ep-now { flex:1; min-width:0; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .ep-dots { flex:none; display:flex; gap:4px; }
@@ -4702,6 +4706,23 @@ ${recent}`
   };
   fetchSug(false);
 }
+/* ── src/js/ui/ai-notice.js — AI 표시: 대화 화면 머리의 배지 · AI 말풍선의 접근성 이름 · 첫 대화 전 한 번의 안내 · 내보낸 파일의 첫 줄 */
+const AI_BADGE = "AI 캐릭터";
+const AI_NOTICE =
+  "캐릭터의 답은 생성형 AI가 만들어요. 작품 설정에 따른 허구이고, 틀리거나 이상한 답을 할 수 있어요. 진지하게 물으면 캐릭터는 자기가 AI라는 걸 숨기지 않아요.";
+const AI_NOTICE_OK = "알겠어요";
+const AI_EXPORT_LINE = "※ 이 파일의 캐릭터 대사와 서술은 생성형 AI(HEART SYNC)가 만든 것입니다.";
+function aiLabel(name) {
+  return "AI 응답: " + name;
+}
+function aiNoticeNeeded() {
+  return !S.settings.aiSeen;
+}
+function ackAiNotice() {
+  if (S.settings.aiSeen) return;
+  S.settings.aiSeen = Date.now();
+  saveSettings();
+}
 /* ── src/js/ui/room-tools.js — 대화방 도구(드로어가 씀): 대화에 나온 그림 모으기(galleryItems)·수집 기록에 적기(collectSeen)·그 장면으로 가기(jumpTo)·대화… */
 function galleryItems(r) {
   const out = [],
@@ -4738,7 +4759,7 @@ function jumpTo(id) {
   setTimeout(() => el.classList.remove("flash"), 1400);
 }
 function exportText(r) {
-  const head = `${r.char.title} — ${r.opening || ""}\n${r.persona.name}(으)로 플레이 · ${new Date().toLocaleString("ko-KR")}\n\n`;
+  const head = `${AI_EXPORT_LINE}\n${r.char.title} —${r.opening || ""}\n${r.persona.name}(으)로 플레이 · ${new Date().toLocaleString("ko-KR")}\n\n`;
   return (
     head +
     r.msgs
@@ -6978,13 +6999,15 @@ async function viewChat(id) {
     <header class="chat-head">
       <button class="icon-btn" id="back" aria-label="뒤로">${ICON.back}</button>
       ${coverHTML(c)}
-      <div class="who"><b>${esc(c.title)}</b><span>${esc(room.opening || "")} · ${esc(room.persona.name)}</span></div>
+      <div class="who"><b>${esc(c.title)}</b>` +
+    `<span><small class="ai-badge">${AI_BADGE}</small>${esc(room.opening || "")} · ${esc(room.persona.name)}</span></div>
       <div class="meter" id="meter"></div>
       <button class="model-chip" id="modelChip" aria-label="AI 모델 선택"></button>
       <button class="icon-btn" id="info" aria-label="대화방 관리">${ICON.menu}</button>
     </header>
-    <div class="ep-bar" id="epBar" hidden></div>
-    <div class="chat-log" id="log"><div class="log-inner" id="logInner"></div><div class="jump-wrap">` +
+    <div class="ep-bar" id="epBar" hidden></div>` +
+    (aiNoticeNeeded() ? `<div class="ai-note" id="aiNote"><span>${AI_NOTICE}</span><button class="btn sm" id="aiNoteOk">${AI_NOTICE_OK}</button></div>` : "") +
+    `<div class="chat-log" id="log"><div class="log-inner" id="logInner"></div><div class="jump-wrap">` +
     `<button class="jump" id="jumpBtn" type="button" hidden>↓ 맨 아래로</button></div></div>
     <div class="composer"><div class="inner">
       <div class="sug-panel" id="sugPanel" hidden></div>
@@ -7011,6 +7034,11 @@ async function viewChat(id) {
   };
   $("#sugBtn").onclick = () => toggleSug();
   $("#stopBtn").onclick = () => stopGen();
+  if ($("#aiNoteOk"))
+    $("#aiNoteOk").onclick = () => {
+      ackAiNotice();
+      $("#aiNote").remove();
+    };
   const inp = $("#inp");
   inp.oninput = () => {
     inp.style.height = "auto";
@@ -7437,7 +7465,7 @@ function renderLog(scroll) {
         ? `<div class="bubble typing" id="liveBubble"></div>`
         : `<div class="bubble${imgTags(alt.text || "").length >= 2 ? " many-img" : ""}">${fmt(alt.text || "", c, r.persona)}</div>`;
     html +=
-      `<div class="msg" data-id="${m.id}">${coverHTML(c)}<div class="col">` +
+      `<div class="msg" data-id="${m.id}" role="group" aria-label="${esc(aiLabel(speakerName(r)))}">${coverHTML(c)}<div class="col">` +
       `<span class="nm">${esc(speakerName(r))}</span>${pending ? "" : epEventHTML(r, alt)}${body}`;
     if (!pending && !m.editing) {
       html += statusBlock(c, alt.status, m.statusBefore, { open: isLast, live: isLast });

@@ -8,7 +8,7 @@
 
 ## 전역 상태와 저장
 
-- 전역 상태 S(core/state.js): wallet·personas·rooms(목록)·shelf(내 서재)·settings{fs·chatLh·narrFont·enterSend·sceneImg·apiKey·memCfg·audience…}·cat·q. 현재 방 room, 진행 중 생성 gen. hasClaudeKey() = settings.apiKey 또는 CFG.serverKeys
+- 전역 상태 S(core/state.js): wallet·personas·rooms(목록)·shelf(내 서재)·settings{fs·chatLh·narrFont·enterSend·sceneImg·apiKey·memCfg·audience·aiSeen(첫 대화 전 AI 안내를 본 시각 — docs/app/chat.md 'AI 표시')…}·cat·q. 현재 방 room, 진행 중 생성 gen. hasClaudeKey() = settings.apiKey 또는 CFG.serverKeys
 - 저장: KV — 늘 localStorage(hv1_)에 쓰고, 로그인했으면 KV.remote → CLOUD.put으로 계정에도. 계정에 올리는 키는 wallet·personas·rooms·memcfg·room-<id>·shelf(SHELF.syncFrom 날짜부터 — 아래 '내 서재')·settings(cloudSettings — 키 칸 apiKey·runwareKey·openRouterKey와 기기마다 다른 fs·enterSend는 빼고)와 그림 본문 img…(페르소나 사진). 그림 본문은 IDB(IndexedDB "heartverse"/kv), 막히면 localStorage. IMG(services/images.js): put(shrink한 JPEG → kv:img… 참조) · load(메모리 → IDB → KV → CLOUD.getOne) · hydrate(그림 자리 img-wait → 받으면 그림, 못 받으면 img-miss) · migrate(예전 hv1_img… 옮김). validRef는 kv:img…·data:image/…·content/….(webp|png|jpg)만. localStorage가 가득 차면 storageFull()이 한 번 알림
 
 ## 로그인·계정 저장

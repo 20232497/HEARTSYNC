@@ -4,7 +4,7 @@
 
 > CLAUDE.md의 지도 표가 가리키는 **영역 문서**예요. 이 영역의 코드를 고치기 전에 읽고, 고친 뒤에는 같은 커밋에서 이 문서의 해당 항목을 고쳐요. 항목은 2026-11-12에 CLAUDE.md의 '앱 구조'·'소스 구조·빌드' 절에서 문장 그대로 옮긴 것이고, 결정의 날짜와 경위를 모은 색인은 [docs/DECISIONS.md](../DECISIONS.md)에 있어요.
 
-**이 문서가 다루는 모듈**: `src/js/core/commands.js` · `src/js/core/rooms.js` · `src/js/core/character.js` · `src/js/core/safety.js` · `src/js/core/constants.js` · `src/js/ui/chat/` · `src/js/ui/room-drawer.js` · `src/js/ui/drawer/` · `src/js/ui/pins.js` · `src/js/ui/room-tools.js` · `src/js/ui/shell.js` · `src/js/ui/chats.js`
+**이 문서가 다루는 모듈**: `src/js/core/commands.js` · `src/js/core/rooms.js` · `src/js/core/character.js` · `src/js/core/safety.js` · `src/js/core/constants.js` · `src/js/ui/chat/` · `src/js/ui/room-drawer.js` · `src/js/ui/drawer/` · `src/js/ui/pins.js` · `src/js/ui/room-tools.js` · `src/js/ui/ai-notice.js` · `src/js/ui/shell.js` · `src/js/ui/chats.js`
 
 ## 명령어
 
@@ -29,6 +29,7 @@
 
 ## 대화방 안전
 
+- AI 표시(ui/ai-notice.js — 문구는 docs/legal/ui-copy.md §6의 글자 그대로, 고칠 때는 그 문서와 같이): ① 대화 화면 머리의 배지 `AI 캐릭터`(늘 — .chat-head .ai-badge) ② AI 말풍선의 접근성 이름(.msg에 role="group"·aria-label "AI 응답: <화자 이름>" — 화자 이름은 speakerName) ③ 첫 대화 전 한 번의 안내 — 본 시각을 S.settings.aiSeen에 적음(계정에 올라가는 설정 칸이라 계정에 한 번, 로그인 전에는 이 기기에 한 번). 안내를 못 본 채 방에 들어온 사람(이 안내가 생기기 전에 만든 방·방 주소로 바로 들어옴)에게는 머리 아래 띠 #aiNote로 보이고 '알겠어요'(#aiNoteOk)를 누르면 사라짐 — 창을 띄우지 않음 ④ 내보낸 글의 첫 줄(exportText). 그림에 붙는 표기 두 줄(크게 보기의 'AI로 만든 그림'·반실사 그림의 'AI')은 그림이 실릴 때(docs/ROADMAP.md 3절)
 - 대화방 안전: saveRoom은 deletedRooms의 방을 저장하지 않음. 안전: minorFlags(출연진 외모·영문 태그·설정 첫머리의 19세 미만·학생, 나이 칸 cast[].age가 19 미만 → 작품 검사 실패)·minorHint(글 속 나이(숫자·한글·영문)·학년·학생·아동·교복 낱말과 태그, 글자만 겹치는 말은 먼저 지움 — 여학생·남학생은 대학생에게도 흔히 써서 보지 않음(2026-11-06 사용자 결정), N살·N세는 둘 다 잡음)·settingHint(설정·장기기억용 — 어른 인물의 과거 이야기 꼴을 빼고 봄)·roomMinorHint(r, lore)(방 전체 — 성인 경로를 서버에 다시 세울 때의 기준). 지금 앱은 minorFlags만 작품 검사로 부르고, 나머지는 단위 테스트(tests/unit/safety.test.mjs — content/의 작품 전부가 막히지 않는지도)가 지킴
 
 ## 유저노트·설정 상한

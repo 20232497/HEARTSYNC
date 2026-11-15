@@ -300,6 +300,7 @@
  * @property {"serif"|"sans"} narrFont
  * @property {boolean} enterSend
  * @property {boolean} sceneImg 대화 속 장면 그림 보기
+ * @property {number} [aiSeen] 첫 대화 전 AI 안내(ui/ai-notice.js)를 '알겠어요'로 넘긴 시각 — 없으면 아직. 계정에 올라가는 칸이라 계정에 한 번(로그인 전에는 이 기기에 한 번)
  * @property {string} apiKey Anthropic
  * @property {MemCfg} memCfg
  * @property {Aud} [audience]

@@ -12,6 +12,7 @@ import { cmdKey, updateCmdList } from "./cmdlist.js";
 import { bindStick, renderLog } from "./log.js";
 import { barPct } from "./render.js";
 import { hideSug, toggleSug } from "./suggest.js";
+import { AI_BADGE, AI_NOTICE, AI_NOTICE_OK, ackAiNotice, aiNoticeNeeded } from "../ai-notice.js";
 import { coverHTML } from "../cover.js";
 import { ICON } from "../icons.js";
 import { openModelSheet } from "../model-sheet.js";
@@ -40,13 +41,15 @@ export async function viewChat(id) {
     <header class="chat-head">
       <button class="icon-btn" id="back" aria-label="뒤로">${ICON.back}</button>
       ${coverHTML(c)}
-      <div class="who"><b>${esc(c.title)}</b><span>${esc(room.opening || "")} · ${esc(room.persona.name)}</span></div>
+      <div class="who"><b>${esc(c.title)}</b>` +
+    `<span><small class="ai-badge">${AI_BADGE}</small>${esc(room.opening || "")} · ${esc(room.persona.name)}</span></div>
       <div class="meter" id="meter"></div>
       <button class="model-chip" id="modelChip" aria-label="AI 모델 선택"></button>
       <button class="icon-btn" id="info" aria-label="대화방 관리">${ICON.menu}</button>
     </header>
-    <div class="ep-bar" id="epBar" hidden></div>
-    <div class="chat-log" id="log"><div class="log-inner" id="logInner"></div><div class="jump-wrap">` +
+    <div class="ep-bar" id="epBar" hidden></div>` +
+    (aiNoticeNeeded() ? `<div class="ai-note" id="aiNote"><span>${AI_NOTICE}</span><button class="btn sm" id="aiNoteOk">${AI_NOTICE_OK}</button></div>` : "") +
+    `<div class="chat-log" id="log"><div class="log-inner" id="logInner"></div><div class="jump-wrap">` +
     `<button class="jump" id="jumpBtn" type="button" hidden>↓ 맨 아래로</button></div></div>
     <div class="composer"><div class="inner">
       <div class="sug-panel" id="sugPanel" hidden></div>
@@ -73,6 +76,12 @@ export async function viewChat(id) {
   };
   $("#sugBtn").onclick = () => toggleSug();
   $("#stopBtn").onclick = () => stopGen();
+  // 첫 대화 전 안내를 못 본 채 방에 들어온 사람(이 안내가 생기기 전에 만든 방·방 주소로 바로 들어옴)에게는 머리 아래 띠로 보여 줌 — 창을 띄우지 않음
+  if ($("#aiNoteOk"))
+    $("#aiNoteOk").onclick = () => {
+      ackAiNotice();
+      $("#aiNote").remove();
+    };
   const inp = $("#inp");
   inp.oninput = () => {
     inp.style.height = "auto";
