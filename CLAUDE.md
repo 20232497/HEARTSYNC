@@ -13,7 +13,7 @@
 |---|---|---|
 | 큰 그림 — 두 빌드와 층 | `docs/ARCHITECTURE.md` | `src/js/app.js` · `src/js/main.js` · `src/js/admin.js` · `src/js/boot.js` |
 | 빌드·소스 구조·시험 | `docs/app/build.md` · `tests/README.md` | `tools/build.mjs` · `tools/build/` · `tools/dev.mjs` · `tests/run.mjs` · `src/page.html` · `src/css/` |
-| 작품 데이터·작품 검사·순서 잠금·그림 의뢰 | `content/README.md` · `docs/app/content.md` | `content/` · `tools/build/work-check.mjs` · `tools/content-lock.mjs` · `tools/content-art.mjs` · `tools/content-report.mjs` · `src/js/core/audience.js` |
+| 작품 데이터·작품 검사·순서 잠금·그림 의뢰 | `content/README.md` · `docs/app/content.md` | `content/` · `tools/build/work-check.mjs` · `tools/content-lock.mjs` · `tools/content-art.mjs` · `tools/art.mjs` · `tools/content-report.mjs` · `src/js/core/audience.js` |
 | 상태·저장·계정·내 서재·MY | `docs/app/storage.md` · `docs/SETUP.md` | `src/js/core/state.js` · `src/js/core/storage.js` · `src/js/core/shelf.js` · `src/js/services/` · `src/js/ui/login.js` · `src/js/ui/account.js` · `src/js/ui/me.js` |
 | AI 호출·대화 트랙·요금 | `docs/app/ai.md` · `docs/COMMERCIALIZATION.md` | `src/js/ai/llm.js` · `src/js/ai/models.js` · `src/js/ai/stream.js` · `src/js/core/wallet.js` · `src/js/ui/pay.js` · `docs/edge/chat.ts` |
 | 프롬프트·응답 형식·에피소드 | `docs/app/prompt.md` | `src/js/ai/prompt/` · `src/js/ai/parse.js` · `src/js/core/episode.js` · `src/js/ui/chat/episode.js` |

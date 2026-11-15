@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HEART SYNC 그림 관리</title>
+<style>
+:root { --bg: #f6f5f2; --panel: #fff; --line: #dcd9d2; --text: #1d1b18; --dim: #6f6a62; --accent: #7a2e48; --ok: #1f7a5a; --warn: #b3202a; }
+@media (prefers-color-scheme: dark) { :root { --bg: #17161a; --panel: #211f25; --line: #37343d; --text: #ece9e4; --dim: #9d978d; --accent: #f0b7c8; --ok: #7fe3b4; --warn: #ff7b86; } }
+* { box-sizing: border-box; }
+body { margin: 0; font: 14px/1.5 "Pretendard", "Malgun Gothic", system-ui, sans-serif; background: var(--bg); color: var(--text); }
+button { font: inherit; color: inherit; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 5px 10px; cursor: pointer; }
+button:hover { border-color: var(--accent); }
+button:disabled { opacity: .45; cursor: default; }
+button.main { background: var(--accent); border-color: var(--accent); color: var(--bg); font-weight: 700; }
+input, select { font: inherit; color: inherit; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 5px 8px; }
+.top { position: sticky; top: 0; z-index: 5; display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; padding: 10px 16px; background: var(--panel); border-bottom: 1px solid var(--line); }
+.top h1 { font-size: 16px; margin: 0 8px 0 0; }
+.top .sp { flex: 1; }
+.dim { color: var(--dim); }
+.ok { color: var(--ok); }
+.warn { color: var(--warn); }
+.wrap { display: grid; grid-template-columns: 250px 1fr; gap: 0; min-height: calc(100vh - 54px); }
+.works { border-right: 1px solid var(--line); padding: 10px; overflow: auto; }
+.work { display: block; width: 100%; text-align: left; margin-bottom: 6px; }
+.work.on { border-color: var(--accent); box-shadow: inset 3px 0 0 var(--accent); }
+.work small { display: block; }
+.pane { padding: 14px 18px 60px; overflow: auto; }
+.bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 12px; }
+h2 { font-size: 15px; margin: 22px 0 8px; }
+.rows { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 10px; }
+.row { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 10px; }
+.row .head { display: flex; gap: 10px; align-items: flex-start; }
+.thumb { width: 84px; height: 84px; flex: none; border-radius: 8px; border: 1px solid var(--line); background: var(--bg) center/contain no-repeat; display: grid; place-items: center; font-size: 11px; color: var(--dim); cursor: zoom-in; }
+.row .info { flex: 1; min-width: 0; }
+.row .info b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.row .acts { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
+.cands { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+.cand { width: 104px; }
+.cand img { width: 104px; height: 104px; object-fit: contain; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); cursor: zoom-in; display: block; }
+.cand button { width: 100%; margin-top: 4px; padding: 3px 0; }
+.msg { margin-top: 6px; font-size: 12px; white-space: pre-wrap; word-break: break-word; }
+@media (max-width: 860px) { .wrap { grid-template-columns: 1fr; } .works { border-right: 0; border-bottom: 1px solid var(--line); max-height: 230px; } }
+.view { position: fixed; inset: 0; z-index: 10; background: rgba(0, 0, 0, .86); display: none; place-items: center; cursor: zoom-out; }
+.view.on { display: grid; }
+.view img { max-width: 96vw; max-height: 96vh; }
+</style>
+</head>
+<body>
+<div class="top">
+  <h1>HEART SYNC 그림 관리</h1>
+  <span class="dim">이 PC 전용 · 그림은 눈으로 확인한 뒤에만 실어요</span>
+  <span class="sp"></span>
+  <label>생성 서비스 키 <input id="key" type="password" size="18" autocomplete="off" placeholder="이 브라우저에만 저장"></label>
+  <button id="keySave">키 저장</button>
+  <span id="keyState" class="dim"></span>
+  <span id="cost" class="dim"></span>
+</div>
+<div class="wrap">
+  <div class="works" id="works"></div>
+  <div class="pane" id="main"><p class="dim">작품 목록을 읽는 중…</p></div>
+</div>
+<div class="view" id="view"><img alt=""></div>
+<script type="module" src="/app.js"></script>
+</body>
+</html>
