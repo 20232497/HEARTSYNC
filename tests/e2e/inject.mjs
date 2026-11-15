@@ -419,6 +419,14 @@ for (const [dev, engine, opts] of [
       S.q = "";
     });
     await go("상세", "c-" + w.id, 700);
+    // 상세의 접힌 칸을 모두 펼침(명령어·장소·컷씬·세계관 일러스트·시작 상황의 장면 펼쳐 읽기·긴 소개), 시작 창의 두 장(AI 안내 → 시작 상황·페르소나를 고르는 장)
+    await act("상세 — 접힌 칸과 장면 펼침", () => {
+      $$("#view details").forEach((d) => (d.open = true));
+      if ($("#dMore")) $("#dMore").click();
+    });
+    await act("시작 창 — AI 안내", (id) => startChat(normalizeChar(getChar(id)), 0), w.id);
+    await act("시작 창 — 고르는 장", () => $("#aiOk") && $("#aiOk").click());
+    await p.evaluate(() => closeOverlays());
     await act(
       "인물 시트",
       (id) => {

@@ -211,36 +211,80 @@ h2.sec small, h1.sec small { font-family:var(--sans); font-size:12.5px; color:va
 .cont .x b { display:block; font-size:14px; }
 .cont .x span { display:block; color:var(--muted); font-size:12.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 
-/* ── 캐릭터 상세 */
-.detail { display:grid; grid-template-columns:minmax(0,380px) minmax(0,1fr); gap:28px; align-items:start; }
-@media (max-width:780px) { .detail { grid-template-columns:1fr; gap:18px; } }
-.detail > div > .cover { aspect-ratio:3/4; border-radius:20px; width:100%; max-width:100%; }
-@media (max-width:780px) { .detail > div > .cover { aspect-ratio:4/3; } }
-.detail h1 { font-family:var(--display); font-size:30px; line-height:1.2; margin:4px 0 6px; text-wrap:balance; }
-.detail .lead { font-size:15.5px; margin:0 0 12px; }
-.detail .tags { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:14px; }
-.like-btn { margin-bottom:14px; gap:6px; }
+/* ── 작품 상세: 왼쪽(.d-side — 넓은 화면에서 고정: 표지·제목·찜·시작·내 대화방) | 오른쪽(.d-main — 탭 줄과 칸들).
+   780px 아래는 한 칸이고 찜·시작 버튼 줄(.d-cta)이 화면 아래(아래 탭 위)에 고정 — 시작 버튼이 늘 보이게 */
+.detail { display:grid; grid-template-columns:minmax(0,340px) minmax(0,1fr); gap:28px; align-items:start; }
+.d-side { position:sticky; top:12px; max-height:calc(100vh - 24px); overflow-y:auto; padding-bottom:4px; }
+@media (max-width:899px) { .d-side { max-height:calc(100vh - 96px); } }
+.d-top > .cover { aspect-ratio:3/4; border-radius:20px; width:min(100%, calc((100vh - 470px) * .75)); min-width:150px; margin-bottom:12px; } /* 낮은 화면에서도 시작 버튼이 첫 화면에 들어오게 표지를 줄임 */
+.detail h1 { font-family:var(--display); font-size:28px; line-height:1.2; margin:4px 0 6px; text-wrap:balance; }
+.detail .lead { font-size:15px; margin:0 0 12px; }
+.detail .tags { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px; }
+.detail .tags span { font-size:12.5px; background:var(--surface2); border-radius:7px; padding:2px 9px; color:var(--muted); }
+.d-cta { display:flex; gap:8px; align-items:center; margin:2px 0 10px; }
+.d-cta .btn.pri.big { flex:1; min-width:0; height:48px; font-size:15px; }
+.d-cta .like-btn { flex:none; height:48px; gap:6px; }
 .like-btn svg { width:15px; height:15px; }
 .like-btn[aria-pressed="true"] { color:var(--accent); border-color:var(--accent); background:var(--accent-soft); }
 .like-btn[aria-pressed="true"] svg { fill:currentColor; }
-.detail .tags span { font-size:12.5px; background:var(--surface2); border-radius:7px; padding:2px 9px; color:var(--muted); }
+.d-rooms { margin-top:14px; }
+.d-rooms h3 { margin:0 0 8px; font-size:13px; color:var(--muted); font-weight:600; letter-spacing:.04em; }
+.d-rooms .cont { grid-template-columns:1fr; }
+.d-tabs { position:sticky; top:0; z-index:3; display:flex; gap:4px; overflow-x:auto; margin:0 0 12px; padding:8px 0; background:var(--bg); border-bottom:1px solid var(--line); scrollbar-width:none; }
+.d-tabs::-webkit-scrollbar { display:none; }
+.d-tab { flex:none; border:0; background:none; padding:7px 13px; border-radius:999px; font-size:13.5px; font-weight:600; color:var(--muted); white-space:nowrap; }
+.d-tab.on { background:var(--accent-soft); color:var(--accent); }
+.d-main > section + section, .d-main section > * + *, .d-main [data-fold] > * + * { margin-top:12px; }
+.d-price { margin:0 0 4px; }
+.d-desc.clamp { display:-webkit-box; -webkit-line-clamp:7; -webkit-box-orient:vertical; overflow:hidden; }
+.d-more { margin-top:8px; }
+.d-fields { margin-top:10px; }
+@media (max-width:780px) {
+  .detail { grid-template-columns:1fr; gap:14px; }
+  .d-side { position:static; max-height:none; overflow:visible; }
+  .d-top { display:grid; grid-template-columns:112px minmax(0,1fr); gap:14px; align-items:start; margin-bottom:12px; }
+  .d-top > .cover { width:100%; min-width:0; margin:0; border-radius:14px; }
+  .detail h1 { font-size:22px; margin-top:2px; }
+  .detail .lead { font-size:14px; margin:0; }
+  .d-cta { position:fixed; left:0; right:0; bottom:calc(60px + env(safe-area-inset-bottom,0px)); z-index:15; margin:0; padding:10px max(16px, env(safe-area-inset-right,0px)) 10px max(16px, env(safe-area-inset-left,0px)); background:var(--surface); border-top:1px solid var(--line); }
+  .d-page { padding-bottom:120px; }
+  body.in-detail .toast { bottom:calc(140px + env(safe-area-inset-bottom,0px)); }
+}
 .box { background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:16px; }
 .box + .box { margin-top:12px; }
 .box h3 { margin:0 0 8px; font-size:13px; color:var(--muted); font-weight:600; letter-spacing:.04em; }
 .box p { margin:0; white-space:pre-wrap; }
 .openings { display:grid; gap:8px; }
-.opening { display:block; border:1px solid var(--line); border-radius:12px; padding:11px 13px; cursor:pointer; background:var(--bg); }
-.opening:has(input:checked) { border-color:var(--accent); background:var(--accent-soft); }
-.opening input { accent-color:var(--accent); margin-right:6px; }
+.opening { display:block; border:1px solid var(--line); border-radius:12px; padding:11px 13px; background:var(--bg); }
 .opening b { font-size:14px; }
-.opening span { color:var(--muted); font-size:12.5px; margin-top:3px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.opening .brief { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; color:var(--muted); font-size:12.5px; margin-top:3px; }
+.opening > .btn { margin-top:9px; }
+/* 고르는 카드(시작 창의 시작 상황·페르소나) — 고른 것은 JS가 .on을 붙임(:has에 기대지 않음) */
+.opening.pick { cursor:pointer; }
+.opening.pick.on { border-color:var(--accent); background:var(--accent-soft); }
+.opening input { accent-color:var(--accent); margin-right:6px; }
+/* 시작 상황 카드의 '장면 펼쳐 읽기' — 대화방 말풍선과 같은 서식 */
+.d-scene { margin-top:8px; }
+.d-scene > summary { cursor:pointer; list-style:none; font-size:12.5px; font-weight:600; color:var(--accent); }
+.d-scene > summary::-webkit-details-marker { display:none; }
+.d-scene > summary::after { content:" ▾"; }
+.d-scene[open] > summary::after { content:" ▴"; }
+.d-scene .bubble { margin-top:8px; border-radius:12px; }
+/* 새 대화 시작 창(ui/start-sheet.js) — 시작 버튼은 창 아래에 붙어 있음 */
+.start-sheet .st-h { display:flex; align-items:center; gap:8px; margin:14px 0 8px; font-size:13px; color:var(--muted); font-weight:600; letter-spacing:.04em; }
+.start-sheet .st-note { margin:12px 0 0; }
+.start-sheet .ai-first { font-size:15px; line-height:1.7; margin:8px 0 18px; }
+.sheet.start-sheet { display:flex; flex-direction:column; overflow:hidden; }
+.start-sheet .st-body { flex:1; min-height:0; overflow-y:auto; }
+.st-go { flex:none; padding-top:12px; }
+.st-go[hidden] { display:none; }
+.st-go .btn { width:100%; height:48px; font-size:15px; }
 .cast { display:grid; grid-template-columns:repeat(auto-fill, minmax(92px,1fr)); gap:10px; align-items:start; }
 .cast button { border:0; background:none; padding:0; text-align:center; font-size:12.5px; display:grid; gap:5px; min-width:0; }
 .cast .portrait { border-radius:14px; overflow:hidden; background:var(--surface2); }
 .cast .portrait img { display:block; width:100%; height:auto; } /* 그림의 원래 비율(대개 세로 2:3) 그대로 — 정사각 칸에 넣으면 얼굴이 잘렸음 */
 .cast b { font-size:13px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .cta-row { display:flex; gap:8px; margin-top:14px; flex-wrap:wrap; align-items:center; }
-.cta-row .btn.pri.big { flex:1; min-width:180px; height:48px; font-size:15px; }
 .field { display:grid; gap:5px; margin-top:12px; }
 .field label, .lbl { font-size:12.5px; color:var(--muted); font-weight:600; }
 .field input, .field textarea, .field select, .inp { width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--line); background:var(--bg); outline:none; }
@@ -265,7 +309,7 @@ h2.sec small, h1.sec small { font-family:var(--sans); font-size:12.5px; color:va
 .wcard.locked { border-style:dashed; background:var(--surface2); }
 .wcard.locked figcaption b, .wcard.locked figcaption span { color:var(--muted); }
 .wcard.locked .wkind { color:var(--muted); background:var(--bg); }
-/* 접는 칸(세계관 일러스트) — 휴대폰에서 시작 버튼 아래를 짧게 */
+/* 접는 칸(명령어·장소·컷씬·세계관 일러스트·긴 플레이 가이드 — ui/detail.js foldBox) */
 details.box > summary { cursor:pointer; list-style:none; display:flex; align-items:center; gap:6px; }
 details.box > summary::-webkit-details-marker { display:none; }
 details.box > summary h3 { margin:0; flex:1; }
@@ -811,7 +855,7 @@ const LIMITS = {
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/core/util.js
    내보냄: $, $$, esc, uid, clamp, today, won, num, ago, timeoutSignal, abortCode, toast
-   쓰는 곳: src/js/core/storage.js, src/js/core/state.js, src/js/core/wallet.js, src/js/core/rooms.js, src/js/services/images.js, src/js/services/cloud.js, src/js/services/supabase.js, src/js/ai/parse.js, src/js/ai/llm.js, src/js/ai/prompt/memory.js, src/js/ui/sheet.js, src/js/ui/chat/cmdlist.js, src/js/ui/cover.js, src/js/ui/chat/render.js, src/js/ui/chat/suggest.js, src/js/ui/room-tools.js, src/js/ui/worldart.js, src/js/ui/drawer/browse.js, src/js/ui/codex.js, src/js/ui/drawer/main.js, src/js/ui/store.js, src/js/ui/pay.js, src/js/ui/pins.js, src/js/ui/drawer/memory.js, src/js/ui/account.js, src/js/ui/faq.js, src/js/ui/help.js, src/js/ui/home.js, src/js/ui/me.js, src/js/ui/drawer/settings.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/chat/episode.js, src/js/ui/report.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/ui/shell.js, src/js/ui/detail.js, src/js/ui/chats.js, src/js/ui/login.js, src/js/app.js, src/js/admin/support.js, src/js/admin/gate.js, src/js/core/migrate.js, src/js/boot.js
+   쓰는 곳: src/js/core/storage.js, src/js/core/state.js, src/js/core/wallet.js, src/js/core/rooms.js, src/js/services/images.js, src/js/services/cloud.js, src/js/services/supabase.js, src/js/ai/parse.js, src/js/ai/llm.js, src/js/ai/prompt/memory.js, src/js/ui/sheet.js, src/js/ui/chat/cmdlist.js, src/js/ui/cover.js, src/js/ui/chat/render.js, src/js/ui/chat/suggest.js, src/js/ui/room-tools.js, src/js/ui/worldart.js, src/js/ui/drawer/browse.js, src/js/ui/codex.js, src/js/ui/drawer/main.js, src/js/ui/store.js, src/js/ui/pay.js, src/js/ui/pins.js, src/js/ui/drawer/memory.js, src/js/ui/account.js, src/js/ui/faq.js, src/js/ui/help.js, src/js/ui/home.js, src/js/ui/me.js, src/js/ui/drawer/settings.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/chat/episode.js, src/js/ui/report.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/ui/shell.js, src/js/ui/start-sheet.js, src/js/ui/detail.js, src/js/ui/chats.js, src/js/ui/login.js, src/js/app.js, src/js/admin/support.js, src/js/admin/gate.js, src/js/core/migrate.js, src/js/boot.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* DOM·문자열·숫자 유틸, toast, 예상 못 한 오류 기록(reportError) */
 /** @typedef {import("./types.js").TimeoutSignal} TimeoutSignal */
@@ -1050,7 +1094,7 @@ const KV = {
            src/js/core/constants.js { LIMITS }
            src/js/core/util.js { today }
    내보냄: hasClaudeKey, S, room, gen, setGen, setRoom
-   쓰는 곳: src/js/core/audience.js, src/js/core/wallet.js, src/js/core/rooms.js, src/js/core/settings.js, src/js/core/shelf.js, src/js/services/cloud.js, src/js/services/load.js, src/js/services/sync.js, src/js/ai/llm.js, src/js/ai/prompt/memory.js, src/js/ui/chat/cmdlist.js, src/js/ui/chat/suggest.js, src/js/ui/ai-notice.js, src/js/ui/room-tools.js, src/js/ui/drawer/main.js, src/js/ui/store.js, src/js/ui/pay.js, src/js/ui/drawer/memory.js, src/js/ui/account.js, src/js/ui/help.js, src/js/ui/home.js, src/js/ui/me.js, src/js/ui/drawer/settings.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/chat/episode.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/ui/shell.js, src/js/ui/detail.js, src/js/ui/chats.js, src/js/app.js, src/js/core/migrate.js, src/js/boot.js
+   쓰는 곳: src/js/core/audience.js, src/js/core/wallet.js, src/js/core/rooms.js, src/js/core/settings.js, src/js/core/shelf.js, src/js/services/cloud.js, src/js/services/load.js, src/js/services/sync.js, src/js/ai/llm.js, src/js/ai/prompt/memory.js, src/js/ui/chat/cmdlist.js, src/js/ui/chat/suggest.js, src/js/ui/ai-notice.js, src/js/ui/room-tools.js, src/js/ui/drawer/main.js, src/js/ui/store.js, src/js/ui/pay.js, src/js/ui/drawer/memory.js, src/js/ui/account.js, src/js/ui/help.js, src/js/ui/home.js, src/js/ui/me.js, src/js/ui/drawer/settings.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/chat/episode.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/ui/shell.js, src/js/ui/start-sheet.js, src/js/ui/detail.js, src/js/ui/chats.js, src/js/app.js, src/js/core/migrate.js, src/js/boot.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 전역 상태 S(지갑·페르소나·대화방·설정), 현재 대화방·진행 중 생성(다른 모듈은 set…()로만 바꿈), API 키 유무(hasClaudeKey — S와 CFG.serverKeys를 함께 봄) */
 
@@ -1155,7 +1199,7 @@ const audOK = (c) => audience() === "all" || audOf(c) === audience();
    src/js/ai/models.js
    가져옴: src/js/core/constants.js { FREE_DAILY }
    내보냄: trackOf, MODELS, PROMPT_CACHE, RECOMMEND_DEFAULT, recommendSet, recommendOf, LEN
-   쓰는 곳: src/js/core/wallet.js, src/js/core/rooms.js, src/js/ai/llm.js, src/js/ai/prompt/input.js, src/js/ai/prompt/rules.js, src/js/ui/drawer/main.js, src/js/ui/pay.js, src/js/ui/faq.js, src/js/ui/drawer/settings.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/chat/generate.js, src/js/ui/detail.js, src/js/app.js
+   쓰는 곳: src/js/core/wallet.js, src/js/core/rooms.js, src/js/ai/llm.js, src/js/ai/prompt/input.js, src/js/ai/prompt/rules.js, src/js/ui/drawer/main.js, src/js/ui/pay.js, src/js/ui/faq.js, src/js/ui/drawer/settings.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/chat/generate.js, src/js/ui/start-sheet.js, src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* AI 모델 등급(MODELS)·출력량(LEN)·작품의 권장 모델(recommendOf). 모델 고도화는 여기와 ai/prompt/ */
 
@@ -1245,7 +1289,7 @@ function emit(name, v) {
            src/js/core/storage.js { KV }
            src/js/core/util.js { today }
    내보냄: FREE_DAILY, PLUS_MONTHLY, WELCOME, PLAN, isPro, plan, refreshFree, freeLeft, saveWallet, ledger, listPrice, quote, qShort, charge, refund
-   쓰는 곳: src/js/services/load.js, src/js/ai/prompt/rules.js, src/js/ai/prompt/memory.js, src/js/ui/drawer/main.js, src/js/ui/store.js, src/js/ui/pay.js, src/js/ui/pins.js, src/js/ui/drawer/memory.js, src/js/ui/faq.js, src/js/ui/me.js, src/js/ui/drawer/settings.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/chat/episode.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/ui/shell.js, src/js/ui/detail.js, src/js/app.js
+   쓰는 곳: src/js/services/load.js, src/js/ai/prompt/rules.js, src/js/ai/prompt/memory.js, src/js/ui/drawer/main.js, src/js/ui/store.js, src/js/ui/pay.js, src/js/ui/pins.js, src/js/ui/drawer/memory.js, src/js/ui/faq.js, src/js/ui/me.js, src/js/ui/drawer/settings.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/chat/episode.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/ui/shell.js, src/js/ui/start-sheet.js, src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 요금: 무료 턴·PLUS·하트 차감/환불, 가격 계산(listPrice·quote) */
 
@@ -2602,7 +2646,7 @@ const epLength = (ep) => ep.beats[ep.beats.length - 1].at[1];
            src/js/core/storage.js { KV }
            src/js/core/util.js { uid }
    내보냄: curText, roomKey, saveRoom, deletedRooms, migrateRoom, defaultSet, newRoom, memoryMark, baseOpening, openingIndex, forkRoom, sideRoom
-   쓰는 곳: src/js/services/cloud.js, src/js/services/sync.js, src/js/ai/prompt/input.js, src/js/ai/prompt/rules.js, src/js/ai/prompt/memory.js, src/js/ui/chat/suggest.js, src/js/ui/room-tools.js, src/js/ui/drawer/browse.js, src/js/ui/drawer/main.js, src/js/ui/pins.js, src/js/ui/drawer/memory.js, src/js/ui/me.js, src/js/ui/drawer/settings.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/chat/episode.js, src/js/ui/report.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/ui/detail.js, src/js/app.js
+   쓰는 곳: src/js/services/cloud.js, src/js/services/sync.js, src/js/ai/prompt/input.js, src/js/ai/prompt/rules.js, src/js/ai/prompt/memory.js, src/js/ui/chat/suggest.js, src/js/ui/room-tools.js, src/js/ui/drawer/browse.js, src/js/ui/drawer/main.js, src/js/ui/pins.js, src/js/ui/drawer/memory.js, src/js/ui/me.js, src/js/ui/drawer/settings.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/chat/episode.js, src/js/ui/report.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/ui/start-sheet.js, src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 대화방 저장·목록·이전(migrateRoom)·새 방 만들기(newRoom)·분기(forkRoom)·외전(sideRoom), 메시지의 현재 버전 글(curText) */
 
@@ -5389,7 +5433,7 @@ function flagMemo(on, txt) {
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/ui/icons.js
    내보냄: ICON
-   쓰는 곳: src/js/ui/chat/suggest.js, src/js/ui/codex.js, src/js/ui/drawer/main.js, src/js/ui/pins.js, src/js/ui/help.js, src/js/ui/home.js, src/js/ui/me.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/shell.js, src/js/ui/detail.js, src/js/app.js, src/js/admin/support.js
+   쓰는 곳: src/js/ui/chat/suggest.js, src/js/ui/codex.js, src/js/ui/drawer/main.js, src/js/ui/pins.js, src/js/ui/help.js, src/js/ui/home.js, src/js/ui/me.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/shell.js, src/js/ui/start-sheet.js, src/js/ui/detail.js, src/js/app.js, src/js/admin/support.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 인라인 SVG 아이콘 */
 const ICON = {
@@ -5415,7 +5459,7 @@ const ICON = {
    src/js/ui/sheet.js
    가져옴: src/js/core/util.js { $, $$, esc }
    내보냄: sheet, closeOverlays, confirmSheet
-   쓰는 곳: src/js/ui/codex.js, src/js/ui/drawer/main.js, src/js/ui/store.js, src/js/ui/pay.js, src/js/ui/pins.js, src/js/ui/account.js, src/js/ui/help.js, src/js/ui/home.js, src/js/ui/me.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/episode.js, src/js/ui/report.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/ui/shell.js, src/js/ui/login.js, src/js/app.js, src/js/admin/support.js, src/js/boot.js
+   쓰는 곳: src/js/ui/codex.js, src/js/ui/drawer/main.js, src/js/ui/store.js, src/js/ui/pay.js, src/js/ui/pins.js, src/js/ui/account.js, src/js/ui/help.js, src/js/ui/home.js, src/js/ui/me.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/episode.js, src/js/ui/report.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/ui/shell.js, src/js/ui/start-sheet.js, src/js/ui/login.js, src/js/app.js, src/js/admin/support.js, src/js/boot.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 바닥 시트·확인 창(sheet·confirmSheet), 오버레이 닫기 */
 
@@ -5644,7 +5688,7 @@ function pavHTML(p) {
            src/js/ui/chat/view.js { gaugeView }
            src/js/ui/cover.js { figHTML }
    내보냄: barPct, statusBlock, fmt, liveFill
-   쓰는 곳: src/js/ui/drawer/browse.js, src/js/ui/chat/view.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/app.js
+   쓰는 곳: src/js/ui/drawer/browse.js, src/js/ui/chat/view.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/ui/detail.js, src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 본문 서식(fmt·fmtLine)·상태창(statusBlock)·스트리밍 표시(liveFill) */
 
@@ -5908,7 +5952,7 @@ ${recent}`
    가져옴: src/js/core/settings.js { saveSettings }
            src/js/core/state.js { S }
    내보냄: AI_BADGE, AI_NOTICE, AI_NOTICE_OK, AI_EXPORT_LINE, aiLabel, aiNoticeNeeded, ackAiNotice
-   쓰는 곳: src/js/ui/room-tools.js, src/js/ui/chat/view.js, src/js/ui/chat/log.js
+   쓰는 곳: src/js/ui/room-tools.js, src/js/ui/chat/view.js, src/js/ui/chat/log.js, src/js/ui/start-sheet.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* AI 표시: 대화 화면 머리의 배지 · AI 말풍선의 접근성 이름 · 첫 대화 전 한 번의 안내 · 내보낸 파일의 첫 줄.
    문구는 docs/legal/ui-copy.md §6의 글자 그대로 — 고칠 때는 그 문서(주인은 법률 세션)와 같이. 그림에 붙는 표기 두 줄은 그림이 실릴 때(docs/ROADMAP.md) */
@@ -6843,7 +6887,7 @@ function checkout(item, after) {
            src/js/ui/sheet.js { sheet }
            src/js/ui/store.js { PACKS, PLUS, buyPack, checkout }
    내보냄: ensurePay, plusSheet
-   쓰는 곳: src/js/ui/pins.js, src/js/ui/drawer/memory.js, src/js/ui/drawer/settings.js, src/js/ui/room-drawer.js, src/js/ui/chat/episode.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/ui/detail.js, src/js/app.js
+   쓰는 곳: src/js/ui/pins.js, src/js/ui/drawer/memory.js, src/js/ui/drawer/settings.js, src/js/ui/room-drawer.js, src/js/ui/chat/episode.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/ui/start-sheet.js, src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 결제 안내: 하트 부족·PLUS 시트, 보내기 전 요금 확인(ensurePay) */
 
@@ -9950,7 +9994,7 @@ function stopGen() {
            src/js/ui/icons.js { ICON }
            src/js/ui/sheet.js { closeOverlays }
    내보냄: registerViews, setNavs, go, route, LOGO, renderShell, renderRailRecent, renderWalletChips, topbar, bindGo
-   쓰는 곳: src/js/ui/room-tools.js, src/js/ui/codex.js, src/js/ui/drawer/main.js, src/js/ui/store.js, src/js/ui/help.js, src/js/ui/home.js, src/js/ui/me.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/chat/episode.js, src/js/ui/report.js, src/js/ui/chat/log.js, src/js/ui/detail.js, src/js/ui/chats.js, src/js/ui/login.js, src/js/app.js, src/js/admin/support.js, src/js/admin/gate.js, src/js/boot.js, src/js/admin.js
+   쓰는 곳: src/js/ui/room-tools.js, src/js/ui/codex.js, src/js/ui/drawer/main.js, src/js/ui/store.js, src/js/ui/help.js, src/js/ui/home.js, src/js/ui/me.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/chat/episode.js, src/js/ui/report.js, src/js/ui/chat/log.js, src/js/ui/start-sheet.js, src/js/ui/detail.js, src/js/ui/chats.js, src/js/ui/login.js, src/js/app.js, src/js/admin/support.js, src/js/admin/gate.js, src/js/boot.js, src/js/admin.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 라우팅(go·route)·레일·탭바·상단바·지갑 칩. 화면은 진입점(main.js·admin.js)이 registerViews·setNavs로 등록한다 — 셸은 어떤 화면이 있는지 모른다.
    아래층의 "rooms"·"wallet"·"route" 이벤트를 받아 레일·칩·화면을 다시 그림 */
@@ -9990,6 +10034,7 @@ function route() {
   closeOverlays();
   if (gen && !h.startsWith("r-")) stopGen();
   document.body.classList.toggle("in-chat", h.startsWith("r-"));
+  document.body.classList.toggle("in-detail", h.startsWith("c-")); // 상세: 좁은 화면에서 아래에 고정된 시작 버튼 줄 위로 토스트를 올림(35-detail.css)
   const [base, ...rest] = h.split("-");
   const arg = rest.join("-");
   const view = VIEWS[base] || VIEWS.home;
@@ -10048,31 +10093,140 @@ on("rooms", renderRailRecent);
 on("wallet", renderWalletChips);
 on("route", route);
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
-   src/js/ui/detail.js
+   src/js/ui/start-sheet.js
    가져옴: src/js/ai/models.js { MODELS }
-           src/js/content/index.js { HOME_ROWS, ORIGINALS }
+           src/js/core/rooms.js { defaultSet, newRoom }
+           src/js/core/state.js { S, room, setRoom }
+           src/js/core/util.js { $, $$, esc }
+           src/js/core/wallet.js { FREE_DAILY, plan, qShort, quote }
+           src/js/ui/ai-notice.js { AI_NOTICE, AI_NOTICE_OK, ackAiNotice, aiNoticeNeeded }
+           src/js/ui/icons.js { ICON }
+           src/js/ui/pay.js { plusSheet }
+           src/js/ui/sheet.js { closeOverlays, sheet }
+           src/js/ui/shell.js { go }
+   내보냄: opBrief, opPlace, startNote, startChat
+   쓰는 곳: src/js/ui/detail.js
+   ════════════════════════════════════════════════════════════════════════════════════════════════════ */
+/* 새 대화 시작 창: 시작 상황과 페르소나를 고르고 시작 — 상세 페이지의 시작 버튼과 시작 상황 카드가 엶(startChat).
+   처음 한 번은 같은 창의 첫 장이 AI 안내(ui/ai-notice.js)라 창이 연달아 뜨지 않음. 고를 것이 없으면(시작 상황 하나·페르소나 하나·안내를 이미 봄) 창 없이 바로 시작 */
+
+
+
+
+
+
+
+
+
+
+/** @typedef {import("../core/types.js").Work} Work */
+
+/** 시작 상황 본문의 앞부분 — 그림 태그와 서식 기호를 뺀 한 줄. @param {{ text: string }} o @param {number} [n] 글자 수 @returns {string} */
+function opBrief(o, n = 120) {
+  return o.text
+    .replace(/\[\[[^\]]*\]\]/g, "")
+    .replace(/[*"\[\]]/g, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, n);
+}
+/** 시작 상황의 배경 장소 배지(place가 작품의 places 범위 안일 때만). @param {Work} c @param {{ place?: number }} o @returns {string} */
+function opPlace(c, o) {
+  const p = o.place && (c.places || [])[o.place - 1];
+  return p ? ` <span class="pill">장소 · ${esc(p.name)}</span>` : "";
+}
+/** 새 대화가 시작하는 모델(작품의 권장 모델)과 그 턴 값 안내 — 값은 wallet의 quote 한 곳에서. @param {Work} c @returns {string} */
+function startNote(c) {
+  const set0 = defaultSet(c),
+    q0 = quote(set0);
+  return (
+    `새 대화는 ${esc(MODELS[set0.model].name)} 모델(${q0.type === "heart" ? "턴당 ♥" + q0.n : qShort(q0)})로 시작해요 — 대화방에서 바꿀 수 있어요. ` +
+    `라이트 모델은 하루 ${FREE_DAILY}턴 무료.`
+  );
+}
+/**
+ * 이 작품으로 새 대화를 시작 — 방 수 한도를 먼저 보고, 고를 것이 있거나 AI 안내를 아직 안 봤으면 시작 창을 엶.
+ * @param {Work} c 작품(normalizeChar를 거친 것) @param {number} [opIdx] 처음에 골라 둘 시작 상황 번호
+ */
+function startChat(c, opIdx = 0) {
+  if (S.rooms.filter((r) => r.charId === c.id).length >= plan().rooms) return plusSheet("rooms");
+  const def = S.personas.find((p) => p.def) || S.personas[0];
+  const begin = (i, p) => {
+    closeOverlays();
+    setRoom(newRoom(c, i, p));
+    go("r-" + room.id);
+  };
+  const choose = c.openings.length > 1 || S.personas.length > 1;
+  if (!choose && !aiNoticeNeeded()) return begin(opIdx, def);
+  const ov = sheet(
+    `<div class="sheet-head"><h2>${c.episode ? "에피소드 시작" : "새 대화 시작"}</h2>` +
+      `<button class="icon-btn" data-x aria-label="닫기">${ICON.close}</button></div><p class="sub">${esc(c.title)}</p>` +
+      `<div class="st-body" id="stBody"></div><div class="st-go" id="stFoot" hidden><button class="btn pri big" id="startGo"></button></div>`,
+    "start-sheet"
+  );
+  const body = $("#stBody", ov), // 고르는 칸만 스크롤하고 시작 버튼(#stFoot)은 창 아래에 그대로 — 35-detail.css .start-sheet
+    goBtn = $("#startGo", ov);
+  const pick = () => {
+    const card = (name, value, on, head, sub) =>
+      `<label class="opening pick${on ? " on" : ""}"><input type="radio" name="${name}" value="${esc(value)}"${on ? " checked" : ""}>` +
+      `<b>${head}</b>${sub ? `<span class="brief">${sub}</span>` : ""}</label>`;
+    body.innerHTML =
+      `<h3 class="st-h">${c.world_mode ? "게임 모드 · 시작 상황" : "시작 상황"}</h3><div class="openings">` +
+      c.openings.map((o, i) => card("op", String(i), i === opIdx, esc(o.title) + opPlace(c, o), esc(opBrief(o)) + "…")).join("") +
+      `</div><h3 class="st-h">대화할 내 페르소나<span class="spacer"></span><button class="btn sm ghost" id="stMe">페르소나 관리</button></h3>` +
+      `<div class="openings">${S.personas.map((p) => card("pp", p.id, p === def, esc(p.name), esc(p.memo || ""))).join("")}</div>` +
+      `<p class="note st-note">${startNote(c)}</p>`;
+    $("#stFoot", ov).hidden = false;
+    const cur = (name) => (body.querySelector(`input[name=${name}]:checked`) || {}).value;
+    const persona = () => S.personas.find((p) => p.id === cur("pp")) || def;
+    const sync = () => {
+      $$(".opening.pick", body).forEach((l) => l.classList.toggle("on", l.querySelector("input").checked));
+      goBtn.textContent = persona().name + "(으)로 시작";
+    };
+    $$("input", body).forEach((x) => (x.onchange = sync));
+    sync();
+    $("#stMe", body).onclick = () => {
+      closeOverlays();
+      go("me");
+    };
+    goBtn.onclick = () => begin(+(cur("op") || 0), persona());
+  };
+  if (!aiNoticeNeeded()) return pick();
+  // 처음 한 번: 같은 창의 첫 장으로 AI 안내 — '알겠어요'를 누르면 고르는 장으로(고를 것이 없으면 바로 시작)
+  body.innerHTML =
+    `<p class="ai-first">${AI_NOTICE}</p>` +
+    `<div class="cta-row"><span class="spacer"></span><button class="btn pri" id="aiOk">${AI_NOTICE_OK}</button></div>`;
+  $("#aiOk", body).onclick = () => {
+    ackAiNotice();
+    if (choose) pick();
+    else begin(opIdx, def);
+  };
+}
+/* ════════════════════════════════════════════════════════════════════════════════════════════════════
+   src/js/ui/detail.js
+   가져옴: src/js/content/index.js { HOME_ROWS, ORIGINALS }
            src/js/core/audience.js { audOK }
            src/js/core/character.js { getChar, normalizeChar }
            src/js/core/episode.js { epLength }
-           src/js/core/rooms.js { defaultSet, newRoom }
            src/js/core/shelf.js { endsSet, liked, toggleLike, touchRecent }
-           src/js/core/state.js { S, room, setRoom }
+           src/js/core/state.js { S }
            src/js/core/util.js { $, $$, ago, esc, toast }
-           src/js/core/wallet.js { FREE_DAILY, plan, qShort, quote }
            src/js/services/images.js { IMG }
            src/js/ui/chat/episode.js { endsHTML }
+           src/js/ui/chat/render.js { fmt }
            src/js/ui/codex.js { bindCast, bindCodex, castGridHTML, collectHTML, commandsHTML, guideHTML, metaHTML, placesHTML }
            src/js/ui/cover.js { coverHTML, lightbox }
            src/js/ui/home.js { rowHTML }
            src/js/ui/icons.js { ICON }
-           src/js/ui/pay.js { plusSheet }
            src/js/ui/shell.js { bindGo, go, topbar }
+           src/js/ui/start-sheet.js { opBrief, opPlace, startChat, startNote }
            src/js/ui/worldart.js { worldArtHTML }
    내보냄: viewDetail
    쓰는 곳: src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
-/* 작품 상세 페이지: 표지·제목·찜 → 시작 상황과 새 대화 시작·내 대화방 → 소개·플레이 가이드·(에피소드형이면 장·결말 안내)·명령어 → 그림이 있는 칸(등장인물·장소·컷씬·세계관 일러스트), 아래에 같은 줄의 다른 작품.
-   새 대화 칸을 소개 위에 둠 — 시작 버튼이 세계관 일러스트·등장인물·도감 아래로 묻혀 있었음(2026-11-11 사용자 요청). 글로 읽는 칸(소개·가이드·명령어)을 먼저, 그림은 그 뒤로 이어서 */
+/* 작품 상세 페이지: 왼쪽(넓은 화면에서 고정 — 표지·제목·찜·새 대화 시작·이 작품의 내 대화방) | 오른쪽(탭 줄 + 소개·시작 상황·등장인물과 도감·같은 줄의 다른 작품).
+   좁은 화면에서는 찜·시작 버튼 줄이 화면 아래에 고정(35-detail.css .d-cta) — 시작 버튼이 늘 보이게(2026-11-16 프레임 6차, 그 전에는 휴대폰에서 첫 화면 밖이었음).
+   탭은 내용을 갈아 끼우지 않고 같은 페이지의 그 자리로 옮김(내용이 모두 문서에 있어 찾기·시험이 쉬움). 시작 버튼과 시작 상황 카드는 시작 창(ui/start-sheet.js)을 엶 */
 
 
 
@@ -10090,8 +10244,11 @@ on("route", route);
 
 
 
+/** @typedef {import("../core/types.js").Work} Work */
 
-
+/* 소개가 이보다 길면 접어 두고 '더 보기', 플레이 가이드가 이보다 길면 접는 칸으로 */
+const LONG_DESC = 320,
+  LONG_GUIDE = 240;
 
 function viewDetail(id) {
   const c = normalizeChar(getChar(id)),
@@ -10106,73 +10263,48 @@ function viewDetail(id) {
   const rooms = S.rooms.filter((r) => r.charId === c.id);
   const persona = S.personas.find((p) => p.def) || S.personas[0];
   const wa = worldArtHTML(c); // 키워드북이 없으면 칸을 숨김
-  const set0 = defaultSet(c),
-    q0 = quote(set0); // 새 대화방이 시작하는 모델(작품의 권장 모델)과 그 턴당 비용
   const row = HOME_ROWS.find((w) => w.key === c.row),
-    near = row ? ORIGINALS.filter((x) => x.row === c.row && x.id !== c.id && audOK(x)) : []; // 같은 홈 줄의 다른 작품(줄이 없는 작품은 칸을 숨김)
+    near = row ? ORIGINALS.filter((x) => x.row === c.row && x.id !== c.id && audOK(x)) : []; // 같은 홈 줄의 다른 작품(줄이 없는 작품은 탭과 칸을 숨김)
   const likeHTML = (on) => `${ICON.mark}<span>${on ? "찜한 작품" : "찜하기"}</span>`;
+  const tabs = [
+    ["intro", "소개"],
+    ["open", "시작 상황"],
+    ["cast", "등장인물·도감"]
+  ].concat(near.length ? [["near", "다른 작품"]] : []);
   touchRecent(c.id);
   v.innerHTML =
-    `<div class="page">
+    `<div class="page d-page">
     ${topbar(`<button class="icon-btn" data-go="home" aria-label="뒤로">${ICON.back}</button>`)}
     <div class="detail">
-      <div>${coverHTML(c, "", { vt: true })}</div>
-      <div>
-        <span class="note">${esc(c.cat)}${c.world_mode ? " · 세계관" : ""} · ${metaHTML(c)}</span>
-        <h1>${esc(c.title)}</h1>
-        <p class="lead">${esc(c.oneLiner)}</p>
+      <div class="d-side">
+        <div class="d-top">${coverHTML(c, "", { vt: true })}
+          <div class="d-info"><span class="note">${esc(c.cat)}${c.world_mode ? " · 세계관" : ""} · ${metaHTML(c)}</span>
+          <h1>${esc(c.title)}</h1><p class="lead">${esc(c.oneLiner)}</p></div>
+        </div>
         <div class="tags">${(c.tags || []).map((t) => `<span>#${esc(t)}</span>`).join("")}</div>
-        <button class="btn sm ghost like-btn" id="like" aria-pressed="${liked(c.id)}">${likeHTML(liked(c.id))}</button>
-        <div class="box"><h3>${c.world_mode ? "게임 모드 · 시작 상황" : "시작 상황"}</h3><div class="openings">
-          ${c.openings
-            .map(
-              (o, i) =>
-                `<label class="opening"><input type="radio" name="op" value="${i}" ${i === 0 ? "checked" : ""}>` +
-                `<b>${esc(o.title)}${o.place && (c.places || [])[o.place - 1] ? ` <span class="pill">장소 · ${esc(c.places[o.place - 1].name)}</span>` : ""}</b>
-            <span>${esc(
-              o.text
-                .replace(/\[\[[^\]]*\]\]/g, "")
-                .replace(/[*"\[\]]/g, "")
-                .replace(/\s+/g, " ")
-                .slice(0, 120)
-            )}…</span></label>`
-            )
-            .join("")}
-        </div>
-        <div class="field"><label for="pp">대화할 내 페르소나</label>` +
-    `<select id="pp">${S.personas
-      .map((p) => `<option value="${esc(p.id)}" ${p === persona ? "selected" : ""}>` + `${esc(p.name)}${p.memo ? " · " + esc(p.memo) : ""}</option>`)
-      .join("")}</select></div>
-        <div class="cta-row"><button class="btn pri big" id="start">${c.episode ? "에피소드 시작" : "새 대화 시작"}</button>` +
-    (`<button class="btn ghost sm" data-go="me">페르소나 관리</button></div>
-        <p class="note" style="margin-top:8px">새 대화는 ${esc(MODELS[set0.model].name)} 모델(` +
-      `${q0.type === "heart" ? "턴당 ♥" + q0.n : qShort(q0)})로 시작해요 — 대화방에서 바꿀 수 있어요. 라이트 모델은 하루 ${FREE_DAILY}턴 무료. 상태창: ` +
-      `${c.fields.slice(0, 8).map(esc).join(" · ")}${c.fields.length > 8 ? " 외" : ""}</p>
-        </div>
-        ${
-          rooms.length
-            ? `<div class="box"><h3>내 대화방</h3>` +
-              `<div class="cont">${rooms
-                .map(
-                  (r) =>
-                    `<button data-room="${esc(r.id)}">${coverHTML(r)}<span class="x"><b>${esc(r.name)}</b>` +
-                    `<span>${esc(r.last)}</span></span><span class="note">${ago(r.at)}</span></button>`
-                )
-                .join("")}</div></div>`
-            : ""
-        }
-        <div class="box"><h3>소개</h3><p>${esc(c.desc)}</p></div>
-        ${guideHTML(c)}
-        ${epInfoHTML(c)}
-        ${commandsHTML(c)}
-        <div class="box"><h3>등장인물 <small>누르면 코드·감정 칸 안내</small>${collectHTML(c)} `) +
-    `<button class="btn sm ghost" data-go="codex-${esc(c.id)}" style="float:right">도감</button></h3>
-          <div class="cast">${castGridHTML(c)}</div></div>
-        ${placesHTML(c)}
-        <div class="box" id="wArtBox" ${wa ? "" : 'style="display:none"'}><h3>세계관 일러스트</h3>${wa}</div>
+        <div class="d-cta"><button class="btn ghost like-btn" id="like" aria-pressed="${liked(c.id)}">${likeHTML(liked(c.id))}</button>` +
+    `<button class="btn pri big" id="start">${c.episode ? "에피소드 시작" : "새 대화 시작"}</button></div>
+        <p class="note d-price">${startNote(c)}</p>
+        ${rooms.length ? `<div class="d-rooms"><h3>이어서 하기 <small>이 작품의 내 대화방</small></h3><div class="cont">${rooms.map(roomHTML).join("")}</div></div>` : ""}
       </div>
-    </div>
-    ${rowHTML("같은 줄의 다른 작품", row ? row.title : "", near, "rowNear")}</div>`;
+      <div class="d-main">
+        <div class="d-tabs" id="dTabs" role="navigation" aria-label="이 페이지의 칸">` +
+    tabs.map(([k, name]) => `<button type="button" class="d-tab" data-tab="${k}">${name}</button>`).join("") +
+    `</div>
+        <section id="d-intro">${descHTML(c)}<div${(c.guide || "").length > LONG_GUIDE ? " data-fold" : ""}>${guideHTML(c)}</div>` +
+    `${epInfoHTML(c)}<div data-fold>${commandsHTML(c)}</div></section>
+        <section id="d-open"><div class="box"><h3>${c.world_mode ? "게임 모드 · 시작 상황" : "시작 상황"} <small>고르면 그 장면에서 시작해요</small></h3>` +
+    `<div class="openings">${c.openings.map((o, i) => openingHTML(c, o, i, persona)).join("")}</div></div></section>
+        <section id="d-cast"><div class="box"><h3>등장인물 <small>누르면 코드·감정 칸 안내</small>${collectHTML(c)} ` +
+    `<button class="btn sm ghost" data-go="codex-${esc(c.id)}" style="float:right">도감</button></h3>
+          <div class="cast">${castGridHTML(c)}</div>` +
+    `<p class="note d-fields">상태창: ${c.fields.slice(0, 8).map(esc).join(" · ")}${c.fields.length > 8 ? " 외" : ""}</p></div>
+          <div data-fold="wide">${placesHTML(c)}<div class="box" id="wArtBox" ${wa ? "" : 'style="display:none"'}><h3>세계관 일러스트</h3>${wa}</div></div></section>
+        ${near.length ? `<section id="d-near">${rowHTML("같은 줄의 다른 작품", row.title, near, "rowNear")}</section>` : ""}
+      </div>
+    </div></div>`;
+  const wide = matchMedia("(min-width:781px)").matches; // 그림이 있는 칸(장소·컷씬·세계관 일러스트)은 넓은 화면에서는 펼쳐 두고 휴대폰에서만 접음
+  $$("[data-fold] > .box", v).forEach((b) => foldBox(b, wide && b.parentElement.dataset.fold === "wide"));
   bindGo(v);
   IMG.hydrate(v);
   $$("[data-char]", v).forEach((b) => (b.onclick = () => go("c-" + b.dataset.char)));
@@ -10193,16 +10325,79 @@ function viewDetail(id) {
   );
   bindCast(v, c);
   bindCodex(v);
-  $("#start").onclick = () => {
-    if (rooms.length >= plan().rooms) return plusSheet("rooms");
-    const opIdx = +(v.querySelector("input[name=op]:checked")?.value || 0);
-    const p = S.personas.find((x) => x.id === $("#pp").value) || persona;
-    setRoom(newRoom(c, opIdx, p));
-    go("r-" + room.id);
-  };
+  bindTabs(v);
+  const more = $("#dMore");
+  if (more)
+    more.onclick = () => {
+      const open = $("#dDesc").classList.toggle("clamp") === false;
+      more.textContent = open ? "접기" : "더 보기";
+      more.setAttribute("aria-expanded", open);
+    };
+  $("#start").onclick = () => startChat(c, 0);
+  $$("[data-op]", v).forEach((b) => (b.onclick = () => startChat(c, +b.dataset.op)));
 }
-
-/** 에피소드형 작품의 안내 칸 — 장 수·결말 수·대략의 턴 수와 결말 이름(모두 보이고 본 것에 ✓). 자유형이면 "". @param {import("../core/types.js").Work} c */
+/* 이 작품의 내 대화방 한 줄(왼쪽 '이어서 하기') — r은 방 목록 항목 */
+const roomHTML = (r) =>
+  `<button data-room="${esc(r.id)}">${coverHTML(r)}<span class="x"><b>${esc(r.name)}</b>` +
+  `<span>${esc(r.last)}</span></span><span class="note">${ago(r.at)}</span></button>`;
+/* 소개 칸 — 길면 접어 두고 '더 보기' */
+function descHTML(c) {
+  const long = (c.desc || "").length > LONG_DESC;
+  return (
+    `<div class="box"><h3>소개</h3><p class="d-desc${long ? " clamp" : ""}" id="dDesc">${esc(c.desc)}</p>` +
+    `${long ? `<button type="button" class="btn sm ghost d-more" id="dMore" aria-expanded="false">더 보기</button>` : ""}</div>`
+  );
+}
+/* 시작 상황 카드 — 제목·배경 장소·앞부분, '장면 펼쳐 읽기'(대화방과 같은 서식 함수 fmt — 그림 태그는 빼고 글만: 비공개 그림이 대화 전에 드러나지 않게), 이 상황으로 시작 */
+function openingHTML(c, o, i, persona) {
+  return (
+    `<div class="opening"><b>${esc(o.title)}${opPlace(c, o)}</b><span class="brief">${esc(opBrief(o))}…</span>` +
+    `<details class="d-scene"><summary>장면 펼쳐 읽기</summary><div class="bubble">${fmt(o.text.replace(/\[\[[^\]]*\]\]/g, ""), c, persona)}</div></details>` +
+    `<button type="button" class="btn sm" data-op="${i}">이 상황으로 시작</button></div>`
+  );
+}
+/* 접는 칸으로 바꿈: .box(div) → details.box(머리 h3가 summary) — 긴 칸(명령어·장소·컷씬·세계관 일러스트·긴 플레이 가이드)이 처음에는 접혀 있게 */
+function foldBox(box, open) {
+  const h = box.querySelector("h3");
+  if (!h) return;
+  const d = document.createElement("details"),
+    s = document.createElement("summary");
+  d.className = box.className;
+  d.open = !!open;
+  if (box.id) d.id = box.id;
+  if (box.style.display) d.style.display = box.style.display;
+  s.append(h);
+  d.append(s, ...Array.from(box.childNodes));
+  box.replaceWith(d);
+}
+/* 탭 줄: 누르면 그 칸이 탭 줄 바로 아래에 오게 옮기고, 스크롤하는 동안 지금 칸을 강조. 화면이 바뀌어 탭 줄이 사라지면 스크롤 듣기를 스스로 뗌 */
+function bindTabs(v) {
+  const tabs = $("#dTabs", v),
+    btns = $$("[data-tab]", tabs),
+    secs = btns.map((b) => $("#d-" + b.dataset.tab, v));
+  const mark = () => {
+    if (!document.body.contains(tabs)) return v.removeEventListener("scroll", mark);
+    const line = tabs.getBoundingClientRect().bottom + 16;
+    let cur = 0;
+    secs.forEach((s, i) => {
+      if (s.getBoundingClientRect().top <= line) cur = i;
+    });
+    btns.forEach((b, i) => {
+      b.classList.toggle("on", i === cur);
+      if (i === cur) b.setAttribute("aria-current", "true");
+      else b.removeAttribute("aria-current");
+    });
+  };
+  btns.forEach(
+    (b, i) =>
+      (b.onclick = () => {
+        v.scrollTop += secs[i].getBoundingClientRect().top - v.getBoundingClientRect().top - tabs.offsetHeight - 8;
+      })
+  );
+  v.addEventListener("scroll", mark, { passive: true });
+  mark();
+}
+/** 에피소드형 작품의 안내 칸 — 장 수·결말 수·대략의 턴 수와 결말 이름(모두 보이고 본 것에 ✓). 자유형이면 "". @param {Work} c */
 function epInfoHTML(c) {
   const ep = c.episode;
   if (!ep) return "";

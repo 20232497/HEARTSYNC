@@ -1,24 +1,28 @@
-/* 작품 상세 페이지: 표지·제목·찜 → 시작 상황과 새 대화 시작·내 대화방 → 소개·플레이 가이드·(에피소드형이면 장·결말 안내)·명령어 → 그림이 있는 칸(등장인물·장소·컷씬·세계관 일러스트), 아래에 같은 줄의 다른 작품.
-   새 대화 칸을 소개 위에 둠 — 시작 버튼이 세계관 일러스트·등장인물·도감 아래로 묻혀 있었음(2026-11-11 사용자 요청). 글로 읽는 칸(소개·가이드·명령어)을 먼저, 그림은 그 뒤로 이어서 */
-import { MODELS } from "../ai/models.js";
+/* 작품 상세 페이지: 왼쪽(넓은 화면에서 고정 — 표지·제목·찜·새 대화 시작·이 작품의 내 대화방) | 오른쪽(탭 줄 + 소개·시작 상황·등장인물과 도감·같은 줄의 다른 작품).
+   좁은 화면에서는 찜·시작 버튼 줄이 화면 아래에 고정(35-detail.css .d-cta) — 시작 버튼이 늘 보이게(2026-11-16 프레임 6차, 그 전에는 휴대폰에서 첫 화면 밖이었음).
+   탭은 내용을 갈아 끼우지 않고 같은 페이지의 그 자리로 옮김(내용이 모두 문서에 있어 찾기·시험이 쉬움). 시작 버튼과 시작 상황 카드는 시작 창(ui/start-sheet.js)을 엶 */
 import { HOME_ROWS, ORIGINALS } from "../content/index.js";
 import { audOK } from "../core/audience.js";
 import { getChar, normalizeChar } from "../core/character.js";
 import { epLength } from "../core/episode.js";
-import { defaultSet, newRoom } from "../core/rooms.js";
 import { endsSet, liked, toggleLike, touchRecent } from "../core/shelf.js";
-import { S, room, setRoom } from "../core/state.js";
+import { S } from "../core/state.js";
 import { $, $$, ago, esc, toast } from "../core/util.js";
-import { FREE_DAILY, plan, qShort, quote } from "../core/wallet.js";
 import { IMG } from "../services/images.js";
 import { endsHTML } from "./chat/episode.js";
+import { fmt } from "./chat/render.js";
 import { bindCast, bindCodex, castGridHTML, collectHTML, commandsHTML, guideHTML, metaHTML, placesHTML } from "./codex.js";
 import { coverHTML, lightbox } from "./cover.js";
 import { rowHTML } from "./home.js";
 import { ICON } from "./icons.js";
-import { plusSheet } from "./pay.js";
 import { bindGo, go, topbar } from "./shell.js";
+import { opBrief, opPlace, startChat, startNote } from "./start-sheet.js";
 import { worldArtHTML } from "./worldart.js";
+/** @typedef {import("../core/types.js").Work} Work */
+
+/* 소개가 이보다 길면 접어 두고 '더 보기', 플레이 가이드가 이보다 길면 접는 칸으로 */
+const LONG_DESC = 320,
+  LONG_GUIDE = 240;
 
 export function viewDetail(id) {
   const c = normalizeChar(getChar(id)),
@@ -33,73 +37,48 @@ export function viewDetail(id) {
   const rooms = S.rooms.filter((r) => r.charId === c.id);
   const persona = S.personas.find((p) => p.def) || S.personas[0];
   const wa = worldArtHTML(c); // 키워드북이 없으면 칸을 숨김
-  const set0 = defaultSet(c),
-    q0 = quote(set0); // 새 대화방이 시작하는 모델(작품의 권장 모델)과 그 턴당 비용
   const row = HOME_ROWS.find((w) => w.key === c.row),
-    near = row ? ORIGINALS.filter((x) => x.row === c.row && x.id !== c.id && audOK(x)) : []; // 같은 홈 줄의 다른 작품(줄이 없는 작품은 칸을 숨김)
+    near = row ? ORIGINALS.filter((x) => x.row === c.row && x.id !== c.id && audOK(x)) : []; // 같은 홈 줄의 다른 작품(줄이 없는 작품은 탭과 칸을 숨김)
   const likeHTML = (on) => `${ICON.mark}<span>${on ? "찜한 작품" : "찜하기"}</span>`;
+  const tabs = [
+    ["intro", "소개"],
+    ["open", "시작 상황"],
+    ["cast", "등장인물·도감"]
+  ].concat(near.length ? [["near", "다른 작품"]] : []);
   touchRecent(c.id);
   v.innerHTML =
-    `<div class="page">
+    `<div class="page d-page">
     ${topbar(`<button class="icon-btn" data-go="home" aria-label="뒤로">${ICON.back}</button>`)}
     <div class="detail">
-      <div>${coverHTML(c, "", { vt: true })}</div>
-      <div>
-        <span class="note">${esc(c.cat)}${c.world_mode ? " · 세계관" : ""} · ${metaHTML(c)}</span>
-        <h1>${esc(c.title)}</h1>
-        <p class="lead">${esc(c.oneLiner)}</p>
+      <div class="d-side">
+        <div class="d-top">${coverHTML(c, "", { vt: true })}
+          <div class="d-info"><span class="note">${esc(c.cat)}${c.world_mode ? " · 세계관" : ""} · ${metaHTML(c)}</span>
+          <h1>${esc(c.title)}</h1><p class="lead">${esc(c.oneLiner)}</p></div>
+        </div>
         <div class="tags">${(c.tags || []).map((t) => `<span>#${esc(t)}</span>`).join("")}</div>
-        <button class="btn sm ghost like-btn" id="like" aria-pressed="${liked(c.id)}">${likeHTML(liked(c.id))}</button>
-        <div class="box"><h3>${c.world_mode ? "게임 모드 · 시작 상황" : "시작 상황"}</h3><div class="openings">
-          ${c.openings
-            .map(
-              (o, i) =>
-                `<label class="opening"><input type="radio" name="op" value="${i}" ${i === 0 ? "checked" : ""}>` +
-                `<b>${esc(o.title)}${o.place && (c.places || [])[o.place - 1] ? ` <span class="pill">장소 · ${esc(c.places[o.place - 1].name)}</span>` : ""}</b>
-            <span>${esc(
-              o.text
-                .replace(/\[\[[^\]]*\]\]/g, "")
-                .replace(/[*"\[\]]/g, "")
-                .replace(/\s+/g, " ")
-                .slice(0, 120)
-            )}…</span></label>`
-            )
-            .join("")}
-        </div>
-        <div class="field"><label for="pp">대화할 내 페르소나</label>` +
-    `<select id="pp">${S.personas
-      .map((p) => `<option value="${esc(p.id)}" ${p === persona ? "selected" : ""}>` + `${esc(p.name)}${p.memo ? " · " + esc(p.memo) : ""}</option>`)
-      .join("")}</select></div>
-        <div class="cta-row"><button class="btn pri big" id="start">${c.episode ? "에피소드 시작" : "새 대화 시작"}</button>` +
-    (`<button class="btn ghost sm" data-go="me">페르소나 관리</button></div>
-        <p class="note" style="margin-top:8px">새 대화는 ${esc(MODELS[set0.model].name)} 모델(` +
-      `${q0.type === "heart" ? "턴당 ♥" + q0.n : qShort(q0)})로 시작해요 — 대화방에서 바꿀 수 있어요. 라이트 모델은 하루 ${FREE_DAILY}턴 무료. 상태창: ` +
-      `${c.fields.slice(0, 8).map(esc).join(" · ")}${c.fields.length > 8 ? " 외" : ""}</p>
-        </div>
-        ${
-          rooms.length
-            ? `<div class="box"><h3>내 대화방</h3>` +
-              `<div class="cont">${rooms
-                .map(
-                  (r) =>
-                    `<button data-room="${esc(r.id)}">${coverHTML(r)}<span class="x"><b>${esc(r.name)}</b>` +
-                    `<span>${esc(r.last)}</span></span><span class="note">${ago(r.at)}</span></button>`
-                )
-                .join("")}</div></div>`
-            : ""
-        }
-        <div class="box"><h3>소개</h3><p>${esc(c.desc)}</p></div>
-        ${guideHTML(c)}
-        ${epInfoHTML(c)}
-        ${commandsHTML(c)}
-        <div class="box"><h3>등장인물 <small>누르면 코드·감정 칸 안내</small>${collectHTML(c)} `) +
-    `<button class="btn sm ghost" data-go="codex-${esc(c.id)}" style="float:right">도감</button></h3>
-          <div class="cast">${castGridHTML(c)}</div></div>
-        ${placesHTML(c)}
-        <div class="box" id="wArtBox" ${wa ? "" : 'style="display:none"'}><h3>세계관 일러스트</h3>${wa}</div>
+        <div class="d-cta"><button class="btn ghost like-btn" id="like" aria-pressed="${liked(c.id)}">${likeHTML(liked(c.id))}</button>` +
+    `<button class="btn pri big" id="start">${c.episode ? "에피소드 시작" : "새 대화 시작"}</button></div>
+        <p class="note d-price">${startNote(c)}</p>
+        ${rooms.length ? `<div class="d-rooms"><h3>이어서 하기 <small>이 작품의 내 대화방</small></h3><div class="cont">${rooms.map(roomHTML).join("")}</div></div>` : ""}
       </div>
-    </div>
-    ${rowHTML("같은 줄의 다른 작품", row ? row.title : "", near, "rowNear")}</div>`;
+      <div class="d-main">
+        <div class="d-tabs" id="dTabs" role="navigation" aria-label="이 페이지의 칸">` +
+    tabs.map(([k, name]) => `<button type="button" class="d-tab" data-tab="${k}">${name}</button>`).join("") +
+    `</div>
+        <section id="d-intro">${descHTML(c)}<div${(c.guide || "").length > LONG_GUIDE ? " data-fold" : ""}>${guideHTML(c)}</div>` +
+    `${epInfoHTML(c)}<div data-fold>${commandsHTML(c)}</div></section>
+        <section id="d-open"><div class="box"><h3>${c.world_mode ? "게임 모드 · 시작 상황" : "시작 상황"} <small>고르면 그 장면에서 시작해요</small></h3>` +
+    `<div class="openings">${c.openings.map((o, i) => openingHTML(c, o, i, persona)).join("")}</div></div></section>
+        <section id="d-cast"><div class="box"><h3>등장인물 <small>누르면 코드·감정 칸 안내</small>${collectHTML(c)} ` +
+    `<button class="btn sm ghost" data-go="codex-${esc(c.id)}" style="float:right">도감</button></h3>
+          <div class="cast">${castGridHTML(c)}</div>` +
+    `<p class="note d-fields">상태창: ${c.fields.slice(0, 8).map(esc).join(" · ")}${c.fields.length > 8 ? " 외" : ""}</p></div>
+          <div data-fold="wide">${placesHTML(c)}<div class="box" id="wArtBox" ${wa ? "" : 'style="display:none"'}><h3>세계관 일러스트</h3>${wa}</div></div></section>
+        ${near.length ? `<section id="d-near">${rowHTML("같은 줄의 다른 작품", row.title, near, "rowNear")}</section>` : ""}
+      </div>
+    </div></div>`;
+  const wide = matchMedia("(min-width:781px)").matches; // 그림이 있는 칸(장소·컷씬·세계관 일러스트)은 넓은 화면에서는 펼쳐 두고 휴대폰에서만 접음
+  $$("[data-fold] > .box", v).forEach((b) => foldBox(b, wide && b.parentElement.dataset.fold === "wide"));
   bindGo(v);
   IMG.hydrate(v);
   $$("[data-char]", v).forEach((b) => (b.onclick = () => go("c-" + b.dataset.char)));
@@ -120,16 +99,79 @@ export function viewDetail(id) {
   );
   bindCast(v, c);
   bindCodex(v);
-  $("#start").onclick = () => {
-    if (rooms.length >= plan().rooms) return plusSheet("rooms");
-    const opIdx = +(v.querySelector("input[name=op]:checked")?.value || 0);
-    const p = S.personas.find((x) => x.id === $("#pp").value) || persona;
-    setRoom(newRoom(c, opIdx, p));
-    go("r-" + room.id);
-  };
+  bindTabs(v);
+  const more = $("#dMore");
+  if (more)
+    more.onclick = () => {
+      const open = $("#dDesc").classList.toggle("clamp") === false;
+      more.textContent = open ? "접기" : "더 보기";
+      more.setAttribute("aria-expanded", open);
+    };
+  $("#start").onclick = () => startChat(c, 0);
+  $$("[data-op]", v).forEach((b) => (b.onclick = () => startChat(c, +b.dataset.op)));
 }
-
-/** 에피소드형 작품의 안내 칸 — 장 수·결말 수·대략의 턴 수와 결말 이름(모두 보이고 본 것에 ✓). 자유형이면 "". @param {import("../core/types.js").Work} c */
+/* 이 작품의 내 대화방 한 줄(왼쪽 '이어서 하기') — r은 방 목록 항목 */
+const roomHTML = (r) =>
+  `<button data-room="${esc(r.id)}">${coverHTML(r)}<span class="x"><b>${esc(r.name)}</b>` +
+  `<span>${esc(r.last)}</span></span><span class="note">${ago(r.at)}</span></button>`;
+/* 소개 칸 — 길면 접어 두고 '더 보기' */
+function descHTML(c) {
+  const long = (c.desc || "").length > LONG_DESC;
+  return (
+    `<div class="box"><h3>소개</h3><p class="d-desc${long ? " clamp" : ""}" id="dDesc">${esc(c.desc)}</p>` +
+    `${long ? `<button type="button" class="btn sm ghost d-more" id="dMore" aria-expanded="false">더 보기</button>` : ""}</div>`
+  );
+}
+/* 시작 상황 카드 — 제목·배경 장소·앞부분, '장면 펼쳐 읽기'(대화방과 같은 서식 함수 fmt — 그림 태그는 빼고 글만: 비공개 그림이 대화 전에 드러나지 않게), 이 상황으로 시작 */
+function openingHTML(c, o, i, persona) {
+  return (
+    `<div class="opening"><b>${esc(o.title)}${opPlace(c, o)}</b><span class="brief">${esc(opBrief(o))}…</span>` +
+    `<details class="d-scene"><summary>장면 펼쳐 읽기</summary><div class="bubble">${fmt(o.text.replace(/\[\[[^\]]*\]\]/g, ""), c, persona)}</div></details>` +
+    `<button type="button" class="btn sm" data-op="${i}">이 상황으로 시작</button></div>`
+  );
+}
+/* 접는 칸으로 바꿈: .box(div) → details.box(머리 h3가 summary) — 긴 칸(명령어·장소·컷씬·세계관 일러스트·긴 플레이 가이드)이 처음에는 접혀 있게 */
+function foldBox(box, open) {
+  const h = box.querySelector("h3");
+  if (!h) return;
+  const d = document.createElement("details"),
+    s = document.createElement("summary");
+  d.className = box.className;
+  d.open = !!open;
+  if (box.id) d.id = box.id;
+  if (box.style.display) d.style.display = box.style.display;
+  s.append(h);
+  d.append(s, ...Array.from(box.childNodes));
+  box.replaceWith(d);
+}
+/* 탭 줄: 누르면 그 칸이 탭 줄 바로 아래에 오게 옮기고, 스크롤하는 동안 지금 칸을 강조. 화면이 바뀌어 탭 줄이 사라지면 스크롤 듣기를 스스로 뗌 */
+function bindTabs(v) {
+  const tabs = $("#dTabs", v),
+    btns = $$("[data-tab]", tabs),
+    secs = btns.map((b) => $("#d-" + b.dataset.tab, v));
+  const mark = () => {
+    if (!document.body.contains(tabs)) return v.removeEventListener("scroll", mark);
+    const line = tabs.getBoundingClientRect().bottom + 16;
+    let cur = 0;
+    secs.forEach((s, i) => {
+      if (s.getBoundingClientRect().top <= line) cur = i;
+    });
+    btns.forEach((b, i) => {
+      b.classList.toggle("on", i === cur);
+      if (i === cur) b.setAttribute("aria-current", "true");
+      else b.removeAttribute("aria-current");
+    });
+  };
+  btns.forEach(
+    (b, i) =>
+      (b.onclick = () => {
+        v.scrollTop += secs[i].getBoundingClientRect().top - v.getBoundingClientRect().top - tabs.offsetHeight - 8;
+      })
+  );
+  v.addEventListener("scroll", mark, { passive: true });
+  mark();
+}
+/** 에피소드형 작품의 안내 칸 — 장 수·결말 수·대략의 턴 수와 결말 이름(모두 보이고 본 것에 ✓). 자유형이면 "". @param {Work} c */
 function epInfoHTML(c) {
   const ep = c.episode;
   if (!ep) return "";

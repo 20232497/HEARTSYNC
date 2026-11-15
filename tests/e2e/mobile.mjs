@@ -47,6 +47,27 @@ for (const url of urls) {
       });
       await page.waitForTimeout(600);
       await check("detail");
+      // 상세: 시작 버튼이 첫 화면 안(아래에 고정된 줄 — 아래 탭 위), 탭을 누르면 그 칸이 탭 줄 바로 아래로 오고 지금 칸이 강조됨, 시작 상황의 '장면 펼쳐 읽기'
+      res.detailCta = await page.evaluate(async () => {
+        const nap = (ms) => new Promise((r) => setTimeout(r, ms)),
+          box = (el) => el.getBoundingClientRect(),
+          s = box($("#start")),
+          bar = box($("#tabbar"));
+        $$("[data-tab]")[1].click();
+        await nap(200);
+        const gap = Math.round(box($("#d-open")).top - box($("#dTabs")).bottom);
+        $(".d-scene").open = true;
+        return {
+          startIn: s.top >= 0 && s.bottom <= bar.top + 1,
+          gap,
+          on: ($("[data-tab].on") || { dataset: {} }).dataset.tab,
+          scene: !!$(".d-scene .bubble p")
+        };
+      });
+      {
+        const d = res.detailCta;
+        if (!d.startIn || Math.abs(d.gap) > 12 || d.on !== "open" || !d.scene) errors.push("상세의 시작 버튼·탭이 다름: " + JSON.stringify(d));
+      }
       await page.evaluate(() => {
         const r = newRoom(normalizeChar(ORIGINALS[0]), 0, S.personas[0]);
         location.hash = "r-" + r.id;
