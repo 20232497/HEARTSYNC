@@ -220,6 +220,54 @@ for (const [dev, engine, opts] of [
       if (!s.id || s.id !== s.wantId || !s.fresh || !s.sameId || !s.sameScene || s.title !== s.wantTitle)
         errs.push("제목을 고친 뒤의 '처음부터 다시'가 같은 시작 상황으로 가지 않음: " + JSON.stringify(s));
     }
+    // 대화방 즐겨찾기 — 대화 목록의 별을 누르면 그 방이 '즐겨찾기' 묶음으로 맨 위에(더 최근 방보다 앞, '최근' 시각은 그대로), 방과 목록에 같이 적힘.
+    // 방 메뉴의 토글로 풀면 다시 최근 순
+    res.fav = await p.evaluate(async () => {
+      const nap = (ms) => new Promise((r) => setTimeout(r, ms));
+      const a = newRoom(normalizeChar(ORIGINALS[0]), 0, S.personas[0]);
+      await nap(10);
+      const b = newRoom(normalizeChar(ORIGINALS[1]), 0, S.personas[0]); // b가 더 최근
+      location.hash = "chats";
+      await nap(300);
+      const top0 = $("[data-room]").dataset.room,
+        at0 = S.rooms.find((x) => x.id === a.id).at;
+      $(`[data-fav="${a.id}"]`).click();
+      await nap(300);
+      const out = {
+        beforeTop: top0 === b.id,
+        top: $("[data-room]").dataset.room === a.id,
+        head: ($("#favHead") || {}).textContent || "",
+        pressed: $(`[data-fav="${a.id}"]`).getAttribute("aria-pressed"),
+        sameAt: S.rooms.find((x) => x.id === a.id).at === at0,
+        saved: !!(await KV.get(roomKey(a.id))).fav,
+        first: S.rooms[0].id === a.id
+      };
+      location.hash = "r-" + a.id;
+      await nap(600);
+      openRoomDrawer("main");
+      await nap(150);
+      out.drawer = $("#mFav").getAttribute("aria-pressed");
+      $("#mFav").click();
+      await nap(300);
+      out.off = !room.fav && !S.rooms.find((x) => x.id === a.id).fav && $("#mFav").getAttribute("aria-pressed") === "false";
+      closeOverlays();
+      return out;
+    });
+    {
+      const f = res.fav;
+      if (
+        !f.beforeTop ||
+        !f.top ||
+        !/즐겨찾기\s*1 \/ 20/.test(f.head) ||
+        f.pressed !== "true" ||
+        !f.sameAt ||
+        !f.saved ||
+        !f.first ||
+        f.drawer !== "true" ||
+        !f.off
+      )
+        errs.push("대화방 즐겨찾기가 다름: " + JSON.stringify(f));
+    }
     // 유저 설정 상한 — 페르소나 상세·유저노트 입력 칸의 maxlength와 "n / 한도" 카운터가 상수(LIMITS)를 따름, 장기기억 기본 한도도
     res.limits = await p.evaluate(() => {
       personaSheet(S.personas[0]);

@@ -190,7 +190,13 @@ h2.sec small, h1.sec small { font-family:var(--sans); font-size:12.5px; color:va
 .aud-seg button { min-width:0; padding:8px 4px; }
 .cat { position:absolute; top:8px; right:8px; z-index:3; font-size:10.5px; font-weight:600; background:rgba(0,0,0,.42); backdrop-filter:blur(6px); padding:2px 8px; border-radius:999px; color:#fff; }
 .cont { display:grid; grid-template-columns:repeat(auto-fill, minmax(260px,1fr)); gap:10px; }
-.cont > button { display:flex; gap:12px; align-items:center; text-align:left; padding:10px; border-radius:14px; border:1px solid var(--line); background:var(--surface); min-width:0; }
+.cont > button, .cont .crow > [data-room] { display:flex; gap:12px; align-items:center; text-align:left; padding:10px; border-radius:14px; border:1px solid var(--line); background:var(--surface); min-width:0; }
+.cont.rooms { grid-template-columns:1fr; }
+.cont .crow { display:flex; gap:6px; align-items:stretch; min-width:0; }
+.cont .crow > [data-room] { flex:1; }
+.fav-btn { flex:none; width:44px; border:1px solid var(--line); border-radius:14px; background:var(--surface); color:var(--muted); font-size:17px; line-height:1; }
+.fav-btn[aria-pressed="true"] { color:var(--gold); border-color:var(--gold); }
+.fav-mark { color:var(--gold); font-style:normal; margin-right:3px; }
 .cont .cover { width:52px; height:52px; border-radius:12px; flex:none; }
 .cont .x { min-width:0; flex:1; }
 .cont .x b { display:block; font-size:14px; }
@@ -777,7 +783,8 @@ const LIMITS = {
   suggestion: 40,
   lead: 500,
   leadTurns: 20,
-  reportQuote: 300
+  reportQuote: 300,
+  favRooms: 20
 };
 /* ── src/js/core/util.js — DOM·문자열·숫자 유틸, toast, 예상 못 한 오류 기록(reportError) */
 const $ = (s, el = document) => el.querySelector(s);
@@ -2301,6 +2308,7 @@ function indexRoom(r) {
     fork: !!r.forkedFrom,
     ep: r.ep ? (r.ep.end ? "결말" : r.ep.beat + 1 + "장") : "",
     side: !!r.side,
+    ...(r.fav ? { fav: true } : {}),
     last: (lastAi ? curText(lastAi) : "")
       .replace(/\[\[[^\]]*\]\]/g, "")
       .replace(/[*"\[\]]/g, "")
@@ -2308,9 +2316,35 @@ function indexRoom(r) {
       .trim()
       .slice(0, 70)
   };
-  S.rooms = [entry, ...S.rooms.filter((x) => x.id !== r.id)].sort((a, b) => b.at - a.at);
+  S.rooms = sortRooms([entry, ...S.rooms.filter((x) => x.id !== r.id)]);
   KV.set("rooms", S.rooms);
   emit("rooms");
+}
+function sortRooms(list) {
+  return list.slice().sort((a, b) => (b.fav ? 1 : 0) - (a.fav ? 1 : 0) || b.at - a.at);
+}
+async function setFav(id, on) {
+  const cur = S.rooms.find((x) => x.id === id);
+  if (!cur) return false;
+  if (on && !cur.fav && S.rooms.filter((x) => x.fav).length >= LIMITS.favRooms) return false;
+  const r = room && room.id === id ? room : await KV.get(roomKey(id));
+  if (r) {
+    if (on) r.fav = true;
+    else delete r.fav;
+    KV.set(roomKey(id), r);
+  }
+  S.rooms = sortRooms(
+    S.rooms.map((x) => {
+      if (x.id !== id) return x;
+      const y = { ...x };
+      if (on) y.fav = true;
+      else delete y.fav;
+      return y;
+    })
+  );
+  KV.set("rooms", S.rooms);
+  emit("rooms");
+  return true;
 }
 function saveRoom(r) {
   if (deletedRooms.has(r.id)) return;
@@ -2479,6 +2513,7 @@ function forkRoom(r, msgId) {
   f.id = uid("r");
   f.opening = (baseOpening(r) || "기본") + FORK_MARK;
   f.forkedFrom = { roomId: r.id, msgId };
+  delete f.fav;
   f.status = (ai && (ai.alts[ai.idx].status || ai.statusBefore)) || r.status;
   const after = r.msgs.slice(i + 1).filter((m) => m.role === "user" && !m.canned).length,
      turn = Math.max(0, (r.turn || 0) - after),
@@ -3243,7 +3278,7 @@ async function loadAll() {
     KV.set("wallet", S.wallet);
   }
   if (Array.isArray(p) && p.length) S.personas = p.map((x) => ({ memo: "", img: "", ...x }));
-  if (Array.isArray(rooms)) S.rooms = rooms;
+  if (Array.isArray(rooms)) S.rooms = sortRooms(rooms);
   S.shelf = mergeShelf(shelf);
   IMG.migrate().catch(() => {});
   if (mc && typeof mc === "object") S.settings.memCfg = { ...S.settings.memCfg, ...mc };
@@ -5258,6 +5293,7 @@ function drawerMain({ r, c, body, cfg, q }) {
       }
       <div class="menu-list">
         <button data-v="persona">내 페르소나<span class="v">${esc(r.persona.name)}</span></button>
+        <button id="mFav" aria-pressed="${!!r.fav}">즐겨찾기<span class="v">${r.fav ? "★ 대화 목록 맨 위에 고정" : "꺼짐"}</span></button>
         <div class="grp"></div>
         <button data-v="memory">장기기억` +
     (`<span class="v">${(r.pins || []).length ? `📌 ${r.pins.length} · ` : ""}` +
@@ -5283,6 +5319,10 @@ function drawerMain({ r, c, body, cfg, q }) {
   if (guide) $("#mGuide", body).onclick = () => guideSheet(live);
   $("#mModel", body).onclick = () => openModelSheet();
   $("#mFind", body).onclick = () => openSearch();
+  $("#mFav", body).onclick = async () => {
+    if (!(await setFav(r.id, !r.fav))) return toast(`즐겨찾기는 ${LIMITS.favRooms}개까지예요 — 대화 목록에서 하나를 풀고 다시 눌러 주세요`);
+    openRoomDrawer("main");
+  };
   $("#qCopy", body).onclick = () => copyText(exportText(r), "대화 전체를 복사했어요");
   $("#qExport", body).onclick = () => exportRoom(r);
   $("#qNew", body).onclick = () => restartRoom(r);
@@ -6380,7 +6420,7 @@ function viewHome() {
             .map(
               (r) =>
                 `
-      <button data-room="${esc(r.id)}">${coverHTML(r)}<span class="x"><b>${esc(r.name)}</b><span>${esc(r.last)}</span></span>` +
+      <button data-room="${esc(r.id)}">${coverHTML(r)}<span class="x"><b>${favMark(r)}${esc(r.name)}</b><span>${esc(r.last)}</span></span>` +
                 `<span class="note">${ago(r.at)}</span></button>`
             )
             .join("")}</div>`
@@ -8178,13 +8218,16 @@ function renderShell() {
 function setNav(k) {
   $$("[data-nav]").forEach((b) => b.classList.toggle("on", b.dataset.nav === k));
 }
+function favMark(r) {
+  return r.fav ? '<i class="fav-mark" title="즐겨찾기">★</i>' : "";
+}
 function renderRailRecent() {
   const el = $("#railRecent");
   if (!el) return;
   el.innerHTML =
     S.rooms
       .slice(0, 6)
-      .map((r) => `<button class="recent" data-room="${esc(r.id)}">${coverHTML(r)}<span>${esc(r.name)}</span></button>`)
+      .map((r) => `<button class="recent" data-room="${esc(r.id)}">${coverHTML(r)}<span>${favMark(r)}${esc(r.name)}</span></button>`)
       .join("") || `<p class="note" style="padding:0 12px">아직 대화가 없어요.</p>`;
   $$("[data-room]", el).forEach((b) => (b.onclick = () => go("r-" + b.dataset.room)));
   IMG.hydrate(el);
@@ -8375,7 +8418,7 @@ function viewDetail(id) {
   $$("[data-op]", v).forEach((b) => (b.onclick = () => startChat(c, +b.dataset.op)));
 }
 const roomHTML = (r) =>
-  `<button data-room="${esc(r.id)}">${coverHTML(r)}<span class="x"><b>${esc(r.name)}</b>` +
+  `<button data-room="${esc(r.id)}">${coverHTML(r)}<span class="x"><b>${favMark(r)}${esc(r.name)}</b>` +
   `<span>${esc(r.last)}</span></span><span class="note">${ago(r.at)}</span></button>`;
 function descHTML(c) {
   const long = (c.desc || "").length > LONG_DESC;
@@ -8443,29 +8486,41 @@ function epInfoHTML(c) {
     <span class="note">모은 결말 ${n} / ${ep.endings.length}</span></div>`
   );
 }
-/* ── src/js/ui/chats.js — 대화 목록 */
+/* ── src/js/ui/chats.js — 대화 목록: 즐겨찾기한 방이 맨 위 묶음(별 버튼으로 켜고 끔 — core/rooms.js setFav, LIMITS.favRooms개까지), 그 아래 최근 대화 */
+const chatRowHTML = (r) =>
+  `<div class="crow"><button data-room="${esc(r.id)}">${coverHTML(r)}<span class="x"><b>${esc(r.title)} ` +
+  `<span class="note" style="display:inline;font-weight:400">· ${esc(r.name)}</span>` +
+  `${r.fork ? ' <span class="pill">분기</span>' : ""}` +
+  `${r.ep ? ` <span class="pill">${r.ep === "결말" ? "결말" : "에피소드 · " + esc(r.ep)}</span>` : ""}` +
+  `${r.side ? ' <span class="pill">외전</span>' : ""}</b>` +
+  `<span>${esc(r.last) || "대화를 시작해 보세요"}</span></span><span class="note">${ago(r.at)}</span></button>` +
+  `<button type="button" class="fav-btn" data-fav="${esc(r.id)}" aria-pressed="${!!r.fav}" aria-label="즐겨찾기"` +
+  ` title="${r.fav ? "즐겨찾기 풀기" : "즐겨찾기 — 목록 맨 위에 고정"}">${r.fav ? "★" : "☆"}</button></div>`;
 function viewChats() {
-  const v = $("#view");
-  v.innerHTML = `<div class="page">${topbar()}<h1 class="sec" style="margin-top:4px">대화</h1>
-    ${
-      S.rooms.length
-        ? `<div class="cont" style="grid-template-columns:1fr">${S.rooms
-            .map(
-              (r) =>
-                `
-      <button data-room="${esc(r.id)}">${coverHTML(r)}<span class="x"><b>${esc(r.title)} ` +
-                (`<span class="note" style="display:inline;font-weight:400">· ${esc(r.name)}</span>` +
-                  (`${r.fork ? ' <span class="pill">분기</span>' : ""}` +
-                    `${r.ep ? ` <span class="pill">${r.ep === "결말" ? "결말" : "에피소드 · " + esc(r.ep)}</span>` : ""}` +
-                    `${r.side ? ' <span class="pill">외전</span>' : ""}</b>`)) +
-                `<span>${esc(r.last) || "대화를 시작해 보세요"}</span></span><span class="note">${ago(r.at)}</span></button>`
-            )
-            .join("")}</div>`
-        : `<div class="empty">아직 대화가 없어요. 마음에 드는 작품을 골라 첫 대화를 시작해 보세요.<br><button class="btn sm pri" data-go="home">작품 둘러보기</button></div>`
-    }</div>`;
+  const v = $("#view"),
+    favs = S.rooms.filter((r) => r.fav),
+    rest = S.rooms.filter((r) => !r.fav);
+  const list = (rooms) => `<div class="cont rooms">${rooms.map(chatRowHTML).join("")}</div>`;
+  v.innerHTML =
+    `<div class="page">${topbar()}<h1 class="sec" style="margin-top:4px">대화</h1>` +
+    (S.rooms.length
+      ? (favs.length ? `<h2 class="sec" id="favHead">즐겨찾기 <small>${favs.length} / ${LIMITS.favRooms}</small></h2>${list(favs)}` : "") +
+        (favs.length && rest.length ? `<h2 class="sec">최근 대화</h2>` : "") +
+        (rest.length ? list(rest) : "")
+      : `<div class="empty">아직 대화가 없어요. 마음에 드는 작품을 골라 첫 대화를 시작해 보세요.<br>` +
+        `<button class="btn sm pri" data-go="home">작품 둘러보기</button></div>`) +
+    `</div>`;
   bindGo(v);
   IMG.hydrate(v);
   $$("[data-room]", v).forEach((b) => (b.onclick = () => go("r-" + b.dataset.room)));
+  $$("[data-fav]", v).forEach(
+    (b) =>
+      (b.onclick = async () => {
+        const on = b.getAttribute("aria-pressed") !== "true";
+        if (!(await setFav(b.dataset.fav, on))) return toast(`즐겨찾기는 ${LIMITS.favRooms}개까지예요 — 하나를 풀고 다시 눌러 주세요`);
+        if (location.hash.slice(1) === "chats") viewChats();
+      })
+  );
 }
 /* ── src/js/ui/login.js — 로그인·가입·비밀번호 찾기·소셜 로그인 화면, 로그인 뒤 돌아갈 작품, 새 비밀번호 시트 */
 const BACK_KEY = "hv1_back",

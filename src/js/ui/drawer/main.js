@@ -2,9 +2,10 @@
 import { engineName } from "../../ai/llm.js";
 import { LEN, MODELS } from "../../ai/models.js";
 import { liveWork } from "../../core/character.js";
-import { baseOpening } from "../../core/rooms.js";
+import { LIMITS } from "../../core/constants.js";
+import { baseOpening, setFav } from "../../core/rooms.js";
 import { S } from "../../core/state.js";
-import { $, $$, esc, num } from "../../core/util.js";
+import { $, $$, esc, num, toast } from "../../core/util.js";
 import { FREE_DAILY, freeLeft, isPro, qShort } from "../../core/wallet.js";
 import { copyText } from "../chat/log.js";
 import { openSearch } from "../chat/search.js";
@@ -43,6 +44,7 @@ export function drawerMain({ r, c, body, cfg, q }) {
       }
       <div class="menu-list">
         <button data-v="persona">내 페르소나<span class="v">${esc(r.persona.name)}</span></button>
+        <button id="mFav" aria-pressed="${!!r.fav}">즐겨찾기<span class="v">${r.fav ? "★ 대화 목록 맨 위에 고정" : "꺼짐"}</span></button>
         <div class="grp"></div>
         <button data-v="memory">장기기억` +
     (`<span class="v">${(r.pins || []).length ? `📌 ${r.pins.length} · ` : ""}` +
@@ -68,6 +70,10 @@ export function drawerMain({ r, c, body, cfg, q }) {
   if (guide) $("#mGuide", body).onclick = () => guideSheet(live);
   $("#mModel", body).onclick = () => openModelSheet();
   $("#mFind", body).onclick = () => openSearch();
+  $("#mFav", body).onclick = async () => {
+    if (!(await setFav(r.id, !r.fav))) return toast(`즐겨찾기는 ${LIMITS.favRooms}개까지예요 — 대화 목록에서 하나를 풀고 다시 눌러 주세요`);
+    openRoomDrawer("main"); // 바뀐 표시로 다시 그림
+  };
   $("#qCopy", body).onclick = () => copyText(exportText(r), "대화 전체를 복사했어요");
   $("#qExport", body).onclick = () => exportRoom(r);
   $("#qNew", body).onclick = () => restartRoom(r);

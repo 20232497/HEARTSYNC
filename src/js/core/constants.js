@@ -73,5 +73,6 @@ export const LIMITS = {
   suggestion: 40,
   lead: 500,
   leadTurns: 20,
-  reportQuote: 300
+  reportQuote: 300,
+  favRooms: 20 // 즐겨찾기한 대화방 수(요금제와 무관 — 2026-11-16 사용자 결정)
 };

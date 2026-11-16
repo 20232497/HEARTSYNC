@@ -8,6 +8,7 @@
 
 ## 전역 상태와 저장
 
+- 대화방 즐겨찾기(core/rooms.js, 화면은 ui/chats.js): 방의 r.fav와 목록 항목(S.rooms[].fav)에 같이 적음(없음 = 아님 — 예전 데이터는 그대로 열림). **목록의 순서는 sortRooms 한 곳** — 즐겨찾기 먼저, 그 안에서 최근 순(at). 방을 저장할 때(indexRoom)와 목록을 불러올 때(services/load.js — 예전 버전이나 다른 기기가 저장한 목록은 최근 순으로만 서 있을 수 있음) 이 순서로 세우고, 대화 목록·왼쪽 메뉴의 최근 대화·홈의 '이어서 대화하기'·상세의 내 대화방은 S.rooms의 순서를 그대로 씀(즐겨찾기한 방은 이름 앞에 별 — ui/shell.js favMark). 켜고 끄기는 setFav(id, on): 순서 기준 시각 at은 건드리지 않고(별을 눌렀다고 '최근 대화'가 되지 않게), LIMITS.favRooms(20개, 요금제와 무관)를 넘으면 바꾸지 않고 false, 열려 있는 방이면 그 방 객체에 적음. 분기·외전으로 만든 새 방에는 딸려 가지 않음(forkRoom). 방 목록과 방은 이미 계정에 올라가는 것이라 새 수집 항목이 아님 — 예전 버전 기기가 그 방을 저장하면 목록 항목의 표시는 빠질 수 있지만 방의 r.fav는 남아, 새 버전에서 그 방을 다시 저장하면 돌아옴
 - 전역 상태 S(core/state.js): wallet·personas·rooms(목록)·shelf(내 서재)·settings{fs·chatLh·narrFont·enterSend·sceneImg·apiKey·memCfg·audience·aiSeen(첫 대화 전 AI 안내를 본 시각 — docs/app/chat.md 'AI 표시')…}·cat·q. 현재 방 room, 진행 중 생성 gen. hasClaudeKey() = settings.apiKey 또는 CFG.serverKeys
 - 저장: KV — 늘 localStorage(hv1_)에 쓰고, 로그인했으면 KV.remote → CLOUD.put으로 계정에도. 계정에 올리는 키는 wallet·personas·rooms·memcfg·room-<id>·shelf(SHELF.syncFrom 날짜부터 — 아래 '내 서재')·settings(cloudSettings — 키 칸 apiKey·runwareKey·openRouterKey와 기기마다 다른 fs·enterSend는 빼고)와 그림 본문 img…(페르소나 사진). 그림 본문은 IDB(IndexedDB "heartverse"/kv), 막히면 localStorage. IMG(services/images.js): put(shrink한 JPEG → kv:img… 참조) · load(메모리 → IDB → KV → CLOUD.getOne) · hydrate(그림 자리 img-wait → 받으면 그림, 못 받으면 img-miss) · migrate(예전 hv1_img… 옮김). validRef는 kv:img…·data:image/…·content/….(webp|png|jpg)만. localStorage가 가득 차면 storageFull()이 한 번 알림
 
