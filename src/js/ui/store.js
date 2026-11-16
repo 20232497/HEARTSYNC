@@ -1,7 +1,7 @@
 /* 스토어: 하트 패키지·PLUS(데모 결제) */
 import { S } from "../core/state.js";
 import { $, $$, esc, num, won } from "../core/util.js";
-import { FREE_DAILY, PLAN, PLUS_MONTHLY, WELCOME, freeLeft, isPro, ledger, listPrice, saveWallet } from "../core/wallet.js";
+import { FREE_DAILY, PLAN, PLUS_MONTHLY, SUGGEST_COST, WELCOME, freeLeft, isPro, ledger, listPrice, saveWallet } from "../core/wallet.js";
 import { sheet } from "./sheet.js";
 import { bindGo, route, topbar } from "./shell.js";
 
@@ -47,7 +47,8 @@ export function viewStore() {
       <tr><td><b>마스터</b><div class="note">소설 같은 몰입감, 복잡한 RPG 계산</div></td><td class="num">${cell("master", "short")}</td>` +
     `<td class="num">${cell("master", "mid")}</td><td class="num">${cell("master", "long")}</td><td class="num plus">50% 할인</td></tr>
     </tbody></table></div>
-    <p class="note" style="margin-top:8px">보내기 버튼에 이번 턴 비용이 항상 표시돼요. 응답이 실패하면 자동으로 환불되고, 장기기억 요약·AI 추천·캐릭터 초안은 무료예요.</p>
+    <p class="note" style="margin-top:8px">보내기 버튼에 이번 턴 비용이 항상 표시돼요. 응답이 실패하면 자동으로 환불돼요. ` +
+    `AI 추천 답변은 받을 때마다 ♥${SUGGEST_COST}(추천 버튼에 표시 — 작가가 써 둔 첫 추천은 무료)이고, 장기기억 요약·캐릭터 초안은 무료예요.</p>
 
     <h2 class="sec">멤버십</h2>
     <div class="member">

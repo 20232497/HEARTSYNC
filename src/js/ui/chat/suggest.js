@@ -21,7 +21,7 @@ const curAlt = (r) => {
 const saved = (r) => ((curAlt(r) || {}).suggestions || []).length > 0;
 /** 추천 버튼의 글 — 저장된 추천이 없어 누르면 값이 드는 때에는 값을 같이 보임. @param {Room} r @returns {string} HTML */
 export function sugLabel(r) {
-  return "✦ AI 추천" + (saved(r) ? "" : ` <small>${qShort(sugQuote())}</small>`);
+  return `✦<span class="t"> 추천</span>` + (saved(r) ? "" : ` <small>${qShort(sugQuote())}</small>`);
 }
 /** 방의 '자동 받기'를 켜고 끔 — 켤 때 값이 더 나간다는 것을 알림. 입력창의 값 표시가 바로 바뀜. @param {Room} r @param {boolean} on */
 export function setAutoSug(r, on) {

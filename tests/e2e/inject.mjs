@@ -534,6 +534,18 @@ for (const [dev, engine, opts] of [
     // 자동 받기로 온 추천은 답이 끝나면 바로 펼쳐짐 — 닫혀 있으면 엶(자동 받기 토글의 글도 같이 보임)
     await act("가짜 응답의 추천 답변", () => $("#sugPanel").hidden && toggleSug(), null, 400);
     await act("드로어 status(응답 뒤)", () => openRoomDrawer("status"));
+    // 대화 검색: 악성 글이 든 메시지를 찾아 결과 목록에(찾은 말 강조는 esc 뒤에 감쌈) — 찾는 말 자체가 악성 글이어도
+    await act("대화 검색 — 결과", () => {
+      openSearch();
+      $("#csQ").value = "onerror";
+      $("#csQ").oninput();
+    });
+    await act("대화 검색 — 찾는 말이 악성 글", () => {
+      openSearch();
+      $("#csQ").value = __P("find").slice(0, 40);
+      $("#csQ").oninput();
+    });
+    await p.evaluate(() => closeOverlays());
     // 끝난 에피소드 방: 결말 카드(결말 이름·고른 길) → 외전 고르기 시트(인물 이름) → 외전 방(제목과 첫 장면 제안에 인물 이름이 들어감)
     await p.evaluate((id) => {
       const r = newRoom(normalizeChar(getChar(id)), 0, S.personas[0]);

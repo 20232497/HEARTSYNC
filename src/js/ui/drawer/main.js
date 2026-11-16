@@ -7,6 +7,7 @@ import { S } from "../../core/state.js";
 import { $, $$, esc, num } from "../../core/util.js";
 import { FREE_DAILY, freeLeft, isPro, qShort } from "../../core/wallet.js";
 import { copyText } from "../chat/log.js";
+import { openSearch } from "../chat/search.js";
 import { guideSheet } from "../codex.js";
 import { coverHTML } from "../cover.js";
 import { ICON } from "../icons.js";
@@ -29,7 +30,7 @@ export function drawerMain({ r, c, body, cfg, q }) {
       <div class="purse">
         <div>오늘 무료 턴 <span class="spacer"></span><b>${isPro() ? "PLUS 무제한" : freeLeft() + " / " + FREE_DAILY}</b></div>
         <div>하트 <span class="spacer"></span><b>♥ ${num(S.wallet.hearts)}</b></div>
-        <div>지금 설정 <span class="spacer"></span><span class="note">${MODELS[r.set.model].name} · 턴당 ${q.type === "heart" ? "♥" + q.n : qShort(q)}</span></div>
+        <div>지금 설정 <span class="spacer"></span><span class="note">${MODELS[r.set.model].name} · 턴당 ${qShort(q)}</span></div>
       </div>
       <h3 class="lbl" style="margin:16px 0 8px">대화 구성</h3>
       <button class="compo" id="compo">${coverHTML(c)}<span class="x"><b>${esc(c.title)}</b>` +
@@ -55,6 +56,7 @@ export function drawerMain({ r, c, body, cfg, q }) {
         <button data-v="gallery">갤러리<span class="v">${galleryItems(r).length}장</span></button>
         ${(live.lore || []).length ? `<button data-v="lore">세계관 수첩<span class="v">${loreSeen(r, live.lore).size} / ${live.lore.length}</span></button>` : ""}
         <button data-v="bookmarks">북마크<span class="v">${(r.bookmarks || []).length}개</span></button>
+        <button id="mFind">대화 검색<span class="v">이 방의 글에서 찾기</span></button>
         ${guide ? `<div class="grp"></div><button id="mGuide">플레이 가이드<span class="v">제작자의 안내</span></button>` : ""}
       </div>
       <button class="btn ghost danger block" id="delRoom" style="margin-top:16px">이 대화방 삭제</button>
@@ -65,6 +67,7 @@ export function drawerMain({ r, c, body, cfg, q }) {
   if (src) $("#forkSrc", body).onclick = () => go("r-" + r.forkedFrom.roomId);
   if (guide) $("#mGuide", body).onclick = () => guideSheet(live);
   $("#mModel", body).onclick = () => openModelSheet();
+  $("#mFind", body).onclick = () => openSearch();
   $("#qCopy", body).onclick = () => copyText(exportText(r), "대화 전체를 복사했어요");
   $("#qExport", body).onclick = () => exportRoom(r);
   $("#qNew", body).onclick = () => restartRoom(r);

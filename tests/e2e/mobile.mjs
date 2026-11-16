@@ -74,6 +74,13 @@ for (const url of urls) {
       });
       await page.waitForTimeout(900);
       await check("chat");
+      // 대화방의 얇은 머리와 한 줄 입력창 — 읽는 자리를 넓히려고 줄인 높이가 다시 커지지 않게(머리 53px · 입력창 묶음 77px, 전에는 59px · 139px)
+      res.chatRow = await page.evaluate(() => {
+        const h = (s) => Math.round($(s).getBoundingClientRect().height);
+        return { head: h(".chat-head"), composer: h(".composer"), badge: !!$(".chat-head .ai-badge"), wallet: $("#freeCount").textContent.includes("♥") };
+      });
+      if (res.chatRow.head > 64 || res.chatRow.composer > 96 || !res.chatRow.badge || !res.chatRow.wallet)
+        errors.push("대화방 머리·입력창 묶음이 다름: " + JSON.stringify(res.chatRow));
       res.chatInput = await page.evaluate(() => {
         const i = document.getElementById("inp");
         if (!i) return "no input";

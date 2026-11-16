@@ -333,6 +333,67 @@ for (const [dev, engine] of targets) {
       if (a.paid !== a.need || a.sugs !== "하나|둘|셋" || !a.asked || a.cost !== "♥" + a.need) errs.push("자동 받기를 켠 턴이 다름: " + JSON.stringify(a));
       if (a.off.asked || a.off.sugs !== 0) errs.push("자동 받기를 끈 턴에 추천 칸이 남음: " + JSON.stringify(a.off));
     }
+    // 한 줄 입력창: 보내기 버튼은 입력이 비면 '이어서 쓰기'(값이 보임), 글을 치면 보내기. 답이 막 끝난 직후의 누름은 이어서 쓰기로 받지 않음(잘못 눌러 값이 나가지 않게).
+    // 예전의 버튼 줄(이어서 쓰기 칩·무료 턴 글)은 없고 무료 턴·하트는 머리에, 안내 줄은 알릴 것이 없으면 비어 있음
+    res.row = await p.evaluate(async () => {
+      const send = $("#sendBtn"),
+        inp = $("#inp"),
+        look = () => ({ cont: send.classList.contains("cont"), text: send.textContent, label: send.getAttribute("aria-label") });
+      hideSug();
+      inp.value = "";
+      inp.oninput();
+      updateComposer();
+      const empty = look();
+      inp.value = "안녕";
+      inp.oninput();
+      const typed = look();
+      inp.value = "";
+      inp.oninput();
+      setGen({ ctl: new AbortController(), msgId: "x" }); // 응답이 끝나는 순간을 흉내 — updateComposer가 그 순간을 잡아 잠깐 잠금
+      updateComposer();
+      setGen(null);
+      updateComposer();
+      const n0 = room.msgs.length;
+      send.click();
+      await new Promise((r) => setTimeout(r, 80));
+      return {
+        empty,
+        typed,
+        locked: room.msgs.length === n0 && !gen,
+        head: $("#freeCount").textContent,
+        oldRow: !!$("#contBtn") || !!$(".composer .bar2"),
+        hint: $("#hint").textContent,
+        composer: Math.round($(".composer").getBoundingClientRect().height)
+      };
+    });
+    {
+      const w = res.row;
+      if (!w.empty.cont || !/^이어서/.test(w.empty.text) || !/♥|무료|PLUS/.test(w.empty.text) || w.empty.label !== "이어서 쓰기")
+        errs.push("빈 입력의 보내기 버튼(이어서 쓰기)이 다름: " + JSON.stringify(w.empty));
+      if (w.typed.cont || w.typed.label !== "보내기" || !w.locked) errs.push("보내기 버튼 전환·잘못 누름 막기가 다름: " + JSON.stringify(w));
+      if (!w.head.includes("♥") || w.oldRow || w.hint || w.composer > 96) errs.push("머리·입력창 묶음이 다름: " + JSON.stringify(w));
+    }
+    // 대화 검색: 머리의 검색 버튼 → 낱말을 치면 결과(찾은 말 강조) → 누르면 창이 닫히고 그 메시지로 감
+    res.find = await p.evaluate(async () => {
+      const nap = (ms) => new Promise((r) => setTimeout(r, ms));
+      $("#findBtn").click();
+      await nap(100);
+      const q = $("#csQ");
+      q.value = "대사 3번";
+      q.oninput();
+      const hits = $$("#csList .cs-hit"),
+        out = { n: hits.length, mark: ($("#csList mark") || {}).textContent, id: hits[0] && hits[0].dataset.id };
+      q.value = "어디에도없는말";
+      q.oninput();
+      out.none = $("#csList").textContent;
+      q.value = "대사 3번";
+      q.oninput();
+      $("#csList .cs-hit").click();
+      await nap(200);
+      return { ...out, closed: !$(".overlay"), at: !!$(`.msg[data-id="${out.id}"].flash`) };
+    });
+    if (res.find.n < 1 || res.find.mark !== "대사 3번" || !/찾는 말이 없어요/.test(res.find.none) || !res.find.closed || !res.find.at)
+      errs.push("대화 검색이 다름: " + JSON.stringify(res.find));
     await p.evaluate(() => {
       hideSug();
       openRoomDrawer("output");

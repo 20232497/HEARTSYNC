@@ -360,14 +360,24 @@ img.img-miss { background:var(--surface2); }
 .chat-head { position:relative; z-index:2; display:flex; align-items:center; gap:8px; padding:10px max(10px, env(safe-area-inset-right,0px)) 10px max(8px, env(safe-area-inset-left,0px)); padding-top:calc(10px + env(safe-area-inset-top,0px)); border-bottom:1px solid var(--line); background:color-mix(in srgb, var(--surface) 88%, transparent); backdrop-filter:blur(12px); }
 .chat-head .cover { width:38px; height:38px; border-radius:11px; flex:none; }
 .chat-head .who { min-width:0; flex:1; }
-.chat-head .who b { display:block; font-size:15px; line-height:1.25; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.chat-head .who span { display:block; font-size:12px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.chat-head .who > b { display:block; font-size:15px; line-height:1.25; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.chat-head .who-sub { display:flex; align-items:center; gap:6px; min-width:0; font-size:12px; color:var(--muted); white-space:nowrap; overflow:hidden; }
+.chat-head .who-sub .freecount { min-width:0; overflow:hidden; text-overflow:ellipsis; }
+.chat-head .who-op { min-width:0; overflow:hidden; text-overflow:ellipsis; }
 .model-chip { border:1px solid var(--line); background:var(--surface2); border-radius:999px; height:32px; padding:0 12px; font-size:12.5px; font-weight:700; white-space:nowrap; display:flex; align-items:center; gap:5px; }
 .model-chip small { color:var(--muted); font-weight:500; }
 .meter { display:flex; align-items:center; gap:7px; font-size:12px; color:var(--muted); font-variant-numeric:tabular-nums; white-space:nowrap; }
 .meter i { width:64px; height:6px; border-radius:3px; background:var(--surface2); overflow:hidden; display:block; }
 .meter i b { display:block; height:100%; background:var(--accent); border-radius:3px; transition:width .6s; }
-@media (max-width:560px) { .meter { display:none; } .model-chip small { display:none; } }
+@media (max-width:560px) {
+  .meter { display:none; } .model-chip small { display:none; }
+  .chat-head { gap:4px; padding-top:calc(7px + env(safe-area-inset-top,0px)); padding-bottom:7px; }
+  .chat-head > .cover, .chat-head .who-op { display:none; }
+  .chat-head .who { margin-left:2px; }
+  .model-chip { padding:0 10px; }
+}
+@media (max-width:359px) { #findBtn { display:none; } }
+.inputrow textarea::placeholder { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .chat-log { position:relative; z-index:1; flex:1; overflow-y:auto; overflow-x:hidden; padding-block:18px 12px; padding-left:max(14px, env(safe-area-inset-left,0px)); padding-right:max(14px, env(safe-area-inset-right,0px)); }
 .log-inner { max-width:760px; margin:0 auto; display:flex; flex-direction:column; gap:16px; }
 .scene-card { text-align:center; padding:6px 0 4px; }
@@ -439,16 +449,24 @@ details.stat[open] summary::after { content:"▴"; }
 .edit-box .row { display:flex; gap:6px; justify-content:flex-end; }
 .composer { position:relative; z-index:2; padding:10px max(12px, env(safe-area-inset-right,0px)) calc(12px + env(safe-area-inset-bottom,0px)) max(12px, env(safe-area-inset-left,0px)); border-top:1px solid var(--line); background:color-mix(in srgb, var(--surface) 92%, transparent); backdrop-filter:blur(12px); }
 .composer .inner { max-width:760px; margin:0 auto; }
-.composer .bar2 { display:flex; gap:6px; align-items:center; margin-bottom:8px; flex-wrap:wrap; }
-.composer .bar2 .chip { padding:4px 12px; font-size:12.5px; }
-.composer .bar2 .chip.on { background:var(--accent-soft); color:var(--accent); border-color:var(--accent); }
+.sugbtn { flex:none; height:40px; border-radius:12px; border:1px solid var(--line); background:var(--surface); padding:0 10px; font-size:13px; font-weight:600; color:var(--muted); white-space:nowrap; display:flex; align-items:center; }
+.sugbtn.on { background:var(--accent-soft); color:var(--accent); border-color:var(--accent); }
+.sugbtn:disabled { opacity:.4; cursor:not-allowed; }
+@media (max-width:359px) { .sugbtn .t { display:none; } }
+.send.cont { background:none; color:var(--accent); border:1px solid var(--accent); font-size:13px; }
 .freecount { font-size:12px; color:var(--muted); font-variant-numeric:tabular-nums; white-space:nowrap; }
 .freecount b { color:var(--fg); }
 .freecount.low b { color:var(--accent); }
 .sug-panel { display:grid; gap:6px; margin-bottom:8px; }
 .sug-panel .head { display:flex; align-items:center; gap:6px; font-size:12px; color:var(--muted); }
-#sugBtn small { margin-left:2px; font-size:.9em; font-weight:700; color:var(--accent); }
+#sugBtn small { margin-left:3px; font-size:.9em; font-weight:700; color:var(--accent); }
 #sugBtn.auto { border-color:var(--accent); color:var(--accent); }
+.cs-list { display:grid; gap:6px; margin-top:10px; }
+.cs-list .note { margin:0; }
+.cs-hit { display:grid; gap:2px; text-align:left; border:1px solid var(--line); border-radius:12px; background:var(--bg); padding:8px 12px; font-size:13.5px; line-height:1.5; }
+.cs-hit b { font-size:12px; color:var(--muted); }
+.cs-hit span { overflow-wrap:anywhere; }
+.cs-hit mark { background:var(--accent-soft); color:var(--accent); font-weight:700; border-radius:3px; padding:0 1px; }
 .sug-auto { display:flex; align-items:center; gap:6px; font-size:12.5px; color:var(--muted); padding:2px 2px 0; cursor:pointer; }
 .sug-auto input { accent-color:var(--accent); }
 .sug-panel button.s { border:1px solid var(--line); background:var(--bg); border-radius:12px; padding:8px 12px; font-size:13.5px; text-align:left; }
@@ -459,7 +477,7 @@ details.stat[open] summary::after { content:"▴"; }
 .cmd-panel button.c code { font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-weight:700; color:var(--accent); white-space:nowrap; }
 .cmd-panel button.c span:not(.pill) { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--muted); }
 .cmd-panel button.c.on, .cmd-panel button.c:hover { border-color:var(--accent); background:var(--accent-soft); }
-.inputrow { display:flex; gap:8px; align-items:flex-end; background:var(--bg); border:1px solid var(--line); border-radius:16px; padding:6px 6px 6px 14px; }
+.inputrow { display:flex; gap:8px; align-items:flex-end; background:var(--bg); border:1px solid var(--line); border-radius:16px; padding:6px; }
 .inputrow:focus-within { border-color:var(--accent); }
 .inputrow textarea { flex:1; min-width:0; border:0; background:none; outline:none; resize:none; max-height:160px; min-height:24px; padding:7px 0; line-height:1.55; }
 .send { height:40px; border-radius:12px; border:0; background:var(--accent); color:var(--accent-ink); padding:0 14px; font-weight:700; display:flex; align-items:center; gap:6px; white-space:nowrap; font-variant-numeric:tabular-nums; }
@@ -467,12 +485,13 @@ details.stat[open] summary::after { content:"▴"; }
 .send:disabled { opacity:.4; cursor:not-allowed; }
 .stopbtn { height:40px; border-radius:12px; border:1px solid var(--line); background:var(--surface); padding:0 12px; font-weight:600; font-size:13px; white-space:nowrap; }
 .hint { font-size:11.5px; color:var(--muted); margin-top:6px; display:flex; gap:10px; flex-wrap:wrap; min-height:1.5em; }
+.hint:empty { display:none; }
 .hint.warn { color:var(--accent); font-weight:600; }
 .err-line { color:var(--err); font-size:13px; align-self:center; text-align:center; }
 .memo-flag { position:absolute; z-index:3; top:64px; left:50%; transform:translateX(-50%); font-size:12px; color:var(--muted); background:var(--surface); border:1px solid var(--line); border-radius:999px; padding:3px 12px; white-space:nowrap; }
 .ep-bar { position:relative; z-index:2; display:flex; align-items:center; gap:8px; padding:6px max(14px, env(safe-area-inset-right,0px)) 6px max(14px, env(safe-area-inset-left,0px)); font-size:12.5px; border-bottom:1px solid var(--line); background:color-mix(in srgb, var(--surface) 88%, transparent); }
 .ep-bar[hidden] { display:none; }
-.chat-head .who .ai-badge { display:inline-block; margin-right:6px; padding:0 6px; border:1px solid var(--line); border-radius:6px; font-size:10.5px; font-weight:600; line-height:16px; color:var(--muted); background:var(--surface2); vertical-align:1px; }
+.chat-head .who .ai-badge { flex:none; display:inline-block; padding:0 6px; border:1px solid var(--line); border-radius:6px; font-size:10.5px; font-weight:600; line-height:16px; color:var(--muted); background:var(--surface2); vertical-align:1px; }
 .ai-note { position:relative; z-index:2; display:flex; align-items:center; gap:10px; padding:8px max(14px, env(safe-area-inset-right,0px)) 8px max(14px, env(safe-area-inset-left,0px)); font-size:12.5px; line-height:1.5; color:var(--narr); border-bottom:1px solid var(--line); background:var(--surface); }
 .ai-note span { flex:1; min-width:0; }
 .ai-note .btn { flex:none; }
@@ -4782,6 +4801,72 @@ function deleteRoom(id) {
   if (room && room.id === id) setRoom(null);
   go("chats");
 }
+/* ── src/js/ui/chat/search.js — 대화 검색: 이 대화방의 메시지에서 낱말을 찾아 결과 목록을 보여 주고, 누르면 그 메시지로 감(ui/room-tools.js jumpTo) */
+const FIND_MAX = 60,
+  FIND_SIDE = 30;
+function searchRoom(r, q) {
+  const key = String(q || "")
+    .trim()
+    .toLowerCase();
+  const out = [];
+  if (!key) return out;
+  for (let i = r.msgs.length - 1; i >= 0 && out.length < FIND_MAX; i--) {
+    const m = r.msgs[i];
+    if (m.sys) continue;
+    const text = (curText(m) || "")
+        .replace(/\[\[[^\]]*\]\]/g, "")
+        .replace(/\s+/g, " ")
+        .trim(),
+      at = text.toLowerCase().indexOf(key);
+    if (at < 0) continue;
+    const end = at + key.length;
+    out.push({
+      id: m.id,
+      who: m.role === "ai" ? speakerName(r) : r.persona.name,
+      pre: (at > FIND_SIDE ? "…" : "") + text.slice(Math.max(0, at - FIND_SIDE), at),
+      hit: text.slice(at, end),
+      post: text.slice(end, end + FIND_SIDE * 2) + (text.length > end + FIND_SIDE * 2 ? "…" : "")
+    });
+  }
+  return out;
+}
+function openSearch() {
+  const r = room;
+  if (!r) return;
+  const ov = sheet(
+    `<div class="sheet-head"><h2>대화 검색</h2><button class="icon-btn" data-x aria-label="닫기">${ICON.close}</button></div>` +
+      `<p class="sub">이 대화방의 메시지에서 찾아요 — 지금 보이는 글만, 이 기기에 있는 대화에서.</p>` +
+      `<label class="sr" for="csQ">찾을 말</label><input class="inp" id="csQ" type="search" maxlength="40" placeholder="찾을 말" autocomplete="off">` +
+      `<div class="cs-list" id="csList" aria-live="polite"></div>`,
+    "search-sheet"
+  );
+  const inp = $("#csQ", ov),
+    list = $("#csList", ov);
+  inp.oninput = () => {
+    const q = inp.value.trim(),
+      hits = searchRoom(r, q);
+    list.innerHTML = !q
+      ? ""
+      : !hits.length
+        ? `<p class="note">찾는 말이 없어요.</p>`
+        : `<p class="note">${hits.length}${hits.length >= FIND_MAX ? "건 이상" : "건"} · 최근 것부터</p>` +
+          hits
+            .map(
+              (h) =>
+                `<button type="button" class="cs-hit" data-id="${esc(h.id)}"><b>${esc(h.who)}</b>` +
+                `<span>${esc(h.pre)}<mark>${esc(h.hit)}</mark>${esc(h.post)}</span></button>`
+            )
+            .join("");
+    $$("[data-id]", list).forEach(
+      (b) =>
+        (b.onclick = () => {
+          closeOverlays();
+          jumpTo(b.dataset.id);
+        })
+    );
+  };
+  inp.focus();
+}
 /* ── src/js/ui/worldart.js — 세계관 카드: 상세 페이지의 키워드북 항목별 그림 갤러리(worldArtHTML)와 대화방 드로어의 세계관 수첩(loreSeen·loreCard) — 항목마다… */
 const LORE_KINDS = { person: "인물", creature: "동물·존재", place: "장소", item: "물건", event: "사건", group: "세력", concept: "설정" };
 function loreImg(c, key) {
@@ -5160,7 +5245,7 @@ function drawerMain({ r, c, body, cfg, q }) {
       <div class="purse">
         <div>오늘 무료 턴 <span class="spacer"></span><b>${isPro() ? "PLUS 무제한" : freeLeft() + " / " + FREE_DAILY}</b></div>
         <div>하트 <span class="spacer"></span><b>♥ ${num(S.wallet.hearts)}</b></div>
-        <div>지금 설정 <span class="spacer"></span><span class="note">${MODELS[r.set.model].name} · 턴당 ${q.type === "heart" ? "♥" + q.n : qShort(q)}</span></div>
+        <div>지금 설정 <span class="spacer"></span><span class="note">${MODELS[r.set.model].name} · 턴당 ${qShort(q)}</span></div>
       </div>
       <h3 class="lbl" style="margin:16px 0 8px">대화 구성</h3>
       <button class="compo" id="compo">${coverHTML(c)}<span class="x"><b>${esc(c.title)}</b>` +
@@ -5186,6 +5271,7 @@ function drawerMain({ r, c, body, cfg, q }) {
         <button data-v="gallery">갤러리<span class="v">${galleryItems(r).length}장</span></button>
         ${(live.lore || []).length ? `<button data-v="lore">세계관 수첩<span class="v">${loreSeen(r, live.lore).size} / ${live.lore.length}</span></button>` : ""}
         <button data-v="bookmarks">북마크<span class="v">${(r.bookmarks || []).length}개</span></button>
+        <button id="mFind">대화 검색<span class="v">이 방의 글에서 찾기</span></button>
         ${guide ? `<div class="grp"></div><button id="mGuide">플레이 가이드<span class="v">제작자의 안내</span></button>` : ""}
       </div>
       <button class="btn ghost danger block" id="delRoom" style="margin-top:16px">이 대화방 삭제</button>
@@ -5196,6 +5282,7 @@ function drawerMain({ r, c, body, cfg, q }) {
   if (src) $("#forkSrc", body).onclick = () => go("r-" + r.forkedFrom.roomId);
   if (guide) $("#mGuide", body).onclick = () => guideSheet(live);
   $("#mModel", body).onclick = () => openModelSheet();
+  $("#mFind", body).onclick = () => openSearch();
   $("#qCopy", body).onclick = () => copyText(exportText(r), "대화 전체를 복사했어요");
   $("#qExport", body).onclick = () => exportRoom(r);
   $("#qNew", body).onclick = () => restartRoom(r);
@@ -5650,7 +5737,8 @@ function viewStore() {
       <tr><td><b>마스터</b><div class="note">소설 같은 몰입감, 복잡한 RPG 계산</div></td><td class="num">${cell("master", "short")}</td>` +
     `<td class="num">${cell("master", "mid")}</td><td class="num">${cell("master", "long")}</td><td class="num plus">50% 할인</td></tr>
     </tbody></table></div>
-    <p class="note" style="margin-top:8px">보내기 버튼에 이번 턴 비용이 항상 표시돼요. 응답이 실패하면 자동으로 환불되고, 장기기억 요약·AI 추천·캐릭터 초안은 무료예요.</p>
+    <p class="note" style="margin-top:8px">보내기 버튼에 이번 턴 비용이 항상 표시돼요. 응답이 실패하면 자동으로 환불돼요. ` +
+    `AI 추천 답변은 받을 때마다 ♥${SUGGEST_COST}(추천 버튼에 표시 — 작가가 써 둔 첫 추천은 무료)이고, 장기기억 요약·캐릭터 초안은 무료예요.</p>
     <h2 class="sec">멤버십</h2>
     <div class="member">
       <h2>HEART SYNC<em>+</em></h2>
@@ -6688,7 +6776,7 @@ function drawerOutput({ r, body }) {
       `<input type="checkbox" id="as" ${s.autoScroll ? "checked" : ""}></div></div>
         <div class="setcard"><div class="toggle"><div><h4>답변 추천 자동 받기</h4>` +
       `<p class="d" style="margin:4px 0 0">켜면 답마다 추천 답변 셋이 같이 와요. <b>턴마다 ♥${SUGGEST_COST}이 더 나가요</b>(무료 턴·PLUS에서도). ` +
-      `하트가 모자란 턴은 추천 없이 보내고, 추천이 오지 않으면 그 값은 돌려드려요. 꺼 두면 ✦ AI 추천을 누를 때만 ♥${SUGGEST_COST}이에요.</p></div>` +
+      `하트가 모자란 턴은 추천 없이 보내고, 추천이 오지 않으면 그 값은 돌려드려요. 꺼 두면 ✦ 추천을 누를 때만 ♥${SUGGEST_COST}이에요.</p></div>` +
       `<input type="checkbox" id="asg" ${s.autoSug ? "checked" : ""}></div></div>
         <div class="setcard"><h4>예상 비용</h4><table class="tbl"><tbody>${Object.keys(MODELS)
           .map((k) => {
@@ -6999,7 +7087,7 @@ const curAlt = (r) => {
 };
 const saved = (r) => ((curAlt(r) || {}).suggestions || []).length > 0;
 function sugLabel(r) {
-  return "✦ AI 추천" + (saved(r) ? "" : ` <small>${qShort(sugQuote())}</small>`);
+  return `✦<span class="t"> 추천</span>` + (saved(r) ? "" : ` <small>${qShort(sugQuote())}</small>`);
 }
 function setAutoSug(r, on) {
   if (on) r.set.autoSug = true;
@@ -7141,39 +7229,37 @@ async function viewChat(id) {
     <header class="chat-head">
       <button class="icon-btn" id="back" aria-label="뒤로">${ICON.back}</button>
       ${coverHTML(c)}
-      <div class="who"><b>${esc(c.title)}</b>` +
-    `<span><small class="ai-badge">${AI_BADGE}</small>${esc(room.opening || "")} · ${esc(room.persona.name)}</span></div>
+      <div class="who"><b>${esc(c.title)}</b><div class="who-sub"><small class="ai-badge">${AI_BADGE}</small>` +
+    `<span class="freecount" id="freeCount"></span><span class="who-op">${esc(room.opening || "")} · ${esc(room.persona.name)}</span></div></div>
       <div class="meter" id="meter"></div>
       <button class="model-chip" id="modelChip" aria-label="AI 모델 선택"></button>
+      <button class="icon-btn" id="findBtn" aria-label="대화 검색">${ICON.search}</button>
       <button class="icon-btn" id="info" aria-label="대화방 관리">${ICON.menu}</button>
     </header>
     <div class="ep-bar" id="epBar" hidden></div>` +
-    (aiNoticeNeeded() ? `<div class="ai-note" id="aiNote"><span>${AI_NOTICE}</span><button class="btn sm" id="aiNoteOk">${AI_NOTICE_OK}</button></div>` : "") +
+    (aiNoticeNeeded()
+      ? `<div class="ai-note" id="aiNote" role="note"><span>${AI_NOTICE}</span><button class="btn sm" id="aiNoteOk">${AI_NOTICE_OK}</button></div>`
+      : "") +
     `<div class="chat-log" id="log"><div class="log-inner" id="logInner"></div><div class="jump-wrap">` +
     `<button class="jump" id="jumpBtn" type="button" hidden>↓ 맨 아래로</button></div></div>
     <div class="composer"><div class="inner">
       <div class="sug-panel" id="sugPanel" hidden></div>
-      <div class="bar2">
-        <button class="chip" id="sugBtn" aria-expanded="false">✦ AI 추천</button>
-        <button class="chip" id="contBtn">이어서 쓰기</button>
-        <span class="spacer"></span><span class="freecount" id="freeCount"></span>
-      </div>
       <div class="cmd-panel" id="cmdPanel" role="listbox" aria-label="명령어" hidden></div>
       <form class="inputrow" id="form">
+        <button class="sugbtn" id="sugBtn" type="button" aria-expanded="false"></button>
         <label class="sr" for="inp">메시지</label>
-        <textarea id="inp" rows="1" maxlength="1500" placeholder="${esc(room.persona.name)}의 행동·대사 입력 (지문은 *별표* 사이에)"></textarea>
+        <textarea id="inp" rows="1" maxlength="1500" placeholder="행동·대사 입력 · // 연출 지시 · ! 명령어"` +
+    ` title="${S.settings.enterSend !== false ? "Enter 전송 · Shift+Enter 줄바꿈" : "Ctrl+Enter 전송 · Enter 줄바꿈"}"></textarea>
         <button class="stopbtn" id="stopBtn" type="button" hidden>■ 중지</button>
-        <button class="send" id="sendBtn" type="submit" aria-label="보내기"></button>
+        <button class="send" id="sendBtn" type="button"></button>
       </form>
       <div class="hint" id="hint"></div>
     </div></div>
   </div>`;
   $("#back").onclick = () => (history.length > 1 ? history.back() : go("chats"));
   $("#info").onclick = () => openRoomDrawer("main");
+  $("#findBtn").onclick = () => openSearch();
   $("#modelChip").onclick = () => openModelSheet();
-  $("#contBtn").onclick = () => {
-    if (!gen) sendTurn("", { cont: true });
-  };
   $("#sugBtn").onclick = () => toggleSug();
   $("#stopBtn").onclick = () => stopGen();
   if ($("#aiNoteOk"))
@@ -7182,25 +7268,17 @@ async function viewChat(id) {
       $("#aiNote").remove();
     };
   const inp = $("#inp");
+  let empty = true;
   inp.oninput = () => {
     inp.style.height = "auto";
     inp.style.height = Math.min(160, inp.scrollHeight) + "px";
     updateCmdList(inp);
-  };
-  inp.onkeydown = (e) => {
-    if (cmdKey(e, inp)) return;
-    const send = S.settings.enterSend !== false ? !e.shiftKey : e.ctrlKey || e.metaKey;
-    if (e.key === "Enter" && send && !e.isComposing && e.keyCode !== 229) {
-      e.preventDefault();
-      if (gen) {
-        flashHint("응답을 쓰는 중이에요. 끝나면 보낼 수 있고, 입력은 미리 써 둘 수 있어요.");
-        return;
-      }
-      $("#form").requestSubmit();
+    if (!inp.value.trim() !== empty) {
+      empty = !empty;
+      updateComposer();
     }
   };
-  $("#form").onsubmit = async (e) => {
-    e.preventDefault();
+  const submit = async () => {
     if (gen) return;
     const t = inp.value.trim();
     if (!t) return;
@@ -7214,6 +7292,28 @@ async function viewChat(id) {
       inp.value = "";
       inp.oninput();
     }
+  };
+  $("#sendBtn").onclick = () => {
+    if (gen) return;
+    if (inp.value.trim()) return submit();
+    if (Date.now() < contLock) return;
+    sendTurn("", { cont: true });
+  };
+  inp.onkeydown = (e) => {
+    if (cmdKey(e, inp)) return;
+    const send = S.settings.enterSend !== false ? !e.shiftKey : e.ctrlKey || e.metaKey;
+    if (e.key === "Enter" && send && !e.isComposing && e.keyCode !== 229) {
+      e.preventDefault();
+      if (gen) {
+        flashHint("응답을 쓰는 중이에요. 끝나면 보낼 수 있고, 입력은 미리 써 둘 수 있어요.");
+        return;
+      }
+      submit();
+    }
+  };
+  $("#form").onsubmit = (e) => {
+    e.preventDefault();
+    submit();
   };
   bindStick($("#log"));
   renderLog(true);
@@ -7249,6 +7349,8 @@ function replyNow(t, cmd) {
   renderLog(true);
 }
 let hintTimer = null;
+let contLock = 0,
+  wasGen = false;
 function flashHint(msg) {
   const h = $("#hint");
   if (!h) return;
@@ -7267,13 +7369,18 @@ function updateComposer() {
     m = MODELS[room.set.model];
   const send = $("#sendBtn"),
     stop = $("#stopBtn");
+  if (wasGen && !gen) contLock = Date.now() + 700;
+  wasGen = !!gen;
   send.disabled = !!gen;
   stop.hidden = !gen;
-  send.innerHTML = `${ICON.send}<small>${qShort(q)}</small>`;
+  const cont = !gen && !$("#inp").value.trim();
+  send.classList.toggle("cont", cont);
+  send.innerHTML = (cont ? "이어서" : ICON.send) + `<small>${qShort(q)}</small>`;
+  send.setAttribute("aria-label", cont ? "이어서 쓰기" : "보내기");
   send.title =
+    (cont ? "입력 없이 이어서 쓰기 — " : "") +
     (q.type === "heart" ? `이번 턴에 하트 ${heartsOf(q)}개가 사용돼요` : q.type === "free" ? "오늘의 무료 턴으로 보내요" : "PLUS 무제한") +
     (q.sug ? ` · 추천 자동 받기 ♥${q.sug} 포함` : "");
-  $("#contBtn").disabled = !!gen;
   const sug = $("#sugBtn");
   sug.disabled = !!gen;
   sug.innerHTML = sugLabel(room);
@@ -7289,23 +7396,17 @@ function updateComposer() {
   if (fc) {
     const left = freeLeft();
     fc.className = "freecount" + (!isPro() && left <= 3 ? " low" : "");
+    fc.title = isPro() ? "PLUS" : `오늘 무료 턴 ${left} / ${FREE_DAILY}`;
     fc.innerHTML = isPro()
       ? `<span class="badge-pro">PLUS</span> ♥ <b>${num(S.wallet.hearts)}</b>`
-      : `무료 <b>${left}</b>/${FREE_DAILY}턴 · ♥ <b>${num(S.wallet.hearts)}</b>`;
+      : `♥ <b>${num(S.wallet.hearts)}</b> · 무료 <b>${left}</b>턴`;
   }
   const h = $("#hint");
-  if (h && !hintTimer) {
-    if (gen) h.textContent = "응답을 쓰는 중이에요 · 다음 입력은 미리 써 둘 수 있어요 · Esc 또는 ■ 중지";
-    else if (q.type === "free" && freeLeft() <= 3)
-      h.textContent = `오늘 무료 턴이 ${freeLeft()}번 남았어요. 다 쓰면 라이트 모델은 턴당 ♥${listPrice("lite", room.set.len, room.set.mem)}이에요.`;
-    else
-      h.textContent =
-        (touchOnly() ? "" : (S.settings.enterSend !== false ? "Enter 전송 · Shift+Enter 줄바꿈" : "Ctrl+Enter 전송 · Enter 줄바꿈") + " · ") +
-        "// 연출 지시 · ! 명령어";
-  }
-}
-function touchOnly() {
-  return typeof matchMedia === "function" && matchMedia("(hover: none) and (pointer: coarse)").matches;
+  if (h && !hintTimer)
+    h.textContent =
+      !gen && q.type === "free" && freeLeft() <= 3
+        ? `오늘 무료 턴이 ${freeLeft()}번 남았어요. 다 쓰면 라이트 모델은 턴당 ♥${listPrice("lite", room.set.len, room.set.mem)}이에요.`
+        : "";
 }
 function lastAi(r) {
   for (let i = r.msgs.length - 1; i >= 0; i--) if (r.msgs[i].role === "ai") return r.msgs[i];
@@ -7436,7 +7537,7 @@ function sideSheet(r) {
     closeOverlays();
     setRoom(f);
     go("r-" + f.id);
-    toast("외전을 열었어요 — ✦ AI 추천에 첫 장면 제안이 있어요");
+    toast("외전을 열었어요 — ✦ 추천에 첫 장면 제안이 있어요");
   };
 }
 /* ── src/js/ui/report.js — 메시지 신고(reportSheet): AI 말풍선 메뉴의 '신고' → 사유(일곱 가지 가운데 하나를 골라야 보냄 — 미리 골라 두지 않음)·덧붙일 말·'이 메시지 앞부분을… */

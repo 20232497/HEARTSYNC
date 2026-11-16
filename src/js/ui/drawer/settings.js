@@ -112,7 +112,7 @@ export function drawerOutput({ r, body }) {
       `<input type="checkbox" id="as" ${s.autoScroll ? "checked" : ""}></div></div>
         <div class="setcard"><div class="toggle"><div><h4>답변 추천 자동 받기</h4>` +
       `<p class="d" style="margin:4px 0 0">켜면 답마다 추천 답변 셋이 같이 와요. <b>턴마다 ♥${SUGGEST_COST}이 더 나가요</b>(무료 턴·PLUS에서도). ` +
-      `하트가 모자란 턴은 추천 없이 보내고, 추천이 오지 않으면 그 값은 돌려드려요. 꺼 두면 ✦ AI 추천을 누를 때만 ♥${SUGGEST_COST}이에요.</p></div>` +
+      `하트가 모자란 턴은 추천 없이 보내고, 추천이 오지 않으면 그 값은 돌려드려요. 꺼 두면 ✦ 추천을 누를 때만 ♥${SUGGEST_COST}이에요.</p></div>` +
       `<input type="checkbox" id="asg" ${s.autoSug ? "checked" : ""}></div></div>
         <div class="setcard"><h4>예상 비용</h4><table class="tbl"><tbody>${Object.keys(MODELS)
           .map((k) => {
