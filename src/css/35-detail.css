@@ -1,33 +1,77 @@
-/* ── 캐릭터 상세 */
-.detail { display:grid; grid-template-columns:minmax(0,380px) minmax(0,1fr); gap:28px; align-items:start; }
-@media (max-width:780px) { .detail { grid-template-columns:1fr; gap:18px; } }
-.detail > div > .cover { aspect-ratio:3/4; border-radius:20px; width:100%; max-width:100%; }
-@media (max-width:780px) { .detail > div > .cover { aspect-ratio:4/3; } }
-.detail h1 { font-family:var(--display); font-size:30px; line-height:1.2; margin:4px 0 6px; text-wrap:balance; }
-.detail .lead { font-size:15.5px; margin:0 0 12px; }
-.detail .tags { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:14px; }
-.like-btn { margin-bottom:14px; gap:6px; }
+/* ── 작품 상세: 왼쪽(.d-side — 넓은 화면에서 고정: 표지·제목·찜·시작·내 대화방) | 오른쪽(.d-main — 탭 줄과 칸들).
+   780px 아래는 한 칸이고 찜·시작 버튼 줄(.d-cta)이 화면 아래(아래 탭 위)에 고정 — 시작 버튼이 늘 보이게 */
+.detail { display:grid; grid-template-columns:minmax(0,340px) minmax(0,1fr); gap:28px; align-items:start; }
+.d-side { position:sticky; top:12px; max-height:calc(100vh - 24px); overflow-y:auto; padding-bottom:4px; }
+@media (max-width:899px) { .d-side { max-height:calc(100vh - 96px); } }
+.d-top > .cover { aspect-ratio:3/4; border-radius:20px; width:min(100%, calc((100vh - 470px) * .75)); min-width:150px; margin-bottom:12px; } /* 낮은 화면에서도 시작 버튼이 첫 화면에 들어오게 표지를 줄임 */
+.detail h1 { font-family:var(--display); font-size:28px; line-height:1.2; margin:4px 0 6px; text-wrap:balance; }
+.detail .lead { font-size:15px; margin:0 0 12px; }
+.detail .tags { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px; }
+.detail .tags span { font-size:12.5px; background:var(--surface2); border-radius:7px; padding:2px 9px; color:var(--muted); }
+.d-cta { display:flex; gap:8px; align-items:center; margin:2px 0 10px; }
+.d-cta .btn.pri.big { flex:1; min-width:0; height:48px; font-size:15px; }
+.d-cta .like-btn { flex:none; height:48px; gap:6px; }
 .like-btn svg { width:15px; height:15px; }
 .like-btn[aria-pressed="true"] { color:var(--accent); border-color:var(--accent); background:var(--accent-soft); }
 .like-btn[aria-pressed="true"] svg { fill:currentColor; }
-.detail .tags span { font-size:12.5px; background:var(--surface2); border-radius:7px; padding:2px 9px; color:var(--muted); }
+.d-rooms { margin-top:14px; }
+.d-rooms h3 { margin:0 0 8px; font-size:13px; color:var(--muted); font-weight:600; letter-spacing:.04em; }
+.d-rooms .cont { grid-template-columns:1fr; }
+.d-tabs { position:sticky; top:0; z-index:3; display:flex; gap:4px; overflow-x:auto; margin:0 0 12px; padding:8px 0; background:var(--bg); border-bottom:1px solid var(--line); scrollbar-width:none; }
+.d-tabs::-webkit-scrollbar { display:none; }
+.d-tab { flex:none; border:0; background:none; padding:7px 13px; border-radius:999px; font-size:13.5px; font-weight:600; color:var(--muted); white-space:nowrap; }
+.d-tab.on { background:var(--accent-soft); color:var(--accent); }
+.d-main > section + section, .d-main section > * + *, .d-main [data-fold] > * + * { margin-top:12px; }
+.d-price { margin:0 0 4px; }
+.d-desc.clamp { display:-webkit-box; -webkit-line-clamp:7; -webkit-box-orient:vertical; overflow:hidden; }
+.d-more { margin-top:8px; }
+.d-fields { margin-top:10px; }
+@media (max-width:780px) {
+  .detail { grid-template-columns:1fr; gap:14px; }
+  .d-side { position:static; max-height:none; overflow:visible; }
+  .d-top { display:grid; grid-template-columns:112px minmax(0,1fr); gap:14px; align-items:start; margin-bottom:12px; }
+  .d-top > .cover { width:100%; min-width:0; margin:0; border-radius:14px; }
+  .detail h1 { font-size:22px; margin-top:2px; }
+  .detail .lead { font-size:14px; margin:0; }
+  .d-cta { position:fixed; left:0; right:0; bottom:calc(60px + env(safe-area-inset-bottom,0px)); z-index:15; margin:0; padding:10px max(16px, env(safe-area-inset-right,0px)) 10px max(16px, env(safe-area-inset-left,0px)); background:var(--surface); border-top:1px solid var(--line); }
+  .d-page { padding-bottom:120px; }
+  body.in-detail .toast { bottom:calc(140px + env(safe-area-inset-bottom,0px)); }
+}
 .box { background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:16px; }
 .box + .box { margin-top:12px; }
 .box h3 { margin:0 0 8px; font-size:13px; color:var(--muted); font-weight:600; letter-spacing:.04em; }
 .box p { margin:0; white-space:pre-wrap; }
 .openings { display:grid; gap:8px; }
-.opening { display:block; border:1px solid var(--line); border-radius:12px; padding:11px 13px; cursor:pointer; background:var(--bg); }
-.opening:has(input:checked) { border-color:var(--accent); background:var(--accent-soft); }
-.opening input { accent-color:var(--accent); margin-right:6px; }
+.opening { display:block; border:1px solid var(--line); border-radius:12px; padding:11px 13px; background:var(--bg); }
 .opening b { font-size:14px; }
-.opening span { color:var(--muted); font-size:12.5px; margin-top:3px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.opening .brief { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; color:var(--muted); font-size:12.5px; margin-top:3px; }
+.opening > .btn { margin-top:9px; }
+/* 고르는 카드(시작 창의 시작 상황·페르소나) — 고른 것은 JS가 .on을 붙임(:has에 기대지 않음) */
+.opening.pick { cursor:pointer; }
+.opening.pick.on { border-color:var(--accent); background:var(--accent-soft); }
+.opening input { accent-color:var(--accent); margin-right:6px; }
+/* 시작 상황 카드의 '장면 펼쳐 읽기' — 대화방 말풍선과 같은 서식 */
+.d-scene { margin-top:8px; }
+.d-scene > summary { cursor:pointer; list-style:none; font-size:12.5px; font-weight:600; color:var(--accent); }
+.d-scene > summary::-webkit-details-marker { display:none; }
+.d-scene > summary::after { content:" ▾"; }
+.d-scene[open] > summary::after { content:" ▴"; }
+.d-scene .bubble { margin-top:8px; border-radius:12px; }
+/* 새 대화 시작 창(ui/start-sheet.js) — 시작 버튼은 창 아래에 붙어 있음 */
+.start-sheet .st-h { display:flex; align-items:center; gap:8px; margin:14px 0 8px; font-size:13px; color:var(--muted); font-weight:600; letter-spacing:.04em; }
+.start-sheet .st-note { margin:12px 0 0; }
+.start-sheet .ai-first { font-size:15px; line-height:1.7; margin:8px 0 18px; }
+.sheet.start-sheet { display:flex; flex-direction:column; overflow:hidden; }
+.start-sheet .st-body { flex:1; min-height:0; overflow-y:auto; }
+.st-go { flex:none; padding-top:12px; }
+.st-go[hidden] { display:none; }
+.st-go .btn { width:100%; height:48px; font-size:15px; }
 .cast { display:grid; grid-template-columns:repeat(auto-fill, minmax(92px,1fr)); gap:10px; align-items:start; }
 .cast button { border:0; background:none; padding:0; text-align:center; font-size:12.5px; display:grid; gap:5px; min-width:0; }
 .cast .portrait { border-radius:14px; overflow:hidden; background:var(--surface2); }
 .cast .portrait img { display:block; width:100%; height:auto; } /* 그림의 원래 비율(대개 세로 2:3) 그대로 — 정사각 칸에 넣으면 얼굴이 잘렸음 */
 .cast b { font-size:13px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .cta-row { display:flex; gap:8px; margin-top:14px; flex-wrap:wrap; align-items:center; }
-.cta-row .btn.pri.big { flex:1; min-width:180px; height:48px; font-size:15px; }
 .field { display:grid; gap:5px; margin-top:12px; }
 .field label, .lbl { font-size:12.5px; color:var(--muted); font-weight:600; }
 .field input, .field textarea, .field select, .inp { width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--line); background:var(--bg); outline:none; }
@@ -52,7 +96,7 @@
 .wcard.locked { border-style:dashed; background:var(--surface2); }
 .wcard.locked figcaption b, .wcard.locked figcaption span { color:var(--muted); }
 .wcard.locked .wkind { color:var(--muted); background:var(--bg); }
-/* 접는 칸(세계관 일러스트) — 휴대폰에서 시작 버튼 아래를 짧게 */
+/* 접는 칸(명령어·장소·컷씬·세계관 일러스트·긴 플레이 가이드 — ui/detail.js foldBox) */
 details.box > summary { cursor:pointer; list-style:none; display:flex; align-items:center; gap:6px; }
 details.box > summary::-webkit-details-marker { display:none; }
 details.box > summary h3 { margin:0; flex:1; }

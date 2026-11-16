@@ -195,35 +195,75 @@ h2.sec small, h1.sec small { font-family:var(--sans); font-size:12.5px; color:va
 .cont .x { min-width:0; flex:1; }
 .cont .x b { display:block; font-size:14px; }
 .cont .x span { display:block; color:var(--muted); font-size:12.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.detail { display:grid; grid-template-columns:minmax(0,380px) minmax(0,1fr); gap:28px; align-items:start; }
-@media (max-width:780px) { .detail { grid-template-columns:1fr; gap:18px; } }
-.detail > div > .cover { aspect-ratio:3/4; border-radius:20px; width:100%; max-width:100%; }
-@media (max-width:780px) { .detail > div > .cover { aspect-ratio:4/3; } }
-.detail h1 { font-family:var(--display); font-size:30px; line-height:1.2; margin:4px 0 6px; text-wrap:balance; }
-.detail .lead { font-size:15.5px; margin:0 0 12px; }
-.detail .tags { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:14px; }
-.like-btn { margin-bottom:14px; gap:6px; }
+.detail { display:grid; grid-template-columns:minmax(0,340px) minmax(0,1fr); gap:28px; align-items:start; }
+.d-side { position:sticky; top:12px; max-height:calc(100vh - 24px); overflow-y:auto; padding-bottom:4px; }
+@media (max-width:899px) { .d-side { max-height:calc(100vh - 96px); } }
+.d-top > .cover { aspect-ratio:3/4; border-radius:20px; width:min(100%, calc((100vh - 470px) * .75)); min-width:150px; margin-bottom:12px; }
+.detail h1 { font-family:var(--display); font-size:28px; line-height:1.2; margin:4px 0 6px; text-wrap:balance; }
+.detail .lead { font-size:15px; margin:0 0 12px; }
+.detail .tags { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px; }
+.detail .tags span { font-size:12.5px; background:var(--surface2); border-radius:7px; padding:2px 9px; color:var(--muted); }
+.d-cta { display:flex; gap:8px; align-items:center; margin:2px 0 10px; }
+.d-cta .btn.pri.big { flex:1; min-width:0; height:48px; font-size:15px; }
+.d-cta .like-btn { flex:none; height:48px; gap:6px; }
 .like-btn svg { width:15px; height:15px; }
 .like-btn[aria-pressed="true"] { color:var(--accent); border-color:var(--accent); background:var(--accent-soft); }
 .like-btn[aria-pressed="true"] svg { fill:currentColor; }
-.detail .tags span { font-size:12.5px; background:var(--surface2); border-radius:7px; padding:2px 9px; color:var(--muted); }
+.d-rooms { margin-top:14px; }
+.d-rooms h3 { margin:0 0 8px; font-size:13px; color:var(--muted); font-weight:600; letter-spacing:.04em; }
+.d-rooms .cont { grid-template-columns:1fr; }
+.d-tabs { position:sticky; top:0; z-index:3; display:flex; gap:4px; overflow-x:auto; margin:0 0 12px; padding:8px 0; background:var(--bg); border-bottom:1px solid var(--line); scrollbar-width:none; }
+.d-tabs::-webkit-scrollbar { display:none; }
+.d-tab { flex:none; border:0; background:none; padding:7px 13px; border-radius:999px; font-size:13.5px; font-weight:600; color:var(--muted); white-space:nowrap; }
+.d-tab.on { background:var(--accent-soft); color:var(--accent); }
+.d-main > section + section, .d-main section > * + *, .d-main [data-fold] > * + * { margin-top:12px; }
+.d-price { margin:0 0 4px; }
+.d-desc.clamp { display:-webkit-box; -webkit-line-clamp:7; -webkit-box-orient:vertical; overflow:hidden; }
+.d-more { margin-top:8px; }
+.d-fields { margin-top:10px; }
+@media (max-width:780px) {
+  .detail { grid-template-columns:1fr; gap:14px; }
+  .d-side { position:static; max-height:none; overflow:visible; }
+  .d-top { display:grid; grid-template-columns:112px minmax(0,1fr); gap:14px; align-items:start; margin-bottom:12px; }
+  .d-top > .cover { width:100%; min-width:0; margin:0; border-radius:14px; }
+  .detail h1 { font-size:22px; margin-top:2px; }
+  .detail .lead { font-size:14px; margin:0; }
+  .d-cta { position:fixed; left:0; right:0; bottom:calc(60px + env(safe-area-inset-bottom,0px)); z-index:15; margin:0; padding:10px max(16px, env(safe-area-inset-right,0px)) 10px max(16px, env(safe-area-inset-left,0px)); background:var(--surface); border-top:1px solid var(--line); }
+  .d-page { padding-bottom:120px; }
+  body.in-detail .toast { bottom:calc(140px + env(safe-area-inset-bottom,0px)); }
+}
 .box { background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:16px; }
 .box + .box { margin-top:12px; }
 .box h3 { margin:0 0 8px; font-size:13px; color:var(--muted); font-weight:600; letter-spacing:.04em; }
 .box p { margin:0; white-space:pre-wrap; }
 .openings { display:grid; gap:8px; }
-.opening { display:block; border:1px solid var(--line); border-radius:12px; padding:11px 13px; cursor:pointer; background:var(--bg); }
-.opening:has(input:checked) { border-color:var(--accent); background:var(--accent-soft); }
-.opening input { accent-color:var(--accent); margin-right:6px; }
+.opening { display:block; border:1px solid var(--line); border-radius:12px; padding:11px 13px; background:var(--bg); }
 .opening b { font-size:14px; }
-.opening span { color:var(--muted); font-size:12.5px; margin-top:3px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.opening .brief { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; color:var(--muted); font-size:12.5px; margin-top:3px; }
+.opening > .btn { margin-top:9px; }
+.opening.pick { cursor:pointer; }
+.opening.pick.on { border-color:var(--accent); background:var(--accent-soft); }
+.opening input { accent-color:var(--accent); margin-right:6px; }
+.d-scene { margin-top:8px; }
+.d-scene > summary { cursor:pointer; list-style:none; font-size:12.5px; font-weight:600; color:var(--accent); }
+.d-scene > summary::-webkit-details-marker { display:none; }
+.d-scene > summary::after { content:" ▾"; }
+.d-scene[open] > summary::after { content:" ▴"; }
+.d-scene .bubble { margin-top:8px; border-radius:12px; }
+.start-sheet .st-h { display:flex; align-items:center; gap:8px; margin:14px 0 8px; font-size:13px; color:var(--muted); font-weight:600; letter-spacing:.04em; }
+.start-sheet .st-note { margin:12px 0 0; }
+.start-sheet .ai-first { font-size:15px; line-height:1.7; margin:8px 0 18px; }
+.sheet.start-sheet { display:flex; flex-direction:column; overflow:hidden; }
+.start-sheet .st-body { flex:1; min-height:0; overflow-y:auto; }
+.st-go { flex:none; padding-top:12px; }
+.st-go[hidden] { display:none; }
+.st-go .btn { width:100%; height:48px; font-size:15px; }
 .cast { display:grid; grid-template-columns:repeat(auto-fill, minmax(92px,1fr)); gap:10px; align-items:start; }
 .cast button { border:0; background:none; padding:0; text-align:center; font-size:12.5px; display:grid; gap:5px; min-width:0; }
 .cast .portrait { border-radius:14px; overflow:hidden; background:var(--surface2); }
 .cast .portrait img { display:block; width:100%; height:auto; }
 .cast b { font-size:13px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .cta-row { display:flex; gap:8px; margin-top:14px; flex-wrap:wrap; align-items:center; }
-.cta-row .btn.pri.big { flex:1; min-width:180px; height:48px; font-size:15px; }
 .field { display:grid; gap:5px; margin-top:12px; }
 .field label, .lbl { font-size:12.5px; color:var(--muted); font-weight:600; }
 .field input, .field textarea, .field select, .inp { width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--line); background:var(--bg); outline:none; }
@@ -428,6 +468,10 @@ details.stat[open] summary::after { content:"▴"; }
 .memo-flag { position:absolute; z-index:3; top:64px; left:50%; transform:translateX(-50%); font-size:12px; color:var(--muted); background:var(--surface); border:1px solid var(--line); border-radius:999px; padding:3px 12px; white-space:nowrap; }
 .ep-bar { position:relative; z-index:2; display:flex; align-items:center; gap:8px; padding:6px max(14px, env(safe-area-inset-right,0px)) 6px max(14px, env(safe-area-inset-left,0px)); font-size:12.5px; border-bottom:1px solid var(--line); background:color-mix(in srgb, var(--surface) 88%, transparent); }
 .ep-bar[hidden] { display:none; }
+.chat-head .who .ai-badge { display:inline-block; margin-right:6px; padding:0 6px; border:1px solid var(--line); border-radius:6px; font-size:10.5px; font-weight:600; line-height:16px; color:var(--muted); background:var(--surface2); vertical-align:1px; }
+.ai-note { position:relative; z-index:2; display:flex; align-items:center; gap:10px; padding:8px max(14px, env(safe-area-inset-right,0px)) 8px max(14px, env(safe-area-inset-left,0px)); font-size:12.5px; line-height:1.5; color:var(--narr); border-bottom:1px solid var(--line); background:var(--surface); }
+.ai-note span { flex:1; min-width:0; }
+.ai-note .btn { flex:none; }
 .ep-tag { flex:none; font-size:11px; font-weight:700; color:var(--accent); background:var(--accent-soft); border-radius:999px; padding:2px 9px; }
 .ep-now { flex:1; min-width:0; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .ep-dots { flex:none; display:flex; gap:4px; }
@@ -4702,6 +4746,23 @@ ${recent}`
   };
   fetchSug(false);
 }
+/* ── src/js/ui/ai-notice.js — AI 표시: 대화 화면 머리의 배지 · AI 말풍선의 접근성 이름 · 첫 대화 전 한 번의 안내 · 내보낸 파일의 첫 줄 */
+const AI_BADGE = "AI 캐릭터";
+const AI_NOTICE =
+  "캐릭터의 답은 생성형 AI가 만들어요. 작품 설정에 따른 허구이고, 틀리거나 이상한 답을 할 수 있어요. 진지하게 물으면 캐릭터는 자기가 AI라는 걸 숨기지 않아요.";
+const AI_NOTICE_OK = "알겠어요";
+const AI_EXPORT_LINE = "※ 이 파일의 캐릭터 대사와 서술은 생성형 AI(HEART SYNC)가 만든 것입니다.";
+function aiLabel(name) {
+  return "AI 응답: " + name;
+}
+function aiNoticeNeeded() {
+  return !S.settings.aiSeen;
+}
+function ackAiNotice() {
+  if (S.settings.aiSeen) return;
+  S.settings.aiSeen = Date.now();
+  saveSettings();
+}
 /* ── src/js/ui/room-tools.js — 대화방 도구(드로어가 씀): 대화에 나온 그림 모으기(galleryItems)·수집 기록에 적기(collectSeen)·그 장면으로 가기(jumpTo)·대화… */
 function galleryItems(r) {
   const out = [],
@@ -4738,7 +4799,7 @@ function jumpTo(id) {
   setTimeout(() => el.classList.remove("flash"), 1400);
 }
 function exportText(r) {
-  const head = `${r.char.title} — ${r.opening || ""}\n${r.persona.name}(으)로 플레이 · ${new Date().toLocaleString("ko-KR")}\n\n`;
+  const head = `${AI_EXPORT_LINE}\n${r.char.title} —${r.opening || ""}\n${r.persona.name}(으)로 플레이 · ${new Date().toLocaleString("ko-KR")}\n\n`;
   return (
     head +
     r.msgs
@@ -6978,13 +7039,15 @@ async function viewChat(id) {
     <header class="chat-head">
       <button class="icon-btn" id="back" aria-label="뒤로">${ICON.back}</button>
       ${coverHTML(c)}
-      <div class="who"><b>${esc(c.title)}</b><span>${esc(room.opening || "")} · ${esc(room.persona.name)}</span></div>
+      <div class="who"><b>${esc(c.title)}</b>` +
+    `<span><small class="ai-badge">${AI_BADGE}</small>${esc(room.opening || "")} · ${esc(room.persona.name)}</span></div>
       <div class="meter" id="meter"></div>
       <button class="model-chip" id="modelChip" aria-label="AI 모델 선택"></button>
       <button class="icon-btn" id="info" aria-label="대화방 관리">${ICON.menu}</button>
     </header>
-    <div class="ep-bar" id="epBar" hidden></div>
-    <div class="chat-log" id="log"><div class="log-inner" id="logInner"></div><div class="jump-wrap">` +
+    <div class="ep-bar" id="epBar" hidden></div>` +
+    (aiNoticeNeeded() ? `<div class="ai-note" id="aiNote"><span>${AI_NOTICE}</span><button class="btn sm" id="aiNoteOk">${AI_NOTICE_OK}</button></div>` : "") +
+    `<div class="chat-log" id="log"><div class="log-inner" id="logInner"></div><div class="jump-wrap">` +
     `<button class="jump" id="jumpBtn" type="button" hidden>↓ 맨 아래로</button></div></div>
     <div class="composer"><div class="inner">
       <div class="sug-panel" id="sugPanel" hidden></div>
@@ -7011,6 +7074,11 @@ async function viewChat(id) {
   };
   $("#sugBtn").onclick = () => toggleSug();
   $("#stopBtn").onclick = () => stopGen();
+  if ($("#aiNoteOk"))
+    $("#aiNoteOk").onclick = () => {
+      ackAiNotice();
+      $("#aiNote").remove();
+    };
   const inp = $("#inp");
   inp.oninput = () => {
     inp.style.height = "auto";
@@ -7437,7 +7505,7 @@ function renderLog(scroll) {
         ? `<div class="bubble typing" id="liveBubble"></div>`
         : `<div class="bubble${imgTags(alt.text || "").length >= 2 ? " many-img" : ""}">${fmt(alt.text || "", c, r.persona)}</div>`;
     html +=
-      `<div class="msg" data-id="${m.id}">${coverHTML(c)}<div class="col">` +
+      `<div class="msg" data-id="${m.id}" role="group" aria-label="${esc(aiLabel(speakerName(r)))}">${coverHTML(c)}<div class="col">` +
       `<span class="nm">${esc(speakerName(r))}</span>${pending ? "" : epEventHTML(r, alt)}${body}`;
     if (!pending && !m.editing) {
       html += statusBlock(c, alt.status, m.statusBefore, { open: isLast, live: isLast });
@@ -7862,6 +7930,7 @@ function route() {
   closeOverlays();
   if (gen && !h.startsWith("r-")) stopGen();
   document.body.classList.toggle("in-chat", h.startsWith("r-"));
+  document.body.classList.toggle("in-detail", h.startsWith("c-"));
   const [base, ...rest] = h.split("-");
   const arg = rest.join("-");
   const view = VIEWS[base] || VIEWS.home;
@@ -7919,7 +7988,83 @@ function bindGo(root) {
 on("rooms", renderRailRecent);
 on("wallet", renderWalletChips);
 on("route", route);
-/* ── src/js/ui/detail.js — 작품 상세 페이지: 표지·제목·찜 → 시작 상황과 새 대화 시작·내 대화방 → 소개·플레이 가이드·(에피소드형이면 장·결말 안내)·명령어 → 그림이 있는… */
+/* ── src/js/ui/start-sheet.js — 새 대화 시작 창: 시작 상황과 페르소나를 고르고 시작 — 상세 페이지의 시작 버튼과 시작 상황 카드가 엶(startChat) */
+function opBrief(o, n = 120) {
+  return o.text
+    .replace(/\[\[[^\]]*\]\]/g, "")
+    .replace(/[*"\[\]]/g, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, n);
+}
+function opPlace(c, o) {
+  const p = o.place && (c.places || [])[o.place - 1];
+  return p ? ` <span class="pill">장소 · ${esc(p.name)}</span>` : "";
+}
+function startNote(c) {
+  const set0 = defaultSet(c),
+    q0 = quote(set0);
+  return (
+    `새 대화는 ${esc(MODELS[set0.model].name)} 모델(${q0.type === "heart" ? "턴당 ♥" + q0.n : qShort(q0)})로 시작해요 — 대화방에서 바꿀 수 있어요. ` +
+    `라이트 모델은 하루 ${FREE_DAILY}턴 무료.`
+  );
+}
+function startChat(c, opIdx = 0) {
+  if (S.rooms.filter((r) => r.charId === c.id).length >= plan().rooms) return plusSheet("rooms");
+  const def = S.personas.find((p) => p.def) || S.personas[0];
+  const begin = (i, p) => {
+    closeOverlays();
+    setRoom(newRoom(c, i, p));
+    go("r-" + room.id);
+  };
+  const choose = c.openings.length > 1 || S.personas.length > 1;
+  if (!choose && !aiNoticeNeeded()) return begin(opIdx, def);
+  const ov = sheet(
+    `<div class="sheet-head"><h2>${c.episode ? "에피소드 시작" : "새 대화 시작"}</h2>` +
+      `<button class="icon-btn" data-x aria-label="닫기">${ICON.close}</button></div><p class="sub">${esc(c.title)}</p>` +
+      `<div class="st-body" id="stBody"></div><div class="st-go" id="stFoot" hidden><button class="btn pri big" id="startGo"></button></div>`,
+    "start-sheet"
+  );
+  const body = $("#stBody", ov),
+    goBtn = $("#startGo", ov);
+  const pick = () => {
+    const card = (name, value, on, head, sub) =>
+      `<label class="opening pick${on ? " on" : ""}"><input type="radio" name="${name}" value="${esc(value)}"${on ? " checked" : ""}>` +
+      `<b>${head}</b>${sub ? `<span class="brief">${sub}</span>` : ""}</label>`;
+    body.innerHTML =
+      `<h3 class="st-h">${c.world_mode ? "게임 모드 · 시작 상황" : "시작 상황"}</h3><div class="openings">` +
+      c.openings.map((o, i) => card("op", String(i), i === opIdx, esc(o.title) + opPlace(c, o), esc(opBrief(o)) + "…")).join("") +
+      `</div><h3 class="st-h">대화할 내 페르소나<span class="spacer"></span><button class="btn sm ghost" id="stMe">페르소나 관리</button></h3>` +
+      `<div class="openings">${S.personas.map((p) => card("pp", p.id, p === def, esc(p.name), esc(p.memo || ""))).join("")}</div>` +
+      `<p class="note st-note">${startNote(c)}</p>`;
+    $("#stFoot", ov).hidden = false;
+    const cur = (name) => (body.querySelector(`input[name=${name}]:checked`) || {}).value;
+    const persona = () => S.personas.find((p) => p.id === cur("pp")) || def;
+    const sync = () => {
+      $$(".opening.pick", body).forEach((l) => l.classList.toggle("on", l.querySelector("input").checked));
+      goBtn.textContent = persona().name + "(으)로 시작";
+    };
+    $$("input", body).forEach((x) => (x.onchange = sync));
+    sync();
+    $("#stMe", body).onclick = () => {
+      closeOverlays();
+      go("me");
+    };
+    goBtn.onclick = () => begin(+(cur("op") || 0), persona());
+  };
+  if (!aiNoticeNeeded()) return pick();
+  body.innerHTML =
+    `<p class="ai-first">${AI_NOTICE}</p>` +
+    `<div class="cta-row"><span class="spacer"></span><button class="btn pri" id="aiOk">${AI_NOTICE_OK}</button></div>`;
+  $("#aiOk", body).onclick = () => {
+    ackAiNotice();
+    if (choose) pick();
+    else begin(opIdx, def);
+  };
+}
+/* ── src/js/ui/detail.js — 작품 상세 페이지: 왼쪽(넓은 화면에서 고정 — 표지·제목·찜·새 대화 시작·이 작품의 내 대화방) | 오른쪽(탭 줄 + 소개·시작 상황·등장인물과 도감·같은 줄의 다른 작품) */
+const LONG_DESC = 320,
+  LONG_GUIDE = 240;
 function viewDetail(id) {
   const c = normalizeChar(getChar(id)),
     v = $("#view");
@@ -7933,73 +8078,48 @@ function viewDetail(id) {
   const rooms = S.rooms.filter((r) => r.charId === c.id);
   const persona = S.personas.find((p) => p.def) || S.personas[0];
   const wa = worldArtHTML(c);
-  const set0 = defaultSet(c),
-    q0 = quote(set0);
   const row = HOME_ROWS.find((w) => w.key === c.row),
     near = row ? ORIGINALS.filter((x) => x.row === c.row && x.id !== c.id && audOK(x)) : [];
   const likeHTML = (on) => `${ICON.mark}<span>${on ? "찜한 작품" : "찜하기"}</span>`;
+  const tabs = [
+    ["intro", "소개"],
+    ["open", "시작 상황"],
+    ["cast", "등장인물·도감"]
+  ].concat(near.length ? [["near", "다른 작품"]] : []);
   touchRecent(c.id);
   v.innerHTML =
-    `<div class="page">
+    `<div class="page d-page">
     ${topbar(`<button class="icon-btn" data-go="home" aria-label="뒤로">${ICON.back}</button>`)}
     <div class="detail">
-      <div>${coverHTML(c, "", { vt: true })}</div>
-      <div>
-        <span class="note">${esc(c.cat)}${c.world_mode ? " · 세계관" : ""} · ${metaHTML(c)}</span>
-        <h1>${esc(c.title)}</h1>
-        <p class="lead">${esc(c.oneLiner)}</p>
+      <div class="d-side">
+        <div class="d-top">${coverHTML(c, "", { vt: true })}
+          <div class="d-info"><span class="note">${esc(c.cat)}${c.world_mode ? " · 세계관" : ""} · ${metaHTML(c)}</span>
+          <h1>${esc(c.title)}</h1><p class="lead">${esc(c.oneLiner)}</p></div>
+        </div>
         <div class="tags">${(c.tags || []).map((t) => `<span>#${esc(t)}</span>`).join("")}</div>
-        <button class="btn sm ghost like-btn" id="like" aria-pressed="${liked(c.id)}">${likeHTML(liked(c.id))}</button>
-        <div class="box"><h3>${c.world_mode ? "게임 모드 · 시작 상황" : "시작 상황"}</h3><div class="openings">
-          ${c.openings
-            .map(
-              (o, i) =>
-                `<label class="opening"><input type="radio" name="op" value="${i}" ${i === 0 ? "checked" : ""}>` +
-                `<b>${esc(o.title)}${o.place && (c.places || [])[o.place - 1] ? ` <span class="pill">장소 · ${esc(c.places[o.place - 1].name)}</span>` : ""}</b>
-            <span>${esc(
-              o.text
-                .replace(/\[\[[^\]]*\]\]/g, "")
-                .replace(/[*"\[\]]/g, "")
-                .replace(/\s+/g, " ")
-                .slice(0, 120)
-            )}…</span></label>`
-            )
-            .join("")}
-        </div>
-        <div class="field"><label for="pp">대화할 내 페르소나</label>` +
-    `<select id="pp">${S.personas
-      .map((p) => `<option value="${esc(p.id)}" ${p === persona ? "selected" : ""}>` + `${esc(p.name)}${p.memo ? " · " + esc(p.memo) : ""}</option>`)
-      .join("")}</select></div>
-        <div class="cta-row"><button class="btn pri big" id="start">${c.episode ? "에피소드 시작" : "새 대화 시작"}</button>` +
-    (`<button class="btn ghost sm" data-go="me">페르소나 관리</button></div>
-        <p class="note" style="margin-top:8px">새 대화는 ${esc(MODELS[set0.model].name)} 모델(` +
-      `${q0.type === "heart" ? "턴당 ♥" + q0.n : qShort(q0)})로 시작해요 — 대화방에서 바꿀 수 있어요. 라이트 모델은 하루 ${FREE_DAILY}턴 무료. 상태창: ` +
-      `${c.fields.slice(0, 8).map(esc).join(" · ")}${c.fields.length > 8 ? " 외" : ""}</p>
-        </div>
-        ${
-          rooms.length
-            ? `<div class="box"><h3>내 대화방</h3>` +
-              `<div class="cont">${rooms
-                .map(
-                  (r) =>
-                    `<button data-room="${esc(r.id)}">${coverHTML(r)}<span class="x"><b>${esc(r.name)}</b>` +
-                    `<span>${esc(r.last)}</span></span><span class="note">${ago(r.at)}</span></button>`
-                )
-                .join("")}</div></div>`
-            : ""
-        }
-        <div class="box"><h3>소개</h3><p>${esc(c.desc)}</p></div>
-        ${guideHTML(c)}
-        ${epInfoHTML(c)}
-        ${commandsHTML(c)}
-        <div class="box"><h3>등장인물 <small>누르면 코드·감정 칸 안내</small>${collectHTML(c)} `) +
-    `<button class="btn sm ghost" data-go="codex-${esc(c.id)}" style="float:right">도감</button></h3>
-          <div class="cast">${castGridHTML(c)}</div></div>
-        ${placesHTML(c)}
-        <div class="box" id="wArtBox" ${wa ? "" : 'style="display:none"'}><h3>세계관 일러스트</h3>${wa}</div>
+        <div class="d-cta"><button class="btn ghost like-btn" id="like" aria-pressed="${liked(c.id)}">${likeHTML(liked(c.id))}</button>` +
+    `<button class="btn pri big" id="start">${c.episode ? "에피소드 시작" : "새 대화 시작"}</button></div>
+        <p class="note d-price">${startNote(c)}</p>
+        ${rooms.length ? `<div class="d-rooms"><h3>이어서 하기 <small>이 작품의 내 대화방</small></h3><div class="cont">${rooms.map(roomHTML).join("")}</div></div>` : ""}
       </div>
-    </div>
-    ${rowHTML("같은 줄의 다른 작품", row ? row.title : "", near, "rowNear")}</div>`;
+      <div class="d-main">
+        <div class="d-tabs" id="dTabs" role="navigation" aria-label="이 페이지의 칸">` +
+    tabs.map(([k, name]) => `<button type="button" class="d-tab" data-tab="${k}">${name}</button>`).join("") +
+    `</div>
+        <section id="d-intro">${descHTML(c)}<div${(c.guide || "").length > LONG_GUIDE ? " data-fold" : ""}>${guideHTML(c)}</div>` +
+    `${epInfoHTML(c)}<div data-fold>${commandsHTML(c)}</div></section>
+        <section id="d-open"><div class="box"><h3>${c.world_mode ? "게임 모드 · 시작 상황" : "시작 상황"} <small>고르면 그 장면에서 시작해요</small></h3>` +
+    `<div class="openings">${c.openings.map((o, i) => openingHTML(c, o, i, persona)).join("")}</div></div></section>
+        <section id="d-cast"><div class="box"><h3>등장인물 <small>누르면 코드·감정 칸 안내</small>${collectHTML(c)} ` +
+    `<button class="btn sm ghost" data-go="codex-${esc(c.id)}" style="float:right">도감</button></h3>
+          <div class="cast">${castGridHTML(c)}</div>` +
+    `<p class="note d-fields">상태창: ${c.fields.slice(0, 8).map(esc).join(" · ")}${c.fields.length > 8 ? " 외" : ""}</p></div>
+          <div data-fold="wide">${placesHTML(c)}<div class="box" id="wArtBox" ${wa ? "" : 'style="display:none"'}><h3>세계관 일러스트</h3>${wa}</div></div></section>
+        ${near.length ? `<section id="d-near">${rowHTML("같은 줄의 다른 작품", row.title, near, "rowNear")}</section>` : ""}
+      </div>
+    </div></div>`;
+  const wide = matchMedia("(min-width:781px)").matches;
+  $$("[data-fold] > .box", v).forEach((b) => foldBox(b, wide && b.parentElement.dataset.fold === "wide"));
   bindGo(v);
   IMG.hydrate(v);
   $$("[data-char]", v).forEach((b) => (b.onclick = () => go("c-" + b.dataset.char)));
@@ -8020,13 +8140,72 @@ function viewDetail(id) {
   );
   bindCast(v, c);
   bindCodex(v);
-  $("#start").onclick = () => {
-    if (rooms.length >= plan().rooms) return plusSheet("rooms");
-    const opIdx = +(v.querySelector("input[name=op]:checked")?.value || 0);
-    const p = S.personas.find((x) => x.id === $("#pp").value) || persona;
-    setRoom(newRoom(c, opIdx, p));
-    go("r-" + room.id);
+  bindTabs(v);
+  const more = $("#dMore");
+  if (more)
+    more.onclick = () => {
+      const open = $("#dDesc").classList.toggle("clamp") === false;
+      more.textContent = open ? "접기" : "더 보기";
+      more.setAttribute("aria-expanded", open);
+    };
+  $("#start").onclick = () => startChat(c, 0);
+  $$("[data-op]", v).forEach((b) => (b.onclick = () => startChat(c, +b.dataset.op)));
+}
+const roomHTML = (r) =>
+  `<button data-room="${esc(r.id)}">${coverHTML(r)}<span class="x"><b>${esc(r.name)}</b>` +
+  `<span>${esc(r.last)}</span></span><span class="note">${ago(r.at)}</span></button>`;
+function descHTML(c) {
+  const long = (c.desc || "").length > LONG_DESC;
+  return (
+    `<div class="box"><h3>소개</h3><p class="d-desc${long ? " clamp" : ""}" id="dDesc">${esc(c.desc)}</p>` +
+    `${long ? `<button type="button" class="btn sm ghost d-more" id="dMore" aria-expanded="false">더 보기</button>` : ""}</div>`
+  );
+}
+function openingHTML(c, o, i, persona) {
+  return (
+    `<div class="opening"><b>${esc(o.title)}${opPlace(c, o)}</b><span class="brief">${esc(opBrief(o))}…</span>` +
+    `<details class="d-scene"><summary>장면 펼쳐 읽기</summary><div class="bubble">${fmt(o.text.replace(/\[\[[^\]]*\]\]/g, ""), c, persona)}</div></details>` +
+    `<button type="button" class="btn sm" data-op="${i}">이 상황으로 시작</button></div>`
+  );
+}
+function foldBox(box, open) {
+  const h = box.querySelector("h3");
+  if (!h) return;
+  const d = document.createElement("details"),
+    s = document.createElement("summary");
+  d.className = box.className;
+  d.open = !!open;
+  if (box.id) d.id = box.id;
+  if (box.style.display) d.style.display = box.style.display;
+  s.append(h);
+  d.append(s, ...Array.from(box.childNodes));
+  box.replaceWith(d);
+}
+function bindTabs(v) {
+  const tabs = $("#dTabs", v),
+    btns = $$("[data-tab]", tabs),
+    secs = btns.map((b) => $("#d-" + b.dataset.tab, v));
+  const mark = () => {
+    if (!document.body.contains(tabs)) return v.removeEventListener("scroll", mark);
+    const line = tabs.getBoundingClientRect().bottom + 16;
+    let cur = 0;
+    secs.forEach((s, i) => {
+      if (s.getBoundingClientRect().top <= line) cur = i;
+    });
+    btns.forEach((b, i) => {
+      b.classList.toggle("on", i === cur);
+      if (i === cur) b.setAttribute("aria-current", "true");
+      else b.removeAttribute("aria-current");
+    });
   };
+  btns.forEach(
+    (b, i) =>
+      (b.onclick = () => {
+        v.scrollTop += secs[i].getBoundingClientRect().top - v.getBoundingClientRect().top - tabs.offsetHeight - 8;
+      })
+  );
+  v.addEventListener("scroll", mark, { passive: true });
+  mark();
 }
 function epInfoHTML(c) {
   const ep = c.episode;

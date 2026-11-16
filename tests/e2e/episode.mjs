@@ -29,12 +29,14 @@ for (const [dev, engine] of targets) {
       location.hash = "c-daeyeon";
     });
     await p.waitForTimeout(700);
-    // 상세: 시작 버튼이 등장인물·도감보다 위, 에피소드 안내와 결말 이름(세계관 일러스트는 #71 순서대로 접지 않음)
+    // 상세: 시작 버튼이 첫 화면 안(넓은 화면은 왼쪽 고정 칸, 휴대폰은 아래 고정 줄)이고 등장인물·도감보다 위, 에피소드 안내와 결말 이름
     res.detail = await p.evaluate(() => {
       const top = (el) => (el ? el.getBoundingClientRect().top + $("#view").scrollTop : -1),
-        start = $("#start");
+        start = $("#start"),
+        box = start.getBoundingClientRect();
       return {
         label: start.textContent,
+        inView: box.top >= 0 && box.bottom <= innerHeight,
         info: !!$(".ep-info"),
         names: $$(".ep-info .ep-ends span")
           .map((s) => s.textContent)
@@ -51,10 +53,37 @@ for (const [dev, engine] of targets) {
     });
     {
       const d = res.detail;
-      if (d.label !== "에피소드 시작" || !d.info || d.names !== d.want || !(d.startTop < d.castTop)) errs.push("상세가 다름: " + JSON.stringify(d));
+      if (d.label !== "에피소드 시작" || !d.inView || !d.info || d.names !== d.want || !(d.startTop < d.castTop))
+        errs.push("상세가 다름: " + JSON.stringify(d));
     }
     await p.screenshot({ path: `${out}/${dev.replace(/\W+/g, "_")}_episode_detail.png` });
+    // 시작 버튼 → 시작 창: 처음 한 번은 첫 장이 AI 안내('알겠어요') → 시작 상황·페르소나를 고르는 장 → '<페르소나>(으)로 시작'
     await p.evaluate(() => $("#start").click());
+    await p.waitForTimeout(300);
+    res.sheet = await p.evaluate(async () => {
+      const nap = (ms) => new Promise((r) => setTimeout(r, ms));
+      const head = ($(".start-sheet h2") || {}).textContent,
+        notice = !!$("#aiOk"),
+        early = !!$("input[name=op]"); // 안내를 넘기기 전에는 고르는 칸이 없어야 함
+      $("#aiOk").click();
+      await nap(100);
+      const out = {
+        head,
+        notice,
+        early,
+        ops: $$("input[name=op]").length,
+        pps: $$("input[name=pp]").length,
+        go: $("#startGo").textContent,
+        seen: S.settings.aiSeen > 0
+      };
+      $("#startGo").click();
+      return out;
+    });
+    {
+      const s = res.sheet;
+      if (s.head !== "에피소드 시작" || !s.notice || s.early || s.ops !== 3 || s.pps < 1 || !/\(으\)로 시작$/.test(s.go) || !s.seen)
+        errs.push("시작 창이 다름: " + JSON.stringify(s));
+    }
     await p.waitForTimeout(900);
     res.bar = await p.evaluate(() => ({ hidden: $("#epBar").hidden, text: $("#epBar").textContent, ep: !!room.ep }));
     if (res.bar.hidden || !res.bar.text.includes("1장 / 4") || !res.bar.ep) errs.push("장 막대가 다름: " + JSON.stringify(res.bar));

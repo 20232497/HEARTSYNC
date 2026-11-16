@@ -27,6 +27,33 @@ for (const [dev, engine] of targets) {
       location.hash = "r-" + r.id;
     });
     await p.waitForTimeout(900);
+    // AI 표시(docs/legal/ui-copy.md §6): 머리의 배지는 늘 보이고, 첫 대화 전 안내를 못 본 사람에게는 머리 아래 띠('알겠어요'를 누르면 적어 두고 다시 안 뜸),
+    // AI 말풍선의 접근성 이름, 내보낸 글의 첫 줄
+    res.ai = await p.evaluate(async () => {
+      const badge = () => ($(".chat-head .ai-badge") || {}).textContent,
+        first = {
+          badge: badge(),
+          note: !!$("#aiNote"),
+          label: $("#logInner .msg[role=group]").getAttribute("aria-label"),
+          line: exportText(room).split("\n")[0]
+        };
+      $("#aiNoteOk").click();
+      const gone = !$("#aiNote"),
+        saved = JSON.parse(localStorage.getItem("hv1_settings")).aiSeen > 0;
+      await viewChat(room.id);
+      return { ...first, gone, saved, again: !!$("#aiNote"), badge2: badge() };
+    });
+    if (
+      res.ai.badge !== "AI 캐릭터" ||
+      res.ai.badge2 !== "AI 캐릭터" ||
+      !res.ai.note ||
+      !res.ai.gone ||
+      !res.ai.saved ||
+      res.ai.again ||
+      res.ai.label !== "AI 응답: 내레이터" ||
+      res.ai.line !== "※ 이 파일의 캐릭터 대사와 서술은 생성형 AI(HEART SYNC)가 만든 것입니다."
+    )
+      errs.push("AI 표시가 다름: " + JSON.stringify(res.ai));
     // ! 명령어 목록: !만 치면 앱 + 작품 명령어가 모두 뜨고, ↓·Enter로 고르면 입력창에 채워진 뒤 닫힘(보내지는 않음)
     res.cmd = await p.evaluate(() => {
       const inp = $("#inp"),

@@ -36,6 +36,7 @@ export function route() {
   closeOverlays();
   if (gen && !h.startsWith("r-")) stopGen();
   document.body.classList.toggle("in-chat", h.startsWith("r-"));
+  document.body.classList.toggle("in-detail", h.startsWith("c-")); // 상세: 좁은 화면에서 아래에 고정된 시작 버튼 줄 위로 토스트를 올림(35-detail.css)
   const [base, ...rest] = h.split("-");
   const arg = rest.join("-");
   const view = VIEWS[base] || VIEWS.home;

@@ -7,6 +7,7 @@ import { KV } from "../core/storage.js";
 import { $ } from "../core/util.js";
 import { IMG_TAG_RE, fallbackSits, imgTags } from "../images/codes.js";
 import { imagesOf } from "../images/pick.js";
+import { AI_EXPORT_LINE } from "./ai-notice.js";
 import { stopGen } from "./chat/generate.js";
 import { copyText } from "./chat/log.js";
 import { tagInfo } from "./cover.js";
@@ -56,7 +57,7 @@ export function jumpTo(id) {
 }
 /** 대화 전체를 글로(그림 태그는 [이미지: 이름 · 칸]으로). @param {Room} r @returns {string} */
 export function exportText(r) {
-  const head = `${r.char.title} — ${r.opening || ""}\n${r.persona.name}(으)로 플레이 · ${new Date().toLocaleString("ko-KR")}\n\n`;
+  const head = `${AI_EXPORT_LINE}\n${r.char.title} —${r.opening || ""}\n${r.persona.name}(으)로 플레이 · ${new Date().toLocaleString("ko-KR")}\n\n`;
   return (
     head +
     r.msgs

@@ -9,6 +9,7 @@ import { bindEp, epBarHTML, epEventHTML, epTailHTML } from "./episode.js";
 import { epCopy, generate, regen, regenAsk, sendTurn } from "./generate.js";
 import { fmt, liveFill, statusBlock } from "./render.js";
 import { flashHint, lastAi, updateMeter } from "./view.js";
+import { aiLabel } from "../ai-notice.js";
 import { coverHTML, pavHTML, zoomPic } from "../cover.js";
 import { plan } from "../../core/wallet.js";
 import { ensurePay, plusSheet } from "../pay.js";
@@ -122,7 +123,7 @@ export function renderLog(scroll) {
         ? `<div class="bubble typing" id="liveBubble"></div>`
         : `<div class="bubble${imgTags(alt.text || "").length >= 2 ? " many-img" : ""}">${fmt(alt.text || "", c, r.persona)}</div>`;
     html +=
-      `<div class="msg" data-id="${m.id}">${coverHTML(c)}<div class="col">` +
+      `<div class="msg" data-id="${m.id}" role="group" aria-label="${esc(aiLabel(speakerName(r)))}">${coverHTML(c)}<div class="col">` +
       `<span class="nm">${esc(speakerName(r))}</span>${pending ? "" : epEventHTML(r, alt)}${body}`;
     if (!pending && !m.editing) {
       html += statusBlock(c, alt.status, m.statusBefore, { open: isLast, live: isLast });
