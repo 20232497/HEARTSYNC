@@ -7,7 +7,7 @@ import { renderLog } from "./chat/log.js";
 import { updateComposer } from "./chat/view.js";
 import { setModel } from "./model-sheet.js";
 import { sheet } from "./sheet.js";
-import { PACKS, PLUS, buyPack, checkout } from "./store.js";
+import { PACKS, PLUS, PLUS_SUG_NOTE, buyPack, checkout } from "./store.js";
 
 /* 결제 확인 → 견적 반환 (null이면 보내지 않음) */
 export async function ensurePay(r) {
@@ -35,7 +35,7 @@ function askPay(q, r) {
     const lite = r.set.model === "lite",
       m = MODELS[r.set.model],
       n = heartsOf(q), // 이번 턴에 나가는 하트 — 추천 자동 받기를 켠 방은 그 값이 더해짐
-      plus = q.sug ? ` (추천 자동 받기 ♥${q.sug} 포함)` : "";
+      plus = q.sug ? ` (답변 추천 자동 받기 ♥${q.sug} 포함)` : "";
     const ov = sheet(
       lite
         ? `<h2>오늘 무료 ${FREE_DAILY}턴을 다 썼어요</h2><p class="sub">지금부터 라이트 모델은 한 턴에 <b>♥${n}</b>이 사용돼요${plus}. 무료 턴은 자정에 다시 채워져요.</p>
@@ -97,7 +97,7 @@ function paywall(q, r) {
       .join("")}</div>
     <div class="member" style="padding:16px"><div class="row"><b style="font-family:var(--display);font-size:18px">HEART SYNC` +
       `<em style="font-style:normal;color:#f0b54a">+</em></b><span class="spacer"></span><span>${won(PLUS.price)}/월</span></div>
-      <p style="margin:6px 0 12px;color:#e9dfcf;font-size:13px">라이트 무제한 · 스토리·마스터 50% 할인 · 매달 ♥${PLUS_MONTHLY}</p>` +
+      <p style="margin:6px 0 12px;color:#e9dfcf;font-size:13px">라이트 무제한 · 스토리·마스터 50% 할인 · 매달 ♥${PLUS_MONTHLY}<br>${PLUS_SUG_NOTE}</p>` +
       `<button class="btn gold block" id="upPlus">PLUS 시작하기</button></div>
     ${
       r.set.model !== "lite"
@@ -148,7 +148,7 @@ export function plusSheet(reason) {
     `<h2>${esc(copy[0])}</h2><p class="sub">${esc(copy[1])}</p>
     <div class="member" style="padding:16px"><div class="row"><b style="font-family:var(--display);font-size:18px">HEART SYNC` +
       `<em style="font-style:normal;color:#f0b54a">+</em></b><span class="spacer"></span><span>${won(PLUS.price)}/월</span></div>
-    <p style="margin:6px 0 12px;color:#e9dfcf;font-size:13px">라이트 무제한 · 스토리·마스터 50% 할인 · 매달 ♥${PLUS_MONTHLY} · 기억 3배 이상</p>` +
+    <p style="margin:6px 0 12px;color:#e9dfcf;font-size:13px">라이트 무제한 · 스토리·마스터 50% 할인 · 매달 ♥${PLUS_MONTHLY} · 기억 3배 이상<br>${PLUS_SUG_NOTE}</p>` +
       `<button class="btn gold block" id="upPlus">PLUS 시작하기</button></div>
     <button class="btn ghost block" data-x style="margin-top:8px">닫기</button>`
   );

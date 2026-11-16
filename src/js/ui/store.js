@@ -12,6 +12,8 @@ export const PACKS = [
   { id: "h3000", n: 3000, bonus: 600, price: 39000 }
 ];
 export const PLUS = { id: "plus", name: "HEART SYNC+ 1개월", price: 9900 };
+/** PLUS 혜택을 적는 자리마다 같이 적는 한 줄 — 답변 추천은 PLUS의 무료 이용·할인에 들지 않음(적지 않으면 혜택을 부풀린 표시로 읽힐 수 있음 — docs/legal/ui-copy.md §3) */
+export const PLUS_SUG_NOTE = `답변 추천은 PLUS에서도 받을 때마다 ♥${SUGGEST_COST}(무료 턴·할인에 들지 않아요)`;
 export function buyPack(id, after) {
   const p = PACKS.find((x) => x.id === id);
   checkout({ id: p.id, name: "하트 " + num(p.n + p.bonus) + "개", price: p.price, hearts: p.n + p.bonus }, after);
@@ -48,7 +50,7 @@ export function viewStore() {
     `<td class="num">${cell("master", "mid")}</td><td class="num">${cell("master", "long")}</td><td class="num plus">50% 할인</td></tr>
     </tbody></table></div>
     <p class="note" style="margin-top:8px">보내기 버튼에 이번 턴 비용이 항상 표시돼요. 응답이 실패하면 자동으로 환불돼요. ` +
-    `AI 추천 답변은 받을 때마다 ♥${SUGGEST_COST}(추천 버튼에 표시 — 작가가 써 둔 첫 추천은 무료)이고, 장기기억 요약·캐릭터 초안은 무료예요.</p>
+    `답변 추천은 받을 때마다 ♥${SUGGEST_COST}(추천 버튼에 표시 — 작가가 써 둔 첫 추천은 무료)이고, 장기기억 요약·캐릭터 초안은 무료예요.</p>
 
     <h2 class="sec">멤버십</h2>
     <div class="member">
@@ -56,7 +58,8 @@ export function viewStore() {
       <ul>
         <li>라이트 모델 무제한</li><li>스토리·마스터 모델 50% 할인</li><li>매달 하트 ${PLUS_MONTHLY}개 지급</li>
         <li>장기기억 ${num(PLAN.free.memoMax)}자 → ${num(PLAN.pro.memoMax)}자</li>` +
-    `<li>기억력 최대 ${PLAN.free.memTurns}턴 → ${PLAN.pro.memTurns}턴</li><li>대화방 무제한 · 기억 히스토리 ${PLAN.pro.hist}개</li>
+    `<li>기억력 최대 ${PLAN.free.memTurns}턴 → ${PLAN.pro.memTurns}턴</li><li>대화방 무제한 · 기억 히스토리 ${PLAN.pro.hist}개</li>` +
+    `<li class="plus-note">${PLUS_SUG_NOTE}</li>
       </ul>
       <div class="row"><span class="price">${won(PLUS.price)} <small>/ 월 · 언제든 해지</small></span><span class="spacer"></span>
       ${
@@ -122,7 +125,7 @@ export function viewStore() {
 export function checkout(item, after) {
   const vat = Math.round(item.price / 11);
   const ov = sheet(
-    `<h2>결제하기</h2><p class="sub">${esc(item.name)}${item.id === "plus" ? ` · 하트 ${PLUS_MONTHLY}개 포함` : ""}</p>
+    `<h2>결제하기</h2><p class="sub">${esc(item.name)}${item.id === "plus" ? ` · 하트 ${PLUS_MONTHLY}개 포함<br>${PLUS_SUG_NOTE}` : ""}</p>
     <div class="sumrow"><span>상품 금액</span><span>${won(item.price - vat)}</span></div>
     <div class="sumrow"><span>부가세</span><span>${won(vat)}</span></div>
     <div class="sumrow total"><span>최종 결제 금액</span><span>${won(item.price)}</span></div>

@@ -205,18 +205,23 @@ export function updateComposer() {
   send.innerHTML = (cont ? "이어서" : ICON.send) + `<small>${qShort(q)}</small>`;
   send.setAttribute("aria-label", cont ? "이어서 쓰기" : "보내기");
   // 누르기 전에 값이 보이게: 보내기 버튼의 값에는 추천 자동 받기(q.sug)가 더해져 있고, 추천 버튼은 저장된 추천이 없을 때만 값을 보임
+  // 설명 글은 풀어 씀 — 버튼의 '무료+♥1'만 보면 '무료'가 먼저 읽히므로(법률 세션 권고, docs/legal/ui-copy.md §3)
+  const sugNote = q.sug ? ` · 답변 추천 자동 받기로 하트 ${q.sug}개가 사용돼요` : "";
   send.title =
     (cont ? "입력 없이 이어서 쓰기 — " : "") +
-    (q.type === "heart" ? `이번 턴에 하트 ${heartsOf(q)}개가 사용돼요` : q.type === "free" ? "오늘의 무료 턴으로 보내요" : "PLUS 무제한") +
-    (q.sug ? ` · 추천 자동 받기 ♥${q.sug} 포함` : "");
+    (q.type === "heart"
+      ? `이번 턴에 하트 ${heartsOf(q)}개가 사용돼요` + (q.sug ? ` · 답변 추천 자동 받기 ♥${q.sug} 포함` : "")
+      : q.type === "free"
+        ? (q.sug ? "이번 턴은 무료 턴이에요" : "오늘의 무료 턴으로 보내요") + sugNote
+        : (q.sug ? "이번 턴은 PLUS로 보내요" : "PLUS 무제한") + sugNote);
   const sug = $("#sugBtn");
   sug.disabled = !!gen;
   sug.innerHTML = sugLabel(room);
   sug.classList.toggle("auto", !!room.set.autoSug);
   sug.title = room.set.autoSug
     ? q.sug
-      ? `추천 자동 받기 켜짐 — 답마다 ♥${q.sug}이 더 나가요`
-      : "추천 자동 받기 켜짐 — 하트가 모자라 이번 턴은 추천 없이 보내요"
+      ? `답변 추천 자동 받기 켜짐 — 답마다 ♥${q.sug}이 더 나가요`
+      : "답변 추천 자동 받기 켜짐 — 하트가 모자라 이번 턴은 추천 없이 보내요"
     : "";
   const chip = $("#modelChip");
   if (chip) chip.innerHTML = `${m.name} <small>${qShort(q)}/턴</small> ▾`; // 좁은 화면에서는 이름만(CSS) — 가격은 보내기 버튼에

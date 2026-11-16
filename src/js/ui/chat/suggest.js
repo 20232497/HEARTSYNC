@@ -1,4 +1,4 @@
-/* ✦ AI 추천 답변: 저장된 추천은 값 없이 펼치고, 없으면 눌러서 받음(추천 한 번의 값 — wallet sugQuote). 방마다 '자동 받기'(r.set.autoSug)를 켜면 답마다 같이 옴.
+/* ✦ 답변 추천: 저장된 추천은 값 없이 펼치고, 없으면 눌러서 받음(추천 한 번의 값 — wallet sugQuote). 방마다 '자동 받기'(r.set.autoSug)를 켜면 답마다 같이 옴.
    값이 드는 버튼에는 누르기 전에 값이 보이고(sugLabel·'새로 추천'), 만들지 못하면 되돌림. 저장된 추천 = 작가가 시작 장면에 써 둔 것 · 자동 받기로 온 것 · 눌러서 받은 것 · 예전 방의 것 */
 import { errCopy, llm } from "../../ai/llm.js";
 import { speakerName } from "../../ai/prompt/rules.js";
@@ -29,7 +29,7 @@ export function setAutoSug(r, on) {
   else delete r.set.autoSug;
   saveRoom(r);
   updateComposer();
-  toast(on ? `자동 받기를 켰어요 — 답마다 ♥${SUGGEST_COST}이 더 나가요` : "자동 받기를 껐어요");
+  toast(on ? `답변 추천 자동 받기를 켰어요 — 답마다 ♥${SUGGEST_COST}이 더 나가요` : "답변 추천 자동 받기를 껐어요");
 }
 export function hideSug() {
   const p = $("#sugPanel");
@@ -89,7 +89,7 @@ export async function toggleSug() {
     busy = true;
     charge(q, label);
     open();
-    p.innerHTML = `<div class="head">✦ 추천 대사를 만드는 중… <span class="thinking"><i></i><i></i><i></i></span></div>`;
+    p.innerHTML = `<div class="head">✦ 답변 추천을 만드는 중… <span class="thinking"><i></i><i></i><i></i></span></div>`;
     const recent = r.msgs
       .filter((x) => curText(x) && !x.sys)
       .slice(-6)
@@ -130,7 +130,7 @@ ${recent}`
       refund(q, label);
       if (room === r && !p.hidden) {
         p.innerHTML =
-          `<div class="head">추천을 만들지 못했어요. ${esc(errCopy(e))} 하트는 돌려드렸어요.<span class="spacer"></span>` +
+          `<div class="head">답변 추천을 만들지 못했어요. ${esc(errCopy(e))} 하트는 돌려드렸어요.<span class="spacer"></span>` +
           `<button class="btn sm ghost" id="sugX">닫기</button></div>`;
         $("#sugX", p).onclick = hideSug;
       }

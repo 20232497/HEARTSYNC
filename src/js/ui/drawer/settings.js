@@ -120,7 +120,7 @@ export function drawerOutput({ r, body }) {
             return (
               `<tr><td>${MODELS[k].name}${k === s.model ? ' <span class="pill">사용 중</span>' : ""}</td>` +
               `<td class="num">${qq.type === "free" ? "무료 (" + freeLeft() + "턴 남음)" : qq.type === "plus" ? "PLUS 무제한" : "♥" + heartsOf(qq) + " / 턴"}` +
-              `${qq.type !== "heart" && qq.sug ? " + 추천 ♥" + qq.sug : ""}</td></tr>`
+              `${qq.type !== "heart" && qq.sug ? " + 답변 추천 ♥" + qq.sug : ""}</td></tr>`
             );
           })
           .join("")}</tbody></table></div>
@@ -159,7 +159,7 @@ export function drawerOutput({ r, body }) {
       delete r.set.sugAuto; // 예전의 '추천 자동 표시' 칸(다른 뜻) — 남아 있으면 지움
       saveRoom(r);
       updateComposer();
-      toast(turnedOn ? `출력 설정을 저장했어요 — 추천 자동 받기: 답마다 ♥${SUGGEST_COST}이 더 나가요` : "출력 설정을 저장했어요");
+      toast(turnedOn ? `출력 설정을 저장했어요 — 답변 추천 자동 받기: 답마다 ♥${SUGGEST_COST}이 더 나가요` : "출력 설정을 저장했어요");
       openRoomDrawer("main");
     };
   };

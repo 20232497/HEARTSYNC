@@ -1129,7 +1129,7 @@ function charge(q, label) {
   } else ledger(0, label + " · PLUS");
   if (q.sug) {
     S.wallet.hearts -= q.sug;
-    ledger(-q.sug, label + " · 추천 자동 받기");
+    ledger(-q.sug, label + " · 답변 추천(자동 받기)");
   }
   saveWallet();
 }
@@ -1145,7 +1145,7 @@ function refund(q, label) {
 function refundSug(q, label) {
   if (!q.sug) return;
   S.wallet.hearts += q.sug;
-  ledger(q.sug, label + " · 추천 환불");
+  ledger(q.sug, label + " · 답변 추천 환불");
   q.sug = 0;
   saveWallet();
 }
@@ -5703,6 +5703,7 @@ const PACKS = [
   { id: "h3000", n: 3000, bonus: 600, price: 39000 }
 ];
 const PLUS = { id: "plus", name: "HEART SYNC+ 1개월", price: 9900 };
+const PLUS_SUG_NOTE = `답변 추천은 PLUS에서도 받을 때마다 ♥${SUGGEST_COST}(무료 턴·할인에 들지 않아요)`;
 function buyPack(id, after) {
   const p = PACKS.find((x) => x.id === id);
   checkout({ id: p.id, name: "하트 " + num(p.n + p.bonus) + "개", price: p.price, hearts: p.n + p.bonus }, after);
@@ -5738,14 +5739,15 @@ function viewStore() {
     `<td class="num">${cell("master", "mid")}</td><td class="num">${cell("master", "long")}</td><td class="num plus">50% 할인</td></tr>
     </tbody></table></div>
     <p class="note" style="margin-top:8px">보내기 버튼에 이번 턴 비용이 항상 표시돼요. 응답이 실패하면 자동으로 환불돼요. ` +
-    `AI 추천 답변은 받을 때마다 ♥${SUGGEST_COST}(추천 버튼에 표시 — 작가가 써 둔 첫 추천은 무료)이고, 장기기억 요약·캐릭터 초안은 무료예요.</p>
+    `답변 추천은 받을 때마다 ♥${SUGGEST_COST}(추천 버튼에 표시 — 작가가 써 둔 첫 추천은 무료)이고, 장기기억 요약·캐릭터 초안은 무료예요.</p>
     <h2 class="sec">멤버십</h2>
     <div class="member">
       <h2>HEART SYNC<em>+</em></h2>
       <ul>
         <li>라이트 모델 무제한</li><li>스토리·마스터 모델 50% 할인</li><li>매달 하트 ${PLUS_MONTHLY}개 지급</li>
         <li>장기기억 ${num(PLAN.free.memoMax)}자 → ${num(PLAN.pro.memoMax)}자</li>` +
-    `<li>기억력 최대 ${PLAN.free.memTurns}턴 → ${PLAN.pro.memTurns}턴</li><li>대화방 무제한 · 기억 히스토리 ${PLAN.pro.hist}개</li>
+    `<li>기억력 최대 ${PLAN.free.memTurns}턴 → ${PLAN.pro.memTurns}턴</li><li>대화방 무제한 · 기억 히스토리 ${PLAN.pro.hist}개</li>` +
+    `<li class="plus-note">${PLUS_SUG_NOTE}</li>
       </ul>
       <div class="row"><span class="price">${won(PLUS.price)} <small>/ 월 · 언제든 해지</small></span><span class="spacer"></span>
       ${
@@ -5809,7 +5811,7 @@ function viewStore() {
 function checkout(item, after) {
   const vat = Math.round(item.price / 11);
   const ov = sheet(
-    `<h2>결제하기</h2><p class="sub">${esc(item.name)}${item.id === "plus" ? ` · 하트 ${PLUS_MONTHLY}개 포함` : ""}</p>
+    `<h2>결제하기</h2><p class="sub">${esc(item.name)}${item.id === "plus" ? ` · 하트 ${PLUS_MONTHLY}개 포함<br>${PLUS_SUG_NOTE}` : ""}</p>
     <div class="sumrow"><span>상품 금액</span><span>${won(item.price - vat)}</span></div>
     <div class="sumrow"><span>부가세</span><span>${won(vat)}</span></div>
     <div class="sumrow total"><span>최종 결제 금액</span><span>${won(item.price)}</span></div>
@@ -5892,9 +5894,9 @@ function faqGroups() {
         ],
         [
           "하트는 어디에 쓰나요?",
-          "무료 턴을 다 쓴 뒤의 라이트 모델과, 스토리·마스터 모델 대화, 그리고 AI 추천 답변에 써요. " +
+          "무료 턴을 다 쓴 뒤의 라이트 모델과, 스토리·마스터 모델 대화, 그리고 답변 추천에 써요. " +
             "보내기 버튼과 추천 버튼에 이번에 드는 하트가 항상 표시되고, 응답이 실패하면 자동으로 환불돼요. " +
-            `AI 추천 답변은 받을 때마다 <b>♥${SUGGEST_COST}</b>이에요(작가가 시작 장면에 써 둔 첫 추천은 무료). ` +
+            `답변 추천은 받을 때마다 <b>♥${SUGGEST_COST}</b>이에요(작가가 시작 장면에 써 둔 첫 추천은 무료). ` +
             `대화방 메뉴의 출력 설정에서 '답변 추천 자동 받기'를 켜면 답마다 추천이 같이 오고 턴마다 ♥${SUGGEST_COST}이 더 나가요(무료 턴·PLUS에서도). ` +
             "장기기억 요약은 무료예요."
         ],
@@ -6784,7 +6786,7 @@ function drawerOutput({ r, body }) {
             return (
               `<tr><td>${MODELS[k].name}${k === s.model ? ' <span class="pill">사용 중</span>' : ""}</td>` +
               `<td class="num">${qq.type === "free" ? "무료 (" + freeLeft() + "턴 남음)" : qq.type === "plus" ? "PLUS 무제한" : "♥" + heartsOf(qq) + " / 턴"}` +
-              `${qq.type !== "heart" && qq.sug ? " + 추천 ♥" + qq.sug : ""}</td></tr>`
+              `${qq.type !== "heart" && qq.sug ? " + 답변 추천 ♥" + qq.sug : ""}</td></tr>`
             );
           })
           .join("")}</tbody></table></div>
@@ -6822,7 +6824,7 @@ function drawerOutput({ r, body }) {
       delete r.set.sugAuto;
       saveRoom(r);
       updateComposer();
-      toast(turnedOn ? `출력 설정을 저장했어요 — 추천 자동 받기: 답마다 ♥${SUGGEST_COST}이 더 나가요` : "출력 설정을 저장했어요");
+      toast(turnedOn ? `출력 설정을 저장했어요 — 답변 추천 자동 받기: 답마다 ♥${SUGGEST_COST}이 더 나가요` : "출력 설정을 저장했어요");
       openRoomDrawer("main");
     };
   };
@@ -6906,7 +6908,7 @@ function openModelSheet() {
     return (
       `<button class="model-card ${r.set.model === k ? "on" : ""}" data-m="${k}"><span class="k">${esc(m.badge)}</span>` +
       `<b>${m.name}${k === rec ? ' <span class="pill ok">권장</span>' : ""}${isPro() && k !== "lite" ? ' <span class="pill gold">PLUS -50%</span>' : ""}</b>` +
-      `<p>${esc(m.desc)}</p><div class="price">${price}${q.sug ? ` + 추천 자동 받기 ♥${q.sug}` : ""}<small>${free}</small></div>` +
+      `<p>${esc(m.desc)}</p><div class="price">${price}${q.sug ? ` + 답변 추천 ♥${q.sug}` : ""}<small>${free}</small></div>` +
       `<span class="chk">✓</span></button>`
     );
   };
@@ -6961,7 +6963,7 @@ function askPay(q, r) {
     const lite = r.set.model === "lite",
       m = MODELS[r.set.model],
       n = heartsOf(q),
-      plus = q.sug ? ` (추천 자동 받기 ♥${q.sug} 포함)` : "";
+      plus = q.sug ? ` (답변 추천 자동 받기 ♥${q.sug} 포함)` : "";
     const ov = sheet(
       lite
         ? `<h2>오늘 무료 ${FREE_DAILY}턴을 다 썼어요</h2><p class="sub">지금부터 라이트 모델은 한 턴에 <b>♥${n}</b>이 사용돼요${plus}. 무료 턴은 자정에 다시 채워져요.</p>
@@ -7023,7 +7025,7 @@ function paywall(q, r) {
       .join("")}</div>
     <div class="member" style="padding:16px"><div class="row"><b style="font-family:var(--display);font-size:18px">HEART SYNC` +
       `<em style="font-style:normal;color:#f0b54a">+</em></b><span class="spacer"></span><span>${won(PLUS.price)}/월</span></div>
-      <p style="margin:6px 0 12px;color:#e9dfcf;font-size:13px">라이트 무제한 · 스토리·마스터 50% 할인 · 매달 ♥${PLUS_MONTHLY}</p>` +
+      <p style="margin:6px 0 12px;color:#e9dfcf;font-size:13px">라이트 무제한 · 스토리·마스터 50% 할인 · 매달 ♥${PLUS_MONTHLY}<br>${PLUS_SUG_NOTE}</p>` +
       `<button class="btn gold block" id="upPlus">PLUS 시작하기</button></div>
     ${
       r.set.model !== "lite"
@@ -7073,13 +7075,13 @@ function plusSheet(reason) {
     `<h2>${esc(copy[0])}</h2><p class="sub">${esc(copy[1])}</p>
     <div class="member" style="padding:16px"><div class="row"><b style="font-family:var(--display);font-size:18px">HEART SYNC` +
       `<em style="font-style:normal;color:#f0b54a">+</em></b><span class="spacer"></span><span>${won(PLUS.price)}/월</span></div>
-    <p style="margin:6px 0 12px;color:#e9dfcf;font-size:13px">라이트 무제한 · 스토리·마스터 50% 할인 · 매달 ♥${PLUS_MONTHLY} · 기억 3배 이상</p>` +
+    <p style="margin:6px 0 12px;color:#e9dfcf;font-size:13px">라이트 무제한 · 스토리·마스터 50% 할인 · 매달 ♥${PLUS_MONTHLY} · 기억 3배 이상<br>${PLUS_SUG_NOTE}</p>` +
       `<button class="btn gold block" id="upPlus">PLUS 시작하기</button></div>
     <button class="btn ghost block" data-x style="margin-top:8px">닫기</button>`
   );
   $("#upPlus", ov).onclick = () => checkout(PLUS, afterBuy);
 }
-/* ── src/js/ui/chat/suggest.js — ✦ AI 추천 답변: 저장된 추천은 값 없이 펼치고, 없으면 눌러서 받음(추천 한 번의 값 — wallet sugQuote) */
+/* ── src/js/ui/chat/suggest.js — ✦ 답변 추천: 저장된 추천은 값 없이 펼치고, 없으면 눌러서 받음(추천 한 번의 값 — wallet sugQuote) */
 let busy = false;
 const curAlt = (r) => {
   const m = r && lastAi(r);
@@ -7094,7 +7096,7 @@ function setAutoSug(r, on) {
   else delete r.set.autoSug;
   saveRoom(r);
   updateComposer();
-  toast(on ? `자동 받기를 켰어요 — 답마다 ♥${SUGGEST_COST}이 더 나가요` : "자동 받기를 껐어요");
+  toast(on ? `답변 추천 자동 받기를 켰어요 — 답마다 ♥${SUGGEST_COST}이 더 나가요` : "답변 추천 자동 받기를 껐어요");
 }
 function hideSug() {
   const p = $("#sugPanel");
@@ -7152,7 +7154,7 @@ async function toggleSug() {
     busy = true;
     charge(q, label);
     open();
-    p.innerHTML = `<div class="head">✦ 추천 대사를 만드는 중… <span class="thinking"><i></i><i></i><i></i></span></div>`;
+    p.innerHTML = `<div class="head">✦ 답변 추천을 만드는 중… <span class="thinking"><i></i><i></i><i></i></span></div>`;
     const recent = r.msgs
       .filter((x) => curText(x) && !x.sys)
       .slice(-6)
@@ -7192,7 +7194,7 @@ ${recent}`
       refund(q, label);
       if (room === r && !p.hidden) {
         p.innerHTML =
-          `<div class="head">추천을 만들지 못했어요. ${esc(errCopy(e))} 하트는 돌려드렸어요.<span class="spacer"></span>` +
+          `<div class="head">답변 추천을 만들지 못했어요. ${esc(errCopy(e))} 하트는 돌려드렸어요.<span class="spacer"></span>` +
           `<button class="btn sm ghost" id="sugX">닫기</button></div>`;
         $("#sugX", p).onclick = hideSug;
       }
@@ -7377,18 +7379,22 @@ function updateComposer() {
   send.classList.toggle("cont", cont);
   send.innerHTML = (cont ? "이어서" : ICON.send) + `<small>${qShort(q)}</small>`;
   send.setAttribute("aria-label", cont ? "이어서 쓰기" : "보내기");
+  const sugNote = q.sug ? ` · 답변 추천 자동 받기로 하트 ${q.sug}개가 사용돼요` : "";
   send.title =
     (cont ? "입력 없이 이어서 쓰기 — " : "") +
-    (q.type === "heart" ? `이번 턴에 하트 ${heartsOf(q)}개가 사용돼요` : q.type === "free" ? "오늘의 무료 턴으로 보내요" : "PLUS 무제한") +
-    (q.sug ? ` · 추천 자동 받기 ♥${q.sug} 포함` : "");
+    (q.type === "heart"
+      ? `이번 턴에 하트 ${heartsOf(q)}개가 사용돼요` + (q.sug ? ` · 답변 추천 자동 받기 ♥${q.sug} 포함` : "")
+      : q.type === "free"
+        ? (q.sug ? "이번 턴은 무료 턴이에요" : "오늘의 무료 턴으로 보내요") + sugNote
+        : (q.sug ? "이번 턴은 PLUS로 보내요" : "PLUS 무제한") + sugNote);
   const sug = $("#sugBtn");
   sug.disabled = !!gen;
   sug.innerHTML = sugLabel(room);
   sug.classList.toggle("auto", !!room.set.autoSug);
   sug.title = room.set.autoSug
     ? q.sug
-      ? `추천 자동 받기 켜짐 — 답마다 ♥${q.sug}이 더 나가요`
-      : "추천 자동 받기 켜짐 — 하트가 모자라 이번 턴은 추천 없이 보내요"
+      ? `답변 추천 자동 받기 켜짐 — 답마다 ♥${q.sug}이 더 나가요`
+      : "답변 추천 자동 받기 켜짐 — 하트가 모자라 이번 턴은 추천 없이 보내요"
     : "";
   const chip = $("#modelChip");
   if (chip) chip.innerHTML = `${m.name} <small>${qShort(q)}/턴</small> ▾`;

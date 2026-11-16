@@ -50,7 +50,7 @@ test("charge·refund: 무료 턴은 턴 수를, 추천 값은 하트를 — 실�
   assert.deepEqual(
     S.wallet.ledger.map((x) => [x.d, x.label]),
     [
-      [-SUGGEST_COST, "작품 · 라이트 · 추천 자동 받기"],
+      [-SUGGEST_COST, "작품 · 라이트 · 답변 추천(자동 받기)"],
       [0, "작품 · 라이트 · 무료 턴"]
     ]
   );

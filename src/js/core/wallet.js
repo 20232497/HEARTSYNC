@@ -89,7 +89,7 @@ export function charge(q, label) {
   } else ledger(0, label + " · PLUS");
   if (q.sug) {
     S.wallet.hearts -= q.sug;
-    ledger(-q.sug, label + " · 추천 자동 받기");
+    ledger(-q.sug, label + " · 답변 추천(자동 받기)");
   }
   saveWallet();
 }
@@ -110,7 +110,7 @@ export function refund(q, label) {
 export function refundSug(q, label) {
   if (!q.sug) return;
   S.wallet.hearts += q.sug;
-  ledger(q.sug, label + " · 추천 환불");
+  ledger(q.sug, label + " · 답변 추천 환불");
   q.sug = 0;
   saveWallet();
 }
