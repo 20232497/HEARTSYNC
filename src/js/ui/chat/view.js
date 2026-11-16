@@ -6,12 +6,12 @@ import { migrateRoom, roomKey, saveRoom } from "../../core/rooms.js";
 import { S, gen, room, setRoom } from "../../core/state.js";
 import { KV } from "../../core/storage.js";
 import { $, esc, num, uid } from "../../core/util.js";
-import { FREE_DAILY, freeLeft, isPro, listPrice, qShort, quote } from "../../core/wallet.js";
+import { FREE_DAILY, freeLeft, heartsOf, isPro, listPrice, qShort, quote } from "../../core/wallet.js";
 import { sendTurn, stopGen } from "./generate.js";
 import { cmdKey, updateCmdList } from "./cmdlist.js";
 import { bindStick, renderLog } from "./log.js";
 import { barPct } from "./render.js";
-import { hideSug, toggleSug } from "./suggest.js";
+import { hideSug, sugLabel, toggleSug } from "./suggest.js";
 import { AI_BADGE, AI_NOTICE, AI_NOTICE_OK, ackAiNotice, aiNoticeNeeded } from "../ai-notice.js";
 import { coverHTML } from "../cover.js";
 import { ICON } from "../icons.js";
@@ -177,9 +177,20 @@ export function updateComposer() {
   send.disabled = !!gen;
   stop.hidden = !gen;
   send.innerHTML = `${ICON.send}<small>${qShort(q)}</small>`;
-  send.title = q.type === "heart" ? `이번 턴에 하트 ${q.n}개가 사용돼요` : q.type === "free" ? "오늘의 무료 턴으로 보내요" : "PLUS 무제한";
+  // 누르기 전에 값이 보이게: 보내기 버튼의 값에는 추천 자동 받기(q.sug)가 더해져 있고, 추천 버튼은 저장된 추천이 없을 때만 값을 보임
+  send.title =
+    (q.type === "heart" ? `이번 턴에 하트 ${heartsOf(q)}개가 사용돼요` : q.type === "free" ? "오늘의 무료 턴으로 보내요" : "PLUS 무제한") +
+    (q.sug ? ` · 추천 자동 받기 ♥${q.sug} 포함` : "");
   $("#contBtn").disabled = !!gen;
-  $("#sugBtn").disabled = !!gen;
+  const sug = $("#sugBtn");
+  sug.disabled = !!gen;
+  sug.innerHTML = sugLabel(room);
+  sug.classList.toggle("auto", !!room.set.autoSug);
+  sug.title = room.set.autoSug
+    ? q.sug
+      ? `추천 자동 받기 켜짐 — 답마다 ♥${q.sug}이 더 나가요`
+      : "추천 자동 받기 켜짐 — 하트가 모자라 이번 턴은 추천 없이 보내요"
+    : "";
   const chip = $("#modelChip");
   if (chip) chip.innerHTML = `${m.name} <small>${qShort(q)}/턴</small> ▾`; // 좁은 화면에서는 이름만(CSS) — 가격은 보내기 버튼에
   const fc = $("#freeCount");

@@ -1,6 +1,6 @@
 /* 요금: 무료 턴·PLUS·하트 차감/환불, 가격 계산(listPrice·quote) */
 import { LEN, MODELS } from "../ai/models.js";
-import { FREE_DAILY, LIMITS, PLUS_MONTHLY, WELCOME } from "./constants.js";
+import { FREE_DAILY, LIMITS, PLUS_MONTHLY, SUGGEST_COST, WELCOME } from "./constants.js";
 import { emit } from "./events.js";
 import { S } from "./state.js";
 import { KV } from "./storage.js";
@@ -9,7 +9,7 @@ import { today } from "./util.js";
 /** @typedef {import("./types.js").Quote} Quote */
 /** @typedef {import("./types.js").RoomSet} RoomSet */
 
-export { FREE_DAILY, PLUS_MONTHLY, WELCOME }; // 요금 상수는 core/constants.js에(ai/models.js와의 순환 import 때문) — 쓰던 곳은 그대로 wallet에서 가져감
+export { FREE_DAILY, PLUS_MONTHLY, SUGGEST_COST, WELCOME }; // 요금 상수는 core/constants.js에(ai/models.js와의 순환 import 때문) — 쓰던 곳은 그대로 wallet에서 가져감
 // pins: 대화방마다 고정 기억 개수(2026-11-09 사용자 결정 — 무료 5 · PLUS 20, 한 줄의 글자 수는 LIMITS.pin)
 export const PLAN = {
   free: { memTurns: 20, memoMax: LIMITS.memory, hist: 5, rooms: 3, pins: 5 },
@@ -52,13 +52,31 @@ export function listPrice(model, len, mem) {
 /** 이 설정으로 한 턴 견적. @param {RoomSet} set @returns {Quote} */
 export function quote(set) {
   const list = listPrice(set.model, set.len, set.mem);
-  if (isPro()) return set.model === "lite" ? { type: "plus", n: 0, list } : { type: "heart", n: Math.ceil(list / 2), list };
-  if (set.model === "lite" && freeLeft() > 0) return { type: "free", n: 0, list };
-  return { type: "heart", n: list, list };
+  /** @type {Quote} */
+  const q = isPro()
+    ? set.model === "lite"
+      ? { type: "plus", n: 0, list, sug: 0 }
+      : { type: "heart", n: Math.ceil(list / 2), list, sug: 0 }
+    : set.model === "lite" && freeLeft() > 0
+      ? { type: "free", n: 0, list, sug: 0 }
+      : { type: "heart", n: list, list, sug: 0 };
+  // 답변 추천 자동 받기(방 설정 autoSug): 턴 값에 추천 값을 더함 — 무료 턴·PLUS에서도 추천 값은 냄. 하트가 그만큼 없으면 이 턴은 추천 없이 보냄
+  // (버튼에 보이는 값만 내게 — 추천 때문에 턴이 막히지 않음)
+  if (set.autoSug && S.wallet.hearts >= q.n + SUGGEST_COST) q.sug = SUGGEST_COST;
+  return q;
 }
-/** 견적 짧은 글("무료"·"PLUS"·"♥4"). @param {Quote} q @returns {string} */
+/** 추천을 눌러 받을 때(추천 버튼·'새로 추천')의 견적 — 요금제와 무관하게 SUGGEST_COST. @returns {Quote} */
+export function sugQuote() {
+  return { type: "heart", n: SUGGEST_COST, list: SUGGEST_COST, sug: 0 };
+}
+/** 이 견적으로 나가는 하트(턴 값 + 추천 값). @param {Quote} q @returns {number} */
+export function heartsOf(q) {
+  return q.n + (q.sug || 0);
+}
+/** 견적 짧은 글("무료"·"PLUS"·"♥4", 추천 자동 받기가 붙으면 "♥5"·"무료+♥1"·"PLUS+♥1"). @param {Quote} q @returns {string} */
 export function qShort(q) {
-  return q.type === "free" ? "무료" : q.type === "plus" ? "PLUS" : "♥" + q.n;
+  if (q.type === "heart") return "♥" + heartsOf(q);
+  return (q.type === "free" ? "무료" : "PLUS") + (q.sug ? "+♥" + q.sug : "");
 }
 /** 견적대로 차감하고 저장("wallet" 이벤트). @param {Quote} q @param {string} label 장부 설명 @returns {void} */
 export function charge(q, label) {
@@ -69,14 +87,30 @@ export function charge(q, label) {
     S.wallet.hearts -= q.n;
     ledger(-q.n, label);
   } else ledger(0, label + " · PLUS");
+  if (q.sug) {
+    S.wallet.hearts -= q.sug;
+    ledger(-q.sug, label + " · 추천 자동 받기");
+  }
   saveWallet();
 }
-/** 실패한 턴 되돌리기(무료 턴·하트). @param {Quote} q @param {string} label @returns {void} */
+/** 실패한 턴 되돌리기(무료 턴·하트 — 추천 값도). @param {Quote} q @param {string} label @returns {void} */
 export function refund(q, label) {
   if (q.type === "free") S.wallet.freeUsed = Math.max(0, S.wallet.freeUsed - 1);
   else if (q.type === "heart") {
     S.wallet.hearts += q.n;
     ledger(q.n, label + " · 실패 환불");
   }
+  refundSug(q, label);
+  saveWallet();
+}
+/**
+ * 추천 값만 되돌림 — 답은 왔는데 추천이 같이 오지 않았을 때(중간에 끊긴 답 포함). 되돌린 뒤 q.sug를 0으로 적어 두 번 되돌리지 않고, 답변의 값 표시(qShort)도 실제 낸 값이 됨.
+ * @param {Quote} q @param {string} label @returns {void}
+ */
+export function refundSug(q, label) {
+  if (!q.sug) return;
+  S.wallet.hearts += q.sug;
+  ledger(q.sug, label + " · 추천 환불");
+  q.sug = 0;
   saveWallet();
 }

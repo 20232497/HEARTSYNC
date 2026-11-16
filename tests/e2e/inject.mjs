@@ -520,6 +520,7 @@ for (const [dev, engine, opts] of [
         return full;
       };
       room.msgs.push({ id: uid("m"), role: "user", text: "두 번째 입력" });
+      room.set.autoSug = true; // 답과 같이 오는 추천은 자동 받기를 켠 방에서만 저장됨(꺼진 방은 버림) — 모델이 쓴 추천 글이 화면에 닿는 길
       window.__turn = generate(null, quote(room.set));
     });
     await p.evaluate(() => window.__turn);
@@ -530,7 +531,8 @@ for (const [dev, engine, opts] of [
       mid.seen.forEach((k) => res.seenSet.add(k));
     }
     await sweep("가짜 응답 뒤");
-    await act("가짜 응답의 추천 답변", () => toggleSug(), null, 400);
+    // 자동 받기로 온 추천은 답이 끝나면 바로 펼쳐짐 — 닫혀 있으면 엶(자동 받기 토글의 글도 같이 보임)
+    await act("가짜 응답의 추천 답변", () => $("#sugPanel").hidden && toggleSug(), null, 400);
     await act("드로어 status(응답 뒤)", () => openRoomDrawer("status"));
     // 끝난 에피소드 방: 결말 카드(결말 이름·고른 길) → 외전 고르기 시트(인물 이름) → 외전 방(제목과 첫 장면 제안에 인물 이름이 들어감)
     await p.evaluate((id) => {

@@ -32,10 +32,11 @@ export function usedOpeners(hist) {
 /**
  * 한 턴의 AI 요청 메시지 묶음(시스템 규칙 + 기억력만큼의 대화 + [이번 응답] 지시).
  * @param {Room} r @param {number} uptoIdx 이 번호 앞의 메시지까지 @param {StatusMap} statusBefore @param {string} [direction] 다시 쓰기 방향
+ * @param {boolean} [sug] 이번 응답에 답변 추천도 같이 받을지(기본: 방 설정의 자동 받기 r.set.autoSug — 보내는 쪽은 이번 턴 견적의 sug를 넘김)
  * @returns {LLMMessage[] & { lore?: string[], ep?: import("../../core/types.js").EpPlan|null }} lore는 반영된 키워드(말풍선 아래 📖), ep는 에피소드 방의 이번 지시. 첫 메시지(시스템)의 cut은
  * 고정부의 글자 수 — llm()이 그 자리에 캐시 표시를 붙임
  */
-export function buildInput(r, uptoIdx, statusBefore, direction) {
+export function buildInput(r, uptoIdx, statusBefore, direction, sug = !!r.set.autoSug) {
   const hist = r.msgs.slice(0, uptoIdx).filter((m) => curText(m));
   const recent = hist.slice(-(r.set.mem * 2 + 1));
   const lore = matchLore(
@@ -43,20 +44,21 @@ export function buildInput(r, uptoIdx, statusBefore, direction) {
     recent.slice(-LORE.scan).map((m) => (m.role === "ai" ? curText(m) : m.text) || "")
   );
   const len = LEN[r.set.len] || LEN.mid;
-  const sys = rulesParts(r, lore, hist);
+  const sys = rulesParts(r, lore, hist, sug);
   const out = [{ role: "user", content: sys.fixed + sys.vary + sys.tail, cut: sys.fixed.length }];
   out.lore = lore.filter((e) => !e.always).map((e) => e.keys[0]); // 말풍선 📖에는 키워드로 걸린 것만(상시 항목은 늘 들어가므로 뺌)
   out.ep = sys.ep; // 에피소드 방: 이번 응답의 지시(epPlan) — 응답이 끝나면 ui/chat/generate.js가 epAfter에 넘김
   // 직전 응답 하나에는 그때의 상태창을 출력 형식 그대로 붙여 보냄 — 기록 속 응답이 모두 본문으로만 끝나면 그 모양을 따라 상태창을 빼먹는 모델이 많음(2026-11-09 모델 시험).
-  // 추천 답변이 없던 응답(시작 상황 등)에는 형식을 보이기 위한 보기 셋을 넣음
+  // 답변 추천도 같이 받는 턴(sug)에만 추천 칸을 붙임 — 추천이 없던 응답(시작 상황 등)에는 형식을 보이기 위한 보기 셋. 받지 않는 턴에 붙이면 모델이 그 모양을 따라 시키지 않은 추천을 냄
   const lastAi = [...recent].reverse().find((m) => m.role === "ai");
+  const shown = ["조금 더 가까이 다가간다", "솔직하게 속마음을 말한다", "화제를 돌려 상황을 살핀다"];
   const stateTail = (m) => {
     const a = m.alts[m.idx] || {};
     return (
       `\n${MARK}\n` +
       JSON.stringify({
         status: a.status || m.statusBefore || {},
-        suggestions: (a.suggestions || []).length ? a.suggestions : ["조금 더 가까이 다가간다", "솔직하게 속마음을 말한다", "화제를 돌려 상황을 살핀다"],
+        ...(sug ? { suggestions: (a.suggestions || []).length ? a.suggestions : shown } : {}),
         ...(sys.ep && !sys.ep.ending ? { _ep: { done: false } } : {})
       })
     );

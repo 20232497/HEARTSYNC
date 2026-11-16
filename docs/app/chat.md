@@ -12,7 +12,8 @@
 
 ## 스트리밍 표시
 
-- 스트리밍 표시: generate의 show()가 liveFill로 #liveBubble — 끝난 줄은 .lv-done에 한 번만 fmt, 쓰는 중 줄은 closeOpen으로 열린 서식을 임시로 닫아 .lv-cur. 자동 스크롤(r.set.autoScroll, 기본 꺼짐, stick 플래그·#jumpBtn). 추천 답변은 저장만 하고 '✦ AI 추천'을 누를 때 펼침(추가 호출 없음, '새로 추천'만 호출)
+- 스트리밍 표시: generate의 show()가 liveFill로 #liveBubble — 끝난 줄은 .lv-done에 한 번만 fmt, 쓰는 중 줄은 closeOpen으로 열린 서식을 임시로 닫아 .lv-cur. 자동 스크롤(r.set.autoScroll, 기본 꺼짐, stick 플래그·#jumpBtn). 추천 답변은 아래 '답변 추천' 항목
+- 답변 추천(ui/chat/suggest.js — 값이 듦, 2026-11-16 사용자 결정): **저장된 추천은 값 없이 펼침** — 작가가 시작 장면에 써 둔 것(openings[].suggestions)·외전의 첫 추천·자동 받기로 온 것·눌러서 받은 것·예전 방의 것. 저장된 것이 없으면 추천 버튼(#sugBtn)에 값이 보이고(sugLabel — wallet sugQuote), 누르면 값을 먼저 내고(charge) 가장 가벼운 등급으로 따로 부름(방을 넘겨 본문과 같은 경로) → 만들지 못하면 되돌림(refund). '새로 추천'(#sugRe)도 같은 값. 하트가 모자라면 부르지 않고 안내(ui/pay.js needHearts), 만드는 동안은 다시 눌러도 한 번만. **자동 받기**(방 설정 r.set.autoSug — 없음 = 꺼짐, 예전 방의 sugAuto는 다른 뜻의 옛 칸이라 읽지 않음): 켜면 답마다 추천이 같이 오고 턴 값에 추천 값이 더해짐(quote의 sug — 무료 턴·PLUS에서도 냄). 하트가 그만큼 없으면 그 턴만 추천 없이 보냄(버튼에 보이는 값만 냄 — 추천 때문에 턴이 막히지 않음). 추천이 같이 오지 않았거나 답이 중간에 끊겼으면 추천 값만 되돌림(refundSug). 자동 받기로 온 추천은 답이 끝나면 바로 펼쳐짐(showSug). 켜고 끄는 곳은 둘 — 추천 패널 아래의 토글(#sugAuto)과 방 메뉴 출력 설정(#asg), 둘 다 setAutoSug/저장 때 '답마다 ♥가 더 나가요'를 알림. 켜져 있으면 추천 버튼에 표시(.auto)와 보내기 버튼의 더해진 값. **자동 받기를 켜지 않은 턴에 모델이 시키지 않은 추천을 내보내면 저장하지 않고 버림**(generate — 그대로 두면 '저장된 추천은 값 없음' 규칙으로 공짜가 됨). 값 상수는 core/constants.js SUGGEST_COST 한 곳. 결제는 아직 데모(하트가 이 브라우저에 있음) — 실제 과금은 서버 원장 뒤(docs/ROADMAP.md)
 
 ## 시작 상황
 

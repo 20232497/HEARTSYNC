@@ -5,7 +5,7 @@ import { LIMITS } from "../../core/constants.js";
 import { saveRoom } from "../../core/rooms.js";
 import { S } from "../../core/state.js";
 import { $, $$, esc, num, toast } from "../../core/util.js";
-import { PLAN, freeLeft, isPro, plan, qShort, quote } from "../../core/wallet.js";
+import { PLAN, SUGGEST_COST, freeLeft, heartsOf, isPro, plan, qShort, quote } from "../../core/wallet.js";
 import { IMG } from "../../services/images.js";
 import { renderLog } from "../chat/log.js";
 import { updateComposer } from "../chat/view.js";
@@ -110,12 +110,17 @@ export function drawerOutput({ r, body }) {
         <div class="setcard"><div class="toggle"><div><h4>자동 스크롤</h4>` +
       `<p class="d" style="margin:4px 0 0">켜면 답이 써지는 동안 화면이 맨 아래를 따라 내려가요. 끄면 보낼 때 한 번만 내려가고, 답은 읽는 속도에 맞춰 직접 내려 보면 돼요.</p></div>` +
       `<input type="checkbox" id="as" ${s.autoScroll ? "checked" : ""}></div></div>
+        <div class="setcard"><div class="toggle"><div><h4>답변 추천 자동 받기</h4>` +
+      `<p class="d" style="margin:4px 0 0">켜면 답마다 추천 답변 셋이 같이 와요. <b>턴마다 ♥${SUGGEST_COST}이 더 나가요</b>(무료 턴·PLUS에서도). ` +
+      `하트가 모자란 턴은 추천 없이 보내고, 추천이 오지 않으면 그 값은 돌려드려요. 꺼 두면 ✦ AI 추천을 누를 때만 ♥${SUGGEST_COST}이에요.</p></div>` +
+      `<input type="checkbox" id="asg" ${s.autoSug ? "checked" : ""}></div></div>
         <div class="setcard"><h4>예상 비용</h4><table class="tbl"><tbody>${Object.keys(MODELS)
           .map((k) => {
             const qq = quote({ ...s, model: k });
             return (
               `<tr><td>${MODELS[k].name}${k === s.model ? ' <span class="pill">사용 중</span>' : ""}</td>` +
-              `<td class="num">${qq.type === "free" ? "무료 (" + freeLeft() + "턴 남음)" : qq.type === "plus" ? "PLUS 무제한" : "♥" + qq.n + " / 턴"}</td></tr>`
+              `<td class="num">${qq.type === "free" ? "무료 (" + freeLeft() + "턴 남음)" : qq.type === "plus" ? "PLUS 무제한" : "♥" + heartsOf(qq) + " / 턴"}` +
+              `${qq.type !== "heart" && qq.sug ? " + 추천 ♥" + qq.sug : ""}</td></tr>`
             );
           })
           .join("")}</tbody></table></div>
@@ -139,12 +144,22 @@ export function drawerOutput({ r, body }) {
     $("#rr", body).onchange = (e) => {
       s.rerollAsk = e.target.checked;
     };
+    $("#as", body).onchange = (e) => {
+      s.autoScroll = e.target.checked;
+    };
+    // 자동 받기는 값이 달라지므로 바로 다시 그려 예상 비용과 저장 버튼의 값에 반영
+    $("#asg", body).onchange = (e) => {
+      s.autoSug = e.target.checked;
+      paint();
+    };
     $("#oSave", body).onclick = () => {
+      const turnedOn = !!s.autoSug && !r.set.autoSug;
       r.set = { ...r.set, ...s, rerollAsk: $("#rr", body).checked, autoScroll: $("#as", body).checked };
-      delete r.set.sugAuto;
+      if (!s.autoSug) delete r.set.autoSug;
+      delete r.set.sugAuto; // 예전의 '추천 자동 표시' 칸(다른 뜻) — 남아 있으면 지움
       saveRoom(r);
       updateComposer();
-      toast("출력 설정을 저장했어요");
+      toast(turnedOn ? `출력 설정을 저장했어요 — 추천 자동 받기: 답마다 ♥${SUGGEST_COST}이 더 나가요` : "출력 설정을 저장했어요");
       openRoomDrawer("main");
     };
   };

@@ -4,6 +4,8 @@ export const MARK = "===STATE===";
 export const FREE_DAILY = 10,
   WELCOME = 30,
   PLUS_MONTHLY = 300;
+/* 답변 추천 한 번의 값(하트) — 추천 버튼을 눌러 받을 때·'새로 추천'·방마다 켜는 '자동 받기'로 턴마다 더해지는 값이 모두 이 값(2026-11-16 사용자 결정 — 요금제와 무관, 무료 턴에서도 냄) */
+export const SUGGEST_COST = 1;
 /* 네트워크 시간 제한(ms): connect 응답 머리가 올 때까지 · stall 스트림 조각 사이 · api Supabase 요청 하나. 넘으면 {code:"timeout"}(core/util.js timeoutSignal)
    think: 성인 트랙 관문에서 첫 글자가 올 때까지의 조각 사이 — 답 전에 오래 생각하는 모델이 있어 stall보다 넉넉히(첫 글자 뒤에는 stall) */
 export const TIMEOUT = { connect: 45000, stall: 60000, think: 150000, api: 20000 };

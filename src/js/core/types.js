@@ -221,6 +221,7 @@
  * @property {number} mem 기억력(최근 몇 턴을 그대로 읽는지)
  * @property {boolean} rerollAsk 다시 쓰기 전에 방향을 물음
  * @property {boolean} [autoScroll]
+ * @property {boolean} [autoSug] 답변 추천 자동 받기 — 켜면 답마다 추천이 같이 오고 턴 값에 SUGGEST_COST가 더해짐(없음 = 꺼짐. 예전 방에 남아 있을 수 있는 sugAuto는 다른 뜻의 옛 칸이라 읽지 않음)
  */
 /** @typedef {{ at: number, label: string, text: string }} MemHist 장기기억 히스토리 한 건 */
 /** @typedef {{ id: string, text: string, at: number, msgId?: string }} Pin 고정 기억 한 줄(LIMITS.pin자까지) — msgId는 고정한 메시지(직접 적었으면 없음; 분기하면 그 메시지까지에서 고정한 것만 따라감) */
@@ -288,7 +289,7 @@
  * @property {LedgerItem[]} ledger
  * @property {Record<string, boolean>} ack
  */
-/** @typedef {{ type: "free"|"plus"|"heart", n: number, list: number }} Quote 한 턴 견적 — n은 낼 하트, list는 정가 */
+/** @typedef {{ type: "free"|"plus"|"heart", n: number, list: number, sug?: number }} Quote 한 턴 견적 — n은 턴 값으로 낼 하트, list는 정가, sug는 답변 추천 자동 받기로 더 내는 하트(0이면 추천 없이 — 나가는 하트는 wallet의 heartsOf) */
 /** @typedef {{ memTurns: number, memoMax: number, hist: number, rooms: number, pins: number }} Plan 요금제 한도(core/wallet.js PLAN) — pins는 대화방마다 고정 기억 개수 */
 /** @typedef {{ auto: boolean, every: number, limit: number, guide: "auto"|"custom", custom: string }} MemCfg 장기기억 요약 설정 */
 /**

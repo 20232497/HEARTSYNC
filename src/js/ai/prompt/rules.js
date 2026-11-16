@@ -42,9 +42,10 @@ function relStage(c, s) {
  * vary: 턴마다 달라질 수 있는 것 — 유저 캐릭터, 유저노트, 고정 기억(r.pins — 이용자가 박아 둔 한 줄들, 요약·압축과 무관하게 그대로), 장기 기억, 키워드로 걸린 키워드북, 지금 상태(등장한 인물·나온 컷씬·관계 단계), 이미 쓴 문장.
  * tail: 이용자가 쓴 글(유저노트·기억) 뒤에 한 번 더 두는 안전 문장과 출력 형식 — 출력 형식은 늘 맨 끝.
  * @param {Room} r @param {LoreEntry[]} [lore] 이번 턴에 넘길 키워드북(matchLore — 상시 항목 + 키워드로 걸린 항목) @param {Message[]} [hist=r.msgs]
+ * @param {boolean} [sug] 이번 응답에 답변 추천(suggestions 칸)도 같이 받을지 — 기본은 방 설정의 자동 받기(r.set.autoSug). 거짓이면 출력 형식에서 그 칸과 설명 줄만 빠짐
  * @returns {{ fixed: string, vary: string, tail: string }}
  */
-export function rulesParts(r, lore = [], hist = r.msgs) {
+export function rulesParts(r, lore = [], hist = r.msgs, sug = !!(r.set && r.set.autoSug)) {
   const c = r.char,
     p = r.persona,
     len = LEN[r.set.len] || LEN.mid;
@@ -161,14 +162,13 @@ ${epProgress(c.episode, r.ep, ep)}${used.length ? `\n[이미 쓴 문장 — 이�
 1) 장면 본문
 2) 한 줄에 ${MARK}
 3) JSON 한 개 (코드블록 금지)
-{"status":{${fields}},"suggestions":["…","…","…"]${ep && !ep.ending ? `,"_ep":{"done":false${ep.ask ? ',"pick":""' : ""}}` : ""}}${ep && !ep.ending ? `\n- _ep.done: 이번 응답에서 지금 장의 목표가 이뤄졌으면 true, 아니면 false.${ep.ask ? ' _ep.pick: 위 [에피소드 진행]의 갈림길에서 유저의 이번 입력에 가까운 보기 id(어느 쪽도 아니면 "").' : ""}` : ""}
+{"status":{${fields}}${sug ? ',"suggestions":["…","…","…"]' : ""}${ep && !ep.ending ? `,"_ep":{"done":false${ep.ask ? ',"pick":""' : ""}}` : ""}}${ep && !ep.ending ? `\n- _ep.done: 이번 응답에서 지금 장의 목표가 이뤄졌으면 true, 아니면 false.${ep.ask ? ' _ep.pick: 위 [에피소드 진행]의 갈림길에서 유저의 이번 입력에 가까운 보기 id(어느 쪽도 아니면 "").' : ""}` : ""}
 - status는 이번 장면이 끝난 시점의 값. 모든 항목을 채운다.${typeof r.status?.[c.gauge] === "number" ? ` "${c.gauge}"는 0~100 정수이고 한 턴에 -10~+8 범위에서만 움직인다.` : ""}${c.fields.some((f) => f.includes("속마음")) ? ' "속마음"은 인물의 진짜 속마음 한 문장.' : ""}${(() => {
     const mf = c.fields.filter((f) => multiPairs(r.status?.[f]).length >= 2);
     return mf.length
       ? ` ${mf.map((f) => `"${f}"`).join("·")}는 '이름 숫자 · 이름 숫자' 형식과 인물 순서를 그대로 지키고 한 명도 빼지 않는다(한 사람당 한 턴에 -10~+8).`
       : "";
-  })()}
-- suggestions: 유저(${p.name})가 다음에 할 만한 행동이나 대사 3개. 서로 다른 방향(다정·도발·신중 등), 각 35자 이내, 유저 시점.`;
+  })()}${sug ? `\n- suggestions: 유저(${p.name})가 다음에 할 만한 행동이나 대사 3개. 서로 다른 방향(다정·도발·신중 등), 각 35자 이내, 유저 시점.` : ""}`;
   return { fixed, vary, tail, ep };
 }
 /**

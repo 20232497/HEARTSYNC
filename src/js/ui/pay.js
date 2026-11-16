@@ -2,7 +2,7 @@
 import { LEN, MODELS } from "../ai/models.js";
 import { S, room } from "../core/state.js";
 import { $, $$, esc, num, toast, today, won } from "../core/util.js";
-import { FREE_DAILY, PLAN, PLUS_MONTHLY, freeLeft, quote, saveWallet } from "../core/wallet.js";
+import { FREE_DAILY, PLAN, PLUS_MONTHLY, freeLeft, heartsOf, quote, saveWallet } from "../core/wallet.js";
 import { renderLog } from "./chat/log.js";
 import { updateComposer } from "./chat/view.js";
 import { setModel } from "./model-sheet.js";
@@ -33,20 +33,22 @@ export async function ensurePay(r) {
 function askPay(q, r) {
   return new Promise((resolve) => {
     const lite = r.set.model === "lite",
-      m = MODELS[r.set.model];
+      m = MODELS[r.set.model],
+      n = heartsOf(q), // 이번 턴에 나가는 하트 — 추천 자동 받기를 켠 방은 그 값이 더해짐
+      plus = q.sug ? ` (추천 자동 받기 ♥${q.sug} 포함)` : "";
     const ov = sheet(
       lite
-        ? `<h2>오늘 무료 ${FREE_DAILY}턴을 다 썼어요</h2><p class="sub">지금부터 라이트 모델은 한 턴에 <b>♥${q.n}</b>이 사용돼요. 무료 턴은 자정에 다시 채워져요.</p>
+        ? `<h2>오늘 무료 ${FREE_DAILY}턴을 다 썼어요</h2><p class="sub">지금부터 라이트 모델은 한 턴에 <b>♥${n}</b>이 사용돼요${plus}. 무료 턴은 자정에 다시 채워져요.</p>
          <div class="purse"><div>보유 하트 <span class="spacer"></span><b>♥ ${num(S.wallet.hearts)}</b></div><div>이 하트로 약 ` +
-            `<span class="spacer"></span><b>${Math.floor(S.wallet.hearts / q.n)}턴</b></div></div>
+            `<span class="spacer"></span><b>${Math.floor(S.wallet.hearts / n)}턴</b></div></div>
          <div class="cta-row"><button class="btn gold" id="toPlus">PLUS로 무제한</button><span class="spacer"></span>` +
-            `<button class="btn ghost" data-x>그만하기</button><button class="btn pri" id="ok">♥${q.n}로 계속</button></div>`
+            `<button class="btn ghost" data-x>그만하기</button><button class="btn pri" id="ok">♥${n}로 계속</button></div>`
         : `<h2>${m.name} 모델은 하트를 써요</h2><p class="sub">지금 설정(출력량 ${LEN[r.set.len].name} · 기억력 ${r.set.mem}턴)으로 한 턴에 ` +
-            `<b>♥${q.n}</b>이 사용돼요. 실패하면 자동으로 돌려드려요. 이 안내는 한 번만 보여요.</p>
+            `<b>♥${n}</b>이 사용돼요${plus}. 실패하면 자동으로 돌려드려요. 이 안내는 한 번만 보여요.</p>
          <div class="purse"><div>보유 하트 <span class="spacer"></span><b>♥ ${num(S.wallet.hearts)}</b></div><div>이 하트로 약 ` +
-            `<span class="spacer"></span><b>${Math.floor(S.wallet.hearts / q.n)}턴</b></div></div>
+            `<span class="spacer"></span><b>${Math.floor(S.wallet.hearts / n)}턴</b></div></div>
          <div class="cta-row"><button class="btn ghost" id="toLite">라이트로 바꾸기</button><span class="spacer"></span>` +
-            `<button class="btn ghost" data-x>취소</button><button class="btn pri" id="ok">♥${q.n}로 보내기</button></div>`
+            `<button class="btn ghost" data-x>취소</button><button class="btn pri" id="ok">♥${n}로 보내기</button></div>`
     );
     let done = false;
     const fin = (v) => {
@@ -119,6 +121,16 @@ function afterBuy() {
     renderLog();
     updateComposer();
   }
+}
+/** 턴이 아닌 것(답변 추천)을 하트가 모자라 받지 못할 때의 안내 — 하트 묶음으로 가는 길만 보임. @param {number} n 필요한 하트 @param {string} what 무엇에 드는지 */
+export function needHearts(n, what) {
+  const ov = sheet(
+    `<h2>하트가 부족해요</h2><p class="sub">${esc(what)}에 ♥${n}이 필요한데 지금 ♥${num(S.wallet.hearts)}이 있어요.</p>` +
+      `<div class="minipacks">${PACKS.slice(0, 3)
+        .map((p) => `<button data-pack="${p.id}"><b>♥ ${num(p.n + p.bonus)}</b><span class="p">${won(p.price)}</span></button>`)
+        .join("")}</div><button class="btn ghost block" data-x style="margin-top:8px">닫기</button>`
+  );
+  $$("[data-pack]", ov).forEach((b) => (b.onclick = () => buyPack(b.dataset.pack, afterBuy)));
 }
 export function plusSheet(reason) {
   const copy = {

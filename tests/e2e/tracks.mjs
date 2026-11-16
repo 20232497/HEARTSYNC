@@ -118,17 +118,21 @@ for (const [dev, engine] of [
       !/암전/.test(g.body.messages[0].content) && /모든 등장인물은 성인이다/.test(g.body.messages[0].content)
     );
     check("관문 스트림을 본문으로 읽음", /관문에서 온 대답/.test(a1.text) && !/STATE/.test(a1.text) && a1.shown && a1.charged === 1 && !a1.err);
-    // ② 추천·요약도 같은 경로
-    await p.evaluate(async () => {
+    // ② 추천·요약도 같은 경로 — 추천은 눌러서 받음(자동 받기를 켜지 않은 방은 답에 추천이 같이 오지 않고, 본문에 딸려 온 것은 버림): 값(♥)을 내고 따로 부름
+    const sugPaid = await p.evaluate(async () => {
+      const before = S.wallet.hearts,
+        kept = (lastAi(room).alts[0].suggestions || []).length,
+        label = $("#sugBtn").textContent;
       $("#sugBtn").click();
-      await new Promise((r) => setTimeout(r, 150));
-      $("#sugRe").click();
-      await new Promise((r) => setTimeout(r, 500));
+      await new Promise((r) => setTimeout(r, 600));
+      return { kept, label, paid: before - S.wallet.hearts, cost: SUGGEST_COST };
     });
+    check("자동 받기를 켜지 않은 방: 본문에 딸려 온 추천은 버리고 버튼에 값이 보임", sugPaid.kept === 0 && sugPaid.label.includes("♥" + sugPaid.cost));
     check(
-      "성인 방의 새 추천이 관문으로",
+      "성인 방의 새 추천이 관문으로(값을 냄)",
       gate.length === 2 &&
         claude.length === 0 &&
+        sugPaid.paid === sugPaid.cost &&
         (await p.evaluate(() =>
           $$("#sugPanel [data-s]")
             .map((x) => x.dataset.s)

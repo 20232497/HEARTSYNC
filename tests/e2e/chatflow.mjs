@@ -76,7 +76,8 @@ for (const [dev, engine] of targets) {
     await p.evaluate(() => {
       const para = (i) =>
         `*장면 ${i}: 바람이 부서진 간판을 흔들었다. 먼지가 내려앉았다.*\n\n한서윤: "대사 ${i}번이에요. 조금 길게 말해 볼게요, 화면이 충분히 길어지도록."`;
-      window.llm = async (input, { onText }) => {
+      window.llm = async (input, { onText, json }) => {
+        if (json && /제안하라/.test(input[0].content)) return { suggestions: ["가", "나", "다"] }; // 눌러서 받는 추천(따로 부름)
         window.__lastInput = input;
         const body = Array.from({ length: 14 }, (_, i) => para(i + 1)).join("\n\n");
         const full = body + "\n===STATE===\n" + JSON.stringify({ status: {}, suggestions: ["하나", "둘", "셋"] });
@@ -257,11 +258,81 @@ for (const [dev, engine] of targets) {
       )
         errs.push("분기가 다름: " + JSON.stringify(f));
     }
-    res.sugClick = await p.evaluate(async () => {
+    // 답변 추천(값이 듦): 자동 받기를 켜지 않은 방은 답에 딸려 온 추천을 버림 → 버튼에 값이 보이고, 누르면 값을 내고 받아 펼침 → 받은 것을 다시 열면 값 없이
+    // → '새로 추천'이 실패하면 되돌림. 자동 받기를 켜면 보내기 버튼의 값에 더해지고 버튼에 표시가 붙음
+    res.sug = await p.evaluate(async () => {
+      const nap = (ms) => new Promise((r) => setTimeout(r, ms)),
+        alt = () => lastAi(room).alts[lastAi(room).idx];
+      S.wallet.hearts = 30;
+      saveWallet();
+      updateComposer();
+      const h0 = S.wallet.hearts,
+        out = { cost: SUGGEST_COST, dropped: (alt().suggestions || []).length === 0, label: $("#sugBtn").textContent };
       $("#sugBtn").click();
-      await new Promise((r) => setTimeout(r, 200));
-      return $$("#sugPanel [data-s]").length;
+      await nap(300);
+      Object.assign(out, { got: $$("#sugPanel [data-s]").length, paid: h0 - S.wallet.hearts, redo: ($("#sugRe") || {}).textContent || "" });
+      hideSug();
+      out.label2 = $("#sugBtn").textContent; // 받은 뒤에는 값이 안 보임(다시 열어도 값 없음)
+      $("#sugBtn").click();
+      await nap(100);
+      out.again = h0 - S.wallet.hearts;
+      const keep = window.llm;
+      window.llm = async () => {
+        throw { code: "server" };
+      };
+      $("#sugRe").click();
+      await nap(300);
+      Object.assign(out, { afterFail: h0 - S.wallet.hearts, failed: /만들지 못했어요/.test($("#sugPanel").textContent) });
+      window.llm = keep;
+      hideSug();
+      out.send0 = $("#sendBtn").textContent;
+      setAutoSug(room, true);
+      Object.assign(out, {
+        send1: $("#sendBtn").textContent,
+        auto: $("#sugBtn").classList.contains("auto"),
+        want: qShort(quote(room.set)),
+        sug: quote(room.set).sug
+      });
+      return out;
     });
+    {
+      const s = res.sug,
+        c = s.cost;
+      if (!s.dropped || !s.label.includes("♥" + c) || s.got !== 3 || s.paid !== c || !s.redo.includes("♥" + c) || s.label2.includes("♥") || s.again !== c)
+        errs.push("눌러서 받는 추천이 다름: " + JSON.stringify(s));
+      if (s.afterFail !== c || !s.failed) errs.push("추천 실패 환불이 다름: " + JSON.stringify(s));
+      if (s.send0 === s.send1 || !s.send1.includes(s.want) || !s.auto || s.sug !== c) errs.push("자동 받기의 값 표시가 다름: " + JSON.stringify(s));
+    }
+    // 자동 받기를 켠 턴: 답과 같이 온 추천이 저장되고 바로 펼쳐짐, 턴 값 + 추천 값이 나감. 끄면 다음 턴의 프롬프트에 추천 칸이 없음
+    res.autoTurn = await (async () => {
+      const before = await p.evaluate(() => ({ hearts: S.wallet.hearts, need: heartsOf(quote(room.set)) }));
+      await turn("자동 받기를 켠 턴");
+      const after = await p.evaluate(() => {
+        const a = lastAi(room).alts[lastAi(room).idx],
+          sys = window.__lastInput[0].content;
+        const out = {
+          hearts: S.wallet.hearts,
+          sugs: (a.suggestions || []).join("|"),
+          open: !$("#sugPanel").hidden,
+          asked: /"suggestions":\["…"/.test(sys),
+          cost: a.cost
+        };
+        setAutoSug(room, false);
+        hideSug();
+        return out;
+      });
+      await turn("자동 받기를 끈 턴");
+      const off = await p.evaluate(() => ({
+        asked: window.__lastInput.some((m) => m.content.includes("suggestions")),
+        sugs: (lastAi(room).alts[lastAi(room).idx].suggestions || []).length
+      }));
+      return { paid: before.hearts - after.hearts, need: before.need, ...after, off };
+    })();
+    {
+      const a = res.autoTurn;
+      if (a.paid !== a.need || a.sugs !== "하나|둘|셋" || !a.asked || a.cost !== "♥" + a.need) errs.push("자동 받기를 켠 턴이 다름: " + JSON.stringify(a));
+      if (a.off.asked || a.off.sugs !== 0) errs.push("자동 받기를 끈 턴에 추천 칸이 남음: " + JSON.stringify(a.off));
+    }
     await p.evaluate(() => {
       hideSug();
       openRoomDrawer("output");
