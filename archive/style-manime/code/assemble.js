@@ -3,6 +3,8 @@
    profileJob(인물, 장소) → 프로필(칸 0) · emotionJob(인물, 장소, 칸 1~14) → 감정 그림. 앱은 이 파일을 쓰지 않는다(그림은 앱 밖에서 만듦)
    v9(2026-11-19): 가볍고 만화 같던 v8을 반실사 만화 마감으로 바꿈 — 마감(FIN)·빛(BG)·얼굴(FACE_*·SKIN)·기본 표정(CALM)·정면 구도(FRAME)·후처리(POST). 견본은 ../samples */
 
+import { TEMPER_EMO, LEAD_EMO } from "./expressions.js";
+
 export const MODEL = { air: "civitai:967405@1428332", name: "Nova Orange XL v6.0", steps: 28, cfg: 4, scheduler: "Euler a" };
 /* 크기는 64의 배수(Runware) — 프로필 768×1152(2:3), 감정 1024×1024. 첫 그림을 hires 크기로 키워 같은 프롬프트로 다시 그린다(strength 0.4) */
 export const SIZE = {
@@ -31,7 +33,8 @@ const SHOULDERS = "(broad shoulders:1.1)";
 const BODY_M_EMOTION = { m: "slender, (bishounen:1.0)", elder: "slender, (bishounen:0.9)" };
 const NEG_PROPORTION = ", (large head:1.3), (narrow shoulders:1.2)";
 // 남자의 놀람·공포 — 이 악문 입과 이마 주름을 막음(성숙한 얼굴에서 과장돼 보임 — 사용자 2026-11-13)
-const NEG_CALM_M = ", (forehead wrinkles:1.3), (clenched teeth:1.1)";
+// + 크게 뜬 둥근 눈과 얼굴 클로즈업은 성인 남자를 앳돼 보이게 함(카일 공포·카엘 놀람 — 2026-11-20) → 막음
+const NEG_CALM_M = ", (forehead wrinkles:1.3), (clenched teeth:1.1), (round eyes:1.3), (big eyes:1.3), (close-up:1.3), (face focus:1.1)";
 const FRAME = {
   // 정면샷(사용자 2026-11-19) — 위에서 내려다보는 각도를 뺌
   profile: "(fully clothed:1.2), (close-up:1.0), (portrait:1.2), (head tilt:0.8), (facing viewer:1.0), looking at viewer",
@@ -106,7 +109,7 @@ export const EMOTIONS = {
     emo: { f: "(embarrassed:1.3), (shy:1.0), (blush:1.7), (full-face blush:0.6), (wavy mouth:0.7), (hand on own cheek:0.9)", m: "(embarrassed:1.2), (blush:1.1), (wavy mouth:0.5), (scratching head:0.8)" } },
   4: { name: "슬픔", look: "down", eyes: both("(half-closed eyes:0.5)"), neg: ", (streaming tears:1.2), (sobbing:1.1)", // 눈물이 맺힌 정도
     emo: { f: "(sad:1.3), (tearing up:1.4), (teary eyes:1.2), (tears:1.0), (frown:0.8), closed mouth, (hand on own chest:0.6)", m: "(sad:1.2), (tearing up:1.2), (teary eyes:1.0), (tears:0.7), (frown:0.8), closed mouth" } },
-  5: { name: "놀람", eyes: { f: "(wide-eyed:1.2)", m: "(wide-eyed:0.9), (pupils:1.0)" }, sym: "(^^^:1.1)", neg: ", (day:1.2), (blue sky:1.1)", negM: NEG_CALM_M,
+  5: { name: "놀람", eyes: { f: "(wide-eyed:1.2)", m: "(wide-eyed:0.6), (pupils:1.0)" }, sym: "(^^^:1.1)", neg: ", (day:1.2), (blue sky:1.1)", negM: NEG_CALM_M,
     emo: { f: "(surprised:1.4), (open mouth:1.0), (raised eyebrows:0.8), (hands up:0.6)", m: "(surprised:1.3), (open mouth:0.5), (raised eyebrows:0.8)" } },
   6: { name: "분노", eyes: both("(glaring:1.0), (v-shaped eyebrows:1.1)"), hard: true, lowBlush: true, sym: "(anger vein:1.4)", emo: both("(angry:1.4), (frown:1.2), (clenched teeth:0.9), (crossed arms:0.8)") },
   7: { name: "삐침", look: "away", sym: "(anger vein:0.8), (squiggle:0.9)",
@@ -150,7 +153,7 @@ const NEG_LINE = ", (thick outlines:1.4), (bold lineart:1.2), (black outline:1.2
 const NEG_FLAT = ", (flat color:1.2), (cel shading:1.3), (anime screencap:1.3), (cartoon:1.2), (big eyes:1.2), (moe:1.2), (glowing eyes:1.2), (harsh shadows:1.1), (from behind:1.3)";
 const NEG_SLIM =
   ", (large breasts:1.5), (huge breasts:1.5), (curvy:1.3), (wide hips:1.2), (bare shoulders:1.6), (bare arms:1.5), (sleeveless:1.6), (shoulder cutout:1.6), (detached sleeves:1.5), (clothing cutout:1.5), (collarbone:1.3)";
-const NEG_SHIRT = ", (open shirt:1.4), (unbuttoned shirt:1.3), (bare chest:1.5), (pectorals:1.3)";
+const NEG_SHIRT = ", (open shirt:1.4), (unbuttoned shirt:1.3), (bare chest:1.5), (pectorals:1.3), (sleeveless:1.5), (bare shoulders:1.5), (bare arms:1.3)"; // 조끼 차림이 소매 없는 옷으로 그려짐(장태산)
 // 기본 표정 칸(0·1)에서만: 감은 눈·둥근 눈·벌린 입(남자는 웃음도)을 막음 — 감정 칸은 그 표정을 써야 하므로 넣지 않음
 const NEG_CALM = {
   f: ", (closed eyes:1.4), (sleeping:1.3), (round eyes:1.2), (open mouth:1.2), (teeth:1.2), (grin:1.2)",
@@ -253,15 +256,20 @@ export function profileJob(c, place, o = {}) {
 export function emotionJob(c, place, slot, o = {}) {
   const E = EMOTIONS[slot] || {}, tags0 = E.armed ? c.tags : c.tags.split(", ").filter((t) => !WEAPON_TAG.test(t)).join(", ");
   const p = person(c, inner(tags0)), g = p.g, ch = charm(c), elder = p.tier === "elder";
-  const eyes = (E.eyes && E.eyes[g]) || (p.man ? EYES_M : ch.eyes);
+  const T = slot > 1 ? (TEMPER_EMO[temperOf(c)] || {})[slot] : null; // 대표 칸은 성격별 표정(expressions.js), 없으면 공통 표정
+  const L = slot > 1 ? (LEAD_EMO[c.code + ":" + c.name] || {})[slot] : null; // 작품의 대표 인물은 그 인물만의 버릇·소품
+  const eyes = (L && L.eyes) || (T && T.eyes && T.eyes[g]) || (E.eyes && E.eyes[g]) || (p.man ? EYES_M : ch.eyes);
   let face = E.face ? E.face[g] : p.man ? FACE_M.emotion : FACE_F;
   if (elder) face = elderFace(face);
   if (E.lowBlush) face = face.replace("(blush:0.3)", "(blush:0.1)"); // 화난 얼굴의 홍조는 수줍어 보임
   face += ", " + SKIN + ", " + LIPS[g];
-  const emo = slot === 1 || !E.emo ? ch.emo : (typeof E.emo === "function" ? E.emo(c) : E.emo[g]) + (E.sym && o.symbols !== false ? ", " + E.sym : "");
-  const frame = E.look ? FRAME.emotion.replace("looking at viewer", LOOK[E.look]) : FRAME.emotion;
+  const own = L ? L.emo : T ? T[g] : typeof E.emo === "function" ? E.emo(c) : E.emo && E.emo[g];
+  const emo = slot === 1 || !E.emo ? ch.emo : own + (E.sym && o.symbols !== false ? ", " + E.sym : "");
+  const look = (L && L.look) || (T && T.look) || E.look; // "viewer"는 마주 봄
+  const frame = look && LOOK[look] ? FRAME.emotion.replace("looking at viewer", LOOK[look]) : FRAME.emotion;
   const day = TIME.test(place.tags) && !DARK.test(place.tags);
-  const body = p.man ? [/broad shoulders/.test(c.tags) ? "" : SHOULDERS, BODY_M_EMOTION[p.tier]].filter(Boolean).join(", ") : BODY.f.emotion + (SLEEVE_TAG.test(c.tags) ? "" : ", " + SLEEVES);
+  const sleeves = SLEEVE_TAG.test(c.tags) ? "" : SLEEVES; // 소매 길이를 적지 않은 옷은 긴소매(여·남 모두)
+  const body = p.man ? [/broad shoulders/.test(c.tags) ? "" : SHOULDERS, BODY_M_EMOTION[p.tier], sleeves].filter(Boolean).join(", ") : BODY.f.emotion + (sleeves ? ", " + sleeves : "");
   let pos = [SUBJ[p.tier], p.pos, emo, frame, placeBlock(place.tags), eyes + ", " + face, body, FIN, day ? BG.emotion.replace("(dim lighting:0.8), ", "") : BG.emotion, Q]
     .filter(Boolean)
     .join(", ");
