@@ -54,7 +54,8 @@ const FACE_M = {
 };
 const elderFace = (s) => s.replace("(long eyelashes:0.6), ", "").replace("(sharp jawline:0.6)", "(sharp jawline:0.7)");
 /* 모든 칸의 얼굴에 더하는 것: 젊은 성인의 맑은 피부, 또렷한 눈동자, 입술 색('어리기보다 잘생김·예쁨 쪽으로' — 사용자 2026-11-16) */
-const SKIN = "(young adult:1.0), (youthful:0.6), (beautiful eyes:0.9), (flawless skin:0.9), (clear skin:0.7), (beautiful detailed eyes:1.2), (eye reflection:0.7), (eyelashes:0.7)";
+// (youthful)은 뺌(2026-11-20) — 얼굴을 어린 쪽으로 끌고 네거티브의 (young:1.1)과 부딪침. 사용자의 나중 방향도 '어리기보다 잘생김·예쁨 쪽으로'
+const SKIN = "(young adult:1.0), (beautiful eyes:0.9), (flawless skin:0.9), (clear skin:0.7), (beautiful detailed eyes:1.2), (eye reflection:0.7), (eyelashes:0.7)";
 const LIPS = { f: "(pink lips:0.7), (lip gloss:0.6)", m: "(pale pink lips:0.4)" };
 const EYE_RULE = [
   [/droopy eyes/, { eyes: "(tareme:0.8), (half-closed eyes:0.5)", emo: "(gentle smile:0.9), closed mouth" }],
