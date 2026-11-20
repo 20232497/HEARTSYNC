@@ -21,6 +21,7 @@
     "blurK": 3,
     "blurA": 0.12
   },
+  "postEmotion": { "filter": "saturate(1.05) contrast(1.12) brightness(0.96)", "blurK": 3, "blurA": 0.12 },
   "slots": {
     "0": "프로필",
     "1": "기본",

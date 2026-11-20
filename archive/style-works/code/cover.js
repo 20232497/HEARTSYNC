@@ -151,7 +151,8 @@ export function styled(c, v, o) {
     if (v.type === "scene") pos = must(pos, BLUR0, "(detailed background:1.1), (depth of field:0.7)");
     if (!fem && !v.level) pos = must(pos, "(flawless skin:0.9)", "(from below:0.3), (flawless skin:0.9)"); // 남자는 살짝 올려다보는 각도
   }
-  const neg = j.neg + (o.solo ? ", (multiple swords:1.3)" : NEG_COVER) + (dark ? NEG_DARK : "") + (v.neg || "");
+  // 밝은 작품은 화풍(감정 그림)의 '밝음 막기'를 뺀다 — 밝게 두는 표지라서
+  const neg = (dark ? j.neg : j.neg.replace(", (bright:1.1)", "")) + (o.solo ? ", (multiple swords:1.3)" : NEG_COVER) + (dark ? NEG_DARK : "") + (v.neg || "");
   const { post, ...base } = j; // 화풍 후처리 대신 표지 후처리를 입힌다
   return { ...base, pos, neg, ...SIZE, hires: { ...HIRES }, ...(miss.length ? { miss } : {}) };
 }

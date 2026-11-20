@@ -74,7 +74,10 @@ test("표지 규칙: 인물 표지는 성인 표시·한 사람·미성년과 �
     assert.ok(job.pos.includes(v.color), id + ": 작품 색 조명이 없음");
     assert.ok(job.pos.includes("(fully clothed:1.2)"), id + ": 옷을 여민 표시가 없음");
     if (mood === "warm") {
-      assert.ok(!job.pos.includes("(dark:0.7)") && !job.neg.includes("(cheerful:1.2)"), id + ": 밝은 작품인데 어둡게 함");
+      assert.ok(
+        !job.pos.includes("(dark:0.7)") && !job.neg.includes("(cheerful:1.2)") && !/(bright:/.test(job.neg),
+        id + ": 밝은 작품인데 어둡게 함(밝음을 막는 네거티브가 있음)"
+      );
       assert.equal(post, COVER_POST.warm);
     } else {
       assert.ok(
