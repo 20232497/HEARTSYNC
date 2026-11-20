@@ -218,9 +218,18 @@ const job = { running: false, log: [], error: "", url: "", done: null };
 const LOCK = path.join(LIB, ".publishing.lock");
 /** 올리는 중인지 — 이 창이든 같은 PC의 다른 창이든(잠금 파일이 45분 넘게 남아 있으면 죽은 것으로 본다) */
 const publishing = () => job.running || (fs.existsSync(LOCK) && Date.now() - fs.statSync(LOCK).mtimeMs < 45 * 60000);
+/** 올리기 잠금을 잡는다 — 파일을 '없을 때만 만들기'로 한 번에(확인과 만들기 사이에 다른 창이 끼어들지 못하게). 못 잡으면 false */
+function lock() {
+  try {
+    fs.mkdirSync(LIB, { recursive: true });
+    if (fs.existsSync(LOCK) && Date.now() - fs.statSync(LOCK).mtimeMs >= 45 * 60000) fs.rmSync(LOCK, { force: true }); // 죽은 올리기가 남긴 것
+    fs.writeFileSync(LOCK, String(process.pid), { flag: "wx" });
+    return true;
+  } catch {
+    return false;
+  }
+}
 function startPublish() {
-  fs.mkdirSync(LIB, { recursive: true });
-  fs.writeFileSync(LOCK, String(process.pid));
   Object.assign(job, { running: true, log: [], error: "", url: "", done: null });
   publish({
     run,
@@ -271,6 +280,8 @@ const server = http.createServer(async (req, res) => {
     q = u.searchParams,
     get = req.method === "GET",
     post = req.method === "POST";
+  // 이 서버의 주소로 온 요청만 받는다(읽기도) — 다른 이름을 이 PC로 돌려 붙이는 수법(DNS 리바인딩)으로 보관함·상태를 읽지 못하게
+  if (!HOSTS.includes(req.headers.host || "")) return send(res, 403, { error: "이 주소(127.0.0.1)로만 열 수 있어요" });
   try {
     if (get && u.pathname === "/") return file(res, path.join(ROOT, "tools/art/index.html"));
     if (get && PAGE.includes(u.pathname.slice(1))) return file(res, path.join(ROOT, "tools/art", u.pathname.slice(1)));
@@ -305,7 +316,7 @@ const server = http.createServer(async (req, res) => {
     if (post && u.pathname === "/api/site") {
       if (MOCK) return send(res, 400, { error: "연습 모드에서는 올릴 수 없어요" });
       if (!ours(req, true)) return send(res, 403, { error: "이 페이지의 단추로만 올릴 수 있어요" });
-      if (publishing()) return send(res, 409, { error: "이미 올리는 중이에요(다른 창일 수도 있어요)" });
+      if (job.running || !lock()) return send(res, 409, { error: "이미 올리는 중이에요(다른 창일 수도 있어요)" });
       startPublish();
       return send(res, 200, { ok: true });
     }
