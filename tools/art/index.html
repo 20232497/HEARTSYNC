@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>HEART SYNC 그림 관리</title>
+<title>HEART SYNC 그림 총괄</title>
 <style>
 :root { --bg: #f6f5f2; --panel: #fff; --line: #dcd9d2; --text: #1d1b18; --dim: #6f6a62; --accent: #7a2e48; --ok: #1f7a5a; --warn: #b3202a; }
 @media (prefers-color-scheme: dark) { :root { --bg: #17161a; --panel: #211f25; --line: #37343d; --text: #ece9e4; --dim: #9d978d; --accent: #f0b7c8; --ok: #7fe3b4; --warn: #ff7b86; } }
@@ -39,6 +39,14 @@ h2 { font-size: 15px; margin: 22px 0 8px; }
 .cand { width: 104px; }
 .cand img { width: 104px; height: 104px; object-fit: contain; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); cursor: zoom-in; display: block; }
 .cand button { width: 100%; margin-top: 4px; padding: 3px 0; }
+.cand .drop { font-size: 12px; color: var(--dim); }
+.tools { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; padding: 8px 16px; border-bottom: 1px solid var(--line); background: var(--panel); }
+.panel { margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--line); font-size: 13px; }
+.panel p { margin: 0 0 8px; }
+.seat { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; margin-bottom: 6px; }
+.seat b { min-width: 84px; }
+.seat input[type=number] { width: 68px; padding: 2px 6px; }
+.pvimg { display: block; max-width: 100%; margin-top: 8px; border-radius: 8px; border: 1px solid var(--line); }
 .msg { margin-top: 6px; font-size: 12px; white-space: pre-wrap; word-break: break-word; }
 @media (max-width: 860px) { .wrap { grid-template-columns: 1fr; } .works { border-right: 0; border-bottom: 1px solid var(--line); max-height: 230px; } }
 .view { position: fixed; inset: 0; z-index: 10; background: rgba(0, 0, 0, .86); display: none; place-items: center; cursor: zoom-out; }
@@ -48,13 +56,24 @@ h2 { font-size: 15px; margin: 22px 0 8px; }
 </head>
 <body>
 <div class="top">
-  <h1>HEART SYNC 그림 관리</h1>
+  <h1>HEART SYNC 그림 총괄</h1>
   <span class="dim">이 PC 전용 · 그림은 눈으로 확인한 뒤에만 실어요</span>
   <span class="sp"></span>
   <label>생성 서비스 키 <input id="key" type="password" size="18" autocomplete="off" placeholder="이 브라우저에만 저장"></label>
   <button id="keySave">키 저장</button>
   <span id="keyState" class="dim"></span>
   <span id="cost" class="dim"></span>
+</div>
+<div class="tools">
+  <span id="total" class="dim"></span>
+  <label>보기 <select id="filter"><option value="todo">안 실린 것</option><option value="rank1">안 실린 1순위</option><option value="all">전체</option></select></label>
+  <label>인물 화풍 <select id="style"><option value="">작품의 화풍대로</option><option value="anime">남성향 애니로 그려 보기</option><option value="daily">일상으로 그려 보기</option></select></label>
+  <label>동시에 <select id="workers"><option>1</option><option selected>2</option><option>3</option></select>장</label>
+  <button id="batchAll" class="main">모든 작품의 보이는 것 그리기</button>
+  <button id="halt">멈춤</button>
+  <span id="batchMsg" class="dim"></span>
+  <span class="sp" style="flex:1"></span>
+  <span id="lib" class="dim"></span>
 </div>
 <div class="wrap">
   <div class="works" id="works"></div>

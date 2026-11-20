@@ -1,141 +1,196 @@
-/* 작품 표지(960×1280)의 프롬프트 조립 — 2026-11-14 사용자와 비교 생성으로 정함(경위와 표는 ../README.md '표지').
-   표지는 여러 명을 그리지 않는다: 작품마다 대표 인물 한 명(LEADS), 구도·자세는 작품마다 다르게(SHOT).
-   일상 화풍(Pony 계열)은 구도 문구를 잘 따르지 않아 두 단계로 그린다 — Nova Orange가 구도를 잡은 밑그림(guide)을 일상 화풍이 다시 그림(strength 0.75).
-   애니(신님들)는 남성향 애니의 감정 그림 작업에서 구도 자리만 바꿔 바로 그린다.
-   받은 그림에는 화풍 후처리(job.post) → 표지 후처리(./cover-post.js) → 로고(./logo.js + ./logos.js) 순서로 입힌다.
-   coverJob(작품 id, 작품) → 작업 하나(일상은 guide가 붙음). Node에서만 돈다. 앱은 이 파일을 쓰지 않는다 */
-import { emotionJob as animeEmotion, assertSafe as animeSafe } from "../../style-manime/code/assemble.js";
-import { profileJob, assertSafe, castTags, isFem, seedOf, split, TEMPERS } from "../../style-mdaily/code/assemble.js";
-import { styleOf } from "./place.js";
+/* 작품 표지(960×1280)의 프롬프트 조립 — 2026-11-16~20 사용자와 비교 생성으로 다시 정함(경위와 표는 ../README.md '표지'). 2026-11-14의 일상 화풍 기준 규칙을 대체한다.
+   모델은 하나(Nova Orange — 남성향 애니 v9). 그 화풍의 감정 그림 칸 1 작업에서 **구도·표정 세기·빛**만 표지 값으로 바꾼다 — 얼굴·피부·마감 문구는 화풍 그대로(화풍이 바뀌면 표지도 따라감).
+   표지는 네 유형(COVERS[작품].type): close 얼굴 가까이(가슴 위) · scene 한 명 + 배경 · group 세 사람(./cover-group.js — 배경과 인물을 따로 그려 오려 얹음) · symbol 상징물(사람 없음).
+   받은 그림에는 표지 후처리(./cover-post.js) → 로고(./logo.js + ./logos.js) 순서로 입힌다.
+   coverPlan(작품 id, 작품) → { type, mood, job | parts…, post }. Node에서만 돈다. 앱은 이 파일을 쓰지 않는다 */
+import { emotionJob, assertSafe, isFem, MODEL } from "../../style-manime/code/assemble.js";
+import { COVER_POST } from "./cover-post.js";
 
 export const SIZE = { width: 960, height: 1280 };
-const HIRES = { w: 1344, h: 1792 }; // Runware는 64의 배수만(1440×1920은 못 만듦) — 받은 뒤 960×1280으로 줄여 싣는다
-const GUIDE = { model: "civitai:967405@1428332", cfg: 4, steps: 28, scheduler: "Euler a", strength: 0.75 }; // Nova Orange XL v6.0 — archive/style-manime
+export const HIRES = { w: 1344, h: 1792, strength: 0.4 }; // Runware는 64의 배수만 — 받은 뒤 960×1280으로 줄여 싣는다
+export const Q = "masterpiece, best quality, amazing quality, very aesthetic, absurdres";
+export const NQ = "bad quality, worst quality, worst detail, sketch, lowres, jpeg artifacts, text, watermark, signature, logo, border, letterboxed";
+// 사람 없는 그림(배경·상징물)의 네거티브 — 동양풍 장면에 도리이·한자 간판이 끼어드는 모델 버릇도 막는다
+export const NO_PEOPLE = ", 1girl, 1boy, (people:1.3), (person:1.3), human, crowd, character, face, silhouette, animal, creature, monster, horse, (torii:1.4), (japanese text:1.3), (kanji:1.2)";
 
-/* 구도·자세. 가까이(가슴 위)는 손짓 하나로 작품을 드러내고, 멀리는 장면이 곧 작품인 경우만(황제의 왕좌·기사의 맹세 — 사용자 '작품에 따라 섞기').
-   쓰지 않는 것: 돌아보는 자세(뒤태가 도드라짐) · 팔짱(가슴이 도드라짐) · 목에 손(눈을 감고 조는 모습으로 나옴) · 가슴에 손을 얹은 갑옷(건틀릿이 갈고리처럼 나옴) */
-export const SHOT = {
-  plain: "(upper body:1.3), (looking at viewer:1.1)",
-  tea: "(upper body:1.3), (holding cup:1.2), (teacup:1.1), (hand up:1.0), (looking at viewer:1.1)",
-  book: "(upper body:1.3), (holding book:1.2), (book:1.0), (looking at viewer:1.1)",
-  watch: "(upper body:1.3), (holding pocket watch:1.2), (pocket watch:1.1), (hand up:1.0), (looking at viewer:1.1)",
-  mug: "(upper body:1.3), (holding cup:1.2), (coffee mug:1.1), (looking at viewer:1.2), (open eyes:1.0)",
-  bowl: "(upper body:1.3), (holding bowl:1.2), (steam:0.9), (looking at viewer:1.1)",
-  tuck: "(upper body:1.3), (tucking hair:1.2), (hand in own hair:1.0), (head tilt:1.0), (looking at viewer:1.1)",
-  hush: "(upper body:1.3), (finger to mouth:1.2), (head tilt:1.1), (looking at viewer:1.1)",
-  desk: "(upper body:1.2), sitting, (elbow rest:1.1), (head rest:1.2), (hand on own cheek:1.0), table, (looking at viewer:1.1), (from above:0.7)",
-  blade: "(upper body:1.2), (holding sword:1.3), (sword:1.1), (blade in foreground:1.1), (looking at viewer:1.1), (dutch angle:1.1), (wind:1.0)",
-  above: "(from above:1.4), (looking up:1.1), (looking at viewer:1.1), (upper body:1.2), (hand on own chest:1.0)",
-  hilt: "(upper body:1.3), (hand on hilt:1.2), (sheathed sword:1.1), (wind:1.0), (floating hair:0.8), (looking at viewer:1.1)",
-  goggles: "(upper body:1.2), (adjusting goggles:1.2), (hand on own head:1.0), (looking at viewer:1.1), (dutch angle:1.0)",
-  throne: "(sitting:1.2), (throne:1.1), (crossed legs:1.0), (head rest:1.1), (looking at viewer:1.1), (cowboy shot:1.2)",
-  vow: "(on one knee:1.2), (kneeling:1.1), (planted sword:1.2), (hands on hilt:1.1), (looking up:1.0), (looking at viewer:1.1), (from above:1.0), (cowboy shot:1.1)",
+/* ── 구도 ── 얼굴 가까이는 '가슴 위까지'(사용자 2026-11-16), 한 명 + 배경은 허리 위. 카메라 기울임은 약하게(0.25 — '그늘은 좋고 각도는 덜') */
+export const FRAME = {
+  close: "(fully clothed:1.2), (portrait:1.1), (upper body:1.2), (close-up:0.5), (head tilt:0.8), looking at viewer",
+  scene: "(fully clothed:1.2), (upper body:1.2), (cowboy shot:0.5), (head tilt:0.5), looking at viewer"
 };
-const FAR = { throne: 1, vow: 1 };
+const TILT = "(dutch angle:0.25)";
 
-/* 대표 인물과 구도. 대표는 그 작품에서 가장 예쁘거나 그림이 가장 자연스럽거나 개성 있는 인물(사용자 — 첫 인물이 대표로 애매한 작품이 있음).
-   뒤 칸은 눈으로 보고 고친 손질: gpos·gneg 밑그림 문구 · pos·neg 본 그림 문구 · gseed·seed 시드 · strength 밑그림을 따르는 정도(낮을수록 밑그림대로)
-   · tags [찾을 말, 바꿀 말] 표지에서만 인물 태그를 바꿈 */
-export const LEADS = {
-  godseats: { code: "HSY", shot: "blade", seed: 2 },
-  hangyeoul: { code: "HGU", shot: "desk", neg: ", (people in background:1.6), (crowd:1.5), (2boys:1.5), (multiple boys:1.5), (customer:1.4)", seed: 6, strength: 0.6 }, // 뒤에 손님이 그려짐
-  yunhaera: { code: "YHR", shot: "tuck" },
-  sipjeol: { code: "NGS", shot: "hilt" },
-  daeyeon: { code: "IHW", shot: "above", gpos: ", (white hanbok:1.3), (white jeogori:1.3)", gneg: ", (blue hanbok:1.4), (blue clothes:1.3), (blue shirt:1.3)", pos: ", (white hanbok:1.3), (white jeogori:1.3)", neg: ", (blue hanbok:1.4), (blue clothes:1.3)", gseed: 5 }, // 한복이 하늘색으로 나옴
-  // 홍 여사: 눈이 붉게 나와 금빛을 올림(머리 모양 — 일자 앞머리·반묶음 — 은 2026-11-16 작품 태그에 들어가 표지용 덮어쓰기를 지움)
-  minwon: { code: "HME", shot: "hush", eyes: ["(golden eyes:0.7)", "(golden eyes:1.1), (yellow eyes:1.0)"], neg: ", (red eyes:1.4)" },
-  baekya: { code: "SHJ", shot: "goggles" },
-  hwanghu: { code: "KAS", shot: "throne" },
-  kael: { code: "KAEL", shot: "vow" },
-  lethe: { code: "CSH", shot: "watch" },
-  seodoyun: { code: "SDY", shot: "mug", gneg: ", (closed eyes:1.4), (sleeping:1.3)", neg: ", (closed eyes:1.4), (sleeping:1.3)" },
-  hasuk: { code: "KTH", shot: "bowl" },
-  baekyeon: { code: "BY", shot: "tea", gseed: -10, seed: -10 },
-  geumseo: { code: "ADL", shot: "book", gseed: -10, seed: -10 },
+/* ── 빛 ── 어둡고 피폐하게 + 작품 색 조명을 세게('어두움은 좋고 색 조명을 더'). 밝은 작품(mood: "warm" — 편의점·하숙집)은 어둡게 하지 않는다('밝게 두기').
+   color는 작품 색을 주된 빛과 가장자리 빛으로 옮긴 문구(가중치는 비교 생성으로 올린 값 그대로) */
+const DEEP = "(chiaroscuro:1.15), (shadow on face:0.85), (side lighting:0.9), (dark background:0.9), (dim lighting:0.9), (dark:0.7), (low key:0.6), (muted colors:0.3)";
+export const light = (color, mood) =>
+  mood === "warm"
+    ? `(cinematic lighting:1.3), (dramatic lighting:1.1), (chiaroscuro:0.95), (side lighting:0.9), (dim lighting:0.6), (muted colors:0.4), ${color}, (backlighting:0.5)`
+    : `(cinematic lighting:1.3), (dramatic lighting:1.1), ${DEEP}, ${color}, (rim lighting:1.2), (colorful lighting:0.5), (backlighting:0.5)`;
+/** 사람 없는 그림의 빛 — 밝은 작품은 햇빛 */
+export const sceneLight = (color, mood) => (mood === "warm" ? "(cinematic lighting:1.1), (soft sunlight:1.0), (warm lighting:1.0), (rim light:0.9), (backlighting:0.5)" : light(color, mood));
+
+/* ── 피폐미 ── 지친 눈매·창백한 피부(약하게), 흐트러진 머리(작품마다 hair), 무심한 시선. 옷은 여민 채(노출 없음), 성인 표시와 미성년 네거티브는 화풍 그대로.
+   tired eyes는 눈을 감기기 쉬워 가중치를 낮게 둔다(감은 눈 네거티브는 화풍에 있음) */
+export const WORN = {
+  f: "(melancholic:0.6), (pale skin:0.4), (tired eyes:0.3)",
+  fWarm: "(melancholic:0.3), (pale skin:0.4), (tired eyes:0.2)",
+  m: "(tired eyes:0.45), (bags under eyes:0.35), (melancholic:0.7), (jaded:0.5), (pale skin:0.5)"
 };
-/** 그 작품의 대표와 구도 — 표에 없는 새 작품은 첫 인물·기본 구도(대표를 정하면 LEADS에 적는다) */
-export const leadOf = (workId, work) => LEADS[workId] || { code: ((work.cast || [])[0] || {}).code, shot: "plain" };
+export const GAZE = {
+  f: "(aloof:0.6), (cold gaze:0.4), (looking down at viewer:0.5)",
+  m: "(looking down at viewer:1.0), (cold gaze:0.7), (indifferent:0.7), (furrowed brow:0.4)"
+};
+const HAIR_DEFAULT = "(loose hair strands:0.9), (messy hair:0.9)";
+const NEG_COVER = ", (simple background:1.2), (multiple swords:1.3)";
+const NEG_DARK = ", (bright:1.2), (cheerful:1.2), (vivid colors:1.1)";
 
-const Q = "masterpiece, best quality, amazing quality, very aesthetic, absurdres, newest, general";
-const NQ = "bad quality, worst quality, worst detail, sketch, lowres, jpeg artifacts, text, watermark, signature, logo, border, letterboxed";
-const SAFE = ", bad anatomy, bad hands, extra fingers, child, loli, shota, underage, toddler, aged down, baby face, nsfw, nude, (cleavage:1.5), (see-through:1.4), chibi, (big head:1.2), (from behind:1.3), (ass:1.5), (bent over:1.4), (downblouse:1.5), (bare legs:1.3), (thighs:1.3), (off shoulder:1.4)";
-const NEG_POSE_F = ", (from behind:1.3), (bent over:1.4), (downblouse:1.5), (bare legs:1.3)";
-/* 남자(사용자: 부자연스럽고 느끼함 → 자연스럽게·선을 유하게, 그 뒤 '너무 무뚝뚝함' → 은은한 미소)
-   · 표정: smirk·half-lidded·mischievous·confident gaze를 쓰지 않고 입을 다문 은은한 미소 · 얼굴선: 화풍 문구의 날카로운 턱·좁은 눈·근육 가중치를 낮춤(성인 표시는 그대로)
-   · 가까이 잡은 표지는 키우지 않음(키우면 선이 딱딱해짐) — 멀리 잡은 표지만 0.3으로 키워 얼굴을 살림 */
-const EXPR_M = { warm: "(gentle smile:1.35), (closed mouth:1.2), (soft gaze:1.2)", cool: "(light smile:1.3), (closed mouth:1.2), (soft gaze:1.2)", cold: "(light smile:1.25), (closed mouth:1.2), (soft gaze:1.2)" };
-const exprM = (temper) => (temper === "차가움" ? EXPR_M.cold : /도도|냉소|곧음/.test(temper || "") ? EXPR_M.cool : EXPR_M.warm);
-const NEG_M = ", (smirk:1.3), (smug:1.3), (half-lidded eyes:1.2), (seductive smile:1.3), (raised eyebrow:1.2), (glossy skin:1.2), (shiny skin:1.2), (from behind:1.3)";
-const SOFT_M = [["(sharp jawline:1.45)", "(sharp jawline:1.0)"], ["(prominent jawline:1.3), ", ""], ["(narrow eyes:1.35)", "(narrow eyes:1.0)"], ["(small eyes:1.2), ", ""], ["(mature male:1.5)", "(mature male:1.1)"],
-  ["(mature face:1.45)", "(mature face:1.0)"], ["(masculine:1.4)", "(masculine:1.1)"], ["(muscular male:1.3)", "(muscular male:1.0)"], ["(thick neck:1.4)", "(thick neck:1.1)"]];
-const SOFT_M_ADD = ", (soft features:1.2), (gentle eyes:1.1), (soft lineart:1.2)";
-const GUIDE_M = "1boy, solo, (adult man:1.2), handsome, (soft features:1.1)",
-  GUIDE_M_NEG = ", (mature male:1.1), old, wrinkles, (muscular:1.2), (thick arms:1.2), smirk, smug, (claws:1.3)";
-/* 여자(사용자: 조금 더 가녀리게 → 한 단계 더). 밑그림에 어깨·팔·허리 문구(narrow shoulders·thin arms·thin waist)를 넣으면 어깨가 드러난 옷·소매 없는 옷이 나온다
-   → 밑그림은 slender·slim과 긴소매만 넣고 드러난 어깨·트임을 세게 막는다. 가녀림은 본 그림(일상 화풍 문구)에서 올린다 */
-const GUIDE_F = "1girl, solo, (adult woman:1.2), (mature female:0.8), slender, (slim:1.2), (long sleeves:1.3)";
-const NEG_SLIM = ", (large breasts:1.5), (huge breasts:1.5), (curvy:1.3), (plump:1.2), (wide hips:1.2), (broad shoulders:1.3), (muscular female:1.3), (thick arms:1.3), (bare shoulders:1.6), (bare arms:1.5), (sleeveless:1.6), (collarbone:1.4), (low neckline:1.5), (shoulder cutout:1.6), (detached sleeves:1.5), (clothing cutout:1.5), (off-shoulder shirt:1.6)";
-const SLIM_F = [["(slender body:1.25)", "(slender body:1.6)"], ["(slim:1.15)", "(slim:1.45)"], ["(narrow shoulders:1.1)", "(narrow shoulders:1.4), (delicate:1.3), (thin arms:1.2), (thin waist:1.1)"]];
-const LIGHT_F = "(cinematic lighting:1.1), (rim light:1.0), (depth of field:1.0)",
-  LIGHT_M = "(depth of field:1.0)";
-const ANIME_SLIM = ", slender, (slim:1.2), (long sleeves:1.3)",
-  ANIME_NEG_F = ", (from behind:1.3), (large breasts:1.5), (huge breasts:1.5), (curvy:1.3), (wide hips:1.2), (thick thighs:1.3), (plump:1.2), (bare shoulders:1.6), (bare arms:1.5), (sleeveless:1.6), (shoulder cutout:1.6), (detached sleeves:1.5), (clothing cutout:1.5)";
+/* ── 작품마다 ── type 유형 · lead 대표 인물 코드 · pose 손짓·소품 · frame 구도(없으면 유형의 기본) · add 장면에 더할 낱말 · hair 흐트러짐(머리 모양에 맞춤) · color 색 조명
+   · flat 카메라를 기울이지 않음 · level 아래에서 올려다보는 각도를 뺌 · swap [찾을 태그, 바꿀 태그] 표지에서만 인물 태그를 바꿈 · rep [찾을 문구, 바꿀 문구] · neg 눈으로 보고 더한 네거티브.
+   함정(그리며 배움): 옷 낱말의 ink(먹빛)는 어두운 분위기 문구와 만나 뺨의 먹물 얼룩·문신이 됨 · red thread on ear는 뺨의 붉은 무늬가 됨 → 표지에서는 낱말을 바꾸고 얼굴 무늬를 막음
+   · short hair와 shoulder-length hair가 같이 있으면 짧게 나옴(아델) · 배경 간판에는 글자·숫자가 그려짐(윤해라·서도윤) */
+export const COVERS = {
+  yunhaera: {
+    type: "close", lead: "YHR", pose: "(hand on own chin:1.0)", hair: "(loose hair strands:0.9), (hair strand over face:0.5)",
+    color: "(pink lighting:1.25), (purple rim light:1.25), (neon city glow:0.95)", neg: ", (billboard:1.3), (sign:1.3), (poster:1.2), (numbers:1.2)"
+  },
+  geumseo: {
+    type: "close", lead: "ADL", pose: "(holding book:1.1)", hair: "(messy hair:1.0), (hair over one eye:0.6), (loose hair strands:0.8)",
+    color: "(blue lighting:1.15), (golden rim light:1.25), (candlelight:1.05)",
+    rep: [["(short hair:1.1), (shoulder-length hair:1.1)", "(medium hair:1.2), (shoulder-length hair:1.3)"]], neg: ", (short hair:1.3), (very short hair:1.3)"
+  },
+  seodoyun: {
+    type: "close", lead: "SDY", frame: "(fully clothed:1.2), (upper body:1.2), (cowboy shot:0.5), (head tilt:0.6), looking at viewer", level: true,
+    pose: "(hand in own hair:0.9)", add: "(messy hair:1.0), (night:0.9), (window blinds:0.8), (office:0.7), (desk:0.6)",
+    hair: "(messy hair:1.2), (disheveled hair:0.9), (hair over eyes:0.7)", color: "(blue lighting:1.15), (amber rim light:1.25), (neon light:0.95)",
+    neg: ", (bright:1.1), (daylight:1.2), (neon sign:1.4), (sign:1.3), (chinese text:1.3), (cup:1.2), (tears:1.3), (close-up:1.2), (face focus:1.1)"
+  },
+  baekyeon: {
+    type: "close", lead: "BY", pose: "(holding cup:1.1), (teacup:1.0)", hair: "(messy hair:1.0), (hair over one eye:0.6), (loose hair strands:0.8)",
+    color: "(orange lighting:1.25), (red rim light:1.15), (lantern light:1.05)",
+    swap: [["red thread on ear", "red tassel earring, single earring"], ["ink black durumagi", "black durumagi"]],
+    neg: ", (blood:1.4), (blood on face:1.4), (facial mark:1.3), (facial tattoo:1.4), (scar:1.2), (cheek mark:1.3), (face paint:1.3), (tattoo:1.3), (face markings:1.3), (ink:1.4), (ink splatter:1.4), (stain:1.2), (dirty face:1.3)"
+  },
+  hangyeoul: {
+    type: "scene", lead: "HGU", mood: "warm", flat: true, frame: "(fully clothed:1.2), (upper body:1.1), sitting, (head tilt:0.6), looking at viewer",
+    pose: "(elbow rest:1.0), (head rest:1.1), counter", add: "(night:0.9)", color: "(teal lighting:0.8), (yellow rim light:0.9)",
+    rep: [["(half-closed eyes:0.8), (narrow eyes:0.6)", "(half-closed eyes:0.6), (narrow eyes:0.5)"]] // 밝은 인물은 눈을 덜 가늘게
+  },
+  daeyeon: {
+    type: "scene", lead: "IHW", pose: "(hand on own chest:1.0), (falling petals:0.8), (night:1.0)", hair: "(loose hair strands:0.9), (stray hair:0.7)",
+    color: "(blue moonlight:1.25), (amber rim light:1.15), (torchlight:0.85)", neg: ", (forehead mark:1.3), (bindi:1.3)"
+  },
+  lethe: {
+    type: "scene", lead: "CSH", pose: "(holding pocket watch:1.1), (pocket watch:1.0)", hair: "(loose hair strands:0.9), (hair falling over forehead:0.8), (messy hair:0.8)",
+    color: "(teal lighting:1.25), (golden rim light:1.25)"
+  },
+  // 카엘: 한쪽 무릎을 꿇고 검을 몸 앞에 수직으로(사용자 2026-11-16)
+  kael: {
+    type: "scene", lead: "KAEL",
+    frame: "(fully clothed:1.2), (kneeling:1.2), (on one knee:1.3), (sword planted in ground:1.2), (vertical sword:1.1), (both hands on hilt:1.2), (hands on hilt:1.1), (longsword:1.0), (cowboy shot:1.0), looking at viewer",
+    hair: "(messy hair:1.1), (hair over eyes:0.6)", color: "(blue lighting:1.15), (golden rim light:1.25), (holy light:1.05)",
+    neg: ", (squatting:1.3), (crouching:1.2), (hand on ground:1.3), (all fours:1.3), (sitting:1.1)"
+  },
+  godseats: { type: "group", mood: "dark", color: "(pink lighting:1.15), (purple rim light:1.25)" },
+  hasuk: { type: "group", mood: "warm", color: "(warm lighting:1.0), (golden rim light:0.9)" },
+  sipjeol: { type: "group", mood: "dark", color: "(orange lighting:1.15), (blue rim light:1.15)" },
+  hwanghu: { type: "group", mood: "dark", color: "(golden lighting:1.25), (red rim light:1.15), (candlelight:0.95)" },
+  // 상징물: 사람 없이 작품의 상징 장면만(주인공이 정해지지 않은 작품)
+  minwon: {
+    type: "symbol", seed: 9305, neg: ", (statue:1.3)",
+    tags: "dark empty government office corridor at midnight, single glowing number ticket machine kiosk, one lit service window at the far end, row of empty plastic waiting chairs, flickering fluorescent ceiling light, deep shadows, light rays, eerie, teal and amber"
+  },
+  baekya: {
+    type: "symbol", seed: 9301,
+    tags: "armored train in a blizzard at night, snowstorm, headlight beam cutting through snow, endless snowfield, frost, orange glow from windows, dramatic clouds, post-apocalyptic, low angle, from below"
+  }
+};
+/** 그 작품의 표지 설계 — 표에 없는 새 작품은 첫 인물을 가까이 잡은 기본 설계(정하면 COVERS에 적는다) */
+export const coverOf = (workId, work) => COVERS[workId] || { type: "close", lead: ((work.cast || [])[0] || {}).code, color: "(rim light:1.1)" };
+/** 대표 인물 코드(단체는 가운데 인물 — ./cover-group.js가 알려 줌, 상징물은 없음) */
+export const leadOf = (workId, work) => ({ code: coverOf(workId, work).lead || "" });
 
 const w = (tags, k) => tags.split(", ").filter(Boolean).map((t) => `(${t}:${k})`).join(", ");
 const must = (s, a, b) => {
-  if (!s.includes(a)) throw new Error("표지 조립: 바꿀 문구를 못 찾았어요 — " + a);
-  return s.replace(a, b);
+  const r = s.replace(a, b);
+  if (r === s) throw new Error("표지 조립: 바꿀 자리를 못 찾았어요 — " + a);
+  return r;
 };
-const shotOf = (lead, c) => {
-  const s = SHOT[lead.shot];
-  if (!s) throw new Error("없는 구도예요: " + lead.shot);
-  return /rapier/.test(c.tags) ? s.replace("(holding sword:1.3), (sword:1.1)", "(holding rapier:1.3), (rapier:1.1)") : s;
-};
+// 화풍(감정 그림)의 구도 자리와 빛 자리 — 화풍 코드가 이 문구를 바꾸면 여기서 던져 알려 준다
+const FRAME0 = "(fully clothed:1.2), (standing:1.0), (upper body:1.1), (head tilt:0.5), (facing viewer:1.0), looking at viewer";
+const LIGHT0 = /(\(sharp focus:0\.9\), ).*(, masterpiece, )/;
+const BLUR0 = /\(blurry background:[\d.]+\)/; // 화풍의 장소 칸 끝(배경 흐림)
+const SOLO0 = new RegExp(FRAME0.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + ", .*?" + BLUR0.source);
+const cut = (s, t) => s.replace(t + ", ", "").replace(", " + t, "");
 
-/** 표지 작업 — 일상은 guide(밑그림 작업과 strength)가 붙고, 애니는 바로 그린다 */
-export function coverJob(workId, work) {
-  const lead = leadOf(workId, work),
-    place = (work.places || [])[0];
-  let c = (work.cast || []).find((x) => x.code === lead.code);
-  if (!c) throw new Error(`대표 인물을 찾지 못했어요: ${workId} ${lead.code}`);
-  if (lead.tags && c.tags.includes(lead.tags[0])) c = { ...c, tags: c.tags.replace(lead.tags[0], lead.tags[1]) };
-  const fem = isFem(c),
-    shot = shotOf(lead, c);
-  if (styleOf(workId) === "anime") {
-    const { hires, ...j } = animeSafe(animeEmotion(c, place, 1)); // 구도 자리만 바꿈 — 화풍 문구·후처리는 원래 그대로
-    return { ...j, pos: must(j.pos, "(upper body:1.1)", shot + (fem ? ANIME_SLIM : "")), neg: j.neg + (fem ? ANIME_NEG_F : ", (from behind:1.3)"), seed: j.seed + (lead.seed || 0), ...SIZE, hires: { ...HIRES, strength: 0.4 } };
-  }
-  const expr = fem ? TEMPERS[c.temper] || "light smile" : exprM(c.temper),
-    scene = [shot, expr, fem ? LIGHT_F : LIGHT_M].join(", ");
-  const guide = {
-    model: GUIDE.model,
-    pos: [Q, fem ? GUIDE_F : GUIDE_M, castTags(c).replace(/\(([^()]+):0\.7\)/g, "$1"), scene, "(fully clothed:1.2)", w((place && place.tags) || "", 1.0)].filter(Boolean).join(", ") + (lead.gpos || ""),
-    neg: NQ + SAFE + (lead.gneg || "") + (fem ? NEG_SLIM : GUIDE_M_NEG),
-    cfg: GUIDE.cfg,
-    steps: GUIDE.steps,
-    scheduler: GUIDE.scheduler,
-    seed: seedOf(c) + (fem ? 43 : 41) + (lead.gseed || 0),
-    ...SIZE,
-  };
-  // 일상 화풍의 프로필 작업에서 구도·표정 자리만 표지 구도로 바꾼다(화풍 문구·네거티브·후처리는 그대로). 표지는 배경을 덜 흐리게
-  const j = assertSafe(profileJob(c, place, { size: SIZE })),
-    head = /^(.*?rating_safe, )(.*?)(, 1(?:girl|boy))/.exec(j.pos);
-  if (!head) throw new Error("표지 조립: 프로필 문구의 구도 자리를 못 찾았어요");
-  let pos = j.pos.replace(head[2], split(scene).map((t) => (t.includes("(") ? t : `(${t}:1.2)`)).join(", "));
-  pos = must(pos, "(blurry background:1.5), (depth of field:1.3)", "(blurry background:1.1), (depth of field:1.1)");
-  if (lead.eyes && pos.includes(lead.eyes[0])) pos = pos.replace(lead.eyes[0], lead.eyes[1]);
-  for (const [a, b] of fem ? SLIM_F : SOFT_M) pos = pos.replace(a, b); // 없으면 그대로(인물마다 문구가 다름)
-  pos += (fem ? "" : SOFT_M_ADD) + (lead.pos || "");
-  const neg = j.neg + (fem ? NEG_POSE_F + NEG_SLIM : NEG_M + (/armor/.test(c.tags) ? ", (claws:1.3)" : "")) + (lead.neg || "");
-  const far = FAR[lead.shot];
-  return { ...j, pos, neg, seed: seedOf(c) + 41 + (lead.seed || 0), ...(fem ? { hires: { ...HIRES, strength: 0.4 } } : far ? { hires: { ...HIRES, strength: 0.3 } } : {}), guide: { job: guide, strength: lead.strength || GUIDE.strength } };
+/** 인물을 찾아 표지용 태그 바꾸기(swap)를 입힌다 — 작품 태그에서 그 낱말이 사라졌으면 그대로 둔다 */
+export function castOf(work, code, swap) {
+  let c = (work.cast || []).find((x) => x.code === code);
+  if (!c) throw new Error(`표지 인물을 찾지 못했어요: ${work.id || ""} ${code}`);
+  for (const [a, b] of swap || []) if (c.tags.split(", ").includes(a)) c = { ...c, tags: c.tags.split(", ").map((t) => (t === a ? b : t)).join(", ") };
+  return c;
 }
-/** 만든 표지 작업이 지킬 것을 지키는지: 성인 표시·한 사람·미성년과 노출 네거티브(밑그림도), 문구 길이(Runware는 3000자까지) */
-export function assertCover(j) {
-  for (const x of j.guide ? [j, j.guide.job] : [j]) {
-    if (!/adult (wo)?man/.test(x.pos) || !/\bsolo\b/.test(x.pos)) throw new Error("성인 표시·solo가 없어요");
-    for (const t of ["child", "loli", "shota", "underage", "toddler", "aged down", "nsfw", "nude"]) if (!x.neg.includes(t)) throw new Error("네거티브에 없어요: " + t);
-    if (x.pos.length > 3000 || x.neg.length > 3000) throw new Error(`문구가 3000자를 넘어요(긍정 ${x.pos.length} · 부정 ${x.neg.length})`);
+/** 화풍의 칸 1 작업을 표지 인물 문구로 — v: COVERS의 한 줄(또는 단체의 인물 한 명), o: { frame, mood, color, place, solo(오려 붙일 인물 — 배경 없이, 시선 문구 없이), away(옆을 봄) } */
+export function styled(c, v, o) {
+  const fem = isFem(c),
+    dark = o.mood !== "warm",
+    j = assertSafe(emotionJob(c, o.place, 1));
+  const shot = [v.frame || o.frame, v.pose, v.add, v.flat || o.solo ? "" : TILT, o.away ? "" : "(looking at viewer:1.1)"].filter(Boolean).join(", ");
+  // 오려 붙일 인물은 구도 자리 뒤의 장소 칸(배경 흐림까지)을 통째로 단순한 배경으로 바꾼다 — 장소에 딸린 네거티브(젖은 옷·낮밤)는 그대로 남는다
+  let pos = o.solo ? must(j.pos, SOLO0, () => shot + ", (simple background:1.4), (grey background:1.2)") : must(j.pos, FRAME0, shot);
+  const miss = (v.rep || []).filter(([a]) => !pos.includes(a)).map(([a]) => a); // 작품 태그가 바뀌어 손질 자리가 사라졌으면 건너뛰고 알림(jobs.mjs check)
+  for (const [a, b] of v.rep || []) pos = pos.replace(a, b);
+  if (dark) pos = pos.replace("(light smile:0.9)", "(light smile:0.7)").replace("(expressionless:0.5)", "(expressionless:0.7)"); // 어두운 표지는 덜 웃고 더 무심하게
+  const worn = dark ? [fem ? WORN.f : WORN.m + (o.solo ? "" : ", (hair over eyes:0.4)"), v.hair || HAIR_DEFAULT, GAZE[fem ? "f" : "m"]] : o.solo || !fem ? [] : [WORN.fWarm];
+  if (worn.length) pos = must(pos, "(flawless skin:0.9)", [...worn, "(flawless skin:0.9)"].join(", "));
+  pos = must(pos, LIGHT0, (m, a, b) => a + (o.solo && !dark ? "(cinematic lighting:1.3), (dramatic lighting:1.1), (chiaroscuro:0.8), (side lighting:0.8), " + o.color + ", (backlighting:0.5)" : light(o.color, o.mood)) + b);
+  if (o.solo) {
+    // 오려 붙일 인물: 내려다보는 시선과 어두운 배경 문구를 뺌(배경은 따로 그려 깐다)
+    pos = cut(pos.replace(/\(looking down at viewer:[\d.]+\), /g, ""), "(dark background:0.9)");
+  } else {
+    if (v.type === "scene") pos = must(pos, BLUR0, "(detailed background:1.1), (depth of field:0.7)");
+    if (!fem && !v.level) pos = must(pos, "(flawless skin:0.9)", "(from below:0.3), (flawless skin:0.9)"); // 남자는 살짝 올려다보는 각도
   }
+  // 밝은 작품은 화풍(감정 그림)의 '밝음 막기'를 뺀다 — 밝게 두는 표지라서
+  const neg = (dark ? j.neg : j.neg.replace(", (bright:1.1)", "")) + (o.solo ? ", (multiple swords:1.3)" : NEG_COVER) + (dark ? NEG_DARK : "") + (v.neg || "");
+  const { post, ...base } = j; // 화풍 후처리 대신 표지 후처리를 입힌다
+  return { ...base, pos, neg, ...SIZE, hires: { ...HIRES }, ...(miss.length ? { miss } : {}) };
+}
+/** 사람 없는 그림(단체의 배경) — tags는 장면 낱말, 마감은 화풍의 칠에서 머리·얼굴 문구를 뺀 것(넣으면 사람 머리가 그려짐) */
+export function sceneJob(tags, color, mood, seed) {
+  const fin = "(semi-realistic:1.15), (digital painting:1.2), (painterly:1.1), (realistic shading:1.0), (depth of field:1.0), (sharp focus:0.9)";
+  const pos = [Q, "(no humans:1.4), scenery, (wide shot:1.2), (high angle:0.5), (perspective:1.1)", w(tags, 1.1), fin, sceneLight(color, mood), "(detailed background:1.2)"].join(", ");
+  const neg = NQ + NO_PEOPLE + ", (from below:1.2), (aerial view:1.3), (map:1.2), (abstract:1.2), (girl:1.4), (lying:1.4), (hair:1.3), (body:1.3), (sign:1.2), (neon sign:1.3)";
+  return { model: MODEL.air, pos, neg, cfg: MODEL.cfg, steps: MODEL.steps, scheduler: MODEL.scheduler, seed, ...SIZE, hires: { ...HIRES } };
+}
+/* 상징물 표지의 마감과 빛 — 2026-11-16에 확정된 두 장(민원실·백야호)을 그린 문구 그대로(그 뒤의 인물 마감 값으로 바꾸지 않음 — 다시 그려 확인하지 않았다) */
+const SYMBOL_FIN =
+  "(shiny hair:1.0), (hair strands:1.3), (detailed hair:1.2), (pale skin:1.0), (semi-realistic:0.8), (digital painting:1.1), (painterly:1.2), (soft shading:1.1), (soft skin shading:1.0), " +
+  "(soft focus:0.4), (depth of field:1.0), (bokeh:0.5), (muted colors:0.5)";
+const SYMBOL_LIGHT = "(cinematic lighting:1.2), (dramatic lighting:0.9), (rim light:0.9), (backlighting:0.5), (dim lighting:0.5), (volumetric lighting:1.1), (fog:0.8), (detailed background:1.2)";
+function symbolJob(v) {
+  const pos = [Q, "(no humans:1.3), scenery", w(v.tags, 1.1), SYMBOL_FIN, SYMBOL_LIGHT].join(", ");
+  return { model: MODEL.air, pos, neg: NQ + NO_PEOPLE + ", (bright:1.1), (flat lighting:1.2)" + (v.neg || ""), cfg: MODEL.cfg, steps: MODEL.steps, scheduler: MODEL.scheduler, seed: v.seed, ...SIZE, hires: { ...HIRES } };
+}
+
+/** 한 장으로 끝나는 표지(가까이·한 명 + 배경·상징물)의 계획. 단체는 ./cover-group.js의 groupPlan */
+export function coverPlan(workId, work) {
+  const v = coverOf(workId, work);
+  if (v.type === "group") throw new Error("단체 표지는 cover-group.js의 groupPlan으로 뽑아요: " + workId);
+  if (v.type === "symbol") return { type: v.type, mood: "dark", job: assertCover(symbolJob(v)), post: COVER_POST.symbol };
+  const mood = v.mood || "dark",
+    c = castOf({ ...work, id: workId }, v.lead, v.swap);
+  const job = styled(c, v, { frame: FRAME[v.type], mood, color: v.color, place: (work.places || [])[0] });
+  return { type: v.type, mood, lead: v.lead, job: assertCover(job), post: COVER_POST[mood] };
+}
+/** 만든 표지 작업이 지킬 것을 지키는지: 인물 그림은 성인 표시·한 사람·미성년과 노출 네거티브, 사람 없는 그림은 사람 네거티브, 문구 길이(Runware는 3000자까지) */
+export function assertCover(j) {
+  if (/\(no humans:/.test(j.pos)) {
+    for (const t of ["1girl", "1boy", "(people:1.3)"]) if (!j.neg.includes(t)) throw new Error("사람 네거티브가 없어요: " + t);
+  } else {
+    if (!/adult (wo)?man/.test(j.pos) || !/\bsolo\b/.test(j.pos)) throw new Error("성인 표시·solo가 없어요");
+    for (const t of ["child", "loli", "shota", "underage", "toddler", "aged down", "nsfw", "nude"]) if (!j.neg.includes(t)) throw new Error("네거티브에 없어요: " + t);
+  }
+  if (j.pos.length > 3000 || j.neg.length > 3000) throw new Error(`문구가 3000자를 넘어요(긍정 ${j.pos.length} · 부정 ${j.neg.length})`);
   return j;
 }
