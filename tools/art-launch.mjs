@@ -6,7 +6,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { execFileSync, spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { HOME } from "./art/publish.mjs";
+import { HOME, MARK } from "./art/publish.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const pi = process.argv.indexOf("--port"),
@@ -26,17 +26,23 @@ const open = () => {
 };
 
 const up = await fetch(URL0 + "api/meta").then(
-  (r) => r.ok,
-  () => false
+  (r) => (r.ok ? r.json() : null),
+  () => null
 );
 if (up) {
+  // 같은 작업 사본의 서버가 이미 켜져 있을 때만 그 창을 다시 쓴다
+  if (path.resolve(up.root || "") !== ROOT) {
+    say(`포트 ${PORT}을 다른 것이 쓰고 있어요(${up.root || "알 수 없는 서버"}) — 그쪽을 끄고 다시 열어 주세요.`);
+    process.exit(1);
+  }
   say("이미 켜져 있어요 — 브라우저만 열어요: " + URL0);
   open();
   process.exit(0);
 }
 try {
   const branch = git("rev-parse", "--abbrev-ref", "HEAD");
-  if (branch === HOME) {
+  // 그림 전용 작업 사본(표식이 있는 곳)의 전용 가지일 때만 main과 맞춘다 — 다른 작업 사본은 건드리지 않는다
+  if (branch === HOME && fs.existsSync(path.resolve(ROOT, git("rev-parse", "--git-path", MARK)))) {
     say("main과 맞추는 중…");
     git("fetch", "origin", "--quiet");
     // 안 올린 그림이 있어도 새 파일뿐이면 그대로 앞으로 간다. 겹치면 그대로 두고 연다

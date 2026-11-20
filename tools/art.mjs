@@ -197,7 +197,7 @@ function mockImage(task) {
 /* ── 사이트에 올리기(./art/publish.mjs) ── 한 번에 하나만. 페이지가 진행 글을 /api/site로 읽는다 */
 const run = (cmd, args, o = {}) =>
   new Promise((ok, no) =>
-    execFile(cmd, args, { cwd: ROOT, maxBuffer: 64 * 1024 * 1024, windowsHide: true }, (e, out, err) => {
+    execFile(cmd, args, { cwd: ROOT, maxBuffer: 64 * 1024 * 1024, windowsHide: true, timeout: o.timeout || 3 * 60000 }, (e, out, err) => {
       if (e && !o.allowFail)
         return no(
           new Error(
@@ -212,7 +212,13 @@ const run = (cmd, args, o = {}) =>
 const job = { running: false, log: [], error: "", url: "", done: null };
 function startPublish() {
   Object.assign(job, { running: true, log: [], error: "", url: "", done: null });
-  publish({ run, log: (t) => job.log.push(t), wait: (ms) => new Promise((r) => setTimeout(r, ms)), build: () => run(process.execPath, ["tools/build.mjs"]) })
+  publish({
+    run,
+    root: ROOT,
+    log: (t) => job.log.push(t),
+    wait: (ms) => new Promise((r) => setTimeout(r, ms)),
+    build: () => run(process.execPath, ["tools/build.mjs"], { timeout: 10 * 60000 })
+  })
     .then((d) => Object.assign(job, { done: d, url: d.url }))
     .catch((e) => Object.assign(job, { error: String((e && e.message) || e), url: (e && e.url) || "" }))
     .finally(() => (job.running = false));
@@ -241,7 +247,11 @@ const body = (req) =>
     req.on("error", no);
   });
 // 쓰는 요청은 이 페이지에서 온 것만(다른 사이트가 이 주소로 보내는 요청을 막음)
-const ours = (req) => req.headers["x-hs-art"] === "1" && (!req.headers.origin || /^http:\/\/(127\.0\.0\.1|localhost):\d+$/.test(req.headers.origin));
+const HOSTS = ["127.0.0.1:" + PORT, "localhost:" + PORT];
+const ours = (req, browser) =>
+  req.headers["x-hs-art"] === "1" &&
+  HOSTS.includes(req.headers.host || "") &&
+  (req.headers.origin ? req.headers.origin === "http://" + req.headers.host : !browser); // browser: 페이지에서 누른 것만 받는 요청(올리기)
 
 const server = http.createServer(async (req, res) => {
   const u = new URL(req.url, "http://127.0.0.1"),
@@ -252,7 +262,7 @@ const server = http.createServer(async (req, res) => {
     if (get && u.pathname === "/") return file(res, path.join(ROOT, "tools/art/index.html"));
     if (get && PAGE.includes(u.pathname.slice(1))) return file(res, path.join(ROOT, "tools/art", u.pathname.slice(1)));
     if (get && u.pathname.startsWith("/code/")) return file(res, CODE[u.pathname.slice(6)] ? path.join(ROOT, CODE[u.pathname.slice(6)]) : "");
-    if (get && u.pathname === "/api/meta") return send(res, 200, { mock: MOCK, lib: LIB });
+    if (get && u.pathname === "/api/meta") return send(res, 200, { mock: MOCK, lib: LIB, root: ROOT });
     if (get && u.pathname === "/api/works") return send(res, 200, listing(await works()));
     if (get && u.pathname === "/api/job") {
       const { c, row } = findRow(await works(), q);
@@ -260,7 +270,7 @@ const server = http.createServer(async (req, res) => {
     }
     if (get && u.pathname === "/api/kept") return send(res, 200, kept());
     // 올릴 수 있는지(그림 전용 작업 사본인지)·올릴 그림·진행 중인 올리기
-    if (get && u.pathname === "/api/site") return send(res, 200, { ...(await siteStatus(run)), job, mock: MOCK });
+    if (get && u.pathname === "/api/site") return send(res, 200, { ...(await siteStatus(run, ROOT)), job, mock: MOCK });
     if (get && u.pathname === "/lib") return file(res, libPath(q.get("path")));
     // 실린 그림 보기 — 작품 폴더의 images/ 안 파일만
     if (get && u.pathname === "/file") {
@@ -281,6 +291,7 @@ const server = http.createServer(async (req, res) => {
     // 사이트에 올리기 — 빌드·커밋·올리기·PR·검사 통과 시 병합. 연습 모드에서는 하지 않는다
     if (post && u.pathname === "/api/site") {
       if (MOCK) return send(res, 400, { error: "연습 모드에서는 올릴 수 없어요" });
+      if (!ours(req, true)) return send(res, 403, { error: "이 페이지의 단추로만 올릴 수 있어요" });
       if (job.running) return send(res, 409, { error: "이미 올리는 중이에요" });
       startPublish();
       return send(res, 200, { ok: true });
@@ -316,6 +327,7 @@ const server = http.createServer(async (req, res) => {
     // 고른 그림 싣기 — 경로는 의뢰 목록이 정한 그 자리뿐, webp만. 연습 그림은 싣지 않는다
     if (post && u.pathname === "/api/save") {
       if (MOCK) return send(res, 400, { error: "연습 모드의 그림은 실을 수 없어요" });
+      if (job.running) return send(res, 409, { error: "사이트에 올리는 중에는 실을 수 없어요 — 끝난 뒤에 다시 눌러 주세요" }); // 올리는 사이 그림이 바뀌지 않게
       const { row } = findRow(await works(), q),
         buf = await body(req);
       if (!isWebp(buf)) return send(res, 400, { error: "webp 그림이 아니에요" });
