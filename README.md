@@ -17,8 +17,10 @@
   <a href="#-작품">작품</a> ·
   <a href="#-화면">화면</a> ·
   <a href="#-무엇을-하나">기능</a> ·
+  <a href="#-어떻게-돌아가나">구조</a> ·
   <a href="#-개발">개발</a> ·
-  <a href="#-문서">문서</a>
+  <a href="#-문서">문서</a> ·
+  <a href="#-지금-상태">지금 상태</a>
 </p>
 
 > [!NOTE]
@@ -102,7 +104,7 @@
   <tr>
     <td valign="top">💎 <b>요금(데모)</b><br>라이트 모델 하루 10턴 무료. 하트와 PLUS는 시연용이라 실제로 청구되지 않아요</td>
     <td valign="top">🛠️ <b>관리자 도구</b><br>사용자 사이트 그대로에 고객센터 관리(공지 쓰기·받은 문의 답변)를 더한 페이지. 웹 주소에서는 비밀번호로 잠겨 있어요</td>
-    <td valign="top">🛡️ <b>수위</b><br>모든 인물은 성인이고, 성적인 장면은 장면 전환으로 넘겨요. 미성년 인물의 성적 묘사는 어떤 경우에도 막아요. 성인 기능은 서버에서 다시 세울 예정이에요(<a href="docs/ROADMAP.md">로드맵</a>)</td>
+    <td valign="top">🛡️ <b>수위</b><br>성적인 장면은 장면 전환으로 넘겨요. 미성년 인물의 성적 묘사는 어떤 경우에도 막아요. 성인 트랙에서는 모든 등장인물이 성인이어야 해요. 성인 기능은 서버에서 다시 세울 예정이에요(<a href="docs/ROADMAP.md">로드맵</a>)</td>
   </tr>
 </table>
 
@@ -131,7 +133,7 @@ flowchart LR
 
 [![빌드 확인](https://github.com/20232497/HEARTSYNC/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/20232497/HEARTSYNC/actions/workflows/build.yml)
 
-Node 18 이상이 필요해요. 처음 한 번만 설치하면 되고, 설치되는 것은 빌드 검사용 파서와 Playwright뿐이에요.
+Node 18 이상이 필요해요. 처음 한 번만 설치하면 되고, 빌드 검사, 코드 정렬, 흐름 시험에 쓰는 개발 의존성을 설치해요.
 
 ```bash
 npm install
