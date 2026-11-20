@@ -14,6 +14,7 @@ import { updateComposer } from "./chat/view.js";
 import { coverHTML } from "./cover.js";
 import { ICON } from "./icons.js";
 import { closeOverlays } from "./sheet.js";
+/** @typedef {import("../core/types.js").Work} Work */
 
 const VIEWS = {}; // 해시 앞부분 → 화면 함수. "c-<id>"·"r-<id>"처럼 "-" 뒤는 인자로 넘김
 let NAVS = []; // 레일·탭바 메뉴 [해시, 이름, ICON 키]
@@ -82,14 +83,16 @@ export function renderRailRecent() {
   $$("[data-room]", el).forEach((b) => (b.onclick = () => go("r-" + b.dataset.room)));
   IMG.hydrate(el);
 }
-/** 왼쪽 메뉴의 '최근 본 작품' — 작게 네 개까지(관심있는 대화로 거름, 없으면 제목도 숨김). 홈의 줄을 여기로 옮김(2026-11-21 사용자 결정) — 좁은 화면에는 레일이 없어 보이지 않음 */
+/** 최근 본 작품 — 방금 본 것 먼저, 관심있는 대화로 거름(없어진 작품은 빠짐). 왼쪽 메뉴와 대화 탭(ui/chats.js)이 같이 씀. @returns {Work[]} */
+export const viewedWorks = () =>
+  recentIds()
+    .map((id) => getChar(id))
+    .filter((c) => c && audOK(c));
+/** 왼쪽 메뉴의 '최근 본 작품' — 작게 네 개까지(없으면 제목도 숨김). 홈의 줄을 여기로 옮김(2026-11-21 사용자 결정) — 좁은 화면에는 레일이 없어 대화 탭 아래에 보임 */
 export function renderRailViewed() {
   const el = $("#railViewed");
   if (!el) return;
-  const list = recentIds()
-    .map((id) => getChar(id))
-    .filter((c) => c && audOK(c))
-    .slice(0, 4);
+  const list = viewedWorks().slice(0, 4);
   el.innerHTML = list.length
     ? `<h4>최근 본 작품</h4>` + list.map((c) => `<button class="recent" data-char="${esc(c.id)}">${coverHTML(c)}<span>${esc(c.name)}</span></button>`).join("")
     : "";

@@ -350,7 +350,7 @@ for (const [dev, engine, opts] of [
         errs.push("설정 상한이 상수와 다름: " + JSON.stringify(l));
     }
     // 내 서재 — 상세의 찜 버튼 → 홈의 '찜한 작품' 줄, 상세를 열면 왼쪽 메뉴의 '최근 본 작품'(홈에는 줄이 없음 — 좁은 화면에서는 레일이 숨지만 DOM에는 있음),
-    // 같은 홈 줄의 다른 작품(줄이 있는 작품만), 관심있는 대화로 거름, 찜을 풀면 줄이 사라짐
+    // 대화 탭 맨 아래에도 같은 목록 — 레일이 없는 좁은 화면에서만 보임. 같은 홈 줄의 다른 작품(줄이 있는 작품만), 관심있는 대화로 거름, 찜을 풀면 줄이 사라짐
     res.shelf = await p.evaluate(async () => {
       const nap = (ms) => new Promise((r) => setTimeout(r, ms)),
         was = { hash: location.hash, shelf: JSON.stringify(S.shelf), aud: S.settings.audience };
@@ -378,6 +378,14 @@ for (const [dev, engine, opts] of [
       const on = $("#like").getAttribute("aria-pressed"),
         label = $("#like").textContent,
         saved = !!(KV.getLocal("shelf") || { likes: {} }).likes[c.id];
+      location.hash = "chats";
+      await nap(300);
+      const tab = document.querySelector(".chats-viewed"),
+        chats = {
+          ids: [...document.querySelectorAll(".chats-viewed [data-char]")].map((b) => b.dataset.char),
+          shown: !!tab && getComputedStyle(tab).display !== "none",
+          rail: getComputedStyle(document.querySelector("#rail")).display !== "none"
+        };
       location.hash = "home";
       await nap(300);
       const likes = ids("#rowLikes"),
@@ -401,7 +409,7 @@ for (const [dev, engine, opts] of [
       await nap(400);
       S.shelf = JSON.parse(was.shelf);
       KV.setLocal("shelf", S.shelf); // 돌아간 화면이 상세면 최근 본에 적히므로 그 뒤에 되돌림
-      return { soloNear, near, wantNear, off, on, label, saved, likes, recent, homeRecent, want: [c.id, solo.id], other, still, gone };
+      return { soloNear, near, wantNear, off, on, label, saved, likes, recent, homeRecent, chats, want: [c.id, solo.id], other, still, gone };
     });
     {
       const s = res.shelf;
@@ -415,6 +423,8 @@ for (const [dev, engine, opts] of [
         !s.saved ||
         JSON.stringify(s.likes) !== JSON.stringify([s.want[0]]) ||
         JSON.stringify(s.recent) !== JSON.stringify(s.want) ||
+        JSON.stringify(s.chats.ids) !== JSON.stringify(s.want) ||
+        s.chats.shown === s.chats.rail || // 레일이 보이면 대화 탭의 목록은 숨고, 레일이 없으면 보임
         s.homeRecent ||
         s.other[0] !== null ||
         s.other[1] ||
