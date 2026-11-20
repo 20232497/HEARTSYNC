@@ -35,7 +35,8 @@ export function openModelSheet() {
     return (
       `<button class="model-card ${r.set.model === k ? "on" : ""}" data-m="${k}"><span class="k">${esc(m.badge)}</span>` +
       `<b>${m.name}${k === rec ? ' <span class="pill ok">권장</span>' : ""}${isPro() && k !== "lite" ? ' <span class="pill gold">PLUS -50%</span>' : ""}</b>` +
-      `<p>${esc(m.desc)}</p><div class="price">${price}<small>${free}</small></div><span class="chk">✓</span></button>`
+      `<p>${esc(m.desc)}</p><div class="price">${price}${q.sug ? ` + 답변 추천 ♥${q.sug}` : ""}<small>${free}</small></div>` +
+      `<span class="chk">✓</span></button>`
     );
   };
   const ov = sheet(

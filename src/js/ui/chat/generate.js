@@ -10,14 +10,14 @@ import { markEnding } from "../../core/shelf.js";
 import { curText, saveRoom } from "../../core/rooms.js";
 import { gen, room, setGen } from "../../core/state.js";
 import { $, esc, uid } from "../../core/util.js";
-import { charge, qShort, quote, refund } from "../../core/wallet.js";
+import { charge, qShort, quote, refund, refundSug } from "../../core/wallet.js";
 import { imgTag, imgTags } from "../../images/codes.js";
 import { imagesOf } from "../../images/pick.js";
 import { sitScores } from "../../images/situations.js";
 import { IMG, validRef } from "../../services/images.js";
 import { autoScroll, followLog, renderLog, setStick, stick, syncJump } from "./log.js";
 import { liveFill } from "./render.js";
-import { hideSug } from "./suggest.js";
+import { hideSug, showSug } from "./suggest.js";
 import { lastAi, updateComposer, updateMeter } from "./view.js";
 import { ensurePay } from "../pay.js";
 import { collectSeen } from "../room-tools.js";
@@ -154,7 +154,7 @@ export async function generate(target, q, direction = "", isEdit = false) {
     altIdx = msg.alts.length - 1;
     msg.idx = altIdx;
   }
-  const input = buildInput(r, r.msgs.indexOf(msg), msg.statusBefore, direction);
+  const input = buildInput(r, r.msgs.indexOf(msg), msg.statusBefore, direction, !!q.sug); // 추천 칸은 이번 턴 견적에 추천 값이 들어 있을 때만
   const label = `${c.title} · ${MODELS[model].name}${target ? " 다시 쓰기" : ""}`;
   charge(q, label);
   const ctl = new AbortController();
@@ -199,6 +199,10 @@ export async function generate(target, q, direction = "", isEdit = false) {
     const bodyText = msg.alts[altIdx].text ? addCastImages(msg.alts[altIdx].text, r, prevMsgs, said) : "(빈 응답)";
     const rep = parsed.ep;
     delete parsed.ep;
+    // 답변 추천: 값을 낸 턴(자동 받기 — q.sug)에 온 것만 저장함. 값을 내지 않은 턴에 모델이 시키지 않은 추천을 내보내면 버림(저장된 추천은 값 없이 펼쳐지므로),
+    // 값을 냈는데 추천이 같이 오지 않았으면 추천 값만 되돌림
+    if (!q.sug) parsed.suggestions = [];
+    else if (!parsed.suggestions.length) refundSug(q, label);
     Object.assign(msg.alts[altIdx], parsed, { text: bodyText, cost: qShort(q), lore: input.lore });
     r.status = parsed.status;
     // 에피소드: 이번 지시(input.ep)와 AI의 보고(_ep)로 다음 상태 — 사건 띠(ev)와 이 버전 뒤의 상태(ep1)를 응답에 적고, 결말까지 끝났으면 '모은 결말'에
@@ -217,6 +221,7 @@ export async function generate(target, q, direction = "", isEdit = false) {
     // 사용자가 멈췼거나 스트림이 중간에 끊긴(timeout) 경우: 받은 본문까지 남김(하트 환불 없음). 끊긴 거면 '다시 시도'(= 다시 쓰기) 안내
     const keep = e && e.text ? splitReply(e.text).body.trim() : "";
     if (keep && (e.code === "cancelled" || e.code === "timeout")) {
+      refundSug(q, label); // 본문만 남긴 답에는 추천이 없음 — 추천 값은 되돌림
       Object.assign(msg.alts[altIdx], { text: keep, status: msg.statusBefore, cost: qShort(q) });
       if (e.code === "timeout") r.lastErr = "응답이 오는 중에 끊겨 여기까지만 남겼어요. '다시 시도'를 누르면 다시 써요.";
     } else {
@@ -237,6 +242,7 @@ export async function generate(target, q, direction = "", isEdit = false) {
       updateComposer();
       updateMeter();
       $("#inp")?.focus({ preventScroll: true });
+      if (q.sug) showSug(); // 자동 받기로 온 추천은 바로 펼쳐 보임(값을 낸 것이라 누르지 않아도)
     }
     maybeSummarize(r);
   }

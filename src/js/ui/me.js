@@ -1,7 +1,6 @@
 /* MY: 페르소나·관심있는 대화·채팅 설정·AI 연결·계정·고객센터·약관 및 정책. #meExt 자리는 관리자 빌드가 EXT.me로 채움(답변 대기 문의 수) */
 import { engineName } from "../ai/llm.js";
 import { AUDS, audience } from "../core/audience.js";
-import { exampleCast } from "../core/character.js";
 import { LIMITS } from "../core/constants.js";
 import { roomKey, saveRoom } from "../core/rooms.js";
 import { applySettings, cleanKeys, saveSettings } from "../core/settings.js";
@@ -12,6 +11,7 @@ import { isPro } from "../core/wallet.js";
 import { CLOUD } from "../services/cloud.js";
 import { IMG } from "../services/images.js";
 import { accountBoxHTML, bindAccount } from "./account.js";
+import { bindChatSettings, chatSettingsHTML } from "./chat-settings.js";
 import { renderLog } from "./chat/log.js";
 import { pavHTML } from "./cover.js";
 import { runExt } from "./ext.js";
@@ -58,33 +58,7 @@ export function viewMe() {
     <h2 class="sec">관심있는 대화 <small>홈에 보일 작품</small></h2>
     <div class="box">${audSegHTML()}<p class="note" style="margin:8px 0 0">남성향은 여성 캐릭터, 여성향은 남성 캐릭터와의 대화만 보여요.</p></div>
     <h2 class="sec">채팅 설정 <small>바꾸면 바로 적용돼요</small></h2>
-    <div class="box">
-      <div class="bubble chat-pv" aria-hidden="true"><p class="narr">창밖으로 첫눈이 내리기 시작했다.</p><p>` +
-    `<b class="spk">${esc(exampleCast().name)}</b><span class="dlg">"오늘은 여기까지 할까요?"</span></p></div>
-      <div class="field"><label for="cfs" style="display:flex">글자 크기<span class="spacer"></span>` +
-    `<output id="cfsV">${S.settings.fs}px</output></label>` +
-    `<input type="range" id="cfs" min="13" max="21" step="0.5" value="${S.settings.fs}"></div>
-      <div class="two">
-        <div class="field"><span class="lbl">줄 간격</span><div class="seg" data-set="chatLh">${[
-          [1.6, "좁게"],
-          [1.8, "보통"],
-          [2.1, "넓게"]
-        ]
-          .map(([n, l]) => `<button type="button" data-v="${n}" class="${S.settings.chatLh == n ? "on" : ""}">${l}</button>`)
-          .join("")}</div></div>
-        <div class="field"><span class="lbl">지문 글꼴</span><div class="seg" data-set="narrFont">${[
-          ["serif", "명조"],
-          ["sans", "고딕"]
-        ]
-          .map(([k, l]) => `<button type="button" data-v="${k}" class="${S.settings.narrFont === k ? "on" : ""}">${l}</button>`)
-          .join("")}</div></div>
-      </div>
-      <div class="toggle" style="margin-top:14px"><label for="cEnter">Enter로 보내기 ` +
-    `<span class="note">끄면 Ctrl+Enter로 보내요</span></label>` +
-    `<input type="checkbox" id="cEnter" ${S.settings.enterSend !== false ? "checked" : ""}></div>
-      <div class="toggle" style="margin-top:8px"><label for="cImg">대화 속 장면 이미지 보기</label>` +
-    `<input type="checkbox" id="cImg" ${S.settings.sceneImg !== false ? "checked" : ""}></div>
-    </div>
+    <div class="box">${chatSettingsHTML()}</div>
     <h2 class="sec">AI 연결 <small>지금: ${esc(engineName())}</small></h2>
     <div class="box">
       <div class="field" style="margin-top:0"><label for="key">Anthropic API 키 <span class="note">이 기기에만 저장돼요</span></label>` +
@@ -126,26 +100,7 @@ export function viewMe() {
   );
   const pa = $("#padd");
   if (pa) pa.onclick = () => personaSheet(null, viewMe);
-  // 채팅 설정: 바꾸는 즉시 저장·반영
-  const chatSet = (k, val) => {
-    S.settings[k] = val;
-    saveSettings();
-    applySettings();
-  };
-  $("#cfs").oninput = (e) => {
-    chatSet("fs", +e.target.value);
-    $("#cfsV").textContent = e.target.value + "px";
-  };
-  $$("[data-set] button", v).forEach(
-    (b) =>
-      (b.onclick = () => {
-        const k = b.parentElement.dataset.set;
-        chatSet(k, k === "chatLh" ? +b.dataset.v : b.dataset.v);
-        $$("button", b.parentElement).forEach((x) => x.classList.toggle("on", x === b));
-      })
-  );
-  $("#cEnter").onchange = (e) => chatSet("enterSend", e.target.checked);
-  $("#cImg").onchange = (e) => chatSet("sceneImg", e.target.checked);
+  bindChatSettings(v); // 채팅 설정: 바꾸는 즉시 저장·반영 — 대화방 메뉴의 '표시 설정'과 같은 조각(ui/chat-settings.js)
   bindAccount(v);
   $$("[data-aud]", v).forEach(
     (x) =>

@@ -15,7 +15,7 @@ import { bindCast, bindCodex, castGridHTML, collectHTML, commandsHTML, guideHTML
 import { coverHTML, lightbox } from "./cover.js";
 import { rowHTML } from "./home.js";
 import { ICON } from "./icons.js";
-import { bindGo, go, topbar } from "./shell.js";
+import { bindGo, favMark, go, topbar } from "./shell.js";
 import { opBrief, opPlace, startChat, startNote } from "./start-sheet.js";
 import { worldArtHTML } from "./worldart.js";
 /** @typedef {import("../core/types.js").Work} Work */
@@ -112,7 +112,7 @@ export function viewDetail(id) {
 }
 /* 이 작품의 내 대화방 한 줄(왼쪽 '이어서 하기') — r은 방 목록 항목 */
 const roomHTML = (r) =>
-  `<button data-room="${esc(r.id)}">${coverHTML(r)}<span class="x"><b>${esc(r.name)}</b>` +
+  `<button data-room="${esc(r.id)}">${coverHTML(r)}<span class="x"><b>${favMark(r)}${esc(r.name)}</b>` +
   `<span>${esc(r.last)}</span></span><span class="note">${ago(r.at)}</span></button>`;
 /* 소개 칸 — 길면 접어 두고 '더 보기' */
 function descHTML(c) {
