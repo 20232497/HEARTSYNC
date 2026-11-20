@@ -8,6 +8,7 @@
 //   npm run art -- --lib D:/art    보관함 자리 바꾸기
 //   npm run art -- --mock          연습 모드: 생성 서비스를 부르지 않고 자리 표시 그림으로 흐름만 돌려 봄(비용 0 — 실을 수 없음)
 import http from "node:http";
+import { execFile } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -18,6 +19,7 @@ import { styleOf, placeJob, assertPlace } from "../archive/style-works/code/plac
 import { coverPlan, coverOf } from "../archive/style-works/code/cover.js";
 import { groupPlan } from "../archive/style-works/code/cover-group.js";
 import { LOGOS, LOGO_PAL } from "../archive/style-works/code/logos.js";
+import { publish, status as siteStatus } from "./art/publish.mjs";
 import { profileJob as animeProfile, emotionJob as animeEmotion, assertSafe as animeSafe } from "../archive/style-manime/code/assemble.js";
 import { profileJob as dailyProfile, emotionJob as dailyEmotion, assertSafe as dailySafe } from "../archive/style-mdaily/code/assemble.js";
 
@@ -39,7 +41,7 @@ const CODE = {
   "post-anime.js": "archive/style-manime/code/post.js",
   "post-daily.js": "archive/style-mdaily/code/post.js"
 };
-const PAGE = ["app.js", "gen.js", "cover.js", "lib.js"]; // tools/art/의 페이지 모듈
+const PAGE = ["app.js", "gen.js", "cover.js", "lib.js", "site.js"]; // tools/art/의 페이지 모듈
 const TYPES = {
   ".html": "text/html; charset=utf-8",
   ".js": "text/javascript; charset=utf-8",
@@ -192,6 +194,30 @@ function mockImage(task) {
   );
 }
 
+/* ── 사이트에 올리기(./art/publish.mjs) ── 한 번에 하나만. 페이지가 진행 글을 /api/site로 읽는다 */
+const run = (cmd, args, o = {}) =>
+  new Promise((ok, no) =>
+    execFile(cmd, args, { cwd: ROOT, maxBuffer: 64 * 1024 * 1024, windowsHide: true }, (e, out, err) => {
+      if (e && !o.allowFail)
+        return no(
+          new Error(
+            `${cmd} ${args.slice(0, 3).join(" ")} — ${String(err || e.message)
+              .trim()
+              .slice(-400)}`
+          )
+        );
+      ok({ code: e ? e.code || 1 : 0, out: String(out) });
+    })
+  );
+const job = { running: false, log: [], error: "", url: "", done: null };
+function startPublish() {
+  Object.assign(job, { running: true, log: [], error: "", url: "", done: null });
+  publish({ run, log: (t) => job.log.push(t), wait: (ms) => new Promise((r) => setTimeout(r, ms)), build: () => run(process.execPath, ["tools/build.mjs"]) })
+    .then((d) => Object.assign(job, { done: d, url: d.url }))
+    .catch((e) => Object.assign(job, { error: String((e && e.message) || e), url: (e && e.url) || "" }))
+    .finally(() => (job.running = false));
+}
+
 const send = (res, code, body, type) => {
   res.writeHead(code, { "content-type": type || "application/json; charset=utf-8", "cache-control": "no-store" });
   res.end(typeof body === "string" || Buffer.isBuffer(body) ? body : JSON.stringify(body));
@@ -233,6 +259,8 @@ const server = http.createServer(async (req, res) => {
       return send(res, 200, jobFor(c, row, +q.get("vary") || 0, q.get("style") || ""));
     }
     if (get && u.pathname === "/api/kept") return send(res, 200, kept());
+    // 올릴 수 있는지(그림 전용 작업 사본인지)·올릴 그림·진행 중인 올리기
+    if (get && u.pathname === "/api/site") return send(res, 200, { ...(await siteStatus(run)), job, mock: MOCK });
     if (get && u.pathname === "/lib") return file(res, libPath(q.get("path")));
     // 실린 그림 보기 — 작품 폴더의 images/ 안 파일만
     if (get && u.pathname === "/file") {
@@ -249,6 +277,13 @@ const server = http.createServer(async (req, res) => {
       return send(res, 200, {
         data: tasks.map((t) => ({ taskType: t.taskType, taskUUID: t.taskUUID, imageDataURI: mockImage(t), cost: 0, NSFWContent: false }))
       });
+    }
+    // 사이트에 올리기 — 빌드·커밋·올리기·PR·검사 통과 시 병합. 연습 모드에서는 하지 않는다
+    if (post && u.pathname === "/api/site") {
+      if (MOCK) return send(res, 400, { error: "연습 모드에서는 올릴 수 없어요" });
+      if (job.running) return send(res, 409, { error: "이미 올리는 중이에요" });
+      startPublish();
+      return send(res, 200, { ok: true });
     }
     // 후보를 보관함에 — 의뢰 목록에 있는 작품·코드만, webp만
     if (post && u.pathname === "/api/keep") {
