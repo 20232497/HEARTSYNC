@@ -506,6 +506,93 @@ for (const [dev, engine, opts] of [
       await p.screenshot({ path: `${out}/${tag}_views_drawer.png` });
       await p.evaluate(() => closeOverlays());
     }
+    // 방 메뉴의 묶음 카드: 예전의 모든 항목이 한 번 눌러 닿는 자리에 그대로 있음(묶고 순서만 바꿈)
+    res.menu = await p.evaluate(() => {
+      openRoomDrawer("main");
+      // 있는지만이 아니라 눈에 보이고 누르면 일하는지까지(크기가 있고 onclick이 붙어 있음). 작품에 따라 있는 항목(플레이 가이드·세계관 수첩·장소)도 작품 데이터와 견줌
+      const live = liveWork(room.char),
+        has = (s) => {
+          const el = $(".drawer " + s);
+          return !!el && el.getBoundingClientRect().height > 0 && typeof el.onclick === "function";
+        },
+        byWork = [live.guide ? "#mGuide" : "", (live.lore || []).length ? '[data-v="lore"]' : "", (live.places || []).length ? '[data-v="places"]' : ""].filter(
+          Boolean
+        ),
+        want = byWork
+          .concat(['[data-v="persona"]', "#mFav", '[data-v="status"]', '[data-v="bookmarks"]', "#mFind", "#compo", '[data-v="gallery"]', "#mModel"])
+          .concat(['[data-v="output"]', '[data-v="display"]', '[data-v="note"]', '[data-v="memory"]', "#topup", "#qCopy", "#qExport", "#qNew", "#delRoom"]);
+      const out = {
+        cards: $$(".drawer .menu-card").length,
+        missing: want.filter((s) => !has(s)),
+        titles: $$(".drawer .menu-card > .lbl, .drawer .menu-card .sheet-head .lbl").map((x) => x.textContent)
+      };
+      closeOverlays();
+      return out;
+    });
+    if (res.menu.cards !== 4 || res.menu.missing.length || res.menu.titles.join("|") !== "이 대화|이 작품|대화 설정|내 재화")
+      errs.push("방 메뉴의 묶음 카드가 다름: " + JSON.stringify(res.menu));
+    // 화면 테마(맨 끝 — 페이지를 다시 읽으므로): 방 메뉴의 표시 설정에서 고르면 html에 바로 걸리고 이 기기에만 저장됨(계정에 올리는 설정에서는 빠짐).
+    // 다시 열면 화면이 그려지기 전에(body가 생기기 전 — 머리의 스크립트) 걸려 깜빡이지 않음. '기기 설정'을 고르면 칸을 지우고 속성을 뗌
+    res.theme = await p.evaluate(() => {
+      openRoomDrawer("display");
+      const btn = (v) => $(`.drawer [data-set="theme"] [data-v="${v}"]`),
+        html = document.documentElement,
+        stored = () => JSON.parse(localStorage.getItem("hv1_settings")).theme;
+      const first = { seg: !!btn("dark"), attr: html.getAttribute("data-theme"), on: ($('.drawer [data-set="theme"] .on') || {}).textContent };
+      btn("dark").click();
+      const dark = {
+        attr: html.getAttribute("data-theme"),
+        stored: stored(),
+        cloud: "theme" in cloudSettings(),
+        bg: getComputedStyle(html).getPropertyValue("--bg").trim()
+      };
+      closeOverlays();
+      return { first, dark };
+    });
+    await p.addInitScript(() => {
+      // 이 스크립트는 문서가 만들어지기 전에 돌아서 html 요소가 아직 없음 — 문서 전체를 지켜보다가 data-theme가 처음 걸리는 순간 body가 있었는지를 적음
+      new MutationObserver(() => {
+        const h = document.documentElement;
+        if (h && window.__themeAt === undefined && h.getAttribute("data-theme")) window.__themeAt = document.body ? "body" : "head";
+      }).observe(document, { attributes: true, childList: true, subtree: true });
+    });
+    await p.reload({ waitUntil: "load" });
+    await wait(1200);
+    res.theme.reload = await p.evaluate(() => {
+      const html = document.documentElement,
+        out = { at: window.__themeAt, attr: html.getAttribute("data-theme") };
+      location.hash = "me";
+      return out;
+    });
+    await wait(500);
+    res.theme.auto = await p.evaluate(() => {
+      const html = document.documentElement,
+        on = ($('[data-set="theme"] .on') || {}).textContent;
+      $('[data-set="theme"] [data-v=""]').click();
+      return { on, attr: html.getAttribute("data-theme"), stored: "theme" in JSON.parse(localStorage.getItem("hv1_settings")) };
+    });
+    // 밝게: 기기가 어두운 설정이어도 '밝게'를 고르면 밝은 색(기기 설정일 때는 어두운 색)
+    await p.emulateMedia({ colorScheme: "dark" });
+    res.theme.light = await p.evaluate(() => {
+      const html = document.documentElement,
+        bg = () => getComputedStyle(html).getPropertyValue("--bg").trim(),
+        auto = bg();
+      $('[data-set="theme"] [data-v="light"]').click();
+      const out = { auto, attr: html.getAttribute("data-theme"), bg: bg() };
+      $('[data-set="theme"] [data-v=""]').click();
+      return out;
+    });
+    await p.emulateMedia({ colorScheme: null });
+    if (res.theme.light.auto !== "#0f0d15" || res.theme.light.attr !== "light" || res.theme.light.bg !== "#f6f4f9")
+      errs.push("어두운 기기에서 '밝게'를 고른 뒤가 다름: " + JSON.stringify(res.theme.light));
+    {
+      const t = res.theme;
+      if (!t.first.seg || t.first.attr !== null || t.first.on !== "기기 설정") errs.push("화면 테마의 처음 상태가 다름: " + JSON.stringify(t.first));
+      if (t.dark.attr !== "dark" || t.dark.stored !== "dark" || t.dark.cloud || t.dark.bg !== "#0f0d15")
+        errs.push("어둡게를 고른 뒤가 다름: " + JSON.stringify(t.dark));
+      if (t.reload.at !== "head" || t.reload.attr !== "dark") errs.push("다시 열 때 테마가 화면이 그려지기 전에 걸리지 않음: " + JSON.stringify(t.reload));
+      if (t.auto.on !== "어둡게" || t.auto.attr !== null || t.auto.stored) errs.push("기기 설정으로 되돌린 뒤가 다름: " + JSON.stringify(t.auto));
+    }
   } catch (e) {
     res.fail = String(e).slice(0, 400);
   }
