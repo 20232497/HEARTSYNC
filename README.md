@@ -1,42 +1,25 @@
 <p align="center">
-  <a href="https://20232497.github.io/HEARTSYNC/"><img src="docs/assets/banner.jpg" alt="HEART SYNC — 작품을 고르고 내 페르소나로 대화하면 AI가 장면과 상태창으로 이야기를 이어 가는 캐릭터 대화 앱" width="100%"></a>
+  <a href="https://20232497.github.io/HEARTSYNC/"><img src="docs/assets/heartsync-icon.png" alt="하트와 맥박을 결합한 HEART SYNC 아이콘" width="112" height="112"></a>
+</p>
+
+<h1 align="center">HEART SYNC</h1>
+
+<p align="center">
+  <strong>한마디로 시작하는 나만의 에피소드</strong><br>
+  오리지널 작품을 고르고 내 페르소나로 말을 걸면, AI가 인물을 연기하며 장면과 상태창으로 이야기를 이어 가요.
 </p>
 
 <p align="center">
-  <a href="https://20232497.github.io/HEARTSYNC/"><img src="docs/assets/open.svg" alt="웹에서 바로 열기" height="50"></a>
-</p>
-
-<p align="center">
-  <a href="https://github.com/20232497/HEARTSYNC/actions/workflows/build.yml"><img alt="빌드 확인" src="https://github.com/20232497/HEARTSYNC/actions/workflows/build.yml/badge.svg?branch=main"></a>
-  <img alt="runtime dependencies 0" src="https://img.shields.io/badge/runtime_deps-0-2b8a57">
-  <img alt="Vanilla JS" src="https://img.shields.io/badge/Vanilla_JS-no_framework-b9780f">
-  <img alt="Supabase" src="https://img.shields.io/badge/Supabase-login_%26_sync-5b4fc4">
+  <a href="https://20232497.github.io/HEARTSYNC/"><img src="docs/assets/open.svg" alt="웹에서 바로 열기" height="44"></a>
 </p>
 
 <p align="center">
   <a href="#-작품">작품</a> ·
   <a href="#-화면">화면</a> ·
   <a href="#-무엇을-하나">기능</a> ·
-  <a href="#-어떻게-돌아가나">구조</a> ·
   <a href="#-개발">개발</a> ·
-  <a href="#-문서">문서</a> ·
-  <a href="#-지금-상태">지금 상태</a>
+  <a href="#-문서">문서</a>
 </p>
-
-**HEART SYNC**는 이야기 속 인물과 직접 대화하며 에피소드를 이어 가는 캐릭터 대화 플랫폼이에요. 오리지널 작품을 고르고 시작 상황을 정한 뒤 내 페르소나로 말을 걸면, AI가 인물을 연기하며 장면·상태창·그림과 함께 이야기를 이어 가요.
-
-<div align="center">
-
-<table>
-  <tr>
-    <td align="center" width="200"><h3>12편</h3><sub>오리지널 작품</sub></td>
-    <td align="center" width="200"><h3>43명</h3><sub>등장인물</sub></td>
-    <td align="center" width="200"><h3>31개</h3><sub>시작 상황</sub></td>
-    <td align="center" width="200"><h3>66개</h3><sub>키워드북 항목</sub></td>
-  </tr>
-</table>
-
-</div>
 
 > [!NOTE]
 > 대화에는 내 Anthropic API 키가 필요해요. **MY → AI 연결**에 넣으면 이 브라우저에만 저장되고, 로그인해도 계정에는 올라가지 않아요(다른 기기에서는 한 번 더 넣어요).
@@ -145,6 +128,8 @@ flowchart LR
 > 2026-11-08에 지금 개발에 필요한 부분만 남기고 정리했어요(그림 생성·이미지 스튜디오·움짤·코드 표·성인 모드·API 키 금고·커뮤니티를 걷어 냄). 정리 전 코드는 git 태그 `archive/before-reset-2026-11-08`에 그대로 있어요.
 
 ## 💻 개발
+
+[![빌드 확인](https://github.com/20232497/HEARTSYNC/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/20232497/HEARTSYNC/actions/workflows/build.yml)
 
 Node 18 이상이 필요해요. 처음 한 번만 설치하면 되고, 설치되는 것은 빌드 검사용 파서와 Playwright뿐이에요.
 
