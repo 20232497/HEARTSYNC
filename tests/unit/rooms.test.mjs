@@ -2,8 +2,9 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { ORIGINALS } from "../../src/js/content/index.js";
-import { OPENING_ID_RE } from "../../src/js/core/constants.js";
-import { forkRoom, newRoom, openingIndex } from "../../src/js/core/rooms.js";
+import { LIMITS, OPENING_ID_RE } from "../../src/js/core/constants.js";
+import { forkRoom, newRoom, openingIndex, saveRoom, setFav, sortRooms } from "../../src/js/core/rooms.js";
+import { S } from "../../src/js/core/state.js";
 
 const P = { id: "p1", name: "지호", memo: "", desc: "" };
 // 시작 상황 셋짜리 가짜 작품(실제 작품의 모양을 빌리되 id·제목은 시험용 — 작품이 실제로 적은 값에 기대지 않게)
@@ -54,4 +55,66 @@ test("작품의 시작 상황 id: 모두 모양에 맞고 작품 안에서 겹�
     assert.equal(new Set(ids).size, ids.length, c.id + ": 겹치는 id");
   }
   for (const bad of ["A-one", "1st", "a", "has space", "under_score", "x".repeat(25), ""]) assert.equal(OPENING_ID_RE.test(bad), false, bad);
+});
+test("즐겨찾기: 목록의 순서는 즐겨찾기 먼저·그 안에서 최근 순, 켜고 꺼도 '최근' 시각은 그대로, 한도를 넘으면 바꾸지 않음", async () => {
+  S.rooms = [];
+  const a = newRoom(work(), 0, P),
+    b = newRoom(work(), 1, P),
+    c = newRoom(work(), 2, P);
+  Object.assign(
+    S.rooms.find((x) => x.id === a.id),
+    { at: 1 }
+  );
+  Object.assign(
+    S.rooms.find((x) => x.id === b.id),
+    { at: 2 }
+  );
+  Object.assign(
+    S.rooms.find((x) => x.id === c.id),
+    { at: 3 }
+  );
+  S.rooms = sortRooms(S.rooms);
+  assert.deepEqual(
+    S.rooms.map((x) => x.id),
+    [c.id, b.id, a.id],
+    "기본은 최근 순"
+  );
+  assert.equal(await setFav(a.id, true), true);
+  assert.deepEqual(
+    S.rooms.map((x) => [x.id, !!x.fav, x.at]),
+    [
+      [a.id, true, 1],
+      [c.id, false, 3],
+      [b.id, false, 2]
+    ],
+    "즐겨찾기가 맨 위 — 시각은 그대로"
+  );
+  assert.equal(await setFav(b.id, true), true);
+  assert.deepEqual(
+    S.rooms.map((x) => x.id),
+    [b.id, a.id, c.id],
+    "즐겨찾기 안에서는 최근 순"
+  );
+  assert.equal(await setFav(a.id, false), true);
+  assert.equal("fav" in S.rooms.find((x) => x.id === a.id), false, "끄면 칸을 지움(없음 = 아님)");
+  assert.equal(await setFav("없는-방", true), false);
+  // 한도: 이미 한도만큼 있으면 새로 켜지지 않고(이미 켠 것을 다시 켜는 것은 됨), 하나를 끄면 다시 켤 수 있음
+  S.rooms = S.rooms.concat(Array.from({ length: LIMITS.favRooms - 1 }, (_, i) => ({ id: "x" + i, at: 0, fav: true })));
+  assert.equal(S.rooms.filter((x) => x.fav).length, LIMITS.favRooms);
+  assert.equal(await setFav(c.id, true), false, "한도를 넘음");
+  assert.equal(await setFav(b.id, true), true, "이미 켠 방");
+  assert.equal(await setFav("x0", false), true);
+  assert.equal(await setFav(c.id, true), true);
+});
+test("즐겨찾기: 방을 저장하면 목록 항목에 따라가고, 분기한 새 방에는 딸려 가지 않음", () => {
+  S.rooms = [];
+  const r = newRoom(work(), 0, P);
+  r.fav = true;
+  saveRoom(r);
+  assert.equal(S.rooms.find((x) => x.id === r.id).fav, true);
+  const f = forkRoom(r, r.msgs[0].id);
+  saveRoom(f);
+  assert.equal("fav" in f, false);
+  assert.equal(!!S.rooms.find((x) => x.id === f.id).fav, false);
+  assert.equal(S.rooms[0].id, r.id, "나중에 만든 방보다 즐겨찾기가 앞");
 });

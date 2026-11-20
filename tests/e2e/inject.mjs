@@ -520,6 +520,7 @@ for (const [dev, engine, opts] of [
         return full;
       };
       room.msgs.push({ id: uid("m"), role: "user", text: "두 번째 입력" });
+      room.set.autoSug = true; // 답과 같이 오는 추천은 자동 받기를 켠 방에서만 저장됨(꺼진 방은 버림) — 모델이 쓴 추천 글이 화면에 닿는 길
       window.__turn = generate(null, quote(room.set));
     });
     await p.evaluate(() => window.__turn);
@@ -530,8 +531,20 @@ for (const [dev, engine, opts] of [
       mid.seen.forEach((k) => res.seenSet.add(k));
     }
     await sweep("가짜 응답 뒤");
-    await act("가짜 응답의 추천 답변", () => toggleSug(), null, 400);
+    // 자동 받기로 온 추천은 답이 끝나면 바로 펼쳐짐 — 닫혀 있으면 엶(자동 받기 토글의 글도 같이 보임)
+    await act("가짜 응답의 추천 답변", () => $("#sugPanel").hidden && toggleSug(), null, 400);
     await act("드로어 status(응답 뒤)", () => openRoomDrawer("status"));
+    // 대화 검색: 악성 글이 든 메시지를 찾아 결과 목록에(찾은 말 강조는 esc 뒤에 감쌈) — 찾는 말 자체가 악성 글이어도
+    // 결과가 실제로 그려졌는지도 봄 — 0건이면 이 자리를 훑은 것이 아니라서 실패로(시험이 헛돌지 않게)
+    const findIn = (q) => {
+      openSearch();
+      $("#csQ").value = q;
+      $("#csQ").oninput();
+      if (!$$("#csList .cs-hit mark").length) throw new Error("대화 검색 결과가 그려지지 않음 — 주입 시험이 이 자리에 닿지 못함: " + q);
+    };
+    await act("대화 검색 — 결과", findIn, "onerror");
+    await act("대화 검색 — 찾는 말이 악성 글", findIn, "\"'><img src=x"); // 넣은 악성 글의 한 토막 — 강조(mark) 안에 꺾쇠와 따옴표가 그대로 들어감
+    await p.evaluate(() => closeOverlays());
     // 끝난 에피소드 방: 결말 카드(결말 이름·고른 길) → 외전 고르기 시트(인물 이름) → 외전 방(제목과 첫 장면 제안에 인물 이름이 들어감)
     await p.evaluate((id) => {
       const r = newRoom(normalizeChar(getChar(id)), 0, S.personas[0]);

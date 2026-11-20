@@ -67,13 +67,17 @@ export function renderShell() {
 function setNav(k) {
   $$("[data-nav]").forEach((b) => b.classList.toggle("on", b.dataset.nav === k));
 }
+/** 즐겨찾기한 방의 이름 앞 별 — 왼쪽 메뉴의 최근 대화·상세의 내 대화방(순서는 S.rooms 그대로라 즐겨찾기가 앞에 옴). @param {{ fav?: boolean }} r @returns {string} HTML */
+export function favMark(r) {
+  return r.fav ? '<i class="fav-mark" title="즐겨찾기">★</i>' : "";
+}
 export function renderRailRecent() {
   const el = $("#railRecent");
   if (!el) return;
   el.innerHTML =
     S.rooms
       .slice(0, 6)
-      .map((r) => `<button class="recent" data-room="${esc(r.id)}">${coverHTML(r)}<span>${esc(r.name)}</span></button>`)
+      .map((r) => `<button class="recent" data-room="${esc(r.id)}">${coverHTML(r)}<span>${favMark(r)}${esc(r.name)}</span></button>`)
       .join("") || `<p class="note" style="padding:0 12px">아직 대화가 없어요.</p>`;
   $$("[data-room]", el).forEach((b) => (b.onclick = () => go("r-" + b.dataset.room)));
   IMG.hydrate(el);

@@ -1,10 +1,10 @@
 /* 대화방 저장·목록·이전(migrateRoom)·새 방 만들기(newRoom)·분기(forkRoom)·외전(sideRoom), 메시지의 현재 버전 글(curText) */
 import { recommendOf } from "../ai/models.js";
 import { getChar, normalizeChar } from "./character.js";
-import { SERIES } from "./constants.js";
+import { LIMITS, SERIES } from "./constants.js";
 import { SIDE, epInit } from "./episode.js";
 import { emit } from "./events.js";
-import { S } from "./state.js";
+import { S, room } from "./state.js";
 import { KV } from "./storage.js";
 import { uid } from "./util.js";
 /** @typedef {import("./types.js").Message} Message */
@@ -36,6 +36,7 @@ function indexRoom(r) {
     fork: !!r.forkedFrom,
     ep: r.ep ? (r.ep.end ? "결말" : r.ep.beat + 1 + "장") : "",
     side: !!r.side,
+    ...(r.fav ? { fav: true } : {}),
     last: (lastAi ? curText(lastAi) : "")
       .replace(/\[\[[^\]]*\]\]/g, "")
       .replace(/[*"\[\]]/g, "")
@@ -43,9 +44,44 @@ function indexRoom(r) {
       .trim()
       .slice(0, 70)
   };
-  S.rooms = [entry, ...S.rooms.filter((x) => x.id !== r.id)].sort((a, b) => b.at - a.at);
+  S.rooms = sortRooms([entry, ...S.rooms.filter((x) => x.id !== r.id)]);
   KV.set("rooms", S.rooms);
   emit("rooms");
+}
+/**
+ * 대화방 목록의 순서 — 즐겨찾기 먼저, 그 안에서 최근 순. 순서 규칙은 여기 한 곳: 대화 목록·왼쪽 메뉴의 최근 대화·상세의 내 대화방이 모두 S.rooms의 순서를 그대로 씀.
+ * @param {import("./types.js").RoomIndex[]} list @returns {import("./types.js").RoomIndex[]} 새 배열
+ */
+export function sortRooms(list) {
+  return list.slice().sort((a, b) => (b.fav ? 1 : 0) - (a.fav ? 1 : 0) || b.at - a.at);
+}
+/**
+ * 대화방 즐겨찾기를 켜고 끔 — 방(r.fav)과 목록 항목에 같이 적고 "rooms" 이벤트. 순서 기준 시각(at)은 건드리지 않음(즐겨찾기를 눌렀다고 '최근 대화'가 되지 않게).
+ * 켤 때 이미 LIMITS.favRooms개면 아무것도 바꾸지 않고 false. 지금 열려 있는 방이면 그 방 객체에 적음(나중의 저장이 표시를 지우지 않게).
+ * @param {string} id @param {boolean} on @returns {Promise<boolean>} 바꿨으면 true
+ */
+export async function setFav(id, on) {
+  const cur = S.rooms.find((x) => x.id === id);
+  if (!cur) return false;
+  if (on && !cur.fav && S.rooms.filter((x) => x.fav).length >= LIMITS.favRooms) return false;
+  const r = room && room.id === id ? room : await KV.get(roomKey(id));
+  if (r) {
+    if (on) r.fav = true;
+    else delete r.fav;
+    KV.set(roomKey(id), r);
+  }
+  S.rooms = sortRooms(
+    S.rooms.map((x) => {
+      if (x.id !== id) return x;
+      const y = { ...x };
+      if (on) y.fav = true;
+      else delete y.fav;
+      return y;
+    })
+  );
+  KV.set("rooms", S.rooms);
+  emit("rooms");
+  return true;
 }
 /** 대화방 저장 + 목록(S.rooms) 갱신 + "rooms" 이벤트. 지운 방(deletedRooms)은 저장하지 않고, 오래된 메시지는 MAX_MSGS_KEEP개만 남김. @param {Room} r @returns {void} */
 export function saveRoom(r) {
@@ -245,6 +281,7 @@ export function forkRoom(r, msgId) {
   f.id = uid("r");
   f.opening = (baseOpening(r) || "기본") + FORK_MARK;
   f.forkedFrom = { roomId: r.id, msgId };
+  delete f.fav; // 즐겨찾기는 원래 방의 것 — 분기·외전으로 만든 새 방에는 딸려 가지 않음
   f.status = (ai && (ai.alts[ai.idx].status || ai.statusBefore)) || r.status;
   const after = r.msgs.slice(i + 1).filter((m) => m.role === "user" && !m.canned).length,
     /* 즉답 명령어의 메시지는 턴이 아님 */ turn = Math.max(0, (r.turn || 0) - after),

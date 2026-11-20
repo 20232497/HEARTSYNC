@@ -160,8 +160,13 @@ export function parseState(text, c, before) {
   if (Array.isArray(v.suggestions))
     out.suggestions = v.suggestions
       .filter((s) => typeof s === "string")
-      .map((s) => s.replace(/^\s*\d+[.)]\s*/, "").slice(0, 80))
-      .filter(Boolean)
+      .map((s) =>
+        s
+          .replace(/^\s*\d+[.)]\s*/, "")
+          .trim()
+          .slice(0, 80)
+      )
+      .filter(Boolean) // 빈칸뿐인 글은 추천이 아님 — 값을 낸 턴이면 추천이 안 온 것으로 보고 되돌림(ui/chat/generate.js)
       .slice(0, 3);
   // 에피소드 방의 보고(장 목표를 이뤘는지·갈림길에서 가까운 보기) — status 안에 넣어 보낸 모델도 받아 줌. 맞는지는 core/episode.js epAfter가 다시 봄
   const ep = v._ep && typeof v._ep === "object" ? v._ep : st && st._ep && typeof st._ep === "object" ? st._ep : null;
