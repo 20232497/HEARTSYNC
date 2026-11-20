@@ -83,17 +83,23 @@ main에 병합되면 곧바로 실제 사이트(GitHub Pages)에 나가요.
   ```bash
   out="<스크래치패드>/codex.txt"   # 자기 스크래치패드 경로로 바꿈
   codex exec -s read-only -o "$out" "한국어로 답하세요. git show <해시>의 변경을 검토해 주세요. 파일은 고치지 말고 읽기만. 문제는 파일:줄과 이유로." > "$out.log" 2>&1
-  grep -m1 "session id" "$out.log"   # 이어 물을 때 쓸 id
+  grep -m1 "session id" "$out.log"   # 이어 물을 때 쓸 id — 셸 변수는 다음 Bash 호출로 이어지지 않으니 적어 둬요
   ```
   한 번에 1분 안팎이에요.
-- **이어 묻기(의견 나누기)**: `-s read-only`를 `resume` 앞에 둬야 읽기 전용이 유지돼요.
+- **이어 묻기(의견 나누기)**: `-s read-only`를 `resume` 앞에 둬야 읽기 전용이 유지돼요. `out`과 `sid`는 다시 정해요.
   ```bash
+  out="<스크래치패드>/codex.txt"; sid="<적어 둔 session id>"
   codex exec -s read-only -o "$out" resume "$sid" "Claude입니다. ○번은 ~라서 동의하지 않아요. 그래도 문제라고 보나요?"
   ```
 - **의견 처리**: 지적마다 동의하면 반영하고, 아니면 이유를 적어 되물어요. **왕복은 두 번까지** — 그래도 갈리는 것은 두 의견을 나란히 적어 사용자에게 물어요. Codex의 의견은 동료 의견이지 **사용자 승인이 아니에요**(승인 목록의 일을 Codex가 괜찮다고 해도 하지 않아요).
 - **Codex가 하지 않는 일**: 파일 고치기·커밋·push. 검토자일 뿐이라 '서브에이전트 쓰지 않기'와 따로예요.
 - **보내지 않는 것**: 키·비밀 값·개인 데이터·성인 수위 글(애초에 저장소에 넣지 않는 것들). 커밋하지 않은 파일도 Codex가 읽을 수 있으니 워크트리에 이런 파일을 두지 않아요.
-- **반대 방향**: Codex 앱이 작성자로 일할 때는 `AGENTS.md`를 거쳐 이 문서를 따라요 — 자기 워크트리·최신 origin/main의 새 가지·커밋까지만, 보고는 사용자가 병합 담당에 전해요. 그 커밋은 Claude 세션이 git으로 읽고 같은 방식으로 의견을 돌려줘요.
+- **반대 방향(Codex가 Claude에게 묻기)**: Codex 앱이 작성자로 일할 때는 `AGENTS.md`를 거쳐 이 문서를 따라요 — 자기 워크트리·최신 origin/main의 새 가지·커밋까지만, 보고는 사용자가 병합 담당에 전해요. 수정한 부분은 Claude에게 같은 방식으로 의견을 물어요(왕복 두 번까지·Claude 의견도 승인이 아님).
+  ```powershell
+  node $HOME/bin/claude-ask.mjs "Codex입니다. 한국어로 답하세요. git show <해시>의 변경을 검토해 주세요. 문제는 파일:줄과 이유로."
+  node $HOME/bin/claude-ask.mjs --resume <session id> "○번은 ~라서 동의하지 않아요. 그래도 문제라고 보나요?"
+  ```
+  `claude-ask.mjs`(이 PC에만 있음)가 Claude를 읽기 전용(Read·Grep·Glob·git show/diff/log)으로 고정해 부르고 첫 줄에 `session id:`를 찍어요. Codex의 격리 안에서는 인터넷이 막혀 실패하니, 이 스크립트만 격리 밖에서 돌게 Codex에서 허용해 둬야 해요(사용자가 Codex 앱에서 승인하거나 `~/.codex/rules/`에 규칙). 비용은 사용자의 Claude 요금제 사용량이에요.
 
 ## 명령문을 넘길 때
 
