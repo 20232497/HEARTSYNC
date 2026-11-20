@@ -25,7 +25,7 @@ export async function addCand(work, row, blob, o = {}) {
   const k = work.id + "/" + row.code,
     c = { url: URL.createObjectURL(blob), blob, nsfw: !!o.nsfw };
   if (!o.nsfw) {
-    const d = await api(`/api/keep?${where(work, row)}&seed=${o.seed || 0}&cost=${(o.cost || 0).toFixed(4)}`, { method: "POST", headers: { ...HEAD, "content-type": "image/webp" }, body: blob });
+    const d = await api(`/api/keep?${where(work, row)}&seed=${o.seed || 0}`, { method: "POST", headers: { ...HEAD, "content-type": "image/webp" }, body: blob });
     c.path = k + "/" + d.file;
   }
   (cands[k] = cands[k] || []).unshift(c);

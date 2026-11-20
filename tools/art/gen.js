@@ -27,7 +27,7 @@ async function call(task, type) {
   for (let t = 0; ; t++) {
     const r = await fetch(meta.mock ? "/mock" : "https://api.runware.ai/v1", {
       method: "POST",
-      headers: { "content-type": "application/json", ...(meta.mock ? {} : { authorization: "Bearer " + key() }) },
+      headers: { "content-type": "application/json", ...(meta.mock ? { "x-hs-art": "1" } : { authorization: "Bearer " + key() }) },
       body: JSON.stringify([task])
     });
     const d = await r.json().catch(() => ({})),

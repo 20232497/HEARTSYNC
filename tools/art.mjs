@@ -121,13 +121,14 @@ function jobFor(c, row, vary, style) {
 /* ── 보관함 ── <LIB>/<작품>/<코드>/<시각>.webp(후보) · <LIB>/<작품>/cover-parts/<자리>-<raw|cut>.<webp|png>(단체 표지의 조각 — 다시 붙일 때 다시 그리지 않음) · <LIB>/log.jsonl(그린 기록) */
 const ID = /^[a-z0-9_-]+$/i,
   KEPT = /^\d{8}-\d{6}(-\d+)?\.webp$/,
-  ROLE = /^(bg|left|mid|right)-(raw|cut)\.(webp|png)$/;
+  ROLE = /^(bg-raw\.webp|(left|mid|right)-(raw\.webp|cut\.png))$/;
 const isWebp = (b) => b.length > 16 && b.toString("latin1", 0, 4) === "RIFF" && b.toString("latin1", 8, 12) === "WEBP";
 const isPng = (b) => b.length > 16 && b.toString("latin1", 1, 4) === "PNG";
 const stamp = () => new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().replace(/[-:]/g, "").replace("T", "-").slice(0, 15);
 function keep(work, code, buf, meta) {
   const dir = path.join(LIB, work, code);
   fs.mkdirSync(dir, { recursive: true });
+  if (!inLib(dir)) throw new Error("보관함 밖을 가리키는 폴더예요: " + work + "/" + code);
   let name = stamp() + ".webp";
   for (let n = 2; fs.existsSync(path.join(dir, name)); n++) name = stamp() + "-" + n + ".webp";
   fs.writeFileSync(path.join(dir, name), buf);
@@ -156,11 +157,18 @@ function kept() {
   }
   return { cands, parts };
 }
+/** 폴더가 정말 보관함 안에 있는지 — 보관함 안에 밖을 가리키는 연결(심볼릭 링크·정션)이 있으면 그 너머는 읽지도 쓰지도 않는다 */
+function inLib(dir) {
+  if (!fs.existsSync(dir) || !fs.existsSync(LIB)) return false;
+  const real = fs.realpathSync(dir),
+    root = fs.realpathSync(LIB);
+  return real === root || real.startsWith(root + path.sep);
+}
 /** 보관함 안의 파일 경로 — 작품/코드/파일 또는 작품/cover-parts/파일만 */
 function libPath(rel) {
   const m = /^([a-z0-9_-]+)\/([a-z0-9_-]+)\/([\w.-]+)$/i.exec(rel || "");
   if (!m || !(m[2] === "cover-parts" ? ROLE.test(m[3]) : KEPT.test(m[3]))) return "";
-  return path.join(LIB, m[1], m[2], m[3]);
+  return inLib(path.join(LIB, m[1], m[2])) ? path.join(LIB, m[1], m[2], m[3]) : "";
 }
 
 /* ── 연습 모드: 생성 서비스 대신 자리 표시 그림(SVG)을 돌려준다 — 흐름·합성·보관함을 돈 안 들이고 돌려 볼 때 */
@@ -234,6 +242,7 @@ const server = http.createServer(async (req, res) => {
         return send(res, 400, { error: "볼 수 없는 경로" });
       return file(res, abs);
     }
+    if (post && !ours(req)) return send(res, 403, { error: "이 페이지에서만 할 수 있어요" });
     if (post && u.pathname === "/mock") {
       if (!MOCK) return send(res, 404, { error: "연습 모드가 아니에요" });
       const tasks = JSON.parse((await body(req)).toString("utf8"));
@@ -241,13 +250,12 @@ const server = http.createServer(async (req, res) => {
         data: tasks.map((t) => ({ taskType: t.taskType, taskUUID: t.taskUUID, imageDataURI: mockImage(t), cost: 0, NSFWContent: false }))
       });
     }
-    if (post && !ours(req)) return send(res, 403, { error: "이 페이지에서만 할 수 있어요" });
     // 후보를 보관함에 — 의뢰 목록에 있는 작품·코드만, webp만
     if (post && u.pathname === "/api/keep") {
       const { c, row } = findRow(await works(), q),
         buf = await body(req);
       if (!isWebp(buf)) return send(res, 400, { error: "webp 그림이 아니에요" });
-      return send(res, 200, { ok: true, file: keep(c.id, row.code, buf, { seed: +q.get("seed") || 0, cost: +q.get("cost") || 0, mock: MOCK || undefined }) });
+      return send(res, 200, { ok: true, file: keep(c.id, row.code, buf, { seed: +q.get("seed") || 0, mock: MOCK || undefined }) });
     }
     // 단체 표지의 조각(배경·인물 원본과 오린 그림) — 자리마다 가장 최근 것 하나
     if (post && u.pathname === "/api/part") {
@@ -255,15 +263,17 @@ const server = http.createServer(async (req, res) => {
         name = q.get("name") || "",
         buf = await body(req);
       if (!ROLE.test(name) || !(name.endsWith(".png") ? isPng(buf) : isWebp(buf))) return send(res, 400, { error: "조각 이름·형식이 맞지 않아요" });
-      fs.mkdirSync(path.join(LIB, c.id, "cover-parts"), { recursive: true });
-      fs.writeFileSync(path.join(LIB, c.id, "cover-parts", name), buf);
+      const dir = path.join(LIB, c.id, "cover-parts");
+      fs.mkdirSync(dir, { recursive: true });
+      if (!inLib(dir)) return send(res, 400, { error: "보관함 밖을 가리키는 폴더예요" });
+      fs.writeFileSync(path.join(dir, name), buf);
       return send(res, 200, { ok: true });
     }
     // 후보 버리기 — 지우지 않고 보관함의 .trash/로 옮긴다
     if (post && u.pathname === "/api/drop") {
       const abs = libPath(q.get("path"));
       if (!abs || !fs.existsSync(abs) || !KEPT.test(path.basename(abs))) return send(res, 400, { error: "없는 후보예요" });
-      const to = path.join(LIB, ".trash", (q.get("path") || "").replace(/\//g, "__"));
+      const to = path.join(LIB, ".trash", Date.now() + "__" + (q.get("path") || "").replace(/\//g, "__")); // 같은 이름을 두 번 버려도 덮어쓰지 않게
       fs.mkdirSync(path.dirname(to), { recursive: true });
       fs.renameSync(abs, to);
       return send(res, 200, { ok: true });

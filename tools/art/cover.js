@@ -31,24 +31,27 @@ export async function makeCover(work, spec, say) {
     return { blob: await dress(work, await load(out.blob), p.post), nsfw: out.nsfw, seed: p.job.seed };
   }
   const imgs = {},
+    files = {},
     layout = structuredClone(p.layout);
   let nsfw = false;
   for (const role of ROLES) {
     say(`단체 표지 — ${NAMES[role]} 그리는 중…(조각 넷 가운데 ${ROLES.indexOf(role) + 1})`);
     const out = await generate(p.parts[role]);
     nsfw = nsfw || out.nsfw;
-    await savePart(work, role + "-raw.webp", out.blob);
+    files[role + "-raw.webp"] = out.blob;
     if (role === "bg") imgs.bg = await load(out.blob);
     else {
-      const cut = await removeBg(out.blob);
-      await savePart(work, role + "-cut.png", cut);
+      const cut = (files[role + "-cut.png"] = await removeBg(out.blob));
       imgs[role] = await load(cut);
       // 새로 그린 그림이라 계획에 적힌 머리 자리(확정 그림에서 잰 값)는 맞지 않는다 → 이 그림에서 어림
       layout.chars.find((c) => c.role === role).head = measure(imgs[role]);
     }
   }
-  groups[work.id] = { plan: p, imgs, layout };
+  // 노출로 판정된 조각이 하나라도 있으면 붙인 그림만 보여 주고 끝낸다 — 조각을 보관함에 남기지 않고(다시 붙여 실을 수 없게) 잇지도 않는다
   if (nsfw) return { blob: await toBlob(composeGroup(layout, imgs)), nsfw, seed: p.final.seed };
+  // 조각은 넷이 다 그려진 뒤에 한꺼번에 보관함에 — 중간에 실패하면 예전 조각 묶음이 그대로 남는다(새것과 섞이지 않게)
+  for (const [name, blob] of Object.entries(files)) await savePart(work, name, blob);
+  groups[work.id] = { plan: p, imgs, layout };
   say("단체 표지 — 붙이고 잇는 중…");
   return finishGroup(work);
 }
@@ -83,9 +86,9 @@ export async function seatPanel(work, box, plan, onCand) {
   const row = (c) =>
     `<div class="seat" data-role="${c.role}"><b>${NAMES[c.role]} ${c.code}</b>` +
     `<label>정수리 <input class="cf" type="number" step="0.01" min="0" max="0.5" value="${c.head[0]}"></label>` +
-    `<label>머리 높이 <input class="hf" type="number" step="0.01" min="0.1" max="0.5" value="${c.head[1]}"></label>` +
+    `<label>머리 높이 <input class="hf" type="number" step="0.01" min="0.12" max="0.5" value="${c.head[1]}"></label>` +
     `<label>얼굴 가로 <input class="fx" type="number" step="0.01" min="0" max="1" value="${c.head[2] === undefined ? 0.5 : c.head[2]}"></label>` +
-    `<label>자리 <input class="cx" type="number" step="0.01" min="0" max="1" value="${c.cx || ""}" placeholder="${G.layout.seat[c.role].cx}"></label>` +
+    `<label>자리 <input class="cx" type="number" step="0.01" min="0.05" max="0.95" value="${c.cx || ""}" placeholder="${G.layout.seat[c.role].cx}"></label>` +
     `<label><input class="flip" type="checkbox"${c.flip ? " checked" : ""}> 좌우 뒤집기</label></div>`;
   box.innerHTML =
     `<p class="dim">값은 그림 크기에 대한 비율이에요(정수리 = 위에서 머리 끝까지, 머리 높이 = 정수리에서 턱까지, 얼굴 가로 = 왼쪽에서 얼굴 가운데까지). 양옆 인물은 가운데를 보도록 뒤집어 주세요.</p>` +
@@ -95,7 +98,7 @@ export async function seatPanel(work, box, plan, onCand) {
     for (const c of G.layout.chars) {
       const el = box.querySelector(`.seat[data-role="${c.role}"]`),
         v = (s) => el.querySelector(s).value;
-      c.head = [num(v(".cf"), c.head[0]), num(v(".hf"), c.head[1]), num(v(".fx"), 0.5)];
+      c.head = [num(v(".cf"), c.head[0]), Math.max(0.12, num(v(".hf"), c.head[1])), num(v(".fx"), 0.5)]; // 머리 높이로 나누니 0에 가까운 값은 받지 않음
       c.flip = el.querySelector(".flip").checked ? 1 : 0;
       if (num(v(".cx"), 0)) c.cx = num(v(".cx"), 0);
       else delete c.cx;

@@ -6,14 +6,14 @@ export const COMP_W = 1344,
 
 /** 머리 비율 head = [정수리 위치 cf, 머리 높이 hf, 얼굴 가로 위치 fx](그림 크기에 대한 비율)와 자리 seat = { head, crown, cx }(화면에 대한 비율)로 그림이 놓일 곳을 정한다.
     돌려주는 값: cx 그림 가운데의 가로 자리 · h 그림 높이 · bottom 그림 아래 끝 · face 얼굴 빛을 줄 높이(그림 안) · fade 아래가 화면에 못 미치면 그늘로 풀어 줄 비율 */
-export function seatOf(seat, head, flip, cxOver) {
+export function seatOf(seat, head, flip, cxOver, ar = 1) {
   const [cf, hf, fx0] = head,
     fx = fx0 === undefined ? 0.5 : flip ? 1 - fx0 : fx0,
     h = seat.head / hf,
     top = seat.crown - cf * h,
     bottom = top + h;
-  // cx는 화면 가로에 대한 비율이고 그림 너비는 높이 × (그림의 가로/세로)라, 얼굴이 가운데에서 벗어난 만큼을 높이 단위로 옮긴다(확정 표지 넷을 만든 식 그대로)
-  return { cx: cxOver || seat.cx - (fx - 0.5) * h, h, bottom, face: cf + hf * 0.55, fade: bottom < 0.99 ? 0.16 : 0 };
+  // 얼굴이 그림 가운데에서 벗어난 만큼 그림을 옮긴다. ar = 그림의 가로세로비 ÷ 화면의 가로세로비 — 조각도 화면도 3:4라 보통 1(확정 표지 넷을 만든 식)
+  return { cx: cxOver || seat.cx - (fx - 0.5) * h * ar, h, bottom, face: cf + hf * 0.55, fade: bottom < 0.99 ? 0.16 : 0 };
 }
 
 /** 배경을 지운 인물 그림에서 머리 자리를 어림한다 — 정수리는 맨 위의 불투명한 줄, 얼굴 가로 위치는 윗부분의 무게 중심, 머리 높이는 목(가장 좁은 줄)까지.
@@ -49,7 +49,8 @@ export function measure(im) {
     min = Infinity;
   const wide = Math.max(...rows.slice(top, top + Math.round(h * 0.12)).map((r) => r.n));
   for (let y = top + Math.round(h * 0.12); y < top + Math.round(h * 0.34) && y < h; y++)
-    if (rows[y].n < min) {
+    if (rows[y].n > 0 && rows[y].n < min) {
+      // 빈 줄(오린 그림이 끊긴 곳)은 목이 아니다
       min = rows[y].n;
       neck = y;
     }
@@ -137,7 +138,7 @@ export function composeGroup(s, imgs) {
   }
   for (const c of s.chars) {
     const im = imgs[c.role],
-      at = seatOf(s.seat[c.role], c.head, c.flip, c.cx),
+      at = seatOf(s.seat[c.role], c.head, c.flip, c.cx, im.width / im.height / (W / H)),
       h = at.h * H,
       w = (h * im.width) / im.height;
     g.save();

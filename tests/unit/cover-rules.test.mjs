@@ -44,6 +44,22 @@ test("표지 규칙: 계획이 모두 뽑히고 문구가 3000자 안, 손질 �
       assert.ok(j.width === 960 && j.height === 1280 && j.hires.w === 1344 && j.hires.h === 1792, id + ": 표지 크기가 다름");
       assert.ok(!/youthful/.test(j.pos), id + ": youthful은 쓰지 않음");
       assert.equal(j.post, undefined, id + ": 화풍 후처리가 남아 있음(표지는 표지 후처리만)");
+      // 바꿔 끼운 자리가 하나씩만 남았는지 — 화풍 문구가 바뀌어 자리를 잘못 잡으면 여기서 걸린다(빛 자리는 마감 끝과 품질 문구 사이)
+      const count = (t) => j.pos.split(t).length - 1;
+      assert.equal(count("masterpiece, best quality"), 1, id + ": 품질 문구가 한 번이 아님");
+      assert.ok(!j.pos.includes("(standing:1.0), (upper body:1.1)"), id + ": 화풍의 구도 문구가 남아 있음");
+      if (!j.pos.includes("(no humans:")) {
+        assert.equal(count("(sharp focus:0.9)"), 1, id + ": 마감 문구가 한 번이 아님");
+        assert.equal(count("(cinematic lighting:"), 1, id + ": 빛 문구가 한 번이 아님(화풍의 빛이 남았거나 표지 빛이 빠짐)");
+        assert.ok(j.pos.includes("(detailed hair:1.3)") && j.pos.includes("(semi-realistic:1.15)"), id + ": 화풍의 마감 문구가 지워짐");
+        assert.equal(count("(flawless skin:0.9)"), 1, id + ": 피부 문구가 한 번이 아님");
+      }
+    }
+    if (p.final) {
+      assert.match(p.final.pos, /\(adult (wo)?men:1\.[23]\)/, id + ": 잇는 작업에 성인 표시가 없음");
+      for (const t of ["child", "loli", "shota", "underage", "toddler", "aged down", "nsfw", "nude"])
+        assert.ok(p.final.neg.includes(t), id + ": 잇는 작업의 네거티브에 없음 — " + t);
+      assert.ok(p.final.width === 1344 && p.final.height === 1792 && p.final.pos.length <= 3000);
     }
   }
 });
@@ -113,5 +129,6 @@ test("표지 규칙: 단체의 자리 계산 — 머리 높이와 정수리 높�
     b = seatOf(SEAT.left, [0.1, 0.2, 0.6], 1);
   assert.ok(near(a.cx, SEAT.left.cx - 0.1 * a.h) && near(b.cx, SEAT.left.cx + 0.1 * b.h), "얼굴이 그림 가운데에서 벗어난 만큼 그림을 옮김");
   assert.ok(near(seatOf(SEAT.right, [0.07, 0.2, 0.49], 1, 0.85).cx, 0.85), "자리 덮어쓰기");
+  assert.ok(near(seatOf(SEAT.left, [0.1, 0.2, 0.6], 0, 0, 0.5).cx, SEAT.left.cx - 0.05 * a.h), "가로세로비가 다른 조각은 그 비율만큼만 옮김");
   assert.ok(seatOf(SEAT.left, [0.03, 0.3], 0).fade > 0 && seatOf(SEAT.mid, [0.03, 0.2], 0).fade === 0, "아래가 화면에 못 미치는 그림만 아래를 풀어 줌");
 });

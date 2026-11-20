@@ -11,7 +11,7 @@ const $ = (s, el = document) => el.querySelector(s);
 const esc = (s) => String(s).replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[ch]);
 const KINDS = ["표지", "인물", "다른 모습", "장소", "컷씬", "세계관"];
 const COVER_NAME = { close: "얼굴 가까이", scene: "한 명 + 배경", group: "단체(세 사람)", symbol: "상징물" };
-const state = { works: [], id: "", filter: "todo", style: "", workers: 2, stop: false, busy: 0, vary: {}, msg: {} };
+const state = { works: [], id: "", filter: "todo", style: "", workers: 2, stop: false, busy: 0, batching: false, running: new Set(), vary: {}, msg: {} };
 
 function showKey() {
   $("#keyState").textContent = meta.mock ? "연습 모드 — 생성 서비스를 부르지 않아요" : key() ? "키 있음" : "키 없음 — 그리려면 넣어 주세요";
@@ -58,13 +58,14 @@ async function finish(spec, raw) {
 async function make(work, row) {
   const k = keyOf(work, row);
   if (!ready()) return say(k, "생성 서비스 키를 먼저 넣어 주세요.", "warn");
+  if (state.running.has(k)) return; // 같은 칸을 겹쳐 그리지 않는다(같은 시드로 두 번 사게 됨)
+  state.running.add(k);
   // 보관함에 이미 후보가 있으면 그 수만큼 시드를 옮겨 시작한다(같은 그림을 다시 사지 않게)
   const vary = state.vary[k] === undefined ? (cands[k] || []).length : state.vary[k];
   state.vary[k] = vary + 1;
   state.busy++;
   say(k, vary ? `다시 그리는 중…(${vary + 1}번째)` : "그리는 중…");
   paintRow(k);
-  const before = spent.usd;
   try {
     const spec = await api(`/api/job?work=${encodeURIComponent(work.id)}&code=${encodeURIComponent(row.code)}&vary=${vary}&style=${state.style}`);
     let out;
@@ -73,13 +74,14 @@ async function make(work, row) {
       const g = await generate(spec.job);
       out = { blob: await finish(spec, g.blob), nsfw: g.nsfw, seed: spec.job.seed };
     }
-    await addCand(work, row, out.blob, { nsfw: out.nsfw, seed: out.seed, cost: spent.usd - before });
+    await addCand(work, row, out.blob, { nsfw: out.nsfw, seed: out.seed });
     say(k, out.nsfw ? "생성 서비스가 노출로 판정했어요 — 이 그림은 실을 수 없어요." : "후보가 나왔어요. 크게 보고 괜찮으면 싣기.", out.nsfw ? "warn" : "");
   } catch (e) {
     say(k, "실패: " + ((e && e.message) || e), "warn");
     if (/fund|balance|credit|insufficient|auth|api.?key/i.test(String(e && e.message))) state.stop = true; // 잔액·키 문제면 이어 그리기를 멈춤
   } finally {
     state.busy--;
+    state.running.delete(k);
     paintRow(k);
     showKey();
   }
@@ -91,7 +93,9 @@ async function batch(pairs, o = {}) {
   // 단체 표지는 조각 넷(키워 다시 그리기 포함)에 오리기·잇기까지 — 대략 다섯 장 값
   const units = pairs.reduce((n, [w, r]) => n + (r.spec === "cover" && w.cover === "group" ? 5 : 1), 0);
   const ask = meta.mock ? `${pairs.length}칸을 연습 모드로 돌려요(비용 0). 계속할까요?` : `${pairs.length}칸을 그려요. 실제 생성 비용이 들어요(대략 ${units}장 값 — 한 장에 1~2센트). 계속할까요?`;
+  if (state.batching) return ($("#batchMsg").textContent = "이미 여러 칸을 그리는 중이에요 — 끝나거나 멈춘 뒤에 다시 눌러 주세요.");
   if (!o.confirmed && !confirm(ask)) return;
+  state.batching = true;
   state.stop = false;
   let i = 0,
     done = 0;
@@ -104,7 +108,11 @@ async function batch(pairs, o = {}) {
     }
   };
   $("#batchMsg").textContent = `0/${pairs.length}칸`;
-  await Promise.all(Array.from({ length: Math.max(1, Math.min(3, state.workers)) }, next));
+  try {
+    await Promise.all(Array.from({ length: Math.max(1, Math.min(3, state.workers)) }, next));
+  } finally {
+    state.batching = false;
+  }
   $("#batchMsg").textContent = state.stop ? `멈췄어요(${done}/${pairs.length}칸)` : `끝 — ${done}칸. 후보를 보고 실어 주세요`;
 }
 const shown = (r) => (state.filter === "all" ? true : state.filter === "rank1" ? !r.has && r.rank === 1 : !r.has);
@@ -127,7 +135,7 @@ function renderWorks() {
 }
 function setThumb(el, row) {
   const t = $(".thumb", el),
-    src = row.saved || (row.has ? "/file?path=" + encodeURIComponent(row.path) + "&t=" + Date.now() : "");
+    src = row.has ? "/file?path=" + encodeURIComponent(row.path) + "&t=" + Date.now() : "";
   t.style.backgroundImage = src ? `url("${src}")` : "";
   t.textContent = src ? "" : "없음";
   t.onclick = src ? () => zoom(src) : null;
@@ -155,8 +163,7 @@ function paintRow(k) {
     $(".put", d).addEventListener("click", async () => {
       try {
         const r = await saveCand(w, row, c);
-        row.has = true;
-        row.saved = c.url;
+        row.has = true; // 썸네일은 작품 폴더에 실린 파일로 보여 준다(후보를 버려도 깨지지 않게)
         say(k, `실었어요 — ${r.path} (${Math.round(r.bytes / 1024)}KB). npm run build 뒤에 사이트에 들어가요.`, "ok");
         renderWorks();
         paintRow(k);
