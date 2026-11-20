@@ -18,10 +18,16 @@ export function saveSettings() {
   KV.set("memcfg", S.settings.memCfg);
   emit("settings");
 }
-/** 채팅 글자 크기·줄 간격·지문 글꼴·장면 그림 보기를 CSS 변수와 html 클래스에 반영(테마는 기기 설정을 따름). @returns {void} */
+/**
+ * 채팅 글자 크기·줄 간격·지문 글꼴·장면 그림 보기를 CSS 변수와 html 클래스에, 화면 테마를 html의 data-theme에 반영.
+ * 테마는 "light"·"dark"를 골랐을 때만 속성을 걸고, 고르지 않았으면 떼어 기기 설정을 따름(css/10-base.css) — 뼈대의 앞쪽 스크립트가 같은 일을 화면이 그려지기 전에 함.
+ * @returns {void}
+ */
 export function applySettings() {
   const s = S.settings,
     root = document.documentElement;
+  if (s.theme === "light" || s.theme === "dark") root.setAttribute("data-theme", s.theme);
+  else root.removeAttribute("data-theme");
   root.style.setProperty("--chat-fs", s.fs + "px");
   root.style.setProperty("--chat-lh", s.chatLh);
   root.style.setProperty("--narr-font", s.narrFont === "sans" ? "var(--sans)" : "var(--serif)");
