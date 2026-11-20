@@ -5,10 +5,11 @@ import { LIMITS } from "../../core/constants.js";
 import { saveRoom } from "../../core/rooms.js";
 import { S } from "../../core/state.js";
 import { $, $$, esc, num, toast } from "../../core/util.js";
-import { PLAN, freeLeft, isPro, plan, qShort, quote } from "../../core/wallet.js";
+import { PLAN, SUGGEST_COST, freeLeft, heartsOf, isPro, plan, qShort, quote } from "../../core/wallet.js";
 import { IMG } from "../../services/images.js";
 import { renderLog } from "../chat/log.js";
 import { updateComposer } from "../chat/view.js";
+import { bindChatSettings, chatSettingsHTML } from "../chat-settings.js";
 import { pavHTML } from "../cover.js";
 import { personaSheet } from "../me.js";
 import { plusSheet } from "../pay.js";
@@ -88,6 +89,15 @@ export function drawerNote({ r, c, body }) {
     openRoomDrawer("main");
   };
 }
+/* 드로어 화면 'display' — 표시 설정: MY의 채팅 설정과 같은 조각(ui/chat-settings.js)을 방 안에서 바로 바꿈. 방마다가 아니라 앱 전체의 설정 */
+/** @param {import("../room-drawer.js").DrawerCtx} x */
+export function drawerDisplay({ body }) {
+  body.innerHTML =
+    `<b>대화 글이 보이는 모양을 바꿔 보세요</b><p class="note" style="margin:4px 0 14px">바꾸면 바로 뒤의 대화에 적용돼요. 이 방만이 아니라 모든 대화방에 같이 적용되고, ` +
+    `MY의 채팅 설정과 같은 값이에요. 글자 크기와 Enter로 보내기는 이 기기에만, 나머지는 로그인하면 계정에도 저장돼요.</p>` +
+    chatSettingsHTML({ preview: false });
+  bindChatSettings(body, updateComposer);
+}
 /** 드로어 화면 'output'. @param {import("../room-drawer.js").DrawerCtx} x */
 export function drawerOutput({ r, body }) {
   const s = { ...r.set };
@@ -110,12 +120,17 @@ export function drawerOutput({ r, body }) {
         <div class="setcard"><div class="toggle"><div><h4>자동 스크롤</h4>` +
       `<p class="d" style="margin:4px 0 0">켜면 답이 써지는 동안 화면이 맨 아래를 따라 내려가요. 끄면 보낼 때 한 번만 내려가고, 답은 읽는 속도에 맞춰 직접 내려 보면 돼요.</p></div>` +
       `<input type="checkbox" id="as" ${s.autoScroll ? "checked" : ""}></div></div>
+        <div class="setcard"><div class="toggle"><div><h4>답변 추천 자동 받기</h4>` +
+      `<p class="d" style="margin:4px 0 0">켜면 답마다 추천 답변 셋이 같이 와요. <b>턴마다 ♥${SUGGEST_COST}이 더 나가요</b>(무료 턴·PLUS에서도). ` +
+      `하트가 모자란 턴은 추천 없이 보내고, 추천이 오지 않으면 그 값은 돌려드려요. 꺼 두면 ✦ 추천을 누를 때만 ♥${SUGGEST_COST}이에요.</p></div>` +
+      `<input type="checkbox" id="asg" ${s.autoSug ? "checked" : ""}></div></div>
         <div class="setcard"><h4>예상 비용</h4><table class="tbl"><tbody>${Object.keys(MODELS)
           .map((k) => {
             const qq = quote({ ...s, model: k });
             return (
               `<tr><td>${MODELS[k].name}${k === s.model ? ' <span class="pill">사용 중</span>' : ""}</td>` +
-              `<td class="num">${qq.type === "free" ? "무료 (" + freeLeft() + "턴 남음)" : qq.type === "plus" ? "PLUS 무제한" : "♥" + qq.n + " / 턴"}</td></tr>`
+              `<td class="num">${qq.type === "free" ? "무료 (" + freeLeft() + "턴 남음)" : qq.type === "plus" ? "PLUS 무제한" : "♥" + heartsOf(qq) + " / 턴"}` +
+              `${qq.type !== "heart" && qq.sug ? " + 답변 추천 ♥" + qq.sug : ""}</td></tr>`
             );
           })
           .join("")}</tbody></table></div>
@@ -139,12 +154,22 @@ export function drawerOutput({ r, body }) {
     $("#rr", body).onchange = (e) => {
       s.rerollAsk = e.target.checked;
     };
+    $("#as", body).onchange = (e) => {
+      s.autoScroll = e.target.checked;
+    };
+    // 자동 받기는 값이 달라지므로 바로 다시 그려 예상 비용과 저장 버튼의 값에 반영
+    $("#asg", body).onchange = (e) => {
+      s.autoSug = e.target.checked;
+      paint();
+    };
     $("#oSave", body).onclick = () => {
+      const turnedOn = !!s.autoSug && !r.set.autoSug;
       r.set = { ...r.set, ...s, rerollAsk: $("#rr", body).checked, autoScroll: $("#as", body).checked };
-      delete r.set.sugAuto;
+      if (!s.autoSug) delete r.set.autoSug;
+      delete r.set.sugAuto; // 예전의 '추천 자동 표시' 칸(다른 뜻) — 남아 있으면 지움
       saveRoom(r);
       updateComposer();
-      toast("출력 설정을 저장했어요");
+      toast(turnedOn ? `출력 설정을 저장했어요 — 답변 추천 자동 받기: 답마다 ♥${SUGGEST_COST}이 더 나가요` : "출력 설정을 저장했어요");
       openRoomDrawer("main");
     };
   };

@@ -1,4 +1,5 @@
 /* 저장된 데이터를 S에 읽어 들임(loadAll): 지갑·페르소나·대화방 목록·요약 설정·내 서재. 부팅과 계정에서 다시 받을 때 씀 */
+import { sortRooms } from "../core/rooms.js";
 import { mergeShelf } from "../core/shelf.js";
 import { S } from "../core/state.js";
 import { KV } from "../core/storage.js";
@@ -23,7 +24,7 @@ export async function loadAll() {
     KV.set("wallet", S.wallet);
   }
   if (Array.isArray(p) && p.length) S.personas = p.map((x) => ({ memo: "", img: "", ...x }));
-  if (Array.isArray(rooms)) S.rooms = rooms;
+  if (Array.isArray(rooms)) S.rooms = sortRooms(rooms); // 즐겨찾기 먼저 — 예전 버전이나 다른 기기가 저장한 목록은 최근 순으로만 서 있을 수 있음
   S.shelf = mergeShelf(shelf);
   IMG.migrate().catch(() => {});
   if (mc && typeof mc === "object") S.settings.memCfg = { ...S.settings.memCfg, ...mc };

@@ -5,7 +5,7 @@ import { LEN, MODELS, RECOMMEND_DEFAULT } from "../ai/models.js";
 import { allCommands } from "../core/commands.js";
 import { exampleCast } from "../core/character.js";
 import { EXAMPLE_SIT, LIMITS, SHELF, SIT } from "../core/constants.js";
-import { PLAN, FREE_DAILY, PLUS_MONTHLY, WELCOME, listPrice } from "../core/wallet.js";
+import { PLAN, FREE_DAILY, PLUS_MONTHLY, SUGGEST_COST, WELCOME, listPrice } from "../core/wallet.js";
 import { esc, num, won } from "../core/util.js";
 import { ASK_DAILY, SUPPORT_MAIL } from "../services/support.js";
 import { PLUS } from "./store.js";
@@ -52,7 +52,11 @@ export function faqGroups() {
         ],
         [
           "하트는 어디에 쓰나요?",
-          "무료 턴을 다 쓴 뒤의 라이트 모델과, 스토리·마스터 모델 대화에 써요. 보내기 버튼에 이번 턴 비용이 항상 표시되고, 응답이 실패하면 자동으로 환불돼요. 장기기억 요약·AI 추천 답변은 무료예요."
+          "무료 턴을 다 쓴 뒤의 라이트 모델과, 스토리·마스터 모델 대화, 그리고 답변 추천에 써요. " +
+            "보내기 버튼과 추천 버튼에 이번에 드는 하트가 항상 표시되고, 응답이 실패하면 자동으로 환불돼요. " +
+            `답변 추천은 받을 때마다 <b>♥${SUGGEST_COST}</b>이에요(작가가 시작 장면에 써 둔 첫 추천은 무료). ` +
+            `대화방 메뉴의 출력 설정에서 '답변 추천 자동 받기'를 켜면 답마다 추천이 같이 오고 턴마다 ♥${SUGGEST_COST}이 더 나가요(무료 턴·PLUS에서도). ` +
+            "장기기억 요약은 무료예요."
         ],
         [
           "모델마다 한 턴에 하트가 얼마나 드나요?",

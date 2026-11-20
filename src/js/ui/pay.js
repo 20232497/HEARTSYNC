@@ -2,12 +2,12 @@
 import { LEN, MODELS } from "../ai/models.js";
 import { S, room } from "../core/state.js";
 import { $, $$, esc, num, toast, today, won } from "../core/util.js";
-import { FREE_DAILY, PLAN, PLUS_MONTHLY, freeLeft, quote, saveWallet } from "../core/wallet.js";
+import { FREE_DAILY, PLAN, PLUS_MONTHLY, freeLeft, heartsOf, quote, saveWallet } from "../core/wallet.js";
 import { renderLog } from "./chat/log.js";
 import { updateComposer } from "./chat/view.js";
 import { setModel } from "./model-sheet.js";
 import { sheet } from "./sheet.js";
-import { PACKS, PLUS, buyPack, checkout } from "./store.js";
+import { PACKS, PLUS, PLUS_SUG_NOTE, buyPack, checkout } from "./store.js";
 
 /* 결제 확인 → 견적 반환 (null이면 보내지 않음) */
 export async function ensurePay(r) {
@@ -28,25 +28,33 @@ export async function ensurePay(r) {
       saveWallet();
     }
   }
-  return quote(r.set);
+  // 처음 낸 견적(확인 창에 보인 값) 그대로 돌려줌 — 창을 보는 사이 잔액이 늘거나(늦게 끝난 답변 추천의 환불) 요금제가 끝나 견적이 올라도
+  // 확인한 값보다 더 내지 않게. 그사이 그 값도 낼 수 없게 됐으면 다시 안내
+  if (S.wallet.hearts < heartsOf(q)) {
+    paywall(q, r);
+    return null;
+  }
+  return q;
 }
 function askPay(q, r) {
   return new Promise((resolve) => {
     const lite = r.set.model === "lite",
-      m = MODELS[r.set.model];
+      m = MODELS[r.set.model],
+      n = heartsOf(q), // 이번 턴에 나가는 하트 — 추천 자동 받기를 켠 방은 그 값이 더해짐
+      plus = q.sug ? ` (답변 추천 자동 받기 ♥${q.sug} 포함)` : "";
     const ov = sheet(
       lite
-        ? `<h2>오늘 무료 ${FREE_DAILY}턴을 다 썼어요</h2><p class="sub">지금부터 라이트 모델은 한 턴에 <b>♥${q.n}</b>이 사용돼요. 무료 턴은 자정에 다시 채워져요.</p>
+        ? `<h2>오늘 무료 ${FREE_DAILY}턴을 다 썼어요</h2><p class="sub">지금부터 라이트 모델은 한 턴에 <b>♥${n}</b>이 사용돼요${plus}. 무료 턴은 자정에 다시 채워져요.</p>
          <div class="purse"><div>보유 하트 <span class="spacer"></span><b>♥ ${num(S.wallet.hearts)}</b></div><div>이 하트로 약 ` +
-            `<span class="spacer"></span><b>${Math.floor(S.wallet.hearts / q.n)}턴</b></div></div>
+            `<span class="spacer"></span><b>${Math.floor(S.wallet.hearts / n)}턴</b></div></div>
          <div class="cta-row"><button class="btn gold" id="toPlus">PLUS로 무제한</button><span class="spacer"></span>` +
-            `<button class="btn ghost" data-x>그만하기</button><button class="btn pri" id="ok">♥${q.n}로 계속</button></div>`
+            `<button class="btn ghost" data-x>그만하기</button><button class="btn pri" id="ok">♥${n}로 계속</button></div>`
         : `<h2>${m.name} 모델은 하트를 써요</h2><p class="sub">지금 설정(출력량 ${LEN[r.set.len].name} · 기억력 ${r.set.mem}턴)으로 한 턴에 ` +
-            `<b>♥${q.n}</b>이 사용돼요. 실패하면 자동으로 돌려드려요. 이 안내는 한 번만 보여요.</p>
+            `<b>♥${n}</b>이 사용돼요${plus}. 실패하면 자동으로 돌려드려요. 이 안내는 한 번만 보여요.</p>
          <div class="purse"><div>보유 하트 <span class="spacer"></span><b>♥ ${num(S.wallet.hearts)}</b></div><div>이 하트로 약 ` +
-            `<span class="spacer"></span><b>${Math.floor(S.wallet.hearts / q.n)}턴</b></div></div>
+            `<span class="spacer"></span><b>${Math.floor(S.wallet.hearts / n)}턴</b></div></div>
          <div class="cta-row"><button class="btn ghost" id="toLite">라이트로 바꾸기</button><span class="spacer"></span>` +
-            `<button class="btn ghost" data-x>취소</button><button class="btn pri" id="ok">♥${q.n}로 보내기</button></div>`
+            `<button class="btn ghost" data-x>취소</button><button class="btn pri" id="ok">♥${n}로 보내기</button></div>`
     );
     let done = false;
     const fin = (v) => {
@@ -95,7 +103,7 @@ function paywall(q, r) {
       .join("")}</div>
     <div class="member" style="padding:16px"><div class="row"><b style="font-family:var(--display);font-size:18px">HEART SYNC` +
       `<em style="font-style:normal;color:#f0b54a">+</em></b><span class="spacer"></span><span>${won(PLUS.price)}/월</span></div>
-      <p style="margin:6px 0 12px;color:#e9dfcf;font-size:13px">라이트 무제한 · 스토리·마스터 50% 할인 · 매달 ♥${PLUS_MONTHLY}</p>` +
+      <p style="margin:6px 0 12px;color:#e9dfcf;font-size:13px">라이트 무제한 · 스토리·마스터 50% 할인 · 매달 ♥${PLUS_MONTHLY}<br>${PLUS_SUG_NOTE}</p>` +
       `<button class="btn gold block" id="upPlus">PLUS 시작하기</button></div>
     ${
       r.set.model !== "lite"
@@ -120,6 +128,16 @@ function afterBuy() {
     updateComposer();
   }
 }
+/** 턴이 아닌 것(답변 추천)을 하트가 모자라 받지 못할 때의 안내 — 하트 묶음으로 가는 길만 보임. @param {number} n 필요한 하트 @param {string} what 무엇에 드는지 */
+export function needHearts(n, what) {
+  const ov = sheet(
+    `<h2>하트가 부족해요</h2><p class="sub">${esc(what)}에 ♥${n}이 필요한데 지금 ♥${num(S.wallet.hearts)}이 있어요.</p>` +
+      `<div class="minipacks">${PACKS.slice(0, 3)
+        .map((p) => `<button data-pack="${p.id}"><b>♥ ${num(p.n + p.bonus)}</b><span class="p">${won(p.price)}</span></button>`)
+        .join("")}</div><button class="btn ghost block" data-x style="margin-top:8px">닫기</button>`
+  );
+  $$("[data-pack]", ov).forEach((b) => (b.onclick = () => buyPack(b.dataset.pack, afterBuy)));
+}
 export function plusSheet(reason) {
   const copy = {
     rooms: ["대화방을 더 만들 수 없어요", `무료 요금제는 캐릭터당 대화방 ${PLAN.free.rooms}개까지예요. 기존 대화방을 지우거나 PLUS로 무제한 만들 수 있어요.`],
@@ -136,7 +154,7 @@ export function plusSheet(reason) {
     `<h2>${esc(copy[0])}</h2><p class="sub">${esc(copy[1])}</p>
     <div class="member" style="padding:16px"><div class="row"><b style="font-family:var(--display);font-size:18px">HEART SYNC` +
       `<em style="font-style:normal;color:#f0b54a">+</em></b><span class="spacer"></span><span>${won(PLUS.price)}/월</span></div>
-    <p style="margin:6px 0 12px;color:#e9dfcf;font-size:13px">라이트 무제한 · 스토리·마스터 50% 할인 · 매달 ♥${PLUS_MONTHLY} · 기억 3배 이상</p>` +
+    <p style="margin:6px 0 12px;color:#e9dfcf;font-size:13px">라이트 무제한 · 스토리·마스터 50% 할인 · 매달 ♥${PLUS_MONTHLY} · 기억 3배 이상<br>${PLUS_SUG_NOTE}</p>` +
       `<button class="btn gold block" id="upPlus">PLUS 시작하기</button></div>
     <button class="btn ghost block" data-x style="margin-top:8px">닫기</button>`
   );

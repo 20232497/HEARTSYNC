@@ -8,7 +8,7 @@
 
 ## 응답 형식
 
-- 응답 형식: 본문 + MARK("===STATE===") + 상태창 JSON → parseState()가 나눔. 요청 형식은 바꾸지 않기. 받는 쪽은 관대하게: splitReply(변형 구분자·구분자 없는 {"status"…}·```json)·repairJSON(끊긴 JSON)·mergeMulti(다인원 칸에서 빠진 인물은 직전 값, 한 사람당 -10~+8, 이름에 숫자 아닌 글자가 있어야 짝). JSON 뒤에 붙은 [[img:…]]는 본문으로, 추천 답변 앞 번호는 뺌. 빈 값은 직전 값을 덮지 않음
+- 응답 형식: 본문 + MARK("===STATE===") + 상태창 JSON → parseState()가 나눔. 요청 형식은 바꾸지 않기. **추천 칸(suggestions)은 이번 턴에 추천 값을 낸 방에서만**(rulesParts·buildInput의 sug — 기본은 방 설정 r.set.autoSug, 보내는 쪽은 견적의 sug를 넘김): 출력 형식의 그 칸·설명 줄, 그리고 직전 응답을 다시 보낼 때 붙이는 상태창의 추천(ai/prompt/input.js stateTail) 세 자리가 같이 들어가거나 같이 빠짐. 꼬리만 달라지고 고정부(캐시 대상)와 변동부는 그대로 — 켠 방의 글은 이 규칙 전과 글자 하나까지 같음. 받는 쪽은 관대하게: splitReply(변형 구분자·구분자 없는 {"status"…}·```json)·repairJSON(끊긴 JSON)·mergeMulti(다인원 칸에서 빠진 인물은 직전 값, 한 사람당 -10~+8, 이름에 숫자 아닌 글자가 있어야 짝). JSON 뒤에 붙은 [[img:…]]는 본문으로, 추천 답변 앞 번호는 뺌. 빈 값은 직전 값을 덮지 않음
 
 ## 프롬프트
 

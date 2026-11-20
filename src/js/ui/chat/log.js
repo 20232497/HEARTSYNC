@@ -8,7 +8,8 @@ import { IMG } from "../../services/images.js";
 import { bindEp, epBarHTML, epEventHTML, epTailHTML } from "./episode.js";
 import { epCopy, generate, regen, regenAsk, sendTurn } from "./generate.js";
 import { fmt, liveFill, statusBlock } from "./render.js";
-import { flashHint, lastAi, updateMeter } from "./view.js";
+import { hideSug } from "./suggest.js";
+import { flashHint, lastAi, updateComposer, updateMeter } from "./view.js";
 import { aiLabel } from "../ai-notice.js";
 import { coverHTML, pavHTML, zoomPic } from "../cover.js";
 import { plan } from "../../core/wallet.js";
@@ -234,6 +235,7 @@ function bindLog(box) {
           if (room.ep && i === room.msgs.length - 1 && (m.alts[m.idx].ep1 || m.ep0)) room.ep = epCopy(m.alts[m.idx].ep1 || m.ep0); // 에피소드: 그 버전 뒤의 진행 상태로
           saveRoom(room);
           renderLog();
+          syncSug();
         } else if (act === "regen") regenAsk(i);
         else if (act === "copy") copyText(curText(m).replace(/\[\[img:[^\]]*\]\]\n?/g, ""), "복사했어요");
         else if (act === "bm") {
@@ -299,9 +301,16 @@ function bindLog(box) {
             saveRoom(room);
             renderLog();
             updateMeter();
+            syncSug();
           });
       })
   );
+}
+/* 마지막 답변(또는 그 버전)이 바뀐 뒤: 펼쳐 둔 추천은 예전 답변의 것이니 닫고, 추천 버튼의 값 표시를 지금 답변에 맞춤 —
+   저장된 추천이 없는 버전으로 바꿨는데 값 없는 버튼이 남으면 누를 때 보이지 않던 값이 나감 */
+function syncSug() {
+  hideSug();
+  updateComposer();
 }
 export function copyText(t, ok) {
   (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(

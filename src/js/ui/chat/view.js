@@ -1,4 +1,5 @@
-/* 대화방 화면 뼈대·입력창·게이지 */
+/* 대화방 화면 뼈대·입력창·게이지. 머리(뒤로·제목·AI 배지·무료 턴과 하트·게이지·모델 칩·대화 검색·방 메뉴) → 대화 → 한 줄 입력창([✦ 추천] [입력] [보내기 — 빈 입력이면 이어서 쓰기]).
+   추천 패널과 ! 명령어 목록은 입력창 바로 위에 끼움. 안내 줄은 알릴 것이 있을 때만 */
 import { MODELS } from "../../ai/models.js";
 import { liveWork } from "../../core/character.js";
 import { commandHelp, findCommand, parseCommand } from "../../core/commands.js";
@@ -6,12 +7,13 @@ import { migrateRoom, roomKey, saveRoom } from "../../core/rooms.js";
 import { S, gen, room, setRoom } from "../../core/state.js";
 import { KV } from "../../core/storage.js";
 import { $, esc, num, uid } from "../../core/util.js";
-import { FREE_DAILY, freeLeft, isPro, listPrice, qShort, quote } from "../../core/wallet.js";
+import { FREE_DAILY, freeLeft, heartsOf, isPro, listPrice, qShort, quote } from "../../core/wallet.js";
 import { sendTurn, stopGen } from "./generate.js";
 import { cmdKey, updateCmdList } from "./cmdlist.js";
 import { bindStick, renderLog } from "./log.js";
 import { barPct } from "./render.js";
-import { hideSug, toggleSug } from "./suggest.js";
+import { openSearch } from "./search.js";
+import { hideSug, sugLabel, toggleSug } from "./suggest.js";
 import { AI_BADGE, AI_NOTICE, AI_NOTICE_OK, ackAiNotice, aiNoticeNeeded } from "../ai-notice.js";
 import { coverHTML } from "../cover.js";
 import { ICON } from "../icons.js";
@@ -41,39 +43,36 @@ export async function viewChat(id) {
     <header class="chat-head">
       <button class="icon-btn" id="back" aria-label="뒤로">${ICON.back}</button>
       ${coverHTML(c)}
-      <div class="who"><b>${esc(c.title)}</b>` +
-    `<span><small class="ai-badge">${AI_BADGE}</small>${esc(room.opening || "")} · ${esc(room.persona.name)}</span></div>
+      <div class="who"><b>${esc(c.title)}</b><div class="who-sub"><small class="ai-badge">${AI_BADGE}</small>` +
+    `<span class="freecount" id="freeCount"></span><span class="who-op">${esc(room.opening || "")} · ${esc(room.persona.name)}</span></div></div>
       <div class="meter" id="meter"></div>
       <button class="model-chip" id="modelChip" aria-label="AI 모델 선택"></button>
+      <button class="icon-btn" id="findBtn" aria-label="대화 검색">${ICON.search}</button>
       <button class="icon-btn" id="info" aria-label="대화방 관리">${ICON.menu}</button>
     </header>
     <div class="ep-bar" id="epBar" hidden></div>` +
-    (aiNoticeNeeded() ? `<div class="ai-note" id="aiNote"><span>${AI_NOTICE}</span><button class="btn sm" id="aiNoteOk">${AI_NOTICE_OK}</button></div>` : "") +
+    (aiNoticeNeeded()
+      ? `<div class="ai-note" id="aiNote" role="note"><span>${AI_NOTICE}</span><button class="btn sm" id="aiNoteOk">${AI_NOTICE_OK}</button></div>`
+      : "") +
     `<div class="chat-log" id="log"><div class="log-inner" id="logInner"></div><div class="jump-wrap">` +
     `<button class="jump" id="jumpBtn" type="button" hidden>↓ 맨 아래로</button></div></div>
     <div class="composer"><div class="inner">
       <div class="sug-panel" id="sugPanel" hidden></div>
-      <div class="bar2">
-        <button class="chip" id="sugBtn" aria-expanded="false">✦ AI 추천</button>
-        <button class="chip" id="contBtn">이어서 쓰기</button>
-        <span class="spacer"></span><span class="freecount" id="freeCount"></span>
-      </div>
       <div class="cmd-panel" id="cmdPanel" role="listbox" aria-label="명령어" hidden></div>
       <form class="inputrow" id="form">
+        <button class="sugbtn" id="sugBtn" type="button" aria-expanded="false"></button>
         <label class="sr" for="inp">메시지</label>
-        <textarea id="inp" rows="1" maxlength="1500" placeholder="${esc(room.persona.name)}의 행동·대사 입력 (지문은 *별표* 사이에)"></textarea>
+        <textarea id="inp" rows="1" maxlength="1500" placeholder="행동·대사 입력 · // 연출 지시 · ! 명령어"></textarea>
         <button class="stopbtn" id="stopBtn" type="button" hidden>■ 중지</button>
-        <button class="send" id="sendBtn" type="submit" aria-label="보내기"></button>
+        <button class="send" id="sendBtn" type="button"></button>
       </form>
       <div class="hint" id="hint"></div>
     </div></div>
   </div>`;
   $("#back").onclick = () => (history.length > 1 ? history.back() : go("chats"));
   $("#info").onclick = () => openRoomDrawer("main");
+  $("#findBtn").onclick = () => openSearch();
   $("#modelChip").onclick = () => openModelSheet();
-  $("#contBtn").onclick = () => {
-    if (!gen) sendTurn("", { cont: true });
-  };
   $("#sugBtn").onclick = () => toggleSug();
   $("#stopBtn").onclick = () => stopGen();
   // 첫 대화 전 안내를 못 본 채 방에 들어온 사람(이 안내가 생기기 전에 만든 방·방 주소로 바로 들어옴)에게는 머리 아래 띠로 보여 줌 — 창을 띄우지 않음
@@ -83,26 +82,19 @@ export async function viewChat(id) {
       $("#aiNote").remove();
     };
   const inp = $("#inp");
+  let empty = true;
   inp.oninput = () => {
     inp.style.height = "auto";
     inp.style.height = Math.min(160, inp.scrollHeight) + "px";
     updateCmdList(inp);
-  };
-  inp.onkeydown = (e) => {
-    if (cmdKey(e, inp)) return; // ! 명령어 목록이 떠 있으면 ↑↓·Enter·Esc는 목록이 먼저 받음
-    // Enter로 보내기(기본) 또는 Ctrl+Enter로 보내기 — 채팅 설정의 enterSend
-    const send = S.settings.enterSend !== false ? !e.shiftKey : e.ctrlKey || e.metaKey;
-    if (e.key === "Enter" && send && !e.isComposing && e.keyCode !== 229) {
-      e.preventDefault();
-      if (gen) {
-        flashHint("응답을 쓰는 중이에요. 끝나면 보낼 수 있고, 입력은 미리 써 둘 수 있어요.");
-        return;
-      }
-      $("#form").requestSubmit();
+    // 입력이 비었는지가 바뀌면 보내기 버튼의 모양을 바꿈(빈 입력 = 이어서 쓰기)
+    if (!inp.value.trim() !== empty) {
+      empty = !empty;
+      updateComposer();
     }
   };
-  $("#form").onsubmit = async (e) => {
-    e.preventDefault();
+  // 보내기: 명령어(앱 화면형·즉답)는 AI 없이, 그 밖은 한 턴. Enter와 버튼이 같은 길로 옴(오래된 iOS에는 form.requestSubmit이 없어 직접 부름)
+  const submit = async () => {
     if (gen) return;
     const t = inp.value.trim();
     if (!t) return;
@@ -116,6 +108,31 @@ export async function viewChat(id) {
       inp.value = "";
       inp.oninput();
     }
+  };
+  // 보내기 버튼: 입력이 있으면 보내고, 비어 있으면 '이어서 쓰기'(버튼의 글과 모양이 그렇게 바뀌어 있음 — updateComposer).
+  // 답이 막 끝난 직후의 누름은 이어서 쓰기로 받지 않음(보내려던 손이 한 번 더 닿아 값이 나가지 않게). Enter는 빈 입력에서 아무 일도 하지 않음
+  $("#sendBtn").onclick = () => {
+    if (gen) return;
+    if (inp.value.trim()) return submit();
+    if (Date.now() < contLock) return;
+    sendTurn("", { cont: true });
+  };
+  inp.onkeydown = (e) => {
+    if (cmdKey(e, inp)) return; // ! 명령어 목록이 떠 있으면 ↑↓·Enter·Esc는 목록이 먼저 받음
+    // Enter로 보내기(기본) 또는 Ctrl+Enter로 보내기 — 채팅 설정의 enterSend
+    const send = S.settings.enterSend !== false ? !e.shiftKey : e.ctrlKey || e.metaKey;
+    if (e.key === "Enter" && send && !e.isComposing && e.keyCode !== 229) {
+      e.preventDefault();
+      if (gen) {
+        flashHint("응답을 쓰는 중이에요. 끝나면 보낼 수 있고, 입력은 미리 써 둘 수 있어요.");
+        return;
+      }
+      submit();
+    }
+  };
+  $("#form").onsubmit = (e) => {
+    e.preventDefault();
+    submit();
   };
   bindStick($("#log"));
   renderLog(true);
@@ -156,6 +173,9 @@ function replyNow(t, cmd) {
   renderLog(true);
 }
 let hintTimer = null;
+/* '이어서 쓰기'를 받지 않는 시각(답이 막 끝난 직후)과 직전에 응답 중이었는지 — updateComposer가 응답이 끝나는 순간을 잡음 */
+let contLock = 0,
+  wasGen = false;
 export function flashHint(msg) {
   const h = $("#hint");
   if (!h) return;
@@ -174,36 +194,56 @@ export function updateComposer() {
     m = MODELS[room.set.model];
   const send = $("#sendBtn"),
     stop = $("#stopBtn");
+  if (wasGen && !gen) contLock = Date.now() + 700; // 답이 막 끝남 — 잠깐은 빈 입력의 누름을 이어서 쓰기로 받지 않음
+  wasGen = !!gen;
   send.disabled = !!gen;
   stop.hidden = !gen;
-  send.innerHTML = `${ICON.send}<small>${qShort(q)}</small>`;
-  send.title = q.type === "heart" ? `이번 턴에 하트 ${q.n}개가 사용돼요` : q.type === "free" ? "오늘의 무료 턴으로 보내요" : "PLUS 무제한";
-  $("#contBtn").disabled = !!gen;
-  $("#sugBtn").disabled = !!gen;
+  // 보내기 버튼은 입력이 비어 있으면 '이어서 쓰기'가 됨 — 글과 모양(.cont)이 달라 무엇을 하는지, 값이 얼마인지 누르기 전에 보임
+  const cont = !gen && !$("#inp").value.trim();
+  send.classList.toggle("cont", cont);
+  send.innerHTML = (cont ? "이어서" : ICON.send) + `<small>${qShort(q)}</small>`;
+  send.setAttribute("aria-label", cont ? "이어서 쓰기" : "보내기");
+  // 누르기 전에 값이 보이게: 보내기 버튼의 값에는 추천 자동 받기(q.sug)가 더해져 있고, 추천 버튼은 저장된 추천이 없을 때만 값을 보임
+  // 설명 글은 풀어 씀 — 버튼의 '무료+♥1'만 보면 '무료'가 먼저 읽히므로(법률 세션 권고, docs/legal/ui-copy.md §3)
+  const sugNote = q.sug ? ` · 답변 추천 자동 받기로 하트 ${q.sug}개가 사용돼요` : "";
+  send.title =
+    (cont ? "입력 없이 이어서 쓰기 — " : "") +
+    (q.type === "heart"
+      ? `이번 턴에 하트 ${heartsOf(q)}개가 사용돼요` + (q.sug ? ` · 답변 추천 자동 받기 ♥${q.sug} 포함` : "")
+      : q.type === "free"
+        ? (q.sug ? "이번 턴은 무료 턴이에요" : "오늘의 무료 턴으로 보내요") + sugNote
+        : (q.sug ? "이번 턴은 PLUS로 보내요" : "PLUS 무제한") + sugNote);
+  // 키 안내는 입력 칸의 title로 — 방 안의 표시 설정에서 'Enter로 보내기'를 바꾸면 여기서 같이 바뀜
+  $("#inp").title = S.settings.enterSend !== false ? "Enter 전송 · Shift+Enter 줄바꿈" : "Ctrl+Enter 전송 · Enter 줄바꿈";
+  const sug = $("#sugBtn");
+  sug.disabled = !!gen;
+  sug.innerHTML = sugLabel(room);
+  sug.classList.toggle("auto", !!room.set.autoSug);
+  sug.title = room.set.autoSug
+    ? q.sug
+      ? `답변 추천 자동 받기 켜짐 — 답마다 ♥${q.sug}이 더 나가요`
+      : "답변 추천 자동 받기 켜짐 — 하트가 모자라 이번 턴은 추천 없이 보내요"
+    : "";
   const chip = $("#modelChip");
   if (chip) chip.innerHTML = `${m.name} <small>${qShort(q)}/턴</small> ▾`; // 좁은 화면에서는 이름만(CSS) — 가격은 보내기 버튼에
   const fc = $("#freeCount");
   if (fc) {
     const left = freeLeft();
     fc.className = "freecount" + (!isPro() && left <= 3 ? " low" : "");
+    // 머리의 하트와 오늘 남은 무료 턴 — 하트를 앞에 둬서, 자리가 모자라면 뒤의 무료 턴부터 줄어듦(CSS)
+    fc.title = isPro() ? "PLUS" : `오늘 무료 턴 ${left} / ${FREE_DAILY}`;
     fc.innerHTML = isPro()
       ? `<span class="badge-pro">PLUS</span> ♥ <b>${num(S.wallet.hearts)}</b>`
-      : `무료 <b>${left}</b>/${FREE_DAILY}턴 · ♥ <b>${num(S.wallet.hearts)}</b>`;
+      : `♥ <b>${num(S.wallet.hearts)}</b> · 무료 <b>${left}</b>턴`;
   }
+  // 안내 줄은 알릴 것이 있을 때만 보임(비면 CSS가 감춤): 잠깐 뜨는 안내(flashHint — 명령어 도움말·응답 중 입력)와 무료 턴이 얼마 안 남았을 때.
+  // 늘 보이던 '// 연출 지시 · ! 명령어' 안내는 입력 칸의 흐린 글로, 키 안내는 입력 칸의 title로 옮김
   const h = $("#hint");
-  if (h && !hintTimer) {
-    if (gen) h.textContent = "응답을 쓰는 중이에요 · 다음 입력은 미리 써 둘 수 있어요 · Esc 또는 ■ 중지";
-    else if (q.type === "free" && freeLeft() <= 3)
-      h.textContent = `오늘 무료 턴이 ${freeLeft()}번 남았어요. 다 쓰면 라이트 모델은 턴당 ♥${listPrice("lite", room.set.len, room.set.mem)}이에요.`;
-    else
-      h.textContent =
-        (touchOnly() ? "" : (S.settings.enterSend !== false ? "Enter 전송 · Shift+Enter 줄바꿈" : "Ctrl+Enter 전송 · Enter 줄바꿈") + " · ") +
-        "// 연출 지시 · ! 명령어"; // 터치 기기에서는 키 안내를 빼고
-  }
-}
-/* 키보드 없는 터치 기기(휴대폰)인지 — 입력창 아래 키 안내를 뺄 때 */
-function touchOnly() {
-  return typeof matchMedia === "function" && matchMedia("(hover: none) and (pointer: coarse)").matches;
+  if (h && !hintTimer)
+    h.textContent =
+      !gen && q.type === "free" && freeLeft() <= 3
+        ? `오늘 무료 턴이 ${freeLeft()}번 남았어요. 다 쓰면 라이트 모델은 턴당 ♥${listPrice("lite", room.set.len, room.set.mem)}이에요.`
+        : "";
 }
 export function lastAi(r) {
   for (let i = r.msgs.length - 1; i >= 0; i--) if (r.msgs[i].role === "ai") return r.msgs[i];
