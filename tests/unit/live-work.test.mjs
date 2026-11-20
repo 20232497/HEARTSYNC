@@ -51,9 +51,9 @@ test("latestWork: 새 방('처음부터 다시')은 방 사본이 아니라 최�
 });
 
 /* 지킴이: '방의 작품'은 liveWork·latestWork로만 찾는다. getChar를 직접 부르거나 작품 목록(ORIGINALS)을 들여오는 모듈은 아래 표의 것뿐 —
-   방이 없는 화면(상세·도감·홈·로그인 뒤 돌아갈 곳)과, 예전 방을 옮길 때 최신 출연진의 코드를 보는 core/rooms.js의 upgradeCodes. 표에 없는 모듈이 쓰면 실패 */
+   방이 없는 화면(상세·도감·홈·왼쪽 메뉴의 최근 본 작품·로그인 뒤 돌아갈 곳)과, 예전 방을 옮길 때 최신 출연진의 코드를 보는 core/rooms.js의 upgradeCodes. 표에 없는 모듈이 쓰면 실패 */
 const ALLOW = {
-  "getChar(": { "core/character.js": 3, "core/rooms.js": 1, "ui/detail.js": 1, "ui/login.js": 1 },
+  "getChar(": { "core/character.js": 3, "core/rooms.js": 1, "ui/detail.js": 1, "ui/login.js": 1, "ui/shell.js": 1 },
   "ORIGINALS": { "content/index.js": true, "core/character.js": true, "ui/codex.js": true, "ui/detail.js": true, "ui/home.js": true }
 };
 test("지킴이: getChar 호출과 ORIGINALS 사용은 허용한 모듈에만(방의 작품은 liveWork·latestWork로)", () => {

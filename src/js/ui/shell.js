@@ -1,6 +1,9 @@
-/* 라우팅(go·route)·레일·탭바·상단바·지갑 칩. 화면은 진입점(main.js·admin.js)이 registerViews·setNavs로 등록한다 — 셸은 어떤 화면이 있는지 모른다.
-   아래층의 "rooms"·"wallet"·"route" 이벤트를 받아 레일·칩·화면을 다시 그림 */
+/* 라우팅(go·route)·레일(메뉴·최근 대화·최근 본 작품)·탭바·상단바·지갑 칩. 화면은 진입점(main.js·admin.js)이 registerViews·setNavs로 등록한다 — 셸은 어떤 화면이 있는지 모른다.
+   아래층의 "rooms"·"wallet"·"settings"·"route" 이벤트를 받아 레일·칩·화면을 다시 그림 */
+import { audOK } from "../core/audience.js";
+import { getChar } from "../core/character.js";
 import { on } from "../core/events.js";
+import { recentIds } from "../core/shelf.js";
 import { S, gen } from "../core/state.js";
 import { isAdmin } from "../core/target.js";
 import { $, $$, esc, num } from "../core/util.js";
@@ -42,6 +45,7 @@ export function route() {
   const view = VIEWS[base] || VIEWS.home;
   setNav(base === "c" ? "home" : base === "r" ? "chats" : base === "login" || base === "help" ? "me" : VIEWS[base] ? base : "home");
   const out = view ? view(arg) : undefined;
+  renderRailViewed(); // 상세를 열면 최근 본 작품이 바뀜(touchRecent)
   if (moved) v.scrollTop = h === "home" ? homeY : 0; // 새 화면은 맨 위부터, 긴 홈은 작품을 보고 돌아오면 보던 자리
   return out;
 }
@@ -51,11 +55,13 @@ export function renderShell() {
     LOGO +
     (isAdmin() ? `<span class="pill" style="margin:-8px 0 8px 14px;justify-self:start">관리자 도구</span>` : "") +
     NAVS.map(([k, l, i]) => `<button class="nav" data-nav="${k}">${ICON[i]}<span>${l}</span></button>`).join("") +
-    `<h4>최근 대화</h4><div id="railRecent"></div><div class="rail-foot"><button class="wallet" id="railWallet" aria-label="내 재화, 스토어로 이동"></button></div>`;
+    `<h4>최근 대화</h4><div id="railRecent"></div><div id="railViewed"></div>` +
+    `<div class="rail-foot"><button class="wallet" id="railWallet" aria-label="내 재화, 스토어로 이동"></button></div>`;
   $("#tabbar").innerHTML = NAVS.map(([k, l, i]) => `<button data-nav="${k}">${ICON[i]}<span>${l}</span></button>`).join("");
   $$("[data-nav]").forEach((b) => (b.onclick = () => go(b.dataset.nav)));
   $("#railWallet").onclick = () => go("store");
   renderRailRecent();
+  renderRailViewed();
   renderWalletChips();
 }
 function setNav(k) {
@@ -70,6 +76,20 @@ export function renderRailRecent() {
       .map((r) => `<button class="recent" data-room="${esc(r.id)}">${coverHTML(r)}<span>${esc(r.name)}</span></button>`)
       .join("") || `<p class="note" style="padding:0 12px">아직 대화가 없어요.</p>`;
   $$("[data-room]", el).forEach((b) => (b.onclick = () => go("r-" + b.dataset.room)));
+  IMG.hydrate(el);
+}
+/** 왼쪽 메뉴의 '최근 본 작품' — 작게 네 개까지(관심있는 대화로 거름, 없으면 제목도 숨김). 홈의 줄을 여기로 옮김(2026-11-21 사용자 결정) — 좁은 화면에는 레일이 없어 보이지 않음 */
+export function renderRailViewed() {
+  const el = $("#railViewed");
+  if (!el) return;
+  const list = recentIds()
+    .map((id) => getChar(id))
+    .filter((c) => c && audOK(c))
+    .slice(0, 4);
+  el.innerHTML = list.length
+    ? `<h4>최근 본 작품</h4>` + list.map((c) => `<button class="recent" data-char="${esc(c.id)}">${coverHTML(c)}<span>${esc(c.name)}</span></button>`).join("")
+    : "";
+  $$("[data-char]", el).forEach((b) => (b.onclick = () => go("c-" + b.dataset.char)));
   IMG.hydrate(el);
 }
 function walletHTML() {
@@ -92,5 +112,7 @@ export function bindGo(root) {
   $$("[data-go]", root).forEach((b) => (b.onclick = () => go(b.dataset.go)));
 }
 on("rooms", renderRailRecent);
+on("rooms", renderRailViewed); // 계정에서 받은 뒤(reloadFromCloud)에도 — 대화방 안에서는 "route" 알림이 없어 이 알림으로 받음
+on("settings", renderRailViewed); // 관심있는 대화를 바꾸면 다시 거름
 on("wallet", renderWalletChips);
 on("route", route);

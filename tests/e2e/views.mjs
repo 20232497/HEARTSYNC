@@ -243,7 +243,8 @@ for (const [dev, engine, opts] of [
       )
         errs.push("설정 상한이 상수와 다름: " + JSON.stringify(l));
     }
-    // 내 서재 — 상세의 찜 버튼 → 홈의 '찜한 작품' 줄, 상세를 열면 '최근 본 작품' 줄, 같은 홈 줄의 다른 작품(줄이 있는 작품만), 관심있는 대화로 거름, 찜을 풀면 줄이 사라짐
+    // 내 서재 — 상세의 찜 버튼 → 홈의 '찜한 작품' 줄, 상세를 열면 왼쪽 메뉴의 '최근 본 작품'(홈에는 줄이 없음 — 좁은 화면에서는 레일이 숨지만 DOM에는 있음),
+    // 같은 홈 줄의 다른 작품(줄이 있는 작품만), 관심있는 대화로 거름, 찜을 풀면 줄이 사라짐
     res.shelf = await p.evaluate(async () => {
       const nap = (ms) => new Promise((r) => setTimeout(r, ms)),
         was = { hash: location.hash, shelf: JSON.stringify(S.shelf), aud: S.settings.audience };
@@ -253,9 +254,11 @@ for (const [dev, engine, opts] of [
           const h = document.querySelector(sel);
           return h ? [...h.nextElementSibling.querySelectorAll("[data-char]")].map((b) => b.dataset.char) : null;
         };
+      const railIds = () => [...document.querySelectorAll("#railViewed [data-char]")].map((b) => b.dataset.char);
       S.shelf = mergeShelf();
       S.settings.audience = "all";
       S.cat = "전체";
+      S.kind = "all";
       S.q = "";
       location.hash = "c-" + solo.id;
       await nap(300);
@@ -272,11 +275,14 @@ for (const [dev, engine, opts] of [
       location.hash = "home";
       await nap(300);
       const likes = ids("#rowLikes"),
-        recent = ids("#rowRecent");
+        recent = railIds(),
+        homeRecent = !!document.querySelector("#rowRecent");
       S.settings.audience = audOf(c) === "f" ? "m" : "f";
+      emit("settings"); // 설정을 저장하면 나는 알림 — 왼쪽 메뉴가 이것을 받아 다시 거름(시험은 저장하지 않으려고 알림만)
       viewHome();
-      const other = [ids("#rowLikes"), (ids("#rowRecent") || []).includes(c.id)];
+      const other = [ids("#rowLikes"), railIds().includes(c.id)];
       S.settings.audience = "all";
+      emit("settings");
       location.hash = "c-" + c.id;
       await nap(300);
       const still = $("#like").getAttribute("aria-pressed");
@@ -289,7 +295,7 @@ for (const [dev, engine, opts] of [
       await nap(400);
       S.shelf = JSON.parse(was.shelf);
       KV.setLocal("shelf", S.shelf); // 돌아간 화면이 상세면 최근 본에 적히므로 그 뒤에 되돌림
-      return { soloNear, near, wantNear, off, on, label, saved, likes, recent, want: [c.id, solo.id], other, still, gone };
+      return { soloNear, near, wantNear, off, on, label, saved, likes, recent, homeRecent, want: [c.id, solo.id], other, still, gone };
     });
     {
       const s = res.shelf;
@@ -303,12 +309,102 @@ for (const [dev, engine, opts] of [
         !s.saved ||
         JSON.stringify(s.likes) !== JSON.stringify([s.want[0]]) ||
         JSON.stringify(s.recent) !== JSON.stringify(s.want) ||
+        s.homeRecent ||
         s.other[0] !== null ||
         s.other[1] ||
         s.still !== "true" ||
         s.gone !== null
       )
         errs.push("내 서재(찜·최근 본·같은 줄)가 다름: " + JSON.stringify(s));
+    }
+    // 홈 구성 — 추천작 → 둘러보기 → 구역(기획 줄·장르별 줄) 순서, 형식 고르기(전체·에피소드·자유형)는 구역만 거르고 추천작은 그대로,
+    // 맞는 작품이 없으면 조건을 푸는 버튼, 장르를 고르면 그 장르의 격자 하나, 최근 대화·최근 본 작품 줄은 홈에 없음
+    res.home = await p.evaluate(async () => {
+      const nap = (ms) => new Promise((r) => setTimeout(r, ms)),
+        was = { hash: location.hash, aud: S.settings.audience };
+      const secs = () =>
+          $$("#view h2.sec")
+            .map((h) => h.firstChild.textContent.trim())
+            .filter((t) => t !== "찜한 작품"),
+        cards = () => Array.from(new Set($$("#view .row-scroll .card, #view .grid .card").map((b) => b.dataset.char))).sort(),
+        ids = (f) =>
+          ORIGINALS.filter(f)
+            .map((c) => c.id)
+            .sort(),
+        has = (f) => ORIGINALS.some(f);
+      const reset = () => {
+        S.settings.audience = "all";
+        S.cat = "전체";
+        S.kind = "all";
+        S.q = "";
+        viewHome();
+      };
+      location.hash = "home";
+      await nap(300);
+      reset();
+      const order = secs(),
+        all = cards(),
+        hero = $$(".hero-card").length,
+        noRecent = !$("#view .cont") && !$("#rowRecent");
+      $("#view [data-kind=ep]").click();
+      const ep = cards(),
+        epHero = $$(".hero-card").length,
+        epOn = $$("#view [data-kind].on").map((b) => b.dataset.kind + ":" + b.getAttribute("aria-pressed"));
+      $("#view [data-kind=free]").click();
+      const free = cards();
+      // 에피소드형이 하나도 없는 쪽(여성향·남성향)이 있으면 그쪽에서 '에피소드'를 골라 빈 화면을 봄
+      const lone = ["f", "m"].find((a) => !has((c) => c.episode && audOf(c) === a));
+      let none = null;
+      if (lone) {
+        S.settings.audience = lone;
+        S.kind = "ep";
+        viewHome();
+        none = { empty: !!$("#view .empty"), btn: !!$("#view .empty [data-kind=all]") };
+        if (none.btn) $("#view .empty [data-kind=all]").click();
+        none.after = S.kind;
+        none.back = cards().length;
+      }
+      reset();
+      const cat = CATS.find((k) => has((c) => c.cat === k));
+      $$("#view [data-cat]")
+        .find((b) => b.dataset.cat === cat)
+        .click();
+      const one = { secs: secs(), cards: cards(), grid: $$("#view .grid").length, rows: $$("#view .row-scroll").length };
+      reset();
+      S.settings.audience = was.aud;
+      location.hash = was.hash;
+      await nap(300);
+      return {
+        order,
+        all,
+        hero,
+        noRecent,
+        ep,
+        epHero,
+        epOn,
+        free,
+        none,
+        one,
+        want: {
+          order: ["추천작", "둘러보기"]
+            .concat(HOME_ROWS.filter((w) => has((c) => c.row === w.key)).map((w) => w.title))
+            .concat(CATS.filter((k) => has((c) => c.cat === k))),
+          all: ids(() => true),
+          ep: ids((c) => c.episode),
+          free: ids((c) => !c.episode),
+          one: { secs: ["추천작", "둘러보기", cat], cards: ids((c) => c.cat === cat), grid: 1, rows: 0 }
+        }
+      };
+    });
+    {
+      const h = res.home,
+        j = JSON.stringify;
+      if (j(h.order) !== j(h.want.order) || !h.noRecent) errs.push("홈 구역 순서가 다름(또는 최근 줄이 남음): " + j([h.order, h.noRecent]));
+      if (h.hero !== 4 || h.epHero !== 4) errs.push("추천작이 4개가 아니거나 형식 고르기에 따라 바뀜: " + j([h.hero, h.epHero]));
+      if (j(h.all) !== j(h.want.all) || j(h.ep) !== j(h.want.ep) || j(h.free) !== j(h.want.free) || j(h.epOn) !== j(["ep:true"]))
+        errs.push("형식 고르기(전체·에피소드·자유형)가 다름: " + j([h.all.length, h.ep, h.free.length, h.epOn]));
+      if (h.none && (!h.none.empty || !h.none.btn || h.none.after !== "all" || !h.none.back)) errs.push("맞는 작품이 없을 때의 안내가 다름: " + j(h.none));
+      if (j(h.one) !== j(h.want.one)) errs.push("장르를 고른 화면이 다름: " + j(h.one));
     }
     // 작품 메타 한 줄 — 가짜 데이터로 틀만: 제작자 기본값, 공개일·독점 배지
     res.meta = await p.evaluate(() => ({

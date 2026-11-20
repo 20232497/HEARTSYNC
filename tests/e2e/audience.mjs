@@ -35,7 +35,7 @@ for (const [dev, engine] of targets) {
         sheetGone: !document.querySelector(".overlay"),
         hero: [...document.querySelectorAll(".hero-card")].map((b) => b.dataset.char),
         rows: [...document.querySelectorAll("h2.sec")].map((h) => h.firstChild.textContent.trim()),
-        grid: [...document.querySelectorAll(".grid .card")].map((b) => b.dataset.char),
+        zones: [...document.querySelectorAll(".row-scroll .card")].map((b) => b.dataset.char),
         overflowX: document.documentElement.scrollWidth - innerWidth
       }));
     res.f = await home();

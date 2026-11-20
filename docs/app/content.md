@@ -28,4 +28,5 @@
 
 ## 관심있는 대화
 
-- 관심있는 대화: S.settings.audience = all·m(여성 캐릭터와의 대화)·f(남성 캐릭터와의 대화). 작품의 aud(폴더), 없으면 guessAud(출연진 외모 성별). audOf/audOK로 홈의 대표 작품·가로 줄·오리지널을 거름. 처음 시작할 때 askAud → audSheet(true)(로그인 페이지가 있으면 로그인·둘러보기 다음), 홈·MY → 설정에 audSegHTML()
+- 관심있는 대화: S.settings.audience = all·m(여성 캐릭터와의 대화)·f(남성 캐릭터와의 대화). 작품의 aud(폴더), 없으면 guessAud(출연진 외모 성별). audOf/audOK로 홈의 추천작·구역과 왼쪽 메뉴의 최근 본 작품을 거름. 처음 시작할 때 askAud → audSheet(true)(로그인 페이지가 있으면 로그인·둘러보기 다음), 홈·MY → 설정에 audSegHTML()
+- 홈 구성(2026-11-21 사용자 결정, ui/home.js viewHome): **추천작**(.hero — order가 앞선 네 작품, 전체면 여성향·남성향을 번갈아) → **둘러보기**(관심있는 대화 audSegHTML · 형식 고르기 HOME_KINDS 전체·에피소드·자유형 채팅 = S.kind, 저장하지 않음 — 에피소드형은 작품에 episode가 있는 것 · 장르 칩 S.cat) → **구역**. 고른 장르·검색어가 없으면 구역은 가로 줄(rowHTML)로 찜한 작품(#rowLikes) → 기획 줄(HOME_ROWS) → 장르별 줄(CATS 순서, #rowCat<n>), 빈 구역은 빠짐. 장르를 고르거나 찾는 중이면 격자 하나. 형식 고르기는 구역만 거르고 추천작은 그대로. 맞는 작품이 없으면 조건을 푸는 버튼([data-kind=all]·[data-aud=all]). '이어서 대화하기'·'최근 본 작품' 줄은 홈에 두지 않음 — 왼쪽 메뉴의 최근 대화·최근 본 작품(ui/shell.js renderRailRecent·renderRailViewed)으로, 좁은 화면에는 레일이 없어 대화 탭으로(최근 본 작품은 좁은 화면에서 안 보임)

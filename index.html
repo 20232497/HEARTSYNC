@@ -187,7 +187,8 @@ h2.sec small, h1.sec small { font-family:var(--sans); font-size:12.5px; color:va
 #loerr:empty { display:none; }
 .acct-row { display:flex; align-items:center; gap:8px; flex-wrap:wrap; min-width:0; }
 .acct-row b { overflow-wrap:anywhere; }
-.aud-seg button { min-width:0; padding:8px 4px; }
+.aud-seg button, .kind-seg button { min-width:0; padding:8px 4px; }
+.kind-seg { margin-top:8px; }
 .cat { position:absolute; top:8px; right:8px; z-index:3; font-size:10.5px; font-weight:600; background:rgba(0,0,0,.42); backdrop-filter:blur(6px); padding:2px 8px; border-radius:999px; color:#fff; }
 .cont { display:grid; grid-template-columns:repeat(auto-fill, minmax(260px,1fr)); gap:10px; }
 .cont > button { display:flex; gap:12px; align-items:center; text-align:left; padding:10px; border-radius:14px; border:1px solid var(--line); background:var(--surface); min-width:0; }
@@ -960,6 +961,7 @@ const S = {
     memCfg: { auto: true, every: 5, limit: LIMITS.memory, guide: "auto", custom: "" }
   },
   cat: "전체",
+  kind: "all",
   q: ""
 };
 let room = null,
@@ -6383,7 +6385,7 @@ async function loadMine(box) {
   );
   runExt("help", "ask", box, list);
 }
-/* ── src/js/ui/home.js — 홈: 대표 작품·이어서 대화하기·내 서재 줄(찜한 작품·최근 본 작품)·가로 줄·둘러보기, 관심있는 대화 고르기 */
+/* ── src/js/ui/home.js — 홈: 추천작 → 둘러보기(관심있는 대화·에피소드와 자유형·장르 고르기) → 구역(찜한 작품·기획 줄·장르별 줄), 관심있는 대화 고르기 */
 function cardHTML(c) {
   const body = (c.cast || []).filter((x) => !x.of).length;
   const bits = [c.episode ? "에피소드" : "", c.world_mode && body > 1 ? `👥 ${body}인 · 🎬 ${(c.openings || []).length}` : ""].filter(Boolean);
@@ -6432,14 +6434,53 @@ function rowHTML(title, sub, list, id) {
         `<div class="row-scroll">${list.map(cardHTML).join("")}</div>`
     : "";
 }
+const HOME_KINDS = {
+  all: { name: "전체", desc: "두 가지 모두" },
+  ep: { name: "에피소드", desc: "끝이 있는 이야기" },
+  free: { name: "자유형 채팅", desc: "끝이 없는 대화" }
+};
+const kindOK = (c) => (S.kind === "ep" ? !!c.episode : S.kind === "free" ? !c.episode : true);
 function viewHome() {
   const v = $("#view");
   const match = (c) =>
     (S.cat === "전체" || c.cat === S.cat) && (!S.q || [c.name, c.title, c.oneLiner, ...(c.tags || [])].join(" ").toLowerCase().includes(S.q.toLowerCase()));
   const pool = ORIGINALS.filter(audOK),
-    originals = pool.filter(match);
+    shown = pool.filter(kindOK),
+    found = shown.filter(match);
   const hidden = audience() !== "all" && ORIGINALS.length > pool.length;
-  const shelfRow = (ids) => ids.map((id) => pool.find((c) => c.id === id)).filter(Boolean);
+  const zones =
+    !S.q && S.cat === "전체"
+      ? rowHTML(
+          "찜한 작품",
+          "",
+          likedIds()
+            .map((id) => shown.find((c) => c.id === id))
+            .filter(Boolean),
+          "rowLikes"
+        ) +
+        HOME_ROWS.map((w) =>
+          rowHTML(
+            w.title,
+            w.sub,
+            shown.filter((c) => c.row === w.key)
+          )
+        ).join("") +
+        CATS.map((k, i) =>
+          rowHTML(
+            k,
+            "",
+            shown.filter((c) => c.cat === k),
+            "rowCat" + i
+          )
+        ).join("")
+      : found.length
+        ? `<h2 class="sec">${S.q ? "검색 결과" : esc(S.cat)} <small>${found.length}개</small></h2><div class="grid">${found.map(cardHTML).join("")}</div>`
+        : "";
+  const empty =
+    `<div class="empty">조건에 맞는 작품이 없어요.` +
+    (S.kind !== "all" ? `<br><button class="btn sm" data-kind="all">에피소드·자유형 모두 보기</button>` : "") +
+    (hidden ? `<br>지금은 ${AUDS[audience()].name} 작품만 보여요.<br><button class="btn sm" data-aud="all">전체 보기</button>` : "") +
+    `</div>`;
   const hero =
     audience() !== "all"
       ? pool.slice(0, 4)
@@ -6457,8 +6498,8 @@ function viewHome() {
     ${topbar(`<label class="search">${ICON.search}<span class="sr">캐릭터 검색</span><input id="q" placeholder="캐릭터, 작품, 태그 검색" value="${esc(S.q)}"></label>`)}
     ${!hasClaudeKey() ? `<div class="engine-warn">AI 연결이 아직 없어요. <b>MY → 설정</b>에서 Anthropic API 키를 넣어 주세요.</div>` : ""}
     ${
-      !S.q
-        ? `<div class="hero">${hero
+      !S.q && hero.length
+        ? `<h2 class="sec">추천작</h2><div class="hero">${hero
             .map(
               (c) => `
       <button class="hero-card" data-char="${esc(c.id)}">${coverHTML(c, "", { vt: true })}
@@ -6468,52 +6509,32 @@ function viewHome() {
             .join("")}</div>`
         : ""
     }
-    ${
-      S.rooms.length && !S.q
-        ? `<h2 class="sec">이어서 대화하기</h2><div class="cont">${S.rooms
-            .slice(0, 4)
-            .map(
-              (r) =>
-                `
-      <button data-room="${esc(r.id)}">${coverHTML(r)}<span class="x"><b>${esc(r.name)}</b><span>${esc(r.last)}</span></span>` +
-                `<span class="note">${ago(r.at)}</span></button>`
-            )
-            .join("")}</div>`
-        : ""
-    }
-    ${
-      !S.q && S.cat === "전체"
-        ? rowHTML("찜한 작품", "", shelfRow(likedIds()), "rowLikes") +
-          rowHTML("최근 본 작품", "", shelfRow(recentIds()), "rowRecent") +
-          HOME_ROWS.map((w) =>
-            rowHTML(
-              w.title,
-              w.sub,
-              pool.filter((c) => c.row === w.key)
-            )
-          ).join("")
-        : ""
-    }
-    <h2 class="sec">둘러보기 <small>관심있는 대화</small></h2>
+    <h2 class="sec">둘러보기 <small>관심있는 대화 · 이야기 형식 · 장르</small></h2>
     ${audSegHTML()}
+    <div class="seg kind-seg">${Object.keys(HOME_KINDS)
+      .map(
+        (k) =>
+          `<button type="button" data-kind="${k}" class="${S.kind === k ? "on" : ""}" aria-pressed="${S.kind === k}">` +
+          `${HOME_KINDS[k].name}<small>${HOME_KINDS[k].desc}</small></button>`
+      )
+      .join("")}</div>
     <div class="chips" style="margin-top:10px">${["전체", ...CATS]
       .map((c) => `<button class="chip ${S.cat === c ? "on" : ""}" ` + `data-cat="${c}">${c}</button>`)
       .join("")}</div>
-    <h2 class="sec">HEART SYNC 오리지널 <small>에디터가 직접 만든 작품</small></h2>
-    ${
-      originals.length
-        ? `<div class="grid">${originals.map(cardHTML).join("")}</div>`
-        : `<div class="empty">조건에 맞는 오리지널 작품이 없어요.${
-            hidden ? `<br>지금은 ${AUDS[audience()].name} 작품만 보여요.` + `<br><button class="btn sm" data-aud="all">전체 보기</button>` : ""
-          }</div>`
-    }
+    ${zones || empty}
   </div>`;
   $$("[data-char]", v).forEach((b) => (b.onclick = () => go("c-" + b.dataset.char)));
-  $$("[data-room]", v).forEach((b) => (b.onclick = () => go("r-" + b.dataset.room)));
   $$("[data-cat]", v).forEach(
     (b) =>
       (b.onclick = () => {
         S.cat = b.dataset.cat;
+        viewHome();
+      })
+  );
+  $$("[data-kind]", v).forEach(
+    (b) =>
+      (b.onclick = () => {
+        S.kind = HOME_KINDS[b.dataset.kind] ? b.dataset.kind : "all";
         viewHome();
       })
   );
@@ -7906,7 +7927,7 @@ async function generate(target, q, direction = "", isEdit = false) {
 function stopGen() {
   if (gen) gen.ctl.abort();
 }
-/* ── src/js/ui/shell.js — 라우팅(go·route)·레일·탭바·상단바·지갑 칩 */
+/* ── src/js/ui/shell.js — 라우팅(go·route)·레일(메뉴·최근 대화·최근 본 작품)·탭바·상단바·지갑 칩 */
 const VIEWS = {};
 let NAVS = [];
 function registerViews(map) {
@@ -7936,6 +7957,7 @@ function route() {
   const view = VIEWS[base] || VIEWS.home;
   setNav(base === "c" ? "home" : base === "r" ? "chats" : base === "login" || base === "help" ? "me" : VIEWS[base] ? base : "home");
   const out = view ? view(arg) : undefined;
+  renderRailViewed();
   if (moved) v.scrollTop = h === "home" ? homeY : 0;
   return out;
 }
@@ -7945,11 +7967,13 @@ function renderShell() {
     LOGO +
     (isAdmin() ? `<span class="pill" style="margin:-8px 0 8px 14px;justify-self:start">관리자 도구</span>` : "") +
     NAVS.map(([k, l, i]) => `<button class="nav" data-nav="${k}">${ICON[i]}<span>${l}</span></button>`).join("") +
-    `<h4>최근 대화</h4><div id="railRecent"></div><div class="rail-foot"><button class="wallet" id="railWallet" aria-label="내 재화, 스토어로 이동"></button></div>`;
+    `<h4>최근 대화</h4><div id="railRecent"></div><div id="railViewed"></div>` +
+    `<div class="rail-foot"><button class="wallet" id="railWallet" aria-label="내 재화, 스토어로 이동"></button></div>`;
   $("#tabbar").innerHTML = NAVS.map(([k, l, i]) => `<button data-nav="${k}">${ICON[i]}<span>${l}</span></button>`).join("");
   $$("[data-nav]").forEach((b) => (b.onclick = () => go(b.dataset.nav)));
   $("#railWallet").onclick = () => go("store");
   renderRailRecent();
+  renderRailViewed();
   renderWalletChips();
 }
 function setNav(k) {
@@ -7964,6 +7988,19 @@ function renderRailRecent() {
       .map((r) => `<button class="recent" data-room="${esc(r.id)}">${coverHTML(r)}<span>${esc(r.name)}</span></button>`)
       .join("") || `<p class="note" style="padding:0 12px">아직 대화가 없어요.</p>`;
   $$("[data-room]", el).forEach((b) => (b.onclick = () => go("r-" + b.dataset.room)));
+  IMG.hydrate(el);
+}
+function renderRailViewed() {
+  const el = $("#railViewed");
+  if (!el) return;
+  const list = recentIds()
+    .map((id) => getChar(id))
+    .filter((c) => c && audOK(c))
+    .slice(0, 4);
+  el.innerHTML = list.length
+    ? `<h4>최근 본 작품</h4>` + list.map((c) => `<button class="recent" data-char="${esc(c.id)}">${coverHTML(c)}<span>${esc(c.name)}</span></button>`).join("")
+    : "";
+  $$("[data-char]", el).forEach((b) => (b.onclick = () => go("c-" + b.dataset.char)));
   IMG.hydrate(el);
 }
 function walletHTML() {
@@ -7986,6 +8023,8 @@ function bindGo(root) {
   $$("[data-go]", root).forEach((b) => (b.onclick = () => go(b.dataset.go)));
 }
 on("rooms", renderRailRecent);
+on("rooms", renderRailViewed);
+on("settings", renderRailViewed);
 on("wallet", renderWalletChips);
 on("route", route);
 /* ── src/js/ui/start-sheet.js — 새 대화 시작 창: 시작 상황과 페르소나를 고르고 시작 — 상세 페이지의 시작 버튼과 시작 상황 카드가 엶(startChat) */
