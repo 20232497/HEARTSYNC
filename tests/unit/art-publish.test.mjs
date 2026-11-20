@@ -69,8 +69,8 @@ function world(name, o = {}) {
         list = Array.isArray(c)
           ? c
           : [
-              { name: "check", bucket: c },
-              { name: "e2e", bucket: c }
+              { name: "check", workflow: "빌드 확인", bucket: c },
+              { name: "e2e", workflow: "흐름 시험", bucket: c }
             ];
       return { code: list.every((x) => x.bucket === "pass") ? 0 : 8, out: JSON.stringify(list) };
     }
@@ -142,13 +142,24 @@ test("올리기: 줄 가르기·제목·검사 판정·그림 서명", () => {
   const d = describe(["content/f/fate/hwanghu/images/cover.webp", "content/f/fate/hwanghu/images/KAS0.webp", "content/m/godseats/images/HSY3.PNG"]);
   assert.equal(d.title, "그림 싣기: 작품 2개 · 3장");
   assert.equal(d.body, "- godseats: HSY3\n- hwanghu: KAS0, cover");
-  const c = (name, bucket) => ({ name, bucket });
+  const WF = { check: "빌드 확인", e2e: "흐름 시험" };
+  const c = (name, bucket, workflow = WF[name] || "") => ({ name, bucket, workflow });
   assert.equal(verdict([]), "pending", "검사가 아직 안 붙었으면 기다림");
   assert.equal(verdict([c("Vercel", "pass")]), "pending", "꼭 통과해야 하는 검사가 아직 안 붙었으면 통과로 치지 않음");
   assert.equal(verdict([c("check", "skipping"), c("Vercel", "pass")]), "pending", "꼭 통과해야 하는 검사가 건너뛰어졌으면 통과로 치지 않음");
   assert.equal(verdict([c("check", "pass"), c("e2e", "pending")]), "pending");
   assert.equal(verdict([c("check", "pass"), c("x", "skipping")]), "pending", "흐름 시험(e2e)이 아직 안 붙었으면 통과로 치지 않음");
   assert.equal(verdict([c("check", "pass"), c("e2e", "pass"), c("x", "skipping")]), "pass");
+  assert.equal(
+    verdict([c("check", "pass", "남의 검사"), c("e2e", "pass", "")]),
+    "pending",
+    "이름만 같은 다른 워크플로의 검사는 꼭 통과해야 하는 검사로 치지 않음"
+  );
+  assert.equal(
+    verdict([c("check", "pass"), c("e2e", "pass"), c("check", "pending", "남의 검사")]),
+    "pending",
+    "이름이 같은 검사가 하나라도 도는 중이면 기다림"
+  );
   assert.equal(verdict([c("check", "fail"), c("e2e", "cancel"), c("v", "pass")]), "fail: check, e2e");
   assert.ok(
     isImage(webp("x")) && isImage(Buffer.from("\x89PNG\r\n\x1a\n0000", "latin1")) && isImage(Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0, 0, 0, 0, 0, 0, 0, 0]))

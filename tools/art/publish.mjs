@@ -14,8 +14,13 @@ import path from "node:path";
 export const HOME = "art/site";
 /** 그림 전용 작업 사본의 표식 — 그 사본의 git 폴더 안 파일(git rev-parse --git-path) */
 export const MARK = "hs-art-site";
-/** 꼭 통과해야 하는 검사 이름(.github/workflows/build.yml·e2e.yml의 job) — 둘 다 그 커밋에 붙어 통과하기 전에는 병합하지 않는다 */
-export const REQUIRED = ["check", "e2e"];
+/** 꼭 통과해야 하는 검사 — 워크플로 이름과 job 이름을 같이 본다(.github/workflows/build.yml '빌드 확인'의 check · e2e.yml '흐름 시험'의 e2e).
+    이름만 같은 다른 검사(바깥 서비스가 붙이는 것)가 통과해도 이 둘로 치지 않는다. 둘 다 그 커밋에 붙어 통과하기 전에는 병합하지 않는다 —
+    워크플로 이름을 바꾸면 여기도 같이 고친다(안 고치면 올리기가 기다리다 멈춘다 — 병합되는 쪽으로 틀리지는 않음) */
+export const REQUIRED = [
+  { workflow: "빌드 확인", name: "check" },
+  { workflow: "흐름 시험", name: "e2e" }
+];
 const UPLOAD = /^art\/upload-\d{8}-\d{6}$/;
 const IMG = /^content\/[\w/.-]+\/images\/[\w.-]+\.(webp|png|jpe?g)$/i;
 const BUILT = ["index.html", "admin.html"];
@@ -48,7 +53,7 @@ export function describe(images) {
 export function verdict(checks, required = REQUIRED) {
   const bad = checks.filter((c) => c.bucket === "fail" || c.bucket === "cancel").map((c) => c.name);
   if (bad.length) return "fail: " + bad.join(", ");
-  const need = required.every((n) => checks.some((c) => c.name === n && c.bucket === "pass"));
+  const need = required.every((r) => checks.some((c) => c.name === r.name && c.workflow === r.workflow && c.bucket === "pass"));
   return need && !checks.some((c) => c.bucket === "pending") ? "pass" : "pending";
 }
 /** 내용의 첫 바이트가 그림(webp·png·jpeg)인지 — 그림 이름만 붙인 다른 파일을 걸러 낸다 */
@@ -236,7 +241,7 @@ export async function publish(ctx) {
     if (pr.state !== "OPEN") throw fail("PR이 닫혀 있어요 — GitHub에서 확인해 주세요: " + url);
     if (pr.headRefOid === sha) {
       // ④ 검사 결과는 PR의 끝이 '우리가 올린 그 커밋'일 때 것만 믿는다 — 읽기 앞뒤로 끝 커밋이 같은지 본다. gh pr checks는 도는 중·실패일 때 0이 아닌 값으로 끝나므로 출력만 읽는다
-      const out = (await run("gh", ["pr", "checks", url, "--json", "name,bucket"], { allowFail: true })).out.trim();
+      const out = (await run("gh", ["pr", "checks", url, "--json", "name,bucket,workflow"], { allowFail: true })).out.trim();
       const v = verdict(out.startsWith("[") ? JSON.parse(out) : []);
       if ((await head()).headRefOid === sha) {
         if (v.startsWith("fail")) throw fail(`검사가 떨어져 병합하지 않았어요(${v.slice(6)}) — PR은 열어 뒀어요: ${url}`);
