@@ -3,6 +3,7 @@
 // 규칙 하나가 조용히 꺼지면 그 줄이 실패하고, 규칙을 새로 더하면 맨 아래 '규칙 자리 수' 시험이 실패해 이 표에 줄을 더하게 함. 작품 이름·코드는 실제 작품에서 가져오지 않음.
 import fs from "node:fs";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 import { test, after } from "node:test";
 import assert from "node:assert/strict";
 import { ROOT, appRules, checkWork, scanImages, checkForbidden } from "../../tools/build.mjs";
@@ -1444,6 +1445,24 @@ test("성격 목록: 빌드 검사의 CAST_TEMPERS와 화풍 코드의 성격 �
     [...CAST_TEMPERS].sort(),
     "한쪽에만 있는 성격 값이 있음 — work-check.mjs CAST_TEMPERS와 화풍 코드의 표를 같이 고치세요"
   );
+});
+test("성격별 표정: 성격 여덟 가지마다 대표 칸의 여·남 표정 태그가 있고, 대표 인물 표의 인물이 작품에 있음", async () => {
+  const { CAST_TEMPERS } = await import("../../tools/build/work-check.mjs");
+  const { TEMPER_EMO, REP_SLOTS, LEAD_EMO } = await import("../../archive/style-manime/code/expressions.js");
+  assert.deepEqual(Object.keys(TEMPER_EMO).sort(), [...CAST_TEMPERS].sort(), "성격 값이 빌드 검사의 목록과 다름");
+  for (const k of Object.keys(TEMPER_EMO))
+    for (const s of REP_SLOTS.filter((n) => n > 1))
+      assert.ok(TEMPER_EMO[k][s] && TEMPER_EMO[k][s].f && TEMPER_EMO[k][s].m, k + " " + s + " 칸의 표정 태그가 비어 있음");
+  const walk = (d) =>
+    fs
+      .readdirSync(d, { withFileTypes: true })
+      .flatMap((e) => (e.isDirectory() ? walk(path.join(d, e.name)) : e.name === "work.js" ? [path.join(d, e.name)] : []));
+  const cast = new Set();
+  for (const f of walk(path.join(ROOT, "content"))) for (const c of (await import(pathToFileURL(f).href)).default.cast || []) cast.add(c.code + ":" + c.name);
+  for (const [k, slots] of Object.entries(LEAD_EMO)) {
+    assert.ok(cast.has(k), k + " — 대표 인물 표의 인물이 작품에 없음(코드나 이름이 바뀜)");
+    for (const [n, v] of Object.entries(slots)) assert.ok(REP_SLOTS.includes(+n) && +n > 1 && v.emo, k + " " + n + " 칸");
+  }
 });
 test("규칙 자리 수: checkWork의 오류 자리 수가 이 시험이 아는 수와 같음(규칙을 더하면 위 표에 줄을 더하고 이 수를 고침)", () => {
   const src = ["work-check", "episode-check", "images-scan"]
