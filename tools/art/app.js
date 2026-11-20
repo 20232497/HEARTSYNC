@@ -58,7 +58,7 @@ async function finish(spec, raw) {
 async function make(work, row) {
   const k = keyOf(work, row);
   if (!ready()) return say(k, "생성 서비스 키를 먼저 넣어 주세요.", "warn");
-  if (state.running.has(k)) return; // 같은 칸을 겹쳐 그리지 않는다(같은 시드로 두 번 사게 됨)
+  if (state.running.has(k)) return "skip"; // 같은 칸을 겹쳐 그리지 않는다(같은 시드로 두 번 사게 됨)
   state.running.add(k);
   // 보관함에 이미 후보가 있으면 그 수만큼 시드를 옮겨 시작한다(같은 그림을 다시 사지 않게)
   const vary = state.vary[k] === undefined ? (cands[k] || []).length : state.vary[k];
@@ -98,12 +98,14 @@ async function batch(pairs, o = {}) {
   state.batching = true;
   state.stop = false;
   let i = 0,
-    done = 0;
+    done = 0,
+    skipped = 0;
   const next = async () => {
     while (i < pairs.length && !state.stop) {
       const [w, r] = pairs[i++];
-      await make(w, r);
-      $("#batchMsg").textContent = `${++done}/${pairs.length}칸`;
+      if ((await make(w, r)) === "skip") skipped++; // 따로 그리는 중이던 칸 — 끝난 것으로 세지 않는다
+      else done++;
+      $("#batchMsg").textContent = `${done}/${pairs.length}칸`;
       renderWorks();
     }
   };
@@ -113,7 +115,8 @@ async function batch(pairs, o = {}) {
   } finally {
     state.batching = false;
   }
-  $("#batchMsg").textContent = state.stop ? `멈췄어요(${done}/${pairs.length}칸)` : `끝 — ${done}칸. 후보를 보고 실어 주세요`;
+  const note = skipped ? ` · 따로 그리던 ${skipped}칸은 건너뜀` : "";
+  $("#batchMsg").textContent = (state.stop ? `멈췄어요(${done}/${pairs.length}칸)` : `끝 — ${done}칸. 후보를 보고 실어 주세요`) + note;
 }
 const shown = (r) => (state.filter === "all" ? true : state.filter === "rank1" ? !r.has && r.rank === 1 : !r.has);
 const todo = (w) => w.rows.filter((r) => shown(r) && r.can).map((r) => [w, r]);

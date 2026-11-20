@@ -50,6 +50,7 @@ export async function makeCover(work, spec, say) {
   // 노출로 판정된 조각이 하나라도 있으면 붙인 그림만 보여 주고 끝낸다 — 조각을 보관함에 남기지 않고(다시 붙여 실을 수 없게) 잇지도 않는다
   if (nsfw) return { blob: await toBlob(composeGroup(layout, imgs)), nsfw, seed: p.final.seed };
   // 조각은 넷이 다 그려진 뒤에 한꺼번에 보관함에 — 중간에 실패하면 예전 조각 묶음이 그대로 남는다(새것과 섞이지 않게)
+  // shortcut: 조각 일곱 개를 하나씩 덮어쓴다 — 쓰는 도중에 실패하면(디스크 오류) 예전 것과 섞일 수 있음. 실패 알림이 뜨면 다시 그릴 것. 묶음째 바꾸려면 서버가 한 요청으로 받아야 함
   for (const [name, blob] of Object.entries(files)) await savePart(work, name, blob);
   groups[work.id] = { plan: p, imgs, layout };
   say("단체 표지 — 붙이고 잇는 중…");
