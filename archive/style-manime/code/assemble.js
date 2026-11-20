@@ -13,24 +13,26 @@ export const SIZE = {
 };
 /* 후처리(post.js): 채도·대비만 아주 조금 + 옅은 부드러운 초점. v8의 빛 번짐·연보라빛은 뺌(견본은 후처리 없이 그린 그림) */
 export const POST = { filter: "saturate(1.04) contrast(1.06)", blurK: 3, blurA: 0.12 };
+/* 감정 그림의 후처리: 대비를 더 올리고 조금 어둡게(얼굴 그늘과 가장자리 빛이 살게 — 사용자 2026-11-20 '너무 밝고 평평함') */
+export const POST_EMOTION = { filter: "saturate(1.05) contrast(1.12) brightness(0.96)", blurK: 3, blurA: 0.12 };
 
 const Q = "masterpiece, best quality, amazing quality, very aesthetic, absurdres";
 const SUBJ = {
   f: "1girl, solo, (adult woman:1.2), (mature female:0.45), (beautiful woman:1.3)",
   m: "1boy, solo, (adult man:1.3), (mature male:0.4), (handsome:1.35)",
-  elder: "1boy, solo, (adult man:1.3), (mature male:0.5), (handsome:1.35)", // 서른 넘은 남자 — 조금 더 성숙하게
+  elder: "1boy, solo, (adult man:1.3), (mature male:0.85), (handsome:1.35)", // 서른 넘은 남자 — 더 성숙하게(0.5에서는 35세가 스물 중반처럼 나옴 — 2026-11-20)
 };
 /* 마감: 반실사 만화(웹소설 표지) 칠 — 머리카락 결·얼굴 묘사·사실적인 명암. v8의 옅은 피부·가는 선·선명한 색(만화 같은 인상)은 뺌 */
 const FIN =
   "(shiny hair:1.1), (hair strands:1.4), (detailed hair:1.3), (detailed face:1.3), (detailed skin:0.9), (semi-realistic:1.15), (manhwa:1.0), (digital painting:1.2), " +
   "(painterly:1.1), (realistic shading:1.0), (soft skin shading:1.0), (depth of field:1.1), (bokeh:0.7), (sharp focus:0.9)";
 /* 몸: 여성은 가녀리게(가슴·허리 문구 대신 slender·slim), 소매 길이를 적지 않은 옷은 긴소매 */
-const BODY = { f: { profile: "slender, (slim:1.1)", emotion: "slender, (slim:1.2)" }, m: "slender, (bishounen:1.0)", elder: "(broad shoulders:0.5), (bishounen:0.9)" };
+const BODY = { f: { profile: "slender, (slim:1.1)", emotion: "slender, (slim:1.2)" }, m: "slender, (bishounen:1.0)", elder: "(broad shoulders:0.5), (bishounen:0.5)" };
 const SLEEVES = "(long sleeves:1.2)";
 const SLEEVE_TAG = /sleeves|sleeveless/;
 /* 남성의 감정 그림 비율: 어깨가 넓고 머리가 작게(류건이 기준 — 사용자 2026-11-13). 태그에 broad shoulders가 없는 인물에만 붙인다. 프로필은 얼굴 구도라 그대로 */
 const SHOULDERS = "(broad shoulders:1.1)";
-const BODY_M_EMOTION = { m: "slender, (bishounen:1.0)", elder: "slender, (bishounen:0.9)" };
+const BODY_M_EMOTION = { m: "slender, (bishounen:1.0)", elder: "slender, (bishounen:0.5)" };
 const NEG_PROPORTION = ", (large head:1.3), (narrow shoulders:1.2)";
 // 남자의 놀람·공포 — 이 악문 입과 이마 주름을 막음(성숙한 얼굴에서 과장돼 보임 — 사용자 2026-11-13)
 // + 크게 뜬 둥근 눈과 얼굴 클로즈업은 성인 남자를 앳돼 보이게 함(카일 공포·카엘 놀람 — 2026-11-20) → 막음
@@ -43,7 +45,10 @@ const FRAME = {
 const LOOK = { away: "(looking away:0.9)", down: "(looking down:0.5)" };
 const BG = {
   profile: "(dim lighting:0.7), (cinematic lighting:1.1), (rim light:0.9), (dark background:1.1), (black background:0.6), (gradient background:0.8), simple background",
-  emotion: "(dim lighting:0.8), (cinematic lighting:1.2), (dramatic lighting:0.9), (chiaroscuro:0.8), (side lighting:0.8), (rim light:1.0), (backlighting:0.5)", // 낮 장소는 dim lighting을 뺌
+  // 감정 그림: 얼굴 그늘·가장자리 빛을 올리고 배경은 조금 어둡게(2026-11-20 — 처음 판은 '너무 밝고 평평', 더 어둡게 한 판은 '배경이 너무 어두움' → 그 중간). 낮 장소는 맨 앞의 dim lighting을 뺌
+  emotion:
+    "(dim lighting:0.8), (cinematic lighting:1.2), (dramatic lighting:0.9), (chiaroscuro:1.0), (side lighting:0.9), (shadow on face:0.5), (rim light:1.2), (backlighting:0.7), " +
+    "(deep shadows:0.6), (high contrast:0.5), (low key:0.3), (dark background:0.4), (dim lighting:0.3)",
 };
 
 /* ── 얼굴 ── 여성: 공통 문구 + 눈매 규칙(작품 태그의 눈매 낱말) / 남성: 고운 미남, 서른 넘으면 턱선을 굵게 */
@@ -55,10 +60,12 @@ const FACE_M = {
   profile: "(long eyelashes:0.6), (detailed eyes:1.2), (detailed iris:1.2), (pupils:0.8), (sharp jawline:0.6), " + FACE_M_MORE,
   emotion: "(long eyelashes:0.6), (detailed eyes:1.2), (detailed iris:1.2), (pupils:0.8), (sharp jawline:0.6), " + FACE_M_MORE,
 };
-const elderFace = (s) => s.replace("(long eyelashes:0.6), ", "").replace("(sharp jawline:0.6)", "(sharp jawline:0.7)");
+const elderFace = (s) => s.replace("(long eyelashes:0.6), ", "").replace("(sharp jawline:0.6)", "(sharp jawline:0.95)");
 /* 모든 칸의 얼굴에 더하는 것: 젊은 성인의 맑은 피부, 또렷한 눈동자, 입술 색('어리기보다 잘생김·예쁨 쪽으로' — 사용자 2026-11-16) */
 // (youthful)은 뺌(2026-11-20) — 얼굴을 어린 쪽으로 끌고 네거티브의 (young:1.1)과 부딪침. 사용자의 나중 방향도 '어리기보다 잘생김·예쁨 쪽으로'
 const SKIN = "(young adult:1.0), (beautiful eyes:0.9), (flawless skin:0.9), (clear skin:0.7), (beautiful detailed eyes:1.2), (eye reflection:0.7), (eyelashes:0.7)";
+/** 서른 넘은 남자는 '젊은 성인' 대신 성숙한 인상 */
+const skinOf = (tier) => (tier === "elder" ? SKIN.replace("(young adult:1.0), ", "(mature:0.5), (30 years old:0.6), ") : SKIN);
 const LIPS = { f: "(pink lips:0.7), (lip gloss:0.6)", m: "(pale pink lips:0.4)" };
 const EYE_RULE = [
   [/droopy eyes/, { eyes: "(tareme:0.8), (half-closed eyes:0.5)", emo: "(gentle smile:0.9), closed mouth" }],
@@ -166,6 +173,9 @@ const NEG_POSE = ", (sitting:1.3), (leaning forward:1.2), (bent over:1.2), (lyin
 const NEG_ARMS = ", (holding gun:1.2), (holding weapon:1.1), (aiming:1.2)";
 const NEG_DAY = ", (day:1.2), (daylight:1.1), (blue sky:1.1)";
 const NEG_HAIR_BLEED = ", (multicolored hair:1.2), streaked hair, colored inner hair, gradient hair"; // 눈색 가중이 높아 눈색이 머리로 번짐
+// 감정 그림: 밝게 날아간 그림·옷의 글자
+const NEG_LIGHT = ", (overexposed:1.3), (flat lighting:1.3), (washed out:1.2), (bright:1.1), (white sky:1.2), (white background:1.3)";
+const NEG_TEXT = ", (text on clothes:1.3), (logo:1.3), (text:1.4)";
 const NEG_TRAIN = ", (train:1.3), (locomotive:1.3), (railroad tracks:1.2)";
 // 물가 장소(폭포·강·비)는 흰 옷을 젖어 비치게 그림(십절곡 낙혼폭 — 2026-11-14) → 젖은 옷·비치는 옷을 막음
 const NEG_WET = ", (wet clothes:1.4), (see-through:1.5), (wet shirt:1.4), (wet:1.1)";
@@ -182,8 +192,10 @@ export const ageOf = (c) => (Number.isInteger(c.age) ? c.age : Number((/(\d+)세
 export const tierOf = (c) => (isFem(c) ? "f" : ageOf(c) >= 30 ? "elder" : "m");
 const EYE_SHAPE = /sharp|round|bright|narrow|droopy|upturned|tired|half-closed|closed/;
 const FACIAL = /^(stubble|beard|mustache|goatee|facial hair)$/;
-const weight = (t) => (/ eyes$/.test(t) && !EYE_SHAPE.test(t) ? 1.0 : FACIAL.test(t) ? 0.7 : 1.1); // 눈색은 덜 선명하게(v8은 1.4)
-const castTags = (tags) => tags.split(", ").map((t) => `(${t}:${weight(t)})`).join(", ");
+const CLOTH = /jacket|coat|uniform|cloak|cardigan|shirt|dress|hanbok|robe|pants|jeans|skirt|turtleneck|suit|armor|vest/;
+/* 눈색은 덜 선명하게(v8은 1.4) · 수염과 흉터는 또렷이(설정인데 안 보였음 — 2026-11-20) · boost: 감정 그림에서 옷 낱말을 세게(칸마다 옷 색이 바뀌던 것을 줄임) */
+const weight = (t, boost) => (/ eyes$/.test(t) && !EYE_SHAPE.test(t) ? 1.0 : FACIAL.test(t) ? 1.3 : /\bscar\b/.test(t) ? 1.4 : boost && CLOTH.test(t) ? 1.25 : 1.1);
+const castTags = (tags, boost) => tags.split(", ").map((t) => `(${t}:${weight(t, boost)})`).join(", ");
 /* 앞머리: 이마를 드러내는 인물(forehead)은 가운데 가르마, 이미 앞머리가 있으면 그대로, 그 밖은 눈을 덮는 앞머리(여)·시스루 앞머리(남)·가르마(서른 넘은 남자) */
 const PART = "(hair parted in the middle:1.1), (center parting:1.0)";
 const NEG_PART = ", (swept bangs:1.2), (side-swept bangs:1.2), (asymmetrical bangs:1.1), (hair slicked back:1.1)";
@@ -215,11 +227,12 @@ const inner = (tags) =>
       : tags;
 /** 인물 칸과 그에 딸린 네거티브. tags는 칸에 맞게 걸러 낸 작품 태그 */
 const BODY_MARK = / on (forearm|arm|hand|back)s?$|^sleeves rolled up$/; // 팔·손의 흉터 같은 낱말은 얼굴로 옮겨 붙음 → 뺌(가슴 위 구도라 보이지도 않음)
-function person(c, tags0) {
+function person(c, tags0, boost) {
   const tags = tags0.split(", ").filter((t) => !BODY_MARK.test(t)).join(", ");
   const tier = tierOf(c), man = tier !== "f";
   const hr = hairRule(man && !HAIR_LENGTH.test(tags) ? tags.replace(/ hair, /, " hair, short hair, ") : tags, tier);
-  const pos = castTags(hr.tags) + (hr.add ? ", " + hr.add : "") + ", " + HAIR_ALL + (OUTER.test(tags) && !TOP.test(tags) ? ", (shirt:1.1)" : "");
+  const facial = man && tags.split(", ").some((t) => FACIAL.test(t));
+  const pos = castTags(hr.tags, boost) + (facial ? ", (facial hair:0.6)" : "") + (hr.add ? ", " + hr.add : "") + ", " + HAIR_ALL + (OUTER.test(tags) && !TOP.test(tags) ? ", (shirt:1.1)" : "");
   let sex = man ? NEG_M : NEG_F;
   if (man && tags.split(", ").some((t) => FACIAL.test(t))) sex = sex.replace(", facial hair, beard, stubble,", ", (long beard:1.2), (mustache:1.1),"); // 수염이 설정인 인물
   const tail =
@@ -229,24 +242,27 @@ function person(c, tags0) {
 
 /* ── 장소 칸(감정 그림) ── 작품의 장소 태그 ×1.1. 사람·클로즈업·기차 낱말은 뺀다(혼자 서 있는 그림). 시간 낱말이 없으면 밤 */
 const PLACE_DROP = /martial artists|spectators|duel|crowd|couple|woman|\bman\b|people|figure|silhouette|hands|close-up|back view/;
+// 장소에 사는 동물(탐정사무소의 'gray cat on desk')은 인물 그림마다 따라 나옴 → 감정 그림에서는 빼고 막음(장소 그림에는 그대로)
+const PLACE_ANIMAL = /\b(cat|kitten|dog|puppy|bird|crow|horse|fox|rabbit|animal)s?\b/;
+const NEG_ANIMAL = ", (cat:1.3), (animal:1.2)";
 const WATER = /waterfall|river|\bsea\b|ocean|\blake\b|\brain|\bwet\b|pond|beach|\bpool\b|hot spring|\bbath|stream/;
 const VEHICLE = /^(steam locomotive|locomotive|steam train|train)$/; // 기차 그 자체만 — 'train car infirmary'처럼 열차 안인 장소는 그대로
 const TIME = /night|dawn|dusk|sunset|sunrise|morning|afternoon|evening|midnight|twilight|moonlight|\bday\b|daytime|noon|sunlight/;
 const DARK = /night|moonlight|midnight|dusk|twilight|evening/;
 function placeBlock(tags) {
-  const ts = tags.split(", ").filter((t) => t && !PLACE_DROP.test(t) && !VEHICLE.test(t)).map((t) => `(${t}:1.1)`);
+  const ts = tags.split(", ").filter((t) => t && !PLACE_DROP.test(t) && !PLACE_ANIMAL.test(t) && !VEHICLE.test(t)).map((t) => `(${t}:1.1)`);
   if (!TIME.test(tags)) ts.push("night");
-  return ts.join(", ") + ", (blurry background:1)";
+  return ts.join(", ") + ", (blurry background:1.2)";
 }
 
 /** 인물마다 시드 하나 — 칸마다 구도와 옷이 바뀌지 않게(인물 코드의 글자 합) */
 export const seedOf = (c) => 7500 + ([...c.code].reduce((a, ch) => a + ch.charCodeAt(0), 0) % 400);
-const job = (kind, pos, neg, seed) => ({ pos, neg, model: MODEL.air, steps: MODEL.steps, cfg: MODEL.cfg, scheduler: MODEL.scheduler, seed, ...SIZE[kind], post: POST });
+const job = (kind, pos, neg, seed) => ({ pos, neg, model: MODEL.air, steps: MODEL.steps, cfg: MODEL.cfg, scheduler: MODEL.scheduler, seed, ...SIZE[kind], post: kind === "emotion" ? POST_EMOTION : POST });
 
 /** 프로필(칸 0): 얼굴이 화면을 채우는 구도 + 어두운 단색 배경. place는 쓰지 않는다(자리만 맞춤) */
 export function profileJob(c, place, o = {}) {
   const p = person(c, c.tags.split(", ").filter((t) => !BOTTOM_TAG.test(t)).join(", ")), ch = charm(c);
-  const face = (p.man ? EYES_M + ", " + (p.tier === "elder" ? elderFace(FACE_M.profile) : FACE_M.profile) : ch.eyes + ", " + FACE_F) + ", " + SKIN + ", " + LIPS[p.g];
+  const face = (p.man ? EYES_M + ", " + (p.tier === "elder" ? elderFace(FACE_M.profile) : FACE_M.profile) : ch.eyes + ", " + FACE_F) + ", " + skinOf(p.tier) + ", " + LIPS[p.g];
   const body = p.man ? BODY[p.tier] : BODY.f.profile;
   const pos = [SUBJ[p.tier], p.pos, ch.emo, FRAME.profile, face, body, FIN, BG.profile, Q].join(", ");
   return job("profile", pos, p.negHead + p.negTail + NEG_CALM[p.g] + (p.man ? "" : NEG_SOFT + NEG_NECK + NEG_LEAN), o.seed || 7301);
@@ -255,14 +271,14 @@ export function profileJob(c, place, o = {}) {
 /** 감정 그림(칸 1~14): 가슴까지 + 작품의 장소. 칸 1은 인물의 기본 표정 */
 export function emotionJob(c, place, slot, o = {}) {
   const E = EMOTIONS[slot] || {}, tags0 = E.armed ? c.tags : c.tags.split(", ").filter((t) => !WEAPON_TAG.test(t)).join(", ");
-  const p = person(c, inner(tags0)), g = p.g, ch = charm(c), elder = p.tier === "elder";
+  const p = person(c, inner(tags0), true), g = p.g, ch = charm(c), elder = p.tier === "elder";
   const T = slot > 1 ? (TEMPER_EMO[temperOf(c)] || {})[slot] : null; // 대표 칸은 성격별 표정(expressions.js), 없으면 공통 표정
   const L = slot > 1 ? (LEAD_EMO[c.code + ":" + c.name] || {})[slot] : null; // 작품의 대표 인물은 그 인물만의 버릇·소품
   const eyes = (L && L.eyes) || (T && T.eyes && T.eyes[g]) || (E.eyes && E.eyes[g]) || (p.man ? EYES_M : ch.eyes);
   let face = E.face ? E.face[g] : p.man ? FACE_M.emotion : FACE_F;
   if (elder) face = elderFace(face);
   if (E.lowBlush) face = face.replace("(blush:0.3)", "(blush:0.1)"); // 화난 얼굴의 홍조는 수줍어 보임
-  face += ", " + SKIN + ", " + LIPS[g];
+  face += ", " + skinOf(p.tier) + ", " + LIPS[g];
   const own = L ? L.emo : T ? T[g] : typeof E.emo === "function" ? E.emo(c) : E.emo && E.emo[g];
   const emo = slot === 1 || !E.emo ? ch.emo : own + (E.sym && o.symbols !== false ? ", " + E.sym : "");
   const look = (L && L.look) || (T && T.look) || E.look; // "viewer"는 마주 봄
@@ -278,6 +294,8 @@ export function emotionJob(c, place, slot, o = {}) {
     p.negHead + p.negTail + (slot === 1 || !E.emo ? NEG_CALM[g] : "") + (!p.man && !E.hard ? NEG_SOFT : "") + (p.man ? "" : NEG_NECK) + (day ? "" : NEG_DAY) + NEG_POSE + (E.armed ? "" : NEG_ARMS) + (E.neg || "") +
     (place.tags.split(", ").some((t) => VEHICLE.test(t)) ? NEG_TRAIN : "") +
     (WATER.test(place.tags) ? NEG_WET : "") +
+    (place.tags.split(", ").some((t) => PLACE_ANIMAL.test(t)) ? NEG_ANIMAL : "") +
+    NEG_LIGHT + NEG_TEXT +
     (p.man ? NEG_PROPORTION + (E.negM || "") : "");
   return job("emotion", pos, neg, o.seed || seedOf(c));
 }
