@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- 더 아이콘다운 판: 채운 하트(분홍 그라데이션) + 흰 파동이 하트를 뚫고 양옆으로, 빛은 약하게 -->
+  <defs>
+    <radialGradient id="bg" cx="0.5" cy="0.4" r="0.8">
+      <stop offset="0" stop-color="#4f1868"/>
+      <stop offset="1" stop-color="#1a0726"/>
+    </radialGradient>
+    <linearGradient id="hg" x1="0.2" y1="0" x2="0.8" y2="1">
+      <stop offset="0" stop-color="#ff6aa6"/>
+      <stop offset="1" stop-color="#e2245f"/>
+    </linearGradient>
+    <filter id="halo" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="28"/></filter>
+    <filter id="lineglow" x="-20%" y="-40%" width="140%" height="180%">
+      <feGaussianBlur stdDeviation="8" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <path id="heart" d="M256 424 C164 368 84 306 84 210 C84 146 132 100 192 100 C222 100 244 116 256 140 C268 116 290 100 320 100 C380 100 428 146 428 210 C428 306 348 368 256 424 Z"/>
+  </defs>
+  <rect width="512" height="512" fill="url(#bg)"/>
+  <use href="#heart" fill="#ff2f7d" opacity=".55" filter="url(#halo)"/>
+  <use href="#heart" fill="url(#hg)"/>
+  <!-- 하트 안쪽 윗부분 반사 -->
+  <path d="M128 196 C128 156 158 130 194 130" fill="none" stroke="#fff" stroke-opacity=".55" stroke-width="12" stroke-linecap="round"/>
+  <path filter="url(#lineglow)" d="M60 262 H170 L188 244 L204 262 H216 L238 160 L262 356 L286 206 L304 262 H318 L334 246 L350 262 H452" fill="none" stroke="#fff" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
