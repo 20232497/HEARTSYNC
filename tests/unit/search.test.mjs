@@ -42,3 +42,10 @@ test("searchRoom: 긴 글은 앞뒤를 줄여 …을 붙이고, 결과는 60건�
   assert.equal(hits.length, 60);
   assert.equal(hits[0].id, "u79", "최근 것부터");
 });
+test("searchRoom: 소문자로 바꾸면 글자 수가 달라지는 글자(İ)가 든 글에서도 찾은 말의 자리가 어긋나지 않음", () => {
+  // 대문자로 적힌 말을 소문자로 찾음 — İ가 든 글에서도 대소문자를 가리지 않아야 하고, 자른 자리가 원문과 맞아야 함
+  const hits = searchRoom(room([me("u1", "İstanbul에서 Hello라고 했다")]), "hello");
+  assert.equal(hits.length, 1);
+  assert.deepEqual([hits[0].pre, hits[0].hit, hits[0].post], ["İstanbul에서 ", "Hello", "라고 했다"]);
+  assert.equal(searchRoom(room([me("u1", "İHello")]), "HELLO")[0].hit, "Hello");
+});

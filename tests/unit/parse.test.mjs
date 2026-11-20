@@ -71,3 +71,8 @@ test("looseJSON: 앞뒤 군말이 붙은 JSON도 읽는다", () => {
   assert.deepEqual(looseJSON('여기 결과: {"a": 1} 끝'), { a: 1 });
   assert.equal(looseJSON("json 아님"), undefined);
 });
+test("parseState: 빈칸뿐인 추천은 추천이 아님 — 걸러 내고(값을 낸 턴이면 되돌리는 근거), 남은 것은 앞뒤 빈칸을 뗌", () => {
+  const out = parseState(`본문\n${MARK}\n{"status":{},"suggestions":["   ","","  다가간다  "]}`, CHAR, {});
+  assert.deepEqual(out.suggestions, ["다가간다"]);
+  assert.deepEqual(parseState(`본문\n${MARK}\n{"status":{},"suggestions":[" ","1. "]}`, CHAR, {}).suggestions, []);
+});

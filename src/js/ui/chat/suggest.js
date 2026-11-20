@@ -2,8 +2,9 @@
    값이 드는 버튼에는 누르기 전에 값이 보이고(sugLabel·'새로 추천'), 만들지 못하면 되돌림. 저장된 추천 = 작가가 시작 장면에 써 둔 것 · 자동 받기로 온 것 · 눌러서 받은 것 · 예전 방의 것 */
 import { errCopy, llm } from "../../ai/llm.js";
 import { speakerName } from "../../ai/prompt/rules.js";
-import { curText, saveRoom } from "../../core/rooms.js";
+import { curText, deletedRooms, roomKey, saveRoom } from "../../core/rooms.js";
 import { S, gen, room } from "../../core/state.js";
+import { KV } from "../../core/storage.js";
 import { $, $$, esc, toast } from "../../core/util.js";
 import { SUGGEST_COST, charge, qShort, refund, sugQuote } from "../../core/wallet.js";
 import { lastAi, updateComposer } from "./view.js";
@@ -86,6 +87,8 @@ export async function toggleSug() {
     const q = sugQuote(),
       label = `${r.char.title} · 답변 추천`;
     if (S.wallet.hearts < q.n) return needHearts(q.n, "답변 추천");
+    const mid = lastAi(r).id,
+      text0 = alt.text; // 추천을 붙일 메시지와 그 버전의 글 — 답이 오면 다시 찾음(버전 번호는 저장하며 밀릴 수 있어 쓰지 않음)
     busy = true;
     charge(q, label);
     open();
@@ -119,24 +122,33 @@ ${recent}`
       const list = Array.isArray(v?.suggestions)
         ? v.suggestions
             .filter((s) => typeof s === "string")
-            .map((s) => s.slice(0, 80))
+            .map((s) => s.trim().slice(0, 80))
+            .filter(Boolean) // 빈 글만 온 것은 받은 것이 아님 — 아래에서 되돌림
             .slice(0, 3)
         : [];
       if (!list.length) throw { code: "invalid_json" };
-      alt.suggestions = list;
-      saveRoom(r);
-      if (room === r && !p.hidden) paint(list);
+      // 기다리는 사이 방을 나갔으면 처음 잡은 방 객체(r)는 낡았을 수 있음 — 그것을 저장하면 그사이의 대화를 덮음. 그래서 붙일 곳을 다시 찾음:
+      // 그 방이 열려 있으면 지금의 방 객체에서, 다른 방을 보고 있으면 저장된 최신 것을 읽어서. 그 버전은 같은 객체이거나 글이 같은 것으로 찾고,
+      // 방·메시지·버전이 지워졌으면 붙일 곳이 없으니 값을 되돌림
+      const now = room && room.id === r.id ? room : deletedRooms.has(r.id) ? null : await KV.get(roomKey(r.id)),
+        m = now && (now.msgs || []).find((x) => x.id === mid),
+        a = m && m.role === "ai" ? m.alts.find((x) => x === alt) || m.alts.find((x) => x.text === text0) : null;
+      if (!a) throw { code: "gone" };
+      a.suggestions = list;
+      saveRoom(now);
+      if (room === r && !p.hidden && curAlt(r) === a) paint(list);
     } catch (e) {
       refund(q, label);
       if (room === r && !p.hidden) {
+        const why = e && e.code === "gone" ? "추천을 붙일 메시지가 없어졌어요." : errCopy(e);
         p.innerHTML =
-          `<div class="head">답변 추천을 만들지 못했어요. ${esc(errCopy(e))} 하트는 돌려드렸어요.<span class="spacer"></span>` +
+          `<div class="head">답변 추천을 만들지 못했어요. ${esc(why)} 하트는 돌려드렸어요.<span class="spacer"></span>` +
           `<button class="btn sm ghost" id="sugX">닫기</button></div>`;
         $("#sugX", p).onclick = hideSug;
       }
     } finally {
       busy = false;
-      if (room === r) updateComposer();
+      if (room && room.id === r.id) updateComposer();
     }
   };
   if (saved(r)) {

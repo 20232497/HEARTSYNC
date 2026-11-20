@@ -303,6 +303,156 @@ for (const [dev, engine] of targets) {
       if (s.afterFail !== c || !s.failed) errs.push("추천 실패 환불이 다름: " + JSON.stringify(s));
       if (s.send0 === s.send1 || !s.send1.includes(s.want) || !s.auto || s.sug !== c) errs.push("자동 받기의 값 표시가 다름: " + JSON.stringify(s));
     }
+    // 추천의 가장자리 경우(Codex 검토에서 나온 것) — 보이지 않던 값이 나가거나 새 대화를 덮지 않게:
+    // ① 빈칸뿐인 추천은 받은 것이 아님(되돌림) ② 기다리는 사이 방을 나갔다 들어와 방 객체가 바뀌어도 그사이의 대화를 덮지 않고 그 메시지에 붙음
+    // ③ 다른 버전으로 바꾸면 펼친 추천이 닫히고 버튼에 값이 다시 보임 ④ 하트 확인 창을 보는 사이 잔액이 늘어도 확인한 값보다 더 내지 않음
+    res.edge = await p.evaluate(async () => {
+      const nap = (ms) => new Promise((r) => setTimeout(r, ms)),
+        keep = window.llm,
+        out = {},
+        cur = (r) => lastAi(r).alts[lastAi(r).idx];
+      setAutoSug(room, false);
+      hideSug();
+      const h0 = S.wallet.hearts;
+      cur(room).suggestions = [];
+      updateComposer();
+      window.llm = async () => ({ suggestions: ["  ", ""] });
+      $("#sugBtn").click();
+      await nap(200);
+      out.blank = {
+        refunded: S.wallet.hearts === h0,
+        none: (cur(room).suggestions || []).length === 0,
+        said: /만들지 못했어요/.test($("#sugPanel").textContent)
+      };
+      hideSug();
+      let release;
+      const wait = new Promise((r) => (release = r));
+      window.llm = async () => {
+        await wait;
+        return { suggestions: ["늦게 온 추천"] };
+      };
+      $("#sugBtn").click();
+      await nap(50);
+      const id = room.id,
+        fresh = migrateRoom(JSON.parse(JSON.stringify(room))); // 방을 나갔다 다시 들어온 것처럼 새 객체
+      setRoom(fresh);
+      fresh.msgs.push({ id: uid("m"), role: "user", text: "그사이 보낸 말", canned: true });
+      saveRoom(fresh);
+      release();
+      await nap(250);
+      out.stale = {
+        kept: (await KV.get(roomKey(id))).msgs.some((m) => m.text === "그사이 보낸 말"),
+        attached: (cur(fresh).suggestions || []).join("|"),
+        paid: h0 - S.wallet.hearts
+      };
+      fresh.msgs.pop();
+      saveRoom(fresh);
+      // ②-2 다른 방을 보고 있을 때 끝난 추천: 저장된 최신 방을 읽어 거기에 붙임(처음 잡은 낡은 객체를 저장하지 않음)
+      const slow = () => {
+        let go;
+        const held = new Promise((r) => (go = r));
+        window.llm = async () => {
+          await held;
+          return { suggestions: ["다른 방에서 온 추천"] };
+        };
+        return go;
+      };
+      const reset = async () => {
+        cur(room).suggestions = [];
+        saveRoom(room);
+        await viewChat(id);
+        return S.wallet.hearts;
+      };
+      let h1 = await reset(),
+        go = slow();
+      $("#sugBtn").click();
+      await nap(50);
+      const latest = migrateRoom(JSON.parse(JSON.stringify(room))); // 그사이 다시 들어와 한마디 보낸 뒤
+      latest.msgs.push({ id: uid("m"), role: "user", text: "다른 방으로 가기 전 한마디", canned: true });
+      saveRoom(latest);
+      const other = newRoom(normalizeChar(ORIGINALS[1]), 0, S.personas[0]); // 다른 방을 보고 있음
+      setRoom(other);
+      go();
+      await nap(300);
+      const stored = await KV.get(roomKey(id)),
+        last = [...stored.msgs].reverse().find((x) => x.role === "ai");
+      out.away = {
+        kept: stored.msgs.some((x) => x.text === "다른 방으로 가기 전 한마디"),
+        attached: (last.alts[last.idx].suggestions || []).join("|"),
+        paid: h1 - S.wallet.hearts
+      };
+      stored.msgs = stored.msgs.filter((x) => x.text !== "다른 방으로 가기 전 한마디");
+      setRoom(migrateRoom(stored));
+      saveRoom(room);
+      S.rooms = S.rooms.filter((x) => x.id !== other.id); // 시험용 방은 목록에서 뺌
+      KV.set("rooms", S.rooms);
+      // ②-3 붙일 버전이 사라짐(그 답이 다른 글로 바뀜): 붙일 곳이 없으니 되돌림
+      h1 = await reset();
+      go = slow();
+      $("#sugBtn").click();
+      await nap(50);
+      const lm = lastAi(room),
+        texts = lm.alts.map((x) => x.text);
+      lm.alts = lm.alts.map((x) => ({ ...x, text: x.text + " (고친 글)" }));
+      go();
+      await nap(300);
+      out.gone = {
+        refunded: S.wallet.hearts === h1,
+        none: (cur(room).suggestions || []).length === 0,
+        said: /메시지가 없어졌어요/.test($("#sugPanel").textContent)
+      };
+      lm.alts.forEach((x, i) => (x.text = texts[i]));
+      saveRoom(room);
+      window.llm = keep;
+      await viewChat(id);
+      const m = lastAi(room);
+      m.alts[m.idx].suggestions = ["저장된 추천"]; // ③의 전제: 지금 버전에는 저장된 추천이 있고(값 없이 펼침), 새로 더하는 버전에는 없음
+      m.alts.push({ text: "다른 버전의 답", status: m.alts[m.idx].status });
+      saveRoom(room);
+      renderLog();
+      updateComposer();
+      $("#sugBtn").click(); // 저장된 추천(값 없이 펼침)
+      const before = { open: !$("#sugPanel").hidden, label: $("#sugBtn").textContent };
+      $$('[data-act="next"]').pop().click();
+      out.version = { before, closed: $("#sugPanel").hidden, label: $("#sugBtn").textContent };
+      $$('[data-act="prev"]').pop().click();
+      out.version.back = $("#sugBtn").textContent;
+      m.alts.pop();
+      m.idx = 0;
+      saveRoom(room);
+      renderLog();
+      room.set.autoSug = true; // 턴 값만큼만 있어 추천 값은 못 냄 → 확인 창에는 턴 값만 보임
+      const turn = quote({ ...room.set, autoSug: false }).n,
+        ack = S.wallet.ack;
+      S.wallet.hearts = turn;
+      S.wallet.ack = {};
+      const pending = ensurePay(room);
+      await nap(150);
+      const shown = ($(".overlay #ok") || {}).textContent || "";
+      S.wallet.hearts += SUGGEST_COST; // 그사이 다른 환불이 들어옴
+      $(".overlay #ok").click();
+      const q = await pending;
+      out.confirm = { shown, turn, sug: q.sug, pays: heartsOf(q) };
+      Object.assign(S.wallet, { hearts: 30, ack });
+      saveWallet();
+      setAutoSug(room, true);
+      return out;
+    });
+    {
+      const e = res.edge,
+        c = res.sug.cost;
+      if (!e.blank.refunded || !e.blank.none || !e.blank.said) errs.push("빈 추천을 되돌리지 않음: " + JSON.stringify(e.blank));
+      if (!e.stale.kept || e.stale.attached !== "늦게 온 추천" || e.stale.paid !== c)
+        errs.push("늦게 끝난 추천이 새 대화를 덮거나 붙지 않음: " + JSON.stringify(e.stale));
+      if (!e.away.kept || e.away.attached !== "다른 방에서 온 추천" || e.away.paid !== c)
+        errs.push("다른 방을 보는 사이 끝난 추천이 새 대화를 덮거나 붙지 않음: " + JSON.stringify(e.away));
+      if (!e.gone.refunded || !e.gone.none || !e.gone.said) errs.push("붙일 곳이 사라진 추천을 되돌리지 않음: " + JSON.stringify(e.gone));
+      const v = e.version;
+      if (!v.before.open || v.before.label.includes("♥") || !v.closed || !v.label.includes("♥" + c) || v.back.includes("♥"))
+        errs.push("버전을 바꾼 뒤 추천 버튼의 값 표시가 다름: " + JSON.stringify(v));
+      if (!e.confirm.shown.includes("♥" + e.confirm.turn + "로") || e.confirm.sug !== 0 || e.confirm.pays !== e.confirm.turn)
+        errs.push("확인한 값보다 더 냄: " + JSON.stringify(e.confirm));
+    }
     // 자동 받기를 켠 턴: 답과 같이 온 추천이 저장되고 바로 펼쳐짐, 턴 값 + 추천 값이 나감. 끄면 다음 턴의 프롬프트에 추천 칸이 없음
     res.autoTurn = await (async () => {
       const before = await p.evaluate(() => ({ hearts: S.wallet.hearts, need: heartsOf(quote(room.set)) }));
@@ -330,7 +480,8 @@ for (const [dev, engine] of targets) {
     })();
     {
       const a = res.autoTurn;
-      if (a.paid !== a.need || a.sugs !== "하나|둘|셋" || !a.asked || a.cost !== "♥" + a.need) errs.push("자동 받기를 켠 턴이 다름: " + JSON.stringify(a));
+      if (a.paid !== a.need || a.sugs !== "하나|둘|셋" || !a.asked || !a.open || a.cost !== "♥" + a.need)
+        errs.push("자동 받기를 켠 턴이 다름: " + JSON.stringify(a));
       if (a.off.asked || a.off.sugs !== 0) errs.push("자동 받기를 끈 턴에 추천 칸이 남음: " + JSON.stringify(a.off));
     }
     // 한 줄 입력창: 보내기 버튼은 입력이 비면 '이어서 쓰기'(값이 보임), 글을 치면 보내기. 답이 막 끝난 직후의 누름은 이어서 쓰기로 받지 않음(잘못 눌러 값이 나가지 않게).

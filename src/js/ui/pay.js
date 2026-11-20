@@ -28,7 +28,13 @@ export async function ensurePay(r) {
       saveWallet();
     }
   }
-  return quote(r.set);
+  // 처음 낸 견적(확인 창에 보인 값) 그대로 돌려줌 — 창을 보는 사이 잔액이 늘거나(늦게 끝난 답변 추천의 환불) 요금제가 끝나 견적이 올라도
+  // 확인한 값보다 더 내지 않게. 그사이 그 값도 낼 수 없게 됐으면 다시 안내
+  if (S.wallet.hearts < heartsOf(q)) {
+    paywall(q, r);
+    return null;
+  }
+  return q;
 }
 function askPay(q, r) {
   return new Promise((resolve) => {

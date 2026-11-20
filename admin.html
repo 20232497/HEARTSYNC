@@ -1001,7 +1001,7 @@ if (typeof window !== "undefined") {
    src/js/core/storage.js
    가져옴: src/js/core/util.js { toast }
    내보냄: IDB, KV
-   쓰는 곳: src/js/core/wallet.js, src/js/core/rooms.js, src/js/core/settings.js, src/js/core/shelf.js, src/js/services/images.js, src/js/services/cloud.js, src/js/services/load.js, src/js/services/sync.js, src/js/ui/room-tools.js, src/js/ui/me.js, src/js/ui/chat/view.js, src/js/app.js
+   쓰는 곳: src/js/core/wallet.js, src/js/core/rooms.js, src/js/core/settings.js, src/js/core/shelf.js, src/js/services/images.js, src/js/services/cloud.js, src/js/services/load.js, src/js/services/sync.js, src/js/ui/room-tools.js, src/js/ui/me.js, src/js/ui/chat/suggest.js, src/js/ui/chat/view.js, src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 저장소: IndexedDB(IDB)와 KV(localStorage → 계정). 계정 저장은 KV.remote 고리로 — services/cloud.js가 꽂음(core는 services를 모름) */
 
@@ -4555,8 +4555,13 @@ function parseState(text, c, before) {
   if (Array.isArray(v.suggestions))
     out.suggestions = v.suggestions
       .filter((s) => typeof s === "string")
-      .map((s) => s.replace(/^\s*\d+[.)]\s*/, "").slice(0, 80))
-      .filter(Boolean)
+      .map((s) =>
+        s
+          .replace(/^\s*\d+[.)]\s*/, "")
+          .trim()
+          .slice(0, 80)
+      )
+      .filter(Boolean) // 빈칸뿐인 글은 추천이 아님 — 값을 낸 턴이면 추천이 안 온 것으로 보고 되돌림(ui/chat/generate.js)
       .slice(0, 3);
   // 에피소드 방의 보고(장 목표를 이뤘는지·갈림길에서 가까운 보기) — status 안에 넣어 보낸 모델도 받아 줌. 맞는지는 core/episode.js epAfter가 다시 봄
   const ep = v._ep && typeof v._ep === "object" ? v._ep : st && st._ep && typeof st._ep === "object" ? st._ep : null;
@@ -6131,15 +6136,23 @@ function deleteRoom(id) {
 const FIND_MAX = 60,
   FIND_SIDE = 30;
 
+/* 대소문자를 가리지 않고 찾기 위한 소문자 글 — 글자 수(자리)를 원문과 똑같이 둠: 소문자로 바꾸면 길이가 달라지는 글자(İ 등)는 그대로 둠.
+   찾은 자리로 원문을 자르기 때문에 자리가 어긋나면 강조가 틀어짐 */
+function foldCase(s) {
+  let out = "";
+  for (let i = 0; i < s.length; i++) {
+    const low = s[i].toLowerCase();
+    out += low.length === 1 ? low : s[i];
+  }
+  return out;
+}
 /**
  * 방의 메시지에서 낱말을 찾음 — 대소문자를 가리지 않고, 그림 태그는 빼고, 최근 메시지부터 FIND_MAX건까지. 메시지 하나에 한 건(처음 나온 자리).
  * @param {Room} r @param {string} q 찾을 말
  * @returns {{ id: string, who: string, pre: string, hit: string, post: string }[]} who는 말한 쪽 이름, pre·hit·post는 찾은 말과 그 앞뒤 글
  */
 function searchRoom(r, q) {
-  const key = String(q || "")
-    .trim()
-    .toLowerCase();
+  const key = foldCase(String(q || "").trim());
   const out = [];
   if (!key) return out;
   for (let i = r.msgs.length - 1; i >= 0 && out.length < FIND_MAX; i--) {
@@ -6149,7 +6162,7 @@ function searchRoom(r, q) {
         .replace(/\[\[[^\]]*\]\]/g, "")
         .replace(/\s+/g, " ")
         .trim(),
-      at = text.toLowerCase().indexOf(key);
+      at = foldCase(text).indexOf(key);
     if (at < 0) continue;
     const end = at + key.length;
     out.push({
@@ -8912,7 +8925,13 @@ async function ensurePay(r) {
       saveWallet();
     }
   }
-  return quote(r.set);
+  // 처음 낸 견적(확인 창에 보인 값) 그대로 돌려줌 — 창을 보는 사이 잔액이 늘거나(늦게 끝난 답변 추천의 환불) 요금제가 끝나 견적이 올라도
+  // 확인한 값보다 더 내지 않게. 그사이 그 값도 낼 수 없게 됐으면 다시 안내
+  if (S.wallet.hearts < heartsOf(q)) {
+    paywall(q, r);
+    return null;
+  }
+  return q;
 }
 function askPay(q, r) {
   return new Promise((resolve) => {
@@ -9042,18 +9061,20 @@ function plusSheet(reason) {
    src/js/ui/chat/suggest.js
    가져옴: src/js/ai/llm.js { errCopy, llm }
            src/js/ai/prompt/rules.js { speakerName }
-           src/js/core/rooms.js { curText, saveRoom }
+           src/js/core/rooms.js { curText, deletedRooms, roomKey, saveRoom }
            src/js/core/state.js { S, gen, room }
+           src/js/core/storage.js { KV }
            src/js/core/util.js { $, $$, esc, toast }
            src/js/core/wallet.js { SUGGEST_COST, charge, qShort, refund, sugQuote }
            src/js/ui/chat/view.js { lastAi, updateComposer }
            src/js/ui/icons.js { ICON }
            src/js/ui/pay.js { needHearts }
    내보냄: sugLabel, setAutoSug, hideSug, showSug, toggleSug
-   쓰는 곳: src/js/ui/chat/view.js, src/js/ui/chat/generate.js, src/js/app.js
+   쓰는 곳: src/js/ui/chat/view.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* ✦ 답변 추천: 저장된 추천은 값 없이 펼치고, 없으면 눌러서 받음(추천 한 번의 값 — wallet sugQuote). 방마다 '자동 받기'(r.set.autoSug)를 켜면 답마다 같이 옴.
    값이 드는 버튼에는 누르기 전에 값이 보이고(sugLabel·'새로 추천'), 만들지 못하면 되돌림. 저장된 추천 = 작가가 시작 장면에 써 둔 것 · 자동 받기로 온 것 · 눌러서 받은 것 · 예전 방의 것 */
+
 
 
 
@@ -9140,6 +9161,8 @@ async function toggleSug() {
     const q = sugQuote(),
       label = `${r.char.title} · 답변 추천`;
     if (S.wallet.hearts < q.n) return needHearts(q.n, "답변 추천");
+    const mid = lastAi(r).id,
+      text0 = alt.text; // 추천을 붙일 메시지와 그 버전의 글 — 답이 오면 다시 찾음(버전 번호는 저장하며 밀릴 수 있어 쓰지 않음)
     busy = true;
     charge(q, label);
     open();
@@ -9173,24 +9196,33 @@ ${recent}`
       const list = Array.isArray(v?.suggestions)
         ? v.suggestions
             .filter((s) => typeof s === "string")
-            .map((s) => s.slice(0, 80))
+            .map((s) => s.trim().slice(0, 80))
+            .filter(Boolean) // 빈 글만 온 것은 받은 것이 아님 — 아래에서 되돌림
             .slice(0, 3)
         : [];
       if (!list.length) throw { code: "invalid_json" };
-      alt.suggestions = list;
-      saveRoom(r);
-      if (room === r && !p.hidden) paint(list);
+      // 기다리는 사이 방을 나갔으면 처음 잡은 방 객체(r)는 낡았을 수 있음 — 그것을 저장하면 그사이의 대화를 덮음. 그래서 붙일 곳을 다시 찾음:
+      // 그 방이 열려 있으면 지금의 방 객체에서, 다른 방을 보고 있으면 저장된 최신 것을 읽어서. 그 버전은 같은 객체이거나 글이 같은 것으로 찾고,
+      // 방·메시지·버전이 지워졌으면 붙일 곳이 없으니 값을 되돌림
+      const now = room && room.id === r.id ? room : deletedRooms.has(r.id) ? null : await KV.get(roomKey(r.id)),
+        m = now && (now.msgs || []).find((x) => x.id === mid),
+        a = m && m.role === "ai" ? m.alts.find((x) => x === alt) || m.alts.find((x) => x.text === text0) : null;
+      if (!a) throw { code: "gone" };
+      a.suggestions = list;
+      saveRoom(now);
+      if (room === r && !p.hidden && curAlt(r) === a) paint(list);
     } catch (e) {
       refund(q, label);
       if (room === r && !p.hidden) {
+        const why = e && e.code === "gone" ? "추천을 붙일 메시지가 없어졌어요." : errCopy(e);
         p.innerHTML =
-          `<div class="head">답변 추천을 만들지 못했어요. ${esc(errCopy(e))} 하트는 돌려드렸어요.<span class="spacer"></span>` +
+          `<div class="head">답변 추천을 만들지 못했어요. ${esc(why)} 하트는 돌려드렸어요.<span class="spacer"></span>` +
           `<button class="btn sm ghost" id="sugX">닫기</button></div>`;
         $("#sugX", p).onclick = hideSug;
       }
     } finally {
       busy = false;
-      if (room === r) updateComposer();
+      if (room && room.id === r.id) updateComposer();
     }
   };
   if (saved(r)) {
@@ -9766,7 +9798,8 @@ function reportSheet(r, m) {
            src/js/ui/chat/episode.js { bindEp, epBarHTML, epEventHTML, epTailHTML }
            src/js/ui/chat/generate.js { epCopy, generate, regen, regenAsk, sendTurn }
            src/js/ui/chat/render.js { fmt, liveFill, statusBlock }
-           src/js/ui/chat/view.js { flashHint, lastAi, updateMeter }
+           src/js/ui/chat/suggest.js { hideSug }
+           src/js/ui/chat/view.js { flashHint, lastAi, updateComposer, updateMeter }
            src/js/ui/ai-notice.js { aiLabel }
            src/js/ui/cover.js { coverHTML, pavHTML, zoomPic }
            src/js/core/wallet.js { plan }
@@ -9779,6 +9812,7 @@ function reportSheet(r, m) {
    쓰는 곳: src/js/ui/room-tools.js, src/js/ui/codex.js, src/js/ui/drawer/main.js, src/js/ui/me.js, src/js/ui/drawer/settings.js, src/js/ui/pay.js, src/js/ui/chat/view.js, src/js/ui/chat/generate.js, src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 메시지 로그 그리기·스크롤 따라가기·말풍선 메뉴(수정·삭제·북마크·고정·좋아요/아쉬워요·분기) */
+
 
 
 
@@ -10014,6 +10048,7 @@ function bindLog(box) {
           if (room.ep && i === room.msgs.length - 1 && (m.alts[m.idx].ep1 || m.ep0)) room.ep = epCopy(m.alts[m.idx].ep1 || m.ep0); // 에피소드: 그 버전 뒤의 진행 상태로
           saveRoom(room);
           renderLog();
+          syncSug();
         } else if (act === "regen") regenAsk(i);
         else if (act === "copy") copyText(curText(m).replace(/\[\[img:[^\]]*\]\]\n?/g, ""), "복사했어요");
         else if (act === "bm") {
@@ -10079,9 +10114,16 @@ function bindLog(box) {
             saveRoom(room);
             renderLog();
             updateMeter();
+            syncSug();
           });
       })
   );
+}
+/* 마지막 답변(또는 그 버전)이 바뀐 뒤: 펼쳐 둔 추천은 예전 답변의 것이니 닫고, 추천 버튼의 값 표시를 지금 답변에 맞춤 —
+   저장된 추천이 없는 버전으로 바꿨는데 값 없는 버튼이 남으면 누를 때 보이지 않던 값이 나감 */
+function syncSug() {
+  hideSug();
+  updateComposer();
 }
 function copyText(t, ok) {
   (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(

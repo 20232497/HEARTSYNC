@@ -3719,7 +3719,12 @@ function parseState(text, c, before) {
   if (Array.isArray(v.suggestions))
     out.suggestions = v.suggestions
       .filter((s) => typeof s === "string")
-      .map((s) => s.replace(/^\s*\d+[.)]\s*/, "").slice(0, 80))
+      .map((s) =>
+        s
+          .replace(/^\s*\d+[.)]\s*/, "")
+          .trim()
+          .slice(0, 80)
+      )
       .filter(Boolean)
       .slice(0, 3);
   const ep = v._ep && typeof v._ep === "object" ? v._ep : st && st._ep && typeof st._ep === "object" ? st._ep : null;
@@ -4839,10 +4844,16 @@ function deleteRoom(id) {
 /* ── src/js/ui/chat/search.js — 대화 검색: 이 대화방의 메시지에서 낱말을 찾아 결과 목록을 보여 주고, 누르면 그 메시지로 감(ui/room-tools.js jumpTo) */
 const FIND_MAX = 60,
   FIND_SIDE = 30;
+function foldCase(s) {
+  let out = "";
+  for (let i = 0; i < s.length; i++) {
+    const low = s[i].toLowerCase();
+    out += low.length === 1 ? low : s[i];
+  }
+  return out;
+}
 function searchRoom(r, q) {
-  const key = String(q || "")
-    .trim()
-    .toLowerCase();
+  const key = foldCase(String(q || "").trim());
   const out = [];
   if (!key) return out;
   for (let i = r.msgs.length - 1; i >= 0 && out.length < FIND_MAX; i--) {
@@ -4852,7 +4863,7 @@ function searchRoom(r, q) {
         .replace(/\[\[[^\]]*\]\]/g, "")
         .replace(/\s+/g, " ")
         .trim(),
-      at = text.toLowerCase().indexOf(key);
+      at = foldCase(text).indexOf(key);
     if (at < 0) continue;
     const end = at + key.length;
     out.push({
@@ -7013,7 +7024,11 @@ async function ensurePay(r) {
       saveWallet();
     }
   }
-  return quote(r.set);
+  if (S.wallet.hearts < heartsOf(q)) {
+    paywall(q, r);
+    return null;
+  }
+  return q;
 }
 function askPay(q, r) {
   return new Promise((resolve) => {
@@ -7208,6 +7223,8 @@ async function toggleSug() {
     const q = sugQuote(),
       label = `${r.char.title} · 답변 추천`;
     if (S.wallet.hearts < q.n) return needHearts(q.n, "답변 추천");
+    const mid = lastAi(r).id,
+      text0 = alt.text;
     busy = true;
     charge(q, label);
     open();
@@ -7240,24 +7257,30 @@ ${recent}`
       const list = Array.isArray(v?.suggestions)
         ? v.suggestions
             .filter((s) => typeof s === "string")
-            .map((s) => s.slice(0, 80))
+            .map((s) => s.trim().slice(0, 80))
+            .filter(Boolean)
             .slice(0, 3)
         : [];
       if (!list.length) throw { code: "invalid_json" };
-      alt.suggestions = list;
-      saveRoom(r);
-      if (room === r && !p.hidden) paint(list);
+      const now = room && room.id === r.id ? room : deletedRooms.has(r.id) ? null : await KV.get(roomKey(r.id)),
+        m = now && (now.msgs || []).find((x) => x.id === mid),
+        a = m && m.role === "ai" ? m.alts.find((x) => x === alt) || m.alts.find((x) => x.text === text0) : null;
+      if (!a) throw { code: "gone" };
+      a.suggestions = list;
+      saveRoom(now);
+      if (room === r && !p.hidden && curAlt(r) === a) paint(list);
     } catch (e) {
       refund(q, label);
       if (room === r && !p.hidden) {
+        const why = e && e.code === "gone" ? "추천을 붙일 메시지가 없어졌어요." : errCopy(e);
         p.innerHTML =
-          `<div class="head">답변 추천을 만들지 못했어요. ${esc(errCopy(e))} 하트는 돌려드렸어요.<span class="spacer"></span>` +
+          `<div class="head">답변 추천을 만들지 못했어요. ${esc(why)} 하트는 돌려드렸어요.<span class="spacer"></span>` +
           `<button class="btn sm ghost" id="sugX">닫기</button></div>`;
         $("#sugX", p).onclick = hideSug;
       }
     } finally {
       busy = false;
-      if (room === r) updateComposer();
+      if (room && room.id === r.id) updateComposer();
     }
   };
   if (saved(r)) {
@@ -7890,6 +7913,7 @@ function bindLog(box) {
           if (room.ep && i === room.msgs.length - 1 && (m.alts[m.idx].ep1 || m.ep0)) room.ep = epCopy(m.alts[m.idx].ep1 || m.ep0);
           saveRoom(room);
           renderLog();
+          syncSug();
         } else if (act === "regen") regenAsk(i);
         else if (act === "copy") copyText(curText(m).replace(/\[\[img:[^\]]*\]\]\n?/g, ""), "복사했어요");
         else if (act === "bm") {
@@ -7955,9 +7979,14 @@ function bindLog(box) {
             saveRoom(room);
             renderLog();
             updateMeter();
+            syncSug();
           });
       })
   );
+}
+function syncSug() {
+  hideSug();
+  updateComposer();
 }
 function copyText(t, ok) {
   (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(

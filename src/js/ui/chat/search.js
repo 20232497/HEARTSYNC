@@ -13,15 +13,23 @@ import { closeOverlays, sheet } from "../sheet.js";
 const FIND_MAX = 60,
   FIND_SIDE = 30;
 
+/* 대소문자를 가리지 않고 찾기 위한 소문자 글 — 글자 수(자리)를 원문과 똑같이 둠: 소문자로 바꾸면 길이가 달라지는 글자(İ 등)는 그대로 둠.
+   찾은 자리로 원문을 자르기 때문에 자리가 어긋나면 강조가 틀어짐 */
+function foldCase(s) {
+  let out = "";
+  for (let i = 0; i < s.length; i++) {
+    const low = s[i].toLowerCase();
+    out += low.length === 1 ? low : s[i];
+  }
+  return out;
+}
 /**
  * 방의 메시지에서 낱말을 찾음 — 대소문자를 가리지 않고, 그림 태그는 빼고, 최근 메시지부터 FIND_MAX건까지. 메시지 하나에 한 건(처음 나온 자리).
  * @param {Room} r @param {string} q 찾을 말
  * @returns {{ id: string, who: string, pre: string, hit: string, post: string }[]} who는 말한 쪽 이름, pre·hit·post는 찾은 말과 그 앞뒤 글
  */
 export function searchRoom(r, q) {
-  const key = String(q || "")
-    .trim()
-    .toLowerCase();
+  const key = foldCase(String(q || "").trim());
   const out = [];
   if (!key) return out;
   for (let i = r.msgs.length - 1; i >= 0 && out.length < FIND_MAX; i--) {
@@ -31,7 +39,7 @@ export function searchRoom(r, q) {
         .replace(/\[\[[^\]]*\]\]/g, "")
         .replace(/\s+/g, " ")
         .trim(),
-      at = text.toLowerCase().indexOf(key);
+      at = foldCase(text).indexOf(key);
     if (at < 0) continue;
     const end = at + key.length;
     out.push({
