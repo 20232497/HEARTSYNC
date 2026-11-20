@@ -138,6 +138,6 @@ export function sideSheet(r) {
     closeOverlays();
     setRoom(f);
     go("r-" + f.id);
-    toast("외전을 열었어요 — ✦ AI 추천에 첫 장면 제안이 있어요");
+    toast("외전을 열었어요 — ✦ 추천에 첫 장면 제안이 있어요");
   };
 }

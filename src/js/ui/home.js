@@ -10,7 +10,7 @@ import { IMG } from "../services/images.js";
 import { coverHTML } from "./cover.js";
 import { ICON } from "./icons.js";
 import { closeOverlays, sheet } from "./sheet.js";
-import { bindGo, go, topbar } from "./shell.js";
+import { bindGo, favMark, go, topbar } from "./shell.js";
 
 export function cardHTML(c) {
   const body = (c.cast || []).filter((x) => !x.of).length; // 다른 모습(폼)은 한 사람으로 — 예전엔 폼까지 세어 인원이 부풀었음
@@ -107,7 +107,7 @@ export function viewHome() {
             .map(
               (r) =>
                 `
-      <button data-room="${esc(r.id)}">${coverHTML(r)}<span class="x"><b>${esc(r.name)}</b><span>${esc(r.last)}</span></span>` +
+      <button data-room="${esc(r.id)}">${coverHTML(r)}<span class="x"><b>${favMark(r)}${esc(r.name)}</b><span>${esc(r.last)}</span></span>` +
                 `<span class="note">${ago(r.at)}</span></button>`
             )
             .join("")}</div>`
