@@ -96,10 +96,13 @@ main에 병합되면 곧바로 실제 사이트(GitHub Pages)에 나가요.
 - **보내지 않는 것**: 키·비밀 값·개인 데이터·성인 수위 글(애초에 저장소에 넣지 않는 것들). 커밋하지 않은 파일도 Codex가 읽을 수 있으니 워크트리에 이런 파일을 두지 않아요.
 - **반대 방향(Codex가 Claude에게 묻기)**: Codex 앱이 작성자로 일할 때는 `AGENTS.md`를 거쳐 이 문서를 따라요 — 자기 워크트리·최신 origin/main의 새 가지·커밋까지만, 보고는 사용자가 병합 담당에 전해요. 수정한 부분은 Claude에게 같은 방식으로 의견을 물어요(왕복 두 번까지·Claude 의견도 승인이 아님).
   ```powershell
-  node $HOME/bin/claude-ask.mjs "Codex입니다. 한국어로 답하세요. git show <해시>의 변경을 검토해 주세요. 문제는 파일:줄과 이유로."
-  node $HOME/bin/claude-ask.mjs --resume <session id> "○번은 ~라서 동의하지 않아요. 그래도 문제라고 보나요?"
+  node <홈 폴더>/bin/claude-ask.mjs "Codex입니다. 한국어로 답하세요. git show <해시>의 변경을 검토해 주세요. 문제는 파일:줄과 이유로."
+  node <홈 폴더>/bin/claude-ask.mjs "Codex입니다. 앞서 당신은 '<Claude의 앞 답 요약>'이라고 했어요. ○번은 ~라서 동의하지 않아요. 그래도 문제라고 보나요?"
   ```
-  `claude-ask.mjs`(이 PC에만 있음)가 Claude를 읽기 전용(Read·Grep·Glob·git show/diff/log)으로 고정해 부르고 첫 줄에 `session id:`를 찍어요. Codex의 격리 안에서는 인터넷이 막혀 실패하니, 이 스크립트만 격리 밖에서 돌게 Codex에서 허용해 둬야 해요(사용자가 Codex 앱에서 승인하거나 `~/.codex/rules/`에 규칙). 비용은 사용자의 Claude 요금제 사용량이에요.
+  - `claude-ask.mjs`(이 PC에만 있음)가 Claude를 읽기 전용(Read·Grep·Glob·git show/diff/log)으로 고정해 불러요. 한 번에 10~20초.
+  - **이어 물을 때는 Claude의 앞 답을 질문에 붙여 새로 물어요** — Codex 격리 안에서는 Claude 쪽 대화 이어 가기(`--resume`)가 실패해요.
+  - Codex는 Codex 규칙(`~/.codex/rules/claude-ask.rules` — 이 PC에만 있음)이 허용한 이 스크립트만 묻지 않고 돌려요. 규칙은 경로를 글자 그대로 맞추므로 `<홈 폴더>`는 실제 경로로 풀어 써요(`$HOME`이면 막힘). 규칙이 없으면 Codex 앱이 실행 승인을 물어요.
+  - 비용은 사용자의 Claude 요금제 사용량이에요.
 
 ## 명령문을 넘길 때
 
