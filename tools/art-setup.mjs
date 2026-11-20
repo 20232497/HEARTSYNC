@@ -24,7 +24,12 @@ const say = (t) => console.log("· " + t);
 const mark = () => path.resolve(SITE, git(SITE, "rev-parse", "--git-path", MARK));
 if (fs.existsSync(SITE)) {
   // 있는 폴더는 우리가 만든 사본(표식이 있거나, 이 저장소의 작업 사본이면서 전용 가지)일 때만 쓴다 — 남의 폴더를 전용 사본으로 삼지 않는다
-  const ours = fs.existsSync(path.join(SITE, ".git")) && (fs.existsSync(mark()) || git(SITE, "rev-parse", "--abbrev-ref", "HEAD") === HOME);
+  // 이 저장소의 작업 사본인지는 git 공용 폴더가 같은지로 본다(이름만 같은 다른 저장소를 쓰지 않게)
+  const common = (dir) => fs.realpathSync(path.resolve(dir, git(dir, "rev-parse", "--git-common-dir")));
+  const ours =
+    fs.existsSync(path.join(SITE, ".git")) &&
+    common(SITE) === common(ROOT) &&
+    (fs.existsSync(mark()) || git(SITE, "rev-parse", "--abbrev-ref", "HEAD") === HOME);
   if (!ours) throw new Error("이미 있는 폴더인데 그림 전용 작업 사본이 아니에요 — 다른 자리를 --site로 주세요: " + SITE);
   say("그림 전용 작업 사본이 이미 있어요: " + SITE);
 } else {
@@ -39,7 +44,8 @@ fs.mkdirSync(LIB, { recursive: true });
 // 창을 닫으면 서버도 꺼진다. 오류가 나면 창이 바로 닫히지 않게 멈춰 둔다. (한글이 깨지지 않게 UTF-8로)
 const body =
   `@echo off\r\nchcp 65001 >nul\r\ntitle HEART SYNC 그림 총괄\r\ncd /d "${SITE.replace(/%/g, "%%")}" || (echo 그림 전용 작업 사본을 찾지 못했어요. & pause & exit /b 1)\r\n` +
-  `if not exist tools\\art-launch.mjs (\r\n  git fetch origin --quiet\r\n  git merge -q --ff-only origin/main\r\n)\r\n` +
+  `set B=\r\nfor /f "delims=" %%b in ('git rev-parse --abbrev-ref HEAD') do set B=%%b\r\n` +
+  `if not exist tools\\art-launch.mjs if "%B%"=="${HOME}" (\r\n  git fetch origin --quiet\r\n  git merge -q --ff-only origin/main\r\n)\r\n` +
   `if not exist tools\\art-launch.mjs (\r\n  echo 그림 총괄 페이지가 아직 main에 들어오지 않았어요. 병합된 뒤에 다시 열어 주세요.\r\n  pause\r\n  exit /b 1\r\n)\r\n` +
   `node tools\\art-launch.mjs\r\nif errorlevel 1 pause\r\n`;
 fs.writeFileSync(CMD, body, "utf8"); // BOM 없이 — 있으면 첫 줄이 깨진다

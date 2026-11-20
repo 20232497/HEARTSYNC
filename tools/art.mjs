@@ -197,20 +197,30 @@ function mockImage(task) {
 /* ── 사이트에 올리기(./art/publish.mjs) ── 한 번에 하나만. 페이지가 진행 글을 /api/site로 읽는다 */
 const run = (cmd, args, o = {}) =>
   new Promise((ok, no) =>
-    execFile(cmd, args, { cwd: ROOT, maxBuffer: 64 * 1024 * 1024, windowsHide: true, timeout: o.timeout || 3 * 60000 }, (e, out, err) => {
-      if (e && !o.allowFail)
-        return no(
-          new Error(
-            `${cmd} ${args.slice(0, 3).join(" ")} — ${String(err || e.message)
-              .trim()
-              .slice(-400)}`
-          )
-        );
-      ok({ code: e ? e.code || 1 : 0, out: String(out) });
-    })
+    execFile(
+      cmd,
+      args,
+      { cwd: ROOT, maxBuffer: 64 * 1024 * 1024, windowsHide: true, timeout: o.timeout || 3 * 60000, encoding: o.raw ? "buffer" : "utf8" },
+      (e, out, err) => {
+        if (e && !o.allowFail)
+          return no(
+            new Error(
+              `${cmd} ${args.slice(0, 3).join(" ")} — ${String(err || e.message)
+                .trim()
+                .slice(-400)}`
+            )
+          );
+        ok({ code: e ? e.code || 1 : 0, out: o.raw ? out : String(out) });
+      }
+    )
   );
 const job = { running: false, log: [], error: "", url: "", done: null };
+const LOCK = path.join(LIB, ".publishing.lock");
+/** 올리는 중인지 — 이 창이든 같은 PC의 다른 창이든(잠금 파일이 45분 넘게 남아 있으면 죽은 것으로 본다) */
+const publishing = () => job.running || (fs.existsSync(LOCK) && Date.now() - fs.statSync(LOCK).mtimeMs < 45 * 60000);
 function startPublish() {
+  fs.mkdirSync(LIB, { recursive: true });
+  fs.writeFileSync(LOCK, String(process.pid));
   Object.assign(job, { running: true, log: [], error: "", url: "", done: null });
   publish({
     run,
@@ -221,7 +231,10 @@ function startPublish() {
   })
     .then((d) => Object.assign(job, { done: d, url: d.url }))
     .catch((e) => Object.assign(job, { error: String((e && e.message) || e), url: (e && e.url) || "" }))
-    .finally(() => (job.running = false));
+    .finally(() => {
+      job.running = false;
+      fs.rmSync(LOCK, { force: true });
+    });
 }
 
 const send = (res, code, body, type) => {
@@ -292,7 +305,7 @@ const server = http.createServer(async (req, res) => {
     if (post && u.pathname === "/api/site") {
       if (MOCK) return send(res, 400, { error: "연습 모드에서는 올릴 수 없어요" });
       if (!ours(req, true)) return send(res, 403, { error: "이 페이지의 단추로만 올릴 수 있어요" });
-      if (job.running) return send(res, 409, { error: "이미 올리는 중이에요" });
+      if (publishing()) return send(res, 409, { error: "이미 올리는 중이에요(다른 창일 수도 있어요)" });
       startPublish();
       return send(res, 200, { ok: true });
     }
@@ -327,10 +340,12 @@ const server = http.createServer(async (req, res) => {
     // 고른 그림 싣기 — 경로는 의뢰 목록이 정한 그 자리뿐, webp만. 연습 그림은 싣지 않는다
     if (post && u.pathname === "/api/save") {
       if (MOCK) return send(res, 400, { error: "연습 모드의 그림은 실을 수 없어요" });
-      if (job.running) return send(res, 409, { error: "사이트에 올리는 중에는 실을 수 없어요 — 끝난 뒤에 다시 눌러 주세요" }); // 올리는 사이 그림이 바뀌지 않게
+      const busy = () => (publishing() ? send(res, 409, { error: "사이트에 올리는 중에는 실을 수 없어요 — 끝난 뒤에 다시 눌러 주세요" }) || true : false); // 올리는 사이 그림이 바뀌지 않게
+      if (busy()) return;
       const { row } = findRow(await works(), q),
         buf = await body(req);
       if (!isWebp(buf)) return send(res, 400, { error: "webp 그림이 아니에요" });
+      if (busy()) return; // 그림을 받는 사이 올리기가 시작됐을 수 있다 — 쓰기 직전에 한 번 더
       const abs = path.join(ROOT, row.path);
       fs.mkdirSync(path.dirname(abs), { recursive: true });
       fs.writeFileSync(abs, buf);

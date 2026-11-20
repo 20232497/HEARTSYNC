@@ -66,7 +66,12 @@ function world(name, o = {}) {
     }
     if (a[1] === "checks") {
       const c = G.checks.length > 1 ? G.checks.shift() : G.checks[0],
-        list = Array.isArray(c) ? c : [{ name: "check", bucket: c }];
+        list = Array.isArray(c)
+          ? c
+          : [
+              { name: "check", bucket: c },
+              { name: "e2e", bucket: c }
+            ];
       return { code: list.every((x) => x.bucket === "pass") ? 0 : 8, out: JSON.stringify(list) };
     }
     if (a[1] === "view" && a.includes("url,state,baseRefName,headRefName"))
@@ -104,7 +109,7 @@ function world(name, o = {}) {
   const run = async (cmd, args, opt = {}) => {
     if (cmd === "gh") return ghFake(args);
     try {
-      return { code: 0, out: execFileSync(cmd, args, { cwd: site, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }) };
+      return { code: 0, out: execFileSync(cmd, args, { cwd: site, encoding: opt.raw ? "buffer" : "utf8", stdio: ["ignore", "pipe", "pipe"] }) };
     } catch (e) {
       if (opt.allowFail) return { code: e.status || 1, out: String(e.stdout || "") };
       throw new Error(`${cmd} ${args.join(" ")} — ${String(e.stderr || e.message).trim()}`);
@@ -142,7 +147,8 @@ test("올리기: 줄 가르기·제목·검사 판정·그림 서명", () => {
   assert.equal(verdict([c("Vercel", "pass")]), "pending", "꼭 통과해야 하는 검사가 아직 안 붙었으면 통과로 치지 않음");
   assert.equal(verdict([c("check", "skipping"), c("Vercel", "pass")]), "pending", "꼭 통과해야 하는 검사가 건너뛰어졌으면 통과로 치지 않음");
   assert.equal(verdict([c("check", "pass"), c("e2e", "pending")]), "pending");
-  assert.equal(verdict([c("check", "pass"), c("x", "skipping")]), "pass");
+  assert.equal(verdict([c("check", "pass"), c("x", "skipping")]), "pending", "흐름 시험(e2e)이 아직 안 붙었으면 통과로 치지 않음");
+  assert.equal(verdict([c("check", "pass"), c("e2e", "pass"), c("x", "skipping")]), "pass");
   assert.equal(verdict([c("check", "fail"), c("e2e", "cancel"), c("v", "pass")]), "fail: check, e2e");
   assert.ok(
     isImage(webp("x")) && isImage(Buffer.from("\x89PNG\r\n\x1a\n0000", "latin1")) && isImage(Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0, 0, 0, 0, 0, 0, 0, 0]))
@@ -232,7 +238,7 @@ test("올리기: 검사가 떨어지면 병합하지 않고 PR을 열어 둠 —
     () => null,
     (x) => x
   );
-  assert.match(e.message, /검사가 떨어져 병합하지 않았어요\(check\)/);
+  assert.match(e.message, /검사가 떨어져 병합하지 않았어요\(check, e2e\)/);
   assert.equal(e.url, "https://github.com/x/y/pull/1");
   assert.equal(w.G.merged, false);
   const st = await status(w.run, w.site);
@@ -274,4 +280,42 @@ test("올리기: 기다리는 사이 main이 바뀌면(빌드 결과가 겹침) 
   assert.equal(git(w.site, "rev-parse", "HEAD"), git(w.site, "rev-parse", "origin/main"));
   assert.equal(git(w.site, "status", "--porcelain"), "");
   assert.equal(count(w, "pr merge"), 1, "검사한 커밋과 PR의 끝이 같을 때만 병합됨(흉내가 확인)");
+});
+
+test("올리기: 올리던 가지의 중간 커밋에 그림 아닌 파일이 있었으면(나중에 지웠어도) 올리지 않고, 커밋된 빌드 결과가 다시 빌드한 것과 달라도 올리지 않음", async () => {
+  const w = world("history");
+  git(w.site, "checkout", "-q", "-b", "art/upload-20261121-000008");
+  put(w.site, "content/f/hwanghu/images/cover.webp", webp("표지"));
+  put(w.site, "src/secret.js", "딸려 올라가면 안 되는 것\n");
+  buildIn(w.site);
+  git(w.site, "add", "-A");
+  git(w.site, "commit", "-q", "-m", "섞인 커밋");
+  fs.rmSync(path.join(w.site, "src/secret.js"));
+  git(w.site, "add", "-A");
+  git(w.site, "commit", "-q", "-m", "지움"); // 마지막 모습은 그림과 빌드 결과뿐이지만, 올리면 중간 커밋도 공개된다
+  await assert.rejects(publish(w.ctx), /그림이 아닌 파일이 들어 있어 올리지 않았어요: src\/secret\.js/);
+  assert.equal(w.heads(), 1, "원격에 올라간 가지 없음");
+  const v = world("stale-built");
+  git(v.site, "checkout", "-q", "-b", "art/upload-20261121-000008");
+  put(v.site, "content/f/hwanghu/images/cover.webp", webp("표지"));
+  put(v.site, "index.html", "손으로 고친 결과물\n");
+  git(v.site, "add", "-A");
+  git(v.site, "commit", "-q", "-m", "그림 싣기");
+  await assert.rejects(publish(v.ctx), /빌드 결과가 다시 빌드한 것과 달라 올리지 않았어요/);
+  assert.equal(v.heads(), 1);
+  assert.equal(v.G.pr, null);
+});
+
+test("올리기: 병합은 됐는데 정리하기 전에 끊겼으면, 다시 눌렀을 때 정리만 함(다시 올리지 않음)", async () => {
+  const w = world("merged-then-cut", { checks: ["fail"] });
+  put(w.site, "content/f/hwanghu/images/cover.webp", webp("표지"));
+  await assert.rejects(publish(w.ctx), /검사가 떨어져/);
+  const sha = git(w.site, "rev-parse", "HEAD");
+  await w.run("gh", ["pr", "merge", w.G.pr.url, "--merge", "--match-head-commit", sha]); // GitHub에서 병합된 뒤 창이 닫힌 모양
+  const r = await publish(w.ctx);
+  assert.equal(r.count, 1);
+  assert.equal(git(w.site, "rev-parse", "--abbrev-ref", "HEAD"), HOME);
+  assert.equal(git(w.site, "rev-parse", "HEAD"), git(w.site, "rev-parse", "origin/main"));
+  assert.equal(count(w, "pr create"), 1);
+  assert.equal(git(w.site, "branch", "--list", "art/upload-*"), "");
 });
