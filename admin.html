@@ -893,7 +893,7 @@ const LIMITS = {
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/core/util.js
    내보냄: $, $$, esc, uid, clamp, today, won, num, ago, timeoutSignal, abortCode, toast
-   쓰는 곳: src/js/core/storage.js, src/js/core/state.js, src/js/core/wallet.js, src/js/core/rooms.js, src/js/services/images.js, src/js/services/cloud.js, src/js/services/supabase.js, src/js/ai/parse.js, src/js/ai/llm.js, src/js/ai/prompt/memory.js, src/js/ui/sheet.js, src/js/ui/chat/cmdlist.js, src/js/ui/cover.js, src/js/ui/chat/render.js, src/js/ui/room-tools.js, src/js/ui/chat/search.js, src/js/ui/worldart.js, src/js/ui/drawer/browse.js, src/js/ui/codex.js, src/js/ui/drawer/main.js, src/js/ui/pins.js, src/js/ui/drawer/memory.js, src/js/ui/account.js, src/js/ui/store.js, src/js/ui/faq.js, src/js/ui/help.js, src/js/ui/home.js, src/js/ui/me.js, src/js/ui/drawer/settings.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/pay.js, src/js/ui/chat/suggest.js, src/js/ui/chat/view.js, src/js/ui/chat/episode.js, src/js/ui/report.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/ui/shell.js, src/js/ui/start-sheet.js, src/js/ui/detail.js, src/js/ui/chats.js, src/js/ui/login.js, src/js/app.js, src/js/admin/support.js, src/js/admin/gate.js, src/js/core/migrate.js, src/js/boot.js
+   쓰는 곳: src/js/core/storage.js, src/js/core/state.js, src/js/core/wallet.js, src/js/core/rooms.js, src/js/services/images.js, src/js/services/cloud.js, src/js/services/supabase.js, src/js/ai/parse.js, src/js/ai/llm.js, src/js/ai/prompt/memory.js, src/js/ui/sheet.js, src/js/ui/chat/cmdlist.js, src/js/ui/cover.js, src/js/ui/chat/render.js, src/js/ui/room-tools.js, src/js/ui/chat/search.js, src/js/ui/worldart.js, src/js/ui/drawer/browse.js, src/js/ui/codex.js, src/js/ui/drawer/main.js, src/js/ui/pins.js, src/js/ui/drawer/memory.js, src/js/ui/chat-settings.js, src/js/ui/account.js, src/js/ui/store.js, src/js/ui/faq.js, src/js/ui/help.js, src/js/ui/home.js, src/js/ui/me.js, src/js/ui/drawer/settings.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/pay.js, src/js/ui/chat/suggest.js, src/js/ui/chat/view.js, src/js/ui/chat/episode.js, src/js/ui/report.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/ui/shell.js, src/js/ui/start-sheet.js, src/js/ui/detail.js, src/js/ui/chats.js, src/js/ui/login.js, src/js/app.js, src/js/admin/support.js, src/js/admin/gate.js, src/js/core/migrate.js, src/js/boot.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* DOM·문자열·숫자 유틸, toast, 예상 못 한 오류 기록(reportError) */
 /** @typedef {import("./types.js").TimeoutSignal} TimeoutSignal */
@@ -1132,7 +1132,7 @@ const KV = {
            src/js/core/constants.js { LIMITS }
            src/js/core/util.js { today }
    내보냄: hasClaudeKey, S, room, gen, setGen, setRoom
-   쓰는 곳: src/js/core/audience.js, src/js/core/wallet.js, src/js/core/rooms.js, src/js/core/settings.js, src/js/core/shelf.js, src/js/services/cloud.js, src/js/services/load.js, src/js/services/sync.js, src/js/ai/llm.js, src/js/ai/prompt/memory.js, src/js/ui/chat/cmdlist.js, src/js/ui/ai-notice.js, src/js/ui/room-tools.js, src/js/ui/chat/search.js, src/js/ui/drawer/main.js, src/js/ui/drawer/memory.js, src/js/ui/account.js, src/js/ui/store.js, src/js/ui/help.js, src/js/ui/home.js, src/js/ui/me.js, src/js/ui/drawer/settings.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/pay.js, src/js/ui/chat/suggest.js, src/js/ui/chat/view.js, src/js/ui/chat/episode.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/ui/shell.js, src/js/ui/start-sheet.js, src/js/ui/detail.js, src/js/ui/chats.js, src/js/app.js, src/js/core/migrate.js, src/js/boot.js
+   쓰는 곳: src/js/core/audience.js, src/js/core/wallet.js, src/js/core/rooms.js, src/js/core/settings.js, src/js/core/shelf.js, src/js/services/cloud.js, src/js/services/load.js, src/js/services/sync.js, src/js/ai/llm.js, src/js/ai/prompt/memory.js, src/js/ui/chat/cmdlist.js, src/js/ui/ai-notice.js, src/js/ui/room-tools.js, src/js/ui/chat/search.js, src/js/ui/drawer/main.js, src/js/ui/drawer/memory.js, src/js/ui/chat-settings.js, src/js/ui/account.js, src/js/ui/store.js, src/js/ui/help.js, src/js/ui/home.js, src/js/ui/me.js, src/js/ui/drawer/settings.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/pay.js, src/js/ui/chat/suggest.js, src/js/ui/chat/view.js, src/js/ui/chat/episode.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/ui/shell.js, src/js/ui/start-sheet.js, src/js/ui/detail.js, src/js/ui/chats.js, src/js/app.js, src/js/core/migrate.js, src/js/boot.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 전역 상태 S(지갑·페르소나·대화방·설정), 현재 대화방·진행 중 생성(다른 모듈은 set…()로만 바꿈), API 키 유무(hasClaudeKey — S와 CFG.serverKeys를 함께 봄) */
 
@@ -2339,7 +2339,7 @@ for (const c of ORIGINALS) {
            src/js/core/audience.js { audOK }
            src/js/core/constants.js { EXAMPLE_CAST }
    내보냄: normalizeChar, getChar, LIVE_FIELDS, liveWork, latestWork, exampleCast
-   쓰는 곳: src/js/core/rooms.js, src/js/images/pick.js, src/js/ai/llm.js, src/js/ai/prompt/input.js, src/js/ai/prompt/rules.js, src/js/ui/chat/cmdlist.js, src/js/ui/cover.js, src/js/ui/worldart.js, src/js/ui/drawer/browse.js, src/js/ui/codex.js, src/js/ui/drawer/main.js, src/js/ui/faq.js, src/js/ui/me.js, src/js/ui/drawer/settings.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/chat/generate.js, src/js/ui/detail.js, src/js/ui/login.js, src/js/app.js
+   쓰는 곳: src/js/core/rooms.js, src/js/images/pick.js, src/js/ai/llm.js, src/js/ai/prompt/input.js, src/js/ai/prompt/rules.js, src/js/ui/chat/cmdlist.js, src/js/ui/cover.js, src/js/ui/worldart.js, src/js/ui/drawer/browse.js, src/js/ui/codex.js, src/js/ui/drawer/main.js, src/js/ui/chat-settings.js, src/js/ui/faq.js, src/js/ui/drawer/settings.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/chat/generate.js, src/js/ui/detail.js, src/js/ui/login.js, src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 작품 찾기·정규화: normalizeChar, id로 찾기(getChar — 오리지널), 방의 작품을 지금 읽을 모양으로(liveWork — 어느 칸을 최신 작품에서 읽는지는 LIVE_FIELDS 한 곳), 화면 예시 문구에 쓸 인물(exampleCast) */
 
@@ -3047,7 +3047,7 @@ function sideRoom(r, kind, who) {
            src/js/core/state.js { S }
            src/js/core/storage.js { KV }
    내보냄: cleanKeys, saveSettings, applySettings
-   쓰는 곳: src/js/services/sync.js, src/js/ui/ai-notice.js, src/js/ui/drawer/memory.js, src/js/ui/home.js, src/js/ui/me.js, src/js/app.js, src/js/core/migrate.js, src/js/boot.js
+   쓰는 곳: src/js/services/sync.js, src/js/ui/ai-notice.js, src/js/ui/drawer/memory.js, src/js/ui/chat-settings.js, src/js/ui/home.js, src/js/ui/me.js, src/js/app.js, src/js/core/migrate.js, src/js/boot.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 설정 저장·적용(글자 크기·줄 간격 등 CSS 변수), API 키 형식 안내. 저장하면 "settings" 이벤트 — 계정 저장(services/cloud.js)이 받음 */
 
@@ -6785,6 +6785,7 @@ function drawerMain({ r, c, body, cfg, q }) {
         <div class="grp"></div>
         <button id="mModel">AI 모델<span class="v">${MODELS[r.set.model].name}</span></button>
         <button data-v="output">출력 설정<span class="v">${LEN[r.set.len].name} · ${r.set.mem}턴</span></button>
+        <button data-v="display">표시 설정<span class="v">글자 ${S.settings.fs}px · 줄 간격·글꼴</span></button>
         <div class="grp"></div>
         <button data-v="status">상태창</button>
         <button data-v="gallery">갤러리<span class="v">${galleryItems(r).length}장</span></button>
@@ -7139,6 +7140,75 @@ function drawerMemory({ r, ov, body, cfg }) {
         })
     );
   paint();
+}
+/* ════════════════════════════════════════════════════════════════════════════════════════════════════
+   src/js/ui/chat-settings.js
+   가져옴: src/js/core/character.js { exampleCast }
+           src/js/core/settings.js { applySettings, saveSettings }
+           src/js/core/state.js { S }
+           src/js/core/util.js { $, $$, esc }
+   내보냄: chatSettingsHTML, bindChatSettings
+   쓰는 곳: src/js/ui/me.js, src/js/ui/drawer/settings.js
+   ════════════════════════════════════════════════════════════════════════════════════════════════════ */
+/* 채팅 표시 설정 조각: 글자 크기·줄 간격·지문 글꼴·Enter로 보내기·장면 이미지 보기 — MY의 '채팅 설정'과 대화방 메뉴의 '표시 설정'이 같이 씀(한 벌).
+   바꾸는 즉시 저장하고(saveSettings) 화면에 반영(applySettings — 대화방 안에서 바꾸면 뒤의 대화 글이 바로 바뀜). 방마다가 아니라 앱 전체의 설정:
+   글자 크기와 Enter로 보내기는 이 기기에만, 줄 간격·지문 글꼴·장면 이미지 보기는 로그인하면 계정에도 저장됨(services/cloud.js DEVICE_SETTINGS) */
+
+
+
+
+
+const LINE_GAPS = [
+    [1.6, "좁게"],
+    [1.8, "보통"],
+    [2.1, "넓게"]
+  ],
+  NARR_FONTS = [
+    ["serif", "명조"],
+    ["sans", "고딕"]
+  ];
+/** 설정 칸의 HTML — 한 화면에 한 번만 넣음(id가 겹치지 않게). @param {{ preview?: boolean }} [o] preview: 보기 말풍선을 같이 넣을지(대화방 안에서는 뒤의 대화가 보기라 뺌) @returns {string} */
+function chatSettingsHTML({ preview = true } = {}) {
+  const s = S.settings,
+    opt = (cur) => (x) => `<button type="button" data-v="${x[0]}" class="${cur == x[0] ? "on" : ""}">${x[1]}</button>`,
+    seg = (key, list, cur) => `<div class="seg" data-set="${key}">${list.map(opt(cur)).join("")}</div>`;
+  return (
+    (preview
+      ? `<div class="bubble chat-pv" aria-hidden="true"><p class="narr">창밖으로 첫눈이 내리기 시작했다.</p><p>` +
+        `<b class="spk">${esc(exampleCast().name)}</b><span class="dlg">"오늘은 여기까지 할까요?"</span></p></div>`
+      : "") +
+    `<div class="field"${preview ? "" : ' style="margin-top:0"'}><label for="cfs" style="display:flex">글자 크기<span class="spacer"></span>` +
+    `<output id="cfsV">${s.fs}px</output></label><input type="range" id="cfs" min="13" max="21" step="0.5" value="${s.fs}"></div>` +
+    `<div class="two"><div class="field"><span class="lbl">줄 간격</span>${seg("chatLh", LINE_GAPS, s.chatLh)}</div>` +
+    `<div class="field"><span class="lbl">지문 글꼴</span>${seg("narrFont", NARR_FONTS, s.narrFont)}</div></div>` +
+    `<div class="toggle" style="margin-top:14px"><label for="cEnter">Enter로 보내기 <span class="note">끄면 Ctrl+Enter로 보내요</span></label>` +
+    `<input type="checkbox" id="cEnter" ${s.enterSend !== false ? "checked" : ""}></div>` +
+    `<div class="toggle" style="margin-top:8px"><label for="cImg">대화 속 장면 이미지 보기</label>` +
+    `<input type="checkbox" id="cImg" ${s.sceneImg !== false ? "checked" : ""}></div>`
+  );
+}
+/** chatSettingsHTML로 넣은 칸에 동작을 붙임 — 바꾸는 즉시 저장·반영. @param {HTMLElement} root 그 칸이 들어 있는 요소 @param {() => void} [after] 바뀐 뒤 부를 것(대화방의 입력창 안내 갱신 등) */
+function bindChatSettings(root, after) {
+  const set = (k, val) => {
+    S.settings[k] = val;
+    saveSettings();
+    applySettings();
+    if (after) after();
+  };
+  $("#cfs", root).oninput = (e) => {
+    set("fs", +e.target.value);
+    $("#cfsV", root).textContent = e.target.value + "px";
+  };
+  $$("[data-set] button", root).forEach(
+    (b) =>
+      (b.onclick = () => {
+        const k = b.parentElement.dataset.set;
+        set(k, k === "chatLh" ? +b.dataset.v : b.dataset.v);
+        $$("button", b.parentElement).forEach((x) => x.classList.toggle("on", x === b));
+      })
+  );
+  $("#cEnter", root).onchange = (e) => set("enterSend", e.target.checked);
+  $("#cImg", root).onchange = (e) => set("sceneImg", e.target.checked);
 }
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/ui/account.js
@@ -8183,7 +8253,6 @@ function viewHome() {
    src/js/ui/me.js
    가져옴: src/js/ai/llm.js { engineName }
            src/js/core/audience.js { AUDS, audience }
-           src/js/core/character.js { exampleCast }
            src/js/core/constants.js { LIMITS }
            src/js/core/rooms.js { roomKey, saveRoom }
            src/js/core/settings.js { applySettings, cleanKeys, saveSettings }
@@ -8194,6 +8263,7 @@ function viewHome() {
            src/js/services/cloud.js { CLOUD }
            src/js/services/images.js { IMG }
            src/js/ui/account.js { accountBoxHTML, bindAccount }
+           src/js/ui/chat-settings.js { bindChatSettings, chatSettingsHTML }
            src/js/ui/chat/log.js { renderLog }
            src/js/ui/cover.js { pavHTML }
            src/js/ui/ext.js { runExt }
@@ -8265,33 +8335,7 @@ function viewMe() {
     <h2 class="sec">관심있는 대화 <small>홈에 보일 작품</small></h2>
     <div class="box">${audSegHTML()}<p class="note" style="margin:8px 0 0">남성향은 여성 캐릭터, 여성향은 남성 캐릭터와의 대화만 보여요.</p></div>
     <h2 class="sec">채팅 설정 <small>바꾸면 바로 적용돼요</small></h2>
-    <div class="box">
-      <div class="bubble chat-pv" aria-hidden="true"><p class="narr">창밖으로 첫눈이 내리기 시작했다.</p><p>` +
-    `<b class="spk">${esc(exampleCast().name)}</b><span class="dlg">"오늘은 여기까지 할까요?"</span></p></div>
-      <div class="field"><label for="cfs" style="display:flex">글자 크기<span class="spacer"></span>` +
-    `<output id="cfsV">${S.settings.fs}px</output></label>` +
-    `<input type="range" id="cfs" min="13" max="21" step="0.5" value="${S.settings.fs}"></div>
-      <div class="two">
-        <div class="field"><span class="lbl">줄 간격</span><div class="seg" data-set="chatLh">${[
-          [1.6, "좁게"],
-          [1.8, "보통"],
-          [2.1, "넓게"]
-        ]
-          .map(([n, l]) => `<button type="button" data-v="${n}" class="${S.settings.chatLh == n ? "on" : ""}">${l}</button>`)
-          .join("")}</div></div>
-        <div class="field"><span class="lbl">지문 글꼴</span><div class="seg" data-set="narrFont">${[
-          ["serif", "명조"],
-          ["sans", "고딕"]
-        ]
-          .map(([k, l]) => `<button type="button" data-v="${k}" class="${S.settings.narrFont === k ? "on" : ""}">${l}</button>`)
-          .join("")}</div></div>
-      </div>
-      <div class="toggle" style="margin-top:14px"><label for="cEnter">Enter로 보내기 ` +
-    `<span class="note">끄면 Ctrl+Enter로 보내요</span></label>` +
-    `<input type="checkbox" id="cEnter" ${S.settings.enterSend !== false ? "checked" : ""}></div>
-      <div class="toggle" style="margin-top:8px"><label for="cImg">대화 속 장면 이미지 보기</label>` +
-    `<input type="checkbox" id="cImg" ${S.settings.sceneImg !== false ? "checked" : ""}></div>
-    </div>
+    <div class="box">${chatSettingsHTML()}</div>
     <h2 class="sec">AI 연결 <small>지금: ${esc(engineName())}</small></h2>
     <div class="box">
       <div class="field" style="margin-top:0"><label for="key">Anthropic API 키 <span class="note">이 기기에만 저장돼요</span></label>` +
@@ -8333,26 +8377,7 @@ function viewMe() {
   );
   const pa = $("#padd");
   if (pa) pa.onclick = () => personaSheet(null, viewMe);
-  // 채팅 설정: 바꾸는 즉시 저장·반영
-  const chatSet = (k, val) => {
-    S.settings[k] = val;
-    saveSettings();
-    applySettings();
-  };
-  $("#cfs").oninput = (e) => {
-    chatSet("fs", +e.target.value);
-    $("#cfsV").textContent = e.target.value + "px";
-  };
-  $$("[data-set] button", v).forEach(
-    (b) =>
-      (b.onclick = () => {
-        const k = b.parentElement.dataset.set;
-        chatSet(k, k === "chatLh" ? +b.dataset.v : b.dataset.v);
-        $$("button", b.parentElement).forEach((x) => x.classList.toggle("on", x === b));
-      })
-  );
-  $("#cEnter").onchange = (e) => chatSet("enterSend", e.target.checked);
-  $("#cImg").onchange = (e) => chatSet("sceneImg", e.target.checked);
+  bindChatSettings(v); // 채팅 설정: 바꾸는 즉시 저장·반영 — 대화방 메뉴의 '표시 설정'과 같은 조각(ui/chat-settings.js)
   bindAccount(v);
   $$("[data-aud]", v).forEach(
     (x) =>
@@ -8478,14 +8503,16 @@ function personaSheet(p, after) {
            src/js/services/images.js { IMG }
            src/js/ui/chat/log.js { renderLog }
            src/js/ui/chat/view.js { updateComposer }
+           src/js/ui/chat-settings.js { bindChatSettings, chatSettingsHTML }
            src/js/ui/cover.js { pavHTML }
            src/js/ui/me.js { personaSheet }
            src/js/ui/pay.js { plusSheet }
            src/js/ui/room-drawer.js { openRoomDrawer }
-   내보냄: drawerPersona, drawerNote, drawerOutput
+   내보냄: drawerPersona, drawerNote, drawerDisplay, drawerOutput
    쓰는 곳: src/js/ui/room-drawer.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 대화방 드로어에서 내가 정하는 화면: 내 페르소나 고르기·유저노트·출력 설정(기억력·출력량·리롤 지침·자동 스크롤). 틀은 ../room-drawer.js */
+
 
 
 
@@ -8575,6 +8602,15 @@ function drawerNote({ r, c, body }) {
     openRoomDrawer("main");
   };
 }
+/* 드로어 화면 'display' — 표시 설정: MY의 채팅 설정과 같은 조각(ui/chat-settings.js)을 방 안에서 바로 바꿈. 방마다가 아니라 앱 전체의 설정 */
+/** @param {import("../room-drawer.js").DrawerCtx} x */
+function drawerDisplay({ body }) {
+  body.innerHTML =
+    `<b>대화 글이 보이는 모양을 바꿔 보세요</b><p class="note" style="margin:4px 0 14px">바꾸면 바로 뒤의 대화에 적용돼요. 이 방만이 아니라 모든 대화방에 같이 적용되고, ` +
+    `MY의 채팅 설정과 같은 값이에요. 글자 크기와 Enter로 보내기는 이 기기에만, 나머지는 로그인하면 계정에도 저장돼요.</p>` +
+    chatSettingsHTML({ preview: false });
+  bindChatSettings(body, updateComposer);
+}
 /** 드로어 화면 'output'. @param {import("../room-drawer.js").DrawerCtx} x */
 function drawerOutput({ r, body }) {
   const s = { ...r.set };
@@ -8663,7 +8699,7 @@ function drawerOutput({ r, body }) {
            src/js/ui/drawer/browse.js { drawerBookmarks, drawerGallery, drawerLore, drawerPlaces, drawerStatus }
            src/js/ui/drawer/main.js { drawerMain }
            src/js/ui/drawer/memory.js { drawerMemory }
-           src/js/ui/drawer/settings.js { drawerNote, drawerOutput, drawerPersona }
+           src/js/ui/drawer/settings.js { drawerDisplay, drawerNote, drawerOutput, drawerPersona }
            src/js/ui/icons.js { ICON }
            src/js/ui/pay.js { plusSheet }
            src/js/ui/sheet.js { closeOverlays, confirmSheet }
@@ -8710,6 +8746,7 @@ function openRoomDrawer(view = "main") {
     memory: "장기기억",
     note: "유저노트",
     output: "출력 설정",
+    display: "표시 설정",
     status: "상태창",
     gallery: "갤러리",
     places: "장소",
@@ -8736,6 +8773,7 @@ function openRoomDrawer(view = "main") {
     memory: drawerMemory,
     note: drawerNote,
     output: drawerOutput,
+    display: drawerDisplay,
     status: drawerStatus,
     gallery: drawerGallery,
     places: drawerPlaces,
@@ -9251,8 +9289,7 @@ async function viewChat(id) {
       <form class="inputrow" id="form">
         <button class="sugbtn" id="sugBtn" type="button" aria-expanded="false"></button>
         <label class="sr" for="inp">메시지</label>
-        <textarea id="inp" rows="1" maxlength="1500" placeholder="행동·대사 입력 · // 연출 지시 · ! 명령어"` +
-    ` title="${S.settings.enterSend !== false ? "Enter 전송 · Shift+Enter 줄바꿈" : "Ctrl+Enter 전송 · Enter 줄바꿈"}"></textarea>
+        <textarea id="inp" rows="1" maxlength="1500" placeholder="행동·대사 입력 · // 연출 지시 · ! 명령어"></textarea>
         <button class="stopbtn" id="stopBtn" type="button" hidden>■ 중지</button>
         <button class="send" id="sendBtn" type="button"></button>
       </form>
@@ -9403,6 +9440,8 @@ function updateComposer() {
       : q.type === "free"
         ? (q.sug ? "이번 턴은 무료 턴이에요" : "오늘의 무료 턴으로 보내요") + sugNote
         : (q.sug ? "이번 턴은 PLUS로 보내요" : "PLUS 무제한") + sugNote);
+  // 키 안내는 입력 칸의 title로 — 방 안의 표시 설정에서 'Enter로 보내기'를 바꾸면 여기서 같이 바뀜
+  $("#inp").title = S.settings.enterSend !== false ? "Enter 전송 · Shift+Enter 줄바꿈" : "Ctrl+Enter 전송 · Enter 줄바꿈";
   const sug = $("#sugBtn");
   sug.disabled = !!gen;
   sug.innerHTML = sugLabel(room);

@@ -268,6 +268,64 @@ for (const [dev, engine, opts] of [
       )
         errs.push("대화방 즐겨찾기가 다름: " + JSON.stringify(f));
     }
+    // 방 안의 표시 설정 — 방 메뉴 → 표시 설정에서 글자 크기를 바꾸면 뒤의 대화 글에 바로 반영되고(CSS 변수) 저장됨. MY의 채팅 설정과 같은 조각이라 같은 값이 보임.
+    // 'Enter로 보내기'를 끄면 입력 칸의 키 안내가 바뀜. 방 안에서는 보기 말풍선이 없고(뒤의 대화가 보기) MY에는 있음
+    res.display = await p.evaluate(async () => {
+      const nap = (ms) => new Promise((r) => setTimeout(r, ms)),
+        rid = room.id,
+        fs0 = S.settings.fs,
+        fire = (el, ev) => el[ev]({ target: el });
+      openRoomDrawer("main");
+      await nap(150);
+      const item = $('[data-v="display"]');
+      if (!item) return { item: false };
+      item.click();
+      await nap(150);
+      const cfs = $("#cfs");
+      cfs.value = "19";
+      fire(cfs, "oninput");
+      const out = {
+        item: true,
+        title: $(".drawer h2").textContent,
+        pv: !!$(".drawer .chat-pv"),
+        fs: S.settings.fs,
+        css: getComputedStyle(document.documentElement).getPropertyValue("--chat-fs").trim(),
+        label: $("#cfsV").textContent,
+        saved: JSON.parse(localStorage.getItem("hv1_settings")).fs,
+        key0: $("#inp").title
+      };
+      $("#cEnter").checked = false;
+      fire($("#cEnter"), "onchange");
+      out.key1 = $("#inp").title;
+      $("#cEnter").checked = true;
+      fire($("#cEnter"), "onchange");
+      closeOverlays();
+      location.hash = "me";
+      await nap(500);
+      Object.assign(out, { me: $("#cfs").value, mePv: !!$(".chat-pv") });
+      $("#cfs").value = String(fs0); // 다음 확인을 위해 되돌리고 방으로 돌아감
+      fire($("#cfs"), "oninput");
+      location.hash = "r-" + rid;
+      await nap(600);
+      return out;
+    });
+    {
+      const d = res.display;
+      if (
+        !d.item ||
+        d.title !== "표시 설정" ||
+        d.pv ||
+        d.fs !== 19 ||
+        d.css !== "19px" ||
+        d.label !== "19px" ||
+        d.saved !== 19 ||
+        !/^Enter 전송/.test(d.key0) ||
+        !/^Ctrl\+Enter 전송/.test(d.key1) ||
+        d.me !== "19" ||
+        !d.mePv
+      )
+        errs.push("방 안의 표시 설정이 다름: " + JSON.stringify(d));
+    }
     // 유저 설정 상한 — 페르소나 상세·유저노트 입력 칸의 maxlength와 "n / 한도" 카운터가 상수(LIMITS)를 따름, 장기기억 기본 한도도
     res.limits = await p.evaluate(() => {
       personaSheet(S.personas[0]);

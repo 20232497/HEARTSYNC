@@ -9,6 +9,7 @@ import { PLAN, SUGGEST_COST, freeLeft, heartsOf, isPro, plan, qShort, quote } fr
 import { IMG } from "../../services/images.js";
 import { renderLog } from "../chat/log.js";
 import { updateComposer } from "../chat/view.js";
+import { bindChatSettings, chatSettingsHTML } from "../chat-settings.js";
 import { pavHTML } from "../cover.js";
 import { personaSheet } from "../me.js";
 import { plusSheet } from "../pay.js";
@@ -87,6 +88,15 @@ export function drawerNote({ r, c, body }) {
     toast("유저노트를 저장했어요");
     openRoomDrawer("main");
   };
+}
+/* 드로어 화면 'display' — 표시 설정: MY의 채팅 설정과 같은 조각(ui/chat-settings.js)을 방 안에서 바로 바꿈. 방마다가 아니라 앱 전체의 설정 */
+/** @param {import("../room-drawer.js").DrawerCtx} x */
+export function drawerDisplay({ body }) {
+  body.innerHTML =
+    `<b>대화 글이 보이는 모양을 바꿔 보세요</b><p class="note" style="margin:4px 0 14px">바꾸면 바로 뒤의 대화에 적용돼요. 이 방만이 아니라 모든 대화방에 같이 적용되고, ` +
+    `MY의 채팅 설정과 같은 값이에요. 글자 크기와 Enter로 보내기는 이 기기에만, 나머지는 로그인하면 계정에도 저장돼요.</p>` +
+    chatSettingsHTML({ preview: false });
+  bindChatSettings(body, updateComposer);
 }
 /** 드로어 화면 'output'. @param {import("../room-drawer.js").DrawerCtx} x */
 export function drawerOutput({ r, body }) {

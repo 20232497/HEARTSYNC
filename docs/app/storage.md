@@ -22,4 +22,4 @@
 
 ## MY
 
-- MY: 페르소나(사진은 이용자가 올린 것만)·관심있는 대화·채팅 설정(fs 13~21px·chatLh·narrFont·enterSend·sceneImg — 바꾸는 즉시 저장, applySettings가 --chat-fs 등 반영)·AI 연결(Anthropic API 키, '설정 저장', cleanKeys가 형식이 다르면 알림)·계정·고객센터·약관 및 정책·모든 데이터 초기화. 테마는 기기 설정을 따름
+- MY: 페르소나(사진은 이용자가 올린 것만)·관심있는 대화·채팅 설정(fs 13~21px·chatLh·narrFont·enterSend·sceneImg — 그리는 조각은 ui/chat-settings.js 하나이고 대화방 메뉴의 표시 설정이 같이 씀, 바꾸는 즉시 저장, applySettings가 --chat-fs 등 반영)·AI 연결(Anthropic API 키, '설정 저장', cleanKeys가 형식이 다르면 알림)·계정·고객센터·약관 및 정책·모든 데이터 초기화. 테마는 기기 설정을 따름

@@ -9,7 +9,7 @@ import { plan, quote } from "../core/wallet.js";
 import { drawerBookmarks, drawerGallery, drawerLore, drawerPlaces, drawerStatus } from "./drawer/browse.js";
 import { drawerMain } from "./drawer/main.js";
 import { drawerMemory } from "./drawer/memory.js";
-import { drawerNote, drawerOutput, drawerPersona } from "./drawer/settings.js";
+import { drawerDisplay, drawerNote, drawerOutput, drawerPersona } from "./drawer/settings.js";
 import { ICON } from "./icons.js";
 import { plusSheet } from "./pay.js";
 import { closeOverlays, confirmSheet } from "./sheet.js";
@@ -37,6 +37,7 @@ export function openRoomDrawer(view = "main") {
     memory: "장기기억",
     note: "유저노트",
     output: "출력 설정",
+    display: "표시 설정",
     status: "상태창",
     gallery: "갤러리",
     places: "장소",
@@ -63,6 +64,7 @@ export function openRoomDrawer(view = "main") {
     memory: drawerMemory,
     note: drawerNote,
     output: drawerOutput,
+    display: drawerDisplay,
     status: drawerStatus,
     gallery: drawerGallery,
     places: drawerPlaces,

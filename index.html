@@ -5302,6 +5302,7 @@ function drawerMain({ r, c, body, cfg, q }) {
         <div class="grp"></div>
         <button id="mModel">AI 모델<span class="v">${MODELS[r.set.model].name}</span></button>
         <button data-v="output">출력 설정<span class="v">${LEN[r.set.len].name} · ${r.set.mem}턴</span></button>
+        <button data-v="display">표시 설정<span class="v">글자 ${S.settings.fs}px · 줄 간격·글꼴</span></button>
         <div class="grp"></div>
         <button data-v="status">상태창</button>
         <button data-v="gallery">갤러리<span class="v">${galleryItems(r).length}장</span></button>
@@ -5598,6 +5599,57 @@ function drawerMemory({ r, ov, body, cfg }) {
         })
     );
   paint();
+}
+/* ── src/js/ui/chat-settings.js — 채팅 표시 설정 조각: 글자 크기·줄 간격·지문 글꼴·Enter로 보내기·장면 이미지 보기 — MY의 '채팅 설정'과 대화방 메뉴의 '표시 설정'이 같이 씀(한 벌) */
+const LINE_GAPS = [
+    [1.6, "좁게"],
+    [1.8, "보통"],
+    [2.1, "넓게"]
+  ],
+  NARR_FONTS = [
+    ["serif", "명조"],
+    ["sans", "고딕"]
+  ];
+function chatSettingsHTML({ preview = true } = {}) {
+  const s = S.settings,
+    opt = (cur) => (x) => `<button type="button" data-v="${x[0]}" class="${cur == x[0] ? "on" : ""}">${x[1]}</button>`,
+    seg = (key, list, cur) => `<div class="seg" data-set="${key}">${list.map(opt(cur)).join("")}</div>`;
+  return (
+    (preview
+      ? `<div class="bubble chat-pv" aria-hidden="true"><p class="narr">창밖으로 첫눈이 내리기 시작했다.</p><p>` +
+        `<b class="spk">${esc(exampleCast().name)}</b><span class="dlg">"오늘은 여기까지 할까요?"</span></p></div>`
+      : "") +
+    `<div class="field"${preview ? "" : ' style="margin-top:0"'}><label for="cfs" style="display:flex">글자 크기<span class="spacer"></span>` +
+    `<output id="cfsV">${s.fs}px</output></label><input type="range" id="cfs" min="13" max="21" step="0.5" value="${s.fs}"></div>` +
+    `<div class="two"><div class="field"><span class="lbl">줄 간격</span>${seg("chatLh", LINE_GAPS, s.chatLh)}</div>` +
+    `<div class="field"><span class="lbl">지문 글꼴</span>${seg("narrFont", NARR_FONTS, s.narrFont)}</div></div>` +
+    `<div class="toggle" style="margin-top:14px"><label for="cEnter">Enter로 보내기 <span class="note">끄면 Ctrl+Enter로 보내요</span></label>` +
+    `<input type="checkbox" id="cEnter" ${s.enterSend !== false ? "checked" : ""}></div>` +
+    `<div class="toggle" style="margin-top:8px"><label for="cImg">대화 속 장면 이미지 보기</label>` +
+    `<input type="checkbox" id="cImg" ${s.sceneImg !== false ? "checked" : ""}></div>`
+  );
+}
+function bindChatSettings(root, after) {
+  const set = (k, val) => {
+    S.settings[k] = val;
+    saveSettings();
+    applySettings();
+    if (after) after();
+  };
+  $("#cfs", root).oninput = (e) => {
+    set("fs", +e.target.value);
+    $("#cfsV", root).textContent = e.target.value + "px";
+  };
+  $$("[data-set] button", root).forEach(
+    (b) =>
+      (b.onclick = () => {
+        const k = b.parentElement.dataset.set;
+        set(k, k === "chatLh" ? +b.dataset.v : b.dataset.v);
+        $$("button", b.parentElement).forEach((x) => x.classList.toggle("on", x === b));
+      })
+  );
+  $("#cEnter", root).onchange = (e) => set("enterSend", e.target.checked);
+  $("#cImg", root).onchange = (e) => set("sceneImg", e.target.checked);
 }
 /* ── src/js/ui/account.js — MY → 계정 칸: 처음 로그인 합치기(firstSync), 동기화 상태·로그아웃·계정 삭제 */
 async function firstSync() {
@@ -6523,33 +6575,7 @@ function viewMe() {
     <h2 class="sec">관심있는 대화 <small>홈에 보일 작품</small></h2>
     <div class="box">${audSegHTML()}<p class="note" style="margin:8px 0 0">남성향은 여성 캐릭터, 여성향은 남성 캐릭터와의 대화만 보여요.</p></div>
     <h2 class="sec">채팅 설정 <small>바꾸면 바로 적용돼요</small></h2>
-    <div class="box">
-      <div class="bubble chat-pv" aria-hidden="true"><p class="narr">창밖으로 첫눈이 내리기 시작했다.</p><p>` +
-    `<b class="spk">${esc(exampleCast().name)}</b><span class="dlg">"오늘은 여기까지 할까요?"</span></p></div>
-      <div class="field"><label for="cfs" style="display:flex">글자 크기<span class="spacer"></span>` +
-    `<output id="cfsV">${S.settings.fs}px</output></label>` +
-    `<input type="range" id="cfs" min="13" max="21" step="0.5" value="${S.settings.fs}"></div>
-      <div class="two">
-        <div class="field"><span class="lbl">줄 간격</span><div class="seg" data-set="chatLh">${[
-          [1.6, "좁게"],
-          [1.8, "보통"],
-          [2.1, "넓게"]
-        ]
-          .map(([n, l]) => `<button type="button" data-v="${n}" class="${S.settings.chatLh == n ? "on" : ""}">${l}</button>`)
-          .join("")}</div></div>
-        <div class="field"><span class="lbl">지문 글꼴</span><div class="seg" data-set="narrFont">${[
-          ["serif", "명조"],
-          ["sans", "고딕"]
-        ]
-          .map(([k, l]) => `<button type="button" data-v="${k}" class="${S.settings.narrFont === k ? "on" : ""}">${l}</button>`)
-          .join("")}</div></div>
-      </div>
-      <div class="toggle" style="margin-top:14px"><label for="cEnter">Enter로 보내기 ` +
-    `<span class="note">끄면 Ctrl+Enter로 보내요</span></label>` +
-    `<input type="checkbox" id="cEnter" ${S.settings.enterSend !== false ? "checked" : ""}></div>
-      <div class="toggle" style="margin-top:8px"><label for="cImg">대화 속 장면 이미지 보기</label>` +
-    `<input type="checkbox" id="cImg" ${S.settings.sceneImg !== false ? "checked" : ""}></div>
-    </div>
+    <div class="box">${chatSettingsHTML()}</div>
     <h2 class="sec">AI 연결 <small>지금: ${esc(engineName())}</small></h2>
     <div class="box">
       <div class="field" style="margin-top:0"><label for="key">Anthropic API 키 <span class="note">이 기기에만 저장돼요</span></label>` +
@@ -6591,25 +6617,7 @@ function viewMe() {
   );
   const pa = $("#padd");
   if (pa) pa.onclick = () => personaSheet(null, viewMe);
-  const chatSet = (k, val) => {
-    S.settings[k] = val;
-    saveSettings();
-    applySettings();
-  };
-  $("#cfs").oninput = (e) => {
-    chatSet("fs", +e.target.value);
-    $("#cfsV").textContent = e.target.value + "px";
-  };
-  $$("[data-set] button", v).forEach(
-    (b) =>
-      (b.onclick = () => {
-        const k = b.parentElement.dataset.set;
-        chatSet(k, k === "chatLh" ? +b.dataset.v : b.dataset.v);
-        $$("button", b.parentElement).forEach((x) => x.classList.toggle("on", x === b));
-      })
-  );
-  $("#cEnter").onchange = (e) => chatSet("enterSend", e.target.checked);
-  $("#cImg").onchange = (e) => chatSet("sceneImg", e.target.checked);
+  bindChatSettings(v);
   bindAccount(v);
   $$("[data-aud]", v).forEach(
     (x) =>
@@ -6795,6 +6803,13 @@ function drawerNote({ r, c, body }) {
     openRoomDrawer("main");
   };
 }
+function drawerDisplay({ body }) {
+  body.innerHTML =
+    `<b>대화 글이 보이는 모양을 바꿔 보세요</b><p class="note" style="margin:4px 0 14px">바꾸면 바로 뒤의 대화에 적용돼요. 이 방만이 아니라 모든 대화방에 같이 적용되고, ` +
+    `MY의 채팅 설정과 같은 값이에요. 글자 크기와 Enter로 보내기는 이 기기에만, 나머지는 로그인하면 계정에도 저장돼요.</p>` +
+    chatSettingsHTML({ preview: false });
+  bindChatSettings(body, updateComposer);
+}
 function drawerOutput({ r, body }) {
   const s = { ...r.set };
   const paint = () => {
@@ -6891,6 +6906,7 @@ function openRoomDrawer(view = "main") {
     memory: "장기기억",
     note: "유저노트",
     output: "출력 설정",
+    display: "표시 설정",
     status: "상태창",
     gallery: "갤러리",
     places: "장소",
@@ -6916,6 +6932,7 @@ function openRoomDrawer(view = "main") {
     memory: drawerMemory,
     note: drawerNote,
     output: drawerOutput,
+    display: drawerDisplay,
     status: drawerStatus,
     gallery: drawerGallery,
     places: drawerPlaces,
@@ -7290,8 +7307,7 @@ async function viewChat(id) {
       <form class="inputrow" id="form">
         <button class="sugbtn" id="sugBtn" type="button" aria-expanded="false"></button>
         <label class="sr" for="inp">메시지</label>
-        <textarea id="inp" rows="1" maxlength="1500" placeholder="행동·대사 입력 · // 연출 지시 · ! 명령어"` +
-    ` title="${S.settings.enterSend !== false ? "Enter 전송 · Shift+Enter 줄바꿈" : "Ctrl+Enter 전송 · Enter 줄바꿈"}"></textarea>
+        <textarea id="inp" rows="1" maxlength="1500" placeholder="행동·대사 입력 · // 연출 지시 · ! 명령어"></textarea>
         <button class="stopbtn" id="stopBtn" type="button" hidden>■ 중지</button>
         <button class="send" id="sendBtn" type="button"></button>
       </form>
@@ -7427,6 +7443,7 @@ function updateComposer() {
       : q.type === "free"
         ? (q.sug ? "이번 턴은 무료 턴이에요" : "오늘의 무료 턴으로 보내요") + sugNote
         : (q.sug ? "이번 턴은 PLUS로 보내요" : "PLUS 무제한") + sugNote);
+  $("#inp").title = S.settings.enterSend !== false ? "Enter 전송 · Shift+Enter 줄바꿈" : "Ctrl+Enter 전송 · Enter 줄바꿈";
   const sug = $("#sugBtn");
   sug.disabled = !!gen;
   sug.innerHTML = sugLabel(room);

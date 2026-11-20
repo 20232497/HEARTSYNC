@@ -62,8 +62,7 @@ export async function viewChat(id) {
       <form class="inputrow" id="form">
         <button class="sugbtn" id="sugBtn" type="button" aria-expanded="false"></button>
         <label class="sr" for="inp">메시지</label>
-        <textarea id="inp" rows="1" maxlength="1500" placeholder="행동·대사 입력 · // 연출 지시 · ! 명령어"` +
-    ` title="${S.settings.enterSend !== false ? "Enter 전송 · Shift+Enter 줄바꿈" : "Ctrl+Enter 전송 · Enter 줄바꿈"}"></textarea>
+        <textarea id="inp" rows="1" maxlength="1500" placeholder="행동·대사 입력 · // 연출 지시 · ! 명령어"></textarea>
         <button class="stopbtn" id="stopBtn" type="button" hidden>■ 중지</button>
         <button class="send" id="sendBtn" type="button"></button>
       </form>
@@ -214,6 +213,8 @@ export function updateComposer() {
       : q.type === "free"
         ? (q.sug ? "이번 턴은 무료 턴이에요" : "오늘의 무료 턴으로 보내요") + sugNote
         : (q.sug ? "이번 턴은 PLUS로 보내요" : "PLUS 무제한") + sugNote);
+  // 키 안내는 입력 칸의 title로 — 방 안의 표시 설정에서 'Enter로 보내기'를 바꾸면 여기서 같이 바뀜
+  $("#inp").title = S.settings.enterSend !== false ? "Enter 전송 · Shift+Enter 줄바꿈" : "Ctrl+Enter 전송 · Enter 줄바꿈";
   const sug = $("#sugBtn");
   sug.disabled = !!gen;
   sug.innerHTML = sugLabel(room);

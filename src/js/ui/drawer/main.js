@@ -53,6 +53,7 @@ export function drawerMain({ r, c, body, cfg, q }) {
         <div class="grp"></div>
         <button id="mModel">AI 모델<span class="v">${MODELS[r.set.model].name}</span></button>
         <button data-v="output">출력 설정<span class="v">${LEN[r.set.len].name} · ${r.set.mem}턴</span></button>
+        <button data-v="display">표시 설정<span class="v">글자 ${S.settings.fs}px · 줄 간격·글꼴</span></button>
         <div class="grp"></div>
         <button data-v="status">상태창</button>
         <button data-v="gallery">갤러리<span class="v">${galleryItems(r).length}장</span></button>
