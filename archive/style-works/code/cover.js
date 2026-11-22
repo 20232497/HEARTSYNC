@@ -134,7 +134,7 @@ export function castOf(work, code, swap) {
 export function styled(c, v, o) {
   const fem = isFem(c),
     dark = o.mood !== "warm",
-    j = assertSafe(emotionJob(c, o.place, 1));
+    j = assertSafe(emotionJob(c, o.place, 1, { accent: false })); // 표지는 목선 '강조'를 쓰지 않는다(목록에서 가입 전 방문자가 보는 그림 — 옷 태그가 여는 데까지만)
   const shot = [v.frame || o.frame, v.pose, v.add, v.flat || o.solo ? "" : TILT, o.away ? "" : "(looking at viewer:1.1)"].filter(Boolean).join(", ");
   // 오려 붙일 인물은 구도 자리 뒤의 장소 칸(배경 흐림까지)을 통째로 단순한 배경으로 바꾼다 — 장소에 딸린 네거티브(젖은 옷·낮밤)는 그대로 남는다
   let pos = o.solo ? must(j.pos, SOLO0, () => shot + ", (simple background:1.4), (grey background:1.2)") : must(j.pos, FRAME0, shot);
