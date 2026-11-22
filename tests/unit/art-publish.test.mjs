@@ -94,7 +94,10 @@ function world(name, o = {}) {
       const runs = typeof c === "function" ? c(sha) : [runOf(BUILD, c, sha), runOf(E2E, c, sha)];
       return ok(runs.map((r) => ({ head_branch: G.pr.head, ...r })));
     }
-    if (a[1] === "list") return ok(G.open ? G.open() : [{ url: G.pr.url, baseRefName: "main" }]);
+    if (a[1] === "list") {
+      if (a[a.indexOf("--state") + 1] !== "all") throw new Error("닫힌 PR까지 봐야 해요: " + a.join(" "));
+      return ok(G.open ? G.open() : [{ url: G.pr.url, baseRefName: "main" }]);
+    }
     if (a[1] === "create") {
       G.pr = { head: a[a.indexOf("--head") + 1], title: a[a.indexOf("--title") + 1], url: "https://github.com/x/y/pull/1" };
       return ok("만들었어요\n" + G.pr.url + "\n");
@@ -390,14 +393,22 @@ test("올리기: 이어할 때 올린 뒤에 더 쌓인 커밋은 올리지 않�
   assert.equal(git(w.site, "rev-parse", kept), aside, "따로 한 커밋이 그 가지에 그대로");
 });
 
-test("올리기: 이 가지에서 열린 PR이 하나가 아니거나 main으로 가지 않으면 검사가 통과해도 병합하지 않음", async () => {
+test("올리기: 기다리는 사이 작업 사본에 커밋하지 않은 변경이 생겼으면 다시 빌드하지 않고 멈춤(그 변경이 빌드 결과에 섞여 올라가지 않게)", async () => {
+  const w = world("dirty-while-waiting", { moveMain: (site) => put(site, "src/js/app.js", "고치다 만 소스\n") });
+  put(w.site, "content/f/hwanghu/images/cover.webp", webp("표지"));
+  await assert.rejects(publish(w.ctx), /작업 사본에 커밋하지 않은 변경이 있어 멈췄어요: src\/js\/app\.js/);
+  assert.equal(count(w, "pr merge"), 0);
+  assert.equal(git(w.site, "log", "-1", "--format=%s"), "그림 싣기: 작품 1개 · 1장", "main을 합치지도 않음");
+});
+
+test("올리기: 이 가지로 연 PR이 (닫힌 것까지) 하나가 아니거나 main으로 가지 않으면 검사가 통과해도 병합하지 않음", async () => {
   const w = world("twin-pr");
   w.G.open = () => [
     { url: w.G.pr.url, baseRefName: "main" },
-    { url: "https://github.com/x/y/pull/2", baseRefName: "release" }
+    { url: "https://github.com/x/y/pull/2", baseRefName: "release" } // 같은 가지로 다른 곳에 열었다가 닫은 PR — 그쪽 검사의 성공이 섞일 수 있다
   ];
   put(w.site, "content/f/hwanghu/images/cover.webp", webp("표지"));
-  await assert.rejects(publish(w.ctx), /열린 PR이 하나가 아니라 병합하지 않았어요/);
+  await assert.rejects(publish(w.ctx), /이 가지로 연 PR이 이것 하나가 아니라 병합하지 않았어요/);
   assert.equal(count(w, "pr merge"), 0);
 
   const v = world("retargeted");

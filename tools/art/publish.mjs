@@ -119,6 +119,12 @@ export async function publish(ctx) {
       into.add(p);
     }
   };
+  /** 빌드는 작업 폴더의 파일로 한다 — 커밋하지 않은 변경(그림이든 소스든)이 있으면 그것이 빌드 결과에 섞여 올라가므로 빌드 전에 멈춘다(빌드 결과 두 파일은 빼고 봄) */
+  const clean = async () => {
+    const left = await status(run, root);
+    if (left.images.length || left.others.length)
+      throw fail("작업 사본에 커밋하지 않은 변경이 있어 멈췄어요: " + [...left.images, ...left.others].slice(0, 5).join(", "));
+  };
   /** ③ 올릴 커밋(sha)을 먼저 못 박고 확인한다 — 아니면 던진다(이 커밋들은 아직 올리지 않은 때). { sha, images }를 돌려주고, 올리는 것도 이 sha다.
       새 커밋(origin/main에 없는 것)마다: main을 합친 커밋은 둘째 부모(이미 공개된 main의 커밋)와, 나머지는 부모와 견준다. 그리고 최신 main이 들어 있으면 main과 견준 최종 모습도 본다
       (옛 main을 다시 합쳐 최신 main의 파일을 되돌린 커밋은 커밋별 차이에는 안 보이고 여기서 걸린다) */
@@ -139,6 +145,7 @@ export async function publish(ctx) {
     if (await yes("merge-base", "--is-ancestor", base, sha)) await only(base, sha, new Set());
     if (!images.size) throw fail("올릴 그림이 없어요.");
     // 커밋된 빌드 결과가 지금 다시 빌드한 것과 같은지(손으로 고친 결과물이 올라가지 않게)
+    await clean();
     await build();
     if ((await git("status", "--porcelain", "--", ...BUILT)).trim()) {
       await git("checkout", "-q", "--", ...BUILT);
@@ -151,6 +158,7 @@ export async function publish(ctx) {
       올려 둔 커밋(from)에서만 이어 간다: 기다리는 사이 작업 사본에 쌓인 커밋은 올리지 않고 그대로 둔 채 멈춘다 */
   const sync = async (from) => {
     if ((await rev("HEAD")) !== from) throw fail("기다리는 사이에 작업 사본의 커밋이 바뀌어 멈췄어요(바뀐 것은 그대로 뒀어요) — PR은 열어 뒀어요: " + url);
+    await clean();
     if (!(await yes(...(await signed("merge", "--no-edit", "origin/main"))))) {
       const clash = (await git("diff", "--name-only", "-z", "--diff-filter=U")).split("\0").filter(Boolean);
       if (!clash.length || !clash.every(isBuilt)) {
@@ -293,10 +301,10 @@ export async function publish(ctx) {
       if (v === "pass") {
         await git("fetch", "origin", "--quiet");
         if (await behind()) continue; // 병합 직전에 main이 또 바뀜 → 다시 맞춘다
-        // 이 가지에서 열린 PR이 이것 하나뿐인지 — 같은 커밋으로 다른 곳에 가는 PR이 또 열려 있으면 그쪽 검사의 성공과 가를 수 없다
-        const open = JSON.parse(await gh("pr", "list", "--head", branch, "--state", "open", "--json", "url,baseRefName"));
-        if (open.length !== 1 || open[0].url !== url || open[0].baseRefName !== "main")
-          throw fail("이 가지에서 열린 PR이 하나가 아니라 병합하지 않았어요 — GitHub에서 확인해 주세요: " + url);
+        // 이 가지로 연 PR이 (닫힌 것까지 쳐서) 이것 하나뿐인지 — 같은 커밋으로 다른 곳에 가는 PR이 있었으면 그쪽 검사의 성공과 가를 수 없다
+        const prs = JSON.parse(await gh("pr", "list", "--head", branch, "--state", "all", "--json", "url,baseRefName"));
+        if (prs.length !== 1 || prs[0].url !== url || prs[0].baseRefName !== "main")
+          throw fail("이 가지로 연 PR이 이것 하나가 아니라 병합하지 않았어요 — GitHub에서 확인해 주세요: " + url);
         log("병합하는 중…");
         await gh("pr", "merge", url, "--merge", "--match-head-commit", sha);
         break;
