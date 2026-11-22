@@ -49,7 +49,7 @@ const GENERAL = {
     { name: "풀어 둔 깃", who: "m", when: /\bopen collar\b|\bpartially unbuttoned\b/, lift: ["unbuttoned shirt", "unbuttoned"] },
   ],
   /* 목선 '강조'(여성) — 이미지 세션이 지정한 인물만("인물코드:이름"). 목선을 열고 '가녀리게'의 가슴 크기 억제 하나(large breasts)를 뺀다. 표지에는 쓰지 않는다.
-     값은 그려서 확인하기 전의 후보 — 긍정 cleavage 태그는 넣지 않는다(네거티브만 풀어 본 뒤에 정함) */
+     2026-11-23에 그려 보니 같은 시드에서 '열림'과 거의 같은 그림이 나왔다(이 값만으로는 강조가 되지 않음). 긍정 cleavage 태그는 넣지 않기로 한 상태라 지정 없이 둔다 */
   accent: [],
   accentLift: ["cleavage", "collarbone", "large breasts"],
   /* 그리기 전 검사가 네거티브에서 찾는 것 — [찾을 글, 그 이름]. 이름이 그 그림에서 풀린 것이면 건너뛴다 */
