@@ -23,6 +23,7 @@ export const S = {
     memCfg: { auto: true, every: 5, limit: LIMITS.memory, guide: "auto", custom: "" }
   },
   cat: "전체",
+  kind: "all",
   q: ""
 };
 export let room = null,

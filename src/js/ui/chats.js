@@ -1,11 +1,12 @@
-/* 대화 목록: 즐겨찾기한 방이 맨 위 묶음(별 버튼으로 켜고 끔 — core/rooms.js setFav, LIMITS.favRooms개까지), 그 아래 최근 대화. 순서는 S.rooms 그대로(sortRooms) */
+/* 대화 목록: 즐겨찾기한 방이 맨 위 묶음(별 버튼으로 켜고 끔 — core/rooms.js setFav, LIMITS.favRooms개까지), 그 아래 최근 대화. 순서는 S.rooms 그대로(sortRooms).
+   맨 아래에 최근 본 작품을 작게 — 왼쪽 메뉴가 없는 좁은 화면에서만 보임(넓은 화면은 왼쪽 메뉴에 있음, 2026-11-21 사용자 결정) */
 import { LIMITS } from "../core/constants.js";
 import { setFav } from "../core/rooms.js";
 import { S } from "../core/state.js";
 import { $, $$, ago, esc, toast } from "../core/util.js";
 import { IMG } from "../services/images.js";
 import { coverHTML } from "./cover.js";
-import { bindGo, go, topbar } from "./shell.js";
+import { bindGo, go, topbar, viewedWorks } from "./shell.js";
 
 /* 방 한 줄: 방으로 가는 버튼 + 즐겨찾기 별(버튼 안에 버튼을 넣지 않으려고 나란히 둠) */
 const chatRowHTML = (r) =>
@@ -21,7 +22,8 @@ const chatRowHTML = (r) =>
 export function viewChats() {
   const v = $("#view"),
     favs = S.rooms.filter((r) => r.fav),
-    rest = S.rooms.filter((r) => !r.fav);
+    rest = S.rooms.filter((r) => !r.fav),
+    seen = viewedWorks();
   const list = (rooms) => `<div class="cont rooms">${rooms.map(chatRowHTML).join("")}</div>`;
   v.innerHTML =
     `<div class="page">${topbar()}<h1 class="sec" style="margin-top:4px">대화</h1>` +
@@ -31,10 +33,16 @@ export function viewChats() {
         (rest.length ? list(rest) : "")
       : `<div class="empty">아직 대화가 없어요. 마음에 드는 작품을 골라 첫 대화를 시작해 보세요.<br>` +
         `<button class="btn sm pri" data-go="home">작품 둘러보기</button></div>`) +
+    (seen.length
+      ? `<div class="chats-viewed"><h2 class="sec">최근 본 작품</h2><div class="chips">` +
+        seen.map((c) => `<button class="chip" data-char="${esc(c.id)}">${coverHTML(c)}<span>${esc(c.name)}</span></button>`).join("") +
+        `</div></div>`
+      : "") +
     `</div>`;
   bindGo(v);
   IMG.hydrate(v);
   $$("[data-room]", v).forEach((b) => (b.onclick = () => go("r-" + b.dataset.room)));
+  $$("[data-char]", v).forEach((b) => (b.onclick = () => go("c-" + b.dataset.char)));
   $$("[data-fav]", v).forEach(
     (b) =>
       (b.onclick = async () => {
