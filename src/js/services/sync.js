@@ -1,4 +1,4 @@
-/* 처음 로그인 합치기(mergeGuest), 계정에서 다시 받기, 기기 지우기 */
+/* 처음 로그인 합치기(mergeGuest)·계정 것만 쓰기(dropGuestRooms), 계정에서 다시 받기, 기기 지우기 */
 import { emit } from "../core/events.js";
 import { roomKey } from "../core/rooms.js";
 import { applySettings } from "../core/settings.js";
@@ -29,6 +29,14 @@ export function mergeGuest(remote, local) {
   );
   if (ps.length && !ps.some((p) => p.def)) ps[0].def = true;
   if (ps.length) KV.set("personas", ps);
+}
+/**
+ * 처음 로그인 '계정 것만 쓰기': 계정에 대화 목록 행이 없으면(올리다 실패한 계정 등) 이 기기의 목록을 비움 — 그대로 두면 이 기기의 목록이 남아 다음 저장 때 계정으로 다시 올라감.
+ * 방 본문은 이 기기에 그대로 둠(2026-11-21 사용자 결정 — 목록에서만 뺌, 되살리는 화면은 아직 없음). 계정에 목록이 있으면 받은 목록이 이미 이 기기 것을 대신함(CLOUD.apply).
+ * 페르소나·지갑은 건드리지 않음 — 계정에 없으면 이 기기 것을 계속 씀(비우면 이 기기에서도 사라짐). @param {Record<string, unknown>} remote 계정에서 받은 키 → 값
+ */
+export function dropGuestRooms(remote) {
+  if (!Array.isArray(remote.rooms)) KV.setLocal("rooms", []);
 }
 /** 계정에서 받은 뒤 다시 읽고 화면 갱신(입력 중·대화방 안이면 화면은 그대로). @returns {Promise<void>} */
 export async function reloadFromCloud() {

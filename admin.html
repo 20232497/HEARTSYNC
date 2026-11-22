@@ -924,7 +924,7 @@ const LIMITS = {
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/core/util.js
    내보냄: $, $$, esc, uid, clamp, today, won, num, ago, timeoutSignal, abortCode, toast
-   쓰는 곳: src/js/core/storage.js, src/js/core/state.js, src/js/core/wallet.js, src/js/core/rooms.js, src/js/services/images.js, src/js/services/cloud.js, src/js/services/supabase.js, src/js/ai/parse.js, src/js/ai/llm.js, src/js/ai/prompt/memory.js, src/js/ui/sheet.js, src/js/ui/chat/cmdlist.js, src/js/ui/cover.js, src/js/ui/chat/render.js, src/js/ui/room-tools.js, src/js/ui/chat/search.js, src/js/ui/worldart.js, src/js/ui/drawer/browse.js, src/js/ui/codex.js, src/js/ui/drawer/main.js, src/js/ui/pins.js, src/js/ui/drawer/memory.js, src/js/ui/chat-settings.js, src/js/ui/account.js, src/js/ui/store.js, src/js/ui/faq.js, src/js/ui/help.js, src/js/ui/home.js, src/js/ui/me.js, src/js/ui/drawer/settings.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/pay.js, src/js/ui/chat/suggest.js, src/js/ui/chat/view.js, src/js/ui/chat/episode.js, src/js/ui/report.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/ui/shell.js, src/js/ui/start-sheet.js, src/js/ui/detail.js, src/js/ui/chats.js, src/js/ui/login.js, src/js/app.js, src/js/admin/support.js, src/js/admin/gate.js, src/js/core/migrate.js, src/js/boot.js
+   쓰는 곳: src/js/core/storage.js, src/js/core/state.js, src/js/core/wallet.js, src/js/core/rooms.js, src/js/core/room-read.js, src/js/services/supabase.js, src/js/services/images.js, src/js/ai/parse.js, src/js/ai/llm.js, src/js/ai/prompt/memory.js, src/js/ui/sheet.js, src/js/ui/chat/cmdlist.js, src/js/ui/cover.js, src/js/ui/chat/render.js, src/js/ui/room-tools.js, src/js/ui/chat/search.js, src/js/ui/worldart.js, src/js/ui/drawer/browse.js, src/js/ui/codex.js, src/js/ui/drawer/main.js, src/js/ui/pins.js, src/js/ui/drawer/memory.js, src/js/ui/chat-settings.js, src/js/ui/account.js, src/js/ui/store.js, src/js/ui/faq.js, src/js/ui/help.js, src/js/ui/home.js, src/js/ui/me.js, src/js/ui/drawer/settings.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/pay.js, src/js/ui/chat/suggest.js, src/js/ui/chat/view.js, src/js/ui/chat/episode.js, src/js/ui/report.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/ui/shell.js, src/js/ui/start-sheet.js, src/js/ui/detail.js, src/js/ui/chats.js, src/js/ui/login.js, src/js/app.js, src/js/admin/support.js, src/js/admin/gate.js, src/js/core/migrate.js, src/js/boot.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* DOM·문자열·숫자 유틸, toast, 예상 못 한 오류 기록(reportError) */
 /** @typedef {import("./types.js").TimeoutSignal} TimeoutSignal */
@@ -1032,7 +1032,7 @@ if (typeof window !== "undefined") {
    src/js/core/storage.js
    가져옴: src/js/core/util.js { toast }
    내보냄: IDB, KV
-   쓰는 곳: src/js/core/wallet.js, src/js/core/rooms.js, src/js/core/settings.js, src/js/core/shelf.js, src/js/services/images.js, src/js/services/cloud.js, src/js/services/load.js, src/js/services/sync.js, src/js/ui/room-tools.js, src/js/ui/me.js, src/js/ui/chat/suggest.js, src/js/ui/chat/view.js, src/js/app.js
+   쓰는 곳: src/js/core/wallet.js, src/js/core/rooms.js, src/js/core/room-read.js, src/js/core/shelf.js, src/js/services/cloud.js, src/js/services/images.js, src/js/services/load.js, src/js/services/sync.js, src/js/services/cloud-push.js, src/js/ui/me.js, src/js/ui/chat/suggest.js, src/js/ui/chat/view.js, src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 저장소: IndexedDB(IDB)와 KV(localStorage → 계정). 계정 저장은 KV.remote 고리로 — services/cloud.js가 꽂음(core는 services를 모름) */
 
@@ -1163,7 +1163,7 @@ const KV = {
            src/js/core/constants.js { LIMITS }
            src/js/core/util.js { today }
    내보냄: hasClaudeKey, S, room, gen, setGen, setRoom
-   쓰는 곳: src/js/core/audience.js, src/js/core/wallet.js, src/js/core/rooms.js, src/js/core/settings.js, src/js/core/shelf.js, src/js/services/cloud.js, src/js/services/load.js, src/js/services/sync.js, src/js/ai/llm.js, src/js/ai/prompt/memory.js, src/js/ui/chat/cmdlist.js, src/js/ui/ai-notice.js, src/js/ui/room-tools.js, src/js/ui/chat/search.js, src/js/ui/drawer/main.js, src/js/ui/drawer/memory.js, src/js/ui/chat-settings.js, src/js/ui/account.js, src/js/ui/store.js, src/js/ui/help.js, src/js/ui/home.js, src/js/ui/me.js, src/js/ui/drawer/settings.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/pay.js, src/js/ui/chat/suggest.js, src/js/ui/chat/view.js, src/js/ui/chat/episode.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/ui/shell.js, src/js/ui/start-sheet.js, src/js/ui/detail.js, src/js/ui/chats.js, src/js/app.js, src/js/core/migrate.js, src/js/boot.js
+   쓰는 곳: src/js/core/audience.js, src/js/core/wallet.js, src/js/core/rooms.js, src/js/core/settings.js, src/js/core/shelf.js, src/js/services/cloud-settings.js, src/js/services/cloud.js, src/js/services/load.js, src/js/services/sync.js, src/js/ai/llm.js, src/js/ai/prompt/memory.js, src/js/ui/chat/cmdlist.js, src/js/ui/ai-notice.js, src/js/ui/room-tools.js, src/js/ui/chat/search.js, src/js/ui/drawer/main.js, src/js/ui/drawer/memory.js, src/js/ui/chat-settings.js, src/js/ui/account.js, src/js/ui/store.js, src/js/ui/help.js, src/js/ui/home.js, src/js/ui/me.js, src/js/ui/drawer/settings.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/pay.js, src/js/ui/chat/suggest.js, src/js/ui/chat/view.js, src/js/ui/chat/episode.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/ui/shell.js, src/js/ui/start-sheet.js, src/js/ui/detail.js, src/js/ui/chats.js, src/js/app.js, src/js/core/migrate.js, src/js/boot.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 전역 상태 S(지갑·페르소나·대화방·설정), 현재 대화방·진행 중 생성(다른 모듈은 set…()로만 바꿈), API 키 유무(hasClaudeKey — S와 CFG.serverKeys를 함께 봄) */
 
@@ -2370,7 +2370,7 @@ for (const c of ORIGINALS) {
            src/js/core/audience.js { audOK }
            src/js/core/constants.js { EXAMPLE_CAST }
    내보냄: normalizeChar, getChar, LIVE_FIELDS, liveWork, latestWork, exampleCast
-   쓰는 곳: src/js/core/rooms.js, src/js/images/pick.js, src/js/ai/llm.js, src/js/ai/prompt/input.js, src/js/ai/prompt/rules.js, src/js/ui/chat/cmdlist.js, src/js/ui/cover.js, src/js/ui/worldart.js, src/js/ui/drawer/browse.js, src/js/ui/codex.js, src/js/ui/drawer/main.js, src/js/ui/chat-settings.js, src/js/ui/faq.js, src/js/ui/drawer/settings.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/chat/generate.js, src/js/ui/detail.js, src/js/ui/login.js, src/js/app.js
+   쓰는 곳: src/js/core/rooms.js, src/js/core/room-read.js, src/js/images/pick.js, src/js/ai/llm.js, src/js/ai/prompt/input.js, src/js/ai/prompt/rules.js, src/js/ui/chat/cmdlist.js, src/js/ui/cover.js, src/js/ui/worldart.js, src/js/ui/drawer/browse.js, src/js/ui/codex.js, src/js/ui/drawer/main.js, src/js/ui/chat-settings.js, src/js/ui/faq.js, src/js/ui/drawer/settings.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/chat/generate.js, src/js/ui/detail.js, src/js/ui/login.js, src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 작품 찾기·정규화: normalizeChar, id로 찾기(getChar — 오리지널), 방의 작품을 지금 읽을 모양으로(liveWork — 어느 칸을 최신 작품에서 읽는지는 LIVE_FIELDS 한 곳), 화면 예시 문구에 쓸 인물(exampleCast) */
 
@@ -2740,18 +2740,18 @@ const SIDE = {
 const epLength = (ep) => ep.beats[ep.beats.length - 1].at[1];
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/core/rooms.js
-   가져옴: src/js/ai/models.js { recommendOf }
-           src/js/core/character.js { getChar, normalizeChar }
+   가져옴: src/js/ai/models.js { LEN, MODELS, recommendOf }
+           src/js/core/character.js { normalizeChar }
            src/js/core/constants.js { LIMITS, SERIES }
            src/js/core/episode.js { SIDE, epInit }
            src/js/core/events.js { emit }
            src/js/core/state.js { S, room }
            src/js/core/storage.js { KV }
            src/js/core/util.js { uid }
-   내보냄: curText, roomKey, sortRooms, setFav, saveRoom, deletedRooms, migrateRoom, defaultSet, newRoom, memoryMark, baseOpening, openingIndex, forkRoom, sideRoom
-   쓰는 곳: src/js/services/cloud.js, src/js/services/load.js, src/js/services/sync.js, src/js/ai/prompt/input.js, src/js/ai/prompt/rules.js, src/js/ai/prompt/memory.js, src/js/ui/room-tools.js, src/js/ui/chat/search.js, src/js/ui/drawer/browse.js, src/js/ui/drawer/main.js, src/js/ui/pins.js, src/js/ui/drawer/memory.js, src/js/ui/me.js, src/js/ui/drawer/settings.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/suggest.js, src/js/ui/chat/view.js, src/js/ui/chat/episode.js, src/js/ui/report.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/ui/start-sheet.js, src/js/ui/chats.js, src/js/app.js
+   내보냄: curText, roomKey, sortRooms, setFav, saveRoom, removeRoom, holdRoom, releaseRoom, roomInUse, deletedRooms, defaultSet, fixSet, newRoom, memoryMark, baseOpening, openingIndex, forkRoom, sideRoom
+   쓰는 곳: src/js/core/room-read.js, src/js/services/cloud.js, src/js/services/load.js, src/js/services/sync.js, src/js/ai/prompt/input.js, src/js/ai/prompt/rules.js, src/js/ai/prompt/memory.js, src/js/ui/room-tools.js, src/js/ui/chat/search.js, src/js/ui/drawer/browse.js, src/js/ui/drawer/main.js, src/js/ui/pins.js, src/js/ui/drawer/memory.js, src/js/ui/me.js, src/js/ui/drawer/settings.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/suggest.js, src/js/ui/chat/view.js, src/js/ui/chat/episode.js, src/js/ui/report.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/ui/start-sheet.js, src/js/ui/chats.js, src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
-/* 대화방 저장·목록·이전(migrateRoom)·새 방 만들기(newRoom)·분기(forkRoom)·외전(sideRoom), 메시지의 현재 버전 글(curText) */
+/* 대화방 저장·목록·삭제(removeRoom)·새 방 만들기(newRoom)·분기(forkRoom)·외전(sideRoom), 메시지의 현재 버전 글(curText). 저장된 방을 여는 쪽은 core/room-read.js */
 
 
 
@@ -2851,91 +2851,53 @@ function saveRoom(r) {
   KV.set(roomKey(r.id), r);
   indexRoom(r);
 }
+/**
+ * 대화방 삭제(데이터 쪽) — 지운 방으로 적고(끝나지 않은 응답·요약의 저장이 되살리지 않게) 본문과 목록에서 뺀 뒤 "rooms" 알림.
+ * 화면 쪽 일(진행 중 응답 멈추기·현재 방 해제·이동)은 부른 쪽이 함(ui/room-tools.js deleteRoom). @param {string} id @returns {void}
+ */
+function removeRoom(id) {
+  deletedRooms.add(id);
+  KV.set(roomKey(id), undefined);
+  S.rooms = S.rooms.filter((r) => r.id !== id);
+  KV.set("rooms", S.rooms);
+  emit("rooms");
+}
+/* 응답 생성·요약이 아직 쓰고 있는 방 — 그 일이 끝나면 들고 있던 방 객체를 저장하므로, 그사이 계정에서 받은 것으로 그 방을 덮으면 곧 옛 사본에 다시 덮임.
+   계정 받기(services/cloud.js)가 이 표를 보고 그 방을 미룸. 생성과 요약이 겹칠 수 있어 수를 셈 */
+const inUse = new Map();
+/** 이 방을 쓰기 시작함(끝나면 꼭 releaseRoom). @param {string} id @returns {void} */
+function holdRoom(id) {
+  inUse.set(id, (inUse.get(id) || 0) + 1);
+}
+/** 이 방을 다 씀. @param {string} id @returns {void} */
+function releaseRoom(id) {
+  const n = (inUse.get(id) || 0) - 1;
+  if (n > 0) inUse.set(id, n);
+  else inUse.delete(id);
+}
+/** 응답 생성·요약이 아직 쓰고 있는 방인지. @param {string} id @returns {boolean} */
+const roomInUse = (id) => inUse.has(id);
 const MAX_MSGS_KEEP = 160;
 /** 지운 대화방 id — 지운 뒤 끝난 응답·요약이 방을 되살리지 않게. @type {Set<string>} */
 const deletedRooms = new Set();
-/** 예전 모양의 대화방(v2 아님)을 지금 모양으로 제자리 보정. @param {Room} r */
-function migrateRoom(r) {
-  normalizeChar(r.char);
-  if (!r.v2) {
-    const old = r.set || {};
-    r.set = {
-      model: old.tier === "default" ? "story" : "lite",
-      len: old.len === "long" ? "long" : old.len === "short" ? "short" : "mid",
-      mem: 10,
-      rerollAsk: false
-    };
-    r.memHist = [];
-    r.sinceMem = 0;
-    r.turn = r.msgs.filter((m) => m.role === "user").length;
-    r.userNote = "";
-    r.bookmarks = [];
-    r.persona = { memo: "", img: "", ...r.persona };
-    r.v2 = true;
-    if (Array.isArray(r.facts) && r.facts.length && !r.memory) r.memory = "[이전 버전에서 옮긴 기억]\n" + r.facts.map((f) => "- " + f).join("\n");
-    delete r.facts;
-    delete r.memCursor;
-  }
-  delete r.set.allowUnfiltered; // 예전 방의 성인 무검열 칸(성인 기능은 서버에 다시 세움 — docs/ROADMAP.md)
-  r.msgs.forEach((m) => delete m.editing);
-  if (upgradeCodes(r)) KV.set(roomKey(r.id), r); // at(최근 활동)은 건드리지 않고 저장만
-  return r;
-}
-/* 2026-11-08 그림 코드 체계 바꿈(images/codes.js): 예전 인물 코드(소문자·숫자 p1·ks)와 태그 [[img:p1:3]]·[[img:ks:3,404,501]]을
-   지금 작품의 대문자 코드와 [[HSY3]]로. 같은 이름의 인물을 최신 작품(getChar)에서 찾고, 없으면 A·B·C… 순서로 새 코드. 바뀐 게 있으면 true */
-function upgradeCodes(r) {
-  const cast = r.char.cast || [],
-    ok = (code) => /^[A-Z]{1,4}$/.test(code),
-    old = cast.filter((x) => !ok(x.code));
-  if (!old.length) return false;
-  const live = getChar(r.char.id),
-    taken = new Set(cast.filter((x) => ok(x.code)).map((x) => x.code)),
-    map = {};
-  const seq = (i) => {
-    let s = "";
-    do {
-      s = String.fromCharCode(65 + (i % 26)) + s;
-      i = Math.floor(i / 26) - 1;
-    } while (i >= 0);
-    return s;
-  };
-  old.forEach((x) => {
-    const hit = live && (live.cast || []).find((y) => y.name === x.name && ok(y.code) && !taken.has(y.code));
-    let code = hit ? hit.code : "";
-    for (let i = 0; !code || taken.has(code); i++) code = seq(i);
-    taken.add(code);
-    map[x.code] = code;
-    x.code = code;
-  });
-  // 예전 태그 → 새 태그: [[img:코드:번호(,조합)]] — 번호는 처음 나오는 0~14, 없으면 1(images/codes.js sitOf와 같은 규칙, 층 규칙 때문에 여기서 따로 씀)
-  const sit = (spec) => {
-    for (const p of String(spec).split(",")) if (/^\d{1,2}$/.test(p.trim()) && +p < 15) return +p;
-    return 1;
-  };
-  const retag = (t) =>
-    String(t || "").replace(/\[\[img:([a-z0-9]+):([\d,]+)\]\]/gi, (raw, code, spec) => {
-      const n = map[code.toLowerCase()];
-      return n ? `[[${n}${sit(spec)}]]` : raw;
-    });
-  r.msgs.forEach((m) => {
-    if (m.role === "ai")
-      m.alts.forEach((a) => {
-        a.text = retag(a.text);
-      });
-    else m.text = retag(m.text);
-  });
-  if (r.char.images) {
-    const im = {};
-    for (const k of Object.keys(r.char.images)) im[map[k] || k] = r.char.images[k];
-    r.char.images = im;
-  }
-  return true;
-}
 /**
  * 새 대화방의 기본 설정 — 모델은 작품의 권장 모델(recommendOf: work.js recommend, 없으면 앱 기본 추천), 출력량 보통·기억력 10턴. 상세 페이지의 '새 대화는 …로 시작' 안내도 이것으로. @param {Work} c @returns {RoomSet}
  */
 function defaultSet(c) {
   return { model: recommendOf(c), len: "mid", mem: 10, rerollAsk: false };
+}
+/**
+ * 방 설정의 빠진 칸과 표에 없는 값을 기본값으로(방 읽기의 경계 core/room-read.js가 씀) — 모델·출력량이 표에 없으면 화면이 그 값을 읽다가 멈춤.
+ * 그 밖의 칸(자동 받기 등)은 그대로 둠. @param {Work} c @param {unknown} set @returns {RoomSet}
+ */
+function fixSet(c, set) {
+  const d = defaultSet(c),
+    s = { ...d, ...(set && typeof set === "object" ? set : {}) };
+  const has = (table, k) => Object.prototype.hasOwnProperty.call(table, k); // 표에 직접 적힌 키만(constructor 같은 물려받은 이름은 아님)
+  if (!has(MODELS, s.model)) s.model = d.model;
+  if (!has(LEN, s.len)) s.len = d.len;
+  if (!(s.mem > 0)) s.mem = d.mem;
+  return s;
 }
 /**
  * 새 대화방 — 작품 사본·시작 상황 본문을 첫 AI 메시지로, 게이지가 없으면 10, 설정은 defaultSet. 바로 저장함.
@@ -3073,15 +3035,130 @@ function sideRoom(r, kind, who) {
   return f;
 }
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
+   src/js/core/room-read.js
+   가져옴: src/js/core/character.js { getChar, normalizeChar }
+           src/js/core/rooms.js { fixSet, roomKey }
+           src/js/core/storage.js { KV }
+           src/js/core/util.js { uid }
+   내보냄: migrateRoom
+   쓰는 곳: src/js/ui/chat/view.js, src/js/app.js
+   ════════════════════════════════════════════════════════════════════════════════════════════════════ */
+/* 방 읽기의 경계(migrateRoom): 저장된 방을 열 수 있는 모양으로 보정하고 복구할 수 없으면 null — 예전 모양(v2 아님)과 예전 그림 코드도 여기서 옮김. 방을 여는 곳(ui/chat/view.js)이 부름 */
+
+
+
+
+/** @typedef {import("./types.js").Room} Room */
+
+/* 열 수 있는 메시지인지: AI 응답은 버전(alts)이 하나 이상, 내 메시지는 글이 있어야 함 */
+const okMsg = (m) =>
+  !!m &&
+  typeof m === "object" &&
+  (m.role === "ai" ? Array.isArray(m.alts) && m.alts.length > 0 && m.alts.every((a) => a && typeof a === "object") : typeof m.text === "string");
+/**
+ * 저장된 방을 열 수 있는 모양으로(제자리 보정) — 방을 여는 곳(ui/chat/view.js)이 부름. **방 읽기의 경계는 여기 한 곳**(2026-11-23):
+ * - 복구할 수 없으면(방이 아님 · 작품 사본이 없음 · 열 수 있는 메시지가 없음) null을 돌려주고 받은 객체는 건드리지 않음 — 부른 쪽은 저장된 원본을 그대로 둔 채 안내만 함.
+ * - 기본값이 분명한 빠짐만 채움: 설정(fixSet — 빠진 칸과 표에 없는 모델·출력량) · 페르소나 · 상태창 · 북마크·고정 기억·기억 이력(빈 목록) · 메시지 id · 버전 번호(범위를 벗어나면 마지막 버전). 모양이 깨진 메시지는 뺌.
+ * - 예전 모양(v2 아님)은 지금 모양으로 옮김.
+ * 여기서 고친 것은 저장하지 않음(다음에 방을 저장할 때 같이) — 그림 코드 체계를 옮긴 것(upgradeCodes)만 바로 저장.
+ * @param {Room} r @returns {Room|null}
+ */
+function migrateRoom(r) {
+  if (!r || typeof r !== "object" || !r.id || !r.char || typeof r.char !== "object" || !Array.isArray(r.msgs)) return null;
+  const msgs = r.msgs.filter(okMsg);
+  if (!msgs.length) return null;
+  r.msgs = msgs;
+  r.msgs.forEach((m) => {
+    if (!m.id) m.id = uid("m");
+    if (m.role === "ai" && !(m.idx >= 0 && m.idx < m.alts.length)) m.idx = m.alts.length - 1;
+  });
+  normalizeChar(r.char);
+  if (!r.v2) {
+    const old = r.set || {};
+    r.set = {
+      model: old.tier === "default" ? "story" : "lite",
+      len: old.len === "long" ? "long" : old.len === "short" ? "short" : "mid",
+      mem: 10,
+      rerollAsk: false
+    };
+    r.memHist = [];
+    r.sinceMem = 0;
+    r.turn = r.msgs.filter((m) => m.role === "user").length;
+    r.userNote = "";
+    r.bookmarks = [];
+    r.persona = { memo: "", img: "", ...r.persona };
+    r.v2 = true;
+    if (Array.isArray(r.facts) && r.facts.length && !r.memory) r.memory = "[이전 버전에서 옮긴 기억]\n" + r.facts.map((f) => "- " + f).join("\n");
+    delete r.facts;
+    delete r.memCursor;
+  }
+  r.set = fixSet(r.char, r.set); // 설정 칸이 통째로 없거나(전에는 아래 줄에서 예외가 나 방 화면이 멈췄음) 모델·출력량이 빠졌거나 표에 없는 값인 방
+  r.persona = { id: "", name: "유저", memo: "", desc: "", img: "", ...(r.persona && typeof r.persona === "object" ? r.persona : {}) };
+  if (!r.status || typeof r.status !== "object") r.status = {};
+  for (const k of ["bookmarks", "pins", "memHist"]) if (!Array.isArray(r[k])) r[k] = [];
+  delete r.set.allowUnfiltered; // 예전 방의 성인 무검열 칸(성인 기능은 서버에 다시 세움 — docs/ROADMAP.md)
+  r.msgs.forEach((m) => delete m.editing);
+  if (upgradeCodes(r)) KV.set(roomKey(r.id), r); // at(최근 활동)은 건드리지 않고 저장만
+  return r;
+}
+/* 2026-11-08 그림 코드 체계 바꿈(images/codes.js): 예전 인물 코드(소문자·숫자 p1·ks)와 태그 [[img:p1:3]]·[[img:ks:3,404,501]]을
+   지금 작품의 대문자 코드와 [[HSY3]]로. 같은 이름의 인물을 최신 작품(getChar)에서 찾고, 없으면 A·B·C… 순서로 새 코드. 바뀐 게 있으면 true */
+function upgradeCodes(r) {
+  const cast = r.char.cast || [],
+    ok = (code) => /^[A-Z]{1,4}$/.test(code),
+    old = cast.filter((x) => !ok(x.code));
+  if (!old.length) return false;
+  const live = getChar(r.char.id),
+    taken = new Set(cast.filter((x) => ok(x.code)).map((x) => x.code)),
+    map = {};
+  const seq = (i) => {
+    let s = "";
+    do {
+      s = String.fromCharCode(65 + (i % 26)) + s;
+      i = Math.floor(i / 26) - 1;
+    } while (i >= 0);
+    return s;
+  };
+  old.forEach((x) => {
+    const hit = live && (live.cast || []).find((y) => y.name === x.name && ok(y.code) && !taken.has(y.code));
+    let code = hit ? hit.code : "";
+    for (let i = 0; !code || taken.has(code); i++) code = seq(i);
+    taken.add(code);
+    map[x.code] = code;
+    x.code = code;
+  });
+  // 예전 태그 → 새 태그: [[img:코드:번호(,조합)]] — 번호는 처음 나오는 0~14, 없으면 1(images/codes.js sitOf와 같은 규칙, 층 규칙 때문에 여기서 따로 씀)
+  const sit = (spec) => {
+    for (const p of String(spec).split(",")) if (/^\d{1,2}$/.test(p.trim()) && +p < 15) return +p;
+    return 1;
+  };
+  const retag = (t) =>
+    String(t || "").replace(/\[\[img:([a-z0-9]+):([\d,]+)\]\]/gi, (raw, code, spec) => {
+      const n = map[code.toLowerCase()];
+      return n ? `[[${n}${sit(spec)}]]` : raw;
+    });
+  r.msgs.forEach((m) => {
+    if (m.role === "ai")
+      m.alts.forEach((a) => {
+        a.text = retag(a.text);
+      });
+    else m.text = retag(m.text);
+  });
+  if (r.char.images) {
+    const im = {};
+    for (const k of Object.keys(r.char.images)) im[map[k] || k] = r.char.images[k];
+    r.char.images = im;
+  }
+  return true;
+}
+/* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/core/settings.js
    가져옴: src/js/core/events.js { emit }
            src/js/core/state.js { S }
-           src/js/core/storage.js { KV }
    내보냄: cleanKeys, saveSettings, applySettings
    쓰는 곳: src/js/services/sync.js, src/js/ui/ai-notice.js, src/js/ui/drawer/memory.js, src/js/ui/chat-settings.js, src/js/ui/home.js, src/js/ui/me.js, src/js/app.js, src/js/core/migrate.js, src/js/boot.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 설정 저장·적용(글자 크기·줄 간격 등 CSS 변수), API 키 형식 안내. 저장하면 "settings" 이벤트 — 계정 저장(services/cloud.js)이 받음 */
-
 
 
 
@@ -3092,12 +3169,14 @@ function cleanKeys() {
   if (s.apiKey && !/^sk-ant-/.test(s.apiKey)) warn.push("Anthropic 키는 sk-ant-로 시작해요");
   return warn;
 }
-/** 설정 저장(localStorage + memcfg KV) 후 "settings" 이벤트(계정 저장이 받음). @returns {void} */
+/**
+ * 설정 저장(localStorage) 후 "settings" 이벤트(계정 저장이 받아 "settings" 행으로 올림). 장기기억 설정(memCfg)도 설정의 한 칸으로만 저장 —
+ * 예전에는 따로 둔 사본(KV memcfg)에도 같이 써서 원본이 둘이었음(2026-11-23). 예전 설치의 사본은 core/migrate.js가 한 번 읽어 옮김. @returns {void}
+ */
 function saveSettings() {
   try {
     localStorage.setItem("hv1_settings", JSON.stringify(S.settings));
   } catch {}
-  KV.set("memcfg", S.settings.memCfg);
   emit("settings");
 }
 /**
@@ -3239,151 +3318,49 @@ function resetShelf() {
   KV.setLocal("shelf", undefined);
 }
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
-   src/js/services/images.js
-   가져옴: src/js/core/storage.js { IDB, KV }
-           src/js/core/util.js { $$, uid }
-           src/js/services/cloud.js { CLOUD }
-   내보냄: validRef, IMG
-   쓰는 곳: src/js/services/cloud.js, src/js/services/load.js, src/js/images/pick.js, src/js/ai/prompt/rules.js, src/js/ui/cover.js, src/js/ui/worldart.js, src/js/ui/drawer/browse.js, src/js/ui/codex.js, src/js/ui/home.js, src/js/ui/me.js, src/js/ui/drawer/settings.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/ui/shell.js, src/js/ui/detail.js, src/js/ui/chats.js, src/js/app.js
+   src/js/services/cloud-settings.js
+   가져옴: src/js/core/state.js { S }
+   내보냄: cloudSettings, mergeCloudSettings
+   쓰는 곳: src/js/services/cloud.js, src/js/services/cloud-push.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
-/* 그림 저장(IMG): IndexedDB → localStorage, 축소(shrink), 참조 모양 검사(validRef) — 작품 폴더에 실린 그림(content/… 상대 경로)도 참조로 씀. 이용자가 올리는 그림은 페르소나 사진뿐 */
+/* 계정에 올리는 설정의 모양: 기기마다 따로 두는 칸과 API 키 칸을 빼고 올리고(cloudSettings), 받을 때도 그 칸은 계정 것을 받지 않음(mergeCloudSettings) */
 
+/** @typedef {import("../core/types.js").Settings} Settings */
 
-
-/** @typedef {import("../core/types.js").ImageRef} ImageRef */
-
-/* 그림 참조: kv:img…(IndexedDB·계정) · data:image/… · content/…/images/x.webp(빌드가 작품 폴더에서 실은 그림, index.html 기준 상대 경로) */
-/** @param {unknown} ref @returns {boolean} ImageRef 모양인지 */
-function validRef(ref) {
-  return (
-    typeof ref === "string" &&
-    (/^kv:img[a-z0-9]{6,30}$/.test(ref) ||
-      /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(ref) ||
-      /^content\/(?!.*\.\.)[A-Za-z0-9_./-]+\.(webp|png|jpe?g)$/.test(ref))
-  );
+const DEVICE_SETTINGS = ["fs", "enterSend", "theme"]; // 화면 테마도 기기마다 따로(낮에 쓰는 기기와 밤에 쓰는 기기가 다를 수 있음)
+/* API 키 칸은 계정에 올리지 않음 — 서버 표의 kv_no_plain_keys 제약도 settings에 이 칸이 있으면 거부. 예전 빌드의 그림·성인 키 칸도 기기에 남아 있을 수 있어 함께 뺌 */
+const KEY_FIELDS = ["apiKey", "runwareKey", "openRouterKey"];
+/** 계정에 올릴 설정 — 기기별 칸(fs·enterSend)과 API 키 칸은 뺌(서버 제약 kv_no_plain_keys). @returns {Partial<Settings>} */
+function cloudSettings() {
+  const s = Object.assign({}, S.settings);
+  DEVICE_SETTINGS.concat(KEY_FIELDS).forEach((k) => delete s[k]);
+  return s;
 }
-/**
- * 그림 저장소. put(file|Blob) → Promise<ImageRef>(축소해 IndexedDB·kv:) · load(k)/local(k) kv 그림 본문(data URL) · tag(ref) → <img> HTML(kv:는 data-kv로 두고 hydrate가 채움)
- * hydrate(root) data-kv 그림 채우기(없으면 계정에서 받음, 받기 전 img-wait·못 받으면 img-miss) · drop(ref) 지우기 · migrate() 예전 localStorage 그림 옮기기
- */
-const IMG = {
-  cache: {},
-  async put(file) {
-    // 그림 본문은 IndexedDB에, 막힌 브라우저에서만 localStorage에(작게). 로그인했으면 KV.set이 계정에도 올림
-    const idb = !!(await IDB.open());
-    const data = await shrink(file, idb ? 960 : 560, idb ? 0.86 : 0.8);
-    const key = uid("img");
-    this.cache[key] = data;
-    const saved = idb && (await IDB.set(key, data));
-    KV.set(key, data, { local: !saved });
-    return "kv:" + key;
-  },
-  /* kv: 그림 읽기 — 메모리 → IndexedDB → 예전 localStorage 순서 */
-  async local(k) {
-    if (this.cache[k]) return this.cache[k];
-    let v = await IDB.get(k);
-    if (typeof v !== "string") v = await KV.get(k);
-    if (validRef(v)) this.cache[k] = v;
-    return this.cache[k];
-  },
-  // 계정에서 받은 그림은 IndexedDB에도 둠(다음부터는 받지 않음)
-  keep(k, v) {
-    if (validRef(v)) {
-      this.cache[k] = v;
-      IDB.set(k, v);
-    }
-  },
-  async load(k) {
-    const v = await this.local(k);
-    if (v || !CLOUD.on) return v;
-    this.keep(k, await CLOUD.getOne(k)); // 다른 기기에서 올린 그림
-    return this.cache[k];
-  },
-  drop(ref) {
-    if (typeof ref === "string" && ref.startsWith("kv:")) {
-      const k = ref.slice(3);
-      KV.set(k, undefined);
-      IDB.set(k, undefined);
-      delete this.cache[k];
-    }
-  },
-  /* 예전 버전이 localStorage에 넣어 둔 그림을 IndexedDB로 옮겨 localStorage 자리를 비움 */
-  async migrate() {
-    if (!(await IDB.open())) return 0;
-    let n = 0;
-    try {
-      for (const lk of Object.keys(localStorage)) {
-        if (!/^hv1_img[a-z0-9]{10,30}$/.test(lk)) continue;
-        const k = lk.slice(4),
-          v = KV.getLocal(k);
-        if (typeof v === "string" && (await IDB.set(k, v))) {
-          localStorage.removeItem(lk);
-          n++;
-        }
-      }
-    } catch {}
-    return n;
-  },
-  tag(ref) {
-    if (!validRef(ref)) return "";
-    if (ref.startsWith("kv:")) {
-      const k = ref.slice(3);
-      return this.cache[k] ? `<img src="${this.cache[k]}" alt="">` : `<img data-kv="${k}" alt="">`;
-    }
-    return `<img src="${ref}" alt="" loading="lazy">`;
-  },
-  // 이 기기에 있는 그림은 바로, 없는 그림(다른 기기에서 올린 것)은 계정에서 받아 채움. 받는 동안 img-wait(반짝이는 자리), 끝내 못 받으면 img-miss(표지는 글자 표지로 되돌림)
-  async hydrate(root = document) {
-    const els = $$("img[data-kv]", root).map((el) => {
-      const k = el.dataset.kv;
-      el.removeAttribute("data-kv");
-      el.classList.add("img-wait");
-      return [el, k];
-    });
-    await Promise.all([...new Set(els.map((x) => x[1]))].map((k) => this.load(k).catch(() => null)));
-    els.forEach(([el, k]) => {
-      if (this.cache[k]) el.src = this.cache[k];
-      el.classList.remove("img-wait");
-      if (!el.src) {
-        el.classList.add("img-miss");
-        const cv = el.closest(".cover");
-        if (cv) cv.classList.remove("has-img");
-      }
-    });
-  }
-};
-function shrink(file, max, q) {
-  return new Promise((res, rej) => {
-    const fr = new FileReader();
-    fr.onload = () => {
-      const img = new Image();
-      img.onload = () => {
-        const k = Math.min(1, max / Math.max(img.width, img.height)),
-          cv = document.createElement("canvas");
-        cv.width = Math.round(img.width * k);
-        cv.height = Math.round(img.height * k);
-        cv.getContext("2d").drawImage(img, 0, 0, cv.width, cv.height);
-        res(cv.toDataURL("image/jpeg", q));
-      };
-      img.onerror = rej;
-      img.src = fr.result;
-    };
-    fr.onerror = rej;
-    fr.readAsDataURL(file);
-  });
+/** 계정에서 받은 설정을 이 기기의 설정에 얹고 저장(기기별 칸·키 칸은 받지 않음). @param {unknown} v */
+function mergeCloudSettings(v) {
+  if (!v || typeof v !== "object") return;
+  // 기기별 칸과 키 칸은 계정 것을 받지 않음 — 이 기기에 그 칸이 없어도(화면 테마를 '기기 설정'으로 둔 것) 예전 빌드가 계정에 남긴 값이 들어오지 않게
+  const incoming = Object.assign({}, v);
+  DEVICE_SETTINGS.concat(KEY_FIELDS).forEach((k) => delete incoming[k]);
+  const next = Object.assign({}, S.settings, incoming);
+  next.memCfg = Object.assign({}, S.settings.memCfg, incoming.memCfg); // 장기기억 설정은 칸마다 합침(계정 값에 없는 칸은 이 기기의 값·기본값)
+  delete next.keysLocal;
+  S.settings = next;
+  try {
+    localStorage.setItem("hv1_settings", JSON.stringify(S.settings));
+  } catch {}
 }
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/services/cloud.js
    가져옴: src/js/core/events.js { emit, on }
-           src/js/core/rooms.js { roomKey }
+           src/js/core/rooms.js { roomInUse, roomKey }
            src/js/core/shelf.js { mergeShelf, shelfSyncOn }
-           src/js/core/state.js { S, room }
-           src/js/core/storage.js { IDB, KV }
-           src/js/core/util.js { ago }
-           src/js/services/images.js { validRef }
+           src/js/core/state.js { S, room, setRoom }
+           src/js/core/storage.js { KV }
+           src/js/services/cloud-settings.js { cloudSettings, mergeCloudSettings }
            src/js/services/supabase.js { SB }
-   내보냄: CLOUD, cloudSettings, cloudStateText
-   쓰는 곳: src/js/services/images.js, src/js/services/supabase.js, src/js/ui/account.js, src/js/ui/me.js, src/js/ui/login.js, src/js/app.js, src/js/boot.js
+   내보냄: synced, IMG_KEY_RE, CLOUD
+   쓰는 곳: src/js/services/supabase.js, src/js/services/images.js, src/js/services/cloud-push.js, src/js/ui/account.js, src/js/ui/me.js, src/js/ui/login.js, src/js/app.js, src/js/boot.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 계정 저장(CLOUD): KV를 계정 kv 표에 모아 올리고 받기, 기기별 설정 분리 */
 
@@ -3394,24 +3371,22 @@ function shrink(file, max, q) {
 
 
 
-/** @typedef {import("../core/types.js").Settings} Settings */
-
 /* KV ↔ 계정 동기화. 쓰기는 KV.set → put()이 키마다 0.8초 모아 upsert(지우기는 DELETE).
    읽기는 그림(img…)을 뺀 키를 받아 이 기기에 씀 — 처음 로그인하면 전부, 그 뒤엔 updated_at이 바뀐 것만. 그림(페르소나 사진)은 IMG.load가 필요할 때 한 장씩.
    이 기기에서 아직 못 올린 키(pending)와 올리는 중인 키(sending)는 받은 값으로 덮지 않음. 설정은 "settings" 키(글자 크기·Enter로 보내기는 기기마다 따로) */
-const DEVICE_SETTINGS = ["fs", "enterSend", "theme"]; // 화면 테마도 기기마다 따로(낮에 쓰는 기기와 밤에 쓰는 기기가 다를 수 있음)
-/* API 키 칸은 계정에 올리지 않음 — 서버 표의 kv_no_plain_keys 제약도 settings에 이 칸이 있으면 거부. 예전 빌드의 그림·성인 키 칸도 기기에 남아 있을 수 있어 함께 뺌 */
-const KEY_FIELDS = ["apiKey", "runwareKey", "openRouterKey"];
-/* 계정과 주고받는 KV 키. 예전 빌드가 남긴 행(그림 묶음·내 작품·잠근 키 등)은 받지도 올리지도 않음 */
-const SYNCED_RE = /^(wallet|personas|rooms|memcfg|room-.+)$/;
+/* 계정과 주고받는 KV 키. 예전 빌드가 남긴 행(그림 묶음·내 작품·잠근 키·따로 두던 장기기억 설정 memcfg 등)은 받지도 올리지도 않음 —
+   장기기억 설정은 설정("settings" 행)의 한 칸으로만 다님(2026-11-23, core/settings.js) */
+const SYNCED_RE = /^(wallet|personas|rooms|room-.+)$/;
 /* 내 서재(찜·최근 본·수집 기록)는 정해진 날짜부터만 계정과 주고받음(shelfSyncOn) — 그 전에는 이 기기에만. 다른 키와 달리 받은 값으로 덮지 않고 합침(takeShelf) */
 const SHELF_KEY = "shelf";
 const synced = (k) => SYNCED_RE.test(k) || (k === SHELF_KEY && shelfSyncOn());
+/* 응답 생성·요약이 아직 쓰고 있는 방의 키인지(core/rooms.js roomInUse) — 그 일이 끝나면 들고 있던 방을 저장하므로 받은 것으로 덮지 않고 미룸 */
+const using = (k) => k.indexOf("room-") === 0 && roomInUse(k.slice(5));
 const IMG_KEY_RE = /^img[a-z0-9]{6,30}$/;
 /**
  * 계정 저장(Supabase kv 표). start()/stop() 로그인·로그아웃 때 · put(k, v) 0.8초 모아 upsert(KV.remote 고리) · flush() 바로 올리고 결과를 돌려줌(한 번에 하나) ·
  * pull() → Promise<number> 바뀐 행 받아 적용
- * getOne(k) 그림 본문 받기 · pushAll(keys) 처음 로그인에 기기 데이터 올리기 · wipe() 계정 행 전부 삭제 · state: ""|"sync"|"ok"|"err"|"notable"("cloud" 이벤트)
+ * getOne(k) 그림 본문 받기 · wipe() 계정 행 전부 삭제 · state: ""|"sync"|"ok"|"err"|"notable"("cloud" 이벤트)
  */
 const CLOUD = {
   on: false,
@@ -3419,6 +3394,10 @@ const CLOUD = {
   pending: {},
   busy: null, // 지금 도는 전송의 줄(Promise) — flush()가 뒤에 이어 붙임
   sending: new Set(), // 지금 올리는 중인 키(send가 채우고 비움)
+  skipped: new Set(), // 열려 있어서 덮지 않고 넘어간 방의 키 — 방에서 나오면 다시 받음(retake)
+  seq: 0, // 이 기기에서 값을 바꿀 때마다 올라가는 번호
+  putSeq: {}, // 키 → 마지막으로 바꾼 때의 번호. 받기를 시작한 뒤에 바뀐 키는 그 받기의 값으로 덮지 않음(받는 사이 저장하고 올리기까지 끝나면 pending·sending에는 흔적이 없음)
+  owed: false, // 처음 올리기(pushAll)가 덜 끝남 — 그림을 대기열에 넣기 전에 실패하면 대기열에는 흔적이 없어, 로그아웃이 이 표시를 보고 다시 올림
   timer: null,
   state: "",
   at: 0,
@@ -3433,12 +3412,18 @@ const CLOUD = {
     this.uid = this.on ? SB.s.user.id : null;
     this.noTable = false;
     this.shelfUp = false;
+    try {
+      this.owed = this.on && localStorage.getItem("hv1_cloudowed") === this.uid; // 새로고침 뒤에도 기억
+    } catch {}
   },
   stop() {
     this.on = false;
     this.uid = null;
     this.pending = {};
     this.sending = new Set();
+    this.skipped = new Set();
+    this.putSeq = {};
+    this.owed = false;
     clearTimeout(this.timer);
     this.setState("");
   },
@@ -3450,6 +3435,7 @@ const CLOUD = {
   put(k, v) {
     if (!this.on || this.noTable || !(k === "settings" || synced(k) || IMG_KEY_RE.test(k))) return;
     this.pending[k] = v === undefined ? null : { v };
+    this.putSeq[k] = ++this.seq;
     clearTimeout(this.timer);
     this.timer = setTimeout(() => this.flush(), 800);
   },
@@ -3568,8 +3554,11 @@ const CLOUD = {
     }
   },
   // 받은 행을 이 기기에 씀. 열려 있는 대화방은 덮지 않음(대화 중에 바뀌면 헷갈림). 바뀐 키 수를 돌려줌.
-  // hold: 이 받기를 시작할 때 올리는 중이던 키 — 받는 사이 올리기가 끝나도, 그 전에 읽힌 옛 값으로 덮지 않음(pull이 넘김)
-  apply(rows, hold) {
+  // hold: 이 받기를 시작할 때 올리는 중이던 키 — 받는 사이 올리기가 끝나도, 그 전에 읽힌 옛 값으로 덮지 않음(pull이 넘김).
+  // since: 이 받기를 시작할 때의 번호(this.seq) — 그 뒤에 이 기기에서 바뀐 키도 덮지 않음. 없으면 처음 로그인의 전부 받기(firstSync)
+  apply(rows, hold, since) {
+    const full = since === undefined,
+      newer = (k) => !full && (this.putSeq[k] || 0) > since;
     let n = 0;
     const open = room && location.hash === "#r-" + room.id ? roomKey(room.id) : "";
     rows.forEach((x) => {
@@ -3581,14 +3570,28 @@ const CLOUD = {
         if (shelfSyncOn() && this.takeShelf(x.value)) n++;
         return;
       } // 보내지 못한 것이 있어도 합침
-      if (x.key in this.pending || this.sending.has(x.key) || (hold && hold.has(x.key)) || x.key === open) return;
+      if (x.key in this.pending || this.sending.has(x.key) || (hold && hold.has(x.key)) || newer(x.key)) return; // 이 기기의 값이 올라가(올라갔거나) 계정 것을 대신함
+      if (x.key === open || using(x.key)) {
+        this.skipped.add(x.key); // 받은 자리 표시(커서)는 이미 이 행을 지나갔으므로 적어 두었다가 방에서 나오면(쓰던 일이 끝나면) 다시 받음
+        return;
+      }
       if (x.key === "settings") {
         mergeCloudSettings(x.value);
         n++;
         return;
       }
+      // 예전 빌드가 따로 올리던 장기기억 설정 행: 처음 로그인의 전부 받기에서, 계정의 설정 행에 그 칸이 없을 때만 받아 설정으로 옮김(지금은 설정의 한 칸으로만 다님 —
+      // 예전 행만 남은 계정에서 값을 잃지 않게). 바뀐 것만 받는 때에는 보지 않음 — 예전 빌드가 이 행만 고쳐도 지금 설정을 덮지 않게
+      if (x.key === "memcfg") {
+        if (full && x.value && typeof x.value === "object" && !rows.some((y) => y.key === "settings" && y.value && y.value.memCfg)) {
+          mergeCloudSettings({ memCfg: x.value });
+          n++;
+        }
+        return;
+      }
       if (!SYNCED_RE.test(x.key)) return;
       KV.setLocal(x.key, x.value === null ? undefined : x.value);
+      if (room && x.key === roomKey(room.id)) setRoom(null); // 메모리에 든 옛 사본을 놓음 — 그대로 두면 그 방을 다시 열 때 옛 사본이 쓰이고, 저장하면 받은 것을 덮음
       n++;
     });
     this.pulledAt = Date.now();
@@ -3605,57 +3608,48 @@ const CLOUD = {
     S.shelf = m;
     return true;
   },
+  /**
+   * 열려 있어서 넘어간 방(skipped)을 다시 받음 — 방에서 나온 뒤(boot.js의 화면 이동)와 받기(pull) 앞에 부름. 아직 열려 있는 방은 계속 보류,
+   * 이 기기에 못 올린 변경이 있는 방은 그 값이 계정으로 올라가므로 받지 않음, 요청이 실패하면 다음에 다시. @returns {Promise<number>} 다시 받은 수
+   */
+  async retake() {
+    const uid = this.uid,
+      isOpen = (k) => !!room && location.hash === "#r-" + room.id && roomKey(room.id) === k;
+    let n = 0;
+    for (const k of [...this.skipped]) {
+      if (!this.on || this.uid !== uid) break;
+      if (isOpen(k) || using(k)) continue;
+      this.skipped.delete(k);
+      if (k in this.pending || this.sending.has(k)) continue;
+      const since = this.seq;
+      let got = null;
+      try {
+        const r = await SB.req("/rest/v1/kv?select=value&key=eq." + encodeURIComponent(k));
+        if (r.ok) got = await r.json();
+      } catch {}
+      if (this.uid !== uid) break;
+      if (!got || isOpen(k) || using(k)) {
+        this.skipped.add(k); // 못 받았거나 그사이 다시 열었으면 다음에
+        continue;
+      }
+      if (!got[0] || k in this.pending || this.sending.has(k) || (this.putSeq[k] || 0) > since) continue; // 계정에 그 방이 없거나, 그사이 이 기기에서 고침(올리기까지 끝났어도)
+      KV.setLocal(k, got[0].value);
+      if (room && roomKey(room.id) === k) setRoom(null);
+      n++;
+    }
+    return n;
+  },
   async pull() {
-    const hold = new Set(this.sending);
-    let n = this.apply(await this.rows(localStorage.getItem(this.lastKey()) || ""), hold);
+    const hold = new Set(this.sending),
+      since = this.seq,
+      again = await this.retake();
+    let n = again + this.apply(await this.rows(localStorage.getItem(this.lastKey()) || ""), hold, since);
     // 로그인한 뒤(또는 날짜가 된 뒤) 처음 한 번: 바뀐 행만 받는 pull에는 서재 행이 안 올 수 있어 따로 받아 합침 — 날짜 전에 이 기기에만 쌓인 것이 이때 계정으로
     if (!this.shelfUp && shelfSyncOn()) {
       this.shelfUp = true;
       if (this.takeShelf(await this.getOne(SHELF_KEY))) n++;
     }
     return n;
-  },
-  // 이 기기의 모든 데이터를 계정에 올림(계정이 비었을 때·합칠 때). 그림은 계정에 없는 것만 한 장씩 읽어 묶어 보냄
-  // (그림 본문은 IndexedDB에, IndexedDB가 막힌 브라우저에서는 localStorage에 있음)
-  async pushAll(keys) {
-    (keys || localKVKeys()).forEach((k) => {
-      const v = KV.getLocal(k);
-      if (v !== undefined) this.pending[k] = { v };
-    });
-    this.pending.settings = { v: cloudSettings() };
-    if ((await this.flush()) !== "ok") throw { code: "push_failed" }; // 못 올렸으면 '저장했어요'라고 하지 않게 — 부른 쪽(처음 로그인)이 받음
-    const have = new Set(await this.imgKeys());
-    let ls = [];
-    try {
-      ls = Object.keys(localStorage)
-        .filter((k) => k.indexOf("hv1_img") === 0)
-        .map((k) => k.slice(4));
-    } catch {}
-    const mine = Array.from(new Set((await IDB.keys()).concat(ls))).filter((k) => IMG_KEY_RE.test(k) && !have.has(k));
-    let batch = [],
-      size = 0;
-    const send = async () => {
-      if (!batch.length) return;
-      await this.check(
-        await SB.req("/rest/v1/kv?on_conflict=user_id,key", {
-          method: "POST",
-          headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
-          body: JSON.stringify(batch)
-        })
-      );
-      batch = [];
-      size = 0;
-    };
-    for (const k of mine) {
-      let v = await IDB.get(k);
-      if (typeof v !== "string") v = KV.getLocal(k);
-      if (typeof v !== "string" || !validRef(v)) continue;
-      batch.push({ user_id: this.uid, key: k, value: v });
-      size += v.length;
-      if (size > 1500000) await send();
-    }
-    await send();
-    this.setState("ok");
   },
   async wipe() {
     if (this.on && !this.noTable) {
@@ -3684,43 +3678,6 @@ function chunkBy(items, max) {
 // core가 services를 모르게 고리로 꽂음: KV.set → 계정에도, 설정 저장 → "settings" 행
 KV.remote = (k, v) => CLOUD.put(k, v);
 on("settings", () => CLOUD.put("settings", cloudSettings()));
-// 이 기기 KV 키 중 계정과 주고받는 것(그림은 pushAll이 따로, 설정은 "settings" 키로 따로)
-function localKVKeys() {
-  try {
-    return Object.keys(localStorage)
-      .filter((k) => k.indexOf("hv1_") === 0)
-      .map((k) => k.slice(4))
-      .filter(synced);
-  } catch {
-    return [];
-  }
-}
-/** 계정에 올릴 설정 — 기기별 칸(fs·enterSend)과 API 키 칸은 뺌(서버 제약 kv_no_plain_keys). @returns {Partial<Settings>} */
-function cloudSettings() {
-  const s = Object.assign({}, S.settings);
-  DEVICE_SETTINGS.concat(KEY_FIELDS).forEach((k) => delete s[k]);
-  return s;
-}
-function mergeCloudSettings(v) {
-  if (!v || typeof v !== "object") return;
-  // 기기별 칸과 키 칸은 계정 것을 받지 않음 — 이 기기에 그 칸이 없어도(화면 테마를 '기기 설정'으로 둔 것) 예전 빌드가 계정에 남긴 값이 들어오지 않게
-  const incoming = Object.assign({}, v);
-  DEVICE_SETTINGS.concat(KEY_FIELDS).forEach((k) => delete incoming[k]);
-  const next = Object.assign({}, S.settings, incoming);
-  delete next.keysLocal;
-  S.settings = next;
-  try {
-    localStorage.setItem("hv1_settings", JSON.stringify(S.settings));
-  } catch {}
-}
-/** MY → 계정에 보이는 동기화 상태 글. @returns {string} */
-function cloudStateText() {
-  if (!CLOUD.on) return "";
-  if (CLOUD.state === "notable") return "⚠️ 계정 저장 표가 아직 없어요 (docs/supabase.sql을 실행해 주세요)";
-  if (CLOUD.state === "err") return "⚠️ 계정에 저장하지 못했어요. 잠시 뒤 다시 시도해요";
-  if (CLOUD.state === "sync") return "저장하는 중…";
-  return CLOUD.at ? "계정에 저장됨 · " + ago(CLOUD.at) : "계정과 연결됨";
-}
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/services/supabase.js
    가져옴: src/js/core/config.js { CFG }
@@ -3973,6 +3930,140 @@ function acctName() {
   return u.email || (provName(u.provider) || "소셜") + " 계정";
 }
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
+   src/js/services/images.js
+   가져옴: src/js/core/storage.js { IDB, KV }
+           src/js/core/util.js { $$, uid }
+           src/js/services/cloud.js { CLOUD }
+   내보냄: validRef, IMG
+   쓰는 곳: src/js/services/load.js, src/js/images/pick.js, src/js/ai/prompt/rules.js, src/js/ui/cover.js, src/js/ui/worldart.js, src/js/ui/drawer/browse.js, src/js/ui/codex.js, src/js/services/cloud-push.js, src/js/ui/home.js, src/js/ui/me.js, src/js/ui/drawer/settings.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/ui/shell.js, src/js/ui/detail.js, src/js/ui/chats.js, src/js/app.js
+   ════════════════════════════════════════════════════════════════════════════════════════════════════ */
+/* 그림 저장(IMG): IndexedDB → localStorage, 축소(shrink), 참조 모양 검사(validRef) — 작품 폴더에 실린 그림(content/… 상대 경로)도 참조로 씀. 이용자가 올리는 그림은 페르소나 사진뿐 */
+
+
+
+/** @typedef {import("../core/types.js").ImageRef} ImageRef */
+
+/* 그림 참조: kv:img…(IndexedDB·계정) · data:image/… · content/…/images/x.webp(빌드가 작품 폴더에서 실은 그림, index.html 기준 상대 경로) */
+/** @param {unknown} ref @returns {boolean} ImageRef 모양인지 */
+function validRef(ref) {
+  return (
+    typeof ref === "string" &&
+    (/^kv:img[a-z0-9]{6,30}$/.test(ref) ||
+      /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(ref) ||
+      /^content\/(?!.*\.\.)[A-Za-z0-9_./-]+\.(webp|png|jpe?g)$/.test(ref))
+  );
+}
+/**
+ * 그림 저장소. put(file|Blob) → Promise<ImageRef>(축소해 IndexedDB·kv:) · load(k)/local(k) kv 그림 본문(data URL) · tag(ref) → <img> HTML(kv:는 data-kv로 두고 hydrate가 채움)
+ * hydrate(root) data-kv 그림 채우기(없으면 계정에서 받음, 받기 전 img-wait·못 받으면 img-miss) · drop(ref) 지우기 · migrate() 예전 localStorage 그림 옮기기
+ */
+const IMG = {
+  cache: {},
+  async put(file) {
+    // 그림 본문은 IndexedDB에, 막힌 브라우저에서만 localStorage에(작게). 로그인했으면 KV.set이 계정에도 올림
+    const idb = !!(await IDB.open());
+    const data = await shrink(file, idb ? 960 : 560, idb ? 0.86 : 0.8);
+    const key = uid("img");
+    this.cache[key] = data;
+    const saved = idb && (await IDB.set(key, data));
+    KV.set(key, data, { local: !saved });
+    return "kv:" + key;
+  },
+  /* kv: 그림 읽기 — 메모리 → IndexedDB → 예전 localStorage 순서 */
+  async local(k) {
+    if (this.cache[k]) return this.cache[k];
+    let v = await IDB.get(k);
+    if (typeof v !== "string") v = await KV.get(k);
+    if (validRef(v)) this.cache[k] = v;
+    return this.cache[k];
+  },
+  // 계정에서 받은 그림은 IndexedDB에도 둠(다음부터는 받지 않음)
+  keep(k, v) {
+    if (validRef(v)) {
+      this.cache[k] = v;
+      IDB.set(k, v);
+    }
+  },
+  async load(k) {
+    const v = await this.local(k);
+    if (v || !CLOUD.on) return v;
+    this.keep(k, await CLOUD.getOne(k)); // 다른 기기에서 올린 그림
+    return this.cache[k];
+  },
+  drop(ref) {
+    if (typeof ref === "string" && ref.startsWith("kv:")) {
+      const k = ref.slice(3);
+      KV.set(k, undefined);
+      IDB.set(k, undefined);
+      delete this.cache[k];
+    }
+  },
+  /* 예전 버전이 localStorage에 넣어 둔 그림을 IndexedDB로 옮겨 localStorage 자리를 비움 */
+  async migrate() {
+    if (!(await IDB.open())) return 0;
+    let n = 0;
+    try {
+      for (const lk of Object.keys(localStorage)) {
+        if (!/^hv1_img[a-z0-9]{10,30}$/.test(lk)) continue;
+        const k = lk.slice(4),
+          v = KV.getLocal(k);
+        if (typeof v === "string" && (await IDB.set(k, v))) {
+          localStorage.removeItem(lk);
+          n++;
+        }
+      }
+    } catch {}
+    return n;
+  },
+  tag(ref) {
+    if (!validRef(ref)) return "";
+    if (ref.startsWith("kv:")) {
+      const k = ref.slice(3);
+      return this.cache[k] ? `<img src="${this.cache[k]}" alt="">` : `<img data-kv="${k}" alt="">`;
+    }
+    return `<img src="${ref}" alt="" loading="lazy">`;
+  },
+  // 이 기기에 있는 그림은 바로, 없는 그림(다른 기기에서 올린 것)은 계정에서 받아 채움. 받는 동안 img-wait(반짝이는 자리), 끝내 못 받으면 img-miss(표지는 글자 표지로 되돌림)
+  async hydrate(root = document) {
+    const els = $$("img[data-kv]", root).map((el) => {
+      const k = el.dataset.kv;
+      el.removeAttribute("data-kv");
+      el.classList.add("img-wait");
+      return [el, k];
+    });
+    await Promise.all([...new Set(els.map((x) => x[1]))].map((k) => this.load(k).catch(() => null)));
+    els.forEach(([el, k]) => {
+      if (this.cache[k]) el.src = this.cache[k];
+      el.classList.remove("img-wait");
+      if (!el.src) {
+        el.classList.add("img-miss");
+        const cv = el.closest(".cover");
+        if (cv) cv.classList.remove("has-img");
+      }
+    });
+  }
+};
+function shrink(file, max, q) {
+  return new Promise((res, rej) => {
+    const fr = new FileReader();
+    fr.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const k = Math.min(1, max / Math.max(img.width, img.height)),
+          cv = document.createElement("canvas");
+        cv.width = Math.round(img.width * k);
+        cv.height = Math.round(img.height * k);
+        cv.getContext("2d").drawImage(img, 0, 0, cv.width, cv.height);
+        res(cv.toDataURL("image/jpeg", q));
+      };
+      img.onerror = rej;
+      img.src = fr.result;
+    };
+    fr.onerror = rej;
+    fr.readAsDataURL(file);
+  });
+}
+/* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/services/load.js
    가져옴: src/js/core/rooms.js { sortRooms }
            src/js/core/shelf.js { mergeShelf }
@@ -3983,7 +4074,7 @@ function acctName() {
    내보냄: loadAll
    쓰는 곳: src/js/services/sync.js, src/js/boot.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
-/* 저장된 데이터를 S에 읽어 들임(loadAll): 지갑·페르소나·대화방 목록·요약 설정·내 서재. 부팅과 계정에서 다시 받을 때 씀 */
+/* 저장된 데이터를 S에 읽어 들임(loadAll): 지갑·페르소나·대화방 목록·내 서재(장기기억 설정은 설정의 한 칸 — core/migrate.js와 계정의 settings 행). 부팅과 계정에서 다시 받을 때 씀 */
 
 
 
@@ -3991,9 +4082,9 @@ function acctName() {
 
 
 
-/** 저장된 데이터(지갑·페르소나·대화방 목록·요약 설정·내 서재)를 KV에서 읽어 S에 얹음. @returns {Promise<void>} */
+/** 저장된 데이터(지갑·페르소나·대화방 목록·내 서재)를 KV에서 읽어 S에 얹음. @returns {Promise<void>} */
 async function loadAll() {
-  const [w, p, rooms, mc, shelf] = await Promise.all(["wallet", "personas", "rooms", "memcfg", "shelf"].map((k) => KV.get(k)));
+  const [w, p, rooms, shelf] = await Promise.all(["wallet", "personas", "rooms", "shelf"].map((k) => KV.get(k)));
   if (w && typeof w === "object")
     S.wallet = {
       ...S.wallet,
@@ -4012,7 +4103,6 @@ async function loadAll() {
   if (Array.isArray(rooms)) S.rooms = sortRooms(rooms); // 즐겨찾기 먼저 — 예전 버전이나 다른 기기가 저장한 목록은 최근 순으로만 서 있을 수 있음
   S.shelf = mergeShelf(shelf);
   IMG.migrate().catch(() => {});
-  if (mc && typeof mc === "object") S.settings.memCfg = { ...S.settings.memCfg, ...mc };
   refreshFree();
 }
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
@@ -4023,10 +4113,10 @@ async function loadAll() {
            src/js/core/state.js { gen }
            src/js/core/storage.js { IDB, KV }
            src/js/services/load.js { loadAll }
-   내보냄: mergeGuest, reloadFromCloud, wipeDevice
+   내보냄: mergeGuest, dropGuestRooms, reloadFromCloud, wipeDevice
    쓰는 곳: src/js/ui/account.js, src/js/ui/login.js, src/js/app.js, src/js/boot.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
-/* 처음 로그인 합치기(mergeGuest), 계정에서 다시 받기, 기기 지우기 */
+/* 처음 로그인 합치기(mergeGuest)·계정 것만 쓰기(dropGuestRooms), 계정에서 다시 받기, 기기 지우기 */
 
 
 
@@ -4057,6 +4147,14 @@ function mergeGuest(remote, local) {
   );
   if (ps.length && !ps.some((p) => p.def)) ps[0].def = true;
   if (ps.length) KV.set("personas", ps);
+}
+/**
+ * 처음 로그인 '계정 것만 쓰기': 계정에 대화 목록 행이 없으면(올리다 실패한 계정 등) 이 기기의 목록을 비움 — 그대로 두면 이 기기의 목록이 남아 다음 저장 때 계정으로 다시 올라감.
+ * 방 본문은 이 기기에 그대로 둠(2026-11-21 사용자 결정 — 목록에서만 뺌, 되살리는 화면은 아직 없음). 계정에 목록이 있으면 받은 목록이 이미 이 기기 것을 대신함(CLOUD.apply).
+ * 페르소나·지갑은 건드리지 않음 — 계정에 없으면 이 기기 것을 계속 씀(비우면 이 기기에서도 사라짐). @param {Record<string, unknown>} remote 계정에서 받은 키 → 값
+ */
+function dropGuestRooms(remote) {
+  if (!Array.isArray(remote.rooms)) KV.setLocal("rooms", []);
 }
 /** 계정에서 받은 뒤 다시 읽고 화면 갱신(입력 중·대화방 안이면 화면은 그대로). @returns {Promise<void>} */
 async function reloadFromCloud() {
@@ -4296,7 +4394,7 @@ const SUPPORT = {
    인물 코드는 영문 대문자 1~4자(HSY = 한서윤), 그 뒤 번호가 감정·행동 칸 0~14(SIT) — HSY3 = 한서윤 3 부끄러움. 본문 태그는 [[HSY3]], 그림 파일은 HSY3.webp.
    예약 시리즈(SERIES): MP<n> 장소(작품 places의 n번째), EV<n> 컷씬(작품 cuts의 n번째) — 번호는 1부터. 다른 모습(폼)은 별도 인물 코드(cast[].of가 본체).
    코드를 해석하는 곳(프롬프트·렌더러·갤러리·빌드 검사·도감)은 모두 codebook(c) 하나를 씀 — 시리즈를 더하려면 SERIES에 한 줄.
-   예전 대화의 [[img:p1:3]]·조합 태그([[img:ks:3,404,501]])·세 자리 코드도 읽음(처음 나오는 0~14 번호, 없으면 1) — 방을 열 때 migrateRoom(core/rooms.js)이 새 코드로 바꿈 */
+   예전 대화의 [[img:p1:3]]·조합 태그([[img:ks:3,404,501]])·세 자리 코드도 읽음(처음 나오는 0~14 번호, 없으면 1) — 방을 열 때 migrateRoom(core/room-read.js)이 새 코드로 바꿈 */
 
 
  // 예약 시리즈 표(MP 장소 · EV 컷씬)는 core/constants.js에 — 쓰던 곳은 그대로 여기서 가져감
@@ -5500,7 +5598,7 @@ function rulesPrompt(r, lore = [], hist = r.msgs) {
    src/js/ai/prompt/memory.js
    가져옴: src/js/ai/llm.js { llm }
            src/js/ai/prompt/rules.js { speakerName }
-           src/js/core/rooms.js { curText, memoryMark, saveRoom }
+           src/js/core/rooms.js { curText, holdRoom, memoryMark, releaseRoom, saveRoom }
            src/js/core/state.js { S }
            src/js/core/util.js { $, $$, toast }
            src/js/core/wallet.js { plan }
@@ -5538,6 +5636,7 @@ async function maybeSummarize(r, manual = false) {
   const msgs = r.msgs.filter((m) => !m.sys && curText(m)).slice(-(n * 2));
   if (!msgs.length) return;
   summarizing = true;
+  holdRoom(r.id); // 요약이 끝나 이 방 객체를 저장할 때까지, 계정에서 받은 것으로 이 방을 덮지 않게(services/cloud.js)
   flagMemo(true, "장기기억을 정리하는 중…");
   const to = r.turn || 0,
     from = Math.max(1, to - n + 1);
@@ -5601,6 +5700,7 @@ ${excerpt}`
   } catch (e) {
     if (manual) toast("요약하지 못했어요. 잠시 뒤 다시 시도해 주세요.");
   } finally {
+    releaseRoom(r.id);
     summarizing = false;
     flagMemo(false);
   }
@@ -5655,12 +5755,20 @@ function sheet(html, cls = "") {
   ov.innerHTML = `<div class="sheet ${cls}" role="dialog" aria-modal="true">${html}</div>`;
   document.body.append(ov);
   ov.addEventListener("click", (e) => {
-    if (e.target === ov || e.target.closest("[data-x]")) ov.remove();
+    if (e.target === ov || e.target.closest("[data-x]")) shut(ov);
   });
   return ov;
 }
+/* 겹 하나를 닫음 — 닫힐 때 할 일(ov.onShut)이 걸려 있으면 한 번 부름. 버튼이 아닌 길(배경·취소·Esc·화면 이동·다른 시트가 열림)로 닫혀도
+   뒤처리가 끝나야 하는 창이 씀(처음 로그인 합치기 창 — ui/account.js). 버튼이 직접 ov.remove()로 닫는 길에서는 부르지 않음 */
+function shut(ov) {
+  const f = ov.onShut;
+  ov.onShut = null;
+  ov.remove();
+  if (f) f();
+}
 function closeOverlays() {
-  $$(".overlay").forEach((o) => o.remove());
+  $$(".overlay").forEach(shut);
 }
 function confirmSheet(title, sub, okLabel, onOk) {
   const ov = sheet(
@@ -6060,10 +6168,9 @@ function ackAiNotice() {
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/ui/room-tools.js
    가져옴: src/js/ai/prompt/rules.js { speakerName }
-           src/js/core/rooms.js { curText, deletedRooms, roomKey }
+           src/js/core/rooms.js { curText, removeRoom }
            src/js/core/shelf.js { markSeen }
-           src/js/core/state.js { S, gen, room, setRoom }
-           src/js/core/storage.js { KV }
+           src/js/core/state.js { gen, room, setRoom }
            src/js/core/util.js { $$ }
            src/js/images/codes.js { IMG_TAG_RE, fallbackSits, imgTags }
            src/js/images/pick.js { imagesOf }
@@ -6071,12 +6178,11 @@ function ackAiNotice() {
            src/js/ui/chat/generate.js { stopGen }
            src/js/ui/chat/log.js { copyText }
            src/js/ui/cover.js { tagInfo }
-           src/js/ui/shell.js { go, renderRailRecent }
+           src/js/ui/shell.js { go }
    내보냄: galleryItems, collectSeen, jumpTo, exportText, exportRoom, deleteRoom
    쓰는 곳: src/js/ui/chat/search.js, src/js/ui/drawer/browse.js, src/js/ui/drawer/main.js, src/js/ui/chat/view.js, src/js/ui/chat/generate.js, src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 대화방 도구(드로어가 씀): 대화에 나온 그림 모으기(galleryItems)·수집 기록에 적기(collectSeen)·그 장면으로 가기(jumpTo)·대화 내보내기(exportText·exportRoom)·대화방 삭제(deleteRoom) */
-
 
 
 
@@ -6165,15 +6271,12 @@ async function exportRoom(r) {
     copyText(data, "내보내기가 막혀 있어서 대신 복사했어요");
   }
 }
-/** 대화방 삭제 — 진행 중 응답을 멈추고, 지운 방으로 적어(되살아나지 않게) 목록에서 빼고 대화 목록으로. @param {string} id */
+/** 대화방 삭제(화면 쪽) — 데이터는 core/rooms.js removeRoom이 지우고(지운 방 표시가 응답 멈추기보다 먼저 — 멈춘 응답의 저장이 방을 되살리지 않게), 여기서는 진행 중 응답을 멈추고 현재 방을 놓은 뒤 대화 목록으로. @param {string} id */
 function deleteRoom(id) {
-  deletedRooms.add(id);
-  if (gen && room && room.id === id) stopGen();
-  KV.set(roomKey(id), undefined);
-  S.rooms = S.rooms.filter((r) => r.id !== id);
-  KV.set("rooms", S.rooms);
-  renderRailRecent();
-  if (room && room.id === id) setRoom(null);
+  const mine = !!room && room.id === id;
+  removeRoom(id);
+  if (gen && mine) stopGen();
+  if (mine) setRoom(null);
   go("chats");
 }
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
@@ -7309,20 +7412,89 @@ function bindChatSettings(root, after) {
   $("#cImg", root).onchange = (e) => set("sceneImg", e.target.checked);
 }
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
+   src/js/services/cloud-push.js
+   가져옴: src/js/core/storage.js { IDB, KV }
+           src/js/services/cloud.js { CLOUD, IMG_KEY_RE, synced }
+           src/js/services/cloud-settings.js { cloudSettings }
+           src/js/services/images.js { validRef }
+   내보냄: pushAll
+   쓰는 곳: src/js/ui/account.js
+   ════════════════════════════════════════════════════════════════════════════════════════════════════ */
+/* 처음 로그인의 올리기(pushAll): 이 기기의 데이터와 그림을 계정에 올림 — 계정이 비었을 때·합칠 때(ui/account.js firstSync). 전송은 CLOUD의 줄(한 번에 하나)에 세움 */
+
+
+
+
+
+/**
+ * 이 기기의 모든 데이터를 계정에 올림(계정이 비었을 때·합칠 때). 그림은 계정에 없는 것만 읽어 **같은 대기열**(CLOUD.put)에 올림 — 전송은 한 번에 하나로 서고,
+ * 실패하면 대기열에 남아 다시 올라가며, 로그아웃도 그것을 '못 올린 것'으로 봄(전에는 그림을 따로 보내, 실패한 그림이 대기열에 남지 않았음).
+ * 그림 본문은 IndexedDB에, IndexedDB가 막힌 브라우저에서는 localStorage에 있음. 못 올렸으면 던짐 — 부른 쪽(처음 로그인)이 '저장했어요'라고 하지 않게.
+ * @param {string[]} [keys] 올릴 KV 키(빼면 이 기기의 것 전부, []이면 대기열에 든 것과 설정·그림만) @returns {Promise<void>}
+ */
+async function pushAll(keys) {
+  // 덜 끝난 표시: 그림을 대기열에 넣기 전에(그림 목록 조회 등) 실패하면 대기열에는 흔적이 없음 — 표시가 남아 있으면 로그아웃·'지금 동기화'가 다시 올림(ui/account.js)
+  CLOUD.owed = true;
+  try {
+    localStorage.setItem("hv1_cloudowed", CLOUD.uid);
+  } catch {}
+  (keys || localKVKeys()).forEach((k) => {
+    const v = KV.getLocal(k);
+    if (v !== undefined) CLOUD.pending[k] = { v };
+  });
+  CLOUD.pending.settings = { v: cloudSettings() };
+  if ((await CLOUD.flush()) !== "ok") throw { code: "push_failed" };
+  const uid = CLOUD.uid,
+    have = new Set(await CLOUD.imgKeys());
+  let ls = [];
+  try {
+    ls = Object.keys(localStorage)
+      .filter((k) => k.indexOf("hv1_img") === 0)
+      .map((k) => k.slice(4));
+  } catch {}
+  const mine = Array.from(new Set((await IDB.keys()).concat(ls))).filter((k) => IMG_KEY_RE.test(k) && !have.has(k));
+  // shortcut: 그림을 한꺼번에 대기열에 올림(페르소나 사진 몇 장), 그림이 많아지면 묶음마다 flush
+  for (const k of mine) {
+    let v = await IDB.get(k);
+    if (typeof v !== "string") v = KV.getLocal(k);
+    if (CLOUD.uid !== uid) throw { code: "push_failed" }; // 읽는 사이 계정이 바뀜
+    if (typeof v === "string" && validRef(v)) CLOUD.put(k, v);
+  }
+  if ((await CLOUD.flush()) !== "ok") throw { code: "push_failed" };
+  if (CLOUD.uid !== uid) return;
+  CLOUD.owed = false;
+  try {
+    localStorage.removeItem("hv1_cloudowed");
+  } catch {}
+}
+// 이 기기 KV 키 중 계정과 주고받는 것(그림은 pushAll이 따로, 설정은 "settings" 키로 따로)
+function localKVKeys() {
+  try {
+    return Object.keys(localStorage)
+      .filter((k) => k.indexOf("hv1_") === 0)
+      .map((k) => k.slice(4))
+      .filter(synced);
+  } catch {
+    return [];
+  }
+}
+/* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/ui/account.js
    가져옴: src/js/core/events.js { on }
            src/js/core/shelf.js { likedIds, mergeShelf, resetShelf }
            src/js/core/state.js { S }
-           src/js/core/util.js { $, esc, toast }
-           src/js/services/cloud.js { CLOUD, cloudStateText }
+           src/js/core/util.js { $, ago, esc, toast }
+           src/js/services/cloud.js { CLOUD }
+           src/js/services/cloud-push.js { pushAll }
            src/js/services/supabase.js { SB, acctName, provName }
-           src/js/services/sync.js { mergeGuest, reloadFromCloud, wipeDevice }
+           src/js/services/sync.js { dropGuestRooms, mergeGuest, reloadFromCloud, wipeDevice }
            src/js/ui/me.js { viewMe }
            src/js/ui/sheet.js { confirmSheet, sheet }
    내보냄: firstSync, accountBoxHTML, bindAccount
    쓰는 곳: src/js/ui/me.js, src/js/ui/login.js, src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* MY → 계정 칸: 처음 로그인 합치기(firstSync), 동기화 상태·로그아웃·계정 삭제 */
+
 
 
 
@@ -7345,7 +7517,7 @@ async function firstSync() {
     remote[x.key] = x.value;
   });
   if (!rows.some((x) => x.key !== "settings")) {
-    await CLOUD.pushAll();
+    await pushAll();
     toast("이 기기의 데이터를 계정에 저장했어요");
     return;
   }
@@ -7359,8 +7531,9 @@ async function firstSync() {
   const use = async (merge) => {
     CLOUD.apply(rows);
     if (merge) mergeGuest(remote, local);
+    else dropGuestRooms(remote);
     await reloadFromCloud();
-    if (merge) await CLOUD.pushAll([]);
+    if (merge) await pushAll([]);
     toast(merge ? "이 기기의 데이터를 계정에 합쳤어요" : "계정 데이터를 불러왔어요");
   };
   if (!onlyRooms.length && !onlyLikes.length) return use(false);
@@ -7381,10 +7554,16 @@ async function firstSync() {
       resetShelf();
       pick(false);
     }; // 이 기기의 찜·최근 본도 합치지 않음
-    ov.addEventListener("click", (e) => {
-      if (e.target === ov) pick(true);
-    }); // 그냥 닫으면 아무것도 잃지 않게 합침
+    ov.onShut = () => pick(true); // 버튼이 아닌 길(배경·Esc·화면 이동)로 닫혀도 뒤처리가 끝나게 — 그냥 닫으면 아무것도 잃지 않게 합침(ui/sheet.js shut)
   });
+}
+/** MY → 계정에 보이는 동기화 상태 글. @returns {string} */
+function cloudStateText() {
+  if (!CLOUD.on) return "";
+  if (CLOUD.state === "notable") return "⚠️ 계정 저장 표가 아직 없어요 (docs/supabase.sql을 실행해 주세요)";
+  if (CLOUD.state === "err") return "⚠️ 계정에 저장하지 못했어요. 잠시 뒤 다시 시도해요";
+  if (CLOUD.state === "sync") return "저장하는 중…";
+  return CLOUD.at ? "계정에 저장됨 · " + ago(CLOUD.at) : "계정과 연결됨";
 }
 on("cloud", () => {
   const el = $("#cloudState");
@@ -7412,7 +7591,17 @@ function accountBoxHTML() {
    - '기기 데이터도 지우기'는 다 올라간 것을 확인했을 때만 함(계정 저장 표가 없는 설치도 계정에 사본이 없으니 지우지 않음). 지우지 않는 로그아웃은 표가 없어도 그대로 됨.
    - 지우는 로그아웃은 올리기 시작부터 새로고침까지 화면을 막음(veil) — 그사이에 바꾼 것은 계정에 닿지 못한 채 지워지므로 */
 const LOGOUT_WAIT = 20000; // 올리기를 기다리는 한도 — 응답이 오다 멈춰도 로그아웃이 영영 안 끝나지 않게(넘으면 못 올린 것으로 보고 물음)
-const flushSoon = () => Promise.race([CLOUD.flush(), new Promise((r) => setTimeout(() => r("left"), LOGOUT_WAIT))]);
+/* 지금 올릴 수 있는 것을 다 올림 — 처음 올리기가 덜 끝났으면(CLOUD.owed: 그림을 대기열에 넣기 전에 실패한 경우) 그것부터 다시. 결과는 CLOUD.flush와 같은 값 */
+async function uploadAll() {
+  if (CLOUD.owed)
+    try {
+      await pushAll([]);
+    } catch {
+      return CLOUD.noTable ? "notable" : "left";
+    }
+  return CLOUD.flush();
+}
+const flushSoon = () => Promise.race([uploadAll(), new Promise((r) => setTimeout(() => r("left"), LOGOUT_WAIT))]);
 /* 화면 전체를 막는 가림막 — .overlay가 아니라서 Esc·화면 이동(closeOverlays)으로 닫히지 않음. 포인터는 덮어서, 키보드는 눌림을 가로채서 막음
    (뒤쪽 화면에 포커스가 남아 있으면 가려져 있어도 Enter·Tab으로 조작됨). 돌려준 함수를 부르면 걷힘 */
 function veil(text) {
@@ -7487,7 +7676,7 @@ function bindAccount(v) {
   $("#cSync", v).onclick = async (e) => {
     e.target.disabled = true;
     try {
-      if ((await CLOUD.flush()) === "left") throw 0; // 올리지 못한 것이 있으면 '이미 최신'이라고 하지 않음
+      if ((await uploadAll()) === "left") throw 0; // 올리지 못한 것이 있으면 '이미 최신'이라고 하지 않음(처음 올리기가 덜 끝났으면 그것부터)
       const n = await CLOUD.pull();
       if (n) await reloadFromCloud();
       CLOUD.setState(CLOUD.noTable ? "notable" : "ok");
@@ -9383,7 +9572,8 @@ ${recent}`
    가져옴: src/js/ai/models.js { MODELS }
            src/js/core/character.js { liveWork }
            src/js/core/commands.js { commandHelp, findCommand, parseCommand }
-           src/js/core/rooms.js { migrateRoom, roomKey, saveRoom }
+           src/js/core/room-read.js { migrateRoom }
+           src/js/core/rooms.js { roomKey, saveRoom }
            src/js/core/state.js { S, gen, room, setRoom }
            src/js/core/storage.js { KV }
            src/js/core/util.js { $, esc, num, uid }
@@ -9428,18 +9618,27 @@ ${recent}`
 
 
 
+
 async function viewChat(id) {
   const v = $("#view");
   if (!room || room.id !== id) {
     v.innerHTML = `<div class="page"><p class="note">대화를 불러오는 중…</p></div>`;
     const r = await KV.get(roomKey(id));
     if (location.hash.slice(1) !== "r-" + id) return;
-    if (!r) {
-      v.innerHTML = `<div class="page">${topbar()}<div class="empty">대화방을 찾을 수 없어요.<br><button class="btn sm" data-go="chats">대화 목록</button></div></div>`;
+    // 방 읽기의 경계(core/room-read.js migrateRoom): 열 수 없는 모양이면 저장된 원본은 그대로 두고 안내만 — 방 하나 때문에 화면이 멈추지 않게
+    let ok = null;
+    try {
+      ok = r ? migrateRoom(r) : null;
+    } catch {}
+    if (!ok) {
+      const why = r
+        ? `이 대화방을 열 수 없어요. 저장된 내용이 온전하지 않아요.<br><span class="note">내용은 지우지 않고 그대로 두었어요.</span>`
+        : "대화방을 찾을 수 없어요.";
+      v.innerHTML = `<div class="page">${topbar()}<div class="empty">${why}<br><button class="btn sm" data-go="chats">대화 목록</button></div></div>`;
       bindGo(v);
       return;
     }
-    setRoom(migrateRoom(r));
+    setRoom(ok);
   }
   collectSeen(room); // 이 방에 나온 그림 코드를 수집 기록에(새 방의 첫 장면, 이 기능 전에 만든 방, 다른 기기에서 온 방)
   const c = room.char;
@@ -10293,7 +10492,7 @@ function restoreStatus() {
            src/js/core/character.js { exampleCast }
            src/js/core/episode.js { epAfter, epPick }
            src/js/core/shelf.js { markEnding }
-           src/js/core/rooms.js { curText, saveRoom }
+           src/js/core/rooms.js { curText, holdRoom, releaseRoom, saveRoom }
            src/js/core/state.js { gen, room, setGen }
            src/js/core/util.js { $, esc, uid }
            src/js/core/wallet.js { charge, qShort, quote, refund, refundSug }
@@ -10498,6 +10697,7 @@ async function generate(target, q, direction = "", isEdit = false) {
       syncJump();
     }
   };
+  holdRoom(r.id); // 응답이 끝나 이 방 객체를 저장할 때까지, 계정에서 받은 것으로 이 방을 덮지 않게(services/cloud.js)
   try {
     const text = await llm(input, {
       tier: MODELS[model].tier,
@@ -10546,18 +10746,22 @@ async function generate(target, q, direction = "", isEdit = false) {
       if (copy) r.lastErr = copy;
     }
   } finally {
-    setGen(null);
-    saveRoom(r);
-    collectSeen(r);
-    if (room === r && $("#logInner")) {
-      renderLog(stick && autoScroll());
-      syncJump();
-      updateComposer();
-      updateMeter();
-      $("#inp")?.focus({ preventScroll: true });
-      if (q.sug) showSug(); // 자동 받기로 온 추천은 바로 펼쳐 보임(값을 낸 것이라 누르지 않아도)
+    try {
+      setGen(null);
+      saveRoom(r);
+      collectSeen(r);
+      if (room === r && $("#logInner")) {
+        renderLog(stick && autoScroll());
+        syncJump();
+        updateComposer();
+        updateMeter();
+        $("#inp")?.focus({ preventScroll: true });
+        if (q.sug) showSug(); // 자동 받기로 온 추천은 바로 펼쳐 보임(값을 낸 것이라 누르지 않아도)
+      }
+      maybeSummarize(r); // 요약은 시작하면서 스스로 방을 잡음 — 아래에서 놓아도 틈이 없음
+    } finally {
+      releaseRoom(r.id); // 위에서 무엇이 던져도 방은 꼭 놓음(안 놓으면 그 방은 계정에서 받지 못함)
     }
-    maybeSummarize(r);
   }
 }
 function stopGen() {
@@ -11381,6 +11585,7 @@ function newPasswordSheet() {
 
 
 
+
 /* 해시 앞부분 → 화면. 상세(c-<id>)·대화방(r-<id>)·도감(codex-<id>)·고객센터(help-<탭>)는 "-" 뒤를 인자로 받음 */
 const USER_VIEWS = {
   home: viewHome,
@@ -11758,6 +11963,15 @@ function migrateSettings() {
   } catch {}
   if (s) S.settings = { ...S.settings, ...s, memCfg: { ...S.settings.memCfg, ...(s.memCfg || {}) } };
   let moved = false;
+  // 장기기억 설정의 원본은 설정(memCfg 칸) 하나. 설정에 그 칸이 없는 예전 설치에서만 따로 두던 사본(hv1_memcfg)을 읽어 설정으로 옮김 — 사본은 지우지 않고 더 쓰지 않음
+  if (!s || !s.memCfg)
+    try {
+      const old = JSON.parse(localStorage.getItem("hv1_memcfg") || "null");
+      if (old && typeof old === "object") {
+        S.settings.memCfg = { ...S.settings.memCfg, ...old };
+        moved = true;
+      }
+    } catch {}
   try {
     // 없앤 설정: 등급별 OpenRouter 모델
     for (const k of ["unfilteredModels"])
@@ -11821,6 +12035,10 @@ async function boot() {
   bootBack(askLogin); // 작품 주소로 처음 들어왔으면 로그인·둘러보기 뒤 그 작품으로
   route();
   window.addEventListener("hashchange", route);
+  // 방을 열어 둔 사이 다른 기기가 그 방을 고쳤으면(받기가 덮지 않고 넘어감) 방에서 나올 때 그 방만 다시 받음
+  window.addEventListener("hashchange", () => {
+    if (CLOUD.on && CLOUD.skipped.size) CLOUD.retake();
+  });
   if (SB.s)
     afterLogin(!!authType).then(() => {
       if (authType === "recovery") newPasswordSheet();

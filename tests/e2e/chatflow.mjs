@@ -567,6 +567,60 @@ for (const [dev, engine] of targets) {
       save: !!document.querySelector("#setSave"),
       overflowX: document.documentElement.scrollWidth - innerWidth
     }));
+    // 방 읽기 경계: 설정 칸이 없는 방(다른 기기·예전 빌드가 남긴 것)은 기본 설정으로 열리고, 메시지가 없는 방은 안내만 뜨며 저장된 내용은 그대로 —
+    // 전에는 설정 칸이 없는 방 하나가 예외로 방 화면을 멈췄음
+    res.boundary = await p.evaluate(async () => {
+      const nap = (ms) => new Promise((r) => setTimeout(r, ms)),
+        a = newRoom(normalizeChar(ORIGINALS[0]), 0, S.personas[0]),
+        b = newRoom(normalizeChar(ORIGINALS[1]), 0, S.personas[0]),
+        ra = KV.getLocal(roomKey(a.id)),
+        rb = KV.getLocal(roomKey(b.id));
+      delete ra.set;
+      delete rb.msgs;
+      KV.setLocal(roomKey(a.id), ra);
+      KV.setLocal(roomKey(b.id), rb);
+      setRoom(null);
+      location.hash = "r-" + a.id;
+      await nap(800);
+      const opened = !!document.querySelector("#inp") && !!room && room.id === a.id && !!room.set && !!room.set.model;
+      location.hash = "r-" + b.id;
+      await nap(800);
+      const left = KV.getLocal(roomKey(b.id));
+      return { opened, notice: (document.querySelector("#view .empty") || {}).textContent || "", kept: !!left && !("msgs" in left), room: room ? room.id : "" };
+    });
+    {
+      const x = res.boundary;
+      if (!x.opened || !/열 수 없어요/.test(x.notice) || !x.kept) errs.push("방 읽기 경계(깨진 방 하나가 화면을 멈추지 않음)가 다름: " + JSON.stringify(x));
+    }
+    // 장기기억 설정의 원본은 설정(settings.memCfg) 하나 — 예전 빌드가 따로 두던 사본(hv1_memcfg)과 값이 달라도 설정의 값을 쓰고,
+    // 설정에 그 칸이 없는 예전 설치에서만 따로 둔 사본을 읽어 설정으로 옮김. 저장할 때 따로 둔 사본은 더 쓰지 않음
+    {
+      const seed = (withCfg) =>
+        p.evaluate((withCfg) => {
+          const s = JSON.parse(localStorage.getItem("hv1_settings") || "{}");
+          if (withCfg) s.memCfg = { ...(s.memCfg || {}), every: 7 };
+          else delete s.memCfg;
+          localStorage.setItem("hv1_settings", JSON.stringify(s));
+          localStorage.setItem("hv1_memcfg", JSON.stringify({ every: 3 }));
+        }, withCfg);
+      await seed(true);
+      await p.reload({ waitUntil: "load" });
+      await p.waitForTimeout(1200);
+      const both = await p.evaluate(() => S.settings.memCfg.every);
+      await seed(false);
+      await p.reload({ waitUntil: "load" });
+      await p.waitForTimeout(1200);
+      const legacy = await p.evaluate(() => {
+        const saved = (JSON.parse(localStorage.getItem("hv1_settings") || "{}").memCfg || {}).every;
+        const every = S.settings.memCfg.every;
+        S.settings.memCfg.every = 9;
+        saveSettings();
+        return { every, saved, extra: JSON.parse(localStorage.getItem("hv1_memcfg")).every };
+      });
+      res.memcfg = { both, legacy };
+      if (both !== 7 || legacy.every !== 3 || legacy.saved !== 3 || legacy.extra !== 3)
+        errs.push("장기기억 설정의 원본(설정 하나, 예전 사본은 옛 설치에서만 읽음)이 다름: " + JSON.stringify(res.memcfg));
+    }
   } catch (e) {
     res.fail = String(e).slice(0, 300);
   }

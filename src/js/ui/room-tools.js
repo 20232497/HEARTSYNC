@@ -1,9 +1,8 @@
 /* 대화방 도구(드로어가 씀): 대화에 나온 그림 모으기(galleryItems)·수집 기록에 적기(collectSeen)·그 장면으로 가기(jumpTo)·대화 내보내기(exportText·exportRoom)·대화방 삭제(deleteRoom) */
 import { speakerName } from "../ai/prompt/rules.js";
-import { curText, deletedRooms, roomKey } from "../core/rooms.js";
+import { curText, removeRoom } from "../core/rooms.js";
 import { markSeen } from "../core/shelf.js";
-import { S, gen, room, setRoom } from "../core/state.js";
-import { KV } from "../core/storage.js";
+import { gen, room, setRoom } from "../core/state.js";
 import { $$ } from "../core/util.js";
 import { IMG_TAG_RE, fallbackSits, imgTags } from "../images/codes.js";
 import { imagesOf } from "../images/pick.js";
@@ -11,7 +10,7 @@ import { AI_EXPORT_LINE } from "./ai-notice.js";
 import { stopGen } from "./chat/generate.js";
 import { copyText } from "./chat/log.js";
 import { tagInfo } from "./cover.js";
-import { go, renderRailRecent } from "./shell.js";
+import { go } from "./shell.js";
 /** @typedef {import("../core/types.js").Room} Room */
 
 /** 대화에 나온 그림 태그를 처음 나온 순서로(같은 코드번호는 한 번) — 인물·장소·컷씬 모두, 작품에 없는 코드는 뺌. 각 항목은 tagInfo + 그 메시지 id. @param {Room} r */
@@ -88,14 +87,11 @@ export async function exportRoom(r) {
     copyText(data, "내보내기가 막혀 있어서 대신 복사했어요");
   }
 }
-/** 대화방 삭제 — 진행 중 응답을 멈추고, 지운 방으로 적어(되살아나지 않게) 목록에서 빼고 대화 목록으로. @param {string} id */
+/** 대화방 삭제(화면 쪽) — 데이터는 core/rooms.js removeRoom이 지우고(지운 방 표시가 응답 멈추기보다 먼저 — 멈춘 응답의 저장이 방을 되살리지 않게), 여기서는 진행 중 응답을 멈추고 현재 방을 놓은 뒤 대화 목록으로. @param {string} id */
 export function deleteRoom(id) {
-  deletedRooms.add(id);
-  if (gen && room && room.id === id) stopGen();
-  KV.set(roomKey(id), undefined);
-  S.rooms = S.rooms.filter((r) => r.id !== id);
-  KV.set("rooms", S.rooms);
-  renderRailRecent();
-  if (room && room.id === id) setRoom(null);
+  const mine = !!room && room.id === id;
+  removeRoom(id);
+  if (gen && mine) stopGen();
+  if (mine) setRoom(null);
   go("chats");
 }
