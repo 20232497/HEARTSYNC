@@ -6,6 +6,7 @@ import { stylePost as postDaily } from "/code/post-daily.js";
 import { meta, spent, key, setKey, ready, generate, load, toBlob } from "/gen.js";
 import { makeCover, hasParts, seatPanel } from "/cover.js";
 import { api, cands, loadKept, addCand, dropCand, saveCand } from "/lib.js";
+import { initSite, refreshSite } from "/site.js";
 
 const $ = (s, el = document) => el.querySelector(s);
 const esc = (s) => String(s).replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[ch]);
@@ -170,6 +171,7 @@ function paintRow(k) {
         say(k, `실었어요 — ${r.path} (${Math.round(r.bytes / 1024)}KB). npm run build 뒤에 사이트에 들어가요.`, "ok");
         renderWorks();
         paintRow(k);
+        refreshSite(); // 올릴 그림 수가 바뀜
       } catch (e) {
         say(k, "싣기 실패: " + ((e && e.message) || e), "warn");
       }
@@ -256,6 +258,12 @@ try {
   state.id = (state.works[0] || {}).id || "";
   renderWorks();
   renderMain();
+  // 올리기가 끝나면 실린 표시를 다시 읽는다
+  initSite(async () => {
+    state.works = await api("/api/works");
+    renderWorks();
+    renderMain();
+  });
 } catch (e) {
   $("#main").innerHTML = `<p class="warn">${esc((e && e.message) || e)}</p>`;
 }

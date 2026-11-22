@@ -1,16 +1,17 @@
-/* 홈: 대표 작품·이어서 대화하기·내 서재 줄(찜한 작품·최근 본 작품)·가로 줄·둘러보기, 관심있는 대화 고르기 */
+/* 홈: 추천작 → 둘러보기(관심있는 대화·에피소드와 자유형·장르 고르기) → 구역(찜한 작품·기획 줄·장르별 줄), 관심있는 대화 고르기.
+   최근 대화와 최근 본 작품은 홈에 두지 않고 왼쪽 메뉴에 작게(ui/shell.js) — 2026-11-21 사용자 결정 */
 import { HOME_ROWS, ORIGINALS } from "../content/index.js";
 import { AUDS, audOK, audOf, audience } from "../core/audience.js";
 import { CATS } from "../core/constants.js";
 import { saveSettings } from "../core/settings.js";
-import { likedIds, recentIds } from "../core/shelf.js";
+import { likedIds } from "../core/shelf.js";
 import { S, hasClaudeKey } from "../core/state.js";
-import { $, $$, ago, esc, toast } from "../core/util.js";
+import { $, $$, esc, toast } from "../core/util.js";
 import { IMG } from "../services/images.js";
 import { coverHTML } from "./cover.js";
 import { ICON } from "./icons.js";
 import { closeOverlays, sheet } from "./sheet.js";
-import { bindGo, favMark, go, topbar } from "./shell.js";
+import { bindGo, go, topbar } from "./shell.js";
 
 export function cardHTML(c) {
   const body = (c.cast || []).filter((x) => !x.of).length; // 다른 모습(폼)은 한 사람으로 — 예전엔 폼까지 세어 인원이 부풀었음
@@ -63,15 +64,56 @@ export function rowHTML(title, sub, list, id) {
         `<div class="row-scroll">${list.map(cardHTML).join("")}</div>`
     : "";
 }
+/* 둘러보기의 형식 고르기(S.kind — 저장하지 않음, 앱을 새로 열면 전체): 에피소드형(작품에 episode가 있음)과 자유형을 나눠 보거나 같이 */
+const HOME_KINDS = {
+  all: { name: "전체", desc: "두 가지 모두" },
+  ep: { name: "에피소드", desc: "끝이 있는 이야기" },
+  free: { name: "자유형 채팅", desc: "끝이 없는 대화" }
+};
+const kindOK = (c) => (S.kind === "ep" ? !!c.episode : S.kind === "free" ? !c.episode : true);
 export function viewHome() {
   const v = $("#view");
   const match = (c) =>
     (S.cat === "전체" || c.cat === S.cat) && (!S.q || [c.name, c.title, c.oneLiner, ...(c.tags || [])].join(" ").toLowerCase().includes(S.q.toLowerCase()));
-  const pool = ORIGINALS.filter(audOK),
-    originals = pool.filter(match);
+  const pool = ORIGINALS.filter(audOK), // 관심있는 대화로 거른 것 — 추천작은 여기서
+    shown = pool.filter(kindOK), // 둘러보기 아래 구역은 형식으로 한 번 더 거름
+    found = shown.filter(match);
   const hidden = audience() !== "all" && ORIGINALS.length > pool.length;
-  const shelfRow = (ids) => ids.map((id) => pool.find((c) => c.id === id)).filter(Boolean); // 내 서재의 줄도 관심있는 대화로 거름(없어진 작품은 빠짐)
-  // 대표 작품: 전체면 여성향·남성향을 번갈아, 아니면 고른 쪽 앞에서 4개
+  // 고른 장르·검색어가 없으면 구역별 가로 줄(찜한 작품 → 기획 줄 → 장르별, 빈 구역은 빠짐), 있으면 격자 하나. 찜한 작품도 같은 조건으로 거름(없어진 작품은 빠짐)
+  const zones =
+    !S.q && S.cat === "전체"
+      ? rowHTML(
+          "찜한 작품",
+          "",
+          likedIds()
+            .map((id) => shown.find((c) => c.id === id))
+            .filter(Boolean),
+          "rowLikes"
+        ) +
+        HOME_ROWS.map((w) =>
+          rowHTML(
+            w.title,
+            w.sub,
+            shown.filter((c) => c.row === w.key)
+          )
+        ).join("") +
+        CATS.map((k, i) =>
+          rowHTML(
+            k,
+            "",
+            shown.filter((c) => c.cat === k),
+            "rowCat" + i
+          )
+        ).join("")
+      : found.length
+        ? `<h2 class="sec">${S.q ? "검색 결과" : esc(S.cat)} <small>${found.length}개</small></h2><div class="grid">${found.map(cardHTML).join("")}</div>`
+        : "";
+  const empty =
+    `<div class="empty">조건에 맞는 작품이 없어요.` +
+    (S.kind !== "all" ? `<br><button class="btn sm" data-kind="all">에피소드·자유형 모두 보기</button>` : "") +
+    (hidden ? `<br>지금은 ${AUDS[audience()].name} 작품만 보여요.<br><button class="btn sm" data-aud="all">전체 보기</button>` : "") +
+    `</div>`;
+  // 추천작: 전체면 여성향·남성향을 번갈아, 아니면 고른 쪽 앞에서 4개
   const hero =
     audience() !== "all"
       ? pool.slice(0, 4)
@@ -89,8 +131,8 @@ export function viewHome() {
     ${topbar(`<label class="search">${ICON.search}<span class="sr">캐릭터 검색</span><input id="q" placeholder="캐릭터, 작품, 태그 검색" value="${esc(S.q)}"></label>`)}
     ${!hasClaudeKey() ? `<div class="engine-warn">AI 연결이 아직 없어요. <b>MY → 설정</b>에서 Anthropic API 키를 넣어 주세요.</div>` : ""}
     ${
-      !S.q
-        ? `<div class="hero">${hero
+      !S.q && hero.length
+        ? `<h2 class="sec">추천작</h2><div class="hero">${hero
             .map(
               (c) => `
       <button class="hero-card" data-char="${esc(c.id)}">${coverHTML(c, "", { vt: true })}
@@ -100,52 +142,32 @@ export function viewHome() {
             .join("")}</div>`
         : ""
     }
-    ${
-      S.rooms.length && !S.q
-        ? `<h2 class="sec">이어서 대화하기</h2><div class="cont">${S.rooms
-            .slice(0, 4)
-            .map(
-              (r) =>
-                `
-      <button data-room="${esc(r.id)}">${coverHTML(r)}<span class="x"><b>${favMark(r)}${esc(r.name)}</b><span>${esc(r.last)}</span></span>` +
-                `<span class="note">${ago(r.at)}</span></button>`
-            )
-            .join("")}</div>`
-        : ""
-    }
-    ${
-      !S.q && S.cat === "전체"
-        ? rowHTML("찜한 작품", "", shelfRow(likedIds()), "rowLikes") +
-          rowHTML("최근 본 작품", "", shelfRow(recentIds()), "rowRecent") +
-          HOME_ROWS.map((w) =>
-            rowHTML(
-              w.title,
-              w.sub,
-              pool.filter((c) => c.row === w.key)
-            )
-          ).join("")
-        : ""
-    }
-    <h2 class="sec">둘러보기 <small>관심있는 대화</small></h2>
+    <h2 class="sec">둘러보기 <small>관심있는 대화 · 이야기 형식 · 장르</small></h2>
     ${audSegHTML()}
+    <div class="seg kind-seg">${Object.keys(HOME_KINDS)
+      .map(
+        (k) =>
+          `<button type="button" data-kind="${k}" class="${S.kind === k ? "on" : ""}" aria-pressed="${S.kind === k}">` +
+          `${HOME_KINDS[k].name}<small>${HOME_KINDS[k].desc}</small></button>`
+      )
+      .join("")}</div>
     <div class="chips" style="margin-top:10px">${["전체", ...CATS]
       .map((c) => `<button class="chip ${S.cat === c ? "on" : ""}" ` + `data-cat="${c}">${c}</button>`)
       .join("")}</div>
-    <h2 class="sec">HEART SYNC 오리지널 <small>에디터가 직접 만든 작품</small></h2>
-    ${
-      originals.length
-        ? `<div class="grid">${originals.map(cardHTML).join("")}</div>`
-        : `<div class="empty">조건에 맞는 오리지널 작품이 없어요.${
-            hidden ? `<br>지금은 ${AUDS[audience()].name} 작품만 보여요.` + `<br><button class="btn sm" data-aud="all">전체 보기</button>` : ""
-          }</div>`
-    }
+    ${zones || empty}
   </div>`;
   $$("[data-char]", v).forEach((b) => (b.onclick = () => go("c-" + b.dataset.char)));
-  $$("[data-room]", v).forEach((b) => (b.onclick = () => go("r-" + b.dataset.room)));
   $$("[data-cat]", v).forEach(
     (b) =>
       (b.onclick = () => {
         S.cat = b.dataset.cat;
+        viewHome();
+      })
+  );
+  $$("[data-kind]", v).forEach(
+    (b) =>
+      (b.onclick = () => {
+        S.kind = HOME_KINDS[b.dataset.kind] ? b.dataset.kind : "all";
         viewHome();
       })
   );
