@@ -28,7 +28,7 @@ const LOOK = {
 export const UNIFY = 0.1;
 
 /* 작품마다: bg 배경(장면 낱말 tags · 시드 · 보는 자리 zoom/at/shift — shift의 세로 값이 음수면 배경이 위로 올라가고 아래 빈 곳은 바닥 무늬로 채움) · tint 인물에 입히는 장면 색(곱하기) · grade 전체 색
-   · left/mid/right 인물(code · pose 소품과 자세 · neg · tint 그 인물만의 색 · flip 좌우 뒤집기 · head [정수리 위치, 머리 높이, 얼굴 가로 위치] · cx 자리 덮어쓰기).
+   · left/mid/right 인물(code · pose 소품과 자세 · neg · swap [찾을 태그, 바꿀 태그] 표지에서만 인물 태그를 바꿈 · tint 그 인물만의 색 · flip 좌우 뒤집기 · head [정수리 위치, 머리 높이, 얼굴 가로 위치] · cx 자리 덮어쓰기).
    **head와 flip은 확정 그림에서 잰 값**이다 — 인물을 다시 그리면 그림이 달라지므로 그림 관리 페이지에서 다시 잰다(compose.js measure가 어림값을 주고 손으로 고침) */
 export const GROUPS = {
   godseats: {
@@ -60,6 +60,19 @@ export const GROUPS = {
     left: { code: "NOL", pose: "(holding book:1.1), (silver hair:1.3)", neg: ", (blonde hair:1.4)", tint: "#dccff2", head: [0.1, 0.2, 0.58] },
     mid: { code: "KAS", pose: "(arms crossed:0.9), (gold trim:1.0)", neg: ", (head tilt:1.3), (looking down:1.2)", tint: "#f2d9a8", head: [0.03, 0.24] },
     right: { code: "LUK", pose: "(hand on hilt:1.1), (sheathed sword:1.0), (silver armor:1.2), (blue cape:0.9)", tint: "#cbd9ef", head: [0.06, 0.22, 0.53] }
+  },
+  /* F급 던전(2026-11-23 설계 — **아직 그려 보지 않음**: head·flip은 어림값이라 그린 뒤 그림 관리 페이지에서 잰 값으로 바꾼다. 가온은 뿔 때문에 정수리 어림이 뿔 끝에 걸릴 수 있음).
+     직원 셋: 가운데 보스 가온, 왼쪽 무대 기술자 세라, 오른쪽 안내원 비오. 배경은 보스방(붉은 현수막·가짜 기둥·작업등). 글자가 그려지는 간판·포스터 낱말은 넣지 않는다.
+     종족 낱말은 표지에서만 바꾼다(swap): minotaur girl은 소 무늬 비키니·방울 목걸이를, slime girl은 비치는 몸을 부른다 → 뿔·귀·머리카락 낱말로만 종족을 보인다 */
+  fdungeon: {
+    bg: { tags: "underground circular stone arena, labyrinth boss room, crumbling stone pillars, red banners hanging from the walls, stone archway gate, string lights, warm work lights, stage spotlights, light haze, stone floor, theme park attraction, indoors, cozy", seed: 9851, zoom: 1.05, at: [0.5, 0.3], shift: [0, -0.12] },
+    grade: "#e8a45c",
+    left: { code: "SER", swap: [["slime girl", "liquid hair"]], pose: "(holding wrench:1.0), (hand on own hip:0.8), (goggles on head:1.1), (light blue hair:1.2)",
+      neg: ", (slime girl:1.3), (monster girl:1.2), (transparent body:1.4), (blue skin:1.3), (tears:1.3), (crying:1.3), (paint on face:1.3), (dirty face:1.2)", head: [0.06, 0.22, 0.5] },
+    mid: { code: "GAO", swap: [["minotaur girl", "bull horns"]], pose: "(hand behind head:0.9), (embarrassed smile:0.7), (large curved horns:1.2), (cow ears:1.0), (red cape:1.1), (yellow safety vest:1.1)",
+      neg: ", (cow print:1.4), (bikini:1.4), (cowbell:1.3), (neck bell:1.3), (midriff:1.3), (crop top:1.3), (navel:1.3), (animal head:1.4), (furry:1.3), (head tilt:1.2)", head: [0.1, 0.22] },
+    // 비오: 발밑의 연기는 허리 위 구도에 안 보이고 몸 둘레에 번져 오리기를 어렵게 함 → 표지에서는 뺌
+    right: { code: "BIO", swap: [["dark smoke around feet", ""]], pose: "(holding clipboard:1.0), (arm at side:0.8), (black necktie:1.0)", neg: ", (smoke:1.2), (long hair:1.2)", head: [0.06, 0.22, 0.5] }
   }
 };
 const ROLES = ["left", "right", "mid"]; // 얹는 순서 — 가운데가 양옆 어깨를 덮는다
@@ -75,7 +88,7 @@ export function groupPlan(workId, work) {
   const parts = { bg: assertCover(sceneJob(G.bg.tags, v.color, mood, G.bg.seed)) };
   for (const role of ROLES) {
     const m = G[role],
-      c = (cast[role] = castOf({ ...work, id: workId }, m.code)),
+      c = (cast[role] = castOf({ ...work, id: workId }, m.code, m.swap)),
       side = role !== "mid";
     const j = styled(c, { pose: m.pose, neg: NEG_CUT + (side ? NEG_SIDE : "") + (m.neg || "") }, { frame: side ? FRAME_SIDE : FRAME_MID, mood, color: v.color, place: (work.places || [])[0], solo: true, away: side });
     parts[role] = assertCover(j);
