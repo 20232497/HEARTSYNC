@@ -94,7 +94,7 @@ export function drawerNote({ r, c, body }) {
 export function drawerDisplay({ body }) {
   body.innerHTML =
     `<b>대화 글이 보이는 모양을 바꿔 보세요</b><p class="note" style="margin:4px 0 14px">바꾸면 바로 뒤의 대화에 적용돼요. 이 방만이 아니라 모든 대화방에 같이 적용되고, ` +
-    `MY의 채팅 설정과 같은 값이에요. 글자 크기와 Enter로 보내기는 이 기기에만, 나머지는 로그인하면 계정에도 저장돼요.</p>` +
+    `MY의 채팅 설정과 같은 값이에요. 화면 테마·글자 크기·Enter로 보내기는 이 기기에만, 나머지는 로그인하면 계정에도 저장돼요.</p>` +
     chatSettingsHTML({ preview: false });
   bindChatSettings(body, updateComposer);
 }

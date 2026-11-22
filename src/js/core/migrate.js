@@ -13,12 +13,17 @@ export function migrateSettings() {
   if (s) S.settings = { ...S.settings, ...s, memCfg: { ...S.settings.memCfg, ...(s.memCfg || {}) } };
   let moved = false;
   try {
-    // 없앤 설정: 테마(기기 설정을 따름), 등급별 OpenRouter 모델
-    for (const k of ["theme", "unfilteredModels"])
+    // 없앤 설정: 등급별 OpenRouter 모델
+    for (const k of ["unfilteredModels"])
       if (k in S.settings) {
         delete S.settings[k];
         moved = true;
       }
+    // 화면 테마: "light"·"dark"만(고르지 않았으면 칸이 없음 = 기기 설정을 따름). 예전 빌드가 남긴 다른 값은 지움
+    if ("theme" in S.settings && S.settings.theme !== "light" && S.settings.theme !== "dark") {
+      delete S.settings.theme;
+      moved = true;
+    }
     S.settings.fs = clamp(+S.settings.fs || 15.5, 13, 21);
     S.settings.chatLh = clamp(+S.settings.chatLh || 1.8, 1.4, 2.4);
   } catch {}
