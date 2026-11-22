@@ -3,6 +3,7 @@
 import { chromium, webkit, devices } from "playwright";
 import { noSupabase } from "./_offline.mjs";
 const [, , url, out] = process.argv; // out: 스크린샷 폴더(없으면 안 찍음)
+const CARD = ".page > .row-scroll:last-of-type .card"; // 홈 맨 아래 구역(장르별 줄의 마지막)의 첫 카드 — 홈을 내려야 보이는 자리
 for (const [dev, engine] of [
   ["Desktop Chrome", chromium],
   ["iPhone 13", webkit]
@@ -58,11 +59,11 @@ for (const [dev, engine] of [
     });
 
     // 홈을 내려 작품을 누르면 상세는 맨 위부터 — 원래 버그(상세가 내려간 채 열려 제목이 잘림)
-    await page.evaluate(() => document.querySelector(".grid .card").scrollIntoView({ block: "center" }));
+    await page.evaluate((s) => document.querySelector(s).scrollIntoView({ block: "center" }), CARD);
     const homeAt = await y(),
-      id = await page.$eval(".grid .card", (b) => b.dataset.char);
+      id = await page.$eval(CARD, (b) => b.dataset.char);
     if (homeAt < 200) res.errors.push("홈이 내려가지 않음: " + homeAt);
-    await page.click(".grid .card");
+    await page.click(CARD);
     await hashIs("#c-" + id);
     same("카드 → 상세", await y(), 0);
     if (out) await page.screenshot({ path: `${out}/scroll_${tag}_detail.png` });
@@ -71,11 +72,13 @@ for (const [dev, engine] of [
     await page.click(".topbar [data-go=home]");
     await hashIs("#home");
     same("상단 뒤로 → 홈", await y(), homeAt, 2);
-    // 작품을 처음 보고 오면 홈에 '최근 본 작품' 줄이 생겨 카드가 한 줄만큼 내려가 있음 — 다시 화면 가운데로 넣고(누를 때 Playwright가 스크롤해 자리가 바뀌지 않게) 그 자리를 기준으로 봄
-    if (!(await page.$("#rowRecent"))) res.errors.push("홈에 최근 본 작품 줄이 없음");
-    await page.evaluate(() => document.querySelector(".grid .card").scrollIntoView({ block: "center" }));
+    // 본 작품은 홈의 줄이 아니라 왼쪽 메뉴에 작게 적힘(좁은 화면에서는 레일이 숨지만 DOM에는 있음) — 홈에는 줄이 생기지 않음.
+    // 카드를 다시 화면 가운데로 넣고(누를 때 Playwright가 스크롤해 자리가 바뀌지 않게) 그 자리를 기준으로 봄
+    if (!(await page.$(`#railViewed [data-char="${id}"]`))) res.errors.push("왼쪽 메뉴에 최근 본 작품이 없음");
+    if (await page.$("#rowRecent")) res.errors.push("홈에 최근 본 작품 줄이 남아 있음");
+    await page.evaluate((s) => document.querySelector(s).scrollIntoView({ block: "center" }), CARD);
     const homeAt2 = await y();
-    await page.click(".grid .card");
+    await page.click(CARD);
     await hashIs("#c-" + id);
     same("다시 상세", await y(), 0);
     await down(200);

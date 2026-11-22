@@ -35,13 +35,13 @@ for (const [dev, engine] of [
         viewHome();
         return {
           hero: $$(".hero-card").map((x) => x.dataset.char),
-          rows: $$(".row-scroll").map((rw) => $$("[data-char]", rw).length),
-          grid: $$(".grid")[0] ? $$("[data-char]", $$(".grid")[0]).length : 0
+          rows: $$(".row-scroll").map((rw) => $$("[data-char]", rw).length)
         };
       }, aud);
-      if (res[aud].hero.length !== 4) errs.push(`${aud}: 대표 작품이 4개가 아님(${res[aud].hero.length})`);
+      if (res[aud].hero.length !== 4) errs.push(`${aud}: 추천작이 4개가 아님(${res[aud].hero.length})`);
+      if (!res[aud].rows.length || res[aud].rows.some((n) => !n)) errs.push(`${aud}: 홈에 구역이 없거나 빈 구역이 있음(${res[aud].rows})`);
     }
-    if (res.f.hero.some((id) => res.m.hero.includes(id))) errs.push("여성향·남성향 대표 작품이 겹침");
+    if (res.f.hero.some((id) => res.m.hero.includes(id))) errs.push("여성향·남성향 추천작이 겹침");
     res.detail = await p.evaluate(async () => {
       location.hash = "c-godseats";
       await new Promise((z) => setTimeout(z, 300));

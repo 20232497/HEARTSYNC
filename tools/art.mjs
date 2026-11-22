@@ -8,6 +8,7 @@
 //   npm run art -- --lib D:/art    보관함 자리 바꾸기
 //   npm run art -- --mock          연습 모드: 생성 서비스를 부르지 않고 자리 표시 그림으로 흐름만 돌려 봄(비용 0 — 실을 수 없음)
 import http from "node:http";
+import { execFile } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -18,6 +19,7 @@ import { styleOf, placeJob, assertPlace } from "../archive/style-works/code/plac
 import { coverPlan, coverOf } from "../archive/style-works/code/cover.js";
 import { groupPlan } from "../archive/style-works/code/cover-group.js";
 import { LOGOS, LOGO_PAL } from "../archive/style-works/code/logos.js";
+import { publish, status as siteStatus } from "./art/publish.mjs";
 import { profileJob as animeProfile, emotionJob as animeEmotion, assertSafe as animeSafe } from "../archive/style-manime/code/assemble.js";
 import { profileJob as dailyProfile, emotionJob as dailyEmotion, assertSafe as dailySafe } from "../archive/style-mdaily/code/assemble.js";
 
@@ -39,7 +41,7 @@ const CODE = {
   "post-anime.js": "archive/style-manime/code/post.js",
   "post-daily.js": "archive/style-mdaily/code/post.js"
 };
-const PAGE = ["app.js", "gen.js", "cover.js", "lib.js"]; // tools/art/의 페이지 모듈
+const PAGE = ["app.js", "gen.js", "cover.js", "lib.js", "site.js"]; // tools/art/의 페이지 모듈
 const TYPES = {
   ".html": "text/html; charset=utf-8",
   ".js": "text/javascript; charset=utf-8",
@@ -192,6 +194,58 @@ function mockImage(task) {
   );
 }
 
+/* ── 사이트에 올리기(./art/publish.mjs) ── 한 번에 하나만. 페이지가 진행 글을 /api/site로 읽는다 */
+const run = (cmd, args, o = {}) =>
+  new Promise((ok, no) =>
+    execFile(
+      cmd,
+      args,
+      { cwd: ROOT, maxBuffer: 64 * 1024 * 1024, windowsHide: true, timeout: o.timeout || 3 * 60000, encoding: o.raw ? "buffer" : "utf8" },
+      (e, out, err) => {
+        if (e && !o.allowFail)
+          return no(
+            new Error(
+              `${cmd} ${args.slice(0, 3).join(" ")} — ${String(err || e.message)
+                .trim()
+                .slice(-400)}`
+            )
+          );
+        ok({ code: e ? e.code || 1 : 0, out: o.raw ? out : String(out) });
+      }
+    )
+  );
+const job = { running: false, log: [], error: "", url: "", done: null };
+const LOCK = path.join(LIB, ".publishing.lock");
+/** 올리는 중인지 — 이 창이든 같은 PC의 다른 창이든(잠금 파일이 45분 넘게 남아 있으면 죽은 것으로 본다) */
+const publishing = () => job.running || (fs.existsSync(LOCK) && Date.now() - fs.statSync(LOCK).mtimeMs < 45 * 60000);
+/** 올리기 잠금을 잡는다 — 파일을 '없을 때만 만들기'로 한 번에(확인과 만들기 사이에 다른 창이 끼어들지 못하게). 못 잡으면 false */
+function lock() {
+  try {
+    fs.mkdirSync(LIB, { recursive: true });
+    if (fs.existsSync(LOCK) && Date.now() - fs.statSync(LOCK).mtimeMs >= 45 * 60000) fs.rmSync(LOCK, { force: true }); // 죽은 올리기가 남긴 것
+    fs.writeFileSync(LOCK, String(process.pid), { flag: "wx" });
+    return true;
+  } catch {
+    return false;
+  }
+}
+function startPublish() {
+  Object.assign(job, { running: true, log: [], error: "", url: "", done: null });
+  publish({
+    run,
+    root: ROOT,
+    log: (t) => job.log.push(t),
+    wait: (ms) => new Promise((r) => setTimeout(r, ms)),
+    build: () => run(process.execPath, ["tools/build.mjs"], { timeout: 10 * 60000 })
+  })
+    .then((d) => Object.assign(job, { done: d, url: d.url }))
+    .catch((e) => Object.assign(job, { error: String((e && e.message) || e), url: (e && e.url) || "" }))
+    .finally(() => {
+      job.running = false;
+      fs.rmSync(LOCK, { force: true });
+    });
+}
+
 const send = (res, code, body, type) => {
   res.writeHead(code, { "content-type": type || "application/json; charset=utf-8", "cache-control": "no-store" });
   res.end(typeof body === "string" || Buffer.isBuffer(body) ? body : JSON.stringify(body));
@@ -215,24 +269,32 @@ const body = (req) =>
     req.on("error", no);
   });
 // 쓰는 요청은 이 페이지에서 온 것만(다른 사이트가 이 주소로 보내는 요청을 막음)
-const ours = (req) => req.headers["x-hs-art"] === "1" && (!req.headers.origin || /^http:\/\/(127\.0\.0\.1|localhost):\d+$/.test(req.headers.origin));
+const HOSTS = ["127.0.0.1:" + PORT, "localhost:" + PORT];
+const ours = (req, browser) =>
+  req.headers["x-hs-art"] === "1" &&
+  HOSTS.includes(req.headers.host || "") &&
+  (req.headers.origin ? req.headers.origin === "http://" + req.headers.host : !browser); // browser: 페이지에서 누른 것만 받는 요청(올리기)
 
 const server = http.createServer(async (req, res) => {
   const u = new URL(req.url, "http://127.0.0.1"),
     q = u.searchParams,
     get = req.method === "GET",
     post = req.method === "POST";
+  // 이 서버의 주소로 온 요청만 받는다(읽기도) — 다른 이름을 이 PC로 돌려 붙이는 수법(DNS 리바인딩)으로 보관함·상태를 읽지 못하게
+  if (!HOSTS.includes(req.headers.host || "")) return send(res, 403, { error: "이 주소(127.0.0.1)로만 열 수 있어요" });
   try {
     if (get && u.pathname === "/") return file(res, path.join(ROOT, "tools/art/index.html"));
     if (get && PAGE.includes(u.pathname.slice(1))) return file(res, path.join(ROOT, "tools/art", u.pathname.slice(1)));
     if (get && u.pathname.startsWith("/code/")) return file(res, CODE[u.pathname.slice(6)] ? path.join(ROOT, CODE[u.pathname.slice(6)]) : "");
-    if (get && u.pathname === "/api/meta") return send(res, 200, { mock: MOCK, lib: LIB });
+    if (get && u.pathname === "/api/meta") return send(res, 200, { mock: MOCK, lib: LIB, root: ROOT });
     if (get && u.pathname === "/api/works") return send(res, 200, listing(await works()));
     if (get && u.pathname === "/api/job") {
       const { c, row } = findRow(await works(), q);
       return send(res, 200, jobFor(c, row, +q.get("vary") || 0, q.get("style") || ""));
     }
     if (get && u.pathname === "/api/kept") return send(res, 200, kept());
+    // 올릴 수 있는지(그림 전용 작업 사본인지)·올릴 그림·진행 중인 올리기
+    if (get && u.pathname === "/api/site") return send(res, 200, { ...(await siteStatus(run, ROOT)), job, mock: MOCK });
     if (get && u.pathname === "/lib") return file(res, libPath(q.get("path")));
     // 실린 그림 보기 — 작품 폴더의 images/ 안 파일만
     if (get && u.pathname === "/file") {
@@ -249,6 +311,14 @@ const server = http.createServer(async (req, res) => {
       return send(res, 200, {
         data: tasks.map((t) => ({ taskType: t.taskType, taskUUID: t.taskUUID, imageDataURI: mockImage(t), cost: 0, NSFWContent: false }))
       });
+    }
+    // 사이트에 올리기 — 빌드·커밋·올리기·PR·검사 통과 시 병합. 연습 모드에서는 하지 않는다
+    if (post && u.pathname === "/api/site") {
+      if (MOCK) return send(res, 400, { error: "연습 모드에서는 올릴 수 없어요" });
+      if (!ours(req, true)) return send(res, 403, { error: "이 페이지의 단추로만 올릴 수 있어요" });
+      if (job.running || !lock()) return send(res, 409, { error: "이미 올리는 중이에요(다른 창일 수도 있어요)" });
+      startPublish();
+      return send(res, 200, { ok: true });
     }
     // 후보를 보관함에 — 의뢰 목록에 있는 작품·코드만, webp만
     if (post && u.pathname === "/api/keep") {
@@ -281,9 +351,12 @@ const server = http.createServer(async (req, res) => {
     // 고른 그림 싣기 — 경로는 의뢰 목록이 정한 그 자리뿐, webp만. 연습 그림은 싣지 않는다
     if (post && u.pathname === "/api/save") {
       if (MOCK) return send(res, 400, { error: "연습 모드의 그림은 실을 수 없어요" });
+      const busy = () => (publishing() ? send(res, 409, { error: "사이트에 올리는 중에는 실을 수 없어요 — 끝난 뒤에 다시 눌러 주세요" }) || true : false); // 올리는 사이 그림이 바뀌지 않게
+      if (busy()) return;
       const { row } = findRow(await works(), q),
         buf = await body(req);
       if (!isWebp(buf)) return send(res, 400, { error: "webp 그림이 아니에요" });
+      if (busy()) return; // 그림을 받는 사이 올리기가 시작됐을 수 있다 — 쓰기 직전에 한 번 더
       const abs = path.join(ROOT, row.path);
       fs.mkdirSync(path.dirname(abs), { recursive: true });
       fs.writeFileSync(abs, buf);

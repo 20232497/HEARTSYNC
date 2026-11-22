@@ -84,7 +84,8 @@ button { cursor:pointer; }
 .topbar { display:flex; align-items:center; gap:10px; margin-bottom:18px; }
 .topbar .logo { padding:0; display:none; }
 @media (max-width:899px) { .topbar { flex-wrap:wrap; } .topbar .logo { display:flex; font-size:15px; letter-spacing:.03em; gap:7px; } .topbar .logo .mark { width:22px; height:22px; border-radius:6px; } .topbar .search { order:9; flex-basis:100%; max-width:none; } }
-.search { flex:1; max-width:420px; display:flex; align-items:center; gap:8px; background:var(--surface); border:1px solid var(--line); border-radius:999px; padding:0 14px; height:40px; }
+/* min-width:0 — 입력칸의 기본 폭(글자 폭 × 20)이 줄 폭보다 넓으면(폭 320px + 글자가 넓은 기기) 검색칸이 줄을 넘어 홈이 가로로 밀림 */
+.search { flex:1; min-width:0; max-width:420px; display:flex; align-items:center; gap:8px; background:var(--surface); border:1px solid var(--line); border-radius:999px; padding:0 14px; height:40px; }
 .search input { border:0; background:none; outline:none; flex:1; min-width:0; }
 .search svg { width:16px; height:16px; color:var(--muted); flex:none; }
 .wallet { display:flex; align-items:center; gap:6px; height:36px; padding:0 12px; border-radius:999px; border:1px solid var(--line); background:var(--surface); font-weight:600; font-size:13px; white-space:nowrap; font-variant-numeric:tabular-nums; }
@@ -206,7 +207,8 @@ h2.sec small, h1.sec small { font-family:var(--sans); font-size:12.5px; color:va
 #loerr:empty { display:none; }
 .acct-row { display:flex; align-items:center; gap:8px; flex-wrap:wrap; min-width:0; }
 .acct-row b { overflow-wrap:anywhere; }
-.aud-seg button { min-width:0; padding:8px 4px; }
+.aud-seg button, .kind-seg button { min-width:0; padding:8px 4px; }
+.kind-seg { margin-top:8px; }
 .cat { position:absolute; top:8px; right:8px; z-index:3; font-size:10.5px; font-weight:600; background:rgba(0,0,0,.42); backdrop-filter:blur(6px); padding:2px 8px; border-radius:999px; color:#fff; }
 .cont { display:grid; grid-template-columns:repeat(auto-fill, minmax(260px,1fr)); gap:10px; }
 .cont > button, .cont .crow > [data-room] { display:flex; gap:12px; align-items:center; text-align:left; padding:10px; border-radius:14px; border:1px solid var(--line); background:var(--surface); min-width:0; }
@@ -217,6 +219,11 @@ h2.sec small, h1.sec small { font-family:var(--sans); font-size:12.5px; color:va
 .fav-btn { flex:none; width:44px; border:1px solid var(--line); border-radius:14px; background:var(--surface); color:var(--muted); font-size:17px; line-height:1; }
 .fav-btn[aria-pressed="true"] { color:var(--gold); border-color:var(--gold); }
 .fav-mark { color:var(--gold); font-style:normal; margin-right:3px; }
+/* 대화 탭 맨 아래의 최근 본 작품 — 왼쪽 메뉴(레일)가 없는 좁은 화면에서만. 넓은 화면은 레일의 같은 목록(15-shell.css의 899px과 같은 경계) */
+.chats-viewed { display:none; }
+@media (max-width:899px) { .chats-viewed { display:block; } }
+.chats-viewed .chip { display:inline-flex; align-items:center; gap:7px; padding:4px 12px 4px 5px; color:var(--fg); }
+.chats-viewed .chip .cover { width:26px; height:26px; border-radius:50%; flex:none; }
 .cont .cover { width:52px; height:52px; border-radius:12px; flex:none; }
 .cont .x { min-width:0; flex:1; }
 .cont .x b { display:block; font-size:14px; }
@@ -1190,6 +1197,7 @@ const S = {
     memCfg: { auto: true, every: 5, limit: LIMITS.memory, guide: "auto", custom: "" }
   },
   cat: "전체",
+  kind: "all",
   q: ""
 };
 let room = null,
@@ -1236,7 +1244,7 @@ function castLook(cast, c) {
    가져옴: src/js/core/cast.js { castLook }
            src/js/core/state.js { S }
    내보냄: AUDS, guessAud, audOf, audience, audOK
-   쓰는 곳: src/js/core/character.js, src/js/ui/codex.js, src/js/ui/home.js, src/js/ui/me.js, src/js/ui/detail.js, src/js/app.js
+   쓰는 곳: src/js/core/character.js, src/js/ui/codex.js, src/js/ui/home.js, src/js/ui/me.js, src/js/ui/shell.js, src/js/ui/detail.js, src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 관심있는 대화(전체·남성향·여성향): 작품 aud 판정과 필터 */
 
@@ -2443,7 +2451,7 @@ for (const c of ORIGINALS) {
            src/js/core/audience.js { audOK }
            src/js/core/constants.js { EXAMPLE_CAST }
    내보냄: normalizeChar, getChar, LIVE_FIELDS, liveWork, latestWork, exampleCast
-   쓰는 곳: src/js/core/rooms.js, src/js/images/pick.js, src/js/ai/llm.js, src/js/ai/prompt/input.js, src/js/ai/prompt/rules.js, src/js/ui/chat/cmdlist.js, src/js/ui/cover.js, src/js/ui/worldart.js, src/js/ui/drawer/browse.js, src/js/ui/codex.js, src/js/ui/drawer/main.js, src/js/ui/chat-settings.js, src/js/ui/faq.js, src/js/ui/drawer/settings.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/chat/generate.js, src/js/ui/detail.js, src/js/ui/login.js, src/js/app.js
+   쓰는 곳: src/js/core/rooms.js, src/js/images/pick.js, src/js/ai/llm.js, src/js/ai/prompt/input.js, src/js/ai/prompt/rules.js, src/js/ui/chat/cmdlist.js, src/js/ui/cover.js, src/js/ui/worldart.js, src/js/ui/drawer/browse.js, src/js/ui/codex.js, src/js/ui/drawer/main.js, src/js/ui/chat-settings.js, src/js/ui/faq.js, src/js/ui/drawer/settings.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/chat/generate.js, src/js/ui/shell.js, src/js/ui/detail.js, src/js/ui/login.js, src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 작품 찾기·정규화: normalizeChar, id로 찾기(getChar — 오리지널), 방의 작품을 지금 읽을 모양으로(liveWork — 어느 칸을 최신 작품에서 읽는지는 LIVE_FIELDS 한 곳), 화면 예시 문구에 쓸 인물(exampleCast) */
 
@@ -2875,7 +2883,7 @@ function indexRoom(r) {
   emit("rooms");
 }
 /**
- * 대화방 목록의 순서 — 즐겨찾기 먼저, 그 안에서 최근 순. 순서 규칙은 여기 한 곳: 대화 목록·왼쪽 메뉴의 최근 대화·홈의 '이어서 대화하기'가 모두 S.rooms의 순서를 그대로 씀.
+ * 대화방 목록의 순서 — 즐겨찾기 먼저, 그 안에서 최근 순. 순서 규칙은 여기 한 곳: 대화 목록·왼쪽 메뉴의 최근 대화·상세의 내 대화방이 모두 S.rooms의 순서를 그대로 씀.
  * @param {import("./types.js").RoomIndex[]} list @returns {import("./types.js").RoomIndex[]} 새 배열
  */
 function sortRooms(list) {
@@ -3194,7 +3202,7 @@ function applySettings() {
            src/js/core/state.js { S }
            src/js/core/storage.js { KV }
    내보냄: mergeShelf, shelfSyncOn, liked, likedIds, recentIds, toggleLike, touchRecent, seenSet, markSeen, endsSet, markEnding, resetShelf
-   쓰는 곳: src/js/services/cloud.js, src/js/services/load.js, src/js/ui/room-tools.js, src/js/ui/drawer/browse.js, src/js/ui/codex.js, src/js/ui/account.js, src/js/ui/home.js, src/js/ui/chat/episode.js, src/js/ui/chat/generate.js, src/js/ui/detail.js
+   쓰는 곳: src/js/services/cloud.js, src/js/services/load.js, src/js/ui/room-tools.js, src/js/ui/drawer/browse.js, src/js/ui/codex.js, src/js/ui/account.js, src/js/ui/home.js, src/js/ui/chat/episode.js, src/js/ui/chat/generate.js, src/js/ui/shell.js, src/js/ui/detail.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 내 서재(S.shelf): 찜한 작품·최근 본 작품·대화에서 본 그림 코드(수집 기록). 이 기기에 저장하고 SHELF.syncFrom 날짜부터 계정에도 — 여러 기기의 값은 덮지 않고 합침(mergeShelf, 순수) */
 
@@ -8297,18 +8305,19 @@ async function loadMine(box) {
            src/js/core/audience.js { AUDS, audOK, audOf, audience }
            src/js/core/constants.js { CATS }
            src/js/core/settings.js { saveSettings }
-           src/js/core/shelf.js { likedIds, recentIds }
+           src/js/core/shelf.js { likedIds }
            src/js/core/state.js { S, hasClaudeKey }
-           src/js/core/util.js { $, $$, ago, esc, toast }
+           src/js/core/util.js { $, $$, esc, toast }
            src/js/services/images.js { IMG }
            src/js/ui/cover.js { coverHTML }
            src/js/ui/icons.js { ICON }
            src/js/ui/sheet.js { closeOverlays, sheet }
-           src/js/ui/shell.js { bindGo, favMark, go, topbar }
+           src/js/ui/shell.js { bindGo, go, topbar }
    내보냄: cardHTML, audSegHTML, setAudience, audSheet, askAud, rowHTML, viewHome
    쓰는 곳: src/js/ui/me.js, src/js/ui/detail.js, src/js/ui/login.js, src/js/app.js, src/js/boot.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
-/* 홈: 대표 작품·이어서 대화하기·내 서재 줄(찜한 작품·최근 본 작품)·가로 줄·둘러보기, 관심있는 대화 고르기 */
+/* 홈: 추천작 → 둘러보기(관심있는 대화·에피소드와 자유형·장르 고르기) → 구역(찜한 작품·기획 줄·장르별 줄), 관심있는 대화 고르기.
+   최근 대화와 최근 본 작품은 홈에 두지 않고 왼쪽 메뉴에 작게(ui/shell.js) — 2026-11-21 사용자 결정 */
 
 
 
@@ -8373,15 +8382,56 @@ function rowHTML(title, sub, list, id) {
         `<div class="row-scroll">${list.map(cardHTML).join("")}</div>`
     : "";
 }
+/* 둘러보기의 형식 고르기(S.kind — 저장하지 않음, 앱을 새로 열면 전체): 에피소드형(작품에 episode가 있음)과 자유형을 나눠 보거나 같이 */
+const HOME_KINDS = {
+  all: { name: "전체", desc: "두 가지 모두" },
+  ep: { name: "에피소드", desc: "끝이 있는 이야기" },
+  free: { name: "자유형 채팅", desc: "끝이 없는 대화" }
+};
+const kindOK = (c) => (S.kind === "ep" ? !!c.episode : S.kind === "free" ? !c.episode : true);
 function viewHome() {
   const v = $("#view");
   const match = (c) =>
     (S.cat === "전체" || c.cat === S.cat) && (!S.q || [c.name, c.title, c.oneLiner, ...(c.tags || [])].join(" ").toLowerCase().includes(S.q.toLowerCase()));
-  const pool = ORIGINALS.filter(audOK),
-    originals = pool.filter(match);
+  const pool = ORIGINALS.filter(audOK), // 관심있는 대화로 거른 것 — 추천작은 여기서
+    shown = pool.filter(kindOK), // 둘러보기 아래 구역은 형식으로 한 번 더 거름
+    found = shown.filter(match);
   const hidden = audience() !== "all" && ORIGINALS.length > pool.length;
-  const shelfRow = (ids) => ids.map((id) => pool.find((c) => c.id === id)).filter(Boolean); // 내 서재의 줄도 관심있는 대화로 거름(없어진 작품은 빠짐)
-  // 대표 작품: 전체면 여성향·남성향을 번갈아, 아니면 고른 쪽 앞에서 4개
+  // 고른 장르·검색어가 없으면 구역별 가로 줄(찜한 작품 → 기획 줄 → 장르별, 빈 구역은 빠짐), 있으면 격자 하나. 찜한 작품도 같은 조건으로 거름(없어진 작품은 빠짐)
+  const zones =
+    !S.q && S.cat === "전체"
+      ? rowHTML(
+          "찜한 작품",
+          "",
+          likedIds()
+            .map((id) => shown.find((c) => c.id === id))
+            .filter(Boolean),
+          "rowLikes"
+        ) +
+        HOME_ROWS.map((w) =>
+          rowHTML(
+            w.title,
+            w.sub,
+            shown.filter((c) => c.row === w.key)
+          )
+        ).join("") +
+        CATS.map((k, i) =>
+          rowHTML(
+            k,
+            "",
+            shown.filter((c) => c.cat === k),
+            "rowCat" + i
+          )
+        ).join("")
+      : found.length
+        ? `<h2 class="sec">${S.q ? "검색 결과" : esc(S.cat)} <small>${found.length}개</small></h2><div class="grid">${found.map(cardHTML).join("")}</div>`
+        : "";
+  const empty =
+    `<div class="empty">조건에 맞는 작품이 없어요.` +
+    (S.kind !== "all" ? `<br><button class="btn sm" data-kind="all">에피소드·자유형 모두 보기</button>` : "") +
+    (hidden ? `<br>지금은 ${AUDS[audience()].name} 작품만 보여요.<br><button class="btn sm" data-aud="all">전체 보기</button>` : "") +
+    `</div>`;
+  // 추천작: 전체면 여성향·남성향을 번갈아, 아니면 고른 쪽 앞에서 4개
   const hero =
     audience() !== "all"
       ? pool.slice(0, 4)
@@ -8399,8 +8449,8 @@ function viewHome() {
     ${topbar(`<label class="search">${ICON.search}<span class="sr">캐릭터 검색</span><input id="q" placeholder="캐릭터, 작품, 태그 검색" value="${esc(S.q)}"></label>`)}
     ${!hasClaudeKey() ? `<div class="engine-warn">AI 연결이 아직 없어요. <b>MY → 설정</b>에서 Anthropic API 키를 넣어 주세요.</div>` : ""}
     ${
-      !S.q
-        ? `<div class="hero">${hero
+      !S.q && hero.length
+        ? `<h2 class="sec">추천작</h2><div class="hero">${hero
             .map(
               (c) => `
       <button class="hero-card" data-char="${esc(c.id)}">${coverHTML(c, "", { vt: true })}
@@ -8410,52 +8460,32 @@ function viewHome() {
             .join("")}</div>`
         : ""
     }
-    ${
-      S.rooms.length && !S.q
-        ? `<h2 class="sec">이어서 대화하기</h2><div class="cont">${S.rooms
-            .slice(0, 4)
-            .map(
-              (r) =>
-                `
-      <button data-room="${esc(r.id)}">${coverHTML(r)}<span class="x"><b>${favMark(r)}${esc(r.name)}</b><span>${esc(r.last)}</span></span>` +
-                `<span class="note">${ago(r.at)}</span></button>`
-            )
-            .join("")}</div>`
-        : ""
-    }
-    ${
-      !S.q && S.cat === "전체"
-        ? rowHTML("찜한 작품", "", shelfRow(likedIds()), "rowLikes") +
-          rowHTML("최근 본 작품", "", shelfRow(recentIds()), "rowRecent") +
-          HOME_ROWS.map((w) =>
-            rowHTML(
-              w.title,
-              w.sub,
-              pool.filter((c) => c.row === w.key)
-            )
-          ).join("")
-        : ""
-    }
-    <h2 class="sec">둘러보기 <small>관심있는 대화</small></h2>
+    <h2 class="sec">둘러보기 <small>관심있는 대화 · 이야기 형식 · 장르</small></h2>
     ${audSegHTML()}
+    <div class="seg kind-seg">${Object.keys(HOME_KINDS)
+      .map(
+        (k) =>
+          `<button type="button" data-kind="${k}" class="${S.kind === k ? "on" : ""}" aria-pressed="${S.kind === k}">` +
+          `${HOME_KINDS[k].name}<small>${HOME_KINDS[k].desc}</small></button>`
+      )
+      .join("")}</div>
     <div class="chips" style="margin-top:10px">${["전체", ...CATS]
       .map((c) => `<button class="chip ${S.cat === c ? "on" : ""}" ` + `data-cat="${c}">${c}</button>`)
       .join("")}</div>
-    <h2 class="sec">HEART SYNC 오리지널 <small>에디터가 직접 만든 작품</small></h2>
-    ${
-      originals.length
-        ? `<div class="grid">${originals.map(cardHTML).join("")}</div>`
-        : `<div class="empty">조건에 맞는 오리지널 작품이 없어요.${
-            hidden ? `<br>지금은 ${AUDS[audience()].name} 작품만 보여요.` + `<br><button class="btn sm" data-aud="all">전체 보기</button>` : ""
-          }</div>`
-    }
+    ${zones || empty}
   </div>`;
   $$("[data-char]", v).forEach((b) => (b.onclick = () => go("c-" + b.dataset.char)));
-  $$("[data-room]", v).forEach((b) => (b.onclick = () => go("r-" + b.dataset.room)));
   $$("[data-cat]", v).forEach(
     (b) =>
       (b.onclick = () => {
         S.cat = b.dataset.cat;
+        viewHome();
+      })
+  );
+  $$("[data-kind]", v).forEach(
+    (b) =>
+      (b.onclick = () => {
+        S.kind = HOME_KINDS[b.dataset.kind] ? b.dataset.kind : "all";
         viewHome();
       })
   );
@@ -10638,7 +10668,10 @@ function stopGen() {
 }
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/ui/shell.js
-   가져옴: src/js/core/events.js { on }
+   가져옴: src/js/core/audience.js { audOK }
+           src/js/core/character.js { getChar }
+           src/js/core/events.js { on }
+           src/js/core/shelf.js { recentIds }
            src/js/core/state.js { S, gen }
            src/js/core/target.js { isAdmin }
            src/js/core/util.js { $, $$, esc, num }
@@ -10649,11 +10682,11 @@ function stopGen() {
            src/js/ui/cover.js { coverHTML }
            src/js/ui/icons.js { ICON }
            src/js/ui/sheet.js { closeOverlays }
-   내보냄: registerViews, setNavs, go, route, LOGO, renderShell, favMark, renderRailRecent, renderWalletChips, topbar, bindGo
+   내보냄: registerViews, setNavs, go, route, LOGO, renderShell, favMark, renderRailRecent, viewedWorks, renderRailViewed, renderWalletChips, topbar, bindGo
    쓰는 곳: src/js/ui/room-tools.js, src/js/ui/codex.js, src/js/ui/drawer/main.js, src/js/ui/store.js, src/js/ui/help.js, src/js/ui/home.js, src/js/ui/me.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/chat/episode.js, src/js/ui/report.js, src/js/ui/chat/log.js, src/js/ui/start-sheet.js, src/js/ui/detail.js, src/js/ui/chats.js, src/js/ui/login.js, src/js/app.js, src/js/admin/support.js, src/js/admin/gate.js, src/js/boot.js, src/js/admin.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
-/* 라우팅(go·route)·레일·탭바·상단바·지갑 칩. 화면은 진입점(main.js·admin.js)이 registerViews·setNavs로 등록한다 — 셸은 어떤 화면이 있는지 모른다.
-   아래층의 "rooms"·"wallet"·"route" 이벤트를 받아 레일·칩·화면을 다시 그림 */
+/* 라우팅(go·route)·레일(메뉴·최근 대화·최근 본 작품)·탭바·상단바·지갑 칩. 화면은 진입점(main.js·admin.js)이 registerViews·setNavs로 등록한다 — 셸은 어떤 화면이 있는지 모른다.
+   아래층의 "rooms"·"wallet"·"settings"·"route" 이벤트를 받아 레일·칩·화면을 다시 그림 */
 
 
 
@@ -10665,6 +10698,10 @@ function stopGen() {
 
 
 
+
+
+
+/** @typedef {import("../core/types.js").Work} Work */
 
 const VIEWS = {}; // 해시 앞부분 → 화면 함수. "c-<id>"·"r-<id>"처럼 "-" 뒤는 인자로 넘김
 let NAVS = []; // 레일·탭바 메뉴 [해시, 이름, ICON 키]
@@ -10696,6 +10733,7 @@ function route() {
   const view = VIEWS[base] || VIEWS.home;
   setNav(base === "c" ? "home" : base === "r" ? "chats" : base === "login" || base === "help" ? "me" : VIEWS[base] ? base : "home");
   const out = view ? view(arg) : undefined;
+  renderRailViewed(); // 상세를 열면 최근 본 작품이 바뀜(touchRecent)
   if (moved) v.scrollTop = h === "home" ? homeY : 0; // 새 화면은 맨 위부터, 긴 홈은 작품을 보고 돌아오면 보던 자리
   return out;
 }
@@ -10705,17 +10743,19 @@ function renderShell() {
     LOGO +
     (isAdmin() ? `<span class="pill" style="margin:-8px 0 8px 14px;justify-self:start">관리자 도구</span>` : "") +
     NAVS.map(([k, l, i]) => `<button class="nav" data-nav="${k}">${ICON[i]}<span>${l}</span></button>`).join("") +
-    `<h4>최근 대화</h4><div id="railRecent"></div><div class="rail-foot"><button class="wallet" id="railWallet" aria-label="내 재화, 스토어로 이동"></button></div>`;
+    `<h4>최근 대화</h4><div id="railRecent"></div><div id="railViewed"></div>` +
+    `<div class="rail-foot"><button class="wallet" id="railWallet" aria-label="내 재화, 스토어로 이동"></button></div>`;
   $("#tabbar").innerHTML = NAVS.map(([k, l, i]) => `<button data-nav="${k}">${ICON[i]}<span>${l}</span></button>`).join("");
   $$("[data-nav]").forEach((b) => (b.onclick = () => go(b.dataset.nav)));
   $("#railWallet").onclick = () => go("store");
   renderRailRecent();
+  renderRailViewed();
   renderWalletChips();
 }
 function setNav(k) {
   $$("[data-nav]").forEach((b) => b.classList.toggle("on", b.dataset.nav === k));
 }
-/** 즐겨찾기한 방의 이름 앞 별 — 왼쪽 메뉴의 최근 대화·홈의 '이어서 대화하기'·상세의 내 대화방(순서는 S.rooms 그대로라 즐겨찾기가 앞에 옴). @param {{ fav?: boolean }} r @returns {string} HTML */
+/** 즐겨찾기한 방의 이름 앞 별 — 왼쪽 메뉴의 최근 대화·상세의 내 대화방(순서는 S.rooms 그대로라 즐겨찾기가 앞에 옴). @param {{ fav?: boolean }} r @returns {string} HTML */
 function favMark(r) {
   return r.fav ? '<i class="fav-mark" title="즐겨찾기">★</i>' : "";
 }
@@ -10728,6 +10768,22 @@ function renderRailRecent() {
       .map((r) => `<button class="recent" data-room="${esc(r.id)}">${coverHTML(r)}<span>${favMark(r)}${esc(r.name)}</span></button>`)
       .join("") || `<p class="note" style="padding:0 12px">아직 대화가 없어요.</p>`;
   $$("[data-room]", el).forEach((b) => (b.onclick = () => go("r-" + b.dataset.room)));
+  IMG.hydrate(el);
+}
+/** 최근 본 작품 — 방금 본 것 먼저, 관심있는 대화로 거름(없어진 작품은 빠짐). 왼쪽 메뉴와 대화 탭(ui/chats.js)이 같이 씀. @returns {Work[]} */
+const viewedWorks = () =>
+  recentIds()
+    .map((id) => getChar(id))
+    .filter((c) => c && audOK(c));
+/** 왼쪽 메뉴의 '최근 본 작품' — 작게 네 개까지(없으면 제목도 숨김). 홈의 줄을 여기로 옮김(2026-11-21 사용자 결정) — 좁은 화면에는 레일이 없어 대화 탭 아래에 보임 */
+function renderRailViewed() {
+  const el = $("#railViewed");
+  if (!el) return;
+  const list = viewedWorks().slice(0, 4);
+  el.innerHTML = list.length
+    ? `<h4>최근 본 작품</h4>` + list.map((c) => `<button class="recent" data-char="${esc(c.id)}">${coverHTML(c)}<span>${esc(c.name)}</span></button>`).join("")
+    : "";
+  $$("[data-char]", el).forEach((b) => (b.onclick = () => go("c-" + b.dataset.char)));
   IMG.hydrate(el);
 }
 function walletHTML() {
@@ -10750,6 +10806,8 @@ function bindGo(root) {
   $$("[data-go]", root).forEach((b) => (b.onclick = () => go(b.dataset.go)));
 }
 on("rooms", renderRailRecent);
+on("rooms", renderRailViewed); // 계정에서 받은 뒤(reloadFromCloud)에도 — 대화방 안에서는 "route" 알림이 없어 이 알림으로 받음
+on("settings", renderRailViewed); // 관심있는 대화를 바꾸면 다시 거름
 on("wallet", renderWalletChips);
 on("route", route);
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
@@ -11079,11 +11137,12 @@ function epInfoHTML(c) {
            src/js/core/util.js { $, $$, ago, esc, toast }
            src/js/services/images.js { IMG }
            src/js/ui/cover.js { coverHTML }
-           src/js/ui/shell.js { bindGo, go, topbar }
+           src/js/ui/shell.js { bindGo, go, topbar, viewedWorks }
    내보냄: viewChats
    쓰는 곳: src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
-/* 대화 목록: 즐겨찾기한 방이 맨 위 묶음(별 버튼으로 켜고 끔 — core/rooms.js setFav, LIMITS.favRooms개까지), 그 아래 최근 대화. 순서는 S.rooms 그대로(sortRooms) */
+/* 대화 목록: 즐겨찾기한 방이 맨 위 묶음(별 버튼으로 켜고 끔 — core/rooms.js setFav, LIMITS.favRooms개까지), 그 아래 최근 대화. 순서는 S.rooms 그대로(sortRooms).
+   맨 아래에 최근 본 작품을 작게 — 왼쪽 메뉴가 없는 좁은 화면에서만 보임(넓은 화면은 왼쪽 메뉴에 있음, 2026-11-21 사용자 결정) */
 
 
 
@@ -11106,7 +11165,8 @@ const chatRowHTML = (r) =>
 function viewChats() {
   const v = $("#view"),
     favs = S.rooms.filter((r) => r.fav),
-    rest = S.rooms.filter((r) => !r.fav);
+    rest = S.rooms.filter((r) => !r.fav),
+    seen = viewedWorks();
   const list = (rooms) => `<div class="cont rooms">${rooms.map(chatRowHTML).join("")}</div>`;
   v.innerHTML =
     `<div class="page">${topbar()}<h1 class="sec" style="margin-top:4px">대화</h1>` +
@@ -11116,10 +11176,16 @@ function viewChats() {
         (rest.length ? list(rest) : "")
       : `<div class="empty">아직 대화가 없어요. 마음에 드는 작품을 골라 첫 대화를 시작해 보세요.<br>` +
         `<button class="btn sm pri" data-go="home">작품 둘러보기</button></div>`) +
+    (seen.length
+      ? `<div class="chats-viewed"><h2 class="sec">최근 본 작품</h2><div class="chips">` +
+        seen.map((c) => `<button class="chip" data-char="${esc(c.id)}">${coverHTML(c)}<span>${esc(c.name)}</span></button>`).join("") +
+        `</div></div>`
+      : "") +
     `</div>`;
   bindGo(v);
   IMG.hydrate(v);
   $$("[data-room]", v).forEach((b) => (b.onclick = () => go("r-" + b.dataset.room)));
+  $$("[data-char]", v).forEach((b) => (b.onclick = () => go("c-" + b.dataset.char)));
   $$("[data-fav]", v).forEach(
     (b) =>
       (b.onclick = async () => {
