@@ -4,7 +4,7 @@ import { curText, deletedRooms, roomKey } from "../core/rooms.js";
 import { markSeen } from "../core/shelf.js";
 import { S, gen, room, setRoom } from "../core/state.js";
 import { KV } from "../core/storage.js";
-import { $ } from "../core/util.js";
+import { $$ } from "../core/util.js";
 import { IMG_TAG_RE, fallbackSits, imgTags } from "../images/codes.js";
 import { imagesOf } from "../images/pick.js";
 import { AI_EXPORT_LINE } from "./ai-notice.js";
@@ -49,7 +49,8 @@ export function collectSeen(r) {
 }
 /** 그 메시지로 스크롤하고 잠깐 강조. @param {string} id 메시지 id */
 export function jumpTo(id) {
-  const el = $(`.msg[data-id="${id}"]`);
+  // 선택자 글에 id를 끼우지 않고 값으로 견줌 — 계정에서 받은 방은 id에 따옴표가 들어 있을 수 있고, 끼우면 선택자가 깨져 예외
+  const el = $$(".msg").find((x) => x.dataset.id === id);
   if (!el) return;
   el.scrollIntoView({ block: "center" });
   el.classList.add("flash");
