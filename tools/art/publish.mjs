@@ -48,10 +48,14 @@ export function describe(images) {
   return { title: `그림 싣기: 작품 ${ids.length}개 · ${images.length}장`, body: ids.map((id) => `- ${id}: ${by[id].sort().join(", ")}`).join("\n") };
 }
 /** 그 커밋(sha)의 워크플로 실행 목록(GitHub actions/runs) → "pass" · "pending" · "fail: 파일…".
-    그 커밋의 PR 실행만 본다(다른 커밋·다른 이벤트의 성공은 치지 않음). 워크플로마다 가장 나중 실행을 보고, 꼭 통과해야 하는 것이 아직 없거나 도는 중이면 기다린다 */
-export function verdict(runs, sha, required = REQUIRED) {
+    그 커밋의 PR 실행만 본다(다른 커밋·다른 이벤트의 성공은 치지 않음. branch를 주면 그 가지에서 연 PR의 실행만). 워크플로마다 가장 나중 실행을 보고,
+    꼭 통과해야 하는 것이 아직 없거나 도는 중이면 기다린다 */
+export function verdict(runs, sha, branch = "", required = REQUIRED) {
   const last = {};
-  for (const r of runs) if (r.head_sha === sha && r.event === "pull_request" && (!last[r.path] || r.run_number > last[r.path].run_number)) last[r.path] = r;
+  for (const r of runs) {
+    if (r.head_sha !== sha || r.event !== "pull_request" || (branch && r.head_branch !== branch)) continue;
+    if (!last[r.path] || r.run_number > last[r.path].run_number) last[r.path] = r;
+  }
   const bad = required.filter((p) => last[p] && last[p].status === "completed" && last[p].conclusion !== "success");
   if (bad.length) return "fail: " + bad.map((p) => path.posix.basename(p)).join(", ");
   return required.every((p) => last[p] && last[p].status === "completed" && last[p].conclusion === "success") ? "pass" : "pending";
@@ -143,8 +147,10 @@ export async function publish(ctx) {
     if ((await rev("HEAD")) !== sha) throw fail("확인하는 사이에 작업 사본의 커밋이 바뀌어 올리지 않았어요 — 다시 눌러 주세요.");
     return { sha, images: [...images] };
   };
-  /** ④ main을 합치고 다시 빌드 — 겹치는 것이 빌드 결과뿐일 때만(그 밖이면 되돌리고 멈춤) */
-  const sync = async () => {
+  /** ④ main을 합치고 다시 빌드 — 겹치는 것이 빌드 결과뿐일 때만(그 밖이면 되돌리고 멈춤).
+      올려 둔 커밋(from)에서만 이어 간다: 기다리는 사이 작업 사본에 쌓인 커밋은 올리지 않고 그대로 둔 채 멈춘다 */
+  const sync = async (from) => {
+    if ((await rev("HEAD")) !== from) throw fail("기다리는 사이에 작업 사본의 커밋이 바뀌어 멈췄어요(바뀐 것은 그대로 뒀어요) — PR은 열어 뒀어요: " + url);
     if (!(await yes(...(await signed("merge", "--no-edit", "origin/main"))))) {
       const clash = (await git("diff", "--name-only", "-z", "--diff-filter=U")).split("\0").filter(Boolean);
       if (!clash.length || !clash.every(isBuilt)) {
@@ -194,8 +200,15 @@ export async function publish(ctx) {
       throw fail("올리던 가지에 커밋하지 않은 변경이 있어 멈췄어요: " + [...left.images, ...left.others].slice(0, 5).join(", "));
     const remote = "refs/remotes/origin/" + branch;
     if (await yes("rev-parse", "-q", "--verify", remote)) {
-      // ② 올린 뒤에 더 쌓인 커밋(올리지 못한 것)은 버리고 올라가 있는 데서 이어 간다
-      if ((await rev("HEAD")) !== (await rev(remote))) await git("reset", "-q", "--hard", remote);
+      // ② 올린 뒤에 더 쌓인 커밋(올리지 못한 것)은 올리지 않는다 — art/kept-…에 남겨 두고 올라가 있는 데서 이어 간다
+      if ((await rev("HEAD")) !== (await rev(remote))) {
+        if (!(await yes("merge-base", "--is-ancestor", "HEAD", remote))) {
+          const keep = "art/kept-" + now();
+          await git("branch", "-q", keep, "HEAD");
+          log(`올리지 못한 커밋은 ${keep}에 남겨 두고, 올라가 있는 데서 이어 가요`);
+        }
+        await git("reset", "-q", "--hard", remote);
+      }
     } else {
       // ② 한 번도 올리지 못한 커밋이 남아 있음 → 그 커밋들은 올리지 않는다. 그림만 추려 전용 가지에서 새로 만든다(예전 가지는 이름을 바꿔 남겨 둠)
       const old = await rev("HEAD"),
@@ -260,26 +273,30 @@ export async function publish(ctx) {
       // ④ 그 사이 main이 바뀜 → 합치고 다시 빌드해 올린 뒤, 새 커밋의 검사를 기다린다(세 번까지)
       if (synced++ >= 3) throw fail("main이 계속 바뀌어 병합하지 못했어요 — 잠시 뒤 다시 눌러 주세요: " + url);
       log("그 사이 main이 바뀌어 다시 맞추는 중…");
-      await sync();
+      await sync(sha);
       ({ sha, images } = await gate());
       await push();
       log("GitHub 검사를 기다리는 중… " + url);
       continue;
     }
-    const pr = JSON.parse(await gh("pr", "view", url, "--json", "state,headRefOid"));
+    const pr = JSON.parse(await gh("pr", "view", url, "--json", "state,headRefOid,baseRefName"));
     if (pr.state === "MERGED") break;
     if (pr.state !== "OPEN") throw fail("PR이 닫혀 있어요 — GitHub에서 확인해 주세요: " + url);
+    if (pr.baseRefName !== "main") throw fail("PR이 main으로 가는 것이 아니에요 — GitHub에서 확인해 주세요: " + url);
     if (pr.headRefOid === sha) {
-      // ⑤ 그 커밋(sha)의 PR 워크플로 실행을 직접 읽는다 — 실행마다 어느 커밋·어느 워크플로 파일의 것인지 적혀 온다
+      // ⑤ 그 커밋(sha)의 PR 워크플로 실행을 직접 읽는다 — 실행마다 어느 커밋·어느 가지·어느 워크플로 파일의 것인지 적혀 온다
       const q = `repos/{owner}/{repo}/actions/runs?head_sha=${sha}&event=pull_request&per_page=100`,
-        out = (
-          await run("gh", ["api", q, "--jq", ".workflow_runs | map({path, head_sha, event, status, conclusion, run_number})"], { allowFail: true })
-        ).out.trim();
-      const v = verdict(out.startsWith("[") ? JSON.parse(out) : [], sha);
+        pick = ".workflow_runs | map({path, head_sha, head_branch, event, status, conclusion, run_number})",
+        out = (await run("gh", ["api", q, "--jq", pick], { allowFail: true })).out.trim();
+      const v = verdict(out.startsWith("[") ? JSON.parse(out) : [], sha, branch);
       if (v.startsWith("fail")) throw fail(`검사가 떨어져 병합하지 않았어요(${v.slice(6)}) — PR은 열어 뒀어요: ${url}`);
       if (v === "pass") {
         await git("fetch", "origin", "--quiet");
         if (await behind()) continue; // 병합 직전에 main이 또 바뀜 → 다시 맞춘다
+        // 이 가지에서 열린 PR이 이것 하나뿐인지 — 같은 커밋으로 다른 곳에 가는 PR이 또 열려 있으면 그쪽 검사의 성공과 가를 수 없다
+        const open = JSON.parse(await gh("pr", "list", "--head", branch, "--state", "open", "--json", "url,baseRefName"));
+        if (open.length !== 1 || open[0].url !== url || open[0].baseRefName !== "main")
+          throw fail("이 가지에서 열린 PR이 하나가 아니라 병합하지 않았어요 — GitHub에서 확인해 주세요: " + url);
         log("병합하는 중…");
         await gh("pr", "merge", url, "--merge", "--match-head-commit", sha);
         break;

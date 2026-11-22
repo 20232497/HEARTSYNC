@@ -50,7 +50,8 @@ const runOf = (p, state, sha, more = {}) => ({
 });
 
 /** 임시 저장소 셋과 gh 흉내. o: { checks: 검사 결과를 차례로(마지막 것이 되풀이됨 — "pass" 같은 글이면 두 워크플로 모두 그 상태, 함수면 (끝 커밋) → 실행 목록),
-    moveMain: PR을 처음 볼 때 main을 한 번 움직임, mark: false면 전용 사본 표식을 두지 않음, ctx: 올리기에 덧붙일 값 } */
+    moveMain: PR을 처음 볼 때 main을 한 번 움직임(함수면 그때 작업 사본에도 (site) → 무슨 일을 냄), mark: false면 전용 사본 표식을 두지 않음, ctx: 올리기에 덧붙일 값 }.
+    G.open: 그 가지에서 열린 PR 목록을 바꿔 줌, G.base: PR이 가는 가지를 바꿔 줌 */
 function world(name, o = {}) {
   const dir = path.join(TMP, name),
     origin = path.join(dir, "origin.git"),
@@ -90,8 +91,10 @@ function world(name, o = {}) {
     if (a[0] === "api") {
       const sha = /head_sha=([0-9a-f]+)/.exec(a[1])[1],
         c = G.checks.length > 1 ? G.checks.shift() : G.checks[0];
-      return ok(typeof c === "function" ? c(sha) : [runOf(BUILD, c, sha), runOf(E2E, c, sha)]);
+      const runs = typeof c === "function" ? c(sha) : [runOf(BUILD, c, sha), runOf(E2E, c, sha)];
+      return ok(runs.map((r) => ({ head_branch: G.pr.head, ...r })));
     }
+    if (a[1] === "list") return ok(G.open ? G.open() : [{ url: G.pr.url, baseRefName: "main" }]);
     if (a[1] === "create") {
       G.pr = { head: a[a.indexOf("--head") + 1], title: a[a.indexOf("--title") + 1], url: "https://github.com/x/y/pull/1" };
       return ok("만들었어요\n" + G.pr.url + "\n");
@@ -108,8 +111,9 @@ function world(name, o = {}) {
           put(r, "content/f/other/images/cover.webp", webp("남의 그림"));
           buildIn(r);
         }, "남이 올린 그림");
+        if (typeof o.moveMain === "function") o.moveMain(site); // 같은 때 작업 사본에서도 무슨 일이 생김
       }
-      return ok({ state: G.merged ? "MERGED" : "OPEN", headRefOid: head() });
+      return ok({ state: G.merged ? "MERGED" : "OPEN", headRefOid: head(), baseRefName: G.base || "main" });
     }
     if (a[1] === "merge") {
       const want = a[a.indexOf("--match-head-commit") + 1];
@@ -178,6 +182,9 @@ test("올리기: 줄 가르기·제목·검사 판정·그림 모양", () => {
     "워크플로마다 가장 나중 실행을 봄"
   );
   assert.equal(verdict([r(BUILD, "pass"), r(E2E, "pass", { run_number: 1 }), r(E2E, "pending", { run_number: 2 })], S), "pending");
+  const at = (b) => [r(BUILD, "pass", { head_branch: b }), r(E2E, "pass", { head_branch: b })];
+  assert.equal(verdict(at("art/upload-1"), S, "art/upload-1"), "pass");
+  assert.equal(verdict(at("feat/other"), S, "art/upload-1"), "pending", "같은 커밋이라도 다른 가지에서 연 PR의 성공은 치지 않음");
   const png = Buffer.concat([Buffer.from("\x89PNG\r\n\x1a\n", "latin1"), Buffer.alloc(12), Buffer.from([0, 0, 0, 0]), Buffer.from("IEND"), Buffer.alloc(4)]),
     jpg = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), Buffer.alloc(16), Buffer.from([0xff, 0xd9])]);
   assert.ok(isImage(webp("x")) && isImage(png) && isImage(jpg));
@@ -351,4 +358,51 @@ test("올리기: 기다리는 사이 main이 바뀌면(빌드 결과가 겹침) 
   assert.equal(git(w.site, "rev-parse", "HEAD"), git(w.site, "rev-parse", "origin/main"));
   assert.equal(git(w.site, "status", "--porcelain"), "");
   assert.equal(count(w, "pr merge"), 1, "검사한 커밋과 PR의 끝이 같을 때만 병합됨(흉내가 확인)");
+});
+
+/** 작업 사본에서 그림 한 장을 따로 커밋해 둠(도구 밖에서 생긴 커밋) */
+const commitAside = (site) => {
+  put(site, "content/f/hwanghu/images/KAS9.webp", webp("따로 커밋한 것"));
+  git(site, "add", "-A");
+  git(site, "commit", "-q", "-m", "도구 밖에서 한 커밋");
+};
+
+test("올리기: 기다리는 사이 작업 사본에 커밋이 쌓였으면 main과 맞추지 않고 멈춤 — 그 커밋은 올라가지 않고 그대로 남음", async () => {
+  const w = world("moved-while-waiting", { moveMain: commitAside });
+  put(w.site, "content/f/hwanghu/images/cover.webp", webp("표지"));
+  await assert.rejects(publish(w.ctx), /기다리는 사이에 작업 사본의 커밋이 바뀌어 멈췄어요/);
+  assert.equal(count(w, "pr merge"), 0);
+  assert.ok(w.neverPushed("content/f/hwanghu/images/KAS9.webp"), "따로 한 커밋은 원격에 올라가지 않음");
+  assert.match(git(w.site, "log", "-1", "--format=%s"), /도구 밖에서 한 커밋/, "작업 사본의 커밋은 그대로");
+});
+
+test("올리기: 이어할 때 올린 뒤에 더 쌓인 커밋은 올리지 않되 버리지도 않는다 — art/kept-… 가지에 남김", async () => {
+  const w = world("resume-keeps", { checks: ["fail"] });
+  put(w.site, "content/f/hwanghu/images/cover.webp", webp("표지"));
+  await assert.rejects(publish(w.ctx), /검사가 떨어져/);
+  commitAside(w.site);
+  const aside = git(w.site, "rev-parse", "HEAD");
+  w.G.checks = ["pass"];
+  assert.equal((await publish(w.ctx)).count, 1, "올라가 있던 그림만 병합됨");
+  assert.ok(w.neverPushed("content/f/hwanghu/images/KAS9.webp"));
+  const kept = git(w.site, "branch", "--list", "art/kept-*").trim();
+  assert.ok(kept, "남겨 둔 가지가 있음");
+  assert.equal(git(w.site, "rev-parse", kept), aside, "따로 한 커밋이 그 가지에 그대로");
+});
+
+test("올리기: 이 가지에서 열린 PR이 하나가 아니거나 main으로 가지 않으면 검사가 통과해도 병합하지 않음", async () => {
+  const w = world("twin-pr");
+  w.G.open = () => [
+    { url: w.G.pr.url, baseRefName: "main" },
+    { url: "https://github.com/x/y/pull/2", baseRefName: "release" }
+  ];
+  put(w.site, "content/f/hwanghu/images/cover.webp", webp("표지"));
+  await assert.rejects(publish(w.ctx), /열린 PR이 하나가 아니라 병합하지 않았어요/);
+  assert.equal(count(w, "pr merge"), 0);
+
+  const v = world("retargeted");
+  v.G.base = "release";
+  put(v.site, "content/f/hwanghu/images/cover.webp", webp("표지"));
+  await assert.rejects(publish(v.ctx), /PR이 main으로 가는 것이 아니에요/);
+  assert.equal(count(v, "pr merge"), 0);
 });
