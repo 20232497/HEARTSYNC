@@ -187,7 +187,9 @@ for (const url of urls) {
         ["메시지 고치기", () => document.querySelector('#logInner [data-act="editai"]').click(), "#logInner .edit-box textarea"]
       ]) {
         await page.evaluate(open);
-        await page.waitForTimeout(600); // 방 메뉴가 옆에서 밀려 들어오는 움직임(0.22초)이 끝난 뒤에 잼
+        // 창이 밀려 들어오는 움직임이 끝난 뒤에 잼 — 정해 둔 시간만 기다리면 느린 기계에서 움직이는 도중의 자리를 재어 헛실패함(방 메뉴 0.22초)
+        await page.waitForTimeout(150);
+        await page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished.catch(() => {}))));
         if (!(await page.$(shown))) errors.push(`${label}: 창이 열리지 않음(${shown})`);
         await fit(label);
         await page.evaluate(() => closeOverlays());
