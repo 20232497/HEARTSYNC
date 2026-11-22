@@ -13,6 +13,10 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hahmlet:wght@500;700;800&family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=Gowun+Batang:wght@400;700&display=swap">
+<!-- 화면 테마: 고른 값(밝게·어둡게)을 화면이 그려지기 전에 걸어 깜빡이지 않게 함 — 사용자 사이트(src/page.html)와 같은 스크립트 -->
+<script>
+try { var t = JSON.parse(localStorage.getItem("hv1_settings") || "{}").theme; if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t); } catch (e) {}
+</script>
 <style>
 /* Layout: 앱 셸 — 데스크톱은 왼쪽 레일 + 본문, 모바일은 하단 탭바. 대화방은 전체 높이 3단(헤더·로그·입력창), 관리 메뉴는 오른쪽 드로어. */
 :root {
@@ -604,6 +608,20 @@ details.stat[open] summary::after { content:"▴"; }
 .menu-list button::after { content:"›"; color:var(--muted); font-size:18px; line-height:1; }
 .menu-list button:not(:has(.v))::after { margin-left:auto; }
 .menu-list .grp { height:10px; }
+/* 방 메뉴 첫 화면의 묶음 카드(ui/drawer/main.js): 카드마다 이름표와 줄(이름 · 지금 값 · ›) */
+.menu-card { border:1px solid var(--line); border-radius:14px; padding:12px 14px 4px; margin-top:12px; background:var(--surface); }
+.menu-card:first-child { margin-top:4px; }
+.menu-card > .lbl { display:block; margin:0 0 2px; }
+.menu-card .row { width:100%; display:flex; align-items:center; gap:10px; border:0; border-top:1px solid var(--line); background:none; padding:12px 0; text-align:left; font-size:14.5px; }
+.menu-card > .lbl + .row { border-top:0; }
+.menu-card .row:hover { color:var(--accent); }
+.menu-card .row .k { flex:1; min-width:0; }
+.menu-card .row .v { color:var(--muted); font-size:13px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:60%; }
+.menu-card .row::after { content:"›"; color:var(--muted); font-size:18px; line-height:1; }
+.menu-card .row[aria-pressed="true"] .v { color:var(--gold); }
+.menu-card .compo { margin:6px 0 8px; }
+.menu-card .purse { margin:8px 0 10px; }
+.menu-card + .quick { margin-top:14px; }
 .tabs { display:flex; gap:4px; border-bottom:1px solid var(--line); margin:6px 0 14px; }
 .tabs button { flex:1; border:0; background:none; padding:10px 6px; font-size:14px; color:var(--muted); font-weight:500; border-bottom:2px solid transparent; margin-bottom:-1px; }
 .tabs button.on { color:var(--fg); font-weight:700; border-bottom-color:var(--fg); }
@@ -3069,10 +3087,16 @@ function saveSettings() {
   KV.set("memcfg", S.settings.memCfg);
   emit("settings");
 }
-/** 채팅 글자 크기·줄 간격·지문 글꼴·장면 그림 보기를 CSS 변수와 html 클래스에 반영(테마는 기기 설정을 따름). @returns {void} */
+/**
+ * 채팅 글자 크기·줄 간격·지문 글꼴·장면 그림 보기를 CSS 변수와 html 클래스에, 화면 테마를 html의 data-theme에 반영.
+ * 테마는 "light"·"dark"를 골랐을 때만 속성을 걸고, 고르지 않았으면 떼어 기기 설정을 따름(css/10-base.css) — 뼈대의 앞쪽 스크립트가 같은 일을 화면이 그려지기 전에 함.
+ * @returns {void}
+ */
 function applySettings() {
   const s = S.settings,
     root = document.documentElement;
+  if (s.theme === "light" || s.theme === "dark") root.setAttribute("data-theme", s.theme);
+  else root.removeAttribute("data-theme");
   root.style.setProperty("--chat-fs", s.fs + "px");
   root.style.setProperty("--chat-lh", s.chatLh);
   root.style.setProperty("--narr-font", s.narrFont === "sans" ? "var(--sans)" : "var(--serif)");
@@ -3362,7 +3386,7 @@ function shrink(file, max, q) {
 /* KV ↔ 계정 동기화. 쓰기는 KV.set → put()이 키마다 0.8초 모아 upsert(지우기는 DELETE).
    읽기는 그림(img…)을 뺀 키를 받아 이 기기에 씀 — 처음 로그인하면 전부, 그 뒤엔 updated_at이 바뀐 것만. 그림(페르소나 사진)은 IMG.load가 필요할 때 한 장씩.
    이 기기에서 아직 못 올린 키(pending)는 받은 값으로 덮지 않음. 설정은 "settings" 키(글자 크기·Enter로 보내기는 기기마다 따로) */
-const DEVICE_SETTINGS = ["fs", "enterSend"];
+const DEVICE_SETTINGS = ["fs", "enterSend", "theme"]; // 화면 테마도 기기마다 따로(낮에 쓰는 기기와 밤에 쓰는 기기가 다를 수 있음)
 /* API 키 칸은 계정에 올리지 않음 — 서버 표의 kv_no_plain_keys 제약도 settings에 이 칸이 있으면 거부. 예전 빌드의 그림·성인 키 칸도 기기에 남아 있을 수 있어 함께 뺌 */
 const KEY_FIELDS = ["apiKey", "runwareKey", "openRouterKey"];
 /* 계정과 주고받는 KV 키. 예전 빌드가 남긴 행(그림 묶음·내 작품·잠근 키 등)은 받지도 올리지도 않음 */
@@ -3636,11 +3660,10 @@ function cloudSettings() {
 }
 function mergeCloudSettings(v) {
   if (!v || typeof v !== "object") return;
-  const keep = {};
-  DEVICE_SETTINGS.concat(KEY_FIELDS).forEach((k) => {
-    if (k in S.settings) keep[k] = S.settings[k];
-  });
-  const next = Object.assign({}, S.settings, v, keep);
+  // 기기별 칸과 키 칸은 계정 것을 받지 않음 — 이 기기에 그 칸이 없어도(화면 테마를 '기기 설정'으로 둔 것) 예전 빌드가 계정에 남긴 값이 들어오지 않게
+  const incoming = Object.assign({}, v);
+  DEVICE_SETTINGS.concat(KEY_FIELDS).forEach((k) => delete incoming[k]);
+  const next = Object.assign({}, S.settings, incoming);
   delete next.keysLocal;
   S.settings = next;
   try {
@@ -6743,7 +6766,8 @@ function viewCodex(id) {
    내보냄: drawerMain
    쓰는 곳: src/js/ui/room-drawer.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
-/* 대화방 드로어의 첫 화면(대화방 관리): 대화 복사·내보내기·처음부터, 내 재화, 대화 구성, 다른 화면으로 가는 메뉴, 대화방 삭제. 틀은 ../room-drawer.js */
+/* 대화방 드로어의 첫 화면(대화방 관리) — 묶음 카드: 이 대화(페르소나·즐겨찾기·상태창·북마크·검색) · 이 작품(작품 카드·가이드·갤러리·장소·세계관 수첩) ·
+   대화 설정(모델·출력·표시·유저노트·장기기억) · 내 재화, 아래에 대화 복사·내보내기·처음부터와 대화방 삭제. 항목은 모두 한 번 눌러 닿음. 틀은 ../room-drawer.js */
 
 
 
@@ -6763,52 +6787,60 @@ function viewCodex(id) {
 
 
 
+
+/* 묶음 카드와 그 안의 한 줄(이름 · 지금 값 · ›) — attr는 그 줄이 여는 것(data-v="화면" 또는 id) */
+const menuCard = (title, rows) => `<section class="menu-card"><h3 class="lbl">${title}</h3>${rows}</section>`;
+const menuRow = (attr, label, val) => `<button class="row" ${attr}><span class="k">${label}</span>${val ? `<span class="v">${val}</span>` : ""}</button>`;
 
 /** 드로어 화면 'main'. @param {import("../room-drawer.js").DrawerCtx} x */
 function drawerMain({ r, c, body, cfg, q }) {
   const src = r.forkedFrom && S.rooms.some((x) => x.id === r.forkedFrom.roomId); // 분기한 방이고 원래 방이 아직 있으면 '원래 대화방' 버튼
-  const live = liveWork(c),
-    guide = live.guide; // 플레이 가이드는 최신 작품에서(예전 방의 사본에는 없을 수 있음)
+  const live = liveWork(c), // 플레이 가이드·장소·세계관 수첩은 최신 작품에서(예전 방의 사본에는 없을 수 있음)
+    guide = live.guide,
+    places = (live.places || []).length;
+  const mem =
+    `${(r.pins || []).length ? `📌 ${r.pins.length} · ` : ""}` + (cfg.auto ? `${Math.max(0, cfg.every - (r.sinceMem || 0))}턴 뒤 요약` : "자동 요약 꺼짐");
   body.innerHTML =
-    `<div class="quick">
-        <button id="qCopy">${ICON.copy}대화 복사</button><button id="qExport">${ICON.down}대화 내보내기</button><button id="qNew">${ICON.redo}처음부터</button></div>
-      <div class="sheet-head"><h3 class="lbl" style="flex:1;margin:0">내 재화</h3><button class="btn sm pri" id="topup">충전</button></div>
+    menuCard(
+      "이 대화",
+      menuRow('data-v="persona"', "내 페르소나", esc(r.persona.name)) +
+        menuRow(`id="mFav" aria-pressed="${!!r.fav}"`, "즐겨찾기", r.fav ? "★ 대화 목록 맨 위에 고정" : "꺼짐") +
+        menuRow('data-v="status"', "상태창", "") +
+        menuRow('data-v="bookmarks"', "북마크", (r.bookmarks || []).length + "개") +
+        menuRow('id="mFind"', "대화 검색", "이 방의 글에서 찾기")
+    ) +
+    menuCard(
+      "이 작품",
+      `<button class="compo" id="compo">${coverHTML(c)}<span class="x"><b>${esc(c.title)}</b>` +
+        `<span>${c.world_mode ? "세계관" : "캐릭터"} · ${esc(c.name)}</span><span>씬 · ${esc(r.opening || "기본")}</span></span></button>` +
+        (r.forkedFrom
+          ? `<p class="note" style="margin:0 0 8px">이 방은 「${esc(baseOpening(r) || "기본")}」 대화의 한 장면에서 분기했어요.` +
+            `${src ? ` <button class="btn sm ghost" id="forkSrc">원래 대화방</button>` : ""}</p>`
+          : "") +
+        (guide ? menuRow('id="mGuide"', "플레이 가이드", "제작자의 안내") : "") +
+        menuRow('data-v="gallery"', "갤러리", galleryItems(r).length + "장") +
+        (places ? menuRow('data-v="places"', "장소", places + "곳") : "") +
+        ((live.lore || []).length ? menuRow('data-v="lore"', "세계관 수첩", `${loreSeen(r, live.lore).size} / ${live.lore.length}`) : "")
+    ) +
+    menuCard(
+      "대화 설정",
+      menuRow('id="mModel"', "AI 모델", MODELS[r.set.model].name) +
+        menuRow('data-v="output"', "출력 설정", `${LEN[r.set.len].name} · ${r.set.mem}턴${r.set.autoSug ? " · 추천 자동 받기" : ""}`) +
+        menuRow('data-v="display"', "표시 설정", `글자 ${S.settings.fs}px · 줄 간격·글꼴`) +
+        menuRow('data-v="note"', "유저노트", r.userNote ? "작성됨" : "비어 있음") +
+        menuRow('data-v="memory"', "장기기억", mem)
+    ) +
+    `<section class="menu-card"><div class="sheet-head"><h3 class="lbl" style="flex:1;margin:0">내 재화</h3>` +
+    `<button class="btn sm pri" id="topup">충전</button></div>
       <div class="purse">
         <div>오늘 무료 턴 <span class="spacer"></span><b>${isPro() ? "PLUS 무제한" : freeLeft() + " / " + FREE_DAILY}</b></div>
         <div>하트 <span class="spacer"></span><b>♥ ${num(S.wallet.hearts)}</b></div>
         <div>지금 설정 <span class="spacer"></span><span class="note">${MODELS[r.set.model].name} · 턴당 ${qShort(q)}</span></div>
-      </div>
-      <h3 class="lbl" style="margin:16px 0 8px">대화 구성</h3>
-      <button class="compo" id="compo">${coverHTML(c)}<span class="x"><b>${esc(c.title)}</b>` +
-    `<span>${c.world_mode ? "세계관" : "캐릭터"} · ${esc(c.name)}</span><span>씬 · ${esc(r.opening || "기본")}</span></span></button>
-      ${
-        r.forkedFrom
-          ? `<p class="note" style="margin:8px 0 0">이 방은 「${esc(baseOpening(r) || "기본")}」 대화의 한 장면에서 분기했어요.` +
-            `${src ? ` <button class="btn sm ghost" id="forkSrc">원래 대화방</button>` : ""}</p>`
-          : ""
-      }
-      <div class="menu-list">
-        <button data-v="persona">내 페르소나<span class="v">${esc(r.persona.name)}</span></button>
-        <button id="mFav" aria-pressed="${!!r.fav}">즐겨찾기<span class="v">${r.fav ? "★ 대화 목록 맨 위에 고정" : "꺼짐"}</span></button>
-        <div class="grp"></div>
-        <button data-v="memory">장기기억` +
-    (`<span class="v">${(r.pins || []).length ? `📌 ${r.pins.length} · ` : ""}` +
-      `${cfg.auto ? `${Math.max(0, cfg.every - (r.sinceMem || 0))}턴 뒤 요약` : "자동 요약 꺼짐"}</span></button>
-        <button data-v="note">유저노트<span class="v">${r.userNote ? "작성됨" : "비어 있음"}</span></button>
-        <div class="grp"></div>
-        <button id="mModel">AI 모델<span class="v">${MODELS[r.set.model].name}</span></button>
-        <button data-v="output">출력 설정<span class="v">${LEN[r.set.len].name} · ${r.set.mem}턴</span></button>
-        <button data-v="display">표시 설정<span class="v">글자 ${S.settings.fs}px · 줄 간격·글꼴</span></button>
-        <div class="grp"></div>
-        <button data-v="status">상태창</button>
-        <button data-v="gallery">갤러리<span class="v">${galleryItems(r).length}장</span></button>
-        ${(live.lore || []).length ? `<button data-v="lore">세계관 수첩<span class="v">${loreSeen(r, live.lore).size} / ${live.lore.length}</span></button>` : ""}
-        <button data-v="bookmarks">북마크<span class="v">${(r.bookmarks || []).length}개</span></button>
-        <button id="mFind">대화 검색<span class="v">이 방의 글에서 찾기</span></button>
-        ${guide ? `<div class="grp"></div><button id="mGuide">플레이 가이드<span class="v">제작자의 안내</span></button>` : ""}
-      </div>
-      <button class="btn ghost danger block" id="delRoom" style="margin-top:16px">이 대화방 삭제</button>
-      <p class="note" style="margin-top:8px">AI 연결: ${engineName()}</p>`);
+      </div></section>
+      <div class="quick">
+        <button id="qCopy">${ICON.copy}대화 복사</button><button id="qExport">${ICON.down}대화 내보내기</button><button id="qNew">${ICON.redo}처음부터</button></div>
+      <button class="btn ghost danger block" id="delRoom">이 대화방 삭제</button>
+      <p class="note" style="margin-top:8px">AI 연결: ${engineName()}</p>`;
   $$("[data-v]", body).forEach((b) => (b.onclick = () => openRoomDrawer(b.dataset.v)));
   $("#topup", body).onclick = () => go("store");
   $("#compo", body).onclick = () => go("c-" + c.id);
@@ -7163,9 +7195,9 @@ function drawerMemory({ r, ov, body, cfg }) {
    내보냄: chatSettingsHTML, bindChatSettings
    쓰는 곳: src/js/ui/me.js, src/js/ui/drawer/settings.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
-/* 채팅 표시 설정 조각: 글자 크기·줄 간격·지문 글꼴·Enter로 보내기·장면 이미지 보기 — MY의 '채팅 설정'과 대화방 메뉴의 '표시 설정'이 같이 씀(한 벌).
+/* 채팅 표시 설정 조각: 화면 테마·글자 크기·줄 간격·지문 글꼴·Enter로 보내기·장면 이미지 보기 — MY의 '채팅 설정'과 대화방 메뉴의 '표시 설정'이 같이 씀(한 벌).
    바꾸는 즉시 저장하고(saveSettings) 화면에 반영(applySettings — 대화방 안에서 바꾸면 뒤의 대화 글이 바로 바뀜). 방마다가 아니라 앱 전체의 설정:
-   글자 크기와 Enter로 보내기는 이 기기에만, 줄 간격·지문 글꼴·장면 이미지 보기는 로그인하면 계정에도 저장됨(services/cloud.js DEVICE_SETTINGS) */
+   화면 테마·글자 크기·Enter로 보내기는 이 기기에만, 줄 간격·지문 글꼴·장면 이미지 보기는 로그인하면 계정에도 저장됨(services/cloud.js DEVICE_SETTINGS) */
 
 
 
@@ -7179,6 +7211,12 @@ const LINE_GAPS = [
   NARR_FONTS = [
     ["serif", "명조"],
     ["sans", "고딕"]
+  ],
+  // 화면 테마: 빈 값은 '고르지 않음' — 설정 칸을 지워 기기 설정(밝게·어둡게)을 따름
+  THEMES = [
+    ["", "기기 설정"],
+    ["light", "밝게"],
+    ["dark", "어둡게"]
   ];
 /** 설정 칸의 HTML — 한 화면에 한 번만 넣음(id가 겹치지 않게). @param {{ preview?: boolean }} [o] preview: 보기 말풍선을 같이 넣을지(대화방 안에서는 뒤의 대화가 보기라 뺌) @returns {string} */
 function chatSettingsHTML({ preview = true } = {}) {
@@ -7190,7 +7228,8 @@ function chatSettingsHTML({ preview = true } = {}) {
       ? `<div class="bubble chat-pv" aria-hidden="true"><p class="narr">창밖으로 첫눈이 내리기 시작했다.</p><p>` +
         `<b class="spk">${esc(exampleCast().name)}</b><span class="dlg">"오늘은 여기까지 할까요?"</span></p></div>`
       : "") +
-    `<div class="field"${preview ? "" : ' style="margin-top:0"'}><label for="cfs" style="display:flex">글자 크기<span class="spacer"></span>` +
+    `<div class="field"${preview ? "" : ' style="margin-top:0"'}><span class="lbl">화면 테마</span>${seg("theme", THEMES, s.theme || "")}</div>` +
+    `<div class="field"><label for="cfs" style="display:flex">글자 크기<span class="spacer"></span>` +
     `<output id="cfsV">${s.fs}px</output></label><input type="range" id="cfs" min="13" max="21" step="0.5" value="${s.fs}"></div>` +
     `<div class="two"><div class="field"><span class="lbl">줄 간격</span>${seg("chatLh", LINE_GAPS, s.chatLh)}</div>` +
     `<div class="field"><span class="lbl">지문 글꼴</span>${seg("narrFont", NARR_FONTS, s.narrFont)}</div></div>` +
@@ -7203,7 +7242,9 @@ function chatSettingsHTML({ preview = true } = {}) {
 /** chatSettingsHTML로 넣은 칸에 동작을 붙임 — 바꾸는 즉시 저장·반영. @param {HTMLElement} root 그 칸이 들어 있는 요소 @param {() => void} [after] 바뀐 뒤 부를 것(대화방의 입력창 안내 갱신 등) */
 function bindChatSettings(root, after) {
   const set = (k, val) => {
-    S.settings[k] = val;
+    if (val === "")
+      delete S.settings[k]; // 화면 테마의 '기기 설정' — 칸을 지움
+    else S.settings[k] = val;
     saveSettings();
     applySettings();
     if (after) after();
@@ -8620,7 +8661,7 @@ function drawerNote({ r, c, body }) {
 function drawerDisplay({ body }) {
   body.innerHTML =
     `<b>대화 글이 보이는 모양을 바꿔 보세요</b><p class="note" style="margin:4px 0 14px">바꾸면 바로 뒤의 대화에 적용돼요. 이 방만이 아니라 모든 대화방에 같이 적용되고, ` +
-    `MY의 채팅 설정과 같은 값이에요. 글자 크기와 Enter로 보내기는 이 기기에만, 나머지는 로그인하면 계정에도 저장돼요.</p>` +
+    `MY의 채팅 설정과 같은 값이에요. 화면 테마·글자 크기·Enter로 보내기는 이 기기에만, 나머지는 로그인하면 계정에도 저장돼요.</p>` +
     chatSettingsHTML({ preview: false });
   bindChatSettings(body, updateComposer);
 }
@@ -11612,12 +11653,17 @@ function migrateSettings() {
   if (s) S.settings = { ...S.settings, ...s, memCfg: { ...S.settings.memCfg, ...(s.memCfg || {}) } };
   let moved = false;
   try {
-    // 없앤 설정: 테마(기기 설정을 따름), 등급별 OpenRouter 모델
-    for (const k of ["theme", "unfilteredModels"])
+    // 없앤 설정: 등급별 OpenRouter 모델
+    for (const k of ["unfilteredModels"])
       if (k in S.settings) {
         delete S.settings[k];
         moved = true;
       }
+    // 화면 테마: "light"·"dark"만(고르지 않았으면 칸이 없음 = 기기 설정을 따름). 예전 빌드가 남긴 다른 값은 지움
+    if ("theme" in S.settings && S.settings.theme !== "light" && S.settings.theme !== "dark") {
+      delete S.settings.theme;
+      moved = true;
+    }
     S.settings.fs = clamp(+S.settings.fs || 15.5, 13, 21);
     S.settings.chatLh = clamp(+S.settings.chatLh || 1.8, 1.4, 2.4);
   } catch {}
