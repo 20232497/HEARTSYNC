@@ -329,6 +329,20 @@ const server = http.createServer(async (req, res) => {
       if (!isWebp(buf)) return send(res, 400, { error: "webp 그림이 아니에요" });
       return send(res, 200, { ok: true, file: keep(c.id, row.code, buf, { seed: +q.get("seed") || 0, mock: MOCK || undefined }) });
     }
+    // 그리다 실패한 까닭을 보관함 기록(log.jsonl)에 남긴다 — 가끔 나는 실패를 나중에 살펴볼 수 있게(그림은 없음). 긴 글자열은 지운다(키가 섞여 들어오지 않게)
+    if (post && u.pathname === "/api/fail") {
+      const { c, row } = findRow(await works(), q),
+        why = (await body(req))
+          .toString("utf8")
+          .replace(/[A-Za-z0-9_-]{24,}/g, "…")
+          .slice(0, 300);
+      fs.mkdirSync(LIB, { recursive: true });
+      fs.appendFileSync(
+        path.join(LIB, "log.jsonl"),
+        JSON.stringify({ at: new Date().toISOString(), work: c.id, code: row.code, fail: why, mock: MOCK || undefined }) + "\n"
+      );
+      return send(res, 200, { ok: true });
+    }
     // 단체 표지의 조각(배경·인물 원본과 오린 그림) — 자리마다 가장 최근 것 하나
     if (post && u.pathname === "/api/part") {
       const { c } = findRow(await works(), new URLSearchParams({ work: q.get("work"), code: "cover" })),

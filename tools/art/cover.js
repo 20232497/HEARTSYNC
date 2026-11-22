@@ -12,6 +12,8 @@ const ROLES = ["bg", "left", "mid", "right"],
   NAMES = { bg: "배경", left: "왼쪽", mid: "가운데", right: "오른쪽" };
 /** 작품마다 붙일 준비가 된 단체 표지: { plan, imgs: { bg, left, mid, right }, layout(고친 자리 값) } */
 const groups = {};
+/** 작품마다 그리다 만 단체 표지의 조각: { files: { "<자리>-raw.webp"·"<자리>-cut.png": blob }, imgs, nsfw } — 넷이 다 모이면 지운다(이 페이지를 닫으면 사라짐) */
+const drafts = {};
 
 /** 후처리 → 로고 → 규격 크기의 webp. 로고 글꼴을 못 불러왔으면 던진다(기본 글꼴로 그려진 표지는 쓰지 않는다) */
 async function dress(work, img, post) {
@@ -30,23 +32,31 @@ export async function makeCover(work, spec, say) {
     const out = await generate(p.job);
     return { blob: await dress(work, await load(out.blob), p.post), nsfw: out.nsfw, seed: p.job.seed };
   }
-  const imgs = {},
-    files = {},
+  // 그리다가 실패하면(연결 끊김 등) 그때까지 그린 조각은 drafts에 남는다 → 다시 누르면 그 조각은 다시 사지 않고 이어 그린다
+  const d = (drafts[work.id] = drafts[work.id] || { files: {}, imgs: {}, nsfw: false }),
+    { imgs, files } = d,
     layout = structuredClone(p.layout);
-  let nsfw = false;
   for (const role of ROLES) {
-    say(`단체 표지 — ${NAMES[role]} 그리는 중…(조각 넷 가운데 ${ROLES.indexOf(role) + 1})`);
-    const out = await generate(p.parts[role]);
-    nsfw = nsfw || out.nsfw;
-    files[role + "-raw.webp"] = out.blob;
-    if (role === "bg") imgs.bg = await load(out.blob);
-    else {
-      const cut = (files[role + "-cut.png"] = await removeBg(out.blob));
-      imgs[role] = await load(cut);
-      // 새로 그린 그림이라 계획에 적힌 머리 자리(확정 그림에서 잰 값)는 맞지 않는다 → 이 그림에서 어림
-      layout.chars.find((c) => c.role === role).head = measure(imgs[role]);
+    const n = ROLES.indexOf(role) + 1,
+      raw = role + "-raw.webp";
+    if (!files[raw]) {
+      say(`단체 표지 — ${NAMES[role]} 그리는 중…(조각 넷 가운데 ${n})`);
+      const out = await generate(p.parts[role]);
+      d.nsfw = d.nsfw || out.nsfw;
+      files[raw] = out.blob;
+    } else if (!imgs[role]) say(`단체 표지 — ${NAMES[role]}: 지난번에 그려 둔 그림을 이어서 써요(조각 넷 가운데 ${n})`);
+    if (!imgs[role]) {
+      if (role === "bg") imgs.bg = await load(files[raw]);
+      else {
+        if (!files[role + "-cut.png"]) files[role + "-cut.png"] = await removeBg(files[raw]);
+        imgs[role] = await load(files[role + "-cut.png"]);
+      }
     }
+    // 새로 그린 그림이라 계획에 적힌 머리 자리(확정 그림에서 잰 값)는 맞지 않는다 → 이 그림에서 어림
+    if (role !== "bg") layout.chars.find((c) => c.role === role).head = measure(imgs[role]);
   }
+  const nsfw = d.nsfw;
+  delete drafts[work.id]; // 넷이 다 모였다 — 여기서부터의 실패(보관함 쓰기·잇기)는 보관함의 조각으로 다시 붙이면 된다
   // 노출로 판정된 조각이 하나라도 있으면 붙인 그림만 보여 주고 끝낸다 — 조각을 보관함에 남기지 않고(다시 붙여 실을 수 없게) 잇지도 않는다
   if (nsfw) return { blob: await toBlob(composeGroup(layout, imgs)), nsfw, seed: p.final.seed };
   // 조각은 넷이 다 그려진 뒤에 한꺼번에 보관함에 — 중간에 실패하면 예전 조각 묶음이 그대로 남는다(새것과 섞이지 않게)
@@ -63,7 +73,8 @@ export async function finishGroup(work) {
   return { blob: await dress(work, await load(out.blob), G.plan.post), nsfw: out.nsfw, seed: G.plan.final.seed };
 }
 /** 조각 넷이 보관함에 다 있는지(다시 붙일 수 있는지) */
-export const hasParts = (work) => !!groups[work.id] || ["bg-raw.webp", "left-cut.png", "mid-cut.png", "right-cut.png"].every((n) => (parts[work.id] || []).includes(n));
+export const hasParts = (work) =>
+  !!groups[work.id] || ["bg-raw.webp", "left-cut.png", "mid-cut.png", "right-cut.png"].every((n) => (parts[work.id] || []).includes(n));
 /** 보관함의 조각으로 붙일 준비 — plan은 서버의 /api/job 결과에서. 머리 자리는 그림에서 다시 어림한다 */
 async function prepare(work, plan) {
   if (groups[work.id]) return groups[work.id];
