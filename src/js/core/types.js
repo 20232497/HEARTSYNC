@@ -304,6 +304,7 @@
  * @property {boolean} enterSend
  * @property {boolean} sceneImg 대화 속 장면 그림 보기
  * @property {number} [aiSeen] 첫 대화 전 AI 안내(ui/ai-notice.js)를 '알겠어요'로 넘긴 시각 — 없으면 아직. 계정에 올라가는 칸이라 계정에 한 번(로그인 전에는 이 기기에 한 번)
+ * @property {"light"|"dark"} [theme] 화면 테마 — 고르지 않았으면 칸이 없음(기기 설정을 따름). 기기마다 따로(계정에 올리지 않음 — services/cloud.js DEVICE_SETTINGS). 화면이 그려지기 전에 뼈대의 앞쪽 스크립트가, 고를 때는 applySettings가 html의 data-theme에 반영
  * @property {string} apiKey Anthropic
  * @property {MemCfg} memCfg
  * @property {Aud} [audience]

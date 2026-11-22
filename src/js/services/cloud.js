@@ -12,7 +12,7 @@ import { SB } from "./supabase.js";
 /* KV ↔ 계정 동기화. 쓰기는 KV.set → put()이 키마다 0.8초 모아 upsert(지우기는 DELETE).
    읽기는 그림(img…)을 뺀 키를 받아 이 기기에 씀 — 처음 로그인하면 전부, 그 뒤엔 updated_at이 바뀐 것만. 그림(페르소나 사진)은 IMG.load가 필요할 때 한 장씩.
    이 기기에서 아직 못 올린 키(pending)는 받은 값으로 덮지 않음. 설정은 "settings" 키(글자 크기·Enter로 보내기는 기기마다 따로) */
-const DEVICE_SETTINGS = ["fs", "enterSend"];
+const DEVICE_SETTINGS = ["fs", "enterSend", "theme"]; // 화면 테마도 기기마다 따로(낮에 쓰는 기기와 밤에 쓰는 기기가 다를 수 있음)
 /* API 키 칸은 계정에 올리지 않음 — 서버 표의 kv_no_plain_keys 제약도 settings에 이 칸이 있으면 거부. 예전 빌드의 그림·성인 키 칸도 기기에 남아 있을 수 있어 함께 뺌 */
 const KEY_FIELDS = ["apiKey", "runwareKey", "openRouterKey"];
 /* 계정과 주고받는 KV 키. 예전 빌드가 남긴 행(그림 묶음·내 작품·잠근 키 등)은 받지도 올리지도 않음 */
@@ -286,11 +286,10 @@ export function cloudSettings() {
 }
 function mergeCloudSettings(v) {
   if (!v || typeof v !== "object") return;
-  const keep = {};
-  DEVICE_SETTINGS.concat(KEY_FIELDS).forEach((k) => {
-    if (k in S.settings) keep[k] = S.settings[k];
-  });
-  const next = Object.assign({}, S.settings, v, keep);
+  // 기기별 칸과 키 칸은 계정 것을 받지 않음 — 이 기기에 그 칸이 없어도(화면 테마를 '기기 설정'으로 둔 것) 예전 빌드가 계정에 남긴 값이 들어오지 않게
+  const incoming = Object.assign({}, v);
+  DEVICE_SETTINGS.concat(KEY_FIELDS).forEach((k) => delete incoming[k]);
+  const next = Object.assign({}, S.settings, incoming);
   delete next.keysLocal;
   S.settings = next;
   try {

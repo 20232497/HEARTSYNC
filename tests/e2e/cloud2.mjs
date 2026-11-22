@@ -225,6 +225,11 @@ try {
   res.meBox = await A.page.evaluate(() => ({ state: document.querySelector("#cloudState")?.textContent, keys: document.querySelector("#syncKeys")?.checked }));
   if (out) await A.page.screenshot({ path: `${out}/pc_me.png` });
 
+  // 예전 빌드가 계정에 남긴 화면 테마 값을 흉내 냄(지금은 기기마다 따로라 올리지 않음) — 다른 기기가 받아도 그 기기의 테마가 바뀌면 안 됨
+  {
+    const row = db.rows.find((r) => r.key === "settings");
+    if (row) row.value = { ...row.value, theme: "dark" };
+  }
   // ---------- 휴대폰: 같은 계정으로 로그인
   const B = await device(webkit, "iPhone 13");
   await B.page.goto(url, { waitUntil: "load" });
@@ -244,6 +249,7 @@ try {
       hasRoom: S.rooms.some((r) => r.id === args.roomId),
       apiKey: S.settings.apiKey,
       aud: S.settings.audience,
+      theme: [S.settings.theme || "", document.documentElement.getAttribute("data-theme") || ""].join("|"), // 계정의 옛 테마 값을 받지 않았어야 함("|")
       sheet: !!document.querySelector(".overlay"),
       img: ((await IMG.load(args.imgRef.slice(3))) || "").slice(0, 22)
     }),
@@ -324,6 +330,7 @@ try {
   // API 키는 계정에 올라가지 않음 — 휴대폰에는 대화는 넘어오되 키는 비어 있음(MY에서 따로 넣음)
   res.keys = { server: JSON.stringify(db.rows).includes("sk-ant-test-fake"), phone: await B.page.evaluate(() => S.settings.apiKey) };
   if (res.keys.server || res.keys.phone) errs.push("API 키가 계정을 거쳐 넘어감: " + JSON.stringify(res.keys));
+  if (res.phone.theme !== "|") errs.push("계정에 남은 화면 테마 값이 다른 기기로 넘어옴(테마는 기기마다 따로): " + res.phone.theme);
   if (!res.phone.hasRoom || !res.phone.img.startsWith("data:image") || !res.pcPull.has || !res.pcPull.roomBody)
     errs.push("기기 사이 이어짐: " + JSON.stringify({ phone: res.phone, pc: res.pcPull }));
   // 휴대폰: 로그아웃 + 기기 데이터 지우기
