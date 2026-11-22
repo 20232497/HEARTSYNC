@@ -13,6 +13,8 @@
     "content:lock": "node tools/content-lock.mjs",
     "content:art": "node tools/content-art.mjs",
     "art": "node tools/art.mjs",
+    "art:open": "node tools/art-launch.mjs",
+    "art:setup": "node tools/art-setup.mjs",
     "test": "node --test",
     "e2e": "node tests/run.mjs",
     "serve": "node tests/serve.mjs"
