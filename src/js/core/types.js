@@ -327,6 +327,7 @@
  * @property {Shelf} shelf
  * @property {Settings} settings
  * @property {string} cat 홈 장르 필터(ui/home.js)
+ * @property {"all"|"ep"|"free"} kind 홈 형식 필터(ui/home.js HOME_KINDS — 전체·에피소드형·자유형)
  * @property {string} q 홈 검색어
  */
 /**
