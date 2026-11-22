@@ -76,7 +76,7 @@ Runware는 크기가 64의 배수여야 합니다(832×1248은 오류). 프로�
 | sharp eyes | `(half-closed eyes:0.6), (tsurime:0.3)` |
 | (없음) | `(half-closed eyes:0.6)` |
 
-몸은 `slender, (slim:1.1~1.2)` — 가녀리게. 감정 그림에서 소매 길이를 적지 않은 옷은 `(long sleeves:1.2)`. 큰 가슴·굴곡 과장·드러난 어깨와 팔은 네거티브로 막습니다.
+몸은 `slender, (slim:1.1~1.2)` — 가녀리게. 감정 그림에서 소매 길이를 적지 않은 옷은 `(long sleeves:1.2)`. 큰 가슴·굴곡 과장·드러난 어깨와 팔은 네거티브로 막습니다(작품 태그에 그 옷을 적으면 풀리는 것은 아래 '노출 정책').
 
 **남성의 비율(감정 그림)** — 어깨가 넓고 머리가 작게(류건이 기준). 태그에 `broad shoulders`가 없는 인물에게 `(broad shoulders:1.1)`을 붙이고, 네거티브에 `(large head:1.3), (narrow shoulders:1.2)`. 구도는 여성과 같은 정면 구도입니다 — 아래에서 올려다보는 구도와 `athletic`은 그려 보고 쓰지 않기로 했습니다(겉옷이 벗겨지고 근육이 드러남). 프로필은 얼굴 구도라 그대로입니다.
 
@@ -114,11 +114,50 @@ Runware는 크기가 64의 배수여야 합니다(832×1248은 오류). 프로�
 
 ## 꼭 지킬 것
 
-- 긍정에 성인 표시 `(adult woman:1.2)` / `(adult man:1.3)`, 네거티브에 미성년 금지(`child, loli, shota, underage, toddler, aged down, baby face, young, teenager, chibi`)와 큰 머리·노출·달라붙는 옷을 **늘** 넣습니다. `assertSafe()`가 빠졌는지 검사합니다 — 그리기 전에 부릅니다.
-- 눈을 덮는 앞머리와 홍조는 얼굴을 앳돼 보이게 합니다. **그린 뒤 눈으로 확인**하고, 어려 보이거나 노출이 있는 그림은 쓰지 않습니다.
-- 위에서 내려다보며 몸을 숙이는 구도, `glossy`, `leaning forward`는 가슴골과 비치는 옷을 부릅니다 — 넣지 않습니다.
+- 긍정에 성인 표시 `(adult woman:1.2)` / `(adult man:1.3)`, 네거티브에 미성년 금지(`child, loli, shota, underage, toddler, aged down, baby face, young, teenager, chibi`)와 큰 머리를 **늘** 넣습니다. 이것은 무엇으로도 풀리지 않습니다(`assertAdult()`).
+- 노출·달라붙는 옷의 네거티브도 늘 넣되, 작품 태그에 적힌 옷과 부딪치는 것만 그 그림에서 뺍니다(아래 '노출 정책'). `assertSafe()`가 빠지면 안 되는 것이 빠졌는지 검사합니다 — 그리기 전에 부릅니다.
+- 눈을 덮는 앞머리와 홍조는 얼굴을 앳돼 보이게 합니다. **그린 뒤 눈으로 확인**하고, 어려 보이거나 과한 노출이 있는 그림은 쓰지 않습니다.
+- 위에서 내려다보며 몸을 숙이는 구도, `glossy`, `leaning forward`는 옷 안이 내려다보이는 각도와 비치는 옷을 부릅니다 — 넣지 않습니다.
+
+## 노출 정책
+
+2026-11-23 사용자 결정: **과한 노출은 막되 목선과 적당한 가슴골은 허용**합니다. 값은 `code/exposure.js`의 표 하나에 있고, 조립 코드는 그 값을 제자리에 끼우기만 합니다.
+
+**눈으로 보는 기준(일반 트랙)**
+
+- 허용: 쇄골·어깨·목선, 옷의 재단 안에서 보이거나 가볍게 강조되는 가슴골.
+- 싣지 않음: 배꼽까지 파인 목선, 옷 안이 내려다보이는 각도, 유두·밑가슴·옆가슴, 속옷, 비치거나 젖어 비치는 옷.
+- 싣지 않음: 가슴을 받치거나 모으는 손, 크기 과장, 조명·시점·자르기로 가슴이 그림의 중심이 되는 컷 — 얼굴이 먼저 보여야 합니다.
+- 원본과 목록 썸네일을 둘 다 봅니다. 성인으로 읽히는지 모호하거나 생성 서비스가 노출로 판정한 그림은 싣지 않습니다.
+
+**목선 세 단계**
+
+| 단계 | 언제 | 문구 |
+|---|---|---|
+| 닫힘(기본) | 옷에 목선·어깨를 적지 않음 | 지금까지와 같음 — 기존 인물의 문구는 글자 하나 바뀌지 않습니다 |
+| 열림 | 작품 태그에 그 옷을 적음 | 그 그림에서만 그 옷과 부딪치는 네거티브를 뺌(아래 표) |
+| 강조 | 이미지 세션이 인물을 지정(`accent`, 여성만) | 열림 + `large breasts` 네거티브를 뺌. **표지에는 쓰지 않습니다**(목록에서 가입 전 방문자가 보는 그림). 지정한 인물은 아직 없습니다 |
+
+**옷 태그 → 그 그림에서 빠지는 네거티브**
+
+| 작품 태그 | 대상 | 빠지는 것 |
+|---|---|---|
+| `tank top` · `sleeveless` | 여·남 | `sleeveless`, `bare arms`, `bare shoulders` (감정 그림에 긴소매도 넣지 않음) |
+| `shorts` · `sundress` · `summer dress` | 여·남 | `bare legs` |
+| `off-shoulder` · `strapless` · `bare shoulders` | 여·남 | `bare shoulders`, `off shoulder`, `collarbone` (긴소매도 넣지 않음) |
+| `collarbone` | 여·남 | `collarbone` |
+| `v-neck` · `scoop neck` · `square neck` · `sweetheart neckline` · `off-shoulder` · `strapless` | 여 | `cleavage`, `collarbone` |
+| `open collar` · `partially unbuttoned` | 남 | `unbuttoned shirt`, `unbuttoned` |
+
+어느 옷으로도 풀리지 않는 것: `nsfw`·`nude`·`revealing clothes`·`plunging neckline`·`downblouse`·`see-through`·`lingerie`·`bra`·`huge breasts`·`open shirt`·`bare chest`·`pectorals`·`no pants` 등. 조끼(`vest`)만 적힌 옷이나 목선이 정해지지 않은 옷 이름(`evening dress`)으로는 열리지 않습니다 — 밑에 입은 옷과 목선을 적어야 합니다.
+
+**고정과 트랙** — 성인 표시와 미성년 네거티브, 그린 뒤 눈으로 하는 성인 외관 확인은 어느 트랙에서도 풀지 않습니다. 그림을 만드는 쪽은 `policyOf(트랙)`으로 정책을 고릅니다(`profileJob`·`emotionJob`의 `o.track`, 없으면 일반). 이 저장소에는 일반 트랙의 정책만 있고 모르는 트랙은 던집니다. 성인 트랙의 값은 공개 저장소에 적지 않습니다 — 도입할 때 저장소 밖에서 끼우고, 그 그림이 공개 저장소로 가지 않게 보관함과 '사이트에 올리기'에서 트랙을 가려야 합니다(아직 없음).
+
+**아직 그려 보지 않았습니다** — 값은 후보입니다. `revealing clothes`와 `(fully clothed:1.2)`가 허용한 옷까지 누르는지, 탱크톱이 깊은 목선으로·반바지가 지나치게 짧게 그려지지 않는지는 같은 시드의 전후 비교로 확인해야 합니다. 긍정 `cleavage` 태그는 넣지 않았습니다(네거티브만 풀어 본 뒤에 정함). 소매를 적지 않은 옷의 긴소매는 그대로 뒀습니다(없애면 모든 인물의 감정 그림과 확정 표지의 문구가 바뀜). 일상 화풍(`style-mdaily`·`style-fdaily`)에는 이 정책이 아직 닿지 않습니다.
 
 ## 작품 태그에 바라는 것
+
+- **어깨·팔·목선을 드러내는 옷은 그 옷을 적습니다**: `tank top`, `off-shoulder dress`, `v-neck dress`, `open collar`. 적지 않으면 닫힌 옷으로 그립니다('노출 정책'의 표).
 
 - **옷을 구체적으로**: 속에 입는 옷과 하의의 색, 겉옷의 색·소매. 모호하면 칸마다 옷이 바뀝니다(`firefighter jacket` → 재킷·조끼·제복). 모델이 모르는 낱말(`scrubs`)은 풀어서.
 - **옷깃 노출은 네거티브보다 옷 태그가 확실**합니다: `white collared shirt`, `black turtleneck dress`, `suit jacket`.
