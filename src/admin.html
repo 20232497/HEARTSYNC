@@ -13,6 +13,10 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hahmlet:wght@500;700;800&family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=Gowun+Batang:wght@400;700&display=swap">
+<!-- 화면 테마: 고른 값(밝게·어둡게)을 화면이 그려지기 전에 걸어 깜빡이지 않게 함 — 사용자 사이트(src/page.html)와 같은 스크립트 -->
+<script>
+try { var t = JSON.parse(localStorage.getItem("hv1_settings") || "{}").theme; if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t); } catch (e) {}
+</script>
 <style>
 <!-- @include css/*.css -->
 <!-- @include css/admin/*.css -->
