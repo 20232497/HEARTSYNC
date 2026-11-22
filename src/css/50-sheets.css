@@ -32,6 +32,20 @@
 .menu-list button::after { content:"›"; color:var(--muted); font-size:18px; line-height:1; }
 .menu-list button:not(:has(.v))::after { margin-left:auto; }
 .menu-list .grp { height:10px; }
+/* 방 메뉴 첫 화면의 묶음 카드(ui/drawer/main.js): 카드마다 이름표와 줄(이름 · 지금 값 · ›) */
+.menu-card { border:1px solid var(--line); border-radius:14px; padding:12px 14px 4px; margin-top:12px; background:var(--surface); }
+.menu-card:first-child { margin-top:4px; }
+.menu-card > .lbl { display:block; margin:0 0 2px; }
+.menu-card .row { width:100%; display:flex; align-items:center; gap:10px; border:0; border-top:1px solid var(--line); background:none; padding:12px 0; text-align:left; font-size:14.5px; }
+.menu-card > .lbl + .row { border-top:0; }
+.menu-card .row:hover { color:var(--accent); }
+.menu-card .row .k { flex:1; min-width:0; }
+.menu-card .row .v { color:var(--muted); font-size:13px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:60%; }
+.menu-card .row::after { content:"›"; color:var(--muted); font-size:18px; line-height:1; }
+.menu-card .row[aria-pressed="true"] .v { color:var(--gold); }
+.menu-card .compo { margin:6px 0 8px; }
+.menu-card .purse { margin:8px 0 10px; }
+.menu-card + .quick { margin-top:14px; }
 .tabs { display:flex; gap:4px; border-bottom:1px solid var(--line); margin:6px 0 14px; }
 .tabs button { flex:1; border:0; background:none; padding:10px 6px; font-size:14px; color:var(--muted); font-weight:500; border-bottom:2px solid transparent; margin-bottom:-1px; }
 .tabs button.on { color:var(--fg); font-weight:700; border-bottom-color:var(--fg); }
