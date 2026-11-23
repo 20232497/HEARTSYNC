@@ -134,6 +134,13 @@ test("일상 화풍: 남성 인물의 감정 그림은 애니 화풍으로 먼�
     for (const sym of ["sparkle", "heart", "spoken heart", "anger vein", "flying sweatdrops"])
       assert.ok(!names(emotionJob(M, PLACE, slot).guide.job.pos).includes(sym), `칸 ${slot} 밑그림: 만화 기호 ${sym}`);
   assert.equal(emotionJob(M, PLACE, 1, { seed: 9 }).guide.job.seed, 9, "시드를 바꾸면 밑그림 시드도 같이");
+  // 옷 규칙은 본 그림과 같게: 셔츠라고만 적힌 남자는 밑그림에도 깃 달린 셔츠(밑그림만 다른 깃으로 그려지면 그대로 따라옴)
+  assert.ok(
+    names(g.job.pos).includes("collared shirt") && names(m.pos).includes("collared shirt"),
+    "셔츠 종류가 안 적힌 남자: 밑그림과 본 그림 모두 깃 달린 셔츠"
+  );
+  const tee = emotionJob({ ...M, tags: "black hair, short hair, grey eyes, black t-shirt, jeans" }, PLACE, 1);
+  assert.ok(!names(tee.guide.job.pos).includes("collared shirt") && !names(tee.pos).includes("collared shirt"), "티셔츠 차림에는 붙이지 않음");
   assert.ok(assertSafe(emotionJob(M, undefined, 1)).guide, "장소가 없어도 뽑히고 검사를 통과");
   // 작품의 모든 장소에서(첫 장소만이 아니라 — 물가 장소는 젖은 옷 네거티브가 더 붙음) 남성 인물의 밑그림 작업이 검사를 통과
   for (const { c, places } of CAST.filter((x) => !isFem(x.c))) for (const place of places) for (let s = 1; s <= 14; s++) assertSafe(emotionJob(c, place, s));

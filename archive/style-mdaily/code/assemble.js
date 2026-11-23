@@ -100,6 +100,8 @@ export function castTags(c) {
 /* 옷 규칙: 멜빵 작업복·앞치마만 적히고 윗옷이 없으면 민소매로 그려짐 → 긴소매 셔츠. 셔츠 종류가 안 적힌 남자는 칸마다 티셔츠·풀어 헤친 셔츠로 바뀜 → 깃 달린 셔츠 */
 const UNDER = /overalls|apron|suspenders/,
   TOP = /shirt|blouse|sweater|turtleneck|hoodie|jacket|coat|uniform/;
+/** 셔츠라고만 적힌 인물(종류가 안 적힘) — 본 그림(build)과 애니 밑그림(underJob)이 같은 규칙으로 깃 달린 셔츠를 보탠다 */
+const plainShirt = (c) => /\bshirt\b/.test(c.tags) && !/t-shirt|v-neck|turtleneck|collared shirt/.test(c.tags);
 const FACIAL = /stubble|beard|mustache|goatee|facial hair/;
 const NEG_CLOTHES_M = "(bare shoulders:1.4), (off shoulder:1.4), (sleeveless:1.3), (pectorals:1.3), (collarbone:1.2), (open collar:1.3), (unbuttoned shirt:1.3)";
 
@@ -201,7 +203,7 @@ function build(c, place, scene, kind, negAdd, still, free) {
     dark = DARK.test(tags);
   if (dark) style = style.replace(st.lightDay || LIGHT_DAY, st.lightNight || LIGHT_NIGHT); // 화풍이 제 낮·밤 빛 문구를 정했으면 그것으로
   const bg = [st.bgTag || BG, placeTags(tags), dark ? "(night:1.2), (dark:0.8)" : ""].filter(Boolean).join(", ");
-  const shirt = male && /\bshirt\b/.test(c.tags) && !/t-shirt|v-neck|turtleneck|collared shirt/.test(c.tags) ? ", (collared shirt:1.2), (buttons:1.0)" : "";
+  const shirt = male && plainShirt(c) ? ", (collared shirt:1.2), (buttons:1.0)" : "";
   const lead = male ? st.lead.tags + ", (fully clothed:1.2)" + shirt : "";
   const under = UNDER.test(c.tags) && !TOP.test(c.tags) ? "(long sleeves:1.2), (shirt:1.2)" : "";
   // 표정 가중치는 칸(장면) 태그에만 올린다 — 인물 태그의 눈썹·입술 낱말은 보관본 가중치 그대로
@@ -266,7 +268,9 @@ export const guided = (c, slot) => (slot === 11 ? isFem(c) : slot > 0 && !!STYLE
    넘어와 애니 화풍의 날카로운 인상에 가까워진다(2026-11-23 비교 생성). 밑그림의 배경과 소품도 따라온다. 밑그림은 첫 그림만 쓴다(키워 다시 그리기·후처리 없이, 만화 기호 없이)
    — 시드와 크기는 이 화풍의 작업과 같게. 프로필(칸 0)은 붙이지 않는다(애니 프로필의 어두운 단색 배경을 따르게 됨), 휴식(칸 11)은 제 규칙대로 */
 function underJob(c, place, slot, j) {
-  const a = animeSafe(animeEmotion(c, place || { tags: "" }, slot, { symbols: false, seed: j.seed }));
+  // 옷 규칙은 본 그림과 같게: 셔츠 종류가 안 적힌 남자는 깃 달린 셔츠 — 밑그림만 다른 깃(차이나 칼라 등)으로 그려지면 세기가 낮을 때 그대로 따라온다
+  const who = !isFem(c) && plainShirt(c) ? { ...c, tags: c.tags + ", collared shirt, buttons" } : c;
+  const a = animeSafe(animeEmotion(who, place || { tags: "" }, slot, { symbols: false, seed: j.seed }));
   return { model: a.model, pos: a.pos, neg: a.neg, cfg: a.cfg, steps: a.steps, scheduler: a.scheduler, seed: a.seed, width: j.width, height: j.height };
 }
 /** 만든 작업이 지킬 것을 지키는지: 성인 표시, 한 사람, 미성년·노출 네거티브(밑그림 작업도) */

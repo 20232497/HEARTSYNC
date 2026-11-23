@@ -126,6 +126,6 @@
   "lightDay": "(side lighting:1.0), (shadow on face:0.55)",
   "lightNight": "(side lighting:1.0), (shadow on face:0.55), soft lamp light, dim lighting",
   "underdraw": {
-    "strength": 0.55
+    "strength": 0.45
   }
 }
