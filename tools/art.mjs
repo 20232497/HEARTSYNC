@@ -124,6 +124,7 @@ function jobFor(c, row, vary, style) {
 const ID = /^[a-z0-9_-]+$/i,
   KEPT = /^\d{8}-\d{6}(-\d+)?\.webp$/,
   ROLE = /^(bg-raw\.webp|(left|mid|right)-(raw\.webp|cut\.png))$/;
+const WRITING = ".writing"; // 단체 표지의 조각 묶음을 쓰는 중이라는 표식(안에 묶음 번호)
 const isWebp = (b) => b.length > 16 && b.toString("latin1", 0, 4) === "RIFF" && b.toString("latin1", 8, 12) === "WEBP";
 const isPng = (b) => b.length > 16 && b.toString("latin1", 1, 4) === "PNG";
 const stamp = () => new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().replace(/[-:]/g, "").replace("T", "-").slice(0, 15);
@@ -147,7 +148,8 @@ function kept() {
     for (const c of fs.readdirSync(path.join(LIB, w.name), { withFileTypes: true })) {
       if (!c.isDirectory()) continue;
       const files = fs.readdirSync(path.join(LIB, w.name, c.name));
-      if (c.name === "cover-parts") parts[w.name] = files.filter((f) => ROLE.test(f));
+      if (c.name === "cover-parts")
+        parts[w.name] = files.includes(WRITING) ? [] : files.filter((f) => ROLE.test(f)); // 쓰다 만 묶음은 내지 않는다
       else if (ID.test(c.name)) {
         const list = files
           .filter((f) => KEPT.test(f))
@@ -308,8 +310,10 @@ const server = http.createServer(async (req, res) => {
     if (post && u.pathname === "/mock") {
       if (!MOCK) return send(res, 404, { error: "연습 모드가 아니에요" });
       const tasks = JSON.parse((await body(req)).toString("utf8"));
+      // 진짜 생성 서비스처럼: 배경 지우기(removeBackground)의 응답은 taskType이 imageBackgroundRemoval로 온다(이 차이로 실제 모드의 단체 표지가 멈췄었음 — 2026-11-23)
+      const typeOf = (t) => (t.taskType === "removeBackground" ? "imageBackgroundRemoval" : t.taskType);
       return send(res, 200, {
-        data: tasks.map((t) => ({ taskType: t.taskType, taskUUID: t.taskUUID, imageDataURI: mockImage(t), cost: 0, NSFWContent: false }))
+        data: tasks.map((t) => ({ taskType: typeOf(t), taskUUID: t.taskUUID, imageDataURI: mockImage(t), cost: 0, NSFWContent: false }))
       });
     }
     // 사이트에 올리기 — 빌드·커밋·올리기·PR·검사 통과 시 병합. 연습 모드에서는 하지 않는다
@@ -327,6 +331,22 @@ const server = http.createServer(async (req, res) => {
       if (!isWebp(buf)) return send(res, 400, { error: "webp 그림이 아니에요" });
       return send(res, 200, { ok: true, file: keep(c.id, row.code, buf, { seed: +q.get("seed") || 0, mock: MOCK || undefined }) });
     }
+    // 그리다 실패한 까닭을 보관함 기록(log.jsonl)에 남긴다 — 가끔 나는 실패를 나중에 살펴볼 수 있게(그림은 없음).
+    // 페이지에서 보낸 것만, 짧은 글만 받고, 긴 글자열(키·작업 번호)은 지운다. 기록의 event: "fail"로 후보 기록과 구분된다
+    if (post && u.pathname === "/api/fail") {
+      if (!ours(req, true) || +req.headers["content-length"] > 2048) return send(res, 403, { error: "이 페이지에서 보낸 짧은 글만 받아요" });
+      const { c, row } = findRow(await works(), q),
+        why = (await body(req))
+          .toString("utf8")
+          .replace(/[A-Za-z0-9_-]{16,}/g, "…")
+          .slice(0, 300);
+      fs.mkdirSync(LIB, { recursive: true });
+      fs.appendFileSync(
+        path.join(LIB, "log.jsonl"),
+        JSON.stringify({ at: new Date().toISOString(), event: "fail", work: c.id, code: row.code, fail: why, mock: MOCK || undefined }) + "\n"
+      );
+      return send(res, 200, { ok: true });
+    }
     // 단체 표지의 조각(배경·인물 원본과 오린 그림) — 자리마다 가장 최근 것 하나
     if (post && u.pathname === "/api/part") {
       const { c } = findRow(await works(), new URLSearchParams({ work: q.get("work"), code: "cover" })),
@@ -336,7 +356,22 @@ const server = http.createServer(async (req, res) => {
       const dir = path.join(LIB, c.id, "cover-parts");
       fs.mkdirSync(dir, { recursive: true });
       if (!inLib(dir)) return send(res, 400, { error: "보관함 밖을 가리키는 폴더예요" });
+      // 묶음째 쓰기(bundle = 묶음 번호): 첫 조각(fresh)에 예전 조각을 지우고 표식(.writing)에 번호를 적는다. 그 뒤의 조각은 같은 번호만 받고(다른 창이 쓰는 묶음과 섞이지 않게),
+      // 마지막 조각(last)까지 쓴 뒤에 표식을 지운다 — 표식이 있는 동안은 보관함 목록에 내지 않아 '자리 맞추기'에 뜨지 않는다. 번호 없이 오는 것은 조각 하나만 바꾸는 쓰기
+      const mark = path.join(dir, WRITING),
+        bundle = q.get("bundle") || "",
+        now = fs.existsSync(mark) ? fs.readFileSync(mark, "utf8") : "";
+      if (bundle && !/^[a-z0-9-]{8,40}$/i.test(bundle)) return send(res, 400, { error: "묶음 번호가 맞지 않아요" });
+      const stale = now && Date.now() - fs.statSync(mark).mtimeMs > 600000; // 10분 넘게 멈춘 표식은 버려진 것(창을 닫음)
+      if (now && now !== bundle && !(stale && q.get("fresh") && bundle))
+        return send(res, 409, { error: "다른 창에서 이 작품의 조각을 쓰고 있어요 — 그쪽이 끝난 뒤에 다시 해 주세요" });
+      if (!now && bundle && !q.get("fresh")) return send(res, 409, { error: "조각 묶음이 시작되지 않았어요 — 다시 눌러 주세요" });
+      if (q.get("fresh") && bundle && now !== bundle) {
+        for (const old of fs.readdirSync(dir)) if (ROLE.test(old)) fs.rmSync(path.join(dir, old));
+        fs.writeFileSync(mark, bundle);
+      }
       fs.writeFileSync(path.join(dir, name), buf);
+      if (q.get("last") && bundle) fs.rmSync(mark, { force: true });
       return send(res, 200, { ok: true });
     }
     // 후보 버리기 — 지우지 않고 보관함의 .trash/로 옮긴다

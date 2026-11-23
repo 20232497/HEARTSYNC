@@ -27,7 +27,7 @@ test("표지 규칙: 설계 표의 작품마다 로고가 있고, 유형 배정�
   assert.ok(DESIGNED.length > 0, "설계 표의 작품이 content/에 하나도 없음");
   for (const id of Object.keys(COVERS)) assert.ok(Array.isArray(LOGOS[id]) && LOGOS[id].length, id + ": 로고 설계가 없음");
   const n = (t) => Object.values(COVERS).filter((v) => v.type === t).length;
-  assert.deepEqual([n("close"), n("scene"), n("group"), n("symbol")], [4, 4, 4, 2], "유형 배정(가까이 4 · 한 명 + 배경 4 · 단체 4 · 상징물 2)이 바뀜");
+  assert.deepEqual([n("close"), n("scene"), n("group"), n("symbol")], [4, 4, 5, 2], "유형 배정(가까이 4 · 한 명 + 배경 4 · 단체 5 · 상징물 2)이 바뀜");
   assert.deepEqual(
     Object.keys(GROUPS).sort(),
     Object.keys(COVERS)
