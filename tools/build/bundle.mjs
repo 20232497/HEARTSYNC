@@ -294,7 +294,10 @@ export function bundleModules(entry, t, page) {
       else owner.set(n, m.rel);
     }
   // 층 방향(아래층 → 윗층 import 금지, 사용자 빌드에 admin/ 금지) — 규칙과 알려진 예외는 tools/build/layers.mjs
-  const graph = order.map((m) => ({ rel: m.rel, imports: m.imports.map((i) => ({ rel: rel(i.target), line: i.line })) }));
+  // 모듈의 자리는 소스 루트(진입점의 폴더 — src/js) 기준 경로로 넘김: 경로 글에서 'src/js/'를 찾아 자르면 그 이름의 폴더가 겹친 경로에 속음
+  const root = path.dirname(entry),
+    at = (f) => path.relative(root, f).split(path.sep).join("/");
+  const graph = order.map((m) => ({ rel: m.rel, at: at(m.file), imports: m.imports.map((i) => ({ at: at(i.target), line: i.line })) }));
   errors.push(...layerErrors(graph, { admin: t.admin }));
   const pos = new Map(order.map((m, i) => [m.file, i]));
   for (const m of order) {
@@ -346,5 +349,5 @@ export function bundleModules(entry, t, page) {
   const sizes = order
     .filter((m) => m.file !== GEN_FILE)
     .map((m) => ({ rel: m.rel, bytes: Buffer.byteLength(m.code), long: m.code.split("\n").filter((l) => l.length > SIZE_LIMITS.lineChars).length }));
-  return { pieces, warnings, count: order.length, sizes };
+  return { pieces, warnings, count: order.length, sizes, graph };
 }

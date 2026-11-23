@@ -58,7 +58,18 @@ export async function build(name = "user") {
   if (errors.length) throw new BuildError(errors);
   fs.mkdirSync(BUILD_DIR, { recursive: true });
   fs.writeFileSync(path.join(BUILD_DIR, t.linemap), JSON.stringify(map));
-  return { name, out: path.join(ROOT, t.out), file: t.out, html, map, css, modules: bundle.count, warnings: bundle.warnings, sizes: bundle.sizes };
+  return {
+    name,
+    out: path.join(ROOT, t.out),
+    file: t.out,
+    html,
+    map,
+    css,
+    modules: bundle.count,
+    warnings: bundle.warnings,
+    sizes: bundle.sizes,
+    graph: bundle.graph
+  };
 }
 /** 크기 기준 요약 한 줄(알림): 용량 기준을 넘는 모듈 수(큰 것 셋의 이름)와 기준보다 긴 줄 수(예외로 둔 것 — 늘면 longLineErrors가 잡음). 두 빌드에 같이 든 모듈은 한 번만 셈. @param {{ rel: string, bytes: number, long: number }[]} sizes */
 export function sizeNote(sizes) {

@@ -5,11 +5,13 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { build } from "../../tools/build.mjs";
 import { bundleModules } from "../../tools/build/bundle.mjs";
 import { BuildError, ROOT, TARGETS } from "../../tools/build/common.mjs";
 import { LAYERS, LAYER_EXCEPTIONS, layerErrors } from "../../tools/build/layers.mjs";
 
-const mod = (rel, ...to) => ({ rel: "src/js/" + rel, imports: to.map((x, i) => ({ rel: "src/js/" + x, line: i + 3 })) });
+// rel은 오류 글에 쓸 경로, at은 소스 루트(src/js) 기준 자리 — 번들러가 실제 경로로 계산해 넘기는 모양 그대로
+const mod = (at, ...to) => ({ rel: "src/js/" + at, at, imports: to.map((x, i) => ({ at: x, line: i + 3 })) });
 
 test("layerErrors: 아래층 → 윗층 import는 오류(원본 파일:줄), 윗층 → 아래층·같은 층·진입점은 통과", () => {
   const ok = [
@@ -53,11 +55,14 @@ test("layerErrors: 사용자 빌드에 admin/ 모듈이 들어가면 오류, 관
 });
 test("layerErrors: 층 표에 없는 폴더(대소문자가 다른 이름도)와 src/js 밖의 파일은 오류 — 맨 위층으로 넘어가 검사를 비켜 가지 않게", () => {
   // 윈도우는 ./Admin/gate.js로도 admin/gate.js가 열림 — 표에 없는 폴더를 맨 위층으로 보면 사용자 빌드의 관리자 모듈 검사를 지나침
-  const errs = layerErrors([mod("Admin/gate.js", "core/util.js"), mod("main.js", "Admin/gate.js"), mod("widgets/x.js"), { rel: "tools/x.js", imports: [] }]);
+  const out = { rel: "tools/x.js", at: "../../tools/x.js", imports: [] };
+  const errs = layerErrors([mod("Admin/gate.js", "core/util.js"), mod("main.js", "Admin/gate.js"), mod("widgets/x.js"), out]);
   assert.equal(errs.length, 3);
   assert.match(errs[0], /^src\/js\/Admin\/gate\.js: 층 표에 없는 자리예요/);
   assert.match(errs[1], /^src\/js\/widgets\/x\.js: 층 표에 없는 자리예요.*LAYERS에 층을 적어 주세요/);
   assert.match(errs[2], /^tools\/x\.js: 층 표에 없는 자리예요/);
+  // 자리는 소스 루트 기준의 첫 폴더로만 봄 — 안쪽에 'src/js/core'가 또 있어도 admin/ 아래면 관리자 모듈
+  assert.equal(layerErrors([mod("admin/sub/src/js/core/x.js")]).length, 1);
 });
 test("layerErrors: 알려진 예외는 적힌 파일 쌍만 — 같은 층의 다른 파일은 그대로 오류", () => {
   const [from, tos] = Object.entries(LAYER_EXCEPTIONS)[0];
@@ -103,7 +108,7 @@ test("번들러가 층 검사를 부름: 가짜 소스 폴더의 core → ui imp
     fs.rmSync(dir, { recursive: true, force: true });
   }
 });
-test("지금 저장소: 층 표가 src/js의 폴더를 모두 알고, 예외 표의 쌍이 실제로 있는 import임(없어졌으면 표에서 뺌)", () => {
+test("지금 저장소: 층 표가 src/js의 폴더를 모두 알고, 예외 표의 쌍이 실제로 있는 import임(없어졌으면 표에서 뺌)", async () => {
   const dirs = fs
     .readdirSync(path.join(ROOT, "src", "js"), { withFileTypes: true })
     .filter((e) => e.isDirectory())
@@ -113,11 +118,12 @@ test("지금 저장소: 층 표가 src/js의 폴더를 모두 알고, 예외 표
     [],
     "새 폴더는 tools/build/layers.mjs의 LAYERS에 층을 적어 주세요(그 폴더의 모듈을 쓰는 순간 빌드도 멈춤)"
   );
+  // 번들러가 읽은 실제 import(관리자 빌드 — 모듈이 모두 듦)와 견줌: 주석 속의 글은 세지 않고, 같은 파일을 가리키는 다른 표기도 잡음
+  const { graph } = await build("admin");
   for (const [from, tos] of Object.entries(LAYER_EXCEPTIONS))
-    for (const to of tos) {
-      const src = fs.readFileSync(path.join(ROOT, "src", "js", from), "utf8");
-      const spec = path.posix.relative(path.posix.dirname(from), to).replace(/[.]/g, "\\.");
-      // 줄 머리의 import 문만 셈(주석 속의 글은 아님)
-      assert.match(src, new RegExp(`^import\\s[^;]*from\\s+"${spec}";`, "m"), `${from}이 이제 ${to}를 import하지 않아요 — LAYER_EXCEPTIONS에서 빼 주세요`);
-    }
+    for (const to of tos)
+      assert.ok(
+        graph.some((m) => m.at === from && m.imports.some((i) => i.at === to)),
+        `${from}이 이제 ${to}를 import하지 않아요 — LAYER_EXCEPTIONS에서 빼 주세요`
+      );
 });

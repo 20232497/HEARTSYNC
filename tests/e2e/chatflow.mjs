@@ -530,10 +530,11 @@ for (const [dev, engine] of targets) {
         want = num(h0 + 123);
       S.wallet.hearts = h0 + 123;
       saveWallet();
-      const out = { head: $("#freeCount").textContent.includes(want), chips: $$(".wallet").every((w) => w.textContent.includes(want)) };
+      const chips = () => $$(".wallet").length > 0 && $$(".wallet").every((w) => w.textContent.includes(want));
+      const out = { head: $("#freeCount").textContent.includes(want), chips: chips() };
       S.wallet.hearts = h0;
       saveWallet();
-      out.back = !$("#freeCount").textContent.includes(want);
+      out.back = !$("#freeCount").textContent.includes(want) && !$$(".wallet").some((w) => w.textContent.includes(want));
       return out;
     });
     if (!res.walletSync.head || !res.walletSync.chips || !res.walletSync.back)
