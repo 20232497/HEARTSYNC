@@ -3,7 +3,7 @@
 //   admin → admin.html  관리자 도구(커밋·배포됨 — 웹에서는 비밀번호 관문 src/js/admin/gate.js). 같은 소스 + src/js/admin/ 모듈. 주석을 모두 남기고 모듈마다 설명 머리(가져옴·내보냄·쓰는 곳)를 붙임
 //   node tools/build.mjs                 둘 다 만들기 (npm run build)
 //   node tools/build.mjs --only user     하나만 (Vercel은 사용자 사이트만)
-//   node tools/build.mjs --check         index.html·admin.html이 지금 소스로 만든 결과와 같은지만 확인 (npm run check, GitHub Actions)
+//   node tools/build.mjs --check         병합 전 검사: 결과 파일이 지금 소스로 만든 것과 같은지 + 순서 잠금·코드 정렬·긴 줄 예외·문서 (npm run check, GitHub Actions)
 //
 // 모듈 번들: 진입점(src/js/main.js 또는 admin.js)에서 import를 따라가며 모듈을 읽고, 의존 모듈이 먼저 오도록 순서를 정한 뒤 import/export 줄만 벗겨
 // 이어 붙인다(모듈 안의 줄 번호는 그대로 — 사용자 빌드는 빈 줄을 지우므로 .build/linemap.json으로 원본 줄을 찾는다). 그 전에 검사한다 —
@@ -16,6 +16,7 @@
 // 파일 구성(2026-11-12 프레임 5차 — 한 파일이던 것을 역할별로 나눔, 코드는 그대로 옮김): 이 파일은 진입점(대상 하나 만들기 build·전부 buildAll·명령줄)이고 나머지는 tools/build/ 에
 //   common.mjs        폴더 위치·TARGETS·AUD_DIRS·BuildError·읽기 쓰기 도우미
 //   bundle.mjs        뼈대 펼치기 + 모듈 번들러(모듈 검사) + 주석 벗기기
+//   layers.mjs        층 방향 검사(아래층 → 윗층 import 금지, 사용자 빌드에 admin/ 금지)와 알려진 예외 표
 //   app-rules.mjs     작품 검사에 쓰는 앱 규칙을 src/js에서 꺼냄(APP_RULES)
 //   content.mjs       content/ 읽기 → generated.js (폴더 구조·순서 잠금)
 //   work-check.mjs    작품 하나의 검사(checkWork) · episode-check.mjs 에피소드 진행표 · images-scan.mjs 그림 파일 이름
@@ -57,7 +58,18 @@ export async function build(name = "user") {
   if (errors.length) throw new BuildError(errors);
   fs.mkdirSync(BUILD_DIR, { recursive: true });
   fs.writeFileSync(path.join(BUILD_DIR, t.linemap), JSON.stringify(map));
-  return { name, out: path.join(ROOT, t.out), file: t.out, html, map, css, modules: bundle.count, warnings: bundle.warnings, sizes: bundle.sizes };
+  return {
+    name,
+    out: path.join(ROOT, t.out),
+    file: t.out,
+    html,
+    map,
+    css,
+    modules: bundle.count,
+    warnings: bundle.warnings,
+    sizes: bundle.sizes,
+    graph: bundle.graph
+  };
 }
 /** 크기 기준 요약 한 줄(알림): 용량 기준을 넘는 모듈 수(큰 것 셋의 이름)와 기준보다 긴 줄 수(예외로 둔 것 — 늘면 longLineErrors가 잡음). 두 빌드에 같이 든 모듈은 한 번만 셈. @param {{ rel: string, bytes: number, long: number }[]} sizes */
 export function sizeNote(sizes) {

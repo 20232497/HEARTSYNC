@@ -10,10 +10,11 @@ export const SRC = path.join(ROOT, "src"),
 export const GEN_FILE = path.join(JS, "content", "generated.js"),
   BUILD_DIR = path.join(ROOT, ".build");
 
-/* 빌드 대상: page(뼈대, src/ 아래) → out(저장소 루트). strip이면 주석·빈 줄을 벗기고, doc이면 모듈마다 설명 머리를 붙임 */
+/* 빌드 대상: page(뼈대, src/ 아래) → out(저장소 루트). strip이면 주석·빈 줄을 벗기고, doc이면 모듈마다 설명 머리를 붙임.
+   admin이 아니면 src/js/admin/ 모듈이 번들에 들어갈 수 없음(tools/build/layers.mjs) */
 export const TARGETS = {
-  user: { page: "page.html", out: "index.html", strip: true, doc: false, linemap: "linemap.json", label: "사용자 사이트" },
-  admin: { page: "admin.html", out: "admin.html", strip: false, doc: true, linemap: "linemap-admin.json", label: "관리자 도구" }
+  user: { page: "page.html", out: "index.html", strip: true, doc: false, admin: false, linemap: "linemap.json", label: "사용자 사이트" },
+  admin: { page: "admin.html", out: "admin.html", strip: false, doc: true, admin: true, linemap: "linemap-admin.json", label: "관리자 도구" }
 };
 /* 폴더 이름이 곧 작품의 aud(관심있는 대화) 값 */
 export const AUD_DIRS = { f: "여성향(남성 캐릭터와의 대화)", m: "남성향(여성 캐릭터와의 대화)", all: "전체(남녀가 섞임)" };
