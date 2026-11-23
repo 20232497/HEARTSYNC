@@ -1,11 +1,11 @@
 // 일상 화풍의 조립(archive/style-mdaily/code/assemble.js) — 그림 도구(npm run art)가 쓰는 화풍 규칙. 앱 코드가 아니다.
-// 2026-11-23: 구도·표정은 애니 화풍과 같게(acting), 남성 인물은 날카로운 v8 후보. 작품 글(content/)이 바뀌어도 막지 않게 규칙의 성질만 본다.
+// 2026-11-23: 구도·표정은 애니 화풍과 같게(acting), 남성 인물은 날카로운 후보(v9), 여성은 뿌연 막을 걷은 후보(v7). 작품 글(content/)이 바뀌어도 막지 않게 규칙의 성질만 본다.
 import fs from "node:fs";
 import path from "node:path";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { profileJob, emotionJob, assertSafe, isFem } from "../../archive/style-mdaily/code/assemble.js";
+import { profileJob, emotionJob, assertSafe, isFem, STYLE } from "../../archive/style-mdaily/code/assemble.js";
 import { acting } from "../../archive/style-manime/code/assemble.js";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
@@ -52,7 +52,9 @@ test("일상 화풍: 구도·표정은 애니 화풍의 것 — 프로필은 얼
       const a = acting(c, slot, { symbols: false }),
         got = names(emotionJob(c, PLACE, slot).pos);
       assert.ok(got.includes("standing") && got.includes("upper body"), `칸 ${slot}: 서 있는 가슴 위`);
-      for (const t of names(a.eyes + ", " + a.emo)) assert.ok(got.includes(t), `칸 ${slot}: 애니의 표정 낱말 ${t}`);
+      // 값 파일이 일부러 빼는 낱말(act.drop — 여성 v7은 기본 표정의 가는 눈)은 빠져도 됨
+      const dropped = ((STYLE[isFem(c) ? "f" : "m"].act || {}).drop || []).map((t) => t.toLowerCase());
+      for (const t of names(a.eyes + ", " + a.emo)) assert.ok(dropped.includes(t) || got.includes(t), `칸 ${slot}: 애니의 표정 낱말 ${t}`);
       for (const sym of ["sparkle", "heart", "spoken heart", "anger vein", "flying sweatdrops"]) assert.ok(!got.includes(sym), `칸 ${slot}: 만화 기호 ${sym}`);
     }
     assert.ok(names(emotionJob(c, PLACE, 3).pos).includes("looking away"), "부끄러움은 시선을 돌림");
@@ -74,16 +76,37 @@ test("일상 화풍: 구도·표정은 애니 화풍의 것 — 프로필은 얼
   assert.ok(rest.pos.includes("(full body:1.5)") && rest.hires && rest.guide, "휴식(칸 11)은 멀리서 몸 전체 그대로");
 });
 
-test("일상 화풍: 남성 인물은 날카로운 v8 후보 — 부드러운 칠·굵은 몸 문구가 없고, 여성 인물의 칠(v6)은 그대로", () => {
+// 가중치는 비교 생성으로 계속 맞추는 값이라 낱말이 있는지만 본다(성인 표시처럼 지킬 것은 가중치까지)
+test("일상 화풍: 남성 인물은 날카로운 후보(v9) — 눈 사이로 떨어지는 앞머리·옆빛, 가르마 머리와 부드러운 칠이 없음 / 여성(v7)은 뿌연 막을 걷음", () => {
   const m = emotionJob(M, PLACE, 1),
-    f = emotionJob(F, PLACE, 1);
-  for (const t of ["(sharp jawline:1.45)", "(sharp eyes:1.35)", "(clean lineart:1.25)", "(sharp focus:1.2)"]) assert.ok(m.pos.includes(t), "남성 v8: " + t);
-  for (const t of ["soft painting", "simple shading", "flat color", "desaturated", "thick neck", "muscular male", "soft bloom"])
-    assert.ok(!names(m.pos).includes(t), "남성 v8에 없어야 함: " + t);
-  assert.ok(m.neg.includes("(soft focus:1.2)") && !names(m.neg).includes("hard shadows"));
+    f = emotionJob(F, PLACE, 1),
+    mp = names(m.pos),
+    fp = names(f.pos);
+  for (const t of ["sharp jawline", "sharp eyes", "thick eyebrows", "hair between eyes", "side lighting", "sharp focus"])
+    assert.ok(mp.includes(t), "남성 v9: " + t);
+  for (const t of [
+    "soft painting",
+    "simple shading",
+    "flat color",
+    "desaturated",
+    "thick neck",
+    "muscular male",
+    "soft bloom",
+    "parted bangs",
+    "curtained hair",
+    "straight-on"
+  ])
+    assert.ok(!mp.includes(t), "남성 v9에 없어야 함: " + t);
+  assert.ok(names(m.neg).includes("soft focus") && !names(m.neg).includes("hard shadows") && !names(m.neg).includes("messy hair"));
   assert.ok(m.post.blurA < 0.6, "후처리를 덜 뿌옇게");
-  assert.ok(f.pos.includes("soft gradient shading") && f.pos.includes("(adult woman:1.45)"), "여성 v6의 칠은 그대로");
+  assert.ok(fp.includes("soft gradient shading") && f.pos.includes("(adult woman:1.45)"), "여성의 칠과 성인 표시는 그대로");
+  for (const t of ["soft bloom", "soft focus", "low contrast", "lifted shadows", "pale skin", "narrow eyes"])
+    assert.ok(!fp.includes(t), "여성 v7에 없어야 함: " + t);
+  assert.ok(fp.includes("detailed iris") && fp.includes("rim light") && !names(f.neg).includes("rim light"), "여성 v7: 홍채·가장자리 빛");
   assert.ok(!isFem(M) && isFem(F));
+  // 올백·이마를 드러낸 머리의 인물에게는 앞머리 문구를 붙이지 않음
+  const back = names(emotionJob({ ...M, tags: "black hair, slicked back hair, grey eyes, navy blue suit, white shirt" }, PLACE, 1).pos);
+  assert.ok(!back.includes("hair between eyes"), "올백 머리에는 떨어지는 앞머리를 붙이지 않음");
   // 화풍 안에서 부딪치던 것: 긍정에 넣은 빛을 막는 네거티브, 밝은 머리 남자의 두 번째 나이
   assert.ok(!names(m.neg).includes("rim light") && !names(m.neg).includes("cinematic lighting"));
   const pale = emotionJob({ ...M, age: 58, look: "58세 남성", tags: "grey hair, short hair, brown eyes, beige cardigan, white collared shirt" }, PLACE, 1);
