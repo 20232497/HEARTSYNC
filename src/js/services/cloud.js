@@ -1,5 +1,7 @@
 /* 계정 저장(CLOUD): KV를 계정 kv 표에 모아 올리고 받기, 기기별 설정 분리 */
 import { emit, on } from "../core/events.js";
+import { isTomb } from "../core/room-list.js";
+import { goneRooms } from "../core/rooms.js";
 import { shelfSyncOn } from "../core/shelf.js";
 import { KV } from "../core/storage.js";
 import { cloudSettings } from "./cloud-settings.js";
@@ -15,6 +17,12 @@ export const SYNCED_RE = /^(wallet|personas|rooms|room-.+)$/;
 /* 내 서재(찜·최근 본·수집 기록)는 정해진 날짜부터만 계정과 주고받음(shelfSyncOn) — 그 전에는 이 기기에만. 다른 키와 달리 받은 값으로 덮지 않고 합침(takeShelf) */
 export const SHELF_KEY = "shelf";
 export const synced = (k) => SYNCED_RE.test(k) || (k === SHELF_KEY && shelfSyncOn());
+/* 지운 방의 키면 본문 대신 삭제 표식을 올림 — 표식을 받기 전에 시작한 저장·전송이 뒤늦게 끝나면서 계정의 표식을 본문으로 덮지 않게(대기열에 넣을 때·되돌려 넣을 때·보낸 뒤에 봄) */
+const tombFor = (k, x) => {
+  if (!x || k.indexOf("room-") !== 0 || isTomb(x.v)) return x;
+  const at = goneRooms()[k.slice(5)];
+  return at ? { v: { gone: at } } : x;
+};
 export const IMG_KEY_RE = /^img[a-z0-9]{6,30}$/;
 /**
  * 계정 저장(Supabase kv 표). start()/stop() 로그인·로그아웃 때 · put(k, v) 0.8초 모아 upsert(KV.remote 고리) · flush() 바로 올리고 결과를 돌려줌(한 번에 하나) ·
@@ -49,6 +57,17 @@ export const CLOUD = {
       else localStorage.removeItem(this.skipKey());
     } catch {}
   },
+  // 아직 계정에 올리지 못한 삭제 표식(키 → 지운 때). 대기열은 메모리에만 있어 올리기 전에 새로고침하면 지움이 이 기기에만 남으므로, localStorage에도 적어 두고
+  // 다음에 계정에 연결할 때 다시 올림. set을 주면 그것으로 바꿔 적음
+  tombs(set) {
+    const key = "hv1_cloudtomb_" + this.uid;
+    try {
+      if (!set) return JSON.parse(localStorage.getItem(key) || "{}") || {};
+      if (Object.keys(set).length) localStorage.setItem(key, JSON.stringify(set));
+      else localStorage.removeItem(key);
+    } catch {}
+    return set || {};
+  },
   lastKey() {
     return "hv1_cloudlast_" + this.uid;
   },
@@ -66,6 +85,17 @@ export const CLOUD = {
         if (o && o.uid === this.uid) this.owed = { keys: Array.isArray(o.keys) ? o.keys : null };
         this.skipped = new Set(JSON.parse(localStorage.getItem(this.skipKey()) || "[]"));
       } catch {}
+    // 지난번에 올리지 못한 삭제 표식을 다시 대기열에
+    if (this.on) {
+      const t = this.tombs();
+      Object.keys(t).forEach((k) => {
+        this.pending[k] = { v: { gone: t[k] } };
+      });
+      if (Object.keys(t).length) {
+        clearTimeout(this.timer);
+        this.timer = setTimeout(() => this.flush(), 800);
+      }
+    }
   },
   stop() {
     this.on = false;
@@ -85,7 +115,15 @@ export const CLOUD = {
   },
   put(k, v) {
     if (!this.on || this.noTable || !(k === "settings" || synced(k) || IMG_KEY_RE.test(k))) return;
-    this.pending[k] = v === undefined ? null : { v };
+    const x = v === undefined ? null : tombFor(k, { v });
+    this.pending[k] = x;
+    if (x && isTomb(x.v)) {
+      const t = this.tombs();
+      if (!t[k]) {
+        t[k] = x.v.gone;
+        this.tombs(t); // 올라간 것을 확인할 때까지 기억(send가 지움)
+      }
+    }
     this.putSeq[k] = ++this.seq;
     clearTimeout(this.timer);
     this.timer = setTimeout(() => this.flush(), 800);
@@ -149,6 +187,20 @@ export const CLOUD = {
         await call("/rest/v1/kv?user_id=eq." + encodeURIComponent(uid) + "&key=in.(" + encodeURIComponent(keys) + ")", { method: "DELETE" });
       }
       this.sending = new Set();
+      // 올라간 삭제 표식은 '못 올린 표식'에서 지우고, 보낸 본문이 그사이 지운 방의 것이면 표식을 이어서 올림(본문이 계정의 표식을 덮었을 수 있음)
+      const t = this.tombs();
+      let changed = false;
+      items.forEach(([k, x]) => {
+        if (x && isTomb(x.v) && t[k]) {
+          delete t[k];
+          changed = true;
+        }
+      });
+      if (changed) this.tombs(t);
+      items.forEach(([k, x]) => {
+        const y = tombFor(k, x);
+        if (y !== x && !(k in this.pending)) this.put(k, y.v); // put이 '못 올린 표식'에도 적음 — 위에서 지운 뒤라 덮이지 않음
+      });
       this.setState("ok");
       // 도는 사이 새로 바뀐 것이 있으면 이어서 올림 — "ok"는 남은 것이 없다는 뜻이어야 함(로그아웃이 이 결과를 보고 기기를 지움)
       return Object.keys(this.pending).length ? this.send() : "ok";
@@ -157,7 +209,7 @@ export const CLOUD = {
       this.sending = new Set();
       // 못 올린 것은 되돌려 두고(그사이 새로 바뀐 값이 있으면 그게 우선) 15초 뒤 다시
       items.forEach(([k, x]) => {
-        if (!(k in this.pending)) this.pending[k] = x;
+        if (!(k in this.pending)) this.pending[k] = tombFor(k, x); // 그사이 지운 방의 본문이면 표식으로
       });
       if (this.noTable) {
         this.pending = {};

@@ -2584,6 +2584,7 @@ function indexRoom(r) {
     motif: c.motif,
     img: c.img || "",
     at: r.at,
+    mt: Date.now(),
     fork: !!r.forkedFrom,
     ep: r.ep ? (r.ep.end ? "결말" : r.ep.beat + 1 + "장") : "",
     side: !!r.side,
@@ -2625,7 +2626,7 @@ async function setFav(id, on) {
   S.rooms = sortRooms(
     S.rooms.map((x) => {
       if (x.id !== id) return x;
-      const y = { ...x };
+      const y = { ...x, mt: Date.now() };
       if (on) y.fav = true;
       else delete y.fav;
       return y;
@@ -2673,14 +2674,42 @@ function saveRoom(r) {
     return !!ok;
   });
 }
-function removeRoom(id) {
+function goneRooms() {
+  try {
+    return JSON.parse(localStorage.getItem("hv1_gone") || "{}") || {};
+  } catch {
+    return {};
+  }
+}
+function forgetRoom(id, at) {
   deletedRooms.add(id);
-  Promise.resolve(KV.set(roomKey(id), undefined)).then((ok) => {
-    if (!ok) KV.set(roomKey(id), undefined, { local: false });
-  });
+  const g = goneRooms();
+  if (!g[id]) {
+    g[id] = at;
+    try {
+      localStorage.setItem("hv1_gone", JSON.stringify(g));
+    } catch {}
+  }
+  KV.put(roomKey(id), undefined);
   S.rooms = S.rooms.filter((r) => r.id !== id);
+}
+function removeRoom(id) {
+  const at = Date.now();
+  forgetRoom(id, at);
+  KV.set(roomKey(id), { gone: at }, { local: false });
   KV.set("rooms", S.rooms);
   emit("rooms");
+}
+function roomGone(id, at) {
+  const had = S.rooms.some((r) => r.id === id) || (!!room && room.id === id);
+  forgetRoom(id, at || Date.now());
+  if (gen && gen.roomId === id) gen.ctl.abort();
+  if (room && room.id === id) setRoom(null);
+  if (had) {
+    KV.set("rooms", S.rooms);
+    emit("rooms");
+  }
+  return had;
 }
 const MAX_MSGS_KEEP = 160;
 const deletedRooms = new Set();
@@ -2895,6 +2924,29 @@ function sideRoom(r, kind, who) {
   saveRoom(f);
   return f;
 }
+/* ── src/js/core/room-list.js — 두 기기의 대화방 목록 합치기(mergeRoomLists) — 계정에서 받은 목록으로 이 기기의 목록을 덮지 않고 방마다 합침 */
+const stampOf = (e) => e.mt || e.at || 0;
+function mergeRoomLists(local, remote, gone) {
+  const list = (a) => (Array.isArray(a) ? a : []),
+    byId = new Map();
+  for (const e of list(remote).concat(list(local))) {
+    if (!e || !e.id || (gone && gone[e.id])) continue;
+    const cur = byId.get(e.id);
+    if (!cur || stampOf(e) > stampOf(cur)) byId.set(e.id, e);
+  }
+  return sortRooms(Array.from(byId.values()));
+}
+function sameRoomList(a, b) {
+  const x = Array.isArray(a) ? a : [],
+    y = Array.isArray(b) ? b : [];
+  if (x.length !== y.length) return false;
+  const m = new Map(y.map((e) => [e && e.id, e]));
+  return x.every((e) => {
+    const o = e && m.get(e.id);
+    return !!o && stampOf(o) === stampOf(e) && !!o.fav === !!e.fav;
+  });
+}
+const isTomb = (v) => !!v && typeof v === "object" && !Array.isArray(v) && typeof v.gone === "number" && !("msgs" in v);
 /* ── src/js/core/settings.js — 설정 저장·적용(글자 크기·줄 간격 등 CSS 변수), API 키 형식 안내 */
 function cleanKeys() {
   const s = S.settings,
@@ -3050,6 +3102,26 @@ async function applyRows(rows, hold, since) {
   let n = 0;
   const open = room && location.hash === "#r-" + room.id ? roomKey(room.id) : "";
   rows.forEach((x) => {
+    if (x.key.indexOf("room-") !== 0 || !isTomb(x.value)) return;
+    delete CLOUD.pending[x.key];
+    if (CLOUD.sending.has(x.key)) {
+      const t = CLOUD.tombs();
+      t[x.key] = x.value.gone;
+      CLOUD.tombs(t);
+    }
+    CLOUD.skip(x.key, false);
+    if (roomGone(x.key.slice(5), x.value.gone)) n++;
+    if (x.key === open) emit("route");
+  });
+  const gone = goneRooms();
+  const takeList = (remote) => {
+    const merged = mergeRoomLists(full ? [] : S.rooms, remote, gone);
+    S.rooms = merged;
+    KV.setLocal("rooms", merged);
+    const queued = "rooms" in CLOUD.pending || CLOUD.sending.has("rooms") || (!!hold && hold.has("rooms")) || newer("rooms");
+    if (queued || (!full && !sameRoomList(merged, remote))) CLOUD.put("rooms", merged);
+  };
+  rows.forEach((x) => {
     if (x.updated_at && x.updated_at > (localStorage.getItem(CLOUD.lastKey()) || ""))
       try {
         localStorage.setItem(CLOUD.lastKey(), x.updated_at);
@@ -3057,6 +3129,19 @@ async function applyRows(rows, hold, since) {
     if (x.key === SHELF_KEY) {
       if (shelfSyncOn() && takeShelf(x.value)) n++;
       return;
+    }
+    if (x.key === "rooms") {
+      takeList(x.value);
+      n++;
+      return;
+    }
+    if (x.key.indexOf("room-") === 0) {
+      if (isTomb(x.value)) return;
+      const at = gone[x.key.slice(5)];
+      if (at) {
+        CLOUD.put(x.key, { gone: at });
+        return;
+      }
     }
     if (x.key in CLOUD.pending || CLOUD.sending.has(x.key) || (hold && hold.has(x.key)) || newer(x.key)) return;
     if (KV.writing(x.key)) {
@@ -3110,8 +3195,20 @@ async function retakeRows() {
       if (r.ok) got = await r.json();
     } catch {}
     if (CLOUD.uid !== uid) break;
+    if (got && got[0] && isTomb(got[0].value)) {
+      const was = isOpen(k);
+      delete CLOUD.pending[k];
+      CLOUD.skip(k, false);
+      if (roomGone(k.slice(5), got[0].value.gone)) n++;
+      if (was) emit("route");
+      continue;
+    }
     if (!got || isOpen(k) || using(k) || KV.writing(k)) continue;
     if (!got[0] || k in CLOUD.pending || CLOUD.sending.has(k) || (CLOUD.putSeq[k] || 0) > since) {
+      CLOUD.skip(k, false);
+      continue;
+    }
+    if (goneRooms()[k.slice(5)]) {
       CLOUD.skip(k, false);
       continue;
     }
@@ -3138,6 +3235,11 @@ async function pullRows() {
 const SYNCED_RE = /^(wallet|personas|rooms|room-.+)$/;
 const SHELF_KEY = "shelf";
 const synced = (k) => SYNCED_RE.test(k) || (k === SHELF_KEY && shelfSyncOn());
+const tombFor = (k, x) => {
+  if (!x || k.indexOf("room-") !== 0 || isTomb(x.v)) return x;
+  const at = goneRooms()[k.slice(5)];
+  return at ? { v: { gone: at } } : x;
+};
 const IMG_KEY_RE = /^img[a-z0-9]{6,30}$/;
 const CLOUD = {
   on: false,
@@ -3166,6 +3268,15 @@ const CLOUD = {
       else localStorage.removeItem(this.skipKey());
     } catch {}
   },
+  tombs(set) {
+    const key = "hv1_cloudtomb_" + this.uid;
+    try {
+      if (!set) return JSON.parse(localStorage.getItem(key) || "{}") || {};
+      if (Object.keys(set).length) localStorage.setItem(key, JSON.stringify(set));
+      else localStorage.removeItem(key);
+    } catch {}
+    return set || {};
+  },
   lastKey() {
     return "hv1_cloudlast_" + this.uid;
   },
@@ -3182,6 +3293,16 @@ const CLOUD = {
         if (o && o.uid === this.uid) this.owed = { keys: Array.isArray(o.keys) ? o.keys : null };
         this.skipped = new Set(JSON.parse(localStorage.getItem(this.skipKey()) || "[]"));
       } catch {}
+    if (this.on) {
+      const t = this.tombs();
+      Object.keys(t).forEach((k) => {
+        this.pending[k] = { v: { gone: t[k] } };
+      });
+      if (Object.keys(t).length) {
+        clearTimeout(this.timer);
+        this.timer = setTimeout(() => this.flush(), 800);
+      }
+    }
   },
   stop() {
     this.on = false;
@@ -3201,7 +3322,15 @@ const CLOUD = {
   },
   put(k, v) {
     if (!this.on || this.noTable || !(k === "settings" || synced(k) || IMG_KEY_RE.test(k))) return;
-    this.pending[k] = v === undefined ? null : { v };
+    const x = v === undefined ? null : tombFor(k, { v });
+    this.pending[k] = x;
+    if (x && isTomb(x.v)) {
+      const t = this.tombs();
+      if (!t[k]) {
+        t[k] = x.v.gone;
+        this.tombs(t);
+      }
+    }
     this.putSeq[k] = ++this.seq;
     clearTimeout(this.timer);
     this.timer = setTimeout(() => this.flush(), 800);
@@ -3255,13 +3384,26 @@ const CLOUD = {
         await call("/rest/v1/kv?user_id=eq." + encodeURIComponent(uid) + "&key=in.(" + encodeURIComponent(keys) + ")", { method: "DELETE" });
       }
       this.sending = new Set();
+      const t = this.tombs();
+      let changed = false;
+      items.forEach(([k, x]) => {
+        if (x && isTomb(x.v) && t[k]) {
+          delete t[k];
+          changed = true;
+        }
+      });
+      if (changed) this.tombs(t);
+      items.forEach(([k, x]) => {
+        const y = tombFor(k, x);
+        if (y !== x && !(k in this.pending)) this.put(k, y.v);
+      });
       this.setState("ok");
       return Object.keys(this.pending).length ? this.send() : "ok";
     } catch (e) {
       if (gone()) return "off";
       this.sending = new Set();
       items.forEach(([k, x]) => {
-        if (!(k in this.pending)) this.pending[k] = x;
+        if (!(k in this.pending)) this.pending[k] = tombFor(k, x);
       });
       if (this.noTable) {
         this.pending = {};
@@ -3709,10 +3851,7 @@ async function mergeGuest(remote, local) {
       if (v) mine.push(r);
       else missed++;
     }
-  KV.set(
-    "rooms",
-    byId(remote.rooms, mine).sort((x, y) => (y.at || 0) - (x.at || 0))
-  );
+  KV.set("rooms", mergeRoomLists(mine, remote.rooms, goneRooms()));
   const ps = byId(
     remote.personas,
     list(local.personas).map((p) => Object.assign({}, p, { def: false }))
@@ -6163,7 +6302,7 @@ async function firstSync() {
     toast("이 기기의 데이터를 계정에 저장했어요");
     return;
   }
-  const local = { rooms: S.rooms, personas: S.personas };
+  const local = { rooms: S.rooms.filter((r) => !isTomb(remote[roomKey(r.id)])), personas: S.personas };
   const has = (list, id) => (Array.isArray(list) ? list : []).some((x) => x && x.id === id);
   const onlyRooms = local.rooms.filter((r) => !has(remote.rooms, r.id));
   const rs = mergeShelf(remote.shelf),
@@ -7884,6 +8023,7 @@ async function viewChat(id) {
       v0 = KV.stamp(key);
       r = await KV.get(key);
     } while (KV.stamp(key) !== v0);
+    if (goneRooms()[id]) r = undefined;
     if (location.hash.slice(1) !== "r-" + id) return;
     let ok = null;
     try {
@@ -8735,7 +8875,7 @@ async function generate(target, q, direction = "", isEdit = false) {
   const label = `${c.title} · ${MODELS[model].name}${target ? " 다시 쓰기" : ""}`;
   charge(q, label);
   const ctl = new AbortController();
-  setGen({ ctl, msgId: msg.id });
+  setGen({ ctl, msgId: msg.id, roomId: r.id });
   hideSug();
   setStick(true);
   renderLog(true);

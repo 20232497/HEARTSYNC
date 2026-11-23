@@ -158,7 +158,7 @@ export async function generate(target, q, direction = "", isEdit = false) {
   const label = `${c.title} · ${MODELS[model].name}${target ? " 다시 쓰기" : ""}`;
   charge(q, label);
   const ctl = new AbortController();
-  setGen({ ctl, msgId: msg.id });
+  setGen({ ctl, msgId: msg.id, roomId: r.id });
   hideSug(); // 추천 답변은 '✦ AI 추천'을 눌렀을 때만 펼침
   setStick(true);
   renderLog(true);

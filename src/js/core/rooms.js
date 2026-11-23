@@ -4,7 +4,7 @@ import { normalizeChar } from "./character.js";
 import { LIMITS, SERIES } from "./constants.js";
 import { epInit } from "./episode.js";
 import { emit } from "./events.js";
-import { S, room } from "./state.js";
+import { S, gen, room, setRoom } from "./state.js";
 import { KV } from "./storage.js";
 import { uid } from "./util.js";
 /** @typedef {import("./types.js").Message} Message */
@@ -33,6 +33,7 @@ function indexRoom(r) {
     motif: c.motif,
     img: c.img || "",
     at: r.at,
+    mt: Date.now(), // 이 항목이 바뀐 때 — 두 기기의 목록을 합칠 때 어느 쪽이 새것인지(core/room-list.js)
     fork: !!r.forkedFrom,
     ep: r.ep ? (r.ep.end ? "결말" : r.ep.beat + 1 + "장") : "",
     side: !!r.side,
@@ -84,7 +85,7 @@ export async function setFav(id, on) {
   S.rooms = sortRooms(
     S.rooms.map((x) => {
       if (x.id !== id) return x;
-      const y = { ...x };
+      const y = { ...x, mt: Date.now() }; // 즐겨찾기는 최근 시각(at)을 안 바꾸므로 '바뀐 때'를 따로 찍음(목록 합치기가 이쪽을 새것으로 보게)
       if (on) y.fav = true;
       else delete y.fav;
       return y;
@@ -143,18 +144,57 @@ export function saveRoom(r) {
   });
 }
 /**
+ * 지운 방의 id → 지운 때. 이 기기에 남겨 둠(hv1_gone — 계정에 올리지 않음): 아직 삭제 표식을 못 받은 다른 기기의 목록·본문이 와도 되살리지 않게
+ * (core/room-list.js mergeRoomLists · services/cloud-pull.js). 자동으로 비우지 않음(보류). @returns {Record<string, number>}
+ */
+export function goneRooms() {
+  try {
+    return JSON.parse(localStorage.getItem("hv1_gone") || "{}") || {};
+  } catch {
+    return {};
+  }
+}
+/* 방을 이 기기에서 지움(이 기기에서 지울 때와, 다른 기기가 지운 방의 표식을 받았을 때 같이 씀) — 지운 방으로 적고 본문과 목록에서 뺌 */
+function forgetRoom(id, at) {
+  deletedRooms.add(id);
+  const g = goneRooms();
+  if (!g[id]) {
+    g[id] = at;
+    try {
+      localStorage.setItem("hv1_gone", JSON.stringify(g));
+    } catch {}
+  }
+  KV.put(roomKey(id), undefined);
+  S.rooms = S.rooms.filter((r) => r.id !== id);
+}
+/**
  * 대화방 삭제(데이터 쪽) — 지운 방으로 적고(끝나지 않은 응답·요약의 저장이 되살리지 않게) 본문과 목록에서 뺀 뒤 "rooms" 알림.
- * 화면 쪽 일(진행 중 응답 멈추기·현재 방 해제·이동)은 부른 쪽이 함(ui/room-tools.js deleteRoom). @param {string} id @returns {void}
+ * 계정에는 그 방의 행을 없애는 대신 **삭제 표식**({ gone: 지운 때 })을 써 둠(2026-11-23) — 다른 기기가 '바뀐 것만 받기'로 지움을 알고, 그 기기의 늦은 저장이 방을 되살리지 않음.
+ * 로그인하지 않았으면 표식은 어디에도 가지 않음. 화면 쪽 일(진행 중 응답 멈추기·현재 방 해제·이동)은 부른 쪽이 함(ui/room-tools.js deleteRoom).
+ * @param {string} id @returns {void}
  */
 export function removeRoom(id) {
-  deletedRooms.add(id);
-  // 이 기기의 본문을 지우지 못해도(드묾) 계정의 본문은 지움 — 본문은 지워진 뒤에만 계정에 알리므로(KV.set), 실패하면 따로 알림
-  Promise.resolve(KV.set(roomKey(id), undefined)).then((ok) => {
-    if (!ok) KV.set(roomKey(id), undefined, { local: false });
-  });
-  S.rooms = S.rooms.filter((r) => r.id !== id);
+  const at = Date.now();
+  forgetRoom(id, at);
+  KV.set(roomKey(id), { gone: at }, { local: false });
   KV.set("rooms", S.rooms);
   emit("rooms");
+}
+/**
+ * 다른 기기가 지운 방(계정에서 삭제 표식을 받음)을 이 기기에서도 지움 — 열려 있거나 응답을 쓰는 중이어도(지움이 이김). 메모리에 든 방이면 놓음.
+ * 목록은 계정에도 다시 올림(이 기기의 못 올린 목록에 그 방이 남아 있으면 그것이 올라가 되살아나므로).
+ * @param {string} id @param {number} [at] 지운 때 @returns {boolean} 이 기기에 그 방이 있었으면 true
+ */
+export function roomGone(id, at) {
+  const had = S.rooms.some((r) => r.id === id) || (!!room && room.id === id);
+  forgetRoom(id, at || Date.now());
+  if (gen && gen.roomId === id) gen.ctl.abort(); // 이 방에 쓰던 응답을 멈춤(다른 방의 응답은 그대로) — 끝나며 하는 저장은 지운 방이라 버려짐
+  if (room && room.id === id) setRoom(null);
+  if (had) {
+    KV.set("rooms", S.rooms);
+    emit("rooms");
+  }
+  return had;
 }
 const MAX_MSGS_KEEP = 160;
 /** 지운 대화방 id — 지운 뒤 끝난 응답·요약이 방을 되살리지 않게. @type {Set<string>} */
