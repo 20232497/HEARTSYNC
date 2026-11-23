@@ -1,7 +1,7 @@
 /* 일상 화풍 두 개의 프롬프트 조립 — 남성향 일상(여성 인물)·여성향 일상(남성 인물). 작품 데이터(cast[]·places[])를 칸에 끼워 긍정·부정 프롬프트와 생성 값을 만든다.
    그림 값(화풍 문구·네거티브·LoRA·후처리)은 값 파일에서 읽는다: ../mdaily-v8.json(여성) · ../../style-fdaily/fdaily-v11.json(남성) — 앞 판(여성 v6·v7, 남성 v7~v10)은 보관 · 고정 태그는 ../mdaily.json.
    값 파일이 정할 수 있는 것: prompt·coolPrompt·neg·fits·lora·post + lightDay·lightNight(낮·밤 빛 문구) · bgTag(배경 문구) · act(연기 문구 손질 — drop·scale)
-   · underdraw(감정 그림을 애니 화풍으로 먼저 그려 밑그림으로 — strength. 아래 '애니 밑그림').
+   · underdraw(감정 그림을 애니 화풍으로 먼저 그려 밑그림으로 — strength · scale(본 그림을 밑그림의 몇 배 크기에서 그릴지). 아래 '애니 밑그림').
    이 파일은 그 값을 인물마다 손대지 않고 쓰는 규칙이다 — 2026-11-13 사용자와 비교 생성으로 정함(경위와 표는 ../README.md '조립 규칙').
    2026-11-23(사용자): 구도와 표정(칸마다의 구도 자리·눈·표정·손동작)은 애니 화풍과 같게 — ../../style-manime/code/assemble.js의 acting()이 고른 것을 그대로 쓴다.
    2026-11-23~24(사용자): 전체적으로 흐릿한 분위기(후처리 값 — 여성 v8·남성 v10부터), 남성 인물의 감정 그림은 애니 화풍으로 먼저 그린 그림을 밑그림으로(세기 0.45).
@@ -258,7 +258,10 @@ export function emotionJob(c, place, slot, o = {}) {
   const s = sceneOf(c, slot),
     j = job(build(c, place, s.scene, "emotion", s.neg, s.still, s.free), "emotion", seed, o),
     u = STYLE[isFem(c) ? "f" : "m"].underdraw;
-  return guided(c, slot) ? { ...j, guide: { job: underJob(c, place, slot, j), strength: u.strength } } : j;
+  if (!guided(c, slot)) return j;
+  // 본 그림은 밑그림보다 크게(scale) — 얼굴이 작게 잡힌 그림은 밑그림과 같은 크기에서 다시 그리면 눈과 세부가 뭉개진다. 받은 뒤 규격 크기로 줄인다(그림 도구의 finish)
+  const k = u.scale || 1;
+  return { ...j, width: Math.round(j.width * k), height: Math.round(j.height * k), guide: { job: underJob(c, place, slot, j), strength: u.strength } };
 }
 /** 이 인물·칸의 그림에 밑그림 단계가 붙는지 — 붙으면 생성 호출이 한 번 더 든다. emotionJob과 그림 도구의 값 어림(tools/art.mjs)이 같이 쓴다:
     여성의 휴식 칸(아래 guideJob), 값 파일에 underdraw가 있는 화풍의 감정 칸(휴식 칸 빼고) */
@@ -266,7 +269,8 @@ export const guided = (c, slot) => (slot === 11 ? isFem(c) : slot > 0 && !!STYLE
 /* ── 애니 밑그림 ── 값 파일에 underdraw가 있는 화풍(지금은 남성 인물)의 감정 그림: 같은 인물·칸을 애니 화풍(style-manime)으로 먼저 그리고,
    그 그림을 밑그림으로 이 화풍이 strength만큼 다시 그린다(낮을수록 밑그림에 가까움). 문구만으로는 얼굴이 부드럽게 나오던 것이, 밑그림의 고개 각도·눈썹과 눈 사이·옆빛이
    넘어와 애니 화풍의 날카로운 인상에 가까워진다(2026-11-23 비교 생성). 밑그림의 배경과 소품도 따라온다. 밑그림은 첫 그림만 쓴다(키워 다시 그리기·후처리 없이, 만화 기호 없이)
-   — 시드와 크기는 이 화풍의 작업과 같게. 프로필(칸 0)은 붙이지 않는다(애니 프로필의 어두운 단색 배경을 따르게 됨), 휴식(칸 11)은 제 규칙대로 */
+   — 시드는 이 화풍의 작업과 같게, 크기는 규격 크기(1024). 본 그림은 그 밑그림을 scale배(1.5 → 1536)로 키운 자리에서 다시 그린다: 같은 크기에서 그리면 작게 잡힌 얼굴의 눈과
+   소매·소품이 뭉개졌다(2026-11-24 사용자 지적 → 비교 생성). 값은 거의 같다(호출 수는 그대로). 프로필(칸 0)은 붙이지 않는다(애니 프로필의 어두운 단색 배경을 따르게 됨), 휴식(칸 11)은 제 규칙대로 */
 function underJob(c, place, slot, j) {
   // 옷 규칙은 본 그림과 같게: 셔츠 종류가 안 적힌 남자는 깃 달린 셔츠 — 밑그림만 다른 깃(차이나 칼라 등)으로 그려지면 세기가 낮을 때 그대로 따라온다
   const who = !isFem(c) && plainShirt(c) ? { ...c, tags: c.tags + ", collared shirt, buttons" } : c;

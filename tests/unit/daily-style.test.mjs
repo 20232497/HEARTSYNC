@@ -5,7 +5,7 @@ import path from "node:path";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { profileJob, emotionJob, assertSafe, isFem, STYLE, guided } from "../../archive/style-mdaily/code/assemble.js";
+import { profileJob, emotionJob, assertSafe, isFem, STYLE, guided, SIZE } from "../../archive/style-mdaily/code/assemble.js";
 import { acting, MODEL } from "../../archive/style-manime/code/assemble.js";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
@@ -127,7 +127,20 @@ test("일상 화풍: 남성 인물의 감정 그림은 애니 화풍으로 먼�
     g = m.guide;
   assert.ok(g && g.strength === STYLE.m.underdraw.strength && g.strength > 0 && g.strength < 1, "밑그림과 세기");
   assert.equal(g.job.model, MODEL.air, "밑그림은 애니 화풍의 모델로");
-  assert.deepEqual([g.job.seed, g.job.width, g.job.height], [m.seed, m.width, m.height], "시드와 크기는 이 화풍의 작업과 같게");
+  assert.deepEqual(
+    [g.job.seed, g.job.width, g.job.height],
+    [m.seed, SIZE.emotion.width, SIZE.emotion.height],
+    "밑그림: 시드는 본 작업과 같게, 크기는 규격 크기"
+  );
+  // 본 그림은 밑그림보다 크게 그린다(값 파일의 scale) — 같은 크기에서 다시 그리면 작게 잡힌 얼굴의 눈과 세부가 뭉개졌음. 받은 뒤 규격 크기로 줄인다
+  const k = STYLE.m.underdraw.scale;
+  assert.ok(k > 1 && k <= 1.5, "본 그림을 키우는 배율(SDXL이 감당하는 1536까지)");
+  assert.deepEqual([m.width, m.height], [SIZE.emotion.width * k, SIZE.emotion.height * k], "본 그림은 scale배 크기에서");
+  assert.deepEqual(
+    [emotionJob(F, PLACE, 1).width, profileJob(M, PLACE).width],
+    [SIZE.emotion.width, SIZE.profile.width],
+    "밑그림이 없는 그림은 규격 크기 그대로"
+  );
   assert.ok(!("hires" in g.job) && !("post" in g.job) && !("lora" in g.job), "밑그림은 첫 그림만(키워 다시 그리기·후처리 없이)");
   assert.ok(/adult man/.test(g.job.pos) && names(g.job.neg).includes("child"), "밑그림에도 성인 표시와 미성년 네거티브");
   for (const slot of [2, 3, 6, 14])

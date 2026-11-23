@@ -2,7 +2,7 @@
   "id": "fdaily",
   "name": "여성향 일상(남성 인물)",
   "version": "v11",
-  "decided": "2026-11-24 — 밑그림 세기 0.45(사용자: 0.45와 0.55 비교에서 '네, 0.45로'), 흐림 단계는 v10에서 정한 값 그대로. 밑그림의 옷 규칙·다른 표정 칸·밤 장면도 두 장으로 확인함",
+  "decided": "2026-11-24 — 밑그림 세기 0.45(사용자: 0.45와 0.55 비교에서 '네, 0.45로'), 흐림 단계는 v10에서 정한 값 그대로. 밑그림의 옷 규칙·다른 표정 칸·밤 장면도 두 장으로 확인함. 본 그림은 밑그림의 1.5배(1536)에서 — 1024에서 그리면 눈과 세부가 무너짐(사용자 지적 → 비교 생성)",
   "base": "fdaily.json",
   "model": {
     "id": "civitai:548016@861939",
@@ -126,6 +126,7 @@
   "lightDay": "(side lighting:1.0), (shadow on face:0.55)",
   "lightNight": "(side lighting:1.0), (shadow on face:0.55), soft lamp light, dim lighting",
   "underdraw": {
-    "strength": 0.45
+    "strength": 0.45,
+    "scale": 1.5
   }
 }
