@@ -78,8 +78,13 @@ async function make(work, row) {
     await addCand(work, row, out.blob, { nsfw: out.nsfw, seed: out.seed });
     say(k, out.nsfw ? "생성 서비스가 노출로 판정했어요 — 이 그림은 실을 수 없어요." : "후보가 나왔어요. 크게 보고 괜찮으면 싣기.", out.nsfw ? "warn" : "");
   } catch (e) {
-    say(k, "실패: " + ((e && e.message) || e), "warn");
-    if (/fund|balance|credit|insufficient|auth|api.?key/i.test(String(e && e.message))) state.stop = true; // 잔액·키 문제면 이어 그리기를 멈춤
+    const why = String((e && e.message) || e);
+    state.vary[k] = vary; // 그리지 못했으니 시드를 넘기지 않는다 — 다시 누르면 같은 내용의 요청이 되어, 닿았는지 몰랐던 작업을 되찾는다(gen.js pending)
+    say(k, "실패: " + why, "warn");
+    // 실패한 까닭을 보관함 기록에 남긴다(남기지 못해도 그만)
+    const at = `work=${encodeURIComponent(work.id)}&code=${encodeURIComponent(row.code)}`;
+    api("/api/fail?" + at, { method: "POST", headers: { "x-hs-art": "1", "content-type": "text/plain" }, body: why }).catch(() => {});
+    if (/fund|balance|credit|insufficient|auth|api.?key|HTTP 40[123]/i.test(String(e && e.message))) state.stop = true; // 잔액·키 문제면 이어 그리기를 멈춤
   } finally {
     state.busy--;
     state.running.delete(k);
@@ -93,7 +98,9 @@ async function batch(pairs, o = {}) {
   if (!ready()) return ($("#batchMsg").textContent = "생성 서비스 키를 먼저 넣어 주세요.");
   // 단체 표지는 조각 넷(키워 다시 그리기 포함)에 오리기·잇기까지 — 대략 다섯 장 값
   const units = pairs.reduce((n, [w, r]) => n + (r.spec === "cover" && w.cover === "group" ? 5 : 1), 0);
-  const ask = meta.mock ? `${pairs.length}칸을 연습 모드로 돌려요(비용 0). 계속할까요?` : `${pairs.length}칸을 그려요. 실제 생성 비용이 들어요(대략 ${units}장 값 — 한 장에 1~2센트). 계속할까요?`;
+  const ask = meta.mock
+    ? `${pairs.length}칸을 연습 모드로 돌려요(비용 0). 계속할까요?`
+    : `${pairs.length}칸을 그려요. 실제 생성 비용이 들어요(대략 ${units}장 값 — 한 장에 1~2센트). 계속할까요?`;
   if (state.batching) return ($("#batchMsg").textContent = "이미 여러 칸을 그리는 중이에요 — 끝나거나 멈춘 뒤에 다시 눌러 주세요.");
   if (!o.confirmed && !confirm(ask)) return;
   state.batching = true;
@@ -104,7 +111,8 @@ async function batch(pairs, o = {}) {
   const next = async () => {
     while (i < pairs.length && !state.stop) {
       const [w, r] = pairs[i++];
-      if ((await make(w, r)) === "skip") skipped++; // 따로 그리는 중이던 칸 — 끝난 것으로 세지 않는다
+      if ((await make(w, r)) === "skip")
+        skipped++; // 따로 그리는 중이던 칸 — 끝난 것으로 세지 않는다
       else done++;
       $("#batchMsg").textContent = `${done}/${pairs.length}칸`;
       renderWorks();
@@ -123,7 +131,12 @@ const shown = (r) => (state.filter === "all" ? true : state.filter === "rank1" ?
 const todo = (w) => w.rows.filter((r) => shown(r) && r.can).map((r) => [w, r]);
 
 /* ── 화면 */
-const count = (w) => ({ need: w.rows.length, has: w.rows.filter((r) => r.has).length, left1: w.rows.filter((r) => !r.has && r.rank === 1).length, cand: w.rows.filter((r) => (cands[keyOf(w, r)] || []).length).length });
+const count = (w) => ({
+  need: w.rows.length,
+  has: w.rows.filter((r) => r.has).length,
+  left1: w.rows.filter((r) => !r.has && r.rank === 1).length,
+  cand: w.rows.filter((r) => (cands[keyOf(w, r)] || []).length).length
+});
 function renderWorks() {
   const box = $("#works"),
     all = state.works.map(count),
@@ -245,7 +258,11 @@ $("#batchAll").addEventListener("click", () => batch(state.works.flatMap(todo)))
 window.art = {
   state,
   cands,
-  run: (pick, o) => batch(state.works.flatMap((w) => w.rows.filter((r) => r.can && (!pick || pick(w, r))).map((r) => [w, r])), o),
+  run: (pick, o) =>
+    batch(
+      state.works.flatMap((w) => w.rows.filter((r) => r.can && (!pick || pick(w, r))).map((r) => [w, r])),
+      o
+    ),
   stop: () => (state.stop = true)
 };
 
