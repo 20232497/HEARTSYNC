@@ -1,5 +1,7 @@
 /* MY → 계정 칸: 처음 로그인 합치기(firstSync), 동기화 상태·로그아웃·계정 삭제 */
 import { on } from "../core/events.js";
+import { isTomb } from "../core/room-list.js";
+import { roomKey } from "../core/rooms.js";
 import { likedIds, mergeShelf, resetShelf } from "../core/shelf.js";
 import { S } from "../core/state.js";
 import { $, ago, esc, toast } from "../core/util.js";
@@ -26,7 +28,8 @@ export async function firstSync() {
     toast("이 기기의 데이터를 계정에 저장했어요");
     return;
   }
-  const local = { rooms: S.rooms, personas: S.personas };
+  // 계정에서 지운 방(삭제 표식이 있는 방)은 이 기기에 남아 있어도 '이 기기에만 있는 대화'가 아님 — 합치면 되살아남
+  const local = { rooms: S.rooms.filter((r) => !isTomb(remote[roomKey(r.id)])), personas: S.personas };
   const has = (list, id) => (Array.isArray(list) ? list : []).some((x) => x && x.id === id);
   const onlyRooms = local.rooms.filter((r) => !has(remote.rooms, r.id));
   // 이 기기에서 찜한 작품 가운데 계정에 없는 것 — 계정의 서재 행은 동기화 날짜(SHELF.syncFrom) 뒤에만 있으므로 그 전에는 이 기기의 찜 전부

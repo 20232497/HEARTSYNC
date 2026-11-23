@@ -28,7 +28,10 @@ export const S = {
 };
 export let room = null,
   gen = null;
-/** 진행 중인 응답 생성(없으면 null). @param {{ ctl: AbortController, msgId: string }|null} v @returns {typeof v} */
+/**
+ * 진행 중인 응답 생성(없으면 null) — roomId는 그 응답을 쓰는 방(다른 기기가 지운 방이 이 방일 때만 멈춤).
+ * @param {{ ctl: AbortController, msgId: string, roomId: string }|null} v @returns {typeof v}
+ */
 export function setGen(v) {
   return (gen = v);
 }
