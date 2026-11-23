@@ -5,6 +5,23 @@
 - 원래 값(2026-11-06): 사용자와 43라운드 비교 생성으로 정함. 2026-11-08 정리 때 코드와 함께 빠져, 그동안 로컬 git 태그 `archive/before-reset-2026-11-08`의 `src/js/images/style-fdaily.js`(값)·`src/js/images/styles.js`(등록·사람 없는 그림)에만 있었습니다.
 - **v7(2026-11-10 확정)**: 남성향 일상 v6과 함께 다듬은 판. 어깨를 넓히고, 피곤한 기색을 빼고, 얼굴을 더 매력 있게, 작품 장소를 흐린 배경으로 넣었습니다. **그림은 이 값으로 만듭니다.**
 
+## v8 후보 — 2026-11-23 (그려서 확인하기 전)
+
+사용자 지시("남성 일상 화풍에서는 너무 부드러운 느낌보단 애니 화풍처럼 날카로운 느낌으로 잘생김이 나오도록")로 `fdaily-v8.json`을 만들었습니다. 조립 코드는 이제 v8을 읽습니다(v7 파일은 보관). **모델·LoRA·생성 값은 v7 그대로**이고 문구와 후처리만 다릅니다.
+
+| 자리 | v7 | v8 후보 |
+|---|---|---|
+| 몸 | 굵은 목·승모근·근육질, `(broad shoulders:1.8)` | 어깨만 넓게 `(broad shoulders:1.5)`, `(lean:1.1)` — 애니 화풍의 남자 비율 쪽 |
+| 칠 | `soft painting`·`soft edges`·`simple shading`·`flat color`·`low contrast`·`desaturated` | `manhwa`·`clean lineart`·`sharp lines`·`detailed shading`·`cinematic lighting`·`rim light` |
+| 얼굴 | `almond eyes`·`simple nose`·`soft hair`·`smooth skin`·`soft bloom` | `sharp eyes`·`narrow eyes`·`tsurime`·`sharp features`·`defined nose`·`(sharp jawline:1.45)`·`sharp focus` |
+| 네거티브 | `high contrast`·`heavy shading`·`hard shadows`를 막음 | 그 셋을 풀고 `soft focus`·`round eyes`·`droopy eyes`·`soft features`를 막음 |
+| 후처리 | 뿌연 막(`blurA 0.6`·`soft 0.12`) | 덜 뿌옇게(`blurA 0.2`·`soft 0.05`) |
+| 앞쪽 몸 문구 | 넓은 어깨·운동선수 체형 | `(broad shoulders:1.3), (handsome:1.4), (sharp eyes:1.2)` |
+
+구도와 표정은 같은 날 애니 화풍과 같게 바꿨습니다(`archive/style-mdaily/README.md`의 2026-11-23 절) — 남자의 기본 표정은 '웃지 않고 입술을 다문 채 가늘게 뜬 눈'입니다.
+
+아직 모르는 것: LoRA 셋(v7 그대로)이 부드러운 인상을 얼마나 만드는지, 문구만으로 충분히 날카로워지는지. 비교 생성(v7 대 v8, 같은 시드)으로 확인하고 값을 맞춥니다. 아래 v7의 설명은 그 판의 기록입니다.
+
 ## 조립 규칙 — 2026-11-13 (그림은 이 규칙으로 만듭니다)
 
 그림 값(모델·LoRA·화풍 문구·네거티브·후처리)은 **v7 그대로**이고, 그 값을 작품 데이터로 조립하는 규칙을 남성향 일상과 한 코드(`archive/style-mdaily/code/assemble.js`)에 정했습니다. 규칙 표·성격별 표정·나이 단계·감정 14칸·확인한 것·남은 한계는 [`archive/style-mdaily/README.md`](../style-mdaily/README.md)의 '조립 규칙'에 있습니다. 남성 인물에만 걸리는 것:
