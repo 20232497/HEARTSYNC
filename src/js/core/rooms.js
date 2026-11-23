@@ -49,7 +49,7 @@ function indexRoom(r) {
   emit("rooms");
 }
 /**
- * 대화방 목록의 순서 — 즐겨찾기 먼저, 그 안에서 최근 순. 순서 규칙은 여기 한 곳: 대화 목록·왼쪽 메뉴의 최근 대화·홈의 '이어서 대화하기'가 모두 S.rooms의 순서를 그대로 씀.
+ * 대화방 목록의 순서 — 즐겨찾기 먼저, 그 안에서 최근 순. 순서 규칙은 여기 한 곳: 대화 목록·왼쪽 메뉴의 최근 대화·상세의 내 대화방이 모두 S.rooms의 순서를 그대로 씀.
  * @param {import("./types.js").RoomIndex[]} list @returns {import("./types.js").RoomIndex[]} 새 배열
  */
 export function sortRooms(list) {
