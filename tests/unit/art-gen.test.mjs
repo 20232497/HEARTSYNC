@@ -73,6 +73,18 @@ function service(replies) {
 }
 retry.waits = [0, 0];
 retry.poll = [0];
+/** 시계 흉내 — 조회(getResponse)가 한 번 갈 때마다 step ms가 흐른 것으로 친다. service() 뒤에 부른다(그 fetch를 감쌈).
+    한도 시험을 실제 타이머로 재면 기계에 부하가 걸렸을 때 첫 조회가 가기도 전에 한도에 닿는다(전체 npm test에서 한 번 실패함) — 시간이 아니라 조회 횟수로 한도에 닿게 한다.
+    Date.now는 시험이 끝나면 저절로 되돌아간다(t.mock) */
+function fakeClock(t, step) {
+  let now = Date.now();
+  t.mock.method(Date, "now", () => now);
+  const inner = globalThis.fetch;
+  globalThis.fetch = (url, init) => {
+    if (init && init.body && JSON.parse(init.body)[0].taskType === "getResponse") now += step;
+    return inner(url, init);
+  };
+}
 
 test("그림 받아오기: 2분을 넘겨 '처리 중'으로 돌아온 작업은 다시 보내지 않고 같은 작업을 조회해 받는다", async () => {
   const s = service(["slow:3", "slow:1"]),
@@ -169,18 +181,17 @@ test("그림 받아오기: 서비스가 오래 기다리라고 하면(Retry-Afte
   assert.equal(s.sent.length, 1);
 });
 
-test("그림 받아오기: 처리 중인 작업이 한도까지 안 끝나면 멈추고 알린다 — 다시 보내지 않는다", async () => {
+test("그림 받아오기: 처리 중인 작업이 한도까지 안 끝나면 멈추고 알린다 — 다시 보내지 않는다", async (t) => {
   const limit = retry.limit;
-  retry.limit = 40;
-  retry.poll = [10];
+  retry.limit = 50;
   try {
     const s = service(["slow:99999"]);
+    fakeClock(t, 20); // 조회 한 번에 20ms — 세 번 조회하면 한도(50ms)를 넘는다
     await assert.rejects(generate(job()), /그림이 아직 그려지는 중이에요 — .*기다렸지만 그림이 오지 않아 멈췄어요/);
     assert.equal(s.sent.length, 1);
-    assert.ok(s.polls() >= 1);
+    assert.equal(s.polls(), 3, "한도 안의 조회는 모두 하고 멈춤");
   } finally {
     retry.limit = limit;
-    retry.poll = [0];
   }
 });
 
@@ -210,20 +221,21 @@ test("그림 받아오기: 키워 다시 그리기에서 실패한 뒤 같은 �
   assert.equal(s.sent[2].width, 96);
 });
 
-test("그림 받아오기: 접수된 작업의 조회가 한도를 넘겨 멈춘 뒤 같은 작업을 다시 부르면 새로 보내지 않고 그 작업부터 확인한다", async () => {
+test("그림 받아오기: 접수된 작업의 조회가 한도를 넘겨 멈춘 뒤 같은 작업을 다시 부르면 새로 보내지 않고 그 작업부터 확인한다", async (t) => {
   const limit = retry.limit,
     j = job();
-  retry.limit = 40;
-  retry.poll = [10];
+  retry.limit = 50;
   let s;
   try {
-    s = service(["slow:8"]); // 조회 여덟 번째에야 그림이 온다 — 첫 시도는 한도에 걸림
+    s = service(["slow:8"]); // 조회 여덟 번째에야 그림이 온다 — 첫 시도는 세 번 조회하고 한도에 걸림
+    fakeClock(t, 20);
     await assert.rejects(generate(j), /기다렸지만 그림이 오지 않아 멈췄어요/);
+    assert.equal(s.polls(), 3);
   } finally {
-    retry.limit = limit;
-    retry.poll = [0];
+    retry.limit = limit; // 원래 한도(5분)에서는 시계 흉내가 남아 있어도 닿지 않는다
   }
   const out = await generate(j);
   assert.ok(out.blob.size > 0);
   assert.equal(s.sent.length, 1, "같은 그림을 두 번 사지 않음");
+  assert.equal(s.polls(), 8, "남은 조회만 이어서 함");
 });
