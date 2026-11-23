@@ -57,6 +57,19 @@ test("일상 화풍: 구도·표정은 애니 화풍의 것 — 프로필은 얼
     }
     assert.ok(names(emotionJob(c, PLACE, 3).pos).includes("looking away"), "부끄러움은 시선을 돌림");
   }
+  // 애니에서 가져오지 않는 것: 이모티콘 입(:d), 겹친 구도(cowboy shot), 낮 장소에서 낮을 막는 네거티브
+  const laugh = names(emotionJob(F, PLACE, 2).pos);
+  assert.ok(!laugh.includes(":d") && !laugh.includes("cowboy shot") && laugh.includes("upper body"));
+  const DAY = { tags: "library, bookshelves, daylight" };
+  for (const c of [F, M]) assert.ok(!names(emotionJob(c, DAY, 5).neg).includes("day"), "놀람: 낮 장소에서 낮을 막지 않음");
+  assert.ok(names(emotionJob(F, PLACE, 5).neg).includes("day"), "밤 장소는 이 화풍이 스스로 낮을 막음");
+  // 연기가 쓰는 것을 화풍 네거티브가 막지 않음: 눈을 크게 뜨는 칸의 큰 눈, 손동작이 있는 칸의 손
+  const wide = names(emotionJob({ ...F, temper: "" }, PLACE, 5).neg);
+  assert.ok(!wide.includes("large eyes") && !wide.includes("big eyes"), "놀람: 큰 눈 네거티브를 풂");
+  assert.ok(names(emotionJob(F, PLACE, 1).neg).includes("large eyes"), "기본 표정은 그대로 막음");
+  assert.ok(names(emotionJob({ ...M, temper: "" }, PLACE, 5).neg).includes("big eyes"), "남자의 놀람은 큰 눈을 일부러 막음(애니 규칙 그대로)");
+  const hands = emotionJob({ ...F, temper: "" }, PLACE, 5);
+  assert.ok(/hands up/.test(hands.pos) && !names(hands.neg).includes("raised hands"), "손을 드는 칸은 손 네거티브를 풂");
   const rest = emotionJob(F, PLACE, 11);
   assert.ok(rest.pos.includes("(full body:1.5)") && rest.hires && rest.guide, "휴식(칸 11)은 멀리서 몸 전체 그대로");
 });
@@ -71,6 +84,10 @@ test("일상 화풍: 남성 인물은 날카로운 v8 후보 — 부드러운 �
   assert.ok(m.post.blurA < 0.6, "후처리를 덜 뿌옇게");
   assert.ok(f.pos.includes("soft gradient shading") && f.pos.includes("(adult woman:1.45)"), "여성 v6의 칠은 그대로");
   assert.ok(!isFem(M) && isFem(F));
+  // 화풍 안에서 부딪치던 것: 긍정에 넣은 빛을 막는 네거티브, 밝은 머리 남자의 두 번째 나이
+  assert.ok(!names(m.neg).includes("rim light") && !names(m.neg).includes("cinematic lighting"));
+  const pale = emotionJob({ ...M, age: 58, look: "58세 남성", tags: "grey hair, short hair, brown eyes, beige cardigan, white collared shirt" }, PLACE, 1);
+  assert.deepEqual(pale.pos.match(/\(\d+ years old:[\d.]+\)/g), ["(58 years old:1.3)"], "나이 문구는 하나");
   // 기본 표정: 남자는 웃지 않고 입을 다묾(웃음은 네거티브), 여자는 살짝 미소
   assert.ok(names(m.pos).includes("closed mouth") && names(m.neg).includes("smirk"));
   assert.ok(names(f.pos).includes("light smile"));

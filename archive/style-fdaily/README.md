@@ -14,7 +14,8 @@
 | 몸 | 굵은 목·승모근·근육질, `(broad shoulders:1.8)` | 어깨만 넓게 `(broad shoulders:1.5)`, `(lean:1.1)` — 애니 화풍의 남자 비율 쪽 |
 | 칠 | `soft painting`·`soft edges`·`simple shading`·`flat color`·`low contrast`·`desaturated` | `manhwa`·`clean lineart`·`sharp lines`·`detailed shading`·`cinematic lighting`·`rim light` |
 | 얼굴 | `almond eyes`·`simple nose`·`soft hair`·`smooth skin`·`soft bloom` | `sharp eyes`·`narrow eyes`·`tsurime`·`sharp features`·`defined nose`·`(sharp jawline:1.45)`·`sharp focus` |
-| 네거티브 | `high contrast`·`heavy shading`·`hard shadows`를 막음 | 그 셋을 풀고 `soft focus`·`round eyes`·`droopy eyes`·`soft features`를 막음 |
+| 네거티브 | `high contrast`·`heavy shading`·`hard shadows`·`rim light`·`cinematic lighting`을 막음 | 그 다섯을 풀고(뒤의 둘은 긍정에 넣은 빛과 부딪침) `soft focus`·`round eyes`·`soft features`를 막음, `droopy eyes` 1.1 → 1.2 |
+| 밝은 머리 문구 | `(33 years old:1.35)` 포함 | 숫자 나이를 뺌(인물 나이 문구와 겹쳐 나이가 둘이 됨) |
 | 후처리 | 뿌연 막(`blurA 0.6`·`soft 0.12`) | 덜 뿌옇게(`blurA 0.2`·`soft 0.05`) |
 | 앞쪽 몸 문구 | 넓은 어깨·운동선수 체형 | `(broad shoulders:1.3), (handsome:1.4), (sharp eyes:1.2)` |
 

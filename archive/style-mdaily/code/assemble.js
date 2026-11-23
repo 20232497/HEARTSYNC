@@ -29,16 +29,29 @@ const MALE = { strip: /makeup|lip|eyelash|glamorous|cute|kawaii|beautiful|female
 /* ── 정한 값(사용자 2026-11-13) ── */
 const EYE_W = 0.7; // 눈색은 은은하게(작품 태그의 눈색을 낮은 가중치로)
 const EXPR_W = 1.35; // 가중치 없이 온 표정 낱말(closed mouth 등)에 주는 값 — 만화 기호는 넣지 않음
-const FRAME_F = "(cowboy shot:1.3)"; // 여성 감정 그림은 얼굴만 가깝게 잡혀서 가슴까지로
 /* 구도·표정은 애니 화풍과 같게: acting()이 고른 구도 자리·눈·표정과 손동작을 그대로 쓴다(만화 기호는 빼고).
    애니의 가중치(0.4~1.7)는 화풍 문구가 약한 모델에 맞춘 값이라, 화풍 문구가 센(1.2~1.5) 이 모델에서는 ACT_W를 곱해 올린다(ACT_MAX까지) — 그려서 맞출 값 */
 const ACT_W = 1.2,
   ACT_MAX = 1.7;
 const boost = (s) => s.replace(/\(([^()]+):([\d.]+)\)/g, (m, tag, w) => `(${tag}:${Math.min(ACT_MAX, +(w * ACT_W).toFixed(2))})`);
-/** 칸의 장면: scene(문구에 넣을 구도·눈·표정) · still(화풍 맞추기에 넘길 글 — 시선을 돌린 칸만 '움직임'으로 쳐서 화풍의 정면 문구를 뺀다) · neg(그 표정에 딸린 네거티브) */
+/* 애니에서 가져오지 않는 것: 이모티콘 입(:d — 만화 기호), 낮을 막는 네거티브(이 화풍은 장소가 밤일 때만 스스로 낮을 막는다 — 낮 장소의 daylight와 부딪침) */
+const NO_SCENE = /^\(:d:[\d.]+\)$/,
+  NO_NEG = /^\((?:day|blue sky):[\d.]+\)$/;
+/* 연기가 쓰는 것을 화풍의 네거티브가 막지 않게 — 손동작이 있는 칸은 손 네거티브를, 눈을 크게 뜨는 칸은 큰 눈 네거티브를 그 칸에서만 푼다(가중치를 뺀 이름) */
+const HAND_NEG = ["outstretched hand", "raised hands", "index finger raised", "pointing"],
+  WIDE_NEG = ["large eyes", "big eyes"];
+/** 칸의 장면: scene(문구에 넣을 구도·눈·표정) · still(화풍 맞추기에 넘길 글 — 시선을 돌린 칸만 '움직임'으로 쳐서 화풍의 정면 문구를 뺀다. 손동작은 정면을 깨지 않으므로 넘기지 않음)
+    · neg(그 표정에 딸린 네거티브) · free(그 칸에서 풀어 줄 화풍 네거티브의 이름) */
 function sceneOf(c, slot) {
-  const a = acting(c, slot, { symbols: false });
-  return { scene: boost([a.frame, a.eyes, a.emo].join(", ")), still: (slot ? "upper body, " : "portrait, ") + (a.look ? "looking to the side" : "looking at viewer"), neg: actingNeg(c, slot).replace(/^, /, "") };
+  const a = acting(c, slot, { symbols: false }),
+    scene = split([a.frame, a.eyes, a.emo].join(", ")).filter((x) => !NO_SCENE.test(x)).join(", ");
+  const neg = split(actingNeg(c, slot)).filter((x) => !NO_NEG.test(x)).join(", "); // 남자의 놀람·공포는 애니 규칙이 큰 눈을 일부러 막는다(앳돼 보임) — 그때는 큰 눈 네거티브를 풀지 않는다
+  return {
+    scene: boost(scene),
+    still: (slot ? "upper body, " : "portrait, ") + (a.look ? "looking to the side" : "looking at viewer"),
+    neg,
+    free: [...(/\bhands?\b|\bfist\b|waving|pointing/.test(scene) ? HAND_NEG : []), ...(/wide-eyed/.test(scene) && !/big eyes/.test(neg) ? WIDE_NEG : [])],
+  };
 }
 
 export const split = (s) => {
@@ -166,15 +179,15 @@ const guideJob = (c, seed) => ({
 });
 
 /* ── 조립 ── 순서는 보관본 그대로: 품질 → 수위 → 장면·표정 → 인원 + 인물 태그 → (남) 앞쪽 몸 문구 → 배경 → 화풍 문구 */
-function build(c, place, scene, kind, negAdd, still) {
+function build(c, place, scene, kind, negAdd, still, free) {
   const g = isFem(c) ? "f" : "m",
     st = STYLE[g],
     male = g === "m";
-  if (!male && kind === "emotion" && /upper body/.test(scene)) scene = FRAME_F + ", " + scene; // 눕거나 싸우는 칸은 그 칸의 구도 그대로
   const subj = male ? "1boy, male focus, solo" : "1girl, solo",
     cast = castTags(c),
     raw = [scene, subj, cast].join(", ");
   const fit = fitStyle(st, raw, still || scene);
+  if (free && free.length) fit.neg = split(fit.neg).filter((x) => !free.includes(bareTag(x))).join(", ");
   let style = fit.prompt;
   if (male) style = split(style).filter((t) => !MALE.strip.test(t)).join(", ");
   const tags = (place && place.tags) || "",
@@ -194,13 +207,18 @@ function build(c, place, scene, kind, negAdd, still) {
   const a = ageFit(g, ageOf(c), pos, dedupe(neg), st.lora);
   return { g, st, ...a };
 }
-/** 네거티브에서 같은 낱말이 또 나오면 뒤의 것을 뺀다(가중치는 앞의 것) — 화풍의 네거티브와 표정의 네거티브가 겹쳐 문구가 길어지는 것을 줄인다(Runware는 3000자까지) */
+/** 네거티브에서 같은 낱말이 또 나오면 하나만 남긴다(자리는 앞의 것, 가중치는 센 쪽) — 화풍의 네거티브와 표정의 네거티브가 겹쳐 문구가 길어지는 것을 줄인다(Runware는 3000자까지) */
 const bareTag = (x) => x.replace(/^\((.+):[\d.]+\)$/, "$1");
+const weightOf = (x) => +(/:([\d.]+)\)$/.exec(x) || [0, 1])[1];
 function dedupe(neg) {
-  const seen = new Set();
-  return split(neg)
-    .filter((x) => !seen.has(bareTag(x)) && seen.add(bareTag(x)))
-    .join(", ");
+  const at = new Map(), // 이름 → 처음 나온 자리
+    out = [];
+  for (const x of split(neg)) {
+    const k = bareTag(x);
+    if (!at.has(k)) at.set(k, out.push(x) - 1);
+    else if (weightOf(x) > weightOf(out[at.get(k)])) out[at.get(k)] = x; // 자리는 앞의 것, 가중치는 센 쪽
+  }
+  return out.join(", ");
 }
 const job = (b, kind, seed, o) => ({
   pos: b.pos,
@@ -218,7 +236,7 @@ const job = (b, kind, seed, o) => ({
 /** 프로필(칸 0) — 얼굴 가까이(애니 화풍과 같은 구도), 기본 표정, 작품의 장소를 흐린 배경으로 */
 export function profileJob(c, place, o = {}) {
   const s = sceneOf(c, 0);
-  return job(build(c, place, s.scene, "profile", s.neg, s.still), "profile", o.seed || seedOf(c), o);
+  return job(build(c, place, s.scene, "profile", s.neg, s.still, s.free), "profile", o.seed || seedOf(c), o);
 }
 /** 감정 그림(칸 1~14) — 정사각, 가슴까지(구도·표정은 애니 화풍과 같음). 칸 11(휴식)은 몸 전체: hires로 키우고, 여성은 guide(밑그림 작업과 strength)가 붙는다 */
 export function emotionJob(c, place, slot, o = {}) {
@@ -229,7 +247,7 @@ export function emotionJob(c, place, slot, o = {}) {
     return g === "f" ? { ...j, guide: { job: guideJob(c, seed), strength: GUIDE.strength } } : j;
   }
   const s = sceneOf(c, slot);
-  return job(build(c, place, s.scene, "emotion", s.neg, s.still), "emotion", seed, o);
+  return job(build(c, place, s.scene, "emotion", s.neg, s.still, s.free), "emotion", seed, o);
 }
 /** 만든 작업이 지킬 것을 지키는지: 성인 표시, 한 사람, 미성년·노출 네거티브(밑그림 작업도) */
 export function assertSafe(j) {
