@@ -100,7 +100,7 @@ export function renderLog(scroll) {
         return;
       }
       const ooc = m.text.startsWith("//");
-      html += `<div class="msg me ${ooc ? "ooc" : ""}" data-id="${m.id}">${ooc ? "" : pavHTML(r.persona)}<div class="col">
+      html += `<div class="msg me ${ooc ? "ooc" : ""}" data-id="${esc(m.id)}">${ooc ? "" : pavHTML(r.persona)}<div class="col">
         ${
           m.editing
             ? editBox(m.text, i)
@@ -124,7 +124,7 @@ export function renderLog(scroll) {
         ? `<div class="bubble typing" id="liveBubble"></div>`
         : `<div class="bubble${imgTags(alt.text || "").length >= 2 ? " many-img" : ""}">${fmt(alt.text || "", c, r.persona)}</div>`;
     html +=
-      `<div class="msg" data-id="${m.id}" role="group" aria-label="${esc(aiLabel(speakerName(r)))}">${coverHTML(c)}<div class="col">` +
+      `<div class="msg" data-id="${esc(m.id)}" role="group" aria-label="${esc(aiLabel(speakerName(r)))}">${coverHTML(c)}<div class="col">` +
       `<span class="nm">${esc(speakerName(r))}</span>${pending ? "" : epEventHTML(r, alt)}${body}`;
     if (!pending && !m.editing) {
       html += statusBlock(c, alt.status, m.statusBefore, { open: isLast, live: isLast });

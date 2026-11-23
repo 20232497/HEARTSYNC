@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ko">
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <!--! index.html은 빌드 결과물(npm run build)이에요. 고칠 땐 src/·content/를 고치세요 — README "소스 구조". 주석은 빌드가 벗겼어요(소스에 있어요) -->
 <title>HEART SYNC</title>
 <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
@@ -77,7 +77,7 @@ button { cursor:pointer; }
 .topbar { display:flex; align-items:center; gap:10px; margin-bottom:18px; }
 .topbar .logo { padding:0; display:none; }
 @media (max-width:899px) { .topbar { flex-wrap:wrap; } .topbar .logo { display:flex; font-size:15px; letter-spacing:.03em; gap:7px; } .topbar .logo .mark { width:22px; height:22px; border-radius:6px; } .topbar .search { order:9; flex-basis:100%; max-width:none; } }
-.search { flex:1; max-width:420px; display:flex; align-items:center; gap:8px; background:var(--surface); border:1px solid var(--line); border-radius:999px; padding:0 14px; height:40px; }
+.search { flex:1; min-width:0; max-width:420px; display:flex; align-items:center; gap:8px; background:var(--surface); border:1px solid var(--line); border-radius:999px; padding:0 14px; height:40px; }
 .search input { border:0; background:none; outline:none; flex:1; min-width:0; }
 .search svg { width:16px; height:16px; color:var(--muted); flex:none; }
 .wallet { display:flex; align-items:center; gap:6px; height:36px; padding:0 12px; border-radius:999px; border:1px solid var(--line); background:var(--surface); font-weight:600; font-size:13px; white-space:nowrap; font-variant-numeric:tabular-nums; }
@@ -236,8 +236,9 @@ h2.sec small, h1.sec small { font-family:var(--sans); font-size:12.5px; color:va
 .d-more { margin-top:8px; }
 .d-fields { margin-top:10px; }
 @media (max-width:780px) {
-  .detail { grid-template-columns:1fr; gap:14px; }
+  .detail { grid-template-columns:minmax(0,1fr); gap:14px; }
   .d-side { position:static; max-height:none; overflow:visible; }
+  .d-side, .d-main { min-width:0; }
   .d-top { display:grid; grid-template-columns:112px minmax(0,1fr); gap:14px; align-items:start; margin-bottom:12px; }
   .d-top > .cover { width:100%; min-width:0; margin:0; border-radius:14px; }
   .detail h1 { font-size:22px; margin-top:2px; }
@@ -431,6 +432,12 @@ img.img-miss { background:var(--surface2); }
 .msg.me .col { align-items:flex-end; flex:0 1 auto; max-width:82%; }
 .msg.me .bubble { background:var(--accent-soft); border-color:transparent; border-radius:16px 4px 16px 16px; }
 .msg.me.ooc .bubble { background:none; border:1px dashed var(--line); color:var(--muted); font-size:13px; padding:7px 12px; }
+@media (max-width:560px) {
+  .msg:not(.me) { position:relative; }
+  .msg:not(.me) > .cover { position:absolute; top:0; left:0; width:24px; height:24px; border-radius:8px; margin-top:0; }
+  .msg:not(.me) .nm { display:flex; align-items:center; min-height:24px; padding-left:30px; }
+  .msg.me > .pav { display:none; }
+}
 .sys-pill { align-self:center; font-size:12px; color:var(--muted); background:var(--surface2); border-radius:999px; padding:3px 12px; }
 .tools-row { display:flex; align-items:center; gap:1px; color:var(--muted); font-size:12px; flex-wrap:wrap; }
 .tools-row button { border:0; background:none; color:var(--muted); padding:4px 7px; border-radius:7px; font-size:12px; display:inline-flex; align-items:center; gap:3px; }
@@ -447,6 +454,7 @@ details.stat summary::-webkit-details-marker { display:none; }
 details.stat summary::after { content:"▾"; margin-left:auto; }
 details.stat[open] summary::after { content:"▴"; }
 .status { padding:2px 12px 11px; display:grid; grid-template-columns:repeat(auto-fill, minmax(270px, 1fr)); gap:5px 22px; margin:0; }
+@media (max-width:560px) { .status { grid-template-columns:minmax(0,1fr); } }
 .st-row { display:grid; grid-template-columns:5.6em minmax(0,1fr); gap:10px; align-items:baseline; }
 .st-row.wide { grid-column:1 / -1; }
 .status dt { color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -536,6 +544,7 @@ details.stat[open] summary::after { content:"▴"; }
 .overlay { position:fixed; inset:0; background:var(--scrim); z-index:40; display:flex; align-items:flex-end; justify-content:center; animation:fade .18s; }
 .sheet { background:var(--surface); width:min(560px, 100%); max-height:90%; overflow-y:auto; border-radius:20px 20px 0 0; padding:20px max(18px, env(safe-area-inset-right,0px)) calc(20px + env(safe-area-inset-bottom,0px)) max(18px, env(safe-area-inset-left,0px)); animation:up .22s ease-out; }
 .sheet.wide { width:min(720px, 100%); }
+.veil { position:fixed; top:0; right:0; bottom:0; left:0; z-index:90; background:var(--scrim); color:#fff; display:flex; align-items:center; justify-content:center; padding:24px; text-align:center; font-weight:600; animation:fade .18s; }
 @keyframes up { from { transform:translateY(24px); opacity:.6; } }
 @media (min-width:700px) { .overlay { align-items:center; } .sheet { border-radius:20px; } }
 .sheet h2 { margin:0 0 4px; font-family:var(--display); font-size:21px; }
@@ -2878,6 +2887,8 @@ const CLOUD = {
   on: false,
   uid: null,
   pending: {},
+  busy: null,
+  sending: new Set(),
   timer: null,
   state: "",
   at: 0,
@@ -2897,6 +2908,7 @@ const CLOUD = {
     this.on = false;
     this.uid = null;
     this.pending = {};
+    this.sending = new Set();
     clearTimeout(this.timer);
     this.setState("");
   },
@@ -2913,55 +2925,69 @@ const CLOUD = {
   },
   async check(r) {
     if (r.ok) return;
-    const j = await r.json().catch(() => ({}));
+    const uid = this.uid,
+      j = await Promise.race([r.json().catch(() => ({})), new Promise((res) => setTimeout(() => res({}), 8000))]);
+    if (this.uid !== uid) throw j;
     if (r.status === 404 || j.code === "PGRST205" || j.code === "42P01") {
       this.noTable = true;
       this.setState("notable");
     }
     throw j;
   },
-  async flush() {
+  flush() {
     clearTimeout(this.timer);
+    const next = () => this.send();
+    return (this.busy = (this.busy || Promise.resolve()).then(next, next));
+  },
+  async send() {
+    const uid = this.uid,
+      gone = () => this.uid !== uid;
+    if (!this.on) return "off";
+    if (this.noTable) return "notable";
     const items = Object.entries(this.pending);
-    if (!items.length || !this.on || this.noTable) return;
+    if (!items.length) return "ok";
     this.pending = {};
+    this.sending = new Set(items.map((x) => x[0]));
     this.setState("sync");
+    const call = async (path, opts) => {
+      if (gone()) throw 0;
+      const r = await SB.req(path, opts);
+      if (gone()) throw 0;
+      await this.check(r);
+    };
     try {
-      const ups = items.filter((x) => x[1]).map(([key, x]) => ({ user_id: this.uid, key, value: x.v }));
+      const ups = items.filter((x) => x[1]).map(([key, x]) => ({ user_id: uid, key, value: x.v }));
       const dels = items.filter((x) => !x[1]).map((x) => x[0]);
       for (const batch of chunkBy(ups, 1500000))
-        await this.check(
-          await SB.req("/rest/v1/kv?on_conflict=user_id,key", {
-            method: "POST",
-            headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
-            body: JSON.stringify(batch)
-          })
-        );
-      for (let i = 0; i < dels.length; i += 40)
-        await this.check(
-          await SB.req(
-            "/rest/v1/kv?key=in.(" +
-              encodeURIComponent(
-                dels
-                  .slice(i, i + 40)
-                  .map((k) => '"' + k.replace(/"/g, "") + '"')
-                  .join(",")
-              ) +
-              ")",
-            { method: "DELETE" }
-          )
-        );
+        await call("/rest/v1/kv?on_conflict=user_id,key", {
+          method: "POST",
+          headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
+          body: JSON.stringify(batch)
+        });
+      for (let i = 0; i < dels.length; i += 40) {
+        const keys = dels
+          .slice(i, i + 40)
+          .map((k) => '"' + k.replace(/"/g, "") + '"')
+          .join(",");
+        await call("/rest/v1/kv?user_id=eq." + encodeURIComponent(uid) + "&key=in.(" + encodeURIComponent(keys) + ")", { method: "DELETE" });
+      }
+      this.sending = new Set();
       this.setState("ok");
+      return Object.keys(this.pending).length ? this.send() : "ok";
     } catch (e) {
+      if (gone()) return "off";
+      this.sending = new Set();
       items.forEach(([k, x]) => {
         if (!(k in this.pending)) this.pending[k] = x;
       });
       if (this.noTable) {
         this.pending = {};
-        return;
+        return "notable";
       }
       this.setState("err");
+      clearTimeout(this.timer);
       this.timer = setTimeout(() => this.flush(), 15000);
+      return "left";
     }
   },
   async rows(since) {
@@ -2997,7 +3023,7 @@ const CLOUD = {
       return undefined;
     }
   },
-  apply(rows) {
+  apply(rows, hold) {
     let n = 0;
     const open = room && location.hash === "#r-" + room.id ? roomKey(room.id) : "";
     rows.forEach((x) => {
@@ -3009,7 +3035,7 @@ const CLOUD = {
         if (shelfSyncOn() && this.takeShelf(x.value)) n++;
         return;
       }
-      if (x.key in this.pending || x.key === open) return;
+      if (x.key in this.pending || this.sending.has(x.key) || (hold && hold.has(x.key)) || x.key === open) return;
       if (x.key === "settings") {
         mergeCloudSettings(x.value);
         n++;
@@ -3033,7 +3059,8 @@ const CLOUD = {
     return true;
   },
   async pull() {
-    let n = this.apply(await this.rows(localStorage.getItem(this.lastKey()) || ""));
+    const hold = new Set(this.sending);
+    let n = this.apply(await this.rows(localStorage.getItem(this.lastKey()) || ""), hold);
     if (!this.shelfUp && shelfSyncOn()) {
       this.shelfUp = true;
       if (this.takeShelf(await this.getOne(SHELF_KEY))) n++;
@@ -3046,7 +3073,7 @@ const CLOUD = {
       if (v !== undefined) this.pending[k] = { v };
     });
     this.pending.settings = { v: cloudSettings() };
-    await this.flush();
+    if ((await this.flush()) !== "ok") throw { code: "push_failed" };
     const have = new Set(await this.imgKeys());
     let ls = [];
     try {
@@ -4890,7 +4917,7 @@ function collectSeen(r) {
   markSeen(r.char.id, codes);
 }
 function jumpTo(id) {
-  const el = $(`.msg[data-id="${id}"]`);
+  const el = $$(".msg").find((x) => x.dataset.id === id);
   if (!el) return;
   el.scrollIntoView({ block: "center" });
   el.classList.add("flash");
@@ -5112,7 +5139,7 @@ function drawerBookmarks({ r, ov, body }) {
     ? list
         .map(
           (m) =>
-            `<button class="bm" data-j="${m.id}">` +
+            `<button class="bm" data-j="${esc(m.id)}">` +
             (`<b>${m.role === "ai" ? esc(speakerName(r)) : esc(r.persona.name)}</b>` +
               `${esc(curText(m).replace(IMG_TAG_RE, "").replace(/[*"]/g, "").replace(/\s+/g, " ").slice(0, 120))}…</button>`)
         )
@@ -5793,11 +5820,9 @@ async function firstSync() {
     onlyLikes = likedIds().filter((id) => !((rs.likes[id] || 0) > (rs.unlikes[id] || 0)));
   const use = async (merge) => {
     CLOUD.apply(rows);
-    if (merge) {
-      mergeGuest(remote, local);
-      await CLOUD.pushAll([]);
-    }
+    if (merge) mergeGuest(remote, local);
     await reloadFromCloud();
+    if (merge) await CLOUD.pushAll([]);
     toast(merge ? "이 기기의 데이터를 계정에 합쳤어요" : "계정 데이터를 불러왔어요");
   };
   if (!onlyRooms.length && !onlyLikes.length) return use(false);
@@ -5805,14 +5830,13 @@ async function firstSync() {
   const ov =
     sheet(`<h2>이 기기의 ${onlyRooms.length ? "대화를" : "찜을"} 합칠까요?</h2><p class="sub">계정에 이미 저장된 데이터가 있어요. 이 기기에만 있는 ${what}를 계정에 합칠 수 있어요. 계정에 있던 것은 그대로 남아요.</p>
     <div class="cta-row"><button class="btn ghost" id="mNo">계정 것만 쓰기</button><span class="spacer"></span><button class="btn pri" id="mYes">합치기</button></div>`);
-  return new Promise((res) => {
+  return new Promise((res, rej) => {
     let done = false;
-    const pick = async (merge) => {
+    const pick = (merge) => {
       if (done) return;
       done = true;
       ov.remove();
-      await use(merge);
-      res();
+      use(merge).then(res, rej);
     };
     $("#mYes", ov).onclick = () => pick(true);
     $("#mNo", ov).onclick = () => {
@@ -5844,12 +5868,81 @@ function accountBoxHTML() {
     `<button class="btn sm ghost" id="cOut">로그아웃</button><button class="btn sm danger" id="cDel">계정 삭제</button></div></div>`
   );
 }
+const LOGOUT_WAIT = 20000;
+const flushSoon = () => Promise.race([CLOUD.flush(), new Promise((r) => setTimeout(() => r("left"), LOGOUT_WAIT))]);
+function veil(text) {
+  const el = document.createElement("div"),
+    block = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+    };
+  el.className = "veil";
+  el.setAttribute("role", "status");
+  el.textContent = text;
+  if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+  document.addEventListener("keydown", block, true);
+  document.body.append(el);
+  return () => {
+    document.removeEventListener("keydown", block, true);
+    el.remove();
+  };
+}
+async function logout(wipe) {
+  const lift = wipe ? veil("계정에 올리는 중이에요…") : null;
+  const up = await flushSoon();
+  if (up === "ok" || (!wipe && up !== "left")) return finishLogout(wipe);
+  if (lift) lift();
+  const why =
+      up === "left"
+        ? "방금 바꾼 대화나 설정이 계정에 올라가지 않았어요. 연결을 확인하고 다시 올려 주세요."
+        : "지금은 이 기기의 데이터를 계정에 저장할 수 없어요.",
+    later = "다음에 로그인할 때 계정에 있던 것으로 바뀔 수 있어요.",
+    then = wipe
+      ? "이 기기의 데이터를 지우면 그 내용이 사라져서, 다 올라가기 전에는 지우지 않아요. 지우지 않고 로그아웃해도 " + later
+      : "그대로 로그아웃하면 이 기기에는 남지만, " + later;
+  const ov = sheet(
+    `<h2>계정에 아직 올리지 못한 것이 있어요</h2><p class="sub">${why} ${then}</p>` +
+      `<div class="cta-row"><button class="btn ghost" data-x>취소</button><span class="spacer"></span>` +
+      `<button class="btn" id="lKeep">${wipe ? "지우지 않고 로그아웃" : "그대로 로그아웃"}</button>` +
+      `<button class="btn pri" id="lRetry">다시 올리기</button></div>`
+  );
+  $("#lKeep", ov).onclick = () => {
+    ov.remove();
+    finishLogout(false);
+  };
+  $("#lRetry", ov).onclick = async (e) => {
+    e.target.disabled = true;
+    const lift2 = wipe ? veil("계정에 올리는 중이에요…") : null;
+    const again = await flushSoon();
+    if (again === "ok" && ov.isConnected) {
+      ov.remove();
+      return finishLogout(wipe);
+    }
+    if (lift2) lift2();
+    e.target.disabled = false;
+    if (ov.isConnected) toast("아직 올리지 못했어요. 연결을 확인해 주세요");
+  };
+}
+async function finishLogout(wipe) {
+  CLOUD.stop();
+  await SB.signOut();
+  if (wipe) {
+    await wipeDevice();
+    location.reload();
+    return;
+  }
+  try {
+    localStorage.setItem("hv1_guest", "1");
+  } catch {}
+  toast("로그아웃했어요. 이 기기의 데이터는 남아 있어요");
+  viewMe();
+}
 function bindAccount(v) {
   if (!$("#cSync", v)) return;
   $("#cSync", v).onclick = async (e) => {
     e.target.disabled = true;
     try {
-      await CLOUD.flush();
+      if ((await CLOUD.flush()) === "left") throw 0;
       const n = await CLOUD.pull();
       if (n) await reloadFromCloud();
       CLOUD.setState(CLOUD.noTable ? "notable" : "ok");
@@ -5867,22 +5960,10 @@ function bindAccount(v) {
       <div class="cta-row" style="margin-top:14px"><span class="spacer"></span><button class="btn ghost" data-x>취소</button>` +
         `<button class="btn pri" id="lok">로그아웃</button></div>`
     );
-    $("#lok", ov).onclick = async () => {
+    $("#lok", ov).onclick = () => {
       const wipe = $("#lwipe", ov).checked;
       ov.remove();
-      await CLOUD.flush();
-      CLOUD.stop();
-      await SB.signOut();
-      if (wipe) {
-        await wipeDevice();
-        location.reload();
-        return;
-      }
-      try {
-        localStorage.setItem("hv1_guest", "1");
-      } catch {}
-      toast("로그아웃했어요. 이 기기의 데이터는 남아 있어요");
-      viewMe();
+      logout(wipe);
     };
   };
   $("#cDel", v).onclick = () =>
@@ -7908,7 +7989,7 @@ function renderLog(scroll) {
         return;
       }
       const ooc = m.text.startsWith("//");
-      html += `<div class="msg me ${ooc ? "ooc" : ""}" data-id="${m.id}">${ooc ? "" : pavHTML(r.persona)}<div class="col">
+      html += `<div class="msg me ${ooc ? "ooc" : ""}" data-id="${esc(m.id)}">${ooc ? "" : pavHTML(r.persona)}<div class="col">
         ${
           m.editing
             ? editBox(m.text, i)
@@ -7932,7 +8013,7 @@ function renderLog(scroll) {
         ? `<div class="bubble typing" id="liveBubble"></div>`
         : `<div class="bubble${imgTags(alt.text || "").length >= 2 ? " many-img" : ""}">${fmt(alt.text || "", c, r.persona)}</div>`;
     html +=
-      `<div class="msg" data-id="${m.id}" role="group" aria-label="${esc(aiLabel(speakerName(r)))}">${coverHTML(c)}<div class="col">` +
+      `<div class="msg" data-id="${esc(m.id)}" role="group" aria-label="${esc(aiLabel(speakerName(r)))}">${coverHTML(c)}<div class="col">` +
       `<span class="nm">${esc(speakerName(r))}</span>${pending ? "" : epEventHTML(r, alt)}${body}`;
     if (!pending && !m.editing) {
       html += statusBlock(c, alt.status, m.statusBefore, { open: isLast, live: isLast });
