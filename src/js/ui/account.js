@@ -2,10 +2,11 @@
 import { on } from "../core/events.js";
 import { likedIds, mergeShelf, resetShelf } from "../core/shelf.js";
 import { S } from "../core/state.js";
-import { $, esc, toast } from "../core/util.js";
-import { CLOUD, cloudStateText } from "../services/cloud.js";
+import { $, ago, esc, toast } from "../core/util.js";
+import { CLOUD } from "../services/cloud.js";
+import { pushAll } from "../services/cloud-push.js";
 import { SB, acctName, provName } from "../services/supabase.js";
-import { mergeGuest, reloadFromCloud, wipeDevice } from "../services/sync.js";
+import { dropGuestRooms, mergeGuest, reloadFromCloud, wipeDevice } from "../services/sync.js";
 import { viewMe } from "./me.js";
 import { confirmSheet, sheet } from "./sheet.js";
 
@@ -21,7 +22,7 @@ export async function firstSync() {
     remote[x.key] = x.value;
   });
   if (!rows.some((x) => x.key !== "settings")) {
-    await CLOUD.pushAll();
+    await pushAll();
     toast("이 기기의 데이터를 계정에 저장했어요");
     return;
   }
@@ -35,8 +36,9 @@ export async function firstSync() {
   const use = async (merge) => {
     CLOUD.apply(rows);
     if (merge) mergeGuest(remote, local);
+    else dropGuestRooms(remote);
     await reloadFromCloud();
-    if (merge) await CLOUD.pushAll([]);
+    if (merge) await pushAll([]);
     toast(merge ? "이 기기의 데이터를 계정에 합쳤어요" : "계정 데이터를 불러왔어요");
   };
   if (!onlyRooms.length && !onlyLikes.length) return use(false);
@@ -57,10 +59,16 @@ export async function firstSync() {
       resetShelf();
       pick(false);
     }; // 이 기기의 찜·최근 본도 합치지 않음
-    ov.addEventListener("click", (e) => {
-      if (e.target === ov) pick(true);
-    }); // 그냥 닫으면 아무것도 잃지 않게 합침
+    ov.onShut = () => pick(true); // 버튼이 아닌 길(배경·Esc·화면 이동)로 닫혀도 뒤처리가 끝나게 — 그냥 닫으면 아무것도 잃지 않게 합침(ui/sheet.js shut)
   });
+}
+/** MY → 계정에 보이는 동기화 상태 글. @returns {string} */
+function cloudStateText() {
+  if (!CLOUD.on) return "";
+  if (CLOUD.state === "notable") return "⚠️ 계정 저장 표가 아직 없어요 (docs/supabase.sql을 실행해 주세요)";
+  if (CLOUD.state === "err") return "⚠️ 계정에 저장하지 못했어요. 잠시 뒤 다시 시도해요";
+  if (CLOUD.state === "sync") return "저장하는 중…";
+  return CLOUD.at ? "계정에 저장됨 · " + ago(CLOUD.at) : "계정과 연결됨";
 }
 on("cloud", () => {
   const el = $("#cloudState");
@@ -88,7 +96,17 @@ export function accountBoxHTML() {
    - '기기 데이터도 지우기'는 다 올라간 것을 확인했을 때만 함(계정 저장 표가 없는 설치도 계정에 사본이 없으니 지우지 않음). 지우지 않는 로그아웃은 표가 없어도 그대로 됨.
    - 지우는 로그아웃은 올리기 시작부터 새로고침까지 화면을 막음(veil) — 그사이에 바꾼 것은 계정에 닿지 못한 채 지워지므로 */
 const LOGOUT_WAIT = 20000; // 올리기를 기다리는 한도 — 응답이 오다 멈춰도 로그아웃이 영영 안 끝나지 않게(넘으면 못 올린 것으로 보고 물음)
-const flushSoon = () => Promise.race([CLOUD.flush(), new Promise((r) => setTimeout(() => r("left"), LOGOUT_WAIT))]);
+/* 지금 올릴 수 있는 것을 다 올림 — 처음 올리기가 덜 끝났으면(CLOUD.owed: 그림을 대기열에 넣기 전에 실패한 경우) 그것부터 다시. 결과는 CLOUD.flush와 같은 값 */
+async function uploadAll() {
+  if (CLOUD.owed)
+    try {
+      await pushAll([]);
+    } catch {
+      return CLOUD.noTable ? "notable" : "left";
+    }
+  return CLOUD.flush();
+}
+const flushSoon = () => Promise.race([uploadAll(), new Promise((r) => setTimeout(() => r("left"), LOGOUT_WAIT))]);
 /* 화면 전체를 막는 가림막 — .overlay가 아니라서 Esc·화면 이동(closeOverlays)으로 닫히지 않음. 포인터는 덮어서, 키보드는 눌림을 가로채서 막음
    (뒤쪽 화면에 포커스가 남아 있으면 가려져 있어도 Enter·Tab으로 조작됨). 돌려준 함수를 부르면 걷힘 */
 function veil(text) {
@@ -163,7 +181,7 @@ export function bindAccount(v) {
   $("#cSync", v).onclick = async (e) => {
     e.target.disabled = true;
     try {
-      if ((await CLOUD.flush()) === "left") throw 0; // 올리지 못한 것이 있으면 '이미 최신'이라고 하지 않음
+      if ((await uploadAll()) === "left") throw 0; // 올리지 못한 것이 있으면 '이미 최신'이라고 하지 않음(처음 올리기가 덜 끝났으면 그것부터)
       const n = await CLOUD.pull();
       if (n) await reloadFromCloud();
       CLOUD.setState(CLOUD.noTable ? "notable" : "ok");

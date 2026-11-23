@@ -2,7 +2,7 @@
    인물 코드는 영문 대문자 1~4자(HSY = 한서윤), 그 뒤 번호가 감정·행동 칸 0~14(SIT) — HSY3 = 한서윤 3 부끄러움. 본문 태그는 [[HSY3]], 그림 파일은 HSY3.webp.
    예약 시리즈(SERIES): MP<n> 장소(작품 places의 n번째), EV<n> 컷씬(작품 cuts의 n번째) — 번호는 1부터. 다른 모습(폼)은 별도 인물 코드(cast[].of가 본체).
    코드를 해석하는 곳(프롬프트·렌더러·갤러리·빌드 검사·도감)은 모두 codebook(c) 하나를 씀 — 시리즈를 더하려면 SERIES에 한 줄.
-   예전 대화의 [[img:p1:3]]·조합 태그([[img:ks:3,404,501]])·세 자리 코드도 읽음(처음 나오는 0~14 번호, 없으면 1) — 방을 열 때 migrateRoom(core/rooms.js)이 새 코드로 바꿈 */
+   예전 대화의 [[img:p1:3]]·조합 태그([[img:ks:3,404,501]])·세 자리 코드도 읽음(처음 나오는 0~14 번호, 없으면 1) — 방을 열 때 migrateRoom(core/room-read.js)이 새 코드로 바꿈 */
 import { SERIES, SIT } from "../core/constants.js";
 
 export { SERIES }; // 예약 시리즈 표(MP 장소 · EV 컷씬)는 core/constants.js에 — 쓰던 곳은 그대로 여기서 가져감

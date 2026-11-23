@@ -3,7 +3,8 @@
 import { MODELS } from "../../ai/models.js";
 import { liveWork } from "../../core/character.js";
 import { commandHelp, findCommand, parseCommand } from "../../core/commands.js";
-import { migrateRoom, roomKey, saveRoom } from "../../core/rooms.js";
+import { migrateRoom } from "../../core/room-read.js";
+import { roomKey, saveRoom } from "../../core/rooms.js";
 import { S, gen, room, setRoom } from "../../core/state.js";
 import { KV } from "../../core/storage.js";
 import { $, esc, num, uid } from "../../core/util.js";
@@ -28,12 +29,20 @@ export async function viewChat(id) {
     v.innerHTML = `<div class="page"><p class="note">대화를 불러오는 중…</p></div>`;
     const r = await KV.get(roomKey(id));
     if (location.hash.slice(1) !== "r-" + id) return;
-    if (!r) {
-      v.innerHTML = `<div class="page">${topbar()}<div class="empty">대화방을 찾을 수 없어요.<br><button class="btn sm" data-go="chats">대화 목록</button></div></div>`;
+    // 방 읽기의 경계(core/room-read.js migrateRoom): 열 수 없는 모양이면 저장된 원본은 그대로 두고 안내만 — 방 하나 때문에 화면이 멈추지 않게
+    let ok = null;
+    try {
+      ok = r ? migrateRoom(r) : null;
+    } catch {}
+    if (!ok) {
+      const why = r
+        ? `이 대화방을 열 수 없어요. 저장된 내용이 온전하지 않아요.<br><span class="note">내용은 지우지 않고 그대로 두었어요.</span>`
+        : "대화방을 찾을 수 없어요.";
+      v.innerHTML = `<div class="page">${topbar()}<div class="empty">${why}<br><button class="btn sm" data-go="chats">대화 목록</button></div></div>`;
       bindGo(v);
       return;
     }
-    setRoom(migrateRoom(r));
+    setRoom(ok);
   }
   collectSeen(room); // 이 방에 나온 그림 코드를 수집 기록에(새 방의 첫 장면, 이 기능 전에 만든 방, 다른 기기에서 온 방)
   const c = room.char;

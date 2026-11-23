@@ -12,6 +12,15 @@ export function migrateSettings() {
   } catch {}
   if (s) S.settings = { ...S.settings, ...s, memCfg: { ...S.settings.memCfg, ...(s.memCfg || {}) } };
   let moved = false;
+  // 장기기억 설정의 원본은 설정(memCfg 칸) 하나. 설정에 그 칸이 없는 예전 설치에서만 따로 두던 사본(hv1_memcfg)을 읽어 설정으로 옮김 — 사본은 지우지 않고 더 쓰지 않음
+  if (!s || !s.memCfg)
+    try {
+      const old = JSON.parse(localStorage.getItem("hv1_memcfg") || "null");
+      if (old && typeof old === "object") {
+        S.settings.memCfg = { ...S.settings.memCfg, ...old };
+        moved = true;
+      }
+    } catch {}
   try {
     // 없앤 설정: 등급별 OpenRouter 모델
     for (const k of ["unfilteredModels"])

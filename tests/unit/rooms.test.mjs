@@ -3,7 +3,21 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { ORIGINALS } from "../../src/js/content/index.js";
 import { LIMITS, OPENING_ID_RE } from "../../src/js/core/constants.js";
-import { forkRoom, newRoom, openingIndex, saveRoom, setFav, sortRooms } from "../../src/js/core/rooms.js";
+import { on } from "../../src/js/core/events.js";
+import { migrateRoom } from "../../src/js/core/room-read.js";
+import {
+  deletedRooms,
+  forkRoom,
+  holdRoom,
+  newRoom,
+  openingIndex,
+  releaseRoom,
+  removeRoom,
+  roomInUse,
+  saveRoom,
+  setFav,
+  sortRooms
+} from "../../src/js/core/rooms.js";
 import { S } from "../../src/js/core/state.js";
 
 const P = { id: "p1", name: "지호", memo: "", desc: "" };
@@ -117,4 +131,81 @@ test("즐겨찾기: 방을 저장하면 목록 항목에 따라가고, 분기한
   assert.equal("fav" in f, false);
   assert.equal(!!S.rooms.find((x) => x.id === f.id).fav, false);
   assert.equal(S.rooms[0].id, r.id, "나중에 만든 방보다 즐겨찾기가 앞");
+});
+test("방 읽기 경계(migrateRoom): 기본값이 분명한 빠짐만 채우고, 복구할 수 없으면 null — 원본은 그대로", () => {
+  const good = newRoom(work(), 0, P);
+  // v2인데 설정 칸이 없는 방(다른 기기·예전 빌드가 남긴 것) — 전에는 여기서 예외가 나 방 화면이 멈췄음
+  const noSet = JSON.parse(JSON.stringify(good));
+  delete noSet.set;
+  delete noSet.persona;
+  delete noSet.bookmarks;
+  delete noSet.pins;
+  delete noSet.memHist;
+  const fixed = migrateRoom(noSet);
+  assert.ok(fixed, "설정 칸이 없어도 열림");
+  assert.deepEqual(fixed.set, good.set, "새 방의 기본 설정으로");
+  assert.equal(typeof fixed.persona.name, "string");
+  assert.deepEqual([fixed.bookmarks, fixed.pins, fixed.memHist], [[], [], []]);
+  // 설정 칸은 있는데 모델이 빠졌거나 표에 없는 값인 방 — 화면이 그 값을 읽다가 멈추지 않게 기본값으로(다른 칸은 그대로)
+  const partial = JSON.parse(JSON.stringify(good));
+  partial.set = { len: "mid", autoSug: true };
+  assert.deepEqual(migrateRoom(partial).set, { ...good.set, autoSug: true });
+  const wrong = JSON.parse(JSON.stringify(good));
+  wrong.set = { ...good.set, model: "없는-모델", len: "없는-길이", mem: 0 };
+  assert.deepEqual(migrateRoom(wrong).set, good.set);
+  const inherited = JSON.parse(JSON.stringify(good));
+  inherited.set = { ...good.set, model: "constructor", len: "toString" }; // 표에 없는데 객체가 물려받은 이름
+  assert.deepEqual(migrateRoom(inherited).set, good.set);
+  // 버전 번호가 범위를 벗어난 응답 → 마지막 버전으로, 버전이 하나도 없는 응답·글이 없는 내 메시지는 뺌
+  const odd = JSON.parse(JSON.stringify(good));
+  odd.msgs.push(
+    { id: "u1", role: "user", text: "안녕" },
+    { id: "a1", role: "ai", idx: 5, alts: [{ text: "하나" }, { text: "둘" }] },
+    { id: "a2", role: "ai", idx: 0, alts: [] },
+    { id: "u2", role: "user" }
+  );
+  const o = migrateRoom(odd);
+  assert.deepEqual(o.msgs.map((m) => m.id).slice(1), ["u1", "a1"]);
+  assert.equal(o.msgs[2].idx, 1);
+  // 복구할 수 없는 방: 메시지가 없음 · 작품 사본이 없음 · 방이 아님 — null을 돌려주고 받은 객체는 건드리지 않음
+  for (const broken of [{ ...good, msgs: undefined }, { ...good, msgs: [] }, { ...good, char: null }, { id: good.id }, null, "글"]) {
+    const before = JSON.stringify(broken);
+    assert.equal(migrateRoom(broken), null);
+    assert.equal(JSON.stringify(broken), before);
+  }
+  // 멀쩡한 방은 그대로
+  const same = JSON.parse(JSON.stringify(good));
+  assert.deepEqual(migrateRoom(same), good);
+});
+test("쓰고 있는 방(holdRoom·releaseRoom): 생성과 요약이 겹쳐도 둘 다 끝나야 풀림", () => {
+  assert.equal(roomInUse("r-x"), false);
+  holdRoom("r-x");
+  holdRoom("r-x");
+  releaseRoom("r-x");
+  assert.equal(roomInUse("r-x"), true);
+  releaseRoom("r-x");
+  assert.equal(roomInUse("r-x"), false);
+  releaseRoom("r-x"); // 더 놓아도 음수가 되지 않음
+  holdRoom("r-x");
+  assert.equal(roomInUse("r-x"), true);
+  releaseRoom("r-x");
+});
+test('방 삭제(removeRoom): 지운 방으로 적고 목록에서 빼며 "rooms" 알림 — 그 뒤의 저장은 방을 되살리지 않음', () => {
+  S.rooms = [];
+  const a = newRoom(work(), 0, P),
+    b = newRoom(work(), 1, P);
+  let told = 0;
+  on("rooms", () => told++);
+  removeRoom(a.id);
+  assert.ok(deletedRooms.has(a.id));
+  assert.deepEqual(
+    S.rooms.map((x) => x.id),
+    [b.id]
+  );
+  assert.equal(told, 1);
+  saveRoom(a); // 지운 뒤에 끝난 응답·요약의 저장
+  assert.deepEqual(
+    S.rooms.map((x) => x.id),
+    [b.id]
+  );
 });

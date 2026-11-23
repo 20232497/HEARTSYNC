@@ -2389,7 +2389,7 @@ const SIDE = {
   }
 };
 const epLength = (ep) => ep.beats[ep.beats.length - 1].at[1];
-/* ── src/js/core/rooms.js — 대화방 저장·목록·이전(migrateRoom)·새 방 만들기(newRoom)·분기(forkRoom)·외전(sideRoom), 메시지의 현재 버전 글(curText) */
+/* ── src/js/core/rooms.js — 대화방 저장·목록·삭제(removeRoom)·새 방 만들기(newRoom)·분기(forkRoom)·외전(sideRoom), 메시지의 현재 버전 글(curText) */
 function curText(m) {
   return m.role === "ai" ? (m.alts[m.idx] || {}).text || "" : m.text;
 }
@@ -2464,83 +2464,36 @@ function saveRoom(r) {
   KV.set(roomKey(r.id), r);
   indexRoom(r);
 }
+function removeRoom(id) {
+  deletedRooms.add(id);
+  KV.set(roomKey(id), undefined);
+  S.rooms = S.rooms.filter((r) => r.id !== id);
+  KV.set("rooms", S.rooms);
+  emit("rooms");
+}
+const inUse = new Map();
+function holdRoom(id) {
+  inUse.set(id, (inUse.get(id) || 0) + 1);
+}
+function releaseRoom(id) {
+  const n = (inUse.get(id) || 0) - 1;
+  if (n > 0) inUse.set(id, n);
+  else inUse.delete(id);
+}
+const roomInUse = (id) => inUse.has(id);
 const MAX_MSGS_KEEP = 160;
 const deletedRooms = new Set();
-function migrateRoom(r) {
-  normalizeChar(r.char);
-  if (!r.v2) {
-    const old = r.set || {};
-    r.set = {
-      model: old.tier === "default" ? "story" : "lite",
-      len: old.len === "long" ? "long" : old.len === "short" ? "short" : "mid",
-      mem: 10,
-      rerollAsk: false
-    };
-    r.memHist = [];
-    r.sinceMem = 0;
-    r.turn = r.msgs.filter((m) => m.role === "user").length;
-    r.userNote = "";
-    r.bookmarks = [];
-    r.persona = { memo: "", img: "", ...r.persona };
-    r.v2 = true;
-    if (Array.isArray(r.facts) && r.facts.length && !r.memory) r.memory = "[이전 버전에서 옮긴 기억]\n" + r.facts.map((f) => "- " + f).join("\n");
-    delete r.facts;
-    delete r.memCursor;
-  }
-  delete r.set.allowUnfiltered;
-  r.msgs.forEach((m) => delete m.editing);
-  if (upgradeCodes(r)) KV.set(roomKey(r.id), r);
-  return r;
-}
-function upgradeCodes(r) {
-  const cast = r.char.cast || [],
-    ok = (code) => /^[A-Z]{1,4}$/.test(code),
-    old = cast.filter((x) => !ok(x.code));
-  if (!old.length) return false;
-  const live = getChar(r.char.id),
-    taken = new Set(cast.filter((x) => ok(x.code)).map((x) => x.code)),
-    map = {};
-  const seq = (i) => {
-    let s = "";
-    do {
-      s = String.fromCharCode(65 + (i % 26)) + s;
-      i = Math.floor(i / 26) - 1;
-    } while (i >= 0);
-    return s;
-  };
-  old.forEach((x) => {
-    const hit = live && (live.cast || []).find((y) => y.name === x.name && ok(y.code) && !taken.has(y.code));
-    let code = hit ? hit.code : "";
-    for (let i = 0; !code || taken.has(code); i++) code = seq(i);
-    taken.add(code);
-    map[x.code] = code;
-    x.code = code;
-  });
-  const sit = (spec) => {
-    for (const p of String(spec).split(",")) if (/^\d{1,2}$/.test(p.trim()) && +p < 15) return +p;
-    return 1;
-  };
-  const retag = (t) =>
-    String(t || "").replace(/\[\[img:([a-z0-9]+):([\d,]+)\]\]/gi, (raw, code, spec) => {
-      const n = map[code.toLowerCase()];
-      return n ? `[[${n}${sit(spec)}]]` : raw;
-    });
-  r.msgs.forEach((m) => {
-    if (m.role === "ai")
-      m.alts.forEach((a) => {
-        a.text = retag(a.text);
-      });
-    else m.text = retag(m.text);
-  });
-  if (r.char.images) {
-    const im = {};
-    for (const k of Object.keys(r.char.images)) im[map[k] || k] = r.char.images[k];
-    r.char.images = im;
-  }
-  return true;
-}
 function defaultSet(c) {
   return { model: recommendOf(c), len: "mid", mem: 10, rerollAsk: false };
+}
+function fixSet(c, set) {
+  const d = defaultSet(c),
+    s = { ...d, ...(set && typeof set === "object" ? set : {}) };
+  const has = (table, k) => Object.prototype.hasOwnProperty.call(table, k);
+  if (!has(MODELS, s.model)) s.model = d.model;
+  if (!has(LEN, s.len)) s.len = d.len;
+  if (!(s.mem > 0)) s.mem = d.mem;
+  return s;
 }
 function newRoom(c, openingIdx, persona) {
   normalizeChar(c);
@@ -2650,6 +2603,96 @@ function sideRoom(r, kind, who) {
   saveRoom(f);
   return f;
 }
+/* ── src/js/core/room-read.js — 방 읽기의 경계(migrateRoom): 저장된 방을 열 수 있는 모양으로 보정하고 복구할 수 없으면 null — 예전 모양(v2 아님)과 예전 그림 코드도 여기서 옮김 */
+const okMsg = (m) =>
+  !!m &&
+  typeof m === "object" &&
+  (m.role === "ai" ? Array.isArray(m.alts) && m.alts.length > 0 && m.alts.every((a) => a && typeof a === "object") : typeof m.text === "string");
+function migrateRoom(r) {
+  if (!r || typeof r !== "object" || !r.id || !r.char || typeof r.char !== "object" || !Array.isArray(r.msgs)) return null;
+  const msgs = r.msgs.filter(okMsg);
+  if (!msgs.length) return null;
+  r.msgs = msgs;
+  r.msgs.forEach((m) => {
+    if (!m.id) m.id = uid("m");
+    if (m.role === "ai" && !(m.idx >= 0 && m.idx < m.alts.length)) m.idx = m.alts.length - 1;
+  });
+  normalizeChar(r.char);
+  if (!r.v2) {
+    const old = r.set || {};
+    r.set = {
+      model: old.tier === "default" ? "story" : "lite",
+      len: old.len === "long" ? "long" : old.len === "short" ? "short" : "mid",
+      mem: 10,
+      rerollAsk: false
+    };
+    r.memHist = [];
+    r.sinceMem = 0;
+    r.turn = r.msgs.filter((m) => m.role === "user").length;
+    r.userNote = "";
+    r.bookmarks = [];
+    r.persona = { memo: "", img: "", ...r.persona };
+    r.v2 = true;
+    if (Array.isArray(r.facts) && r.facts.length && !r.memory) r.memory = "[이전 버전에서 옮긴 기억]\n" + r.facts.map((f) => "- " + f).join("\n");
+    delete r.facts;
+    delete r.memCursor;
+  }
+  r.set = fixSet(r.char, r.set);
+  r.persona = { id: "", name: "유저", memo: "", desc: "", img: "", ...(r.persona && typeof r.persona === "object" ? r.persona : {}) };
+  if (!r.status || typeof r.status !== "object") r.status = {};
+  for (const k of ["bookmarks", "pins", "memHist"]) if (!Array.isArray(r[k])) r[k] = [];
+  delete r.set.allowUnfiltered;
+  r.msgs.forEach((m) => delete m.editing);
+  if (upgradeCodes(r)) KV.set(roomKey(r.id), r);
+  return r;
+}
+function upgradeCodes(r) {
+  const cast = r.char.cast || [],
+    ok = (code) => /^[A-Z]{1,4}$/.test(code),
+    old = cast.filter((x) => !ok(x.code));
+  if (!old.length) return false;
+  const live = getChar(r.char.id),
+    taken = new Set(cast.filter((x) => ok(x.code)).map((x) => x.code)),
+    map = {};
+  const seq = (i) => {
+    let s = "";
+    do {
+      s = String.fromCharCode(65 + (i % 26)) + s;
+      i = Math.floor(i / 26) - 1;
+    } while (i >= 0);
+    return s;
+  };
+  old.forEach((x) => {
+    const hit = live && (live.cast || []).find((y) => y.name === x.name && ok(y.code) && !taken.has(y.code));
+    let code = hit ? hit.code : "";
+    for (let i = 0; !code || taken.has(code); i++) code = seq(i);
+    taken.add(code);
+    map[x.code] = code;
+    x.code = code;
+  });
+  const sit = (spec) => {
+    for (const p of String(spec).split(",")) if (/^\d{1,2}$/.test(p.trim()) && +p < 15) return +p;
+    return 1;
+  };
+  const retag = (t) =>
+    String(t || "").replace(/\[\[img:([a-z0-9]+):([\d,]+)\]\]/gi, (raw, code, spec) => {
+      const n = map[code.toLowerCase()];
+      return n ? `[[${n}${sit(spec)}]]` : raw;
+    });
+  r.msgs.forEach((m) => {
+    if (m.role === "ai")
+      m.alts.forEach((a) => {
+        a.text = retag(a.text);
+      });
+    else m.text = retag(m.text);
+  });
+  if (r.char.images) {
+    const im = {};
+    for (const k of Object.keys(r.char.images)) im[map[k] || k] = r.char.images[k];
+    r.char.images = im;
+  }
+  return true;
+}
 /* ── src/js/core/settings.js — 설정 저장·적용(글자 크기·줄 간격 등 CSS 변수), API 키 형식 안내 */
 function cleanKeys() {
   const s = S.settings,
@@ -2661,7 +2704,6 @@ function saveSettings() {
   try {
     localStorage.setItem("hv1_settings", JSON.stringify(S.settings));
   } catch {}
-  KV.set("memcfg", S.settings.memCfg);
   emit("settings");
 }
 function applySettings() {
@@ -2766,122 +2808,31 @@ function resetShelf() {
   S.shelf = mergeShelf();
   KV.setLocal("shelf", undefined);
 }
-/* ── src/js/services/images.js — 그림 저장(IMG): IndexedDB → localStorage, 축소(shrink), 참조 모양 검사(validRef) — 작품 폴더에 실린 그림(content/… 상대… */
-function validRef(ref) {
-  return (
-    typeof ref === "string" &&
-    (/^kv:img[a-z0-9]{6,30}$/.test(ref) ||
-      /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(ref) ||
-      /^content\/(?!.*\.\.)[A-Za-z0-9_./-]+\.(webp|png|jpe?g)$/.test(ref))
-  );
-}
-const IMG = {
-  cache: {},
-  async put(file) {
-    const idb = !!(await IDB.open());
-    const data = await shrink(file, idb ? 960 : 560, idb ? 0.86 : 0.8);
-    const key = uid("img");
-    this.cache[key] = data;
-    const saved = idb && (await IDB.set(key, data));
-    KV.set(key, data, { local: !saved });
-    return "kv:" + key;
-  },
-  async local(k) {
-    if (this.cache[k]) return this.cache[k];
-    let v = await IDB.get(k);
-    if (typeof v !== "string") v = await KV.get(k);
-    if (validRef(v)) this.cache[k] = v;
-    return this.cache[k];
-  },
-  keep(k, v) {
-    if (validRef(v)) {
-      this.cache[k] = v;
-      IDB.set(k, v);
-    }
-  },
-  async load(k) {
-    const v = await this.local(k);
-    if (v || !CLOUD.on) return v;
-    this.keep(k, await CLOUD.getOne(k));
-    return this.cache[k];
-  },
-  drop(ref) {
-    if (typeof ref === "string" && ref.startsWith("kv:")) {
-      const k = ref.slice(3);
-      KV.set(k, undefined);
-      IDB.set(k, undefined);
-      delete this.cache[k];
-    }
-  },
-  async migrate() {
-    if (!(await IDB.open())) return 0;
-    let n = 0;
-    try {
-      for (const lk of Object.keys(localStorage)) {
-        if (!/^hv1_img[a-z0-9]{10,30}$/.test(lk)) continue;
-        const k = lk.slice(4),
-          v = KV.getLocal(k);
-        if (typeof v === "string" && (await IDB.set(k, v))) {
-          localStorage.removeItem(lk);
-          n++;
-        }
-      }
-    } catch {}
-    return n;
-  },
-  tag(ref) {
-    if (!validRef(ref)) return "";
-    if (ref.startsWith("kv:")) {
-      const k = ref.slice(3);
-      return this.cache[k] ? `<img src="${this.cache[k]}" alt="">` : `<img data-kv="${k}" alt="">`;
-    }
-    return `<img src="${ref}" alt="" loading="lazy">`;
-  },
-  async hydrate(root = document) {
-    const els = $$("img[data-kv]", root).map((el) => {
-      const k = el.dataset.kv;
-      el.removeAttribute("data-kv");
-      el.classList.add("img-wait");
-      return [el, k];
-    });
-    await Promise.all([...new Set(els.map((x) => x[1]))].map((k) => this.load(k).catch(() => null)));
-    els.forEach(([el, k]) => {
-      if (this.cache[k]) el.src = this.cache[k];
-      el.classList.remove("img-wait");
-      if (!el.src) {
-        el.classList.add("img-miss");
-        const cv = el.closest(".cover");
-        if (cv) cv.classList.remove("has-img");
-      }
-    });
-  }
-};
-function shrink(file, max, q) {
-  return new Promise((res, rej) => {
-    const fr = new FileReader();
-    fr.onload = () => {
-      const img = new Image();
-      img.onload = () => {
-        const k = Math.min(1, max / Math.max(img.width, img.height)),
-          cv = document.createElement("canvas");
-        cv.width = Math.round(img.width * k);
-        cv.height = Math.round(img.height * k);
-        cv.getContext("2d").drawImage(img, 0, 0, cv.width, cv.height);
-        res(cv.toDataURL("image/jpeg", q));
-      };
-      img.onerror = rej;
-      img.src = fr.result;
-    };
-    fr.onerror = rej;
-    fr.readAsDataURL(file);
-  });
-}
-/* ── src/js/services/cloud.js — 계정 저장(CLOUD): KV를 계정 kv 표에 모아 올리고 받기, 기기별 설정 분리 */
+/* ── src/js/services/cloud-settings.js — 계정에 올리는 설정의 모양: 기기마다 따로 두는 칸과 API 키 칸을 빼고 올리고(cloudSettings), 받을 때도 그 칸은 계정 것을 받지… */
 const DEVICE_SETTINGS = ["fs", "enterSend", "theme"];
 const KEY_FIELDS = ["apiKey", "runwareKey", "openRouterKey"];
-const SYNCED_RE = /^(wallet|personas|rooms|memcfg|room-.+)$/;
+function cloudSettings() {
+  const s = Object.assign({}, S.settings);
+  DEVICE_SETTINGS.concat(KEY_FIELDS).forEach((k) => delete s[k]);
+  return s;
+}
+function mergeCloudSettings(v) {
+  if (!v || typeof v !== "object") return;
+  const incoming = Object.assign({}, v);
+  DEVICE_SETTINGS.concat(KEY_FIELDS).forEach((k) => delete incoming[k]);
+  const next = Object.assign({}, S.settings, incoming);
+  next.memCfg = Object.assign({}, S.settings.memCfg, incoming.memCfg);
+  delete next.keysLocal;
+  S.settings = next;
+  try {
+    localStorage.setItem("hv1_settings", JSON.stringify(S.settings));
+  } catch {}
+}
+/* ── src/js/services/cloud.js — 계정 저장(CLOUD): KV를 계정 kv 표에 모아 올리고 받기, 기기별 설정 분리 */
+const SYNCED_RE = /^(wallet|personas|rooms|room-.+)$/;
 const SHELF_KEY = "shelf";
 const synced = (k) => SYNCED_RE.test(k) || (k === SHELF_KEY && shelfSyncOn());
+const using = (k) => k.indexOf("room-") === 0 && roomInUse(k.slice(5));
 const IMG_KEY_RE = /^img[a-z0-9]{6,30}$/;
 const CLOUD = {
   on: false,
@@ -2889,6 +2840,10 @@ const CLOUD = {
   pending: {},
   busy: null,
   sending: new Set(),
+  skipped: new Set(),
+  seq: 0,
+  putSeq: {},
+  owed: false,
   timer: null,
   state: "",
   at: 0,
@@ -2903,12 +2858,18 @@ const CLOUD = {
     this.uid = this.on ? SB.s.user.id : null;
     this.noTable = false;
     this.shelfUp = false;
+    try {
+      this.owed = this.on && localStorage.getItem("hv1_cloudowed") === this.uid;
+    } catch {}
   },
   stop() {
     this.on = false;
     this.uid = null;
     this.pending = {};
     this.sending = new Set();
+    this.skipped = new Set();
+    this.putSeq = {};
+    this.owed = false;
     clearTimeout(this.timer);
     this.setState("");
   },
@@ -2920,6 +2881,7 @@ const CLOUD = {
   put(k, v) {
     if (!this.on || this.noTable || !(k === "settings" || synced(k) || IMG_KEY_RE.test(k))) return;
     this.pending[k] = v === undefined ? null : { v };
+    this.putSeq[k] = ++this.seq;
     clearTimeout(this.timer);
     this.timer = setTimeout(() => this.flush(), 800);
   },
@@ -3023,7 +2985,9 @@ const CLOUD = {
       return undefined;
     }
   },
-  apply(rows, hold) {
+  apply(rows, hold, since) {
+    const full = since === undefined,
+      newer = (k) => !full && (this.putSeq[k] || 0) > since;
     let n = 0;
     const open = room && location.hash === "#r-" + room.id ? roomKey(room.id) : "";
     rows.forEach((x) => {
@@ -3035,14 +2999,26 @@ const CLOUD = {
         if (shelfSyncOn() && this.takeShelf(x.value)) n++;
         return;
       }
-      if (x.key in this.pending || this.sending.has(x.key) || (hold && hold.has(x.key)) || x.key === open) return;
+      if (x.key in this.pending || this.sending.has(x.key) || (hold && hold.has(x.key)) || newer(x.key)) return;
+      if (x.key === open || using(x.key)) {
+        this.skipped.add(x.key);
+        return;
+      }
       if (x.key === "settings") {
         mergeCloudSettings(x.value);
         n++;
         return;
       }
+      if (x.key === "memcfg") {
+        if (full && x.value && typeof x.value === "object" && !rows.some((y) => y.key === "settings" && y.value && y.value.memCfg)) {
+          mergeCloudSettings({ memCfg: x.value });
+          n++;
+        }
+        return;
+      }
       if (!SYNCED_RE.test(x.key)) return;
       KV.setLocal(x.key, x.value === null ? undefined : x.value);
+      if (room && x.key === roomKey(room.id)) setRoom(null);
       n++;
     });
     this.pulledAt = Date.now();
@@ -3058,54 +3034,43 @@ const CLOUD = {
     S.shelf = m;
     return true;
   },
+  async retake() {
+    const uid = this.uid,
+      isOpen = (k) => !!room && location.hash === "#r-" + room.id && roomKey(room.id) === k;
+    let n = 0;
+    for (const k of [...this.skipped]) {
+      if (!this.on || this.uid !== uid) break;
+      if (isOpen(k) || using(k)) continue;
+      this.skipped.delete(k);
+      if (k in this.pending || this.sending.has(k)) continue;
+      const since = this.seq;
+      let got = null;
+      try {
+        const r = await SB.req("/rest/v1/kv?select=value&key=eq." + encodeURIComponent(k));
+        if (r.ok) got = await r.json();
+      } catch {}
+      if (this.uid !== uid) break;
+      if (!got || isOpen(k) || using(k)) {
+        this.skipped.add(k);
+        continue;
+      }
+      if (!got[0] || k in this.pending || this.sending.has(k) || (this.putSeq[k] || 0) > since) continue;
+      KV.setLocal(k, got[0].value);
+      if (room && roomKey(room.id) === k) setRoom(null);
+      n++;
+    }
+    return n;
+  },
   async pull() {
-    const hold = new Set(this.sending);
-    let n = this.apply(await this.rows(localStorage.getItem(this.lastKey()) || ""), hold);
+    const hold = new Set(this.sending),
+      since = this.seq,
+      again = await this.retake();
+    let n = again + this.apply(await this.rows(localStorage.getItem(this.lastKey()) || ""), hold, since);
     if (!this.shelfUp && shelfSyncOn()) {
       this.shelfUp = true;
       if (this.takeShelf(await this.getOne(SHELF_KEY))) n++;
     }
     return n;
-  },
-  async pushAll(keys) {
-    (keys || localKVKeys()).forEach((k) => {
-      const v = KV.getLocal(k);
-      if (v !== undefined) this.pending[k] = { v };
-    });
-    this.pending.settings = { v: cloudSettings() };
-    if ((await this.flush()) !== "ok") throw { code: "push_failed" };
-    const have = new Set(await this.imgKeys());
-    let ls = [];
-    try {
-      ls = Object.keys(localStorage)
-        .filter((k) => k.indexOf("hv1_img") === 0)
-        .map((k) => k.slice(4));
-    } catch {}
-    const mine = Array.from(new Set((await IDB.keys()).concat(ls))).filter((k) => IMG_KEY_RE.test(k) && !have.has(k));
-    let batch = [],
-      size = 0;
-    const send = async () => {
-      if (!batch.length) return;
-      await this.check(
-        await SB.req("/rest/v1/kv?on_conflict=user_id,key", {
-          method: "POST",
-          headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
-          body: JSON.stringify(batch)
-        })
-      );
-      batch = [];
-      size = 0;
-    };
-    for (const k of mine) {
-      let v = await IDB.get(k);
-      if (typeof v !== "string") v = KV.getLocal(k);
-      if (typeof v !== "string" || !validRef(v)) continue;
-      batch.push({ user_id: this.uid, key: k, value: v });
-      size += v.length;
-      if (size > 1500000) await send();
-    }
-    await send();
-    this.setState("ok");
   },
   async wipe() {
     if (this.on && !this.noTable) {
@@ -3133,39 +3098,6 @@ function chunkBy(items, max) {
 }
 KV.remote = (k, v) => CLOUD.put(k, v);
 on("settings", () => CLOUD.put("settings", cloudSettings()));
-function localKVKeys() {
-  try {
-    return Object.keys(localStorage)
-      .filter((k) => k.indexOf("hv1_") === 0)
-      .map((k) => k.slice(4))
-      .filter(synced);
-  } catch {
-    return [];
-  }
-}
-function cloudSettings() {
-  const s = Object.assign({}, S.settings);
-  DEVICE_SETTINGS.concat(KEY_FIELDS).forEach((k) => delete s[k]);
-  return s;
-}
-function mergeCloudSettings(v) {
-  if (!v || typeof v !== "object") return;
-  const incoming = Object.assign({}, v);
-  DEVICE_SETTINGS.concat(KEY_FIELDS).forEach((k) => delete incoming[k]);
-  const next = Object.assign({}, S.settings, incoming);
-  delete next.keysLocal;
-  S.settings = next;
-  try {
-    localStorage.setItem("hv1_settings", JSON.stringify(S.settings));
-  } catch {}
-}
-function cloudStateText() {
-  if (!CLOUD.on) return "";
-  if (CLOUD.state === "notable") return "⚠️ 계정 저장 표가 아직 없어요 (docs/supabase.sql을 실행해 주세요)";
-  if (CLOUD.state === "err") return "⚠️ 계정에 저장하지 못했어요. 잠시 뒤 다시 시도해요";
-  if (CLOUD.state === "sync") return "저장하는 중…";
-  return CLOUD.at ? "계정에 저장됨 · " + ago(CLOUD.at) : "계정과 연결됨";
-}
 /* ── src/js/services/supabase.js — Supabase 인증 REST(SB): 로그인·가입·소셜·세션 갱신, 안내 문구 */
 const SB = {
   url: String(CFG.supabaseUrl || "").replace(/\/+$/, ""),
@@ -3382,9 +3314,119 @@ function acctName() {
   if (!u) return "";
   return u.email || (provName(u.provider) || "소셜") + " 계정";
 }
-/* ── src/js/services/load.js — 저장된 데이터를 S에 읽어 들임(loadAll): 지갑·페르소나·대화방 목록·요약 설정·내 서재 */
+/* ── src/js/services/images.js — 그림 저장(IMG): IndexedDB → localStorage, 축소(shrink), 참조 모양 검사(validRef) — 작품 폴더에 실린 그림(content/… 상대… */
+function validRef(ref) {
+  return (
+    typeof ref === "string" &&
+    (/^kv:img[a-z0-9]{6,30}$/.test(ref) ||
+      /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(ref) ||
+      /^content\/(?!.*\.\.)[A-Za-z0-9_./-]+\.(webp|png|jpe?g)$/.test(ref))
+  );
+}
+const IMG = {
+  cache: {},
+  async put(file) {
+    const idb = !!(await IDB.open());
+    const data = await shrink(file, idb ? 960 : 560, idb ? 0.86 : 0.8);
+    const key = uid("img");
+    this.cache[key] = data;
+    const saved = idb && (await IDB.set(key, data));
+    KV.set(key, data, { local: !saved });
+    return "kv:" + key;
+  },
+  async local(k) {
+    if (this.cache[k]) return this.cache[k];
+    let v = await IDB.get(k);
+    if (typeof v !== "string") v = await KV.get(k);
+    if (validRef(v)) this.cache[k] = v;
+    return this.cache[k];
+  },
+  keep(k, v) {
+    if (validRef(v)) {
+      this.cache[k] = v;
+      IDB.set(k, v);
+    }
+  },
+  async load(k) {
+    const v = await this.local(k);
+    if (v || !CLOUD.on) return v;
+    this.keep(k, await CLOUD.getOne(k));
+    return this.cache[k];
+  },
+  drop(ref) {
+    if (typeof ref === "string" && ref.startsWith("kv:")) {
+      const k = ref.slice(3);
+      KV.set(k, undefined);
+      IDB.set(k, undefined);
+      delete this.cache[k];
+    }
+  },
+  async migrate() {
+    if (!(await IDB.open())) return 0;
+    let n = 0;
+    try {
+      for (const lk of Object.keys(localStorage)) {
+        if (!/^hv1_img[a-z0-9]{10,30}$/.test(lk)) continue;
+        const k = lk.slice(4),
+          v = KV.getLocal(k);
+        if (typeof v === "string" && (await IDB.set(k, v))) {
+          localStorage.removeItem(lk);
+          n++;
+        }
+      }
+    } catch {}
+    return n;
+  },
+  tag(ref) {
+    if (!validRef(ref)) return "";
+    if (ref.startsWith("kv:")) {
+      const k = ref.slice(3);
+      return this.cache[k] ? `<img src="${this.cache[k]}" alt="">` : `<img data-kv="${k}" alt="">`;
+    }
+    return `<img src="${ref}" alt="" loading="lazy">`;
+  },
+  async hydrate(root = document) {
+    const els = $$("img[data-kv]", root).map((el) => {
+      const k = el.dataset.kv;
+      el.removeAttribute("data-kv");
+      el.classList.add("img-wait");
+      return [el, k];
+    });
+    await Promise.all([...new Set(els.map((x) => x[1]))].map((k) => this.load(k).catch(() => null)));
+    els.forEach(([el, k]) => {
+      if (this.cache[k]) el.src = this.cache[k];
+      el.classList.remove("img-wait");
+      if (!el.src) {
+        el.classList.add("img-miss");
+        const cv = el.closest(".cover");
+        if (cv) cv.classList.remove("has-img");
+      }
+    });
+  }
+};
+function shrink(file, max, q) {
+  return new Promise((res, rej) => {
+    const fr = new FileReader();
+    fr.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const k = Math.min(1, max / Math.max(img.width, img.height)),
+          cv = document.createElement("canvas");
+        cv.width = Math.round(img.width * k);
+        cv.height = Math.round(img.height * k);
+        cv.getContext("2d").drawImage(img, 0, 0, cv.width, cv.height);
+        res(cv.toDataURL("image/jpeg", q));
+      };
+      img.onerror = rej;
+      img.src = fr.result;
+    };
+    fr.onerror = rej;
+    fr.readAsDataURL(file);
+  });
+}
+/* ── src/js/services/load.js — 저장된 데이터를 S에 읽어 들임(loadAll): 지갑·페르소나·대화방 목록·내 서재(장기기억 설정은 설정의 한 칸 — core/migrate.js와 계정의 settings 행) */
 async function loadAll() {
-  const [w, p, rooms, mc, shelf] = await Promise.all(["wallet", "personas", "rooms", "memcfg", "shelf"].map((k) => KV.get(k)));
+  const [w, p, rooms, shelf] = await Promise.all(["wallet", "personas", "rooms", "shelf"].map((k) => KV.get(k)));
   if (w && typeof w === "object")
     S.wallet = {
       ...S.wallet,
@@ -3403,10 +3445,9 @@ async function loadAll() {
   if (Array.isArray(rooms)) S.rooms = sortRooms(rooms);
   S.shelf = mergeShelf(shelf);
   IMG.migrate().catch(() => {});
-  if (mc && typeof mc === "object") S.settings.memCfg = { ...S.settings.memCfg, ...mc };
   refreshFree();
 }
-/* ── src/js/services/sync.js — 처음 로그인 합치기(mergeGuest), 계정에서 다시 받기, 기기 지우기 */
+/* ── src/js/services/sync.js — 처음 로그인 합치기(mergeGuest)·계정 것만 쓰기(dropGuestRooms), 계정에서 다시 받기, 기기 지우기 */
 function mergeGuest(remote, local) {
   const list = (a) => (Array.isArray(a) ? a : []);
   const byId = (a, b) => {
@@ -3429,6 +3470,9 @@ function mergeGuest(remote, local) {
   );
   if (ps.length && !ps.some((p) => p.def)) ps[0].def = true;
   if (ps.length) KV.set("personas", ps);
+}
+function dropGuestRooms(remote) {
+  if (!Array.isArray(remote.rooms)) KV.setLocal("rooms", []);
 }
 async function reloadFromCloud() {
   await loadAll();
@@ -4486,6 +4530,7 @@ async function maybeSummarize(r, manual = false) {
   const msgs = r.msgs.filter((m) => !m.sys && curText(m)).slice(-(n * 2));
   if (!msgs.length) return;
   summarizing = true;
+  holdRoom(r.id);
   flagMemo(true, "장기기억을 정리하는 중…");
   const to = r.turn || 0,
     from = Math.max(1, to - n + 1);
@@ -4545,6 +4590,7 @@ ${excerpt}`
   } catch (e) {
     if (manual) toast("요약하지 못했어요. 잠시 뒤 다시 시도해 주세요.");
   } finally {
+    releaseRoom(r.id);
     summarizing = false;
     flagMemo(false);
   }
@@ -4586,12 +4632,18 @@ function sheet(html, cls = "") {
   ov.innerHTML = `<div class="sheet ${cls}" role="dialog" aria-modal="true">${html}</div>`;
   document.body.append(ov);
   ov.addEventListener("click", (e) => {
-    if (e.target === ov || e.target.closest("[data-x]")) ov.remove();
+    if (e.target === ov || e.target.closest("[data-x]")) shut(ov);
   });
   return ov;
 }
+function shut(ov) {
+  const f = ov.onShut;
+  ov.onShut = null;
+  ov.remove();
+  if (f) f();
+}
 function closeOverlays() {
-  $$(".overlay").forEach((o) => o.remove());
+  $$(".overlay").forEach(shut);
 }
 function confirmSheet(title, sub, okLabel, onOk) {
   const ov = sheet(
@@ -4954,13 +5006,10 @@ async function exportRoom(r) {
   }
 }
 function deleteRoom(id) {
-  deletedRooms.add(id);
-  if (gen && room && room.id === id) stopGen();
-  KV.set(roomKey(id), undefined);
-  S.rooms = S.rooms.filter((r) => r.id !== id);
-  KV.set("rooms", S.rooms);
-  renderRailRecent();
-  if (room && room.id === id) setRoom(null);
+  const mine = !!room && room.id === id;
+  removeRoom(id);
+  if (gen && mine) stopGen();
+  if (mine) setRoom(null);
   go("chats");
 }
 /* ── src/js/ui/chat/search.js — 대화 검색: 이 대화방의 메시지에서 낱말을 찾아 결과 목록을 보여 주고, 누르면 그 메시지로 감(ui/room-tools.js jumpTo) */
@@ -5798,6 +5847,50 @@ function bindChatSettings(root, after) {
   $("#cEnter", root).onchange = (e) => set("enterSend", e.target.checked);
   $("#cImg", root).onchange = (e) => set("sceneImg", e.target.checked);
 }
+/* ── src/js/services/cloud-push.js — 처음 로그인의 올리기(pushAll): 이 기기의 데이터와 그림을 계정에 올림 — 계정이 비었을 때·합칠 때(ui/account.js firstSync) */
+async function pushAll(keys) {
+  CLOUD.owed = true;
+  try {
+    localStorage.setItem("hv1_cloudowed", CLOUD.uid);
+  } catch {}
+  (keys || localKVKeys()).forEach((k) => {
+    const v = KV.getLocal(k);
+    if (v !== undefined) CLOUD.pending[k] = { v };
+  });
+  CLOUD.pending.settings = { v: cloudSettings() };
+  if ((await CLOUD.flush()) !== "ok") throw { code: "push_failed" };
+  const uid = CLOUD.uid,
+    have = new Set(await CLOUD.imgKeys());
+  let ls = [];
+  try {
+    ls = Object.keys(localStorage)
+      .filter((k) => k.indexOf("hv1_img") === 0)
+      .map((k) => k.slice(4));
+  } catch {}
+  const mine = Array.from(new Set((await IDB.keys()).concat(ls))).filter((k) => IMG_KEY_RE.test(k) && !have.has(k));
+  for (const k of mine) {
+    let v = await IDB.get(k);
+    if (typeof v !== "string") v = KV.getLocal(k);
+    if (CLOUD.uid !== uid) throw { code: "push_failed" };
+    if (typeof v === "string" && validRef(v)) CLOUD.put(k, v);
+  }
+  if ((await CLOUD.flush()) !== "ok") throw { code: "push_failed" };
+  if (CLOUD.uid !== uid) return;
+  CLOUD.owed = false;
+  try {
+    localStorage.removeItem("hv1_cloudowed");
+  } catch {}
+}
+function localKVKeys() {
+  try {
+    return Object.keys(localStorage)
+      .filter((k) => k.indexOf("hv1_") === 0)
+      .map((k) => k.slice(4))
+      .filter(synced);
+  } catch {
+    return [];
+  }
+}
 /* ── src/js/ui/account.js — MY → 계정 칸: 처음 로그인 합치기(firstSync), 동기화 상태·로그아웃·계정 삭제 */
 async function firstSync() {
   try {
@@ -5809,7 +5902,7 @@ async function firstSync() {
     remote[x.key] = x.value;
   });
   if (!rows.some((x) => x.key !== "settings")) {
-    await CLOUD.pushAll();
+    await pushAll();
     toast("이 기기의 데이터를 계정에 저장했어요");
     return;
   }
@@ -5821,8 +5914,9 @@ async function firstSync() {
   const use = async (merge) => {
     CLOUD.apply(rows);
     if (merge) mergeGuest(remote, local);
+    else dropGuestRooms(remote);
     await reloadFromCloud();
-    if (merge) await CLOUD.pushAll([]);
+    if (merge) await pushAll([]);
     toast(merge ? "이 기기의 데이터를 계정에 합쳤어요" : "계정 데이터를 불러왔어요");
   };
   if (!onlyRooms.length && !onlyLikes.length) return use(false);
@@ -5843,10 +5937,15 @@ async function firstSync() {
       resetShelf();
       pick(false);
     };
-    ov.addEventListener("click", (e) => {
-      if (e.target === ov) pick(true);
-    });
+    ov.onShut = () => pick(true);
   });
+}
+function cloudStateText() {
+  if (!CLOUD.on) return "";
+  if (CLOUD.state === "notable") return "⚠️ 계정 저장 표가 아직 없어요 (docs/supabase.sql을 실행해 주세요)";
+  if (CLOUD.state === "err") return "⚠️ 계정에 저장하지 못했어요. 잠시 뒤 다시 시도해요";
+  if (CLOUD.state === "sync") return "저장하는 중…";
+  return CLOUD.at ? "계정에 저장됨 · " + ago(CLOUD.at) : "계정과 연결됨";
 }
 on("cloud", () => {
   const el = $("#cloudState");
@@ -5869,7 +5968,16 @@ function accountBoxHTML() {
   );
 }
 const LOGOUT_WAIT = 20000;
-const flushSoon = () => Promise.race([CLOUD.flush(), new Promise((r) => setTimeout(() => r("left"), LOGOUT_WAIT))]);
+async function uploadAll() {
+  if (CLOUD.owed)
+    try {
+      await pushAll([]);
+    } catch {
+      return CLOUD.noTable ? "notable" : "left";
+    }
+  return CLOUD.flush();
+}
+const flushSoon = () => Promise.race([uploadAll(), new Promise((r) => setTimeout(() => r("left"), LOGOUT_WAIT))]);
 function veil(text) {
   const el = document.createElement("div"),
     block = (e) => {
@@ -5942,7 +6050,7 @@ function bindAccount(v) {
   $("#cSync", v).onclick = async (e) => {
     e.target.disabled = true;
     try {
-      if ((await CLOUD.flush()) === "left") throw 0;
+      if ((await uploadAll()) === "left") throw 0;
       const n = await CLOUD.pull();
       if (n) await reloadFromCloud();
       CLOUD.setState(CLOUD.noTable ? "notable" : "ok");
@@ -7505,12 +7613,19 @@ async function viewChat(id) {
     v.innerHTML = `<div class="page"><p class="note">대화를 불러오는 중…</p></div>`;
     const r = await KV.get(roomKey(id));
     if (location.hash.slice(1) !== "r-" + id) return;
-    if (!r) {
-      v.innerHTML = `<div class="page">${topbar()}<div class="empty">대화방을 찾을 수 없어요.<br><button class="btn sm" data-go="chats">대화 목록</button></div></div>`;
+    let ok = null;
+    try {
+      ok = r ? migrateRoom(r) : null;
+    } catch {}
+    if (!ok) {
+      const why = r
+        ? `이 대화방을 열 수 없어요. 저장된 내용이 온전하지 않아요.<br><span class="note">내용은 지우지 않고 그대로 두었어요.</span>`
+        : "대화방을 찾을 수 없어요.";
+      v.innerHTML = `<div class="page">${topbar()}<div class="empty">${why}<br><button class="btn sm" data-go="chats">대화 목록</button></div></div>`;
       bindGo(v);
       return;
     }
-    setRoom(migrateRoom(r));
+    setRoom(ok);
   }
   collectSeen(room);
   const c = room.char;
@@ -8363,6 +8478,7 @@ async function generate(target, q, direction = "", isEdit = false) {
       syncJump();
     }
   };
+  holdRoom(r.id);
   try {
     const text = await llm(input, {
       tier: MODELS[model].tier,
@@ -8407,18 +8523,22 @@ async function generate(target, q, direction = "", isEdit = false) {
       if (copy) r.lastErr = copy;
     }
   } finally {
-    setGen(null);
-    saveRoom(r);
-    collectSeen(r);
-    if (room === r && $("#logInner")) {
-      renderLog(stick && autoScroll());
-      syncJump();
-      updateComposer();
-      updateMeter();
-      $("#inp")?.focus({ preventScroll: true });
-      if (q.sug) showSug();
+    try {
+      setGen(null);
+      saveRoom(r);
+      collectSeen(r);
+      if (room === r && $("#logInner")) {
+        renderLog(stick && autoScroll());
+        syncJump();
+        updateComposer();
+        updateMeter();
+        $("#inp")?.focus({ preventScroll: true });
+        if (q.sug) showSug();
+      }
+      maybeSummarize(r);
+    } finally {
+      releaseRoom(r.id);
     }
-    maybeSummarize(r);
   }
 }
 function stopGen() {
@@ -9049,6 +9169,14 @@ function migrateSettings() {
   } catch {}
   if (s) S.settings = { ...S.settings, ...s, memCfg: { ...S.settings.memCfg, ...(s.memCfg || {}) } };
   let moved = false;
+  if (!s || !s.memCfg)
+    try {
+      const old = JSON.parse(localStorage.getItem("hv1_memcfg") || "null");
+      if (old && typeof old === "object") {
+        S.settings.memCfg = { ...S.settings.memCfg, ...old };
+        moved = true;
+      }
+    } catch {}
   try {
     for (const k of ["unfilteredModels"])
       if (k in S.settings) {
@@ -9076,6 +9204,9 @@ async function boot() {
   bootBack(askLogin);
   route();
   window.addEventListener("hashchange", route);
+  window.addEventListener("hashchange", () => {
+    if (CLOUD.on && CLOUD.skipped.size) CLOUD.retake();
+  });
   if (SB.s)
     afterLogin(!!authType).then(() => {
       if (authType === "recovery") newPasswordSheet();

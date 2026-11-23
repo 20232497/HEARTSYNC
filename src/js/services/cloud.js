@@ -1,30 +1,28 @@
 /* 계정 저장(CLOUD): KV를 계정 kv 표에 모아 올리고 받기, 기기별 설정 분리 */
 import { emit, on } from "../core/events.js";
-import { roomKey } from "../core/rooms.js";
+import { roomInUse, roomKey } from "../core/rooms.js";
 import { mergeShelf, shelfSyncOn } from "../core/shelf.js";
-import { S, room } from "../core/state.js";
-import { IDB, KV } from "../core/storage.js";
-import { ago } from "../core/util.js";
-import { validRef } from "./images.js";
+import { S, room, setRoom } from "../core/state.js";
+import { KV } from "../core/storage.js";
+import { cloudSettings, mergeCloudSettings } from "./cloud-settings.js";
 import { SB } from "./supabase.js";
-/** @typedef {import("../core/types.js").Settings} Settings */
 
 /* KV ↔ 계정 동기화. 쓰기는 KV.set → put()이 키마다 0.8초 모아 upsert(지우기는 DELETE).
    읽기는 그림(img…)을 뺀 키를 받아 이 기기에 씀 — 처음 로그인하면 전부, 그 뒤엔 updated_at이 바뀐 것만. 그림(페르소나 사진)은 IMG.load가 필요할 때 한 장씩.
    이 기기에서 아직 못 올린 키(pending)와 올리는 중인 키(sending)는 받은 값으로 덮지 않음. 설정은 "settings" 키(글자 크기·Enter로 보내기는 기기마다 따로) */
-const DEVICE_SETTINGS = ["fs", "enterSend", "theme"]; // 화면 테마도 기기마다 따로(낮에 쓰는 기기와 밤에 쓰는 기기가 다를 수 있음)
-/* API 키 칸은 계정에 올리지 않음 — 서버 표의 kv_no_plain_keys 제약도 settings에 이 칸이 있으면 거부. 예전 빌드의 그림·성인 키 칸도 기기에 남아 있을 수 있어 함께 뺌 */
-const KEY_FIELDS = ["apiKey", "runwareKey", "openRouterKey"];
-/* 계정과 주고받는 KV 키. 예전 빌드가 남긴 행(그림 묶음·내 작품·잠근 키 등)은 받지도 올리지도 않음 */
-const SYNCED_RE = /^(wallet|personas|rooms|memcfg|room-.+)$/;
+/* 계정과 주고받는 KV 키. 예전 빌드가 남긴 행(그림 묶음·내 작품·잠근 키·따로 두던 장기기억 설정 memcfg 등)은 받지도 올리지도 않음 —
+   장기기억 설정은 설정("settings" 행)의 한 칸으로만 다님(2026-11-23, core/settings.js) */
+const SYNCED_RE = /^(wallet|personas|rooms|room-.+)$/;
 /* 내 서재(찜·최근 본·수집 기록)는 정해진 날짜부터만 계정과 주고받음(shelfSyncOn) — 그 전에는 이 기기에만. 다른 키와 달리 받은 값으로 덮지 않고 합침(takeShelf) */
 const SHELF_KEY = "shelf";
-const synced = (k) => SYNCED_RE.test(k) || (k === SHELF_KEY && shelfSyncOn());
-const IMG_KEY_RE = /^img[a-z0-9]{6,30}$/;
+export const synced = (k) => SYNCED_RE.test(k) || (k === SHELF_KEY && shelfSyncOn());
+/* 응답 생성·요약이 아직 쓰고 있는 방의 키인지(core/rooms.js roomInUse) — 그 일이 끝나면 들고 있던 방을 저장하므로 받은 것으로 덮지 않고 미룸 */
+const using = (k) => k.indexOf("room-") === 0 && roomInUse(k.slice(5));
+export const IMG_KEY_RE = /^img[a-z0-9]{6,30}$/;
 /**
  * 계정 저장(Supabase kv 표). start()/stop() 로그인·로그아웃 때 · put(k, v) 0.8초 모아 upsert(KV.remote 고리) · flush() 바로 올리고 결과를 돌려줌(한 번에 하나) ·
  * pull() → Promise<number> 바뀐 행 받아 적용
- * getOne(k) 그림 본문 받기 · pushAll(keys) 처음 로그인에 기기 데이터 올리기 · wipe() 계정 행 전부 삭제 · state: ""|"sync"|"ok"|"err"|"notable"("cloud" 이벤트)
+ * getOne(k) 그림 본문 받기 · wipe() 계정 행 전부 삭제 · state: ""|"sync"|"ok"|"err"|"notable"("cloud" 이벤트)
  */
 export const CLOUD = {
   on: false,
@@ -32,6 +30,10 @@ export const CLOUD = {
   pending: {},
   busy: null, // 지금 도는 전송의 줄(Promise) — flush()가 뒤에 이어 붙임
   sending: new Set(), // 지금 올리는 중인 키(send가 채우고 비움)
+  skipped: new Set(), // 열려 있어서 덮지 않고 넘어간 방의 키 — 방에서 나오면 다시 받음(retake)
+  seq: 0, // 이 기기에서 값을 바꿀 때마다 올라가는 번호
+  putSeq: {}, // 키 → 마지막으로 바꾼 때의 번호. 받기를 시작한 뒤에 바뀐 키는 그 받기의 값으로 덮지 않음(받는 사이 저장하고 올리기까지 끝나면 pending·sending에는 흔적이 없음)
+  owed: false, // 처음 올리기(pushAll)가 덜 끝남 — 그림을 대기열에 넣기 전에 실패하면 대기열에는 흔적이 없어, 로그아웃이 이 표시를 보고 다시 올림
   timer: null,
   state: "",
   at: 0,
@@ -46,12 +48,18 @@ export const CLOUD = {
     this.uid = this.on ? SB.s.user.id : null;
     this.noTable = false;
     this.shelfUp = false;
+    try {
+      this.owed = this.on && localStorage.getItem("hv1_cloudowed") === this.uid; // 새로고침 뒤에도 기억
+    } catch {}
   },
   stop() {
     this.on = false;
     this.uid = null;
     this.pending = {};
     this.sending = new Set();
+    this.skipped = new Set();
+    this.putSeq = {};
+    this.owed = false;
     clearTimeout(this.timer);
     this.setState("");
   },
@@ -63,6 +71,7 @@ export const CLOUD = {
   put(k, v) {
     if (!this.on || this.noTable || !(k === "settings" || synced(k) || IMG_KEY_RE.test(k))) return;
     this.pending[k] = v === undefined ? null : { v };
+    this.putSeq[k] = ++this.seq;
     clearTimeout(this.timer);
     this.timer = setTimeout(() => this.flush(), 800);
   },
@@ -181,8 +190,11 @@ export const CLOUD = {
     }
   },
   // 받은 행을 이 기기에 씀. 열려 있는 대화방은 덮지 않음(대화 중에 바뀌면 헷갈림). 바뀐 키 수를 돌려줌.
-  // hold: 이 받기를 시작할 때 올리는 중이던 키 — 받는 사이 올리기가 끝나도, 그 전에 읽힌 옛 값으로 덮지 않음(pull이 넘김)
-  apply(rows, hold) {
+  // hold: 이 받기를 시작할 때 올리는 중이던 키 — 받는 사이 올리기가 끝나도, 그 전에 읽힌 옛 값으로 덮지 않음(pull이 넘김).
+  // since: 이 받기를 시작할 때의 번호(this.seq) — 그 뒤에 이 기기에서 바뀐 키도 덮지 않음. 없으면 처음 로그인의 전부 받기(firstSync)
+  apply(rows, hold, since) {
+    const full = since === undefined,
+      newer = (k) => !full && (this.putSeq[k] || 0) > since;
     let n = 0;
     const open = room && location.hash === "#r-" + room.id ? roomKey(room.id) : "";
     rows.forEach((x) => {
@@ -194,14 +206,28 @@ export const CLOUD = {
         if (shelfSyncOn() && this.takeShelf(x.value)) n++;
         return;
       } // 보내지 못한 것이 있어도 합침
-      if (x.key in this.pending || this.sending.has(x.key) || (hold && hold.has(x.key)) || x.key === open) return;
+      if (x.key in this.pending || this.sending.has(x.key) || (hold && hold.has(x.key)) || newer(x.key)) return; // 이 기기의 값이 올라가(올라갔거나) 계정 것을 대신함
+      if (x.key === open || using(x.key)) {
+        this.skipped.add(x.key); // 받은 자리 표시(커서)는 이미 이 행을 지나갔으므로 적어 두었다가 방에서 나오면(쓰던 일이 끝나면) 다시 받음
+        return;
+      }
       if (x.key === "settings") {
         mergeCloudSettings(x.value);
         n++;
         return;
       }
+      // 예전 빌드가 따로 올리던 장기기억 설정 행: 처음 로그인의 전부 받기에서, 계정의 설정 행에 그 칸이 없을 때만 받아 설정으로 옮김(지금은 설정의 한 칸으로만 다님 —
+      // 예전 행만 남은 계정에서 값을 잃지 않게). 바뀐 것만 받는 때에는 보지 않음 — 예전 빌드가 이 행만 고쳐도 지금 설정을 덮지 않게
+      if (x.key === "memcfg") {
+        if (full && x.value && typeof x.value === "object" && !rows.some((y) => y.key === "settings" && y.value && y.value.memCfg)) {
+          mergeCloudSettings({ memCfg: x.value });
+          n++;
+        }
+        return;
+      }
       if (!SYNCED_RE.test(x.key)) return;
       KV.setLocal(x.key, x.value === null ? undefined : x.value);
+      if (room && x.key === roomKey(room.id)) setRoom(null); // 메모리에 든 옛 사본을 놓음 — 그대로 두면 그 방을 다시 열 때 옛 사본이 쓰이고, 저장하면 받은 것을 덮음
       n++;
     });
     this.pulledAt = Date.now();
@@ -218,57 +244,48 @@ export const CLOUD = {
     S.shelf = m;
     return true;
   },
+  /**
+   * 열려 있어서 넘어간 방(skipped)을 다시 받음 — 방에서 나온 뒤(boot.js의 화면 이동)와 받기(pull) 앞에 부름. 아직 열려 있는 방은 계속 보류,
+   * 이 기기에 못 올린 변경이 있는 방은 그 값이 계정으로 올라가므로 받지 않음, 요청이 실패하면 다음에 다시. @returns {Promise<number>} 다시 받은 수
+   */
+  async retake() {
+    const uid = this.uid,
+      isOpen = (k) => !!room && location.hash === "#r-" + room.id && roomKey(room.id) === k;
+    let n = 0;
+    for (const k of [...this.skipped]) {
+      if (!this.on || this.uid !== uid) break;
+      if (isOpen(k) || using(k)) continue;
+      this.skipped.delete(k);
+      if (k in this.pending || this.sending.has(k)) continue;
+      const since = this.seq;
+      let got = null;
+      try {
+        const r = await SB.req("/rest/v1/kv?select=value&key=eq." + encodeURIComponent(k));
+        if (r.ok) got = await r.json();
+      } catch {}
+      if (this.uid !== uid) break;
+      if (!got || isOpen(k) || using(k)) {
+        this.skipped.add(k); // 못 받았거나 그사이 다시 열었으면 다음에
+        continue;
+      }
+      if (!got[0] || k in this.pending || this.sending.has(k) || (this.putSeq[k] || 0) > since) continue; // 계정에 그 방이 없거나, 그사이 이 기기에서 고침(올리기까지 끝났어도)
+      KV.setLocal(k, got[0].value);
+      if (room && roomKey(room.id) === k) setRoom(null);
+      n++;
+    }
+    return n;
+  },
   async pull() {
-    const hold = new Set(this.sending);
-    let n = this.apply(await this.rows(localStorage.getItem(this.lastKey()) || ""), hold);
+    const hold = new Set(this.sending),
+      since = this.seq,
+      again = await this.retake();
+    let n = again + this.apply(await this.rows(localStorage.getItem(this.lastKey()) || ""), hold, since);
     // 로그인한 뒤(또는 날짜가 된 뒤) 처음 한 번: 바뀐 행만 받는 pull에는 서재 행이 안 올 수 있어 따로 받아 합침 — 날짜 전에 이 기기에만 쌓인 것이 이때 계정으로
     if (!this.shelfUp && shelfSyncOn()) {
       this.shelfUp = true;
       if (this.takeShelf(await this.getOne(SHELF_KEY))) n++;
     }
     return n;
-  },
-  // 이 기기의 모든 데이터를 계정에 올림(계정이 비었을 때·합칠 때). 그림은 계정에 없는 것만 한 장씩 읽어 묶어 보냄
-  // (그림 본문은 IndexedDB에, IndexedDB가 막힌 브라우저에서는 localStorage에 있음)
-  async pushAll(keys) {
-    (keys || localKVKeys()).forEach((k) => {
-      const v = KV.getLocal(k);
-      if (v !== undefined) this.pending[k] = { v };
-    });
-    this.pending.settings = { v: cloudSettings() };
-    if ((await this.flush()) !== "ok") throw { code: "push_failed" }; // 못 올렸으면 '저장했어요'라고 하지 않게 — 부른 쪽(처음 로그인)이 받음
-    const have = new Set(await this.imgKeys());
-    let ls = [];
-    try {
-      ls = Object.keys(localStorage)
-        .filter((k) => k.indexOf("hv1_img") === 0)
-        .map((k) => k.slice(4));
-    } catch {}
-    const mine = Array.from(new Set((await IDB.keys()).concat(ls))).filter((k) => IMG_KEY_RE.test(k) && !have.has(k));
-    let batch = [],
-      size = 0;
-    const send = async () => {
-      if (!batch.length) return;
-      await this.check(
-        await SB.req("/rest/v1/kv?on_conflict=user_id,key", {
-          method: "POST",
-          headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
-          body: JSON.stringify(batch)
-        })
-      );
-      batch = [];
-      size = 0;
-    };
-    for (const k of mine) {
-      let v = await IDB.get(k);
-      if (typeof v !== "string") v = KV.getLocal(k);
-      if (typeof v !== "string" || !validRef(v)) continue;
-      batch.push({ user_id: this.uid, key: k, value: v });
-      size += v.length;
-      if (size > 1500000) await send();
-    }
-    await send();
-    this.setState("ok");
   },
   async wipe() {
     if (this.on && !this.noTable) {
@@ -297,40 +314,3 @@ function chunkBy(items, max) {
 // core가 services를 모르게 고리로 꽂음: KV.set → 계정에도, 설정 저장 → "settings" 행
 KV.remote = (k, v) => CLOUD.put(k, v);
 on("settings", () => CLOUD.put("settings", cloudSettings()));
-// 이 기기 KV 키 중 계정과 주고받는 것(그림은 pushAll이 따로, 설정은 "settings" 키로 따로)
-function localKVKeys() {
-  try {
-    return Object.keys(localStorage)
-      .filter((k) => k.indexOf("hv1_") === 0)
-      .map((k) => k.slice(4))
-      .filter(synced);
-  } catch {
-    return [];
-  }
-}
-/** 계정에 올릴 설정 — 기기별 칸(fs·enterSend)과 API 키 칸은 뺌(서버 제약 kv_no_plain_keys). @returns {Partial<Settings>} */
-export function cloudSettings() {
-  const s = Object.assign({}, S.settings);
-  DEVICE_SETTINGS.concat(KEY_FIELDS).forEach((k) => delete s[k]);
-  return s;
-}
-function mergeCloudSettings(v) {
-  if (!v || typeof v !== "object") return;
-  // 기기별 칸과 키 칸은 계정 것을 받지 않음 — 이 기기에 그 칸이 없어도(화면 테마를 '기기 설정'으로 둔 것) 예전 빌드가 계정에 남긴 값이 들어오지 않게
-  const incoming = Object.assign({}, v);
-  DEVICE_SETTINGS.concat(KEY_FIELDS).forEach((k) => delete incoming[k]);
-  const next = Object.assign({}, S.settings, incoming);
-  delete next.keysLocal;
-  S.settings = next;
-  try {
-    localStorage.setItem("hv1_settings", JSON.stringify(S.settings));
-  } catch {}
-}
-/** MY → 계정에 보이는 동기화 상태 글. @returns {string} */
-export function cloudStateText() {
-  if (!CLOUD.on) return "";
-  if (CLOUD.state === "notable") return "⚠️ 계정 저장 표가 아직 없어요 (docs/supabase.sql을 실행해 주세요)";
-  if (CLOUD.state === "err") return "⚠️ 계정에 저장하지 못했어요. 잠시 뒤 다시 시도해요";
-  if (CLOUD.state === "sync") return "저장하는 중…";
-  return CLOUD.at ? "계정에 저장됨 · " + ago(CLOUD.at) : "계정과 연결됨";
-}
