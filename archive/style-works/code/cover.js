@@ -95,6 +95,8 @@ export const COVERS = {
   hasuk: { type: "group", mood: "warm", color: "(warm lighting:1.0), (golden rim light:0.9)" },
   sipjeol: { type: "group", mood: "dark", color: "(orange lighting:1.15), (blue rim light:1.15)" },
   hwanghu: { type: "group", mood: "dark", color: "(golden lighting:1.25), (red rim light:1.15), (candlelight:0.95)" },
+  // F급 던전: 밝고 유쾌한 작품 — 작업등의 따뜻한 빛에 코어의 푸른 가장자리 빛(2026-11-23 설계, 아직 그려 보지 않음)
+  fdungeon: { type: "group", mood: "warm", color: "(warm lighting:1.0), (orange lighting:0.8), (teal rim light:0.8)" },
   // 상징물: 사람 없이 작품의 상징 장면만(주인공이 정해지지 않은 작품)
   minwon: {
     type: "symbol", seed: 9305, neg: ", (statue:1.3)",
@@ -123,11 +125,11 @@ const BLUR0 = /\(blurry background:[\d.]+\)/; // 화풍의 장소 칸 끝(배경
 const SOLO0 = new RegExp(FRAME0.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + ", .*?" + BLUR0.source);
 const cut = (s, t) => s.replace(t + ", ", "").replace(", " + t, "");
 
-/** 인물을 찾아 표지용 태그 바꾸기(swap)를 입힌다 — 작품 태그에서 그 낱말이 사라졌으면 그대로 둔다 */
+/** 인물을 찾아 표지용 태그 바꾸기(swap)를 입힌다 — 작품 태그에서 그 낱말이 사라졌으면 그대로 둔다. 바꿀 태그가 빈 글이면 그 태그를 뺀다 */
 export function castOf(work, code, swap) {
   let c = (work.cast || []).find((x) => x.code === code);
   if (!c) throw new Error(`표지 인물을 찾지 못했어요: ${work.id || ""} ${code}`);
-  for (const [a, b] of swap || []) if (c.tags.split(", ").includes(a)) c = { ...c, tags: c.tags.split(", ").map((t) => (t === a ? b : t)).join(", ") };
+  for (const [a, b] of swap || []) if (c.tags.split(", ").includes(a)) c = { ...c, tags: c.tags.split(", ").map((t) => (t === a ? b : t)).filter(Boolean).join(", ") };
   return c;
 }
 /** 화풍의 칸 1 작업을 표지 인물 문구로 — v: COVERS의 한 줄(또는 단체의 인물 한 명), o: { frame, mood, color, place, solo(오려 붙일 인물 — 배경 없이, 시선 문구 없이), away(옆을 봄) } */

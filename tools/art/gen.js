@@ -37,7 +37,8 @@ async function call(task, type) {
       continue;
     }
     if (e || !r.ok) throw new Error(e ? [e.code, e.message, e.parameter].filter(Boolean).join(" — ") : "HTTP " + r.status);
-    const x = (d.data || []).find((o) => o.taskType === type);
+    // 응답의 taskType은 보낸 것과 다를 수 있다(배경 지우기 removeBackground는 imageBackgroundRemoval로 온다) → 보낸 taskUUID로 먼저 찾는다
+    const x = (d.data || []).find((o) => o.taskUUID === task.taskUUID) || (d.data || []).find((o) => o.taskType === type);
     if (!x) throw new Error("그림이 오지 않았어요");
     spent.usd += x.cost || 0;
     return x;
@@ -84,7 +85,8 @@ export const load = (src) =>
     i.onerror = () => rej(new Error("그림을 읽지 못했어요"));
     i.src = url;
   });
-export const toBlob = (cv, type = "image/webp", q = 0.9) => new Promise((res, rej) => cv.toBlob((b) => (b ? res(b) : rej(new Error("그림으로 바꾸지 못했어요"))), type, q));
+export const toBlob = (cv, type = "image/webp", q = 0.9) =>
+  new Promise((res, rej) => cv.toBlob((b) => (b ? res(b) : rej(new Error("그림으로 바꾸지 못했어요"))), type, q));
 
 /** 연습 모드의 자리 표시 그림(SVG)을 진짜 그림 형식으로 — 보관함은 webp·png만 받는다 */
 async function real(blob, type) {
@@ -116,7 +118,15 @@ export async function generate(j) {
 /** 인물 그림의 배경을 지운다(Runware removeBackground — BiRefNet General, 한 장에 약 0.06센트) → PNG blob */
 export async function removeBg(blob) {
   const x = await call(
-    { taskType: "removeBackground", taskUUID: crypto.randomUUID(), model: "runware:112@5", inputs: { image: await dataOf(blob) }, outputType: "dataURI", outputFormat: "PNG", includeCost: true },
+    {
+      taskType: "removeBackground",
+      taskUUID: crypto.randomUUID(),
+      model: "runware:112@5",
+      inputs: { image: await dataOf(blob) },
+      outputType: "dataURI",
+      outputFormat: "PNG",
+      includeCost: true
+    },
     "removeBackground"
   );
   const uri = x.imageDataURI || (x.imageBase64Data && "data:image/png;base64," + x.imageBase64Data) || x.imageURL;

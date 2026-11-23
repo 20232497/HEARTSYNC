@@ -308,8 +308,10 @@ const server = http.createServer(async (req, res) => {
     if (post && u.pathname === "/mock") {
       if (!MOCK) return send(res, 404, { error: "연습 모드가 아니에요" });
       const tasks = JSON.parse((await body(req)).toString("utf8"));
+      // 진짜 생성 서비스처럼: 배경 지우기(removeBackground)의 응답은 taskType이 imageBackgroundRemoval로 온다(이 차이로 실제 모드의 단체 표지가 멈췄었음 — 2026-11-23)
+      const typeOf = (t) => (t.taskType === "removeBackground" ? "imageBackgroundRemoval" : t.taskType);
       return send(res, 200, {
-        data: tasks.map((t) => ({ taskType: t.taskType, taskUUID: t.taskUUID, imageDataURI: mockImage(t), cost: 0, NSFWContent: false }))
+        data: tasks.map((t) => ({ taskType: typeOf(t), taskUUID: t.taskUUID, imageDataURI: mockImage(t), cost: 0, NSFWContent: false }))
       });
     }
     // 사이트에 올리기 — 빌드·커밋·올리기·PR·검사 통과 시 병합. 연습 모드에서는 하지 않는다
