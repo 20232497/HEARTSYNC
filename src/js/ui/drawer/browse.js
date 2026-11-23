@@ -90,7 +90,7 @@ export function drawerBookmarks({ r, ov, body }) {
     ? list
         .map(
           (m) =>
-            `<button class="bm" data-j="${m.id}">` +
+            `<button class="bm" data-j="${esc(m.id)}">` +
             (`<b>${m.role === "ai" ? esc(speakerName(r)) : esc(r.persona.name)}</b>` +
               `${esc(curText(m).replace(IMG_TAG_RE, "").replace(/[*"]/g, "").replace(/\s+/g, " ").slice(0, 120))}…</button>`)
         )

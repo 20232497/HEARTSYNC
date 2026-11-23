@@ -64,6 +64,14 @@
 .msg.me .col { align-items:flex-end; flex:0 1 auto; max-width:82%; }
 .msg.me .bubble { background:var(--accent-soft); border-color:transparent; border-radius:16px 4px 16px 16px; }
 .msg.me.ooc .bubble { background:none; border:1px dashed var(--line); color:var(--muted); font-size:13px; padding:7px 12px; }
+/* 휴대폰: 말풍선이 로그 폭 전체를 쓰게 — 아바타 칸(36px + 간격 10px)이 말풍선을 밀어 왼쪽 60px·오른쪽 14px로 쏠려 보였고, 긴 답에서는 아바타가 지나간 뒤 빈 띠만 남았음.
+   AI 아바타는 24px로 줄여 이름 줄 앞에 얹고(칸을 차지하지 않게 absolute), 내 말풍선 옆의 페르소나 사진은 숨김(2026-11-21 사용자 결정). 상태창·도구 줄도 같이 넓어짐 */
+@media (max-width:560px) {
+  .msg:not(.me) { position:relative; }
+  .msg:not(.me) > .cover { position:absolute; top:0; left:0; width:24px; height:24px; border-radius:8px; margin-top:0; }
+  .msg:not(.me) .nm { display:flex; align-items:center; min-height:24px; padding-left:30px; }
+  .msg.me > .pav { display:none; }
+}
 .sys-pill { align-self:center; font-size:12px; color:var(--muted); background:var(--surface2); border-radius:999px; padding:3px 12px; }
 .tools-row { display:flex; align-items:center; gap:1px; color:var(--muted); font-size:12px; flex-wrap:wrap; }
 .tools-row button { border:0; background:none; color:var(--muted); padding:4px 7px; border-radius:7px; font-size:12px; display:inline-flex; align-items:center; gap:3px; }
@@ -80,6 +88,8 @@ details.stat summary::-webkit-details-marker { display:none; }
 details.stat summary::after { content:"▾"; margin-left:auto; }
 details.stat[open] summary::after { content:"▴"; }
 .status { padding:2px 12px 11px; display:grid; grid-template-columns:repeat(auto-fill, minmax(270px, 1fr)); gap:5px 22px; margin:0; }
+/* 휴대폰에서는 늘 한 칸(카드 안쪽이 두 칸 폭 562px에 못 미침) — 칸의 최소 폭 270px이 카드보다 넓으면(폭 320px) 값이 카드 밖으로 나가 잘렸음. 방 메뉴의 상태창도 같음 */
+@media (max-width:560px) { .status { grid-template-columns:minmax(0,1fr); } }
 .st-row { display:grid; grid-template-columns:5.6em minmax(0,1fr); gap:10px; align-items:baseline; }
 .st-row.wide { grid-column:1 / -1; }
 .status dt { color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }

@@ -27,8 +27,9 @@
 .d-more { margin-top:8px; }
 .d-fields { margin-top:10px; }
 @media (max-width:780px) {
-  .detail { grid-template-columns:1fr; gap:14px; }
+  .detail { grid-template-columns:minmax(0,1fr); gap:14px; } /* 1fr의 최소 폭은 내용만큼이라, 가로로 미는 줄(다른 작품)이 칸을 화면 밖으로 밀어냄 — 0부터 */
   .d-side { position:static; max-height:none; overflow:visible; }
+  .d-side, .d-main { min-width:0; }
   .d-top { display:grid; grid-template-columns:112px minmax(0,1fr); gap:14px; align-items:start; margin-bottom:12px; }
   .d-top > .cover { width:100%; min-width:0; margin:0; border-radius:14px; }
   .detail h1 { font-size:22px; margin-top:2px; }

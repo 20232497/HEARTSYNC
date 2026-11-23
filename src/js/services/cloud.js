@@ -11,7 +11,7 @@ import { SB } from "./supabase.js";
 
 /* KV ↔ 계정 동기화. 쓰기는 KV.set → put()이 키마다 0.8초 모아 upsert(지우기는 DELETE).
    읽기는 그림(img…)을 뺀 키를 받아 이 기기에 씀 — 처음 로그인하면 전부, 그 뒤엔 updated_at이 바뀐 것만. 그림(페르소나 사진)은 IMG.load가 필요할 때 한 장씩.
-   이 기기에서 아직 못 올린 키(pending)는 받은 값으로 덮지 않음. 설정은 "settings" 키(글자 크기·Enter로 보내기는 기기마다 따로) */
+   이 기기에서 아직 못 올린 키(pending)와 올리는 중인 키(sending)는 받은 값으로 덮지 않음. 설정은 "settings" 키(글자 크기·Enter로 보내기는 기기마다 따로) */
 const DEVICE_SETTINGS = ["fs", "enterSend", "theme"]; // 화면 테마도 기기마다 따로(낮에 쓰는 기기와 밤에 쓰는 기기가 다를 수 있음)
 /* API 키 칸은 계정에 올리지 않음 — 서버 표의 kv_no_plain_keys 제약도 settings에 이 칸이 있으면 거부. 예전 빌드의 그림·성인 키 칸도 기기에 남아 있을 수 있어 함께 뺌 */
 const KEY_FIELDS = ["apiKey", "runwareKey", "openRouterKey"];
@@ -22,13 +22,16 @@ const SHELF_KEY = "shelf";
 const synced = (k) => SYNCED_RE.test(k) || (k === SHELF_KEY && shelfSyncOn());
 const IMG_KEY_RE = /^img[a-z0-9]{6,30}$/;
 /**
- * 계정 저장(Supabase kv 표). start()/stop() 로그인·로그아웃 때 · put(k, v) 0.8초 모아 upsert(KV.remote 고리) · flush() 바로 올림 · pull() → Promise<number> 바뀐 행 받아 적용
+ * 계정 저장(Supabase kv 표). start()/stop() 로그인·로그아웃 때 · put(k, v) 0.8초 모아 upsert(KV.remote 고리) · flush() 바로 올리고 결과를 돌려줌(한 번에 하나) ·
+ * pull() → Promise<number> 바뀐 행 받아 적용
  * getOne(k) 그림 본문 받기 · pushAll(keys) 처음 로그인에 기기 데이터 올리기 · wipe() 계정 행 전부 삭제 · state: ""|"sync"|"ok"|"err"|"notable"("cloud" 이벤트)
  */
 export const CLOUD = {
   on: false,
   uid: null,
   pending: {},
+  busy: null, // 지금 도는 전송의 줄(Promise) — flush()가 뒤에 이어 붙임
+  sending: new Set(), // 지금 올리는 중인 키(send가 채우고 비움)
   timer: null,
   state: "",
   at: 0,
@@ -48,6 +51,7 @@ export const CLOUD = {
     this.on = false;
     this.uid = null;
     this.pending = {};
+    this.sending = new Set();
     clearTimeout(this.timer);
     this.setState("");
   },
@@ -62,59 +66,83 @@ export const CLOUD = {
     clearTimeout(this.timer);
     this.timer = setTimeout(() => this.flush(), 800);
   },
+  // 응답이 실패면 던짐. 오류 본문은 8초까지만 기다리고(머리만 오고 본문이 멈추면 전송의 줄이 영영 안 풀림), 기다리는 사이 계정이 바뀌었으면 '표 없음' 판정을 켜지 않음
   async check(r) {
     if (r.ok) return;
-    const j = await r.json().catch(() => ({}));
+    const uid = this.uid,
+      j = await Promise.race([r.json().catch(() => ({})), new Promise((res) => setTimeout(() => res({}), 8000))]);
+    if (this.uid !== uid) throw j;
     if (r.status === 404 || j.code === "PGRST205" || j.code === "42P01") {
       this.noTable = true;
       this.setState("notable");
     }
     throw j;
   },
-  async flush() {
+  /**
+   * 모아 둔 것을 지금 올림. **전송은 한 번에 하나** — 도는 것이 있으면 그것이 끝난 뒤에 이어서 돎(겹쳐 돌면 늦게 끝난 옛 값이 새 값을 덮고,
+   * 로그아웃이 '보낼 것 없음'으로 보고 도는 전송을 기다리지 않음). 로그아웃·'지금 동기화'는 돌려준 결과를 보고 다음 일을 정함(ui/account.js).
+   * @returns {Promise<"ok"|"left"|"notable"|"off">} ok 남은 것 없음 · left 못 올린 것이 남음(15초 뒤 다시 시도) · notable 계정 저장 표가 없음 · off 계정 연결이 꺼짐
+   */
+  flush() {
     clearTimeout(this.timer);
+    const next = () => this.send();
+    return (this.busy = (this.busy || Promise.resolve()).then(next, next));
+  },
+  // 전송 한 차례 — flush()의 줄에서만 부름. 시작할 때의 계정(uid)이 도는 사이 바뀌면(로그아웃·다른 계정) 남은 요청·되돌려 넣기·상태 갱신을 모두 버림
+  async send() {
+    const uid = this.uid,
+      gone = () => this.uid !== uid;
+    if (!this.on) return "off";
+    if (this.noTable) return "notable";
     const items = Object.entries(this.pending);
-    if (!items.length || !this.on || this.noTable) return;
+    if (!items.length) return "ok";
     this.pending = {};
+    this.sending = new Set(items.map((x) => x[0])); // 올리는 중인 키 — 그사이 받은 옛 값으로 이 기기를 덮지 않게(apply)
     this.setState("sync");
+    // 요청 하나: 보내기 전과 응답을 받은 뒤에 계정을 다시 봄 — 바뀌었으면 응답을 해석하지 않고 그만둠(다른 계정에 '표 없음' 판정을 켜지 않게)
+    const call = async (path, opts) => {
+      if (gone()) throw 0;
+      const r = await SB.req(path, opts);
+      if (gone()) throw 0;
+      await this.check(r);
+    };
     try {
-      const ups = items.filter((x) => x[1]).map(([key, x]) => ({ user_id: this.uid, key, value: x.v }));
+      const ups = items.filter((x) => x[1]).map(([key, x]) => ({ user_id: uid, key, value: x.v }));
       const dels = items.filter((x) => !x[1]).map((x) => x[0]);
+      // 그림이 섞이면 요청이 커지므로 1.5MB씩
       for (const batch of chunkBy(ups, 1500000))
-        // 그림이 섞이면 요청이 커지므로 1.5MB씩
-        await this.check(
-          await SB.req("/rest/v1/kv?on_conflict=user_id,key", {
-            method: "POST",
-            headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
-            body: JSON.stringify(batch)
-          })
-        );
-      for (let i = 0; i < dels.length; i += 40)
-        await this.check(
-          await SB.req(
-            "/rest/v1/kv?key=in.(" +
-              encodeURIComponent(
-                dels
-                  .slice(i, i + 40)
-                  .map((k) => '"' + k.replace(/"/g, "") + '"')
-                  .join(",")
-              ) +
-              ")",
-            { method: "DELETE" }
-          )
-        );
+        await call("/rest/v1/kv?on_conflict=user_id,key", {
+          method: "POST",
+          headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
+          body: JSON.stringify(batch)
+        });
+      // 지우기에는 계정 조건을 붙임 — 요청이 토큰 갱신을 기다리는 사이 다른 계정으로 바뀌어도 그 계정의 행을 지우지 않게
+      for (let i = 0; i < dels.length; i += 40) {
+        const keys = dels
+          .slice(i, i + 40)
+          .map((k) => '"' + k.replace(/"/g, "") + '"')
+          .join(",");
+        await call("/rest/v1/kv?user_id=eq." + encodeURIComponent(uid) + "&key=in.(" + encodeURIComponent(keys) + ")", { method: "DELETE" });
+      }
+      this.sending = new Set();
       this.setState("ok");
+      // 도는 사이 새로 바뀐 것이 있으면 이어서 올림 — "ok"는 남은 것이 없다는 뜻이어야 함(로그아웃이 이 결과를 보고 기기를 지움)
+      return Object.keys(this.pending).length ? this.send() : "ok";
     } catch (e) {
+      if (gone()) return "off";
+      this.sending = new Set();
       // 못 올린 것은 되돌려 두고(그사이 새로 바뀐 값이 있으면 그게 우선) 15초 뒤 다시
       items.forEach(([k, x]) => {
         if (!(k in this.pending)) this.pending[k] = x;
       });
       if (this.noTable) {
         this.pending = {};
-        return;
+        return "notable";
       }
       this.setState("err");
+      clearTimeout(this.timer);
       this.timer = setTimeout(() => this.flush(), 15000);
+      return "left";
     }
   },
   // 계정의 행 읽기(그림 제외). since가 있으면 그 뒤에 바뀐 것만. 1000행 제한이 있어 500행씩
@@ -152,8 +180,9 @@ export const CLOUD = {
       return undefined;
     }
   },
-  // 받은 행을 이 기기에 씀. 열려 있는 대화방은 덮지 않음(대화 중에 바뀌면 헷갈림). 바뀐 키 수를 돌려줌
-  apply(rows) {
+  // 받은 행을 이 기기에 씀. 열려 있는 대화방은 덮지 않음(대화 중에 바뀌면 헷갈림). 바뀐 키 수를 돌려줌.
+  // hold: 이 받기를 시작할 때 올리는 중이던 키 — 받는 사이 올리기가 끝나도, 그 전에 읽힌 옛 값으로 덮지 않음(pull이 넘김)
+  apply(rows, hold) {
     let n = 0;
     const open = room && location.hash === "#r-" + room.id ? roomKey(room.id) : "";
     rows.forEach((x) => {
@@ -165,7 +194,7 @@ export const CLOUD = {
         if (shelfSyncOn() && this.takeShelf(x.value)) n++;
         return;
       } // 보내지 못한 것이 있어도 합침
-      if (x.key in this.pending || x.key === open) return;
+      if (x.key in this.pending || this.sending.has(x.key) || (hold && hold.has(x.key)) || x.key === open) return;
       if (x.key === "settings") {
         mergeCloudSettings(x.value);
         n++;
@@ -190,7 +219,8 @@ export const CLOUD = {
     return true;
   },
   async pull() {
-    let n = this.apply(await this.rows(localStorage.getItem(this.lastKey()) || ""));
+    const hold = new Set(this.sending);
+    let n = this.apply(await this.rows(localStorage.getItem(this.lastKey()) || ""), hold);
     // 로그인한 뒤(또는 날짜가 된 뒤) 처음 한 번: 바뀐 행만 받는 pull에는 서재 행이 안 올 수 있어 따로 받아 합침 — 날짜 전에 이 기기에만 쌓인 것이 이때 계정으로
     if (!this.shelfUp && shelfSyncOn()) {
       this.shelfUp = true;
@@ -206,7 +236,7 @@ export const CLOUD = {
       if (v !== undefined) this.pending[k] = { v };
     });
     this.pending.settings = { v: cloudSettings() };
-    await this.flush();
+    if ((await this.flush()) !== "ok") throw { code: "push_failed" }; // 못 올렸으면 '저장했어요'라고 하지 않게 — 부른 쪽(처음 로그인)이 받음
     const have = new Set(await this.imgKeys());
     let ls = [];
     try {
