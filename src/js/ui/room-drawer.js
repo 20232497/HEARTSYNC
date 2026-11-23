@@ -2,7 +2,8 @@
    '처음부터 다시'(restartRoom) — 내보내기·삭제·그림 모으기는 room-tools.js */
 import { memCfg } from "../ai/prompt/memory.js";
 import { latestWork, normalizeChar } from "../core/character.js";
-import { newRoom, openingIndex } from "../core/rooms.js";
+import { openingIndex } from "../core/room-fork.js";
+import { newRoom } from "../core/rooms.js";
 import { S, room, setRoom } from "../core/state.js";
 import { $ } from "../core/util.js";
 import { plan, quote } from "../core/wallet.js";

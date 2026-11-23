@@ -34,12 +34,16 @@ export async function firstSync() {
     onlyLikes = likedIds().filter((id) => !((rs.likes[id] || 0) > (rs.unlikes[id] || 0)));
   // 이 기기의 화면부터 맞추고 나서 계정에 올림 — 못 올리면 던져서 afterLogin이 '저장하지 못했어요' 상태로 둠(못 올린 것은 남아 15초 뒤 다시 올라감)
   const use = async (merge) => {
-    CLOUD.apply(rows);
-    if (merge) mergeGuest(remote, local);
-    else dropGuestRooms(remote);
+    await CLOUD.apply(rows);
+    const g = merge ? await mergeGuest(remote, local) : null;
+    if (!merge) dropGuestRooms(remote);
     await reloadFromCloud();
-    if (merge) await pushAll([]);
-    toast(merge ? "이 기기의 데이터를 계정에 합쳤어요" : "계정 데이터를 불러왔어요");
+    if (merge) await pushAll(g.keys); // 합친 방의 본문(과 설정·그림)을 올림 — 못 올리면 던져서 '저장하지 못했어요' 상태로, 덜 끝난 표시가 남아 다시 올림
+    const done =
+      g && g.missed
+        ? `이 기기의 데이터를 합쳤어요. 대화 ${g.missed}개는 읽지 못해 합치지 못했어요(이 기기에는 남아 있어요)`
+        : "이 기기의 데이터를 계정에 합쳤어요";
+    toast(merge ? done : "계정 데이터를 불러왔어요");
   };
   if (!onlyRooms.length && !onlyLikes.length) return use(false);
   const what = [onlyRooms.length ? `대화 ${onlyRooms.length}개` : "", onlyLikes.length ? `찜한 작품 ${onlyLikes.length}개` : ""].filter(Boolean).join("와 ");
@@ -100,7 +104,7 @@ const LOGOUT_WAIT = 20000; // 올리기를 기다리는 한도 — 응답이 오
 async function uploadAll() {
   if (CLOUD.owed)
     try {
-      await pushAll([]);
+      await pushAll(CLOUD.owed.keys || undefined); // 올리려던 키 그대로(없으면 이 기기의 것 전부)
     } catch {
       return CLOUD.noTable ? "notable" : "left";
     }
@@ -129,7 +133,7 @@ function veil(text) {
 async function logout(wipe) {
   const lift = wipe ? veil("계정에 올리는 중이에요…") : null;
   const up = await flushSoon();
-  if (up === "ok" || (!wipe && up !== "left")) return finishLogout(wipe); // 지우는 길이면 가림막은 새로고침까지 그대로
+  if (up === "ok" || (!wipe && up !== "left")) return finishLogout(wipe, lift); // 지우는 길이면 가림막은 새로고침까지 그대로
   if (lift) lift();
   const why =
       up === "left"
@@ -155,19 +159,26 @@ async function logout(wipe) {
     const again = await flushSoon();
     if (again === "ok" && ov.isConnected) {
       ov.remove();
-      return finishLogout(wipe);
+      return finishLogout(wipe, lift2);
     }
     if (lift2) lift2();
     e.target.disabled = false;
     if (ov.isConnected) toast("아직 올리지 못했어요. 연결을 확인해 주세요"); // 기다리는 사이 창이 닫혔으면(취소) 아무것도 하지 않음
   };
 }
-async function finishLogout(wipe) {
+async function finishLogout(wipe, lift) {
   CLOUD.stop();
   await SB.signOut();
   if (wipe) {
-    await wipeDevice();
-    location.reload();
+    if (await wipeDevice()) return location.reload();
+    // 큰 저장소를 비우지 못함(브라우저가 열어 주지 않음) — 지웠다고 하지 않고 알림. 확인을 누르면 새로고침
+    if (lift) lift();
+    const ov = sheet(
+      `<h2>이 기기의 데이터를 다 지우지 못했어요</h2><p class="sub">브라우저가 저장소를 열어 주지 않아 대화 일부가 이 기기에 남아 있을 수 있어요. ` +
+        `같이 쓰는 기기라면 브라우저 설정에서 이 사이트의 데이터를 지워 주세요.</p>` +
+        `<div class="cta-row"><span class="spacer"></span><button class="btn pri" data-x>확인</button></div>`
+    );
+    ov.onShut = () => location.reload();
     return;
   }
   try {

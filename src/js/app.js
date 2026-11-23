@@ -12,6 +12,7 @@ import "./core/character.js";
 import "./core/safety.js";
 import "./core/rooms.js";
 import "./core/room-read.js";
+import "./core/room-fork.js";
 import "./core/settings.js";
 import "./content/index.js";
 import "./services/supabase.js";

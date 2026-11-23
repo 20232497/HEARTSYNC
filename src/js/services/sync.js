@@ -7,28 +7,35 @@ import { IDB, KV } from "../core/storage.js";
 import { loadAll } from "./load.js";
 
 /** 처음 로그인 '합치기': 계정 값 위에 이 기기에만 있던 대화방·페르소나를 더함(같은 id면 계정 값). @param {Record<string, unknown>} remote @param {{ rooms: object[], personas: object[] }} local */
-export function mergeGuest(remote, local) {
+export async function mergeGuest(remote, local) {
   const list = (a) => (Array.isArray(a) ? a : []);
   const byId = (a, b) => {
     const ids = new Set(list(a).map((x) => x && x.id));
     return list(a).concat(list(b).filter((x) => x && !ids.has(x.id)));
   };
+  // 이 기기에만 있던 방: 본문을 먼저 읽고(큰 저장소), 읽은 방만 목록에 더함 — 본문을 못 읽은 방을 목록에만 올리면 계정에 '본문 없는 방'이 생김
+  const mine = [];
+  let missed = 0;
+  for (const r of local.rooms)
+    if (!list(remote.rooms).some((x) => x.id === r.id)) {
+      let v;
+      try {
+        v = await KV.get(roomKey(r.id), true);
+      } catch {}
+      if (v) mine.push(r);
+      else missed++; // 본문을 읽지 못함(또는 없음) — 목록에 더하지 않음. 본문은 이 기기에 그대로
+    }
   KV.set(
     "rooms",
-    byId(remote.rooms, local.rooms).sort((x, y) => (y.at || 0) - (x.at || 0))
+    byId(remote.rooms, mine).sort((x, y) => (y.at || 0) - (x.at || 0))
   );
-  local.rooms.forEach((r) => {
-    if (!list(remote.rooms).some((x) => x.id === r.id)) {
-      const v = KV.getLocal(roomKey(r.id));
-      if (v) KV.set(roomKey(r.id), v);
-    }
-  });
   const ps = byId(
     remote.personas,
     list(local.personas).map((p) => Object.assign({}, p, { def: false }))
   );
   if (ps.length && !ps.some((p) => p.def)) ps[0].def = true;
   if (ps.length) KV.set("personas", ps);
+  return { keys: mine.map((r) => roomKey(r.id)), missed };
 }
 /**
  * 처음 로그인 '계정 것만 쓰기': 계정에 대화 목록 행이 없으면(올리다 실패한 계정 등) 이 기기의 목록을 비움 — 그대로 두면 이 기기의 목록이 남아 다음 저장 때 계정으로 다시 올라감.
@@ -50,10 +57,11 @@ export async function reloadFromCloud() {
 }
 /** 이 기기의 HEART SYNC 데이터 전부 삭제(설정·키·그림 포함) — 같이 쓰는 기기에서 로그아웃할 때. @returns {Promise<void>} */
 export async function wipeDevice() {
-  await IDB.clear();
+  const clean = await IDB.clear(); // 큰 저장소(방 본문·그림)를 비웠는지 — 못 비웠으면 부른 쪽이 알림
   try {
     Object.keys(localStorage)
       .filter((k) => k.indexOf("hv1_") === 0)
       .forEach((k) => localStorage.removeItem(k));
   } catch {}
+  return clean;
 }

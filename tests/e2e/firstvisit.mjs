@@ -314,9 +314,9 @@ for (const [dev, engine] of [
     await hashIs(pg, "#home");
     await settle(pg);
     await expect(pg, "로그인 뒤 홈에 처음", { sheet: true });
-    const leak = await pg.evaluate(() => {
+    const leak = await pg.evaluate(async () => {
       localStorage.setItem("hv1_back", JSON.stringify({ to: "c-lethe", at: Date.now() }));
-      const ks = localKVKeys();
+      const ks = await localKVKeys(); // 방 본문의 키를 큰 저장소에서도 모으느라 비동기
       localStorage.removeItem("hv1_back");
       return ks.includes("back");
     });

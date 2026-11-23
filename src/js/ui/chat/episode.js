@@ -1,7 +1,7 @@
 /* 에피소드 방의 화면 조각: 장 막대(epBarHTML — 대화방 머리 아래), 말풍선 위 사건 띠(epEventHTML), 로그 끝의 갈림길 카드·결말 카드(epTailHTML)와 그 버튼(bindEp), 외전 고르기(sideSheet).
    판정(언제 장이 넘어가고 어떤 결말인지)은 모두 core/episode.js — 여기는 상태 r.ep를 보여 주고 고른 것을 보내기만 함 */
 import { SIDE, choiceOf } from "../../core/episode.js";
-import { sideRoom } from "../../core/rooms.js";
+import { sideRoom } from "../../core/room-fork.js";
 import { endsSet } from "../../core/shelf.js";
 import { S, gen, setRoom } from "../../core/state.js";
 import { $, $$, esc, toast } from "../../core/util.js";

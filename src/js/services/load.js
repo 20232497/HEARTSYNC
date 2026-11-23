@@ -28,4 +28,5 @@ export async function loadAll() {
   S.shelf = mergeShelf(shelf);
   IMG.migrate().catch(() => {});
   refreshFree();
+  KV.moveBodies().catch(() => {}); // 예전 설치가 localStorage에 둔 방 본문을 큰 저장소로(뒤에서, 기다리지 않음)
 }

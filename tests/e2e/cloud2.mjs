@@ -283,7 +283,7 @@ try {
   res.pcPull = await A.page.evaluate(async (id) => {
     const n = await CLOUD.pull();
     await reloadFromCloud();
-    return { n, has: S.rooms.some((r) => r.id === id), roomBody: !!KV.getLocal(roomKey(id)) };
+    return { n, has: S.rooms.some((r) => r.id === id), roomBody: !!(await KV.get(roomKey(id))) };
   }, room2);
   // 건너뛴 행 다시 받기: PC가 방을 열어 둔 사이 휴대폰이 그 방을 고침 → PC의 받기는 열린 방을 덮지 않고 넘어감(받은 자리 표시는 이미 그 행을 지나감) →
   // 방에서 나오면 그 방만 다시 받아 옴(이쪽에서 더 고치지 않아도). 다시 받은 방은 메모리에 든 옛 사본 대신 저장된 것으로 다시 열림
@@ -299,13 +299,13 @@ try {
   }, room2);
   const heldNote = await A.page.evaluate(async (id) => {
     await CLOUD.pull();
-    return (KV.getLocal(roomKey(id)) || {}).userNote || "";
+    return ((await KV.get(roomKey(id))) || {}).userNote || "";
   }, room2);
   await A.page.evaluate(() => {
     location.hash = "home";
   });
-  await A.page.waitForFunction((id) => (KV.getLocal(roomKey(id)) || {}).userNote === "휴대폰에서 고침", room2, { timeout: 5000 }).catch(() => {});
-  res.retake = await A.page.evaluate((id) => ({ note: (KV.getLocal(roomKey(id)) || {}).userNote || "", inMemory: !!(room && room.id === id) }), room2);
+  await A.page.waitForFunction(async (id) => ((await KV.get(roomKey(id))) || {}).userNote === "휴대폰에서 고침", room2, { timeout: 5000 }).catch(() => {});
+  res.retake = await A.page.evaluate(async (id) => ({ note: ((await KV.get(roomKey(id))) || {}).userNote || "", inMemory: !!(room && room.id === id) }), room2);
   res.retake.held = heldNote;
   // 그 방을 다시 열면 받은 내용으로 열림(메모리의 옛 사본이 아니라)
   await A.page.evaluate((id) => {
@@ -327,10 +327,10 @@ try {
   }, room2);
   res.retake.busy = await A.page.evaluate(async (id) => {
     await CLOUD.pull();
-    const during = (KV.getLocal(roomKey(id)) || {}).userNote || "";
+    const during = ((await KV.get(roomKey(id))) || {}).userNote || "";
     releaseRoom(id);
     await CLOUD.retake();
-    return { during, after: (KV.getLocal(roomKey(id)) || {}).userNote || "" };
+    return { during, after: ((await KV.get(roomKey(id))) || {}).userNote || "" };
   }, room2);
   if (
     heldNote !== "" ||
@@ -510,14 +510,14 @@ try {
     btn.focus();
   });
   await C.page.keyboard.press("Enter"); // 진짜 키 눌림 — 막지 않으면 포커스가 있는 버튼이 눌림
-  const waiting = await C.page.evaluate((id) => {
+  const waiting = await C.page.evaluate(async (id) => {
     const v = document.querySelector(".veil"),
       r = v ? v.getBoundingClientRect() : { width: 0, height: 0 };
     return {
       held: true,
       covers: r.width >= innerWidth && r.height >= innerHeight,
       keyBlocked: window.__behind === 0,
-      body: !!KV.getLocal(roomKey(id)),
+      body: !!(await KV.get(roomKey(id))),
       signedIn: !!SB.s,
       sheet: !!document.querySelector("#lRetry")
     };
@@ -526,7 +526,7 @@ try {
   db.gate.open(); // 붙잡은 요청을 놓아 줌 → 실패로 끝남 → 이어 붙은 로그아웃의 전송도 실패
   db.gate = null;
   await C.page.waitForTimeout(1500);
-  const guardNow = (id) => ({ body: !!KV.getLocal(roomKey(id)), sheet: !!document.querySelector("#lRetry"), signedIn: !!SB.s });
+  const guardNow = async (id) => ({ body: !!(await KV.get(roomKey(id))), sheet: !!document.querySelector("#lRetry"), signedIn: !!SB.s });
   const guard1 = await C.page.evaluate(guardNow, room4);
   if (guard1.sheet) await C.page.click("#lRetry");
   await C.page.waitForTimeout(1200);
@@ -601,8 +601,8 @@ try {
   if (keepSheet) await D.page.click("#lKeep");
   await D.page.waitForTimeout(900);
   res.logoutKeep = await D.page.evaluate(
-    (id) => ({
-      body: !!KV.getLocal(roomKey(id)),
+    async (id) => ({
+      body: !!(await KV.get(roomKey(id))),
       listed: S.rooms.some((r) => r.id === id),
       signedIn: !!SB.s,
       guest: localStorage.getItem("hv1_guest")
@@ -631,11 +631,29 @@ try {
   await D.page.waitForTimeout(2000);
   res.accountOnly = await D.page.evaluate(async (id) => {
     await CLOUD.flush();
-    return { rooms: S.rooms.map((r) => r.id), body: !!KV.getLocal(roomKey(id)) };
+    return { rooms: S.rooms.map((r) => r.id), body: !!(await KV.get(roomKey(id))) };
   }, room5);
   res.accountOnly.server = ((db.rows.find((r) => r.key === "rooms") || {}).value || []).map((r) => r.id);
   if (!onlySheet || res.accountOnly.rooms.length || !res.accountOnly.body || res.accountOnly.server.length)
     errs.push("계정 것만 쓰기(계정에 목록이 없으면 이 기기의 목록도 비우고 본문은 남김)가 다름: " + JSON.stringify({ onlySheet, ...res.accountOnly }));
+  // 기기 지우기가 큰 저장소(IndexedDB)를 비우지 못하면 '지웠다'고 하지 않고 알림 — 같이 쓰는 기기에 대화가 남은 채 지운 줄 알게 되지 않게
+  await D.page.evaluate(() => {
+    IDB.clear = async () => false;
+    location.hash = "me";
+  });
+  await D.page.waitForTimeout(400);
+  await D.page.click("#cOut");
+  await D.page.waitForTimeout(200);
+  await D.page.click("#lwipe");
+  await D.page.click("#lok");
+  await D.page.waitForTimeout(1800);
+  res.wipeFail = await D.page.evaluate(() => ({
+    title: (document.querySelector(".overlay h2") || {}).textContent || "",
+    veil: !!document.querySelector(".veil"),
+    signedIn: !!SB.s
+  }));
+  if (!/다 지우지 못했어요/.test(res.wipeFail.title) || res.wipeFail.veil || res.wipeFail.signedIn)
+    errs.push("기기 지우기 실패 알림이 다름: " + JSON.stringify(res.wipeFail));
   await D.browser.close();
   // PC: 계정 삭제
   await A.page.evaluate(() => {

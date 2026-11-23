@@ -1,6 +1,7 @@
 /* 메시지 로그 그리기·스크롤 따라가기·말풍선 메뉴(수정·삭제·북마크·고정·좋아요/아쉬워요·분기) */
 import { speakerName } from "../../ai/prompt/rules.js";
-import { curText, forkRoom, saveRoom } from "../../core/rooms.js";
+import { forkRoom } from "../../core/room-fork.js";
+import { curText, saveRoom } from "../../core/rooms.js";
 import { S, gen, room, setRoom } from "../../core/state.js";
 import { $, $$, clamp, esc, toast } from "../../core/util.js";
 import { imgTags } from "../../images/codes.js";
