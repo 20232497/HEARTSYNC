@@ -15,13 +15,18 @@ const done = (task, more = {}) => ({ taskType: "imageInference", taskUUID: task.
     sent: 그림을 보낸 요청들, polls: 조회 횟수 */
 function service(replies) {
   const sent = [],
-    known = {}; // taskUUID → 조회가 몇 번 남았는지(0이면 그림)
+    known = {}, // taskUUID → 조회가 몇 번 남았는지(0이면 그림)
+    ghost = {}, // taskUUID → 남은 동안 조회 응답이 '모르는 작업' 모양으로 옴(접수는 됐음)
+    pollFail = { n: 0 }; // 조회 요청 자체가 503으로 실패할 횟수
   let polls = 0;
   globalThis.fetch = async (url, init) => {
     if (String(url).startsWith("data:")) return new Response(new Blob(["x"], { type: "image/webp" }));
     const task = JSON.parse(init.body)[0];
     if (task.taskType === "getResponse") {
       polls++;
+      if (pollFail.n-- > 0) return json({}, 503);
+      if (ghost[task.taskUUID] && known[task.taskUUID] > 0 && known[task.taskUUID]--)
+        return json({ data: [{ taskType: "getResponse", taskUUID: task.taskUUID, status: "processing" }] });
       if (!(task.taskUUID in known)) return json({ data: [{ taskType: "getResponse", taskUUID: task.taskUUID, status: "processing" }] }); // 모르는 작업은 이렇게 온다(실제 호출로 확인)
       if (known[task.taskUUID]-- > 0) return json({ data: [{ taskType: "imageInference", taskUUID: task.taskUUID, status: "processing" }] });
       return json({ data: [done(task, { status: "success" })] });
@@ -38,6 +43,17 @@ function service(replies) {
       return { status: 200, ok: true, headers: new Headers(), text: () => Promise.reject(new TypeError("terminated")) };
     }
     if (r === "empty") return json({ data: [] });
+    if (typeof r === "string" && r.startsWith("ghost:")) {
+      // 접수는 확인됐는데(제 taskType의 처리 중) 그 뒤의 조회는 한동안 '모르는 작업' 모양으로 온다
+      known[task.taskUUID] = +r.slice(6);
+      ghost[task.taskUUID] = true;
+      return json({ data: [{ taskType: task.taskType, taskUUID: task.taskUUID, status: "processing" }] });
+    }
+    if (r === "lost+pollfail") {
+      known[task.taskUUID] = 0;
+      pollFail.n = 2;
+      throw new TypeError("fetch failed");
+    }
     if (typeof r === "string" && r.startsWith("slow:")) {
       known[task.taskUUID] = +r.slice(5) - 1;
       return json({ data: [{ taskType: task.taskType, taskUUID: task.taskUUID, status: "processing" }] });
@@ -109,6 +125,23 @@ test("그림 받아오기: 다시 걸어도 같은 실패(키·잔액·문구·�
     assert.equal(s.sent.length, 1, "다시 보내지 않음: " + re);
     assert.equal(s.polls(), 0);
   }
+});
+
+test("그림 받아오기: 접수가 확인된 작업은 조회가 '모르는 작업' 모양으로 와도 다시 보내지 않는다 · 조회 요청 자체의 실패는 다시 조회한다", async () => {
+  const s = service(["ghost:4"]);
+  await generate(JOB);
+  assert.equal(s.sent.length, 1, "접수된 작업을 두 번 사지 않음");
+  assert.equal(s.polls(), 5);
+  const p = service(["lost+pollfail"]);
+  await generate(JOB);
+  assert.equal(p.sent.length, 1, "조회가 503으로 실패해도 그림을 다시 보내지 않음");
+  assert.equal(p.polls(), 3);
+});
+
+test("그림 받아오기: 서비스가 오래 기다리라고 하면(Retry-After) 기다렸다 다시 보내지 않고 그 회차를 끝낸다", async () => {
+  const s = service([{ errors: [{ code: "serviceOverloaded", message: "busy", retryAfter: 120 }], status: 429 }, "ok"]);
+  await assert.rejects(generate(JOB), /serviceOverloaded — busy — 생성 서비스가 120초 뒤에 다시 하라고 해요/);
+  assert.equal(s.sent.length, 1);
 });
 
 test("그림 받아오기: 처리 중인 작업이 한도까지 안 끝나면 멈추고 알린다 — 다시 보내지 않는다", async () => {

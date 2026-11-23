@@ -354,6 +354,8 @@ const server = http.createServer(async (req, res) => {
       const dir = path.join(LIB, c.id, "cover-parts");
       fs.mkdirSync(dir, { recursive: true });
       if (!inLib(dir)) return send(res, 400, { error: "보관함 밖을 가리키는 폴더예요" });
+      // fresh: 새 묶음의 첫 조각 — 예전 조각을 먼저 지운다(쓰다가 실패해도 새것과 예전 것이 한 묶음처럼 남지 않게. 모자란 묶음은 '자리 맞추기'에 뜨지 않는다)
+      if (q.get("fresh")) for (const old of fs.readdirSync(dir)) if (ROLE.test(old)) fs.rmSync(path.join(dir, old));
       fs.writeFileSync(path.join(dir, name), buf);
       return send(res, 200, { ok: true });
     }

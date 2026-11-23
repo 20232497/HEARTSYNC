@@ -65,8 +65,8 @@ export async function makeCover(work, spec, say) {
     if (role !== "bg") layout.chars.find((c) => c.role === role).head = measure(imgs[role]);
   }
   // 조각은 넷이 다 그려진 뒤에 한꺼번에 보관함에 — 중간에 실패하면 예전 조각 묶음이 그대로 남는다(새것과 섞이지 않게)
-  // shortcut: 조각 일곱 개를 하나씩 덮어쓴다 — 쓰는 도중에 실패하면(디스크 오류) 예전 것과 섞일 수 있음. 실패 알림이 뜨면 다시 그릴 것. 묶음째 바꾸려면 서버가 한 요청으로 받아야 함
-  for (const [name, blob] of Object.entries(files)) await savePart(work, name, blob);
+  // 첫 조각을 쓸 때 예전 묶음을 지운다(fresh) — 쓰는 도중에 실패해도 예전 조각과 섞이지 않고, 초안이 남아 있어 다시 누르면 이어서 쓴다
+  for (const [i, [name, blob]] of Object.entries(files).entries()) await savePart(work, name, blob, i === 0);
   groups[work.id] = { plan, imgs, layout };
   delete drafts[work.id]; // 조각이 보관함에 다 들어갔다 — 여기서부터의 실패(잇기)는 '자리 맞추기'에서 보관함의 조각으로 다시 붙이면 된다
   say("단체 표지 — 붙이고 잇는 중…");
