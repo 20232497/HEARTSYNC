@@ -6,6 +6,7 @@ import * as espree from "espree";
 import * as scope from "eslint-scope";
 import { BROWSER_GLOBALS } from "../globals.mjs";
 import { BuildError, GEN_FILE, SIZE_LIMITS, SRC, readText, rel, visible } from "./common.mjs";
+import { layerErrors } from "./layers.mjs";
 
 /* ---------------------------------------------------------------- 주석 벗기기(사용자 빌드) */
 const KEEP_CSS = /\/\*(?!!)[\s\S]*?\*\//g; // 지울 CSS 주석(/*! 는 남김)
@@ -112,7 +113,7 @@ export async function assemble(t) {
 /* ---------------------------------------------------------------- 모듈 번들러 */
 const parseModule = (code, file) => {
   try {
-    return espree.parse(code, { ecmaVersion: 2022, sourceType: "module", range: true, loc: true, comment: true });
+    return espree.parse(code, { ecmaVersion: 2022, sourceType: "module", range: true, loc: true, comment: true, tokens: true });
   } catch (e) {
     throw new BuildError([`${rel(file)}:${e.lineNumber || "?"}: 문법 오류 — ${e.message.replace(/\s*\(\d+:\d+\)$/, "")}`]);
   }
@@ -161,6 +162,11 @@ function loadModule(file, mods, errors, chain) {
     cuts: []
   };
   mods.set(file, info);
+  // import()는 번들러가 따라가지 않아 대상이 결과에 안 들어가고(단일 파일 배포라 따로 불러올 파일도 없음) 층 검사도 비켜 감 — 막음
+  (ast.tokens || []).forEach((tk, i, all) => {
+    if (tk.type === "Keyword" && tk.value === "import" && all[i + 1] && all[i + 1].value === "(")
+      errors.push(`${r}:${tk.loc.start.line}: import()는 쓸 수 없어요 — 합치면 한 스크립트라 따로 불러올 파일이 없어요(맨 위의 import { 이름 } 만)`);
+  });
   for (const st of ast.body) {
     if (st.type === "ImportDeclaration") {
       const spec = st.source.value;
@@ -261,7 +267,8 @@ function docHeader(m, order) {
   return lines.join("\n") + "\n";
 }
 
-function bundleModules(entry, t, page) {
+/* 진입 모듈에서 import를 따라 모듈을 모아 검사하고 한 스크립트의 조각들로 — 시험(tests/unit/layers.test.mjs)이 가짜 소스 폴더로 직접 부르기도 함 */
+export function bundleModules(entry, t, page) {
   const errors = [],
     warnings = [],
     mods = new Map();
@@ -286,6 +293,9 @@ function bundleModules(entry, t, page) {
       if (owner.has(n)) errors.push(`${m.rel}:${d.line}: "${n}"가 ${owner.get(n)}에도 선언돼 있어요 — 합치면 하나의 스크립트라 이름이 겹치면 안 돼요`);
       else owner.set(n, m.rel);
     }
+  // 층 방향(아래층 → 윗층 import 금지, 사용자 빌드에 admin/ 금지) — 규칙과 알려진 예외는 tools/build/layers.mjs
+  const graph = order.map((m) => ({ rel: m.rel, imports: m.imports.map((i) => ({ rel: rel(i.target), line: i.line })) }));
+  errors.push(...layerErrors(graph, { admin: t.admin }));
   const pos = new Map(order.map((m, i) => [m.file, i]));
   for (const m of order) {
     for (const imp of m.imports) {

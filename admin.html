@@ -1539,7 +1539,7 @@ const LEN = {
 /* 모듈 사이의 느슨한 연결(이벤트 버스): 아래층(core·services)이 위층(ui)을 import하지 않고 "바뀌었다"고 알리기만 한다 — on(이름, fn)·emit(이름, 값).
    아무것도 import하지 않는 잎 모듈. 이름과 뜻:
      rooms      대화방 목록이 바뀜(core/rooms)           → ui/shell이 레일의 최근 대화를 다시 그림
-     wallet     지갑(하트·무료 턴)이 바뀜(core/wallet)     → ui/shell이 지갑 칩을 다시 그림
+     wallet     지갑(하트·무료 턴)이 바뀜(core/wallet)     → ui/shell이 지갑 칩을, ui/chat/view가 대화방 머리·입력창의 값을 다시 그림
      settings   설정을 저장함(core/settings)              → services/cloud가 계정에 올림
      cloud      계정 저장 상태가 바뀜(services/cloud)      → ui/account가 상태 글을 다시 그림
      route      화면을 다시 그려야 함(services/sync)       → ui/shell이 route()
@@ -10062,7 +10062,7 @@ ${recent}`
            src/js/ui/room-tools.js { collectSeen }
            src/js/ui/shell.js { bindGo, go, topbar }
    내보냄: viewChat, flashHint, updateComposer, lastAi, gaugeView, updateMeter
-   쓰는 곳: src/js/ui/chat/render.js, src/js/ui/drawer/browse.js, src/js/ui/drawer/settings.js, src/js/ui/model-sheet.js, src/js/ui/pay.js, src/js/ui/chat/suggest.js, src/js/ui/chat/episode.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/ui/shell.js, src/js/app.js
+   쓰는 곳: src/js/ui/chat/render.js, src/js/ui/drawer/browse.js, src/js/ui/drawer/settings.js, src/js/ui/model-sheet.js, src/js/ui/pay.js, src/js/ui/chat/suggest.js, src/js/ui/chat/episode.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 대화방 화면 뼈대·입력창·게이지. 머리(뒤로·제목·AI 배지·무료 턴과 하트·게이지·모델 칩·대화 검색·방 메뉴) → 대화 → 한 줄 입력창([✦ 추천] [입력] [보내기 — 빈 입력이면 이어서 쓰기]).
    추천 패널과 ! 명령어 목록은 입력창 바로 위에 끼움. 안내 줄은 알릴 것이 있을 때만 */
@@ -10338,6 +10338,7 @@ function updateComposer() {
         ? `오늘 무료 턴이 ${freeLeft()}번 남았어요. 다 쓰면 라이트 모델은 턴당 ♥${listPrice("lite", room.set.len, room.set.mem)}이에요.`
         : "";
 }
+on("wallet", updateComposer); // 하트·무료 턴이 바뀜 — 보내기 버튼의 값과 안내를 맞춤(전에는 틀 ui/shell.js가 직접 불렀음)
 on("rooms", updateComposer); // 방 저장이 실패했거나 실패했던 방이 저장됨 — '저장하지 못했어요' 줄을 맞춤(core/rooms.js saveRoom)
 function lastAi(r) {
   for (let i = r.msgs.length - 1; i >= 0; i--) if (r.msgs[i].role === "ai") return r.msgs[i];
@@ -11270,7 +11271,6 @@ function stopGen() {
            src/js/core/wallet.js { freeLeft, isPro }
            src/js/services/images.js { IMG }
            src/js/ui/chat/generate.js { stopGen }
-           src/js/ui/chat/view.js { updateComposer }
            src/js/ui/cover.js { coverHTML }
            src/js/ui/icons.js { ICON }
            src/js/ui/sheet.js { closeOverlays }
@@ -11279,7 +11279,6 @@ function stopGen() {
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 라우팅(go·route)·레일(메뉴·최근 대화·최근 본 작품)·탭바·상단바·지갑 칩. 화면은 진입점(main.js·admin.js)이 registerViews·setNavs로 등록한다 — 셸은 어떤 화면이 있는지 모른다.
    아래층의 "rooms"·"wallet"·"settings"·"route" 이벤트를 받아 레일·칩·화면을 다시 그림 */
-
 
 
 
@@ -11388,7 +11387,6 @@ function renderWalletChips() {
     w.innerHTML = walletHTML();
     w.classList.toggle("pro", isPro());
   });
-  updateComposer();
 }
 function topbar(extra = "") {
   return `<div class="topbar">${LOGO}${extra}<span class="spacer"></span>

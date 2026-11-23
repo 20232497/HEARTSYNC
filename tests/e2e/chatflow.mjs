@@ -524,6 +524,20 @@ for (const [dev, engine] of targets) {
       if (w.typed.cont || w.typed.label !== "보내기" || !w.locked) errs.push("보내기 버튼 전환·잘못 누름 막기가 다름: " + JSON.stringify(w));
       if (!w.head.includes("♥") || w.oldRow || w.hint || w.composer > 96) errs.push("머리·입력창 묶음이 다름: " + JSON.stringify(w));
     }
+    // 지갑 알림("wallet") 하나로 틀의 지갑 칩과 대화방 머리가 같이 바뀜 — 대화방 화면이 알림을 직접 받음(틀 ui/shell.js가 대화방을 부르지 않음)
+    res.walletSync = await p.evaluate(() => {
+      const h0 = S.wallet.hearts,
+        want = num(h0 + 123);
+      S.wallet.hearts = h0 + 123;
+      saveWallet();
+      const out = { head: $("#freeCount").textContent.includes(want), chips: $$(".wallet").every((w) => w.textContent.includes(want)) };
+      S.wallet.hearts = h0;
+      saveWallet();
+      out.back = !$("#freeCount").textContent.includes(want);
+      return out;
+    });
+    if (!res.walletSync.head || !res.walletSync.chips || !res.walletSync.back)
+      errs.push("지갑이 바뀌어도 대화방 머리·지갑 칩이 안 따라옴: " + JSON.stringify(res.walletSync));
     // 대화 검색: 머리의 검색 버튼 → 낱말을 치면 결과(찾은 말 강조) → 누르면 창이 닫히고 그 메시지로 감
     res.find = await p.evaluate(async () => {
       const nap = (ms) => new Promise((r) => setTimeout(r, ms));
