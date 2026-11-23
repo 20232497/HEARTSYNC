@@ -188,10 +188,8 @@ export function removeRoom(id) {
 export function roomGone(id, at) {
   const had = S.rooms.some((r) => r.id === id) || (!!room && room.id === id);
   forgetRoom(id, at || Date.now());
-  if (room && room.id === id) {
-    if (gen) gen.ctl.abort(); // 이 방에 쓰던 응답을 멈춤(응답은 지금 방에서만 돎) — 끝나며 하는 저장은 지운 방이라 버려짐
-    setRoom(null);
-  }
+  if (gen && gen.roomId === id) gen.ctl.abort(); // 이 방에 쓰던 응답을 멈춤(다른 방의 응답은 그대로) — 끝나며 하는 저장은 지운 방이라 버려짐
+  if (room && room.id === id) setRoom(null);
   if (had) {
     KV.set("rooms", S.rooms);
     emit("rooms");

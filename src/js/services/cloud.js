@@ -195,10 +195,12 @@ export const CLOUD = {
           delete t[k];
           changed = true;
         }
-        const y = tombFor(k, x);
-        if (y !== x && !(k in this.pending)) this.put(k, y.v);
       });
       if (changed) this.tombs(t);
+      items.forEach(([k, x]) => {
+        const y = tombFor(k, x);
+        if (y !== x && !(k in this.pending)) this.put(k, y.v); // put이 '못 올린 표식'에도 적음 — 위에서 지운 뒤라 덮이지 않음
+      });
       this.setState("ok");
       // 도는 사이 새로 바뀐 것이 있으면 이어서 올림 — "ok"는 남은 것이 없다는 뜻이어야 함(로그아웃이 이 결과를 보고 기기를 지움)
       return Object.keys(this.pending).length ? this.send() : "ok";

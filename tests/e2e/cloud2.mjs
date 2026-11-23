@@ -405,6 +405,26 @@ try {
     if (!t.queued || t.morePosts || [t.onA, t.onB, t.onServer].some((x) => x.join() !== "true,true"))
       errs.push("두 기기가 각각 만든 방의 목록 합치기(둘 다 남고, 맞춰진 뒤에는 더 올리지 않음)가 다름: " + JSON.stringify(t));
   }
+  // 합친 결과가 계정 목록과 같아도, 이 기기의 옛 목록이 대기열에 있으면 합친 것으로 바꿔 올림 — 그대로 두면 옛 목록이 올라가 방금 받은 새 방을 계정 목록에서 뺌
+  const rB2 = await B.page.evaluate(async () => {
+    const r = newRoom(normalizeChar(getChar("lethe")), 0, S.personas[0]);
+    await CLOUD.flush();
+    return r.id;
+  });
+  res.staleList = await A.page.evaluate(async (id) => {
+    window.__flush = CLOUD.flush;
+    CLOUD.flush = async () => "left";
+    CLOUD.put("rooms", S.rooms); // 이 기기의 옛 목록(휴대폰의 새 방을 모름)이 대기열에
+    await CLOUD.pull();
+    const queuedHas = ((CLOUD.pending.rooms || {}).v || []).some((r) => r.id === id);
+    CLOUD.flush = window.__flush;
+    await reloadFromCloud();
+    await CLOUD.flush();
+    return { queuedHas, listed: S.rooms.some((r) => r.id === id) };
+  }, rB2);
+  res.staleList.onServer = accountList().includes(rB2);
+  if (!res.staleList.queuedHas || !res.staleList.listed || !res.staleList.onServer)
+    errs.push("못 올린 옛 목록이 받은 새 방을 계정 목록에서 뺌: " + JSON.stringify(res.staleList));
   // 삭제 표식: 한쪽에서 지운 방은 다른 쪽에서도 사라지고(목록·본문) 되살아나지 않음 — 다른 쪽이 표식을 받기 **전에 시작한** 저장(본문 쓰기와 올리기가 아직 안 끝남)도,
   // 받은 뒤의 늦은 저장도. 계정에는 방 대신 표식이 남음
   await A.page.evaluate(async (id) => {
@@ -416,8 +436,18 @@ try {
   }, rB);
   res.tomb = await A.page.evaluate(async (id) => {
     const had = !!window.__stale;
-    const early = saveRoom(window.__stale); // 표식을 받기 전에 시작한 저장
+    // 표식을 받기 전에 시작한 저장 — 본문 쓰기를 붙잡아 두어, 표식을 처리할 때까지 그 저장이 끝나지 않게(끝난 뒤에야 계정 대기열에 들어감)
+    const realSet = IDB.set;
+    let open;
+    const gate = new Promise((r) => (open = r));
+    IDB.set = async (k, v) => {
+      await gate;
+      return realSet.call(IDB, k, v);
+    };
+    const early = saveRoom(window.__stale);
     await CLOUD.pull();
+    IDB.set = realSet;
+    open();
     await reloadFromCloud();
     await early;
     await CLOUD.flush();

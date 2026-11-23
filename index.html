@@ -2703,10 +2703,8 @@ function removeRoom(id) {
 function roomGone(id, at) {
   const had = S.rooms.some((r) => r.id === id) || (!!room && room.id === id);
   forgetRoom(id, at || Date.now());
-  if (room && room.id === id) {
-    if (gen) gen.ctl.abort();
-    setRoom(null);
-  }
+  if (gen && gen.roomId === id) gen.ctl.abort();
+  if (room && room.id === id) setRoom(null);
   if (had) {
     KV.set("rooms", S.rooms);
     emit("rooms");
@@ -3106,6 +3104,11 @@ async function applyRows(rows, hold, since) {
   rows.forEach((x) => {
     if (x.key.indexOf("room-") !== 0 || !isTomb(x.value)) return;
     delete CLOUD.pending[x.key];
+    if (CLOUD.sending.has(x.key)) {
+      const t = CLOUD.tombs();
+      t[x.key] = x.value.gone;
+      CLOUD.tombs(t);
+    }
     CLOUD.skip(x.key, false);
     if (roomGone(x.key.slice(5), x.value.gone)) n++;
     if (x.key === open) emit("route");
@@ -3115,8 +3118,8 @@ async function applyRows(rows, hold, since) {
     const merged = mergeRoomLists(full ? [] : S.rooms, remote, gone);
     S.rooms = merged;
     KV.setLocal("rooms", merged);
-    const queued = "rooms" in CLOUD.pending || CLOUD.sending.has("rooms");
-    if (!full && (queued || !sameRoomList(merged, remote))) CLOUD.put("rooms", merged);
+    const queued = "rooms" in CLOUD.pending || CLOUD.sending.has("rooms") || (!!hold && hold.has("rooms")) || newer("rooms");
+    if (queued || (!full && !sameRoomList(merged, remote))) CLOUD.put("rooms", merged);
   };
   rows.forEach((x) => {
     if (x.updated_at && x.updated_at > (localStorage.getItem(CLOUD.lastKey()) || ""))
@@ -3388,10 +3391,12 @@ const CLOUD = {
           delete t[k];
           changed = true;
         }
+      });
+      if (changed) this.tombs(t);
+      items.forEach(([k, x]) => {
         const y = tombFor(k, x);
         if (y !== x && !(k in this.pending)) this.put(k, y.v);
       });
-      if (changed) this.tombs(t);
       this.setState("ok");
       return Object.keys(this.pending).length ? this.send() : "ok";
     } catch (e) {
@@ -8870,7 +8875,7 @@ async function generate(target, q, direction = "", isEdit = false) {
   const label = `${c.title} · ${MODELS[model].name}${target ? " 다시 쓰기" : ""}`;
   charge(q, label);
   const ctl = new AbortController();
-  setGen({ ctl, msgId: msg.id });
+  setGen({ ctl, msgId: msg.id, roomId: r.id });
   hideSug();
   setStick(true);
   renderLog(true);

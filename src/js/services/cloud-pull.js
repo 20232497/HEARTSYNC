@@ -26,6 +26,12 @@ export async function applyRows(rows, hold, since) {
   rows.forEach((x) => {
     if (x.key.indexOf("room-") !== 0 || !isTomb(x.value)) return;
     delete CLOUD.pending[x.key];
+    if (CLOUD.sending.has(x.key)) {
+      // 이 방의 본문이 지금 올라가는 중 — 도착하면 계정의 표식을 덮음. 보낸 뒤에 표식을 다시 올리지만(cloud.js send), 그 전에 창을 닫아도 되게 '못 올린 표식'으로 적어 둠
+      const t = CLOUD.tombs();
+      t[x.key] = x.value.gone;
+      CLOUD.tombs(t);
+    }
     CLOUD.skip(x.key, false);
     if (roomGone(x.key.slice(5), x.value.gone)) n++;
     if (x.key === open) emit("route");
@@ -37,9 +43,10 @@ export async function applyRows(rows, hold, since) {
     const merged = mergeRoomLists(full ? [] : S.rooms, remote, gone);
     S.rooms = merged;
     KV.setLocal("rooms", merged);
-    // 못 올린(올리는 중인) 목록이 있으면 합친 것으로 바꿔 올림 — 그대로 두면 옛 목록이 올라가 방금 받은 다른 기기의 새 방을 계정 목록에서 뺌
-    const queued = "rooms" in CLOUD.pending || CLOUD.sending.has("rooms");
-    if (!full && (queued || !sameRoomList(merged, remote))) CLOUD.put("rooms", merged); // 이 기기에만 있던 방이 있거나 지운 방이 계정 목록에 남아 있음 — 합친 목록을 계정에
+    // 이 기기의 목록이 올라가는 길에 있으면(못 올림 · 올리는 중 · 이 받기를 시작할 때 올리는 중이었음 · 받는 사이 바뀜) 합친 것으로 바꿔 올림 —
+    // 그대로 두면 옛 목록이 올라가(올라가서) 방금 받은 다른 기기의 새 방을 계정 목록에서 뺌. 처음 로그인의 전부 받기도 같음(표식 처리가 목록을 대기열에 넣었을 수 있음)
+    const queued = "rooms" in CLOUD.pending || CLOUD.sending.has("rooms") || (!!hold && hold.has("rooms")) || newer("rooms");
+    if (queued || (!full && !sameRoomList(merged, remote))) CLOUD.put("rooms", merged); // 이 기기에만 있던 방이 있거나 지운 방이 계정 목록에 남아 있을 때도
   };
   rows.forEach((x) => {
     if (x.updated_at && x.updated_at > (localStorage.getItem(CLOUD.lastKey()) || ""))
