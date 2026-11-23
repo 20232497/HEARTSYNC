@@ -1,14 +1,14 @@
 /* 일상 화풍 두 개의 프롬프트 조립 — 남성향 일상(여성 인물)·여성향 일상(남성 인물). 작품 데이터(cast[]·places[])를 칸에 끼워 긍정·부정 프롬프트와 생성 값을 만든다.
-   그림 값(화풍 문구·네거티브·LoRA·후처리)은 값 파일에서 읽는다: ../mdaily-v8.json(여성) · ../../style-fdaily/fdaily-v11.json(남성) — 앞 판(여성 v6·v7, 남성 v7~v10)은 보관 · 고정 태그는 ../mdaily.json.
+   그림 값(화풍 문구·네거티브·LoRA·후처리)은 값 파일에서 읽는다: ../mdaily-v8.json(여성) · ../../style-fdaily/fdaily-v12.json(남성) — 앞 판(여성 v6·v7, 남성 v7~v11)은 보관 · 고정 태그는 ../mdaily.json.
    값 파일이 정할 수 있는 것: prompt·coolPrompt·neg·fits·lora·post + lightDay·lightNight(낮·밤 빛 문구) · bgTag(배경 문구) · act(연기 문구 손질 — drop·scale)
-   · underdraw(감정 그림을 애니 화풍으로 먼저 그려 밑그림으로 — strength · scale(본 그림을 밑그림의 몇 배 크기에서 그릴지). 아래 '애니 밑그림').
+   · draw("anime"면 그 성별의 인물을 애니 화풍의 작업으로 그리고 이 화풍의 후처리만 한 겹 입힘 — 아래 '애니 화풍으로 그리는 인물').
    이 파일은 그 값을 인물마다 손대지 않고 쓰는 규칙이다 — 2026-11-13 사용자와 비교 생성으로 정함(경위와 표는 ../README.md '조립 규칙').
    2026-11-23(사용자): 구도와 표정(칸마다의 구도 자리·눈·표정·손동작)은 애니 화풍과 같게 — ../../style-manime/code/assemble.js의 acting()이 고른 것을 그대로 쓴다.
-   2026-11-23~24(사용자): 전체적으로 흐릿한 분위기(후처리 값 — 여성 v8·남성 v10부터), 남성 인물의 감정 그림은 애니 화풍으로 먼저 그린 그림을 밑그림으로(세기 0.45).
+   2026-11-23~24(사용자): 전체적으로 흐릿한 분위기(후처리 값 — 여성 v8·남성 v10부터). 남성 인물은 애니 화풍으로 그리고 이 화풍의 흐림만 입힌다(값 파일의 draw — v12).
    profileJob(인물, 장소) → 프로필(칸 0) · emotionJob(인물, 장소, 칸 1~14) → 감정 그림. Node에서만 돈다(값 파일을 읽음). 앱은 이 파일을 쓰지 않는다 */
 import fs from "node:fs";
 import { fitStyle, weighTags } from "./style-fit.js";
-import { acting, actingNeg, emotionJob as animeEmotion, assertSafe as animeSafe } from "../../style-manime/code/assemble.js";
+import { acting, actingNeg, profileJob as animeProfile, emotionJob as animeEmotion, assertSafe as animeSafe } from "../../style-manime/code/assemble.js";
 
 const J = (rel) => JSON.parse(fs.readFileSync(new URL(rel, import.meta.url), "utf8"));
 const toRe = (s) => {
@@ -21,7 +21,7 @@ const load = (rel) => {
 };
 const BASE = J("../mdaily.json");
 export const FIX = BASE.fixed; // 품질·수위·규격·미성년 금지 태그
-export const STYLE = { f: load("../mdaily-v8.json"), m: load("../../style-fdaily/fdaily-v11.json") };
+export const STYLE = { f: load("../mdaily-v8.json"), m: load("../../style-fdaily/fdaily-v12.json") };
 /* 그림 규격(tools/content-art.mjs ART_SPECS) — 프로필 768×1152, 감정 1024×1024. 멀리 잡는 휴식 칸만 1536으로 키워 다시 그린다(얼굴이 작아져 무너짐) */
 export const SIZE = { profile: { width: 768, height: 1152 }, emotion: { width: 1024, height: 1024 } };
 const HIRES = { w: 1536, h: 1536, strength: 0.4 };
@@ -244,38 +244,34 @@ const job = (b, kind, seed, o) => ({
 
 /** 프로필(칸 0) — 얼굴 가까이(애니 화풍과 같은 구도), 기본 표정, 작품의 장소를 흐린 배경으로 */
 export function profileJob(c, place, o = {}) {
+  if (viaAnime(c)) return animeDrawn(c, place, 0, o);
   const s = sceneOf(c, 0);
   return job(build(c, place, s.scene, "profile", s.neg, s.still, s.free), "profile", o.seed || seedOf(c), o);
 }
 /** 감정 그림(칸 1~14) — 정사각, 가슴까지(구도·표정은 애니 화풍과 같음). 칸 11(휴식)은 몸 전체: hires로 키우고, 여성은 guide(밑그림 작업과 strength)가 붙는다 */
 export function emotionJob(c, place, slot, o = {}) {
+  if (viaAnime(c)) return animeDrawn(c, place, slot, o);
   const seed = o.seed || seedOf(c);
   if (slot === 11) {
     const g = isFem(c) ? "f" : "m",
       j = { ...job(build(c, place, REST[g].scene, "emotion", REST[g].neg), "emotion", seed, o), hires: HIRES };
     return guided(c, slot) ? { ...j, guide: { job: guideJob(c, seed), strength: GUIDE.strength } } : j;
   }
-  const s = sceneOf(c, slot),
-    j = job(build(c, place, s.scene, "emotion", s.neg, s.still, s.free), "emotion", seed, o),
-    u = STYLE[isFem(c) ? "f" : "m"].underdraw;
-  if (!guided(c, slot)) return j;
-  // 본 그림은 밑그림보다 크게(scale) — 얼굴이 작게 잡힌 그림은 밑그림과 같은 크기에서 다시 그리면 눈과 세부가 뭉개진다. 받은 뒤 규격 크기로 줄인다(그림 도구의 finish)
-  const k = u.scale || 1;
-  return { ...j, width: Math.round(j.width * k), height: Math.round(j.height * k), guide: { job: underJob(c, place, slot, j), strength: u.strength } };
+  const s = sceneOf(c, slot);
+  return job(build(c, place, s.scene, "emotion", s.neg, s.still, s.free), "emotion", seed, o);
 }
-/** 이 인물·칸의 그림에 밑그림 단계가 붙는지 — 붙으면 생성 호출이 한 번 더 든다. emotionJob과 그림 도구의 값 어림(tools/art.mjs)이 같이 쓴다:
-    여성의 휴식 칸(아래 guideJob), 값 파일에 underdraw가 있는 화풍의 감정 칸(휴식 칸 빼고) */
-export const guided = (c, slot) => (slot === 11 ? isFem(c) : slot > 0 && !!STYLE[isFem(c) ? "f" : "m"].underdraw);
-/* ── 애니 밑그림 ── 값 파일에 underdraw가 있는 화풍(지금은 남성 인물)의 감정 그림: 같은 인물·칸을 애니 화풍(style-manime)으로 먼저 그리고,
-   그 그림을 밑그림으로 이 화풍이 strength만큼 다시 그린다(낮을수록 밑그림에 가까움). 문구만으로는 얼굴이 부드럽게 나오던 것이, 밑그림의 고개 각도·눈썹과 눈 사이·옆빛이
-   넘어와 애니 화풍의 날카로운 인상에 가까워진다(2026-11-23 비교 생성). 밑그림의 배경과 소품도 따라온다. 밑그림은 첫 그림만 쓴다(키워 다시 그리기·후처리 없이, 만화 기호 없이)
-   — 시드는 이 화풍의 작업과 같게, 크기는 규격 크기(1024). 본 그림은 그 밑그림을 scale배(1.5 → 1536)로 키운 자리에서 다시 그린다: 같은 크기에서 그리면 작게 잡힌 얼굴의 눈과
-   소매·소품이 뭉개졌다(2026-11-24 사용자 지적 → 비교 생성). 값은 거의 같다(호출 수는 그대로). 프로필(칸 0)은 붙이지 않는다(애니 프로필의 어두운 단색 배경을 따르게 됨), 휴식(칸 11)은 제 규칙대로 */
-function underJob(c, place, slot, j) {
-  // 옷 규칙은 본 그림과 같게: 셔츠 종류가 안 적힌 남자는 깃 달린 셔츠 — 밑그림만 다른 깃(차이나 칼라 등)으로 그려지면 세기가 낮을 때 그대로 따라온다
-  const who = !isFem(c) && plainShirt(c) ? { ...c, tags: c.tags + ", collared shirt, buttons" } : c;
-  const a = animeSafe(animeEmotion(who, place || { tags: "" }, slot, { symbols: false, seed: j.seed }));
-  return { model: a.model, pos: a.pos, neg: a.neg, cfg: a.cfg, steps: a.steps, scheduler: a.scheduler, seed: a.seed, width: j.width, height: j.height };
+/** 이 인물·칸의 그림에 밑그림 단계가 붙는지 — 붙으면 생성 호출이 한 번 더 든다. emotionJob과 그림 도구의 값 어림(tools/art.mjs)이 같이 쓴다: 여성의 휴식 칸(위 guideJob) */
+export const guided = (c, slot) => slot === 11 && isFem(c) && !viaAnime(c);
+/* ── 애니 화풍으로 그리는 인물 ── 값 파일의 draw가 "anime"인 화풍(지금은 남성 인물): 이 화풍의 문구로 그리지 않고 애니 화풍(style-manime)의 작업을 그대로 쓰고,
+   받은 그림에 애니 화풍의 후처리를 입힌 뒤 이 화풍의 후처리(흐림)를 한 겹 더 입힌다 — postAs(먼저 입힐 후처리의 종류)·haze(그 뒤에 입힐 이 화풍의 후처리 값)를 그림 도구가 읽는다.
+   사용자 2026-11-24 결정("남성은 애니 화풍에 흐림만 입히는 걸로 가자"): 남성 인물을 이 화풍의 모델에서 문구만으로 애니처럼 날카롭게 만드는 시험(14장)은 구도만 움직이고 얼굴과
+   명암은 움직이지 않았고, 애니 그림을 밑그림으로 다시 그리는 방식은 쓰지 않기로 했다. 만화 기호는 뺀다(이 화풍에는 없음). 시드는 애니 화풍의 것 그대로 — 같은 인물을 애니 화풍으로
+   그린 그림과 같은 얼굴이 된다(o.seed를 주면 그 값). 프로필의 어두운 단색 배경, 휴식 칸의 조는 모습도 애니 화풍의 것 그대로 */
+const viaAnime = (c) => STYLE[isFem(c) ? "f" : "m"].draw === "anime";
+function animeDrawn(c, place, slot, o) {
+  const ao = { symbols: false, ...(o.seed ? { seed: o.seed } : {}) };
+  const a = animeSafe(slot ? animeEmotion(c, place || { tags: "" }, slot, ao) : animeProfile(c, place, ao));
+  return { ...a, postAs: "anime", haze: STYLE[isFem(c) ? "f" : "m"].post };
 }
 /** 만든 작업이 지킬 것을 지키는지: 성인 표시, 한 사람, 미성년·노출 네거티브(밑그림 작업도) */
 export function assertSafe(j) {

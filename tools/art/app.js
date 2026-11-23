@@ -43,9 +43,12 @@ function paintMsg(el, k) {
   $(".msg", el).className = "msg " + m.cls;
 }
 
-/** 인물·장소 그림: 받은 그림 → 화풍 후처리 → 규격 크기의 webp */
+/** 인물·장소 그림: 받은 그림 → 화풍 후처리 → (작업에 haze가 있으면 일상 화풍의 흐림을 한 겹 더) → 규격 크기의 webp */
 async function finish(spec, raw) {
-  const im = await load(await (spec.post === "anime" ? postAnime : postDaily)(raw, spec.job.post || {})),
+  let done = await (spec.post === "anime" ? postAnime : postDaily)(raw, spec.job.post || {});
+  // 일상 화풍 작품의 남성 인물: 애니 화풍으로 그린 그림에 일상 화풍의 흐릿한 분위기만 입힌다(archive/style-mdaily/code/assemble.js '애니 화풍으로 그리는 인물')
+  if (spec.job.haze) done = await postDaily(done, spec.job.haze);
+  const im = await load(done),
     cv = document.createElement("canvas");
   cv.width = spec.size.w;
   cv.height = spec.size.h;

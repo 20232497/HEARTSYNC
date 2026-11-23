@@ -129,7 +129,9 @@ function jobFor(c, row, vary, style) {
     else job = dailySafe(slot ? dailyEmotion(who, place, slot) : dailyProfile(who, place));
   }
   // 장소 그림의 후처리는 작품의 화풍을 따른다(인물 화풍만 바꿔 그려 보는 것)
-  return { job: shift(job, vary), post: (row.spec === "place" ? styleOf(c.id) === "anime" : anime) ? "anime" : "daily", cover: false, size: sizeOf(row.spec) };
+  // 작업이 스스로 후처리의 종류를 적어 왔으면 그것으로(일상 화풍 작품의 남성 인물은 애니 화풍으로 그려 애니 후처리 → 그 위에 일상 화풍의 흐림 — job.postAs·job.haze)
+  const post = job.postAs || ((row.spec === "place" ? styleOf(c.id) === "anime" : anime) ? "anime" : "daily");
+  return { job: shift(job, vary), post, cover: false, size: sizeOf(row.spec) };
 }
 
 /* ── 보관함 ── <LIB>/<작품>/<코드>/<시각>.webp(후보) · <LIB>/<작품>/cover-parts/<자리>-<raw|cut>.<webp|png>(단체 표지의 조각 — 다시 붙일 때 다시 그리지 않음) · <LIB>/log.jsonl(그린 기록) */
