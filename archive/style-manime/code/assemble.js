@@ -254,6 +254,28 @@ const job = (kind, pos, neg, seed, lift) => ({
   ...(lift.length ? { lift } : {}),
 });
 
+/** 칸의 연기 — 눈·표정과 손동작·구도 자리(시선). 화풍과 상관없이 '무엇을 하고 있나'만 고른다: 감정 그림이 쓰고, 일상 화풍(style-mdaily)이 같은 구도·표정을 내려고 가져다 쓴다.
+    칸 0은 프로필(얼굴 구도 + 기본 표정), 칸 1과 표정이 없는 칸은 기본 표정(base). o.symbols === false면 만화 기호를 뺀다. look은 시선을 돌린 칸의 방향(away·down — 마주 보면 빈 글) */
+export function acting(c, slot, o = {}) {
+  const man = !isFem(c), g = man ? "m" : "f", ch = charm(c);
+  if (!slot) return { g, E: {}, eyes: man ? EYES_M : ch.eyes, emo: ch.emo, frame: FRAME.profile, look: "", base: true };
+  const E = EMOTIONS[slot] || {};
+  const T = slot > 1 ? (TEMPER_EMO[temperOf(c)] || {})[slot] : null; // 대표 칸은 성격별 표정(expressions.js), 없으면 공통 표정
+  const L = slot > 1 ? (LEAD_EMO[c.code + ":" + c.name] || {})[slot] : null; // 작품의 대표 인물은 그 인물만의 버릇·소품
+  const eyes = (L && L.eyes) || (T && T.eyes && T.eyes[g]) || (E.eyes && E.eyes[g]) || (man ? EYES_M : ch.eyes);
+  const own = L ? L.emo : T ? T[g] : typeof E.emo === "function" ? E.emo(c) : E.emo && E.emo[g];
+  const base = slot === 1 || !E.emo;
+  const emo = base ? ch.emo : own + (E.sym && o.symbols !== false ? ", " + E.sym : "");
+  const look = (L && L.look) || (T && T.look) || E.look; // "viewer"는 마주 봄
+  const turned = !!(look && LOOK[look]);
+  return { g, E, eyes, emo, frame: turned ? FRAME.emotion.replace("looking at viewer", LOOK[look]) : FRAME.emotion, look: turned ? look : "", base };
+}
+/** 그 연기에 딸린 네거티브(표정) — 화풍의 것(빛·옷·비율·자세)은 뺀 것. 일상 화풍이 쓴다: 기본 표정 칸의 감은 눈·벌린 입, 여성의 노려보는 눈, 칸마다의 것(감정 그림의 네거티브와 같은 조건) */
+export function actingNeg(c, slot) {
+  const g = isFem(c) ? "f" : "m", E = EMOTIONS[slot] || {};
+  return (slot <= 1 || !E.emo ? NEG_CALM[g] : "") + (g === "f" && !E.hard ? NEG_SOFT : "") + (E.neg || "") + (g === "m" ? E.negM || "" : "");
+}
+
 /** 프로필(칸 0): 얼굴이 화면을 채우는 구도 + 어두운 단색 배경. place는 쓰지 않는다(자리만 맞춤). o: { seed, track(노출 정책의 트랙 — 없으면 일반), accent: false면 강조를 쓰지 않음 } */
 export function profileJob(c, place, o = {}) {
   const P = policyOf(o.track), lift = liftOf(c, isFem(c), P, o);
@@ -268,18 +290,12 @@ export function profileJob(c, place, o = {}) {
 export function emotionJob(c, place, slot, o = {}) {
   const P = policyOf(o.track), lift = liftOf(c, isFem(c), P, o);
   const E = EMOTIONS[slot] || {}, tags0 = E.armed ? c.tags : c.tags.split(", ").filter((t) => !WEAPON_TAG.test(t)).join(", ");
-  const p = person(c, inner(tags0), true, P), g = p.g, ch = charm(c), elder = p.tier === "elder";
-  const T = slot > 1 ? (TEMPER_EMO[temperOf(c)] || {})[slot] : null; // 대표 칸은 성격별 표정(expressions.js), 없으면 공통 표정
-  const L = slot > 1 ? (LEAD_EMO[c.code + ":" + c.name] || {})[slot] : null; // 작품의 대표 인물은 그 인물만의 버릇·소품
-  const eyes = (L && L.eyes) || (T && T.eyes && T.eyes[g]) || (E.eyes && E.eyes[g]) || (p.man ? EYES_M : ch.eyes);
+  const p = person(c, inner(tags0), true, P), g = p.g, elder = p.tier === "elder";
+  const { eyes, emo, frame } = acting(c, slot, o);
   let face = E.face ? E.face[g] : p.man ? FACE_M.emotion : FACE_F;
   if (elder) face = elderFace(face);
   if (E.lowBlush) face = face.replace("(blush:0.3)", "(blush:0.1)"); // 화난 얼굴의 홍조는 수줍어 보임
   face += ", " + skinOf(p.tier) + ", " + LIPS[g];
-  const own = L ? L.emo : T ? T[g] : typeof E.emo === "function" ? E.emo(c) : E.emo && E.emo[g];
-  const emo = slot === 1 || !E.emo ? ch.emo : own + (E.sym && o.symbols !== false ? ", " + E.sym : "");
-  const look = (L && L.look) || (T && T.look) || E.look; // "viewer"는 마주 봄
-  const frame = look && LOOK[look] ? FRAME.emotion.replace("looking at viewer", LOOK[look]) : FRAME.emotion;
   const day = TIME.test(place.tags) && !DARK.test(place.tags);
   // 소매 길이를 적지 않은 옷은 긴소매(여·남 모두) — 어깨·팔을 드러내는 옷을 적어 그 네거티브를 푼 그림은 뺌
   const sleeves = SLEEVE_TAG.test(c.tags) || lift.includes("bare arms") || lift.includes("bare shoulders") ? "" : P.sleeves;
