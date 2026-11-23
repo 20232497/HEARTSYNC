@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ko">
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <!-- admin.html은 관리자 도구 빌드 결과물(npm run build)이에요 — git에 넣지 않고 로컬에서 열어요. 고칠 땐 src/·content/를 고치세요 (docs/ARCHITECTURE.md) -->
 <!-- 사용자 사이트(index.html)와 같은 소스에서 관리자 모듈(src/js/admin/)을 더해 만들어요. 주석은 모두 남기고 모듈마다 설명 머리를 붙여요 -->
 <title>HEART SYNC 관리자</title>
@@ -84,7 +84,8 @@ button { cursor:pointer; }
 .topbar { display:flex; align-items:center; gap:10px; margin-bottom:18px; }
 .topbar .logo { padding:0; display:none; }
 @media (max-width:899px) { .topbar { flex-wrap:wrap; } .topbar .logo { display:flex; font-size:15px; letter-spacing:.03em; gap:7px; } .topbar .logo .mark { width:22px; height:22px; border-radius:6px; } .topbar .search { order:9; flex-basis:100%; max-width:none; } }
-.search { flex:1; max-width:420px; display:flex; align-items:center; gap:8px; background:var(--surface); border:1px solid var(--line); border-radius:999px; padding:0 14px; height:40px; }
+/* min-width:0 — 입력칸의 기본 폭(글자 폭 × 20)이 줄 폭보다 넓으면(폭 320px + 글자가 넓은 기기) 검색칸이 줄을 넘어 홈이 가로로 밀림 */
+.search { flex:1; min-width:0; max-width:420px; display:flex; align-items:center; gap:8px; background:var(--surface); border:1px solid var(--line); border-radius:999px; padding:0 14px; height:40px; }
 .search input { border:0; background:none; outline:none; flex:1; min-width:0; }
 .search svg { width:16px; height:16px; color:var(--muted); flex:none; }
 .wallet { display:flex; align-items:center; gap:6px; height:36px; padding:0 12px; border-radius:999px; border:1px solid var(--line); background:var(--surface); font-weight:600; font-size:13px; white-space:nowrap; font-variant-numeric:tabular-nums; }
@@ -257,8 +258,9 @@ h2.sec small, h1.sec small { font-family:var(--sans); font-size:12.5px; color:va
 .d-more { margin-top:8px; }
 .d-fields { margin-top:10px; }
 @media (max-width:780px) {
-  .detail { grid-template-columns:1fr; gap:14px; }
+  .detail { grid-template-columns:minmax(0,1fr); gap:14px; } /* 1fr의 최소 폭은 내용만큼이라, 가로로 미는 줄(다른 작품)이 칸을 화면 밖으로 밀어냄 — 0부터 */
   .d-side { position:static; max-height:none; overflow:visible; }
+  .d-side, .d-main { min-width:0; }
   .d-top { display:grid; grid-template-columns:112px minmax(0,1fr); gap:14px; align-items:start; margin-bottom:12px; }
   .d-top > .cover { width:100%; min-width:0; margin:0; border-radius:14px; }
   .detail h1 { font-size:22px; margin-top:2px; }
@@ -471,6 +473,14 @@ img.img-miss { background:var(--surface2); }
 .msg.me .col { align-items:flex-end; flex:0 1 auto; max-width:82%; }
 .msg.me .bubble { background:var(--accent-soft); border-color:transparent; border-radius:16px 4px 16px 16px; }
 .msg.me.ooc .bubble { background:none; border:1px dashed var(--line); color:var(--muted); font-size:13px; padding:7px 12px; }
+/* 휴대폰: 말풍선이 로그 폭 전체를 쓰게 — 아바타 칸(36px + 간격 10px)이 말풍선을 밀어 왼쪽 60px·오른쪽 14px로 쏠려 보였고, 긴 답에서는 아바타가 지나간 뒤 빈 띠만 남았음.
+   AI 아바타는 24px로 줄여 이름 줄 앞에 얹고(칸을 차지하지 않게 absolute), 내 말풍선 옆의 페르소나 사진은 숨김(2026-11-21 사용자 결정). 상태창·도구 줄도 같이 넓어짐 */
+@media (max-width:560px) {
+  .msg:not(.me) { position:relative; }
+  .msg:not(.me) > .cover { position:absolute; top:0; left:0; width:24px; height:24px; border-radius:8px; margin-top:0; }
+  .msg:not(.me) .nm { display:flex; align-items:center; min-height:24px; padding-left:30px; }
+  .msg.me > .pav { display:none; }
+}
 .sys-pill { align-self:center; font-size:12px; color:var(--muted); background:var(--surface2); border-radius:999px; padding:3px 12px; }
 .tools-row { display:flex; align-items:center; gap:1px; color:var(--muted); font-size:12px; flex-wrap:wrap; }
 .tools-row button { border:0; background:none; color:var(--muted); padding:4px 7px; border-radius:7px; font-size:12px; display:inline-flex; align-items:center; gap:3px; }
@@ -487,6 +497,8 @@ details.stat summary::-webkit-details-marker { display:none; }
 details.stat summary::after { content:"▾"; margin-left:auto; }
 details.stat[open] summary::after { content:"▴"; }
 .status { padding:2px 12px 11px; display:grid; grid-template-columns:repeat(auto-fill, minmax(270px, 1fr)); gap:5px 22px; margin:0; }
+/* 휴대폰에서는 늘 한 칸(카드 안쪽이 두 칸 폭 562px에 못 미침) — 칸의 최소 폭 270px이 카드보다 넓으면(폭 320px) 값이 카드 밖으로 나가 잘렸음. 방 메뉴의 상태창도 같음 */
+@media (max-width:560px) { .status { grid-template-columns:minmax(0,1fr); } }
 .st-row { display:grid; grid-template-columns:5.6em minmax(0,1fr); gap:10px; align-items:baseline; }
 .st-row.wide { grid-column:1 / -1; }
 .status dt { color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -584,6 +596,8 @@ details.stat[open] summary::after { content:"▴"; }
 .overlay { position:fixed; inset:0; background:var(--scrim); z-index:40; display:flex; align-items:flex-end; justify-content:center; animation:fade .18s; }
 .sheet { background:var(--surface); width:min(560px, 100%); max-height:90%; overflow-y:auto; border-radius:20px 20px 0 0; padding:20px max(18px, env(safe-area-inset-right,0px)) calc(20px + env(safe-area-inset-bottom,0px)) max(18px, env(safe-area-inset-left,0px)); animation:up .22s ease-out; }
 .sheet.wide { width:min(720px, 100%); }
+/* 화면 전체를 막는 가림막(ui/account.js veil — 기기 데이터를 지우는 로그아웃이 끝날 때까지). 시트·그림 크게 보기보다 위 */
+.veil { position:fixed; top:0; right:0; bottom:0; left:0; z-index:90; background:var(--scrim); color:#fff; display:flex; align-items:center; justify-content:center; padding:24px; text-align:center; font-weight:600; animation:fade .18s; }
 @keyframes up { from { transform:translateY(24px); opacity:.6; } }
 @media (min-width:700px) { .overlay { align-items:center; } .sheet { border-radius:20px; } }
 .sheet h2 { margin:0 0 4px; font-family:var(--display); font-size:21px; }
@@ -1860,7 +1874,7 @@ const ORIGINALS = [
     {"code":"ODE","name":"오다은","desc":"3년 차 선배 주무관. 수칙을 신봉하고, 짧고 딱딱한 존댓말로 괴이에게도 꼬박꼬박 '민원인님'이라 부른다. 처리가 칼같다. 괴이의 본모습을 꿰뚫어 보는 눈을 가졌다.","look":"31세 여성, 낮게 묶은 흑발, 일자 앞머리, 가늘고 곧은 눈매의 푸른 눈, 눈 밑 점, 남색 재킷과 흰 블라우스, 목에 건 공무원증","temper":"곧음","age":31,"tags":"black hair, low ponytail, blunt bangs, narrow eyes, blue eyes, straight eyebrows, mole under eye, navy blazer, white blouse, lanyard id card, office lady"},
     {"code":"HME","name":"홍 여사","desc":"매주 목요일에 오는 단골 민원인. 천 년 넘게 산 구미호. 나른한 하오체로 장난을 치지만 은근히 다정하다. 늘 같은 민원을 넣고, 도움을 줄 땐 늘 작은 대가를 받는다.","look":"외견 40대 여성, 촘촘한 일자 앞머리에 반묶음한 긴 흑발과 비녀, 가늘게 올라간 눈매의 금빛 눈, 붉은 입술, 자주색 개량 한복 재킷","temper":"장난","age":45,"tags":"black hair, long hair, straight hair, blunt bangs, straight bangs, half updo, hairpin, upturned eyes, golden eyes, arched eyebrows, red lips, beauty mark, modern hanbok, burgundy jacket, mature female"},
     {"code":"HMF","name":"홍 여사(본모습)","of":"HME","look":"외견 40대 여성, 아홉 갈래 흰 여우 꼬리, 흰 여우 귀, 금빛 눈, 풀어 내린 흑발, 붉은 한복 치마저고리","tags":"black hair, long hair, white fox ears, nine white fox tails, golden eyes, slit pupils, upturned eyes, red hanbok, korean clothes, mature female, glowing aura"},
-    {"code":"JTS","name":"장태산","desc":"구청 청원경찰. 거구인데 겁이 많고, 과장된 존댓말과 비명이 특기. 자기는 아무것도 안 보인다고 주장한다.","look":"36세 남성, 짧게 민 머리, 큰 덩치, 동그란 초록 눈, 짙은 눈썹, 남색 긴소매 청원경찰 제복과 모자, 노란 반사 조끼","temper":"수줍음","age":36,"tags":"black hair, buzz cut, round eyes, green eyes, thick eyebrows, large build, tall male, security guard uniform, navy long-sleeved shirt, navy cap, yellow reflective vest, nervous expression"},
+    {"code":"JTS","name":"장태산","desc":"구청 청원경찰. 거구인데 겁이 많고, 과장된 존댓말과 비명이 특기. 자기는 아무것도 안 보인다고 주장한다.","look":"36세 남성, 짧게 민 머리, 큰 덩치, 동그란 초록 눈, 짙은 눈썹, 남색 긴소매 청원경찰 제복과 모자, 노란 반사 조끼","temper":"수줍음","age":36,"tags":"black hair, buzz cut, round eyes, green eyes, thick eyebrows, large build, tall male, security guard uniform, dark blue long-sleeved shirt, dark blue peaked cap, yellow reflective vest, nervous expression"},
     {"code":"SYJ","name":"서윤재","desc":"본청 특수민원 감사실 감사관. 공문서 같은 존댓말, 숫자와 근거. 2주 감사 뒤 야간 민원실에 폐쇄 권고를 낼 예정이다. 괴이 앞에서도 이상할 만큼 침착하다.","look":"34세 남성, 가르마를 탄 짙은 갈색 단발, 가는 눈매의 회색 눈, 무테안경, 차콜 정장과 검은 넥타이, 출입증","temper":"차가움","age":34,"tags":"dark brown hair, short hair, side part, narrow eyes, grey eyes, thin eyebrows, rimless glasses, charcoal suit, black necktie, white collared shirt, id badge, calm expression"}
   ],
   "places": [
@@ -2055,8 +2069,8 @@ const ORIGINALS = [
     {"keys":["몹","엑스트라","고블린"],"text":"코어가 DP로 불러내는 이름 없는 몬스터들. 고블린 엑스트라, 종이 박쥐 떼 같은 것. 말이 서툴고 영업이 끝나면 흩어진다.","kind":"creature","tags":"small goblin extras in costumes, paper bats, foam weapons, dungeon corridor, playful"}
   ],
   "cast": [
-    {"code":"GAO","name":"가온","desc":"미노타우로스. 보스방의 보스 배우이자 구조 반장. 무섭게 생긴 것을 늘 미안해하는 다정한 거구. 휜 두 뿔, 짧은 갈색 머리, 팔뚝의 화상 흉터, 해진 붉은 망토 아래 형광 구조 조끼.","look":"31세 여성, 미노타우로스, 머리 위로 휜 굵은 두 뿔과 소 귀, 짧게 친 갈색 머리, 장신에 다부진 체격, 팔뚝의 오래된 화상 흉터, 해진 붉은 망토 아래 형광 구조 조끼","temper":"다정","age":31,"tags":"minotaur girl, large curved horns, cow ears, brown hair, short hair, brown eyes, droopy eyes, thick eyebrows, tall, muscular, burn scar on forearm, tattered red cape, high-visibility safety vest, black tank top, work gloves"},
-    {"code":"SER","name":"세라","desc":"슬라임족 무대 기술자. 함정과 연출 소품을 만든다. 손님이 '좋은 쪽으로' 비명 지를 때 가장 행복한 장난꾸러기. 반투명한 하늘색 머리칼, 이마의 고글, 공구 벨트.","look":"27세 여성, 슬라임족, 물결치는 반투명한 하늘색 긴 머리, 볼의 작은 물방울 자국, 이마에 올린 작업용 고글, 공구 벨트와 물감 묻은 작업 앞치마","temper":"장난","age":27,"tags":"slime girl, translucent hair, light blue hair, long hair, wavy hair, aqua eyes, round eyes, water droplets on cheeks, goggles on forehead, tool belt, work apron, paint stains, rolled up sleeves"},
+    {"code":"GAO","name":"가온","desc":"미노타우로스. 보스방의 보스 배우이자 구조 반장. 무섭게 생긴 것을 늘 미안해하는 다정한 거구. 휜 두 뿔, 짧은 갈색 머리, 팔뚝의 화상 흉터, 해진 붉은 망토 아래 형광 구조 조끼.","look":"31세 여성, 미노타우로스, 머리 위로 휜 굵은 두 뿔과 소 귀, 짧게 친 갈색 머리, 장신에 다부진 체격, 팔뚝의 오래된 화상 흉터, 해진 붉은 망토 아래 형광 구조 조끼","temper":"다정","age":31,"tags":"large curved horns, cow ears, brown hair, short hair, brown eyes, droopy eyes, thick eyebrows, tall, burn scar on forearm, tattered red cape, high-visibility safety vest, black long-sleeved shirt, rolled up sleeves, dark cargo pants, work gloves"},
+    {"code":"SER","name":"세라","desc":"슬라임족 무대 기술자. 함정과 연출 소품을 만든다. 손님이 '좋은 쪽으로' 비명 지를 때 가장 행복한 장난꾸러기. 반투명한 하늘색 머리칼, 이마의 고글, 공구 벨트.","look":"27세 여성, 슬라임족, 물결치는 반투명한 하늘색 긴 머리, 볼의 작은 물방울 자국, 이마에 올린 작업용 고글, 공구 벨트와 물감 묻은 작업 앞치마","temper":"장난","age":27,"tags":"translucent hair, light blue hair, long hair, wavy hair, aqua eyes, round eyes, water droplets on cheeks, goggles on forehead, light grey long-sleeved shirt, rolled up sleeves, brown work apron, paint stains, tool belt, dark work pants"},
     {"code":"BIO","name":"비오","desc":"그림자족 안내원. 던전의 모든 통로를 안다. 짧고 건조하게 말하지만 손님 안내는 완벽하다. 턱선 단발, 보라색 눈, 발밑에서 연기처럼 일렁이는 그림자.","look":"29세 여성, 그림자족, 턱선 길이의 검은 단발, 가늘고 차분한 보라색 눈, 창백한 피부, 단정한 검은 안내원 제복과 명찰, 발밑에서 연기처럼 일렁이는 그림자","temper":"차가움","age":29,"tags":"black hair, bob cut, straight bangs, purple eyes, narrow eyes, pale skin, black guide uniform, name tag, black necktie, dark smoke around feet"},
     {"code":"NAR","name":"차나린","desc":"C급 헌터이자 던전 후기 채널 운영자. 이 던전의 단골이자 앙숙 — '이딴 F급'이라 투덜대면서 매주 온다. 붉은 갈색 포니테일, 왼쪽 눈썹의 작은 흉터, 어깨의 바디캠.","look":"26세 여성, 헌터, 하나로 질끈 묶은 붉은 갈색 포니테일, 날카로운 호박색 눈, 왼쪽 눈썹의 작은 흉터, 가벼운 가죽 갑옷 위 바람막이, 어깨의 바디캠, 허리의 짧은 검","temper":"도도","age":26,"tags":"auburn hair, long hair, high ponytail, amber eyes, sharp eyes, scar on eyebrow, light leather armor, windbreaker, body camera on shoulder, fingerless gloves, short sword at hip"},
     {"code":"YUD","name":"정유담","desc":"던전관리공단 감사관. 규정대로만 움직이는 딱딱한 사람이지만 공정하다. 잘 만든 안전 설계를 보면 눈빛이 달라진다. 낮게 틀어 올린 흑발, 은테 안경, 회색 정장과 공단 완장.","look":"35세 여성, 낮게 틀어 올린 흑발, 회색 눈, 은테 안경, 회색 정장과 공단 완장, 목에 건 출입증","temper":"곧음","age":35,"tags":"black hair, low bun, side-swept bangs, grey eyes, serious eyes, semi-rimless eyewear, silver-framed glasses, grey suit, white shirt, armband, lanyard, id card"}
@@ -2071,7 +2085,7 @@ const ORIGINALS = [
   ],
   "cuts": [
     {"title":"첫 재예약","when":"손님이 퇴장 데크에서 처음으로 스스로 다음 예약을 잡는 순간","tags":"happy adventurers at a dungeon exit deck, writing a reservation, monster staff waving, string lights, warm evening"},
-    {"title":"보스의 인사","when":"보스전을 마친 가온이 처음으로 망토를 벗고 손님들에게 고개 숙여 인사하는 순간","tags":"minotaur girl bowing to adventurers, cape removed, spotlight, labyrinth arena, applause, smoke"},
+    {"title":"보스의 인사","when":"보스전을 마친 가온이 처음으로 망토를 벗고 손님들에게 고개 숙여 인사하는 순간","tags":"tall woman with large curved horns and cow ears bowing to adventurers, red cape held in one hand, high-visibility safety vest, spotlight, labyrinth arena, applause, smoke"},
     {"title":"고물 더미의 종","when":"아무도 당기지 않은 낡은 종이 처음으로 혼자 울리는 순간","tags":"old bronze bell ringing by itself, workshop scrap pile, dust, low light, faint glow","hidden":true}
   ],
   "commands": [
@@ -3465,7 +3479,7 @@ function shrink(file, max, q) {
 
 /* KV ↔ 계정 동기화. 쓰기는 KV.set → put()이 키마다 0.8초 모아 upsert(지우기는 DELETE).
    읽기는 그림(img…)을 뺀 키를 받아 이 기기에 씀 — 처음 로그인하면 전부, 그 뒤엔 updated_at이 바뀐 것만. 그림(페르소나 사진)은 IMG.load가 필요할 때 한 장씩.
-   이 기기에서 아직 못 올린 키(pending)는 받은 값으로 덮지 않음. 설정은 "settings" 키(글자 크기·Enter로 보내기는 기기마다 따로) */
+   이 기기에서 아직 못 올린 키(pending)와 올리는 중인 키(sending)는 받은 값으로 덮지 않음. 설정은 "settings" 키(글자 크기·Enter로 보내기는 기기마다 따로) */
 const DEVICE_SETTINGS = ["fs", "enterSend", "theme"]; // 화면 테마도 기기마다 따로(낮에 쓰는 기기와 밤에 쓰는 기기가 다를 수 있음)
 /* API 키 칸은 계정에 올리지 않음 — 서버 표의 kv_no_plain_keys 제약도 settings에 이 칸이 있으면 거부. 예전 빌드의 그림·성인 키 칸도 기기에 남아 있을 수 있어 함께 뺌 */
 const KEY_FIELDS = ["apiKey", "runwareKey", "openRouterKey"];
@@ -3476,13 +3490,16 @@ const SHELF_KEY = "shelf";
 const synced = (k) => SYNCED_RE.test(k) || (k === SHELF_KEY && shelfSyncOn());
 const IMG_KEY_RE = /^img[a-z0-9]{6,30}$/;
 /**
- * 계정 저장(Supabase kv 표). start()/stop() 로그인·로그아웃 때 · put(k, v) 0.8초 모아 upsert(KV.remote 고리) · flush() 바로 올림 · pull() → Promise<number> 바뀐 행 받아 적용
+ * 계정 저장(Supabase kv 표). start()/stop() 로그인·로그아웃 때 · put(k, v) 0.8초 모아 upsert(KV.remote 고리) · flush() 바로 올리고 결과를 돌려줌(한 번에 하나) ·
+ * pull() → Promise<number> 바뀐 행 받아 적용
  * getOne(k) 그림 본문 받기 · pushAll(keys) 처음 로그인에 기기 데이터 올리기 · wipe() 계정 행 전부 삭제 · state: ""|"sync"|"ok"|"err"|"notable"("cloud" 이벤트)
  */
 const CLOUD = {
   on: false,
   uid: null,
   pending: {},
+  busy: null, // 지금 도는 전송의 줄(Promise) — flush()가 뒤에 이어 붙임
+  sending: new Set(), // 지금 올리는 중인 키(send가 채우고 비움)
   timer: null,
   state: "",
   at: 0,
@@ -3502,6 +3519,7 @@ const CLOUD = {
     this.on = false;
     this.uid = null;
     this.pending = {};
+    this.sending = new Set();
     clearTimeout(this.timer);
     this.setState("");
   },
@@ -3516,59 +3534,83 @@ const CLOUD = {
     clearTimeout(this.timer);
     this.timer = setTimeout(() => this.flush(), 800);
   },
+  // 응답이 실패면 던짐. 오류 본문은 8초까지만 기다리고(머리만 오고 본문이 멈추면 전송의 줄이 영영 안 풀림), 기다리는 사이 계정이 바뀌었으면 '표 없음' 판정을 켜지 않음
   async check(r) {
     if (r.ok) return;
-    const j = await r.json().catch(() => ({}));
+    const uid = this.uid,
+      j = await Promise.race([r.json().catch(() => ({})), new Promise((res) => setTimeout(() => res({}), 8000))]);
+    if (this.uid !== uid) throw j;
     if (r.status === 404 || j.code === "PGRST205" || j.code === "42P01") {
       this.noTable = true;
       this.setState("notable");
     }
     throw j;
   },
-  async flush() {
+  /**
+   * 모아 둔 것을 지금 올림. **전송은 한 번에 하나** — 도는 것이 있으면 그것이 끝난 뒤에 이어서 돎(겹쳐 돌면 늦게 끝난 옛 값이 새 값을 덮고,
+   * 로그아웃이 '보낼 것 없음'으로 보고 도는 전송을 기다리지 않음). 로그아웃·'지금 동기화'는 돌려준 결과를 보고 다음 일을 정함(ui/account.js).
+   * @returns {Promise<"ok"|"left"|"notable"|"off">} ok 남은 것 없음 · left 못 올린 것이 남음(15초 뒤 다시 시도) · notable 계정 저장 표가 없음 · off 계정 연결이 꺼짐
+   */
+  flush() {
     clearTimeout(this.timer);
+    const next = () => this.send();
+    return (this.busy = (this.busy || Promise.resolve()).then(next, next));
+  },
+  // 전송 한 차례 — flush()의 줄에서만 부름. 시작할 때의 계정(uid)이 도는 사이 바뀌면(로그아웃·다른 계정) 남은 요청·되돌려 넣기·상태 갱신을 모두 버림
+  async send() {
+    const uid = this.uid,
+      gone = () => this.uid !== uid;
+    if (!this.on) return "off";
+    if (this.noTable) return "notable";
     const items = Object.entries(this.pending);
-    if (!items.length || !this.on || this.noTable) return;
+    if (!items.length) return "ok";
     this.pending = {};
+    this.sending = new Set(items.map((x) => x[0])); // 올리는 중인 키 — 그사이 받은 옛 값으로 이 기기를 덮지 않게(apply)
     this.setState("sync");
+    // 요청 하나: 보내기 전과 응답을 받은 뒤에 계정을 다시 봄 — 바뀌었으면 응답을 해석하지 않고 그만둠(다른 계정에 '표 없음' 판정을 켜지 않게)
+    const call = async (path, opts) => {
+      if (gone()) throw 0;
+      const r = await SB.req(path, opts);
+      if (gone()) throw 0;
+      await this.check(r);
+    };
     try {
-      const ups = items.filter((x) => x[1]).map(([key, x]) => ({ user_id: this.uid, key, value: x.v }));
+      const ups = items.filter((x) => x[1]).map(([key, x]) => ({ user_id: uid, key, value: x.v }));
       const dels = items.filter((x) => !x[1]).map((x) => x[0]);
+      // 그림이 섞이면 요청이 커지므로 1.5MB씩
       for (const batch of chunkBy(ups, 1500000))
-        // 그림이 섞이면 요청이 커지므로 1.5MB씩
-        await this.check(
-          await SB.req("/rest/v1/kv?on_conflict=user_id,key", {
-            method: "POST",
-            headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
-            body: JSON.stringify(batch)
-          })
-        );
-      for (let i = 0; i < dels.length; i += 40)
-        await this.check(
-          await SB.req(
-            "/rest/v1/kv?key=in.(" +
-              encodeURIComponent(
-                dels
-                  .slice(i, i + 40)
-                  .map((k) => '"' + k.replace(/"/g, "") + '"')
-                  .join(",")
-              ) +
-              ")",
-            { method: "DELETE" }
-          )
-        );
+        await call("/rest/v1/kv?on_conflict=user_id,key", {
+          method: "POST",
+          headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
+          body: JSON.stringify(batch)
+        });
+      // 지우기에는 계정 조건을 붙임 — 요청이 토큰 갱신을 기다리는 사이 다른 계정으로 바뀌어도 그 계정의 행을 지우지 않게
+      for (let i = 0; i < dels.length; i += 40) {
+        const keys = dels
+          .slice(i, i + 40)
+          .map((k) => '"' + k.replace(/"/g, "") + '"')
+          .join(",");
+        await call("/rest/v1/kv?user_id=eq." + encodeURIComponent(uid) + "&key=in.(" + encodeURIComponent(keys) + ")", { method: "DELETE" });
+      }
+      this.sending = new Set();
       this.setState("ok");
+      // 도는 사이 새로 바뀐 것이 있으면 이어서 올림 — "ok"는 남은 것이 없다는 뜻이어야 함(로그아웃이 이 결과를 보고 기기를 지움)
+      return Object.keys(this.pending).length ? this.send() : "ok";
     } catch (e) {
+      if (gone()) return "off";
+      this.sending = new Set();
       // 못 올린 것은 되돌려 두고(그사이 새로 바뀐 값이 있으면 그게 우선) 15초 뒤 다시
       items.forEach(([k, x]) => {
         if (!(k in this.pending)) this.pending[k] = x;
       });
       if (this.noTable) {
         this.pending = {};
-        return;
+        return "notable";
       }
       this.setState("err");
+      clearTimeout(this.timer);
       this.timer = setTimeout(() => this.flush(), 15000);
+      return "left";
     }
   },
   // 계정의 행 읽기(그림 제외). since가 있으면 그 뒤에 바뀐 것만. 1000행 제한이 있어 500행씩
@@ -3606,8 +3648,9 @@ const CLOUD = {
       return undefined;
     }
   },
-  // 받은 행을 이 기기에 씀. 열려 있는 대화방은 덮지 않음(대화 중에 바뀌면 헷갈림). 바뀐 키 수를 돌려줌
-  apply(rows) {
+  // 받은 행을 이 기기에 씀. 열려 있는 대화방은 덮지 않음(대화 중에 바뀌면 헷갈림). 바뀐 키 수를 돌려줌.
+  // hold: 이 받기를 시작할 때 올리는 중이던 키 — 받는 사이 올리기가 끝나도, 그 전에 읽힌 옛 값으로 덮지 않음(pull이 넘김)
+  apply(rows, hold) {
     let n = 0;
     const open = room && location.hash === "#r-" + room.id ? roomKey(room.id) : "";
     rows.forEach((x) => {
@@ -3619,7 +3662,7 @@ const CLOUD = {
         if (shelfSyncOn() && this.takeShelf(x.value)) n++;
         return;
       } // 보내지 못한 것이 있어도 합침
-      if (x.key in this.pending || x.key === open) return;
+      if (x.key in this.pending || this.sending.has(x.key) || (hold && hold.has(x.key)) || x.key === open) return;
       if (x.key === "settings") {
         mergeCloudSettings(x.value);
         n++;
@@ -3644,7 +3687,8 @@ const CLOUD = {
     return true;
   },
   async pull() {
-    let n = this.apply(await this.rows(localStorage.getItem(this.lastKey()) || ""));
+    const hold = new Set(this.sending);
+    let n = this.apply(await this.rows(localStorage.getItem(this.lastKey()) || ""), hold);
     // 로그인한 뒤(또는 날짜가 된 뒤) 처음 한 번: 바뀐 행만 받는 pull에는 서재 행이 안 올 수 있어 따로 받아 합침 — 날짜 전에 이 기기에만 쌓인 것이 이때 계정으로
     if (!this.shelfUp && shelfSyncOn()) {
       this.shelfUp = true;
@@ -3660,7 +3704,7 @@ const CLOUD = {
       if (v !== undefined) this.pending[k] = { v };
     });
     this.pending.settings = { v: cloudSettings() };
-    await this.flush();
+    if ((await this.flush()) !== "ok") throw { code: "push_failed" }; // 못 올렸으면 '저장했어요'라고 하지 않게 — 부른 쪽(처음 로그인)이 받음
     const have = new Set(await this.imgKeys());
     let ls = [];
     try {
@@ -6101,7 +6145,7 @@ function ackAiNotice() {
            src/js/core/shelf.js { markSeen }
            src/js/core/state.js { S, gen, room, setRoom }
            src/js/core/storage.js { KV }
-           src/js/core/util.js { $ }
+           src/js/core/util.js { $$ }
            src/js/images/codes.js { IMG_TAG_RE, fallbackSits, imgTags }
            src/js/images/pick.js { imagesOf }
            src/js/ui/ai-notice.js { AI_EXPORT_LINE }
@@ -6163,7 +6207,8 @@ function collectSeen(r) {
 }
 /** 그 메시지로 스크롤하고 잠깐 강조. @param {string} id 메시지 id */
 function jumpTo(id) {
-  const el = $(`.msg[data-id="${id}"]`);
+  // 선택자 글에 id를 끼우지 않고 값으로 견줌 — 계정에서 받은 방은 id에 따옴표가 들어 있을 수 있고, 끼우면 선택자가 깨져 예외
+  const el = $$(".msg").find((x) => x.dataset.id === id);
   if (!el) return;
   el.scrollIntoView({ block: "center" });
   el.classList.add("flash");
@@ -6486,7 +6531,7 @@ function drawerBookmarks({ r, ov, body }) {
     ? list
         .map(
           (m) =>
-            `<button class="bm" data-j="${m.id}">` +
+            `<button class="bm" data-j="${esc(m.id)}">` +
             (`<b>${m.role === "ai" ? esc(speakerName(r)) : esc(r.persona.name)}</b>` +
               `${esc(curText(m).replace(IMG_TAG_RE, "").replace(/[*"]/g, "").replace(/\s+/g, " ").slice(0, 120))}…</button>`)
         )
@@ -7391,13 +7436,12 @@ async function firstSync() {
   // 이 기기에서 찜한 작품 가운데 계정에 없는 것 — 계정의 서재 행은 동기화 날짜(SHELF.syncFrom) 뒤에만 있으므로 그 전에는 이 기기의 찜 전부
   const rs = mergeShelf(remote.shelf),
     onlyLikes = likedIds().filter((id) => !((rs.likes[id] || 0) > (rs.unlikes[id] || 0)));
+  // 이 기기의 화면부터 맞추고 나서 계정에 올림 — 못 올리면 던져서 afterLogin이 '저장하지 못했어요' 상태로 둠(못 올린 것은 남아 15초 뒤 다시 올라감)
   const use = async (merge) => {
     CLOUD.apply(rows);
-    if (merge) {
-      mergeGuest(remote, local);
-      await CLOUD.pushAll([]);
-    }
+    if (merge) mergeGuest(remote, local);
     await reloadFromCloud();
+    if (merge) await CLOUD.pushAll([]);
     toast(merge ? "이 기기의 데이터를 계정에 합쳤어요" : "계정 데이터를 불러왔어요");
   };
   if (!onlyRooms.length && !onlyLikes.length) return use(false);
@@ -7405,14 +7449,13 @@ async function firstSync() {
   const ov =
     sheet(`<h2>이 기기의 ${onlyRooms.length ? "대화를" : "찜을"} 합칠까요?</h2><p class="sub">계정에 이미 저장된 데이터가 있어요. 이 기기에만 있는 ${what}를 계정에 합칠 수 있어요. 계정에 있던 것은 그대로 남아요.</p>
     <div class="cta-row"><button class="btn ghost" id="mNo">계정 것만 쓰기</button><span class="spacer"></span><button class="btn pri" id="mYes">합치기</button></div>`);
-  return new Promise((res) => {
+  return new Promise((res, rej) => {
     let done = false;
-    const pick = async (merge) => {
+    const pick = (merge) => {
       if (done) return;
       done = true;
       ov.remove();
-      await use(merge);
-      res();
+      use(merge).then(res, rej); // 올리기가 실패해도 기다리는 쪽(afterLogin)이 멈추지 않게
     };
     $("#mYes", ov).onclick = () => pick(true);
     $("#mNo", ov).onclick = () => {
@@ -7444,12 +7487,88 @@ function accountBoxHTML() {
     `<button class="btn sm ghost" id="cOut">로그아웃</button><button class="btn sm danger" id="cDel">계정 삭제</button></div></div>`
   );
 }
+/* 로그아웃: 먼저 못 올린 것을 올리고(도는 전송이 있으면 기다림), 그 결과를 보고 정함(2026-11-21 사용자 결정).
+   - 다 올라갔으면 고른 대로(기기 데이터를 지우거나 남김).
+   - 못 올린 것이 남았으면 멈추고 묻는 창 — 기기를 지우면 그 대화의 마지막 사본이 사라지고, 남겨도 다음 로그인 때 계정 것으로 덮일 수 있음.
+   - '기기 데이터도 지우기'는 다 올라간 것을 확인했을 때만 함(계정 저장 표가 없는 설치도 계정에 사본이 없으니 지우지 않음). 지우지 않는 로그아웃은 표가 없어도 그대로 됨.
+   - 지우는 로그아웃은 올리기 시작부터 새로고침까지 화면을 막음(veil) — 그사이에 바꾼 것은 계정에 닿지 못한 채 지워지므로 */
+const LOGOUT_WAIT = 20000; // 올리기를 기다리는 한도 — 응답이 오다 멈춰도 로그아웃이 영영 안 끝나지 않게(넘으면 못 올린 것으로 보고 물음)
+const flushSoon = () => Promise.race([CLOUD.flush(), new Promise((r) => setTimeout(() => r("left"), LOGOUT_WAIT))]);
+/* 화면 전체를 막는 가림막 — .overlay가 아니라서 Esc·화면 이동(closeOverlays)으로 닫히지 않음. 포인터는 덮어서, 키보드는 눌림을 가로채서 막음
+   (뒤쪽 화면에 포커스가 남아 있으면 가려져 있어도 Enter·Tab으로 조작됨). 돌려준 함수를 부르면 걷힘 */
+function veil(text) {
+  const el = document.createElement("div"),
+    block = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+    };
+  el.className = "veil";
+  el.setAttribute("role", "status");
+  el.textContent = text;
+  if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+  document.addEventListener("keydown", block, true);
+  document.body.append(el);
+  return () => {
+    document.removeEventListener("keydown", block, true);
+    el.remove();
+  };
+}
+async function logout(wipe) {
+  const lift = wipe ? veil("계정에 올리는 중이에요…") : null;
+  const up = await flushSoon();
+  if (up === "ok" || (!wipe && up !== "left")) return finishLogout(wipe); // 지우는 길이면 가림막은 새로고침까지 그대로
+  if (lift) lift();
+  const why =
+      up === "left"
+        ? "방금 바꾼 대화나 설정이 계정에 올라가지 않았어요. 연결을 확인하고 다시 올려 주세요."
+        : "지금은 이 기기의 데이터를 계정에 저장할 수 없어요.",
+    later = "다음에 로그인할 때 계정에 있던 것으로 바뀔 수 있어요.",
+    then = wipe
+      ? "이 기기의 데이터를 지우면 그 내용이 사라져서, 다 올라가기 전에는 지우지 않아요. 지우지 않고 로그아웃해도 " + later
+      : "그대로 로그아웃하면 이 기기에는 남지만, " + later;
+  const ov = sheet(
+    `<h2>계정에 아직 올리지 못한 것이 있어요</h2><p class="sub">${why} ${then}</p>` +
+      `<div class="cta-row"><button class="btn ghost" data-x>취소</button><span class="spacer"></span>` +
+      `<button class="btn" id="lKeep">${wipe ? "지우지 않고 로그아웃" : "그대로 로그아웃"}</button>` +
+      `<button class="btn pri" id="lRetry">다시 올리기</button></div>`
+  );
+  $("#lKeep", ov).onclick = () => {
+    ov.remove();
+    finishLogout(false);
+  };
+  $("#lRetry", ov).onclick = async (e) => {
+    e.target.disabled = true;
+    const lift2 = wipe ? veil("계정에 올리는 중이에요…") : null;
+    const again = await flushSoon();
+    if (again === "ok" && ov.isConnected) {
+      ov.remove();
+      return finishLogout(wipe);
+    }
+    if (lift2) lift2();
+    e.target.disabled = false;
+    if (ov.isConnected) toast("아직 올리지 못했어요. 연결을 확인해 주세요"); // 기다리는 사이 창이 닫혔으면(취소) 아무것도 하지 않음
+  };
+}
+async function finishLogout(wipe) {
+  CLOUD.stop();
+  await SB.signOut();
+  if (wipe) {
+    await wipeDevice();
+    location.reload();
+    return;
+  }
+  try {
+    localStorage.setItem("hv1_guest", "1");
+  } catch {}
+  toast("로그아웃했어요. 이 기기의 데이터는 남아 있어요");
+  viewMe();
+}
 function bindAccount(v) {
   if (!$("#cSync", v)) return;
   $("#cSync", v).onclick = async (e) => {
     e.target.disabled = true;
     try {
-      await CLOUD.flush();
+      if ((await CLOUD.flush()) === "left") throw 0; // 올리지 못한 것이 있으면 '이미 최신'이라고 하지 않음
       const n = await CLOUD.pull();
       if (n) await reloadFromCloud();
       CLOUD.setState(CLOUD.noTable ? "notable" : "ok");
@@ -7467,22 +7586,10 @@ function bindAccount(v) {
       <div class="cta-row" style="margin-top:14px"><span class="spacer"></span><button class="btn ghost" data-x>취소</button>` +
         `<button class="btn pri" id="lok">로그아웃</button></div>`
     );
-    $("#lok", ov).onclick = async () => {
+    $("#lok", ov).onclick = () => {
       const wipe = $("#lwipe", ov).checked;
       ov.remove();
-      await CLOUD.flush();
-      CLOUD.stop();
-      await SB.signOut();
-      if (wipe) {
-        await wipeDevice();
-        location.reload();
-        return;
-      }
-      try {
-        localStorage.setItem("hv1_guest", "1");
-      } catch {}
-      toast("로그아웃했어요. 이 기기의 데이터는 남아 있어요");
-      viewMe();
+      logout(wipe);
     };
   };
   $("#cDel", v).onclick = () =>
@@ -10056,7 +10163,7 @@ function renderLog(scroll) {
         return;
       }
       const ooc = m.text.startsWith("//");
-      html += `<div class="msg me ${ooc ? "ooc" : ""}" data-id="${m.id}">${ooc ? "" : pavHTML(r.persona)}<div class="col">
+      html += `<div class="msg me ${ooc ? "ooc" : ""}" data-id="${esc(m.id)}">${ooc ? "" : pavHTML(r.persona)}<div class="col">
         ${
           m.editing
             ? editBox(m.text, i)
@@ -10080,7 +10187,7 @@ function renderLog(scroll) {
         ? `<div class="bubble typing" id="liveBubble"></div>`
         : `<div class="bubble${imgTags(alt.text || "").length >= 2 ? " many-img" : ""}">${fmt(alt.text || "", c, r.persona)}</div>`;
     html +=
-      `<div class="msg" data-id="${m.id}" role="group" aria-label="${esc(aiLabel(speakerName(r)))}">${coverHTML(c)}<div class="col">` +
+      `<div class="msg" data-id="${esc(m.id)}" role="group" aria-label="${esc(aiLabel(speakerName(r)))}">${coverHTML(c)}<div class="col">` +
       `<span class="nm">${esc(speakerName(r))}</span>${pending ? "" : epEventHTML(r, alt)}${body}`;
     if (!pending && !m.editing) {
       html += statusBlock(c, alt.status, m.statusBefore, { open: isLast, live: isLast });

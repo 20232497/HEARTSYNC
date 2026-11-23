@@ -1,6 +1,7 @@
 // 계정 저장 시험: Supabase를 page.route로 흉내 냄(실제 서버로는 아무것도 안 감). 키는 모두 시험용 가짜 값
 // PC 게스트 → 이메일 가입(계정이 비어 이 기기 데이터를 올림) → 휴대폰 로그인으로 대화·그림 받음 → 휴대폰 새 대화를 PC가 받음 → API 키는 계정에 안 올라감
 // → 휴대폰 로그아웃(기기 지우기) → 갤럭시 게스트 대화 합치기 → 계정 삭제
+// → 로그아웃 보호: 계정에 못 올린 것이 있으면 '기기 데이터도 지우기'를 골라도 지우지 않음(전송이 도는 중이어도) — 다시 올린 뒤에만 지우거나, 지우지 않고 로그아웃
 import { chromium, webkit, devices } from "playwright";
 const [, , url, out] = process.argv;
 const SB = "https://mblvphojbmxiuqnlxisi.supabase.co";
@@ -94,6 +95,13 @@ async function handler(route) {
   if (p === "/rest/v1/kv") {
     const uid = who(req);
     if (!uid) return json(route, 401, { message: "JWT" });
+    // 로그아웃 보호 시험용: 저장 요청만 붙잡아 두거나(gate) 실패시킴(failKv) — 읽기는 그대로
+    if (m === "POST" && db.gate) {
+      db.holding = (db.holding || 0) + 1; // 지금 붙잡고 있는 저장 요청 수
+      await db.gate.opened; // 시험이 db.gate.open()을 부를 때까지 붙잡아 둠(전송이 '도는 중'인 상태를 시간에 기대지 않고 만듦)
+      db.holding--;
+    }
+    if (m === "POST" && db.failKv) return json(route, 500, { message: "mock: 저장 실패" });
     const q = [...u.searchParams.entries()],
       prefer = req.headers()["prefer"] || "",
       sel = u.searchParams.get("select");
@@ -168,6 +176,11 @@ try {
   const A = await device(chromium, "Desktop Chrome");
   await A.page.goto(url, { waitUntil: "load" });
   await A.page.waitForTimeout(1000);
+  // 내 서재의 날짜 관문을 처음부터 '날짜 전'으로 잡아 둠 — 시험은 이 상수를 바꿔 양쪽을 보는데, 실제 날짜가 SHELF.syncFrom을 지난 뒤에는 페이지를 여는 순간 이미
+  // 열려 있어(로그인 직후의 받기가 '서재를 한 번 올림' 표시를 먼저 켬) 아래 '날짜 전' 장면이 성립하지 않음. 실제 날짜에 기대지 않게 함
+  await A.page.evaluate(() => {
+    SHELF.syncFrom = "2999-01-01";
+  });
   res.firstScreen = await A.page.evaluate(() => ({
     hash: location.hash,
     login: !!document.querySelector("#lform"),
@@ -234,6 +247,9 @@ try {
   const B = await device(webkit, "iPhone 13");
   await B.page.goto(url, { waitUntil: "load" });
   await B.page.waitForTimeout(1000);
+  await B.page.evaluate(() => {
+    SHELF.syncFrom = "2999-01-01";
+  });
   await B.page.fill("#lmail", "tester@example.test");
   await B.page.fill("#lpw", "wrong-pass");
   await B.page.click("#lgo");
@@ -380,6 +396,75 @@ try {
     room3Body: db.rows.some((r) => r.key === "room-" + room3),
     aud: await C.page.evaluate(() => S.settings.audience)
   };
+  // 로그아웃 보호 ①: 새 대화를 계정에 올리는 전송이 도는 중(가짜 서버가 첫 저장 요청을 붙잡아 둠)에 '이 기기의 데이터도 지우기'로 로그아웃 →
+  // 도는 전송을 기다리며 화면을 막음(가림막이 화면을 덮고 키 눌림도 막음) → 붙잡은 요청이 실패로 끝나면 지우지 않고 '아직 올리지 못한 것이 있어요' 창 →
+  // 실패하는 동안 '다시 올리기'를 눌러도 그대로 → 서버가 돌아온 뒤 '다시 올리기' → 올라간 뒤에야 지우고 로그아웃
+  {
+    let open;
+    db.gate = { opened: new Promise((r) => (open = r)), open: () => open() };
+  }
+  db.failKv = true;
+  const room4 = await C.page.evaluate(() => newRoom(normalizeChar(getChar("lethe")), 0, S.personas[0]).id);
+  for (let i = 0; i < 50 && !db.holding; i++) await C.page.waitForTimeout(100); // 0.8초 모으기가 끝나 첫 저장 요청이 서버에 붙잡힐 때까지
+  const inflight = (db.holding || 0) > 0;
+  await C.page.evaluate(() => {
+    location.hash = "me";
+  });
+  await C.page.waitForTimeout(400);
+  await C.page.click("#cOut");
+  await C.page.waitForTimeout(200);
+  await C.page.click("#lwipe");
+  await C.page.click("#lok");
+  await C.page.waitForTimeout(700);
+  // 아직 앞의 전송이 붙잡혀 있음: 로그아웃은 그것을 기다리는 중 — 가림막이 화면 전체를 덮고, 뒤쪽 버튼에 포커스를 두고 Enter를 눌러도 눌리지 않음, 아무것도 지워지지 않음
+  await C.page.evaluate(() => {
+    const btn = document.querySelector("#cSync");
+    window.__behind = 0;
+    btn.addEventListener("click", () => window.__behind++, true);
+    btn.focus();
+  });
+  await C.page.keyboard.press("Enter"); // 진짜 키 눌림 — 막지 않으면 포커스가 있는 버튼이 눌림
+  const waiting = await C.page.evaluate((id) => {
+    const v = document.querySelector(".veil"),
+      r = v ? v.getBoundingClientRect() : { width: 0, height: 0 };
+    return {
+      held: true,
+      covers: r.width >= innerWidth && r.height >= innerHeight,
+      keyBlocked: window.__behind === 0,
+      body: !!KV.getLocal(roomKey(id)),
+      signedIn: !!SB.s,
+      sheet: !!document.querySelector("#lRetry")
+    };
+  }, room4);
+  waiting.held = (db.holding || 0) > 0; // 재는 동안에도 붙잡혀 있었는지
+  db.gate.open(); // 붙잡은 요청을 놓아 줌 → 실패로 끝남 → 이어 붙은 로그아웃의 전송도 실패
+  db.gate = null;
+  await C.page.waitForTimeout(1500);
+  const guardNow = (id) => ({ body: !!KV.getLocal(roomKey(id)), sheet: !!document.querySelector("#lRetry"), signedIn: !!SB.s });
+  const guard1 = await C.page.evaluate(guardNow, room4);
+  if (guard1.sheet) await C.page.click("#lRetry");
+  await C.page.waitForTimeout(1200);
+  const guard2 = await C.page.evaluate(guardNow, room4);
+  db.failKv = false;
+  if (guard2.sheet) await C.page.click("#lRetry");
+  await C.page.waitForTimeout(2200);
+  res.logoutGuard = {
+    inflight,
+    waiting,
+    guard1,
+    guard2,
+    server: db.rows.some((r) => r.key === "room-" + room4),
+    after: await C.page.evaluate(() => ({ login: !!document.querySelector("#lform"), rooms: S.rooms.length, auth: !!localStorage.getItem("hv1_auth") }))
+  };
+  {
+    const g = res.logoutGuard,
+      w = waiting,
+      held = (x) => x.body && x.sheet && x.signedIn;
+    if (!inflight || !w.held || !w.covers || !w.keyBlocked || !w.body || !w.signedIn || w.sheet)
+      errs.push("로그아웃 보호(도는 전송을 기다리는 동안 화면을 막고 아무것도 지우지 않음)가 다름: " + JSON.stringify({ inflight, waiting: w }));
+    if (!held(guard1) || !held(guard2) || !g.server || !g.after.login || g.after.rooms || g.after.auth)
+      errs.push("로그아웃 보호(못 올린 대화가 있으면 기기를 지우지 않고, 다시 올린 뒤에만 지움)가 다름: " + JSON.stringify(g));
+  }
   await C.browser.close();
   // ---------- 또 다른 기기: 대화는 없고 찜만 있는 게스트가 같은 계정에 로그인 → 찜도 합칠지 물음, '계정 것만 쓰기'를 고르면 이 기기의 찜은 버리고 계정의 찜만(날짜 관문은 지난 것으로)
   const D = await device(chromium, "Desktop Chrome");
@@ -410,6 +495,41 @@ try {
   };
   if (!/^이 기기의 찜을 합칠까요\? \/ .*찜한 작품 1개를/.test(likeSheet) || res.likeMerge.local.join() !== "hasuk" || res.likeMerge.server.includes("daeyeon"))
     errs.push("찜만 있는 기기의 처음 로그인(묻기·계정 것만 쓰기)이 다름: " + JSON.stringify(res.likeMerge));
+  // 로그아웃 보호 ②: 저장이 실패하는 채로 — '지금 동기화'가 '이미 최신이에요'라고 하지 않고, '기기 데이터도 지우기'를 골라도 창에서 '지우지 않고 로그아웃'을 누르면
+  // 로그아웃만 되고 이 기기의 대화는 남음
+  db.failKv = true;
+  const room5 = await D.page.evaluate(() => newRoom(normalizeChar(getChar("hasuk")), 0, S.personas[0]).id);
+  await D.page.evaluate(() => {
+    location.hash = "me";
+  });
+  await D.page.waitForTimeout(400);
+  await D.page.click("#cSync");
+  await D.page.waitForTimeout(700);
+  const syncToast = await D.page.evaluate(() => (document.querySelector(".toast") || {}).textContent || "");
+  await D.page.click("#cOut");
+  await D.page.waitForTimeout(200);
+  await D.page.click("#lwipe");
+  await D.page.click("#lok");
+  await D.page.waitForTimeout(1200);
+  const keepSheet = await D.page.evaluate(() => !!document.querySelector("#lKeep"));
+  if (keepSheet) await D.page.click("#lKeep");
+  await D.page.waitForTimeout(900);
+  res.logoutKeep = await D.page.evaluate(
+    (id) => ({
+      body: !!KV.getLocal(roomKey(id)),
+      listed: S.rooms.some((r) => r.id === id),
+      signedIn: !!SB.s,
+      guest: localStorage.getItem("hv1_guest")
+    }),
+    room5
+  );
+  db.failKv = false;
+  {
+    const k = res.logoutKeep;
+    if (!/못했/.test(syncToast)) errs.push("저장이 실패했는데 '지금 동기화'가 못 했다고 알리지 않음: " + syncToast);
+    if (!keepSheet || !k.body || !k.listed || k.signedIn || k.guest !== "1")
+      errs.push("로그아웃 보호(지우지 않고 로그아웃)가 다름: " + JSON.stringify({ keepSheet, ...k }));
+  }
   await D.browser.close();
   // PC: 계정 삭제
   await A.page.evaluate(() => {

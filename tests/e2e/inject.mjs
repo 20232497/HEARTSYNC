@@ -386,8 +386,9 @@ for (const [dev, engine, opts] of [
       r.memHist = [{ at: Date.now(), label: P("mhl"), text: P("mht") }];
       r.pins = [{ id: uid("p"), text: P("pin"), at: Date.now() }];
       r.lastErr = P("err");
+      // 메시지 id도 악성 글로 — 계정에서 받은 방은 id가 이 기기에서 만든 것이 아닐 수 있음(말풍선의 data-id·북마크 목록의 data-j 속성에 들어감)
       const ai = {
-        id: uid("m"),
+        id: P("mid"),
         role: "ai",
         idx: 0,
         statusBefore: r.status,
@@ -402,7 +403,7 @@ for (const [dev, engine, opts] of [
           }
         ]
       };
-      r.msgs.push({ id: uid("m"), role: "user", text: P("user") }, ai);
+      r.msgs.push({ id: P("uid"), role: "user", text: P("user") }, ai);
       r.status = st;
       r.bookmarks = [ai.id];
       Object.assign(r.ep, { t: 1, ask: "road", askAt: 1, seen: ["storm"] }); // 에피소드: 첫 장에서 사건이 하나 일어났고 갈림길 앞에 선 상태
@@ -447,6 +448,11 @@ for (const [dev, engine, opts] of [
     await act("새 방의 첫 답변 추천", () => toggleSug(), null, 400);
     // 대화방: 본문·상태창·오류 줄, 추천 답변, 입력창 ! 목록, 드로어의 모든 화면, 시트들
     await go("대화방", "r-" + w.rid, 1000);
+    // 따옴표와 꺾쇠가 든 id의 메시지로도 갈 수 있어야 함(북마크·대화 검색이 쓰는 jumpTo — 선택자 글에 id를 그대로 끼우면 예외)
+    await act("악성 id의 메시지로 가기", () => {
+      jumpTo(lastAi(room).id);
+      if (!document.querySelector("#log .msg.flash")) throw new Error("따옴표가 든 id의 메시지로 가지 못함(jumpTo)");
+    });
     await act("갈림길 카드(오류 줄이 없을 때만 보임)", () => {
       room.lastErr = "";
       renderLog(true);
