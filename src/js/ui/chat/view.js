@@ -5,7 +5,7 @@ import { liveWork } from "../../core/character.js";
 import { commandHelp, findCommand, parseCommand } from "../../core/commands.js";
 import { on } from "../../core/events.js";
 import { migrateRoom } from "../../core/room-read.js";
-import { roomKey, roomUnsaved, saveRoom } from "../../core/rooms.js";
+import { goneRooms, roomKey, roomUnsaved, saveRoom } from "../../core/rooms.js";
 import { S, gen, room, setRoom } from "../../core/state.js";
 import { KV } from "../../core/storage.js";
 import { $, esc, num, toast, uid } from "../../core/util.js";
@@ -35,6 +35,7 @@ export async function viewChat(id) {
       v0 = KV.stamp(key);
       r = await KV.get(key);
     } while (KV.stamp(key) !== v0);
+    if (goneRooms()[id]) r = undefined; // 지운 방(이 기기에서 지웠거나 삭제 표식을 받음) — 본문이 어쩌다 남아 있어도 열지 않음
     if (location.hash.slice(1) !== "r-" + id) return;
     // 방 읽기의 경계(core/room-read.js migrateRoom): 열 수 없는 모양이면 저장된 원본은 그대로 두고 안내만 — 방 하나 때문에 화면이 멈추지 않게
     let ok = null;
