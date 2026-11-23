@@ -5,7 +5,7 @@ import path from "node:path";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { profileJob, emotionJob, assertSafe, isFem, STYLE } from "../../archive/style-mdaily/code/assemble.js";
+import { profileJob, emotionJob, assertSafe, isFem, STYLE, guided } from "../../archive/style-mdaily/code/assemble.js";
 import { acting, MODEL } from "../../archive/style-manime/code/assemble.js";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
@@ -18,7 +18,11 @@ for (const f of walk(path.join(ROOT, "content"))) {
   const work = (await import(pathToFileURL(f).href)).default;
   for (const c0 of work.cast || []) {
     const base = c0.of ? (work.cast || []).find((x) => x.code === c0.of) : null;
-    CAST.push({ c: base ? { ...c0, temper: c0.temper || base.temper, age: c0.age === undefined ? base.age : c0.age } : c0, place: (work.places || [])[0] });
+    CAST.push({
+      c: base ? { ...c0, temper: c0.temper || base.temper, age: c0.age === undefined ? base.age : c0.age } : c0,
+      place: (work.places || [])[0],
+      places: work.places || []
+    });
   }
 }
 const names = (s) => s.split(", ").map((t) => t.replace(/^\((.+):[\d.]+\)$/, "$1"));
@@ -41,6 +45,7 @@ test("일상 화풍: 모든 작품의 모든 인물·칸이 뽑히고 지킬 것
       const j = assertSafe(s ? emotionJob(c, place, s) : profileJob(c, place));
       const n = names(j.neg);
       assert.equal(new Set(n).size, n.length, `${c.code}/${s}: 네거티브에 같은 낱말이 두 번`);
+      assert.equal(!!j.guide, guided(c, s), `${c.code}/${s}: 밑그림이 붙는지는 guided()와 같아야 함(그림 도구의 값 어림이 읽음)`);
     }
 });
 
@@ -129,7 +134,9 @@ test("일상 화풍: 남성 인물의 감정 그림은 애니 화풍으로 먼�
     for (const sym of ["sparkle", "heart", "spoken heart", "anger vein", "flying sweatdrops"])
       assert.ok(!names(emotionJob(M, PLACE, slot).guide.job.pos).includes(sym), `칸 ${slot} 밑그림: 만화 기호 ${sym}`);
   assert.equal(emotionJob(M, PLACE, 1, { seed: 9 }).guide.job.seed, 9, "시드를 바꾸면 밑그림 시드도 같이");
-  assert.ok(emotionJob(M, undefined, 1).guide, "장소가 없어도 뽑힘");
+  assert.ok(assertSafe(emotionJob(M, undefined, 1)).guide, "장소가 없어도 뽑히고 검사를 통과");
+  // 작품의 모든 장소에서(첫 장소만이 아니라 — 물가 장소는 젖은 옷 네거티브가 더 붙음) 남성 인물의 밑그림 작업이 검사를 통과
+  for (const { c, places } of CAST.filter((x) => !isFem(x.c))) for (const place of places) for (let s = 1; s <= 14; s++) assertSafe(emotionJob(c, place, s));
   assert.ok(!profileJob(M, PLACE).guide, "프로필은 문구만");
   assert.ok(!emotionJob(M, PLACE, 11).guide, "남성 휴식 칸은 제 규칙대로");
   assert.ok(!emotionJob(F, PLACE, 1).guide, "여성 인물은 밑그림 없이");

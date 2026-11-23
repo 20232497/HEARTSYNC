@@ -96,8 +96,8 @@ async function make(work, row) {
 async function batch(pairs, o = {}) {
   if (!pairs.length) return ($("#batchMsg").textContent = "그릴 칸이 없어요.");
   if (!ready()) return ($("#batchMsg").textContent = "생성 서비스 키를 먼저 넣어 주세요.");
-  // 단체 표지는 조각 넷(키워 다시 그리기 포함)에 오리기·잇기까지 — 대략 다섯 장 값
-  const units = pairs.reduce((n, [w, r]) => n + (r.spec === "cover" && w.cover === "group" ? 5 : 1), 0);
+  // 단체 표지는 조각 넷(키워 다시 그리기 포함)에 오리기·잇기까지 — 대략 다섯 장 값. 일상 화풍에서 밑그림을 거치는 칸(남성 인물의 감정 그림 등)은 두 장 값
+  const units = pairs.reduce((n, [w, r]) => n + (r.spec === "cover" && w.cover === "group" ? 5 : r.guide && (state.style || w.style) === "daily" ? 2 : 1), 0);
   const ask = meta.mock
     ? `${pairs.length}칸을 연습 모드로 돌려요(비용 0). 계속할까요?`
     : `${pairs.length}칸을 그려요. 실제 생성 비용이 들어요(대략 ${units}장 값 — 한 장에 1~2센트). 계속할까요?`;

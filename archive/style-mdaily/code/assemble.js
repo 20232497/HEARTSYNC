@@ -251,13 +251,16 @@ export function emotionJob(c, place, slot, o = {}) {
   if (slot === 11) {
     const g = isFem(c) ? "f" : "m",
       j = { ...job(build(c, place, REST[g].scene, "emotion", REST[g].neg), "emotion", seed, o), hires: HIRES };
-    return g === "f" ? { ...j, guide: { job: guideJob(c, seed), strength: GUIDE.strength } } : j;
+    return guided(c, slot) ? { ...j, guide: { job: guideJob(c, seed), strength: GUIDE.strength } } : j;
   }
   const s = sceneOf(c, slot),
     j = job(build(c, place, s.scene, "emotion", s.neg, s.still, s.free), "emotion", seed, o),
     u = STYLE[isFem(c) ? "f" : "m"].underdraw;
-  return u ? { ...j, guide: { job: underJob(c, place, slot, j), strength: u.strength } } : j;
+  return guided(c, slot) ? { ...j, guide: { job: underJob(c, place, slot, j), strength: u.strength } } : j;
 }
+/** 이 인물·칸의 그림에 밑그림 단계가 붙는지 — 붙으면 생성 호출이 한 번 더 든다. emotionJob과 그림 도구의 값 어림(tools/art.mjs)이 같이 쓴다:
+    여성의 휴식 칸(아래 guideJob), 값 파일에 underdraw가 있는 화풍의 감정 칸(휴식 칸 빼고) */
+export const guided = (c, slot) => (slot === 11 ? isFem(c) : slot > 0 && !!STYLE[isFem(c) ? "f" : "m"].underdraw);
 /* ── 애니 밑그림 ── 값 파일에 underdraw가 있는 화풍(지금은 남성 인물)의 감정 그림: 같은 인물·칸을 애니 화풍(style-manime)으로 먼저 그리고,
    그 그림을 밑그림으로 이 화풍이 strength만큼 다시 그린다(낮을수록 밑그림에 가까움). 문구만으로는 얼굴이 부드럽게 나오던 것이, 밑그림의 고개 각도·눈썹과 눈 사이·옆빛이
    넘어와 애니 화풍의 날카로운 인상에 가까워진다(2026-11-23 비교 생성). 밑그림의 배경과 소품도 따라온다. 밑그림은 첫 그림만 쓴다(키워 다시 그리기·후처리 없이, 만화 기호 없이)
