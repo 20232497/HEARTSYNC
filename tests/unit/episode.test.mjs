@@ -5,7 +5,8 @@ import assert from "node:assert/strict";
 import { rulesParts } from "../../src/js/ai/prompt/rules.js";
 import { ORIGINALS } from "../../src/js/content/index.js";
 import { EP, SIDE, epAfter, epEnding, epInit, epLength, epPick, epPlan } from "../../src/js/core/episode.js";
-import { newRoom, sideRoom } from "../../src/js/core/rooms.js";
+import { sideRoom } from "../../src/js/core/room-fork.js";
+import { newRoom } from "../../src/js/core/rooms.js";
 
 const EPI = {
   beats: [

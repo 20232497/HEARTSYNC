@@ -3,11 +3,12 @@
 import { MODELS } from "../../ai/models.js";
 import { liveWork } from "../../core/character.js";
 import { commandHelp, findCommand, parseCommand } from "../../core/commands.js";
+import { on } from "../../core/events.js";
 import { migrateRoom } from "../../core/room-read.js";
-import { roomKey, saveRoom } from "../../core/rooms.js";
+import { roomKey, roomUnsaved, saveRoom } from "../../core/rooms.js";
 import { S, gen, room, setRoom } from "../../core/state.js";
 import { KV } from "../../core/storage.js";
-import { $, esc, num, uid } from "../../core/util.js";
+import { $, esc, num, toast, uid } from "../../core/util.js";
 import { FREE_DAILY, freeLeft, heartsOf, isPro, listPrice, qShort, quote } from "../../core/wallet.js";
 import { sendTurn, stopGen } from "./generate.js";
 import { cmdKey, updateCmdList } from "./cmdlist.js";
@@ -27,7 +28,13 @@ export async function viewChat(id) {
   const v = $("#view");
   if (!room || room.id !== id) {
     v.innerHTML = `<div class="page"><p class="note">대화를 불러오는 중…</p></div>`;
-    const r = await KV.get(roomKey(id));
+    // 읽는 사이 계정에서 받은 것이 쓰였으면 다시 읽음 — 먼저 시작한 읽기가 옛 본문을 돌려주면, 그것을 메모리에 올렸다가 저장할 때 받은 것을 덮음
+    const key = roomKey(id);
+    let r, v0;
+    do {
+      v0 = KV.stamp(key);
+      r = await KV.get(key);
+    } while (KV.stamp(key) !== v0);
     if (location.hash.slice(1) !== "r-" + id) return;
     // 방 읽기의 경계(core/room-read.js migrateRoom): 열 수 없는 모양이면 저장된 원본은 그대로 두고 안내만 — 방 하나 때문에 화면이 멈추지 않게
     let ok = null;
@@ -76,6 +83,8 @@ export async function viewChat(id) {
         <button class="send" id="sendBtn" type="button"></button>
       </form>
       <div class="hint" id="hint"></div>
+      <div class="save-fail" id="saveFail" role="alert" hidden><span>이 대화를 저장하지 못했어요. 화면의 대화는 그대로예요.</span>` +
+    `<button class="btn sm" id="saveRetry" type="button">다시 저장</button></div>
     </div></div>
   </div>`;
   $("#back").onclick = () => (history.length > 1 ? history.back() : go("chats"));
@@ -84,6 +93,13 @@ export async function viewChat(id) {
   $("#modelChip").onclick = () => openModelSheet();
   $("#sugBtn").onclick = () => toggleSug();
   $("#stopBtn").onclick = () => stopGen();
+  // 본문이 저장소에 들어가지 못한 방(가득 참 등): 목록은 마지막으로 저장된 모양으로 돌아가 있고, 여기서 다시 저장할 수 있음(core/rooms.js saveRoom)
+  $("#saveRetry").onclick = async (e) => {
+    e.target.disabled = true;
+    const ok = await saveRoom(room);
+    e.target.disabled = false;
+    toast(ok ? "대화를 저장했어요" : "아직 저장하지 못했어요. 브라우저의 저장 공간을 확인해 주세요");
+  };
   // 첫 대화 전 안내를 못 본 채 방에 들어온 사람(이 안내가 생기기 전에 만든 방·방 주소로 바로 들어옴)에게는 머리 아래 띠로 보여 줌 — 창을 띄우지 않음
   if ($("#aiNoteOk"))
     $("#aiNoteOk").onclick = () => {
@@ -247,6 +263,8 @@ export function updateComposer() {
   }
   // 안내 줄은 알릴 것이 있을 때만 보임(비면 CSS가 감춤): 잠깐 뜨는 안내(flashHint — 명령어 도움말·응답 중 입력)와 무료 턴이 얼마 안 남았을 때.
   // 늘 보이던 '// 연출 지시 · ! 명령어' 안내는 입력 칸의 흐린 글로, 키 안내는 입력 칸의 title로 옮김
+  const sf = $("#saveFail");
+  if (sf) sf.hidden = !roomUnsaved(room.id);
   const h = $("#hint");
   if (h && !hintTimer)
     h.textContent =
@@ -254,6 +272,7 @@ export function updateComposer() {
         ? `오늘 무료 턴이 ${freeLeft()}번 남았어요. 다 쓰면 라이트 모델은 턴당 ♥${listPrice("lite", room.set.len, room.set.mem)}이에요.`
         : "";
 }
+on("rooms", updateComposer); // 방 저장이 실패했거나 실패했던 방이 저장됨 — '저장하지 못했어요' 줄을 맞춤(core/rooms.js saveRoom)
 export function lastAi(r) {
   for (let i = r.msgs.length - 1; i >= 0; i--) if (r.msgs[i].role === "ai") return r.msgs[i];
   return null;

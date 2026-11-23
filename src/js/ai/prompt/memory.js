@@ -1,8 +1,8 @@
 /* 장기기억: N턴마다 요약·압축(maybeSummarize), 요약 지침 */
 import { llm } from "../llm.js";
 import { speakerName } from "./rules.js";
-import { curText, holdRoom, memoryMark, releaseRoom, saveRoom } from "../../core/rooms.js";
-import { S } from "../../core/state.js";
+import { curText, memoryMark, saveRoom } from "../../core/rooms.js";
+import { S, holdRoom, releaseRoom } from "../../core/state.js";
 import { $, $$, toast } from "../../core/util.js";
 import { plan } from "../../core/wallet.js";
 /** @typedef {import("../../core/types.js").MemCfg} MemCfg */

@@ -14,13 +14,14 @@ test("timeoutSignal: 시간이 지나면 abort되고 timedOut이 켜진다", asy
   assert.equal(abortCode({ name: "AbortError" }, t, "x"), "timeout");
 });
 test("timeoutSignal: tick이 멈춤 시간을 다시 재고, clear가 타이머를 멈춘다", async () => {
-  const t = timeoutSignal(40);
-  await sleep(25);
-  t.tick(80);
-  await sleep(40);
+  // 여유를 넉넉히(전에는 40ms 타이머에 25ms를 재워 여유가 15ms — 기계가 바쁘면 tick 전에 끝나 헛실패)
+  const t = timeoutSignal(300);
+  await sleep(100);
+  t.tick(300); // 여기서부터 300ms — 끝나는 때가 400ms로 미뤄짐(처음 것은 300ms)
+  await sleep(250); // 350ms: 미루지 않았으면 이미 끝났을 때
   assert.equal(t.signal.aborted, false, "tick으로 미뤄져 아직 살아 있음");
   t.clear();
-  await sleep(100);
+  await sleep(200); // 550ms: 멈추지 않았으면 400ms에 끝났을 때
   assert.equal(t.signal.aborted, false, "clear 뒤에는 abort되지 않음");
 });
 test("timeoutSignal: 바깥 신호가 취소되면 같이 abort되지만 timedOut은 아니다(cancelled)", async () => {

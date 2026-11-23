@@ -1,8 +1,8 @@
-/* 대화방 저장·목록·삭제(removeRoom)·새 방 만들기(newRoom)·분기(forkRoom)·외전(sideRoom), 메시지의 현재 버전 글(curText). 저장된 방을 여는 쪽은 core/room-read.js */
+/* 대화방 저장·목록·삭제(removeRoom)·새 방 만들기(newRoom), 메시지의 현재 버전 글(curText). 저장된 방을 여는 쪽은 core/room-read.js, 분기·외전·시작 상황 찾기는 core/room-fork.js */
 import { LEN, MODELS, recommendOf } from "../ai/models.js";
 import { normalizeChar } from "./character.js";
 import { LIMITS, SERIES } from "./constants.js";
-import { SIDE, epInit } from "./episode.js";
+import { epInit } from "./episode.js";
 import { emit } from "./events.js";
 import { S, room } from "./state.js";
 import { KV } from "./storage.js";
@@ -64,12 +64,23 @@ export async function setFav(id, on) {
   const cur = S.rooms.find((x) => x.id === id);
   if (!cur) return false;
   if (on && !cur.fav && S.rooms.filter((x) => x.fav).length >= LIMITS.favRooms) return false;
-  const r = room && room.id === id ? room : await KV.get(roomKey(id));
+  let r;
+  try {
+    r = room && room.id === id ? room : await KV.get(roomKey(id), true);
+  } catch {
+    return false; // 본문을 읽지 못함(없는 것과 다름) — 목록만 바꾸면 본문과 어긋남
+  }
+  if (deletedRooms.has(id)) return false; // 본문을 읽는 사이 지운 방 — 다시 쓰면 되살아남
   if (r) {
     if (on) r.fav = true;
     else delete r.fav;
-    KV.set(roomKey(id), r);
-  }
+    if (!(await KV.set(roomKey(id), r))) {
+      // 본문에 적지 못했으면 목록도 바꾸지 않음(다시 열면 표시가 사라져 어긋남)
+      if (on) delete r.fav;
+      else r.fav = true;
+      return false;
+    }
+  } // 본문이 없는 목록 항목(다른 기기의 방이 아직 안 온 것 등)은 목록만 바꿈
   S.rooms = sortRooms(
     S.rooms.map((x) => {
       if (x.id !== id) return x;
@@ -80,12 +91,26 @@ export async function setFav(id, on) {
     })
   );
   KV.set("rooms", S.rooms);
+  const se = savedEntry.get(id);
+  if (se) se.entry = S.rooms.find((x) => x.id === id); // 저장된 본문에 맞는 목록 항목도 이 표시로 — 다음 저장이 실패해 되돌릴 때 표시가 사라지지 않게
   emit("rooms");
   return true;
 }
-/** 대화방 저장 + 목록(S.rooms) 갱신 + "rooms" 이벤트. 지운 방(deletedRooms)은 저장하지 않고, 오래된 메시지는 MAX_MSGS_KEEP개만 남김. @param {Room} r @returns {void} */
+/* 저장이 실패한 방(본문이 저장소에 들어가지 못함) — 방 화면이 '저장하지 못했어요 · 다시 저장'을 보여 줌. 다음 저장이 성공하면 풀림 */
+const unsaved = new Set();
+/** 마지막 저장이 실패한 방인지. @param {string} id @returns {boolean} */
+export const roomUnsaved = (id) => unsaved.has(id);
+/* 방마다: 저장 차례 번호(늦게 끝난 옛 저장이 목록을 건드리지 않게)와, 마지막으로 본문이 저장됐을 때의 목록 항목(실패하면 이 모양으로 되돌림 — 없던 방이면 undefined) */
+const saveSeq = new Map(),
+  savedEntry = new Map();
+/**
+ * 대화방 저장 + 목록(S.rooms) 갱신 + "rooms" 이벤트. 지운 방(deletedRooms)은 저장하지 않고, 오래된 메시지는 MAX_MSGS_KEEP개만 남김.
+ * 본문은 큰 저장소(IndexedDB — core/storage.js)에 쓰므로 끝나는 때가 뒤임: 목록은 바로 고치고(화면이 기다리지 않게), **본문이 저장되지 못하면 목록을 마지막으로 저장된 모양으로
+ * 되돌리고**(목록과 본문이 어긋나지 않게) 그 방을 '저장 안 됨'으로 적은 뒤 "rooms" 알림. 계정 올리기는 본문이 저장된 뒤에만(KV.set).
+ * @param {Room} r @returns {Promise<boolean>} 본문이 저장됐는지
+ */
 export function saveRoom(r) {
-  if (deletedRooms.has(r.id)) return; // 지운 뒤 끝난 응답·요약이 방을 되살리지 않게
+  if (deletedRooms.has(r.id)) return Promise.resolve(false); // 지운 뒤 끝난 응답·요약이 방을 되살리지 않게
   r.at = Date.now();
   if (r.msgs.length > MAX_MSGS_KEEP) r.msgs = r.msgs.slice(-MAX_MSGS_KEEP);
   r.msgs.forEach((m, i) => {
@@ -95,8 +120,27 @@ export function saveRoom(r) {
       m.idx = 0;
     }
   });
-  KV.set(roomKey(r.id), r);
+  const id = r.id,
+    seq = (saveSeq.get(id) || 0) + 1;
+  saveSeq.set(id, seq);
+  if (!savedEntry.has(id)) savedEntry.set(id, { seq: 0, entry: S.rooms.find((x) => x.id === id) }); // 이 세션의 첫 저장 — 지금 목록 항목이 '마지막으로 저장된 모양'(새 방이면 없음)
   indexRoom(r);
+  const entry = S.rooms.find((x) => x.id === id); // 이번 저장에 맞는 목록 항목
+  return Promise.resolve(KV.set(roomKey(id), r)).then((ok) => {
+    // 저장된 것은 차례와 상관없이 기록 — 먼저 시작한 저장이 됐고 뒤의 저장이 실패하면, 앞의 것(저장된 본문)에 맞는 항목으로 되돌려야 함
+    if (ok && seq > savedEntry.get(id).seq) savedEntry.set(id, { seq, entry });
+    if (saveSeq.get(id) !== seq || deletedRooms.has(id)) return !!ok; // 더 새 저장이 뒤에 있음(화면·되돌리기는 그쪽이 정함) · 그사이 지운 방
+    if (ok) {
+      if (unsaved.delete(id)) emit("rooms"); // 실패했던 방이 저장됨 — 방 화면이 '저장하지 못했어요' 줄을 거둠
+    } else {
+      unsaved.add(id);
+      const good = savedEntry.get(id).entry;
+      S.rooms = sortRooms(good ? S.rooms.map((x) => (x.id === id ? good : x)) : S.rooms.filter((x) => x.id !== id));
+      KV.set("rooms", S.rooms);
+      emit("rooms");
+    }
+    return !!ok;
+  });
 }
 /**
  * 대화방 삭제(데이터 쪽) — 지운 방으로 적고(끝나지 않은 응답·요약의 저장이 되살리지 않게) 본문과 목록에서 뺀 뒤 "rooms" 알림.
@@ -104,26 +148,14 @@ export function saveRoom(r) {
  */
 export function removeRoom(id) {
   deletedRooms.add(id);
-  KV.set(roomKey(id), undefined);
+  // 이 기기의 본문을 지우지 못해도(드묾) 계정의 본문은 지움 — 본문은 지워진 뒤에만 계정에 알리므로(KV.set), 실패하면 따로 알림
+  Promise.resolve(KV.set(roomKey(id), undefined)).then((ok) => {
+    if (!ok) KV.set(roomKey(id), undefined, { local: false });
+  });
   S.rooms = S.rooms.filter((r) => r.id !== id);
   KV.set("rooms", S.rooms);
   emit("rooms");
 }
-/* 응답 생성·요약이 아직 쓰고 있는 방 — 그 일이 끝나면 들고 있던 방 객체를 저장하므로, 그사이 계정에서 받은 것으로 그 방을 덮으면 곧 옛 사본에 다시 덮임.
-   계정 받기(services/cloud.js)가 이 표를 보고 그 방을 미룸. 생성과 요약이 겹칠 수 있어 수를 셈 */
-const inUse = new Map();
-/** 이 방을 쓰기 시작함(끝나면 꼭 releaseRoom). @param {string} id @returns {void} */
-export function holdRoom(id) {
-  inUse.set(id, (inUse.get(id) || 0) + 1);
-}
-/** 이 방을 다 씀. @param {string} id @returns {void} */
-export function releaseRoom(id) {
-  const n = (inUse.get(id) || 0) - 1;
-  if (n > 0) inUse.set(id, n);
-  else inUse.delete(id);
-}
-/** 응답 생성·요약이 아직 쓰고 있는 방인지. @param {string} id @returns {boolean} */
-export const roomInUse = (id) => inUse.has(id);
 const MAX_MSGS_KEEP = 160;
 /** 지운 대화방 id — 지운 뒤 끝난 응답·요약이 방을 되살리지 않게. @type {Set<string>} */
 export const deletedRooms = new Set();
@@ -190,94 +222,4 @@ export function newRoom(c, openingIdx, persona) {
 /** 장기기억 구간의 머리표 "[a-b턴]" — 요약(ai/prompt/memory.js)이 구간마다 붙이고, 분기(memoryUpTo)가 읽음. @param {number} from @param {number} to @returns {string} */
 export function memoryMark(from, to) {
   return `[${from}-${to}턴]`;
-}
-/* 장기기억에서 그 턴보다 뒤에 시작하는 구간을 뺌 → [남긴 기억, 남긴 마지막 구간의 끝 턴(없으면 0), 뺀 것이 있는지].
-   구간 머리표가 없는 글(직접 쓴 기억·압축으로 합쳐진 기억)은 그대로 둠 */
-function memoryUpTo(mem, turn) {
-  let last = 0,
-    cut = false;
-  const kept = String(mem || "")
-    .split(/\n\n(?=\[\d+-\d+턴\])/)
-    .filter((p) => {
-      const m = p.match(/^\[(\d+)-(\d+)턴\]/);
-      if (!m) return true;
-      if (+m[1] > turn) {
-        cut = true;
-        return false;
-      }
-      last = +m[2];
-      return true;
-    });
-  return [kept.join("\n\n"), last, cut];
-}
-/* 분기한 방의 시작 상황 제목 끝에 붙는 표시 — 원래 제목은 baseOpening으로 */
-const FORK_MARK = " (분기)";
-/** 시작 상황의 원래 제목(분기 표시를 뗌) — '처음부터'가 같은 시작 상황을 찾을 때. @param {Room} r @returns {string} */
-export function baseOpening(r) {
-  const t = r.opening || "";
-  return t.slice(-FORK_MARK.length) === FORK_MARK ? t.slice(0, -FORK_MARK.length) : t;
-}
-/**
- * 방의 시작 상황이 작품의 몇 번째인지 — 찾는 순서는 여기 한 곳: 방에 적힌 id(openingId) → 제목(id가 없던 예전 방이거나 id를 못 찾을 때, 분기 표시는 떼고) → 첫 시작 상황.
- * 작품이 시작 상황의 제목을 고쳐도 id가 같으면 같은 시작 상황으로 감. '처음부터 다시'(ui/room-drawer.js)가 씀.
- * @param {Work} c 최신 작품 @param {Room} r @returns {number}
- */
-export function openingIndex(c, r) {
-  const ops = (c && c.openings) || [];
-  let i = r.openingId ? ops.findIndex((o) => o.id === r.openingId) : -1;
-  if (i < 0) i = ops.findIndex((o) => o.title === baseOpening(r));
-  return Math.max(0, i);
-}
-/**
- * 분기: 그 메시지까지를 깊은 복사한 새 대화방 — 같은 작품 사본·페르소나·설정·유저노트·시작 상황 id(openingId), 상태창은 그 시점의 것, 시작 상황 제목에 '(분기)', forkedFrom에 출처.
- * 장기기억은 분기한 턴보다 뒤에 시작하는 구간([a-b턴])을 빼고 복사(2026-11-09 사용자 결정 — 아직 안 일어난 일이 따라오지 않게. 머리표가 없으면 통째로).
- * 턴 번호는 원래 방의 것을 이어 씀(지운 메시지가 있어도 구간 머리표와 어긋나지 않게). 원래 방은 건드리지 않고 새 방을 바로 저장함(지운 방·MAX_MSGS_KEEP 규칙은 saveRoom 그대로).
- * @param {Room} r @param {string} msgId 이 메시지까지 가져감 @returns {Room|null} 메시지를 못 찾으면 null
- */
-export function forkRoom(r, msgId) {
-  const i = r.msgs.findIndex((m) => m.id === msgId);
-  if (i < 0) return null;
-  const f = JSON.parse(JSON.stringify({ ...r, msgs: r.msgs.slice(0, i + 1) }));
-  const ai = [...f.msgs].reverse().find((m) => m.role === "ai"),
-    ids = new Set(f.msgs.map((m) => m.id));
-  f.id = uid("r");
-  f.opening = (baseOpening(r) || "기본") + FORK_MARK;
-  f.forkedFrom = { roomId: r.id, msgId };
-  delete f.fav; // 즐겨찾기는 원래 방의 것 — 분기·외전으로 만든 새 방에는 딸려 가지 않음
-  f.status = (ai && (ai.alts[ai.idx].status || ai.statusBefore)) || r.status;
-  const after = r.msgs.slice(i + 1).filter((m) => m.role === "user" && !m.canned).length,
-    /* 즉답 명령어의 메시지는 턴이 아님 */ turn = Math.max(0, (r.turn || 0) - after),
-    mem = memoryUpTo(r.memory, turn);
-  f.turn = turn;
-  f.memory = mem[0];
-  f.sinceMem = mem[2] ? Math.max(0, turn - mem[1]) : Math.max(0, (r.sinceMem || 0) - after);
-  f.memHist = [];
-  f.lastErr = "";
-  f.bookmarks = (r.bookmarks || []).filter((b) => ids.has(b));
-  f.created = Date.now();
-  f.pins = (r.pins || []).filter((p) => !p.msgId || ids.has(p.msgId)).map((p) => ({ ...p })); // 고정 기억은 그 메시지까지에서 고정한 것만(직접 적은 것은 모두)
-  saveRoom(f);
-  return f;
-}
-/**
- * 외전: 결말까지 끝난 에피소드 방을 통째로 이어받은 새 자유 대화방 — 분기(forkRoom)처럼 대화·장기기억·고정 기억·상태창을 깊은 복사하고, 진행 상태(ep)를 떼고 side에 어떤 외전인지 적음.
- * 그래서 AI는 그 대화와 결말을 그대로 읽고(프롬프트 고정부의 [외전] — ai/prompt/rules.js), 끝이 없는 자유 대화로 이어 감. 원래 방은 그대로(끝난 채). 첫 추천은 외전 갈래의 SIDE.sug.
- * @param {Room} r 끝난 에피소드 방 @param {"after"|"pov"|"again"} kind @param {string} [who] 인물 코드(pov·again) @returns {Room|null}
- */
-export function sideRoom(r, kind, who) {
-  const K = SIDE[kind],
-    last = r.msgs[r.msgs.length - 1];
-  if (!K || !r.ep || !r.ep.over || !last || (K.who && !who)) return null;
-  const f = forkRoom(r, last.id),
-    name = ((r.char.cast || []).find((x) => x.code === who) || {}).name || "";
-  const end = (r.char.episode.endings || []).find((x) => x.id === r.ep.end) || {};
-  delete f.ep;
-  delete f.forkedFrom;
-  f.side = { kind, ...(K.who ? { who } : {}), from: r.id, ending: r.ep.end, endTitle: end.title || "", picks: { ...r.ep.picks }, seen: r.ep.seen.slice() };
-  f.sideAfter = last.id;
-  f.opening = K.title(name); // 외전 구분선은 이 메시지 뒤(오래된 메시지가 잘려도 어긋나지 않게 id로)
-  const ai = [...f.msgs].reverse().find((m) => m.role === "ai");
-  if (ai) ai.alts[ai.idx].suggestions = K.sug(name); // ✦ AI 추천이 부르지 않고 보여 줌
-  saveRoom(f);
-  return f;
 }

@@ -1,10 +1,9 @@
 /* 계정 저장(CLOUD): KV를 계정 kv 표에 모아 올리고 받기, 기기별 설정 분리 */
 import { emit, on } from "../core/events.js";
-import { roomInUse, roomKey } from "../core/rooms.js";
-import { mergeShelf, shelfSyncOn } from "../core/shelf.js";
-import { S, room, setRoom } from "../core/state.js";
+import { shelfSyncOn } from "../core/shelf.js";
 import { KV } from "../core/storage.js";
-import { cloudSettings, mergeCloudSettings } from "./cloud-settings.js";
+import { cloudSettings } from "./cloud-settings.js";
+import { applyRows, pullRows, retakeRows } from "./cloud-pull.js";
 import { SB } from "./supabase.js";
 
 /* KV ↔ 계정 동기화. 쓰기는 KV.set → put()이 키마다 0.8초 모아 upsert(지우기는 DELETE).
@@ -12,12 +11,10 @@ import { SB } from "./supabase.js";
    이 기기에서 아직 못 올린 키(pending)와 올리는 중인 키(sending)는 받은 값으로 덮지 않음. 설정은 "settings" 키(글자 크기·Enter로 보내기는 기기마다 따로) */
 /* 계정과 주고받는 KV 키. 예전 빌드가 남긴 행(그림 묶음·내 작품·잠근 키·따로 두던 장기기억 설정 memcfg 등)은 받지도 올리지도 않음 —
    장기기억 설정은 설정("settings" 행)의 한 칸으로만 다님(2026-11-23, core/settings.js) */
-const SYNCED_RE = /^(wallet|personas|rooms|room-.+)$/;
+export const SYNCED_RE = /^(wallet|personas|rooms|room-.+)$/;
 /* 내 서재(찜·최근 본·수집 기록)는 정해진 날짜부터만 계정과 주고받음(shelfSyncOn) — 그 전에는 이 기기에만. 다른 키와 달리 받은 값으로 덮지 않고 합침(takeShelf) */
-const SHELF_KEY = "shelf";
+export const SHELF_KEY = "shelf";
 export const synced = (k) => SYNCED_RE.test(k) || (k === SHELF_KEY && shelfSyncOn());
-/* 응답 생성·요약이 아직 쓰고 있는 방의 키인지(core/rooms.js roomInUse) — 그 일이 끝나면 들고 있던 방을 저장하므로 받은 것으로 덮지 않고 미룸 */
-const using = (k) => k.indexOf("room-") === 0 && roomInUse(k.slice(5));
 export const IMG_KEY_RE = /^img[a-z0-9]{6,30}$/;
 /**
  * 계정 저장(Supabase kv 표). start()/stop() 로그인·로그아웃 때 · put(k, v) 0.8초 모아 upsert(KV.remote 고리) · flush() 바로 올리고 결과를 돌려줌(한 번에 하나) ·
@@ -33,13 +30,25 @@ export const CLOUD = {
   skipped: new Set(), // 열려 있어서 덮지 않고 넘어간 방의 키 — 방에서 나오면 다시 받음(retake)
   seq: 0, // 이 기기에서 값을 바꿀 때마다 올라가는 번호
   putSeq: {}, // 키 → 마지막으로 바꾼 때의 번호. 받기를 시작한 뒤에 바뀐 키는 그 받기의 값으로 덮지 않음(받는 사이 저장하고 올리기까지 끝나면 pending·sending에는 흔적이 없음)
-  owed: false, // 처음 올리기(pushAll)가 덜 끝남 — 그림을 대기열에 넣기 전에 실패하면 대기열에는 흔적이 없어, 로그아웃이 이 표시를 보고 다시 올림
+  owed: null, // 처음 올리기(pushAll)가 덜 끝남: { keys } — 올리려던 키(null이면 이 기기의 것 전부). 대기열에 넣기 전에 실패하면 대기열에는 흔적이 없어, 로그아웃이 이것을 보고 다시 올림
   timer: null,
   state: "",
   at: 0,
   pulledAt: 0,
   noTable: false,
   shelfUp: false,
+  skipKey() {
+    return "hv1_cloudskip_" + this.uid;
+  },
+  // 다시 받을 방을 적거나(on) 지움 — 새로고침 뒤에도 남게 localStorage에도(받은 자리 표시는 localStorage에 남는데 이것만 사라지면 그 변경이 다시 오지 않음)
+  skip(k, on = true) {
+    if (on) this.skipped.add(k);
+    else this.skipped.delete(k);
+    try {
+      if (this.skipped.size) localStorage.setItem(this.skipKey(), JSON.stringify([...this.skipped]));
+      else localStorage.removeItem(this.skipKey());
+    } catch {}
+  },
   lastKey() {
     return "hv1_cloudlast_" + this.uid;
   },
@@ -48,9 +57,15 @@ export const CLOUD = {
     this.uid = this.on ? SB.s.user.id : null;
     this.noTable = false;
     this.shelfUp = false;
-    try {
-      this.owed = this.on && localStorage.getItem("hv1_cloudowed") === this.uid; // 새로고침 뒤에도 기억
-    } catch {}
+    // 새로고침 뒤에도 기억하는 둘: 덜 끝난 처음 올리기(owed — 올릴 키와 함께)와 다시 받을 방(skipped)
+    this.owed = null;
+    this.skipped = new Set();
+    if (this.on)
+      try {
+        const o = JSON.parse(localStorage.getItem("hv1_cloudowed") || "null");
+        if (o && o.uid === this.uid) this.owed = { keys: Array.isArray(o.keys) ? o.keys : null };
+        this.skipped = new Set(JSON.parse(localStorage.getItem(this.skipKey()) || "[]"));
+      } catch {}
   },
   stop() {
     this.on = false;
@@ -59,7 +74,7 @@ export const CLOUD = {
     this.sending = new Set();
     this.skipped = new Set();
     this.putSeq = {};
-    this.owed = false;
+    this.owed = null;
     clearTimeout(this.timer);
     this.setState("");
   },
@@ -94,7 +109,7 @@ export const CLOUD = {
    */
   flush() {
     clearTimeout(this.timer);
-    const next = () => this.send();
+    const next = () => KV.settled().then(() => this.send()); // 진행 중인 방 본문 저장이 끝나 대기열에 들어온 뒤에 보냄(본문은 큰 저장소에 쓰인 뒤에야 올림)
     return (this.busy = (this.busy || Promise.resolve()).then(next, next));
   },
   // 전송 한 차례 — flush()의 줄에서만 부름. 시작할 때의 계정(uid)이 도는 사이 바뀌면(로그아웃·다른 계정) 남은 요청·되돌려 넣기·상태 갱신을 모두 버림
@@ -189,103 +204,15 @@ export const CLOUD = {
       return undefined;
     }
   },
-  // 받은 행을 이 기기에 씀. 열려 있는 대화방은 덮지 않음(대화 중에 바뀌면 헷갈림). 바뀐 키 수를 돌려줌.
-  // hold: 이 받기를 시작할 때 올리는 중이던 키 — 받는 사이 올리기가 끝나도, 그 전에 읽힌 옛 값으로 덮지 않음(pull이 넘김).
-  // since: 이 받기를 시작할 때의 번호(this.seq) — 그 뒤에 이 기기에서 바뀐 키도 덮지 않음. 없으면 처음 로그인의 전부 받기(firstSync)
+  // 받기(받은 행 적용·다시 받기·바뀐 행 받기)는 services/cloud-pull.js에 — 여기서는 이름만 이어 줌
   apply(rows, hold, since) {
-    const full = since === undefined,
-      newer = (k) => !full && (this.putSeq[k] || 0) > since;
-    let n = 0;
-    const open = room && location.hash === "#r-" + room.id ? roomKey(room.id) : "";
-    rows.forEach((x) => {
-      if (x.updated_at && x.updated_at > (localStorage.getItem(this.lastKey()) || ""))
-        try {
-          localStorage.setItem(this.lastKey(), x.updated_at);
-        } catch {}
-      if (x.key === SHELF_KEY) {
-        if (shelfSyncOn() && this.takeShelf(x.value)) n++;
-        return;
-      } // 보내지 못한 것이 있어도 합침
-      if (x.key in this.pending || this.sending.has(x.key) || (hold && hold.has(x.key)) || newer(x.key)) return; // 이 기기의 값이 올라가(올라갔거나) 계정 것을 대신함
-      if (x.key === open || using(x.key)) {
-        this.skipped.add(x.key); // 받은 자리 표시(커서)는 이미 이 행을 지나갔으므로 적어 두었다가 방에서 나오면(쓰던 일이 끝나면) 다시 받음
-        return;
-      }
-      if (x.key === "settings") {
-        mergeCloudSettings(x.value);
-        n++;
-        return;
-      }
-      // 예전 빌드가 따로 올리던 장기기억 설정 행: 처음 로그인의 전부 받기에서, 계정의 설정 행에 그 칸이 없을 때만 받아 설정으로 옮김(지금은 설정의 한 칸으로만 다님 —
-      // 예전 행만 남은 계정에서 값을 잃지 않게). 바뀐 것만 받는 때에는 보지 않음 — 예전 빌드가 이 행만 고쳐도 지금 설정을 덮지 않게
-      if (x.key === "memcfg") {
-        if (full && x.value && typeof x.value === "object" && !rows.some((y) => y.key === "settings" && y.value && y.value.memCfg)) {
-          mergeCloudSettings({ memCfg: x.value });
-          n++;
-        }
-        return;
-      }
-      if (!SYNCED_RE.test(x.key)) return;
-      KV.setLocal(x.key, x.value === null ? undefined : x.value);
-      if (room && x.key === roomKey(room.id)) setRoom(null); // 메모리에 든 옛 사본을 놓음 — 그대로 두면 그 방을 다시 열 때 옛 사본이 쓰이고, 저장하면 받은 것을 덮음
-      n++;
-    });
-    this.pulledAt = Date.now();
-    return n;
+    return applyRows(rows, hold, since);
   },
-  // 계정의 서재와 이 기기의 서재를 합침: 이 기기에만 있던 것은 계정으로 올리고, 이 기기 값이 바뀌었으면 true
-  takeShelf(remote) {
-    const local = KV.getLocal(SHELF_KEY),
-      m = mergeShelf(local, remote),
-      s = JSON.stringify(m);
-    if (s !== JSON.stringify(mergeShelf(remote))) this.put(SHELF_KEY, m);
-    if (s === JSON.stringify(mergeShelf(local))) return false;
-    KV.setLocal(SHELF_KEY, m);
-    S.shelf = m;
-    return true;
+  retake() {
+    return retakeRows();
   },
-  /**
-   * 열려 있어서 넘어간 방(skipped)을 다시 받음 — 방에서 나온 뒤(boot.js의 화면 이동)와 받기(pull) 앞에 부름. 아직 열려 있는 방은 계속 보류,
-   * 이 기기에 못 올린 변경이 있는 방은 그 값이 계정으로 올라가므로 받지 않음, 요청이 실패하면 다음에 다시. @returns {Promise<number>} 다시 받은 수
-   */
-  async retake() {
-    const uid = this.uid,
-      isOpen = (k) => !!room && location.hash === "#r-" + room.id && roomKey(room.id) === k;
-    let n = 0;
-    for (const k of [...this.skipped]) {
-      if (!this.on || this.uid !== uid) break;
-      if (isOpen(k) || using(k)) continue;
-      this.skipped.delete(k);
-      if (k in this.pending || this.sending.has(k)) continue;
-      const since = this.seq;
-      let got = null;
-      try {
-        const r = await SB.req("/rest/v1/kv?select=value&key=eq." + encodeURIComponent(k));
-        if (r.ok) got = await r.json();
-      } catch {}
-      if (this.uid !== uid) break;
-      if (!got || isOpen(k) || using(k)) {
-        this.skipped.add(k); // 못 받았거나 그사이 다시 열었으면 다음에
-        continue;
-      }
-      if (!got[0] || k in this.pending || this.sending.has(k) || (this.putSeq[k] || 0) > since) continue; // 계정에 그 방이 없거나, 그사이 이 기기에서 고침(올리기까지 끝났어도)
-      KV.setLocal(k, got[0].value);
-      if (room && roomKey(room.id) === k) setRoom(null);
-      n++;
-    }
-    return n;
-  },
-  async pull() {
-    const hold = new Set(this.sending),
-      since = this.seq,
-      again = await this.retake();
-    let n = again + this.apply(await this.rows(localStorage.getItem(this.lastKey()) || ""), hold, since);
-    // 로그인한 뒤(또는 날짜가 된 뒤) 처음 한 번: 바뀐 행만 받는 pull에는 서재 행이 안 올 수 있어 따로 받아 합침 — 날짜 전에 이 기기에만 쌓인 것이 이때 계정으로
-    if (!this.shelfUp && shelfSyncOn()) {
-      this.shelfUp = true;
-      if (this.takeShelf(await this.getOne(SHELF_KEY))) n++;
-    }
-    return n;
+  pull() {
+    return pullRows();
   },
   async wipe() {
     if (this.on && !this.noTable) {
