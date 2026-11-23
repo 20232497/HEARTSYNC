@@ -83,7 +83,7 @@ async function make(work, row) {
     // 실패한 까닭을 보관함 기록에 남긴다(남기지 못해도 그만)
     const at = `work=${encodeURIComponent(work.id)}&code=${encodeURIComponent(row.code)}`;
     api("/api/fail?" + at, { method: "POST", headers: { "x-hs-art": "1", "content-type": "text/plain" }, body: why }).catch(() => {});
-    if (/fund|balance|credit|insufficient|auth|api.?key/i.test(String(e && e.message))) state.stop = true; // 잔액·키 문제면 이어 그리기를 멈춤
+    if (/fund|balance|credit|insufficient|auth|api.?key|HTTP 40[123]/i.test(String(e && e.message))) state.stop = true; // 잔액·키 문제면 이어 그리기를 멈춤
   } finally {
     state.busy--;
     state.running.delete(k);

@@ -20,15 +20,24 @@ export async function loadKept() {
   for (const [k, files] of Object.entries(d.cands)) cands[k] = files.map((f) => ({ url: libUrl(k + "/" + f), path: k + "/" + f }));
   Object.assign(parts, d.parts);
 }
-/** 새 후보를 목록 맨 앞에 — 노출로 판정된 그림은 보관함에 넣지 않는다(이번 화면에서만 보임) */
+/** 새 후보를 목록 맨 앞에 — 노출로 판정된 그림은 보관함에 넣지 않는다(이번 화면에서만 보임).
+    목록에 먼저 넣고 보관함에 쓴다: 보관함에 넣지 못해도(디스크·연결 오류) 받은 그림은 이번 화면에 남아, 다시 사지 않아도 된다 */
 export async function addCand(work, row, blob, o = {}) {
   const k = work.id + "/" + row.code,
     c = { url: URL.createObjectURL(blob), blob, nsfw: !!o.nsfw };
-  if (!o.nsfw) {
-    const d = await api(`/api/keep?${where(work, row)}&seed=${o.seed || 0}`, { method: "POST", headers: { ...HEAD, "content-type": "image/webp" }, body: blob });
-    c.path = k + "/" + d.file;
-  }
   (cands[k] = cands[k] || []).unshift(c);
+  if (!o.nsfw) {
+    try {
+      const d = await api(`/api/keep?${where(work, row)}&seed=${o.seed || 0}`, {
+        method: "POST",
+        headers: { ...HEAD, "content-type": "image/webp" },
+        body: blob
+      });
+      c.path = k + "/" + d.file;
+    } catch (e) {
+      throw new Error(`그림은 받았는데 보관함에 넣지 못했어요(${(e && e.message) || e}) — 이번 화면의 후보로는 남아 있어요`);
+    }
+  }
   return c;
 }
 /** 후보를 보관함의 휴지통(.trash)으로 */
@@ -43,6 +52,10 @@ export async function saveCand(work, row, c) {
 }
 /** 단체 표지의 조각을 보관함에(자리마다 가장 최근 것 하나) */
 export async function savePart(work, name, blob) {
-  await api(`/api/part?work=${encodeURIComponent(work.id)}&name=${encodeURIComponent(name)}`, { method: "POST", headers: { ...HEAD, "content-type": blob.type }, body: blob });
+  await api(`/api/part?work=${encodeURIComponent(work.id)}&name=${encodeURIComponent(name)}`, {
+    method: "POST",
+    headers: { ...HEAD, "content-type": blob.type },
+    body: blob
+  });
   parts[work.id] = [...new Set([...(parts[work.id] || []), name])];
 }

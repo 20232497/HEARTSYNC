@@ -23,81 +23,144 @@ export function setKey(v) {
 /** 그릴 수 있는 상태인지(연습 모드이거나 키가 있음) */
 export const ready = () => meta.mock || !!key();
 
-/* 그림을 못 받아오는 경우(2026-11-23 사용자 제보): 잠깐 끊긴 연결·서버 쪽 오류·빈 응답은 조금 기다렸다 다시 건다(waits의 수만큼).
-   키·잔액·문구 같은 오류는 다시 걸어도 같으니 바로 알린다. 응답이 limit을 넘게 안 오면 멈추고 알린다 — 이때는 다시 걸지 않는다
-   (서비스 쪽에서는 그려졌을 수 있어 값이 두 번 나감. 모델을 새로 올릴 때 2분쯤 걸린 뒤 성공한 적이 있어 한도를 넉넉히 둠) */
-export const retry = { waits: [2000, 6000], limit: 240000 };
-const TRANSIENT = /failedModelLoad|inferenceError|timeout|unavailable|rateLimit|tooManyRequests|internal|provider|overload/i;
+/* 그림을 못 받아오는 경우(2026-11-23 사용자 제보 · Codex 검토 · 생성 서비스 문서 Task Polling·Errors·Rate Limits):
+   ① 동기 요청은 120초까지만 기다리고, 그때까지 안 끝난 작업은 status: "processing"으로 돌아온다(모델을 새로 올릴 때 실제로 그랬다) → 같은 taskUUID로 getResponse를 조회해 결과를 받는다.
+      다시 보내면 같은 그림을 두 번 사게 된다.
+   ② 응답을 못 받았거나(연결 끊김·본문이 끊김) 응답에 그림이 없으면 접수됐는지 알 수 없다 → 다시 보내지 않고 같은 taskUUID로 조회해 되찾는다.
+   ③ 다시 보내는 것은 서비스가 받지 않았다고 답했을 때뿐: HTTP 429·5xx, 다시 걸 만한 오류 코드(RETRY_CODE). 기다리는 시간은 서비스가 알려 준 값(retryAfter)이 먼저.
+   ④ 키·잔액·문구 같은 오류(HTTP 400~404와 그 밖의 오류 코드)는 다시 걸어도 같으니 바로 알린다.
+   한 작업을 기다리는 한도는 limit(처음 보낸 때부터). waits는 다시 보내기 전에, poll은 조회 사이에 기다리는 시간(마지막 값을 되풀이) */
+export const retry = { waits: [2000, 6000], poll: [2000, 3000, 5000], limit: 240000 };
+const RETRY_CODE = /^(serviceOverloaded|inferenceRateLimitExceeded|providerRateLimitExceeded|timeoutProvider|failedModelLoad|inferenceError)$/;
+const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
 const fatal = (text) => Object.assign(new Error(text), { fatal: true });
-/** 한 번 걸어 본다 → 응답 항목. 다시 걸어 볼 만한 실패는 그냥 던지고, 다시 걸어도 소용없는 실패는 fatal로 던진다 */
-async function once(task, type) {
+/** 응답 항목의 그림 주소(없으면 빈 글) */
+export const uriOf = (x) => (x && (x.imageDataURI || (x.imageBase64Data && "data:image/webp;base64," + x.imageBase64Data) || x.imageURL)) || "";
+const mine = (list, task) => (list || []).filter((o) => o.taskUUID === task.taskUUID);
+
+/** 요청 하나를 보내고 본문까지 읽는다 → { status, ok, after(서비스가 알려 준 기다릴 시간 ms), d }. 못 받으면 lost로 던진다(보냈는데 응답만 잃었을 수 있음) */
+async function post(task, until) {
   const ctl = new AbortController(),
-    timer = setTimeout(() => ctl.abort(), retry.limit);
-  let r, d;
+    timer = setTimeout(() => ctl.abort(), Math.max(1, until - Date.now()));
   try {
-    r = await fetch(meta.mock ? "/mock" : "https://api.runware.ai/v1", {
+    const r = await fetch(meta.mock ? "/mock" : "https://api.runware.ai/v1", {
       method: "POST",
       headers: { "content-type": "application/json", ...(meta.mock ? { "x-hs-art": "1" } : { authorization: "Bearer " + key() }) },
       body: JSON.stringify([task]),
       signal: ctl.signal
     });
-    d = await r.json().catch(() => ({}));
-  } catch (e) {
-    if (ctl.signal.aborted) throw fatal(`생성 서비스의 응답이 ${Math.round(retry.limit / 60000)}분 넘게 오지 않아 멈췄어요 — 잠시 뒤 다시 눌러 주세요`);
-    throw new Error("생성 서비스에 닿지 못했어요(인터넷 연결 확인)");
+    const text = await r.text(); // 본문이 끊기면 아래 catch로(삼키지 않는다)
+    let d = {};
+    try {
+      d = JSON.parse(text);
+    } catch {
+      /* JSON이 아닌 응답 — 아래에서 상태 코드로 본다 */
+    }
+    return { status: r.status, ok: r.ok, after: (+r.headers.get("retry-after") || 0) * 1000, d: d && typeof d === "object" ? d : {} };
+  } catch {
+    throw Object.assign(new Error(ctl.signal.aborted ? "생성 서비스의 응답이 한도 안에 오지 않았어요" : "생성 서비스와의 연결이 끊겼어요"), { lost: true });
   } finally {
     clearTimeout(timer);
   }
-  const e = (d.errors || [])[0];
-  if (e) {
-    const text = [e.code, e.message, e.parameter].filter(Boolean).join(" — ");
-    throw TRANSIENT.test(String(e.code) + " " + String(e.message)) ? new Error(text) : fatal(text);
-  }
-  if (!r.ok) throw r.status >= 500 || r.status === 429 || r.status === 408 ? new Error("HTTP " + r.status) : fatal("HTTP " + r.status);
-  // 응답의 taskType은 보낸 것과 다를 수 있다(배경 지우기 removeBackground는 imageBackgroundRemoval로 온다) → 보낸 taskUUID로 먼저 찾는다
-  const x = (d.data || []).find((o) => o.taskUUID === task.taskUUID) || (d.data || []).find((o) => o.taskType === type);
-  if (!x) throw new Error("그림이 오지 않았어요(빈 응답)");
-  return x;
 }
-async function call(task, type) {
-  for (let t = 0; ; t++) {
+/** 응답을 읽는다 → { x } 그림이 온 항목 · { wait: true } 처리 중이거나 그림이 없음(조회로 기다릴 것). 오류는 던진다: fatal(다시 걸어도 같음) 또는 again(다시 보낼 만함 — after ms) */
+function read(task, res) {
+  const errs = res.d.errors || [],
+    e = mine(errs, task)[0] || errs.find((x) => !x.taskUUID) || (res.ok ? null : errs[0]);
+  if (e || !res.ok) {
+    const text = e ? [e.code, e.message, e.parameter].filter(Boolean).join(" — ") : "HTTP " + res.status;
+    const again = res.status === 429 || res.status >= 500 || !!(e && RETRY_CODE.test(String(e.code)));
+    if (!again) throw fatal(text);
+    throw Object.assign(new Error(text), { again: true, after: (e && e.retryAfter * 1000) || res.after || 0 });
+  }
+  const rows = mine(res.d.data, task),
+    x = rows.find((o) => o.status !== "processing" && uriOf(o));
+  return x ? { x } : { wait: true };
+}
+/** 같은 작업의 결과를 조회로 기다린다(getResponse) → 그림이 온 항목. 서비스가 그 작업을 모르거나 작업이 다시 걸 만한 오류로 끝났으면 null(다시 보내도 됨).
+    서비스가 모르는 작업은 오류가 아니라 taskType이 "getResponse"인 '처리 중' 한 줄로 온다(2026-11-23 실제 호출로 확인 — 진짜 작업은 제 taskType으로 옴).
+    막 보낸 요청이 조금 늦게 닿았을 수도 있으니 두 번 잇달아 그렇게 올 때만 받지 않은 것으로 본다 */
+async function poll(task, until, why) {
+  let unknown = 0;
+  for (let i = 0; ; i++) {
+    const left = until - Date.now();
+    if (left <= 0)
+      throw fatal(
+        `${why} — ${Math.round(retry.limit / 60000)}분을 기다렸지만 그림이 오지 않아 멈췄어요. 서비스 쪽에서는 그려졌을 수 있어요(값이 나갔을 수 있음) — 잠시 뒤 다시 눌러 주세요`
+      );
+    await sleep(Math.min(left, retry.poll[Math.min(i, retry.poll.length - 1)]));
+    let res;
     try {
-      const x = await once(task, type);
-      spent.usd += x.cost || 0;
-      return x;
+      res = await post({ taskType: "getResponse", taskUUID: task.taskUUID }, until);
+    } catch {
+      continue; // 조회가 끊겼으면 한도까지 다시 조회
+    }
+    try {
+      const out = read(task, res);
+      if (out.x) return out.x;
+      const rows = mine(res.d.data, task);
+      if (rows.length && rows.every((o) => o.taskType === "getResponse")) {
+        if (++unknown >= 2) return null;
+      } else unknown = 0;
     } catch (e) {
-      if (e.fatal || t >= retry.waits.length) throw t && !e.fatal ? new Error(`${e.message} — ${t + 1}번 해 봤어요. 잠시 뒤 다시 눌러 주세요`) : e;
-      task.taskUUID = crypto.randomUUID();
-      await new Promise((res) => setTimeout(res, retry.waits[t]));
+      if (e.again || res.status === 404 || res.status === 400) return null; // 작업이 실패로 끝났거나(다시 걸 만함) 서비스가 그 작업을 모름 → 다시 보내도 두 번 그려지지 않는다
+      throw e;
     }
   }
 }
+async function call(task) {
+  const until = Date.now() + retry.limit;
+  for (let t = 0; ; t++) {
+    let x = null,
+      why = "그림이 아직 그려지는 중이에요",
+      after = 0;
+    try {
+      const out = read(task, await post(task, until));
+      x = out.x || (await poll(task, until, why));
+    } catch (e) {
+      if (e.lost)
+        x = await poll(task, until, (why = e.message)); // 접수됐는지 모름 → 같은 작업을 조회해 되찾는다
+      else if (!e.again) throw e;
+      else ((why = e.message), (after = e.after));
+    }
+    if (x) {
+      spent.usd += x.cost || 0;
+      return x;
+    }
+    // 여기까지 왔으면 서비스가 그 작업을 받지 않았거나 작업이 실패로 끝난 것 — 새 taskUUID로 다시 보낸다(waits의 수만큼)
+    if (t >= retry.waits.length) throw new Error(`${why} — ${t + 1}번 해 봤어요. 잠시 뒤 다시 눌러 주세요`);
+    await sleep(Math.min(Math.max(1, until - Date.now()), after || retry.waits[t]));
+    task.taskUUID = crypto.randomUUID();
+  }
+}
 const infer = (j, extra) =>
-  call(
-    {
-      taskType: "imageInference",
-      taskUUID: crypto.randomUUID(),
-      positivePrompt: j.pos,
-      negativePrompt: j.neg,
-      model: j.model,
-      width: j.width,
-      height: j.height,
-      numberResults: 1,
-      steps: j.steps,
-      CFGScale: j.cfg,
-      scheduler: j.scheduler,
-      seed: j.seed,
-      outputFormat: "WEBP",
-      outputType: "dataURI",
-      checkNSFW: true,
-      includeCost: true,
-      ...(j.lora && j.lora.length ? { lora: j.lora } : {}),
-      ...(/\([^()]+:\d/.test(j.pos + j.neg) ? { promptWeighting: "sdEmbeds" } : {}),
-      ...extra
-    },
-    "imageInference"
-  );
-export const blobOf = async (uri) => (await fetch(uri)).blob();
+  call({
+    taskType: "imageInference",
+    taskUUID: crypto.randomUUID(),
+    positivePrompt: j.pos,
+    negativePrompt: j.neg,
+    model: j.model,
+    width: j.width,
+    height: j.height,
+    numberResults: 1,
+    steps: j.steps,
+    CFGScale: j.cfg,
+    scheduler: j.scheduler,
+    seed: j.seed,
+    outputFormat: "WEBP",
+    outputType: "dataURI",
+    checkNSFW: true,
+    includeCost: true,
+    ...(j.lora && j.lora.length ? { lora: j.lora } : {}),
+    ...(/\([^()]+:\d/.test(j.pos + j.neg) ? { promptWeighting: "sdEmbeds" } : {}),
+    ...extra
+  });
+/** 그림 주소(data URI나 서비스의 주소)를 blob으로 — 내려받지 못하면 까닭을 알린다 */
+export const blobOf = async (uri) => {
+  const r = await fetch(uri).catch(() => null);
+  if (!r || !r.ok) throw new Error("받은 그림을 읽지 못했어요" + (r ? "(HTTP " + r.status + ")" : ""));
+  return r.blob();
+};
 export const dataOf = (blob) =>
   new Promise((res, rej) => {
     const r = new FileReader();
@@ -133,36 +196,31 @@ export async function generate(j) {
   if (j.guide) {
     const g = await infer(j.guide.job);
     nsfw = nsfw || !!g.NSFWContent;
-    seedImage = g.imageDataURI;
+    seedImage = uriOf(g);
   }
   let x = await infer(j, seedImage ? { seedImage, strength: j.guide.strength } : {});
   nsfw = nsfw || !!x.NSFWContent;
   if (j.hires) {
-    x = await infer(j, { seedImage: x.imageDataURI, strength: j.hires.strength, width: j.hires.w, height: j.hires.h });
+    x = await infer(j, { seedImage: uriOf(x), strength: j.hires.strength, width: j.hires.w, height: j.hires.h });
     nsfw = nsfw || !!x.NSFWContent;
   }
-  return { blob: await real(await blobOf(x.imageDataURI), "image/webp"), nsfw };
+  return { blob: await real(await blobOf(uriOf(x)), "image/webp"), nsfw };
 }
 /** 인물 그림의 배경을 지운다(Runware removeBackground — BiRefNet General, 한 장에 약 0.06센트) → PNG blob */
 export async function removeBg(blob) {
-  const x = await call(
-    {
-      taskType: "removeBackground",
-      taskUUID: crypto.randomUUID(),
-      model: "runware:112@5",
-      inputs: { image: await dataOf(blob) },
-      outputType: "dataURI",
-      outputFormat: "PNG",
-      includeCost: true
-    },
-    "removeBackground"
-  );
-  const uri = x.imageDataURI || (x.imageBase64Data && "data:image/png;base64," + x.imageBase64Data) || x.imageURL;
-  if (!uri) throw new Error("오린 그림이 오지 않았어요");
-  return real(await blobOf(uri), "image/png");
+  const x = await call({
+    taskType: "removeBackground",
+    taskUUID: crypto.randomUUID(),
+    model: "runware:112@5",
+    inputs: { image: await dataOf(blob) },
+    outputType: "dataURI",
+    outputFormat: "PNG",
+    includeCost: true
+  });
+  return real(await blobOf(uriOf(x)), "image/png");
 }
 /** 합친 단체 표지(캔버스)를 아주 약하게 다시 그려 잇는다 → { blob, nsfw } */
 export async function unify(final, cv) {
   const x = await infer(final, { seedImage: cv.toDataURL("image/jpeg", 0.93), strength: final.strength });
-  return { blob: await real(await blobOf(x.imageDataURI), "image/webp"), nsfw: !!x.NSFWContent };
+  return { blob: await real(await blobOf(uriOf(x)), "image/webp"), nsfw: !!x.NSFWContent };
 }

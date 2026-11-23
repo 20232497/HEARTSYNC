@@ -329,17 +329,19 @@ const server = http.createServer(async (req, res) => {
       if (!isWebp(buf)) return send(res, 400, { error: "webp 그림이 아니에요" });
       return send(res, 200, { ok: true, file: keep(c.id, row.code, buf, { seed: +q.get("seed") || 0, mock: MOCK || undefined }) });
     }
-    // 그리다 실패한 까닭을 보관함 기록(log.jsonl)에 남긴다 — 가끔 나는 실패를 나중에 살펴볼 수 있게(그림은 없음). 긴 글자열은 지운다(키가 섞여 들어오지 않게)
+    // 그리다 실패한 까닭을 보관함 기록(log.jsonl)에 남긴다 — 가끔 나는 실패를 나중에 살펴볼 수 있게(그림은 없음).
+    // 페이지에서 보낸 것만, 짧은 글만 받고, 긴 글자열(키·작업 번호)은 지운다. 기록의 event: "fail"로 후보 기록과 구분된다
     if (post && u.pathname === "/api/fail") {
+      if (!ours(req, true) || +req.headers["content-length"] > 2048) return send(res, 403, { error: "이 페이지에서 보낸 짧은 글만 받아요" });
       const { c, row } = findRow(await works(), q),
         why = (await body(req))
           .toString("utf8")
-          .replace(/[A-Za-z0-9_-]{24,}/g, "…")
+          .replace(/[A-Za-z0-9_-]{16,}/g, "…")
           .slice(0, 300);
       fs.mkdirSync(LIB, { recursive: true });
       fs.appendFileSync(
         path.join(LIB, "log.jsonl"),
-        JSON.stringify({ at: new Date().toISOString(), work: c.id, code: row.code, fail: why, mock: MOCK || undefined }) + "\n"
+        JSON.stringify({ at: new Date().toISOString(), event: "fail", work: c.id, code: row.code, fail: why, mock: MOCK || undefined }) + "\n"
       );
       return send(res, 200, { ok: true });
     }

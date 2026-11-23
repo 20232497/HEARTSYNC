@@ -12,7 +12,7 @@ const ROLES = ["bg", "left", "mid", "right"],
   NAMES = { bg: "배경", left: "왼쪽", mid: "가운데", right: "오른쪽" };
 /** 작품마다 붙일 준비가 된 단체 표지: { plan, imgs: { bg, left, mid, right }, layout(고친 자리 값) } */
 const groups = {};
-/** 작품마다 그리다 만 단체 표지의 조각: { files: { "<자리>-raw.webp"·"<자리>-cut.png": blob }, imgs, nsfw } — 넷이 다 모이면 지운다(이 페이지를 닫으면 사라짐) */
+/** 작품마다 그리다 만 단체 표지: { plan(처음 받은 계획), files: { "<자리>-raw.webp"·"<자리>-cut.png": blob }, imgs } — 조각이 보관함에 다 들어가면 지운다(이 페이지를 닫으면 사라짐) */
 const drafts = {};
 
 /** 후처리 → 로고 → 규격 크기의 webp. 로고 글꼴을 못 불러왔으면 던진다(기본 글꼴로 그려진 표지는 쓰지 않는다) */
@@ -32,37 +32,43 @@ export async function makeCover(work, spec, say) {
     const out = await generate(p.job);
     return { blob: await dress(work, await load(out.blob), p.post), nsfw: out.nsfw, seed: p.job.seed };
   }
-  // 그리다가 실패하면(연결 끊김 등) 그때까지 그린 조각은 drafts에 남는다 → 다시 누르면 그 조각은 다시 사지 않고 이어 그린다
-  const d = (drafts[work.id] = drafts[work.id] || { files: {}, imgs: {}, nsfw: false }),
-    { imgs, files } = d,
-    layout = structuredClone(p.layout);
+  // 그리다가 실패하면(연결 끊김 등) 그때까지 그린 조각은 drafts에 남는다 → 다시 누르면 그 조각은 다시 사지 않고 이어 그린다.
+  // 이어 그릴 때는 처음 받은 계획(d.plan)을 그대로 쓴다 — 누를 때마다 시드가 바뀐 새 계획이 오는데, 섞으면 조각마다 시드가 달라진다
+  const d = (drafts[work.id] = drafts[work.id] || { plan: p, files: {}, imgs: {} }),
+    { imgs, files, plan } = d,
+    layout = structuredClone(plan.layout);
   for (const role of ROLES) {
     const n = ROLES.indexOf(role) + 1,
-      raw = role + "-raw.webp";
+      raw = role + "-raw.webp",
+      cut = role + "-cut.png";
     if (!files[raw]) {
       say(`단체 표지 — ${NAMES[role]} 그리는 중…(조각 넷 가운데 ${n})`);
-      const out = await generate(p.parts[role]);
-      d.nsfw = d.nsfw || out.nsfw;
+      const out = await generate(plan.parts[role]);
+      if (out.nsfw) {
+        // 노출로 판정된 조각이 나오면 거기서 끝낸다 — 나머지 조각에 돈을 더 쓰지 않고, 조각을 남기지도 잇지도 않는다(그 그림만 이번 화면에 보여 줌)
+        delete drafts[work.id];
+        return { blob: out.blob, nsfw: true, seed: plan.final.seed };
+      }
       files[raw] = out.blob;
     } else if (!imgs[role]) say(`단체 표지 — ${NAMES[role]}: 지난번에 그려 둔 그림을 이어서 써요(조각 넷 가운데 ${n})`);
     if (!imgs[role]) {
-      if (role === "bg") imgs.bg = await load(files[raw]);
-      else {
-        if (!files[role + "-cut.png"]) files[role + "-cut.png"] = await removeBg(files[raw]);
-        imgs[role] = await load(files[role + "-cut.png"]);
+      const name = role === "bg" ? raw : cut;
+      if (role !== "bg" && !files[cut]) files[cut] = await removeBg(files[raw]);
+      try {
+        imgs[role] = await load(files[name]);
+      } catch (e) {
+        delete files[name]; // 깨진 그림은 남기지 않는다 — 다시 누르면 그 단계부터 다시(배경은 다시 그리고, 인물은 오리기만 다시)
+        throw e;
       }
     }
     // 새로 그린 그림이라 계획에 적힌 머리 자리(확정 그림에서 잰 값)는 맞지 않는다 → 이 그림에서 어림
     if (role !== "bg") layout.chars.find((c) => c.role === role).head = measure(imgs[role]);
   }
-  const nsfw = d.nsfw;
-  delete drafts[work.id]; // 넷이 다 모였다 — 여기서부터의 실패(보관함 쓰기·잇기)는 보관함의 조각으로 다시 붙이면 된다
-  // 노출로 판정된 조각이 하나라도 있으면 붙인 그림만 보여 주고 끝낸다 — 조각을 보관함에 남기지 않고(다시 붙여 실을 수 없게) 잇지도 않는다
-  if (nsfw) return { blob: await toBlob(composeGroup(layout, imgs)), nsfw, seed: p.final.seed };
   // 조각은 넷이 다 그려진 뒤에 한꺼번에 보관함에 — 중간에 실패하면 예전 조각 묶음이 그대로 남는다(새것과 섞이지 않게)
   // shortcut: 조각 일곱 개를 하나씩 덮어쓴다 — 쓰는 도중에 실패하면(디스크 오류) 예전 것과 섞일 수 있음. 실패 알림이 뜨면 다시 그릴 것. 묶음째 바꾸려면 서버가 한 요청으로 받아야 함
   for (const [name, blob] of Object.entries(files)) await savePart(work, name, blob);
-  groups[work.id] = { plan: p, imgs, layout };
+  groups[work.id] = { plan, imgs, layout };
+  delete drafts[work.id]; // 조각이 보관함에 다 들어갔다 — 여기서부터의 실패(잇기)는 '자리 맞추기'에서 보관함의 조각으로 다시 붙이면 된다
   say("단체 표지 — 붙이고 잇는 중…");
   return finishGroup(work);
 }
