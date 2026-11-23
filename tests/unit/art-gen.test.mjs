@@ -197,3 +197,33 @@ test("그림 받아오기: 배경 지우기의 응답은 taskType이 달라도(i
   assert.ok(cut.size > 0);
   assert.equal(s.sent[0].taskType, "removeBackground");
 });
+
+test("그림 받아오기: 키워 다시 그리기에서 실패한 뒤 같은 작업을 다시 부르면 이미 산 첫 그림은 다시 사지 않고 그 단계부터 잇는다", async () => {
+  const j = { ...job(), hires: { w: 96, h: 96, strength: 0.4 } },
+    s = service(["ok", 401, "ok"]);
+  await assert.rejects(generate(j), /HTTP 401/); // 첫 그림은 받았고, 키워 다시 그리기가 실패
+  assert.equal(s.sent.length, 2);
+  const out = await generate(j);
+  assert.ok(out.blob.size > 0);
+  assert.equal(s.sent.length, 3, "다시 불렀을 때 보낸 것은 키워 다시 그리기 하나뿐");
+  assert.equal(s.sent[2].seedImage, IMG, "남겨 둔 첫 그림을 밑그림으로");
+  assert.equal(s.sent[2].width, 96);
+});
+
+test("그림 받아오기: 접수된 작업의 조회가 한도를 넘겨 멈춘 뒤 같은 작업을 다시 부르면 새로 보내지 않고 그 작업부터 확인한다", async () => {
+  const limit = retry.limit,
+    j = job();
+  retry.limit = 40;
+  retry.poll = [10];
+  let s;
+  try {
+    s = service(["slow:8"]); // 조회 여덟 번째에야 그림이 온다 — 첫 시도는 한도에 걸림
+    await assert.rejects(generate(j), /기다렸지만 그림이 오지 않아 멈췄어요/);
+  } finally {
+    retry.limit = limit;
+    retry.poll = [0];
+  }
+  const out = await generate(j);
+  assert.ok(out.blob.size > 0);
+  assert.equal(s.sent.length, 1, "같은 그림을 두 번 사지 않음");
+});

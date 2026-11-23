@@ -362,10 +362,14 @@ const server = http.createServer(async (req, res) => {
         bundle = q.get("bundle") || "",
         now = fs.existsSync(mark) ? fs.readFileSync(mark, "utf8") : "";
       if (bundle && !/^[a-z0-9-]{8,40}$/i.test(bundle)) return send(res, 400, { error: "묶음 번호가 맞지 않아요" });
-      if (q.get("fresh") && bundle) {
+      const stale = now && Date.now() - fs.statSync(mark).mtimeMs > 600000; // 10분 넘게 멈춘 표식은 버려진 것(창을 닫음)
+      if (now && now !== bundle && !(stale && q.get("fresh") && bundle))
+        return send(res, 409, { error: "다른 창에서 이 작품의 조각을 쓰고 있어요 — 그쪽이 끝난 뒤에 다시 해 주세요" });
+      if (!now && bundle && !q.get("fresh")) return send(res, 409, { error: "조각 묶음이 시작되지 않았어요 — 다시 눌러 주세요" });
+      if (q.get("fresh") && bundle && now !== bundle) {
         for (const old of fs.readdirSync(dir)) if (ROLE.test(old)) fs.rmSync(path.join(dir, old));
         fs.writeFileSync(mark, bundle);
-      } else if (now !== bundle) return send(res, 409, { error: "다른 창에서 이 작품의 조각을 쓰고 있어요 — 그쪽이 끝난 뒤에 다시 해 주세요" });
+      }
       fs.writeFileSync(path.join(dir, name), buf);
       if (q.get("last") && bundle) fs.rmSync(mark, { force: true });
       return send(res, 200, { ok: true });

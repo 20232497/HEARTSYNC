@@ -126,6 +126,8 @@ async function poll(task, why, accepted) {
     else if (!accepted && ++unknown >= 2) return { unknown: true };
   }
 }
+/* 그리다 만 작업의 끝난 단계: 작업 내용의 지문 → { guide, base, hires }(응답 항목) — generate가 쓴다 */
+const steps = new Map();
 /* 접수됐는지 모른 채 끝난 요청: 내용(taskUUID를 뺀 것)의 지문 → 그때의 taskUUID. 같은 내용을 다시 그리려 하면 새로 보내기 전에 그 작업부터 조회한다
    (서비스가 실은 받아서 그려 뒀다면 그 그림을 받아 온다 — 두 번 사지 않게). 그때도 모른다고 하면 받지 않은 것으로 보고 새로 보낸다 */
 const pending = new Map();
@@ -158,12 +160,11 @@ async function call(task) {
     }
     if (out.wait) {
       const why = out.why;
+      pending.set(print, task.taskUUID); // 조회가 한도를 넘겨 멈추거나 끝내 알 수 없어도, 같은 칸을 다시 누르면 이 작업부터 확인한다
       out = await poll(task, why, !!out.accepted);
-      if (out.unknown) {
-        // 서비스에 닿았는지 끝내 알 수 없다 → 자동으로 다시 보내지 않는다(두 번 살 수 있음). 같은 칸을 다시 누르면 이 작업부터 확인한다
-        pending.set(print, task.taskUUID);
-        throw new Error(`${why} — 요청이 닿았는지 알 수 없어 멈췄어요. 같은 칸을 다시 누르면 먼저 이 요청부터 확인해요`);
-      }
+      // 서비스에 닿았는지 끝내 알 수 없다 → 자동으로 다시 보내지 않는다(두 번 살 수 있음)
+      if (out.unknown) throw new Error(`${why} — 요청이 닿았는지 알 수 없어 멈췄어요. 같은 칸을 다시 누르면 먼저 이 요청부터 확인해요`);
+      pending.delete(print); // 그림이 왔거나 작업이 실패로 끝났다(다시 보내도 됨)
     }
     if (out.x) return done(out.x);
     // 여기까지 왔으면 서비스가 그 작업을 받지 않았거나 작업이 실패로 끝난 것 — 새 taskUUID로 다시 보낸다(waits의 수만큼)
@@ -240,20 +241,17 @@ async function real(blob, type) {
 }
 /** 작업 하나를 그린다: 밑그림(guide)이 있으면 먼저 그려 본 그림의 밑그림으로, hires가 있으면 키워 다시 그림 → { blob, nsfw } */
 export async function generate(j) {
-  let nsfw = false,
-    seedImage;
-  if (j.guide) {
-    const g = await infer(j.guide.job);
-    nsfw = nsfw || !!g.NSFWContent;
-    seedImage = uriOf(g);
-  }
-  let x = await infer(j, seedImage ? { seedImage, strength: j.guide.strength } : {});
-  nsfw = nsfw || !!x.NSFWContent;
-  if (j.hires) {
-    x = await infer(j, { seedImage: uriOf(x), strength: j.hires.strength, width: j.hires.w, height: j.hires.h });
-    nsfw = nsfw || !!x.NSFWContent;
-  }
-  return { blob: await real(await blobOf(uriOf(x)), "image/webp"), nsfw };
+  // 끝난 단계의 응답은 마지막 그림을 받을 때까지 남긴다(steps) — 뒤 단계에서 실패한 뒤 같은 작업을 다시 부르면 이미 산 앞 단계를 다시 사지 않고 그 단계부터 잇는다
+  const print = printOf(j),
+    st = steps.get(print) || {};
+  steps.set(print, st);
+  if (j.guide && !st.guide) st.guide = await infer(j.guide.job);
+  if (!st.base) st.base = await infer(j, st.guide ? { seedImage: uriOf(st.guide), strength: j.guide.strength } : {});
+  let x = st.base;
+  if (j.hires) x = st.hires = st.hires || (await infer(j, { seedImage: uriOf(st.base), strength: j.hires.strength, width: j.hires.w, height: j.hires.h }));
+  const blob = await real(await blobOf(uriOf(x)), "image/webp");
+  steps.delete(print);
+  return { blob, nsfw: [st.guide, st.base, st.hires].some((s) => s && s.NSFWContent) };
 }
 /** 인물 그림의 배경을 지운다(Runware removeBackground — BiRefNet General, 한 장에 약 0.06센트) → PNG blob */
 export async function removeBg(blob) {
