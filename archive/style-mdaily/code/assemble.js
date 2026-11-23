@@ -1,13 +1,14 @@
 /* 일상 화풍 두 개의 프롬프트 조립 — 남성향 일상(여성 인물)·여성향 일상(남성 인물). 작품 데이터(cast[]·places[])를 칸에 끼워 긍정·부정 프롬프트와 생성 값을 만든다.
-   그림 값(화풍 문구·네거티브·LoRA·후처리)은 값 파일에서 읽는다: ../mdaily-v8.json(여성) · ../../style-fdaily/fdaily-v10.json(남성) — 앞 판(여성 v6·v7, 남성 v7~v9)은 보관 · 고정 태그는 ../mdaily.json.
-   값 파일이 정할 수 있는 것: prompt·coolPrompt·neg·fits·lora·post + lightDay·lightNight(낮·밤 빛 문구) · bgTag(배경 문구) · act(연기 문구 손질 — drop·scale).
+   그림 값(화풍 문구·네거티브·LoRA·후처리)은 값 파일에서 읽는다: ../mdaily-v8.json(여성) · ../../style-fdaily/fdaily-v11.json(남성) — 앞 판(여성 v6·v7, 남성 v7~v10)은 보관 · 고정 태그는 ../mdaily.json.
+   값 파일이 정할 수 있는 것: prompt·coolPrompt·neg·fits·lora·post + lightDay·lightNight(낮·밤 빛 문구) · bgTag(배경 문구) · act(연기 문구 손질 — drop·scale)
+   · underdraw(감정 그림을 애니 화풍으로 먼저 그려 밑그림으로 — strength. 아래 '애니 밑그림').
    이 파일은 그 값을 인물마다 손대지 않고 쓰는 규칙이다 — 2026-11-13 사용자와 비교 생성으로 정함(경위와 표는 ../README.md '조립 규칙').
    2026-11-23(사용자): 구도와 표정(칸마다의 구도 자리·눈·표정·손동작)은 애니 화풍과 같게 — ../../style-manime/code/assemble.js의 acting()이 고른 것을 그대로 쓴다.
    남성 인물은 부드러운 v7 대신 날카로운 v8 후보(../../style-fdaily/fdaily-v8.json). 둘 다 그려서 확인하기 전의 값이다.
    profileJob(인물, 장소) → 프로필(칸 0) · emotionJob(인물, 장소, 칸 1~14) → 감정 그림. Node에서만 돈다(값 파일을 읽음). 앱은 이 파일을 쓰지 않는다 */
 import fs from "node:fs";
 import { fitStyle, weighTags } from "./style-fit.js";
-import { acting, actingNeg } from "../../style-manime/code/assemble.js";
+import { acting, actingNeg, emotionJob as animeEmotion, assertSafe as animeSafe } from "../../style-manime/code/assemble.js";
 
 const J = (rel) => JSON.parse(fs.readFileSync(new URL(rel, import.meta.url), "utf8"));
 const toRe = (s) => {
@@ -20,7 +21,7 @@ const load = (rel) => {
 };
 const BASE = J("../mdaily.json");
 export const FIX = BASE.fixed; // 품질·수위·규격·미성년 금지 태그
-export const STYLE = { f: load("../mdaily-v8.json"), m: load("../../style-fdaily/fdaily-v10.json") };
+export const STYLE = { f: load("../mdaily-v8.json"), m: load("../../style-fdaily/fdaily-v11.json") };
 /* 그림 규격(tools/content-art.mjs ART_SPECS) — 프로필 768×1152, 감정 1024×1024. 멀리 잡는 휴식 칸만 1536으로 키워 다시 그린다(얼굴이 작아져 무너짐) */
 export const SIZE = { profile: { width: 768, height: 1152 }, emotion: { width: 1024, height: 1024 } };
 const HIRES = { w: 1536, h: 1536, strength: 0.4 };
@@ -252,8 +253,18 @@ export function emotionJob(c, place, slot, o = {}) {
       j = { ...job(build(c, place, REST[g].scene, "emotion", REST[g].neg), "emotion", seed, o), hires: HIRES };
     return g === "f" ? { ...j, guide: { job: guideJob(c, seed), strength: GUIDE.strength } } : j;
   }
-  const s = sceneOf(c, slot);
-  return job(build(c, place, s.scene, "emotion", s.neg, s.still, s.free), "emotion", seed, o);
+  const s = sceneOf(c, slot),
+    j = job(build(c, place, s.scene, "emotion", s.neg, s.still, s.free), "emotion", seed, o),
+    u = STYLE[isFem(c) ? "f" : "m"].underdraw;
+  return u ? { ...j, guide: { job: underJob(c, place, slot, j), strength: u.strength } } : j;
+}
+/* ── 애니 밑그림 ── 값 파일에 underdraw가 있는 화풍(지금은 남성 인물)의 감정 그림: 같은 인물·칸을 애니 화풍(style-manime)으로 먼저 그리고,
+   그 그림을 밑그림으로 이 화풍이 strength만큼 다시 그린다(낮을수록 밑그림에 가까움). 문구만으로는 얼굴이 부드럽게 나오던 것이, 밑그림의 고개 각도·눈썹과 눈 사이·옆빛이
+   넘어와 애니 화풍의 날카로운 인상에 가까워진다(2026-11-23 비교 생성). 밑그림의 배경과 소품도 따라온다. 밑그림은 첫 그림만 쓴다(키워 다시 그리기·후처리 없이, 만화 기호 없이)
+   — 시드와 크기는 이 화풍의 작업과 같게. 프로필(칸 0)은 붙이지 않는다(애니 프로필의 어두운 단색 배경을 따르게 됨), 휴식(칸 11)은 제 규칙대로 */
+function underJob(c, place, slot, j) {
+  const a = animeSafe(animeEmotion(c, place || { tags: "" }, slot, { symbols: false, seed: j.seed }));
+  return { model: a.model, pos: a.pos, neg: a.neg, cfg: a.cfg, steps: a.steps, scheduler: a.scheduler, seed: a.seed, width: j.width, height: j.height };
 }
 /** 만든 작업이 지킬 것을 지키는지: 성인 표시, 한 사람, 미성년·노출 네거티브(밑그림 작업도) */
 export function assertSafe(j) {

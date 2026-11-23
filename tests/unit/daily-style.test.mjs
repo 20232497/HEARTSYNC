@@ -1,12 +1,12 @@
 // 일상 화풍의 조립(archive/style-mdaily/code/assemble.js) — 그림 도구(npm run art)가 쓰는 화풍 규칙. 앱 코드가 아니다.
-// 2026-11-23: 구도·표정은 애니 화풍과 같게(acting), 남성 인물은 날카로운 후보(v10), 여성은 또렷한 얼굴에 흐릿한 분위기를 되돌린 후보(v8). 작품 글(content/)이 바뀌어도 막지 않게 규칙의 성질만 본다.
+// 2026-11-23: 구도·표정은 애니 화풍과 같게(acting), 남성 인물은 날카로운 후보(v11), 여성은 또렷한 얼굴에 흐릿한 분위기를 되돌린 후보(v8). 작품 글(content/)이 바뀌어도 막지 않게 규칙의 성질만 본다.
 import fs from "node:fs";
 import path from "node:path";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { profileJob, emotionJob, assertSafe, isFem, STYLE } from "../../archive/style-mdaily/code/assemble.js";
-import { acting } from "../../archive/style-manime/code/assemble.js";
+import { acting, MODEL } from "../../archive/style-manime/code/assemble.js";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const walk = (d) =>
@@ -77,7 +77,7 @@ test("일상 화풍: 구도·표정은 애니 화풍의 것 — 프로필은 얼
 });
 
 // 가중치는 비교 생성으로 계속 맞추는 값이라 낱말이 있는지만 본다(성인 표시처럼 지킬 것은 가중치까지)
-test("일상 화풍: 남성 인물은 날카로운 후보(v10) — 눈 사이로 떨어지는 앞머리·옆빛, 가르마 머리와 부드러운 칠이 없음 / 여성(v8)은 얼굴은 또렷하게, 분위기는 흐릿하게", () => {
+test("일상 화풍: 남성 인물은 날카로운 후보(v11) — 눈 사이로 떨어지는 앞머리·옆빛, 가르마 머리와 부드러운 칠이 없음 / 여성(v8)은 얼굴은 또렷하게, 분위기는 흐릿하게", () => {
   const m = emotionJob(M, PLACE, 1),
     f = emotionJob(F, PLACE, 1),
     mp = names(m.pos),
@@ -115,4 +115,23 @@ test("일상 화풍: 남성 인물은 날카로운 후보(v10) — 눈 사이로
   // 기본 표정: 남자는 웃지 않고 입을 다묾(웃음은 네거티브), 여자는 살짝 미소
   assert.ok(names(m.pos).includes("closed mouth") && names(m.neg).includes("smirk"));
   assert.ok(names(f.pos).includes("light smile"));
+});
+
+test("일상 화풍: 남성 인물의 감정 그림은 애니 화풍으로 먼저 그린 밑그림을 쓴다(값 파일의 underdraw) — 프로필·휴식 칸과 여성 인물은 그대로", () => {
+  const m = emotionJob(M, PLACE, 1),
+    g = m.guide;
+  assert.ok(g && g.strength === STYLE.m.underdraw.strength && g.strength > 0 && g.strength < 1, "밑그림과 세기");
+  assert.equal(g.job.model, MODEL.air, "밑그림은 애니 화풍의 모델로");
+  assert.deepEqual([g.job.seed, g.job.width, g.job.height], [m.seed, m.width, m.height], "시드와 크기는 이 화풍의 작업과 같게");
+  assert.ok(!("hires" in g.job) && !("post" in g.job) && !("lora" in g.job), "밑그림은 첫 그림만(키워 다시 그리기·후처리 없이)");
+  assert.ok(/adult man/.test(g.job.pos) && names(g.job.neg).includes("child"), "밑그림에도 성인 표시와 미성년 네거티브");
+  for (const slot of [2, 3, 6, 14])
+    for (const sym of ["sparkle", "heart", "spoken heart", "anger vein", "flying sweatdrops"])
+      assert.ok(!names(emotionJob(M, PLACE, slot).guide.job.pos).includes(sym), `칸 ${slot} 밑그림: 만화 기호 ${sym}`);
+  assert.equal(emotionJob(M, PLACE, 1, { seed: 9 }).guide.job.seed, 9, "시드를 바꾸면 밑그림 시드도 같이");
+  assert.ok(emotionJob(M, undefined, 1).guide, "장소가 없어도 뽑힘");
+  assert.ok(!profileJob(M, PLACE).guide, "프로필은 문구만");
+  assert.ok(!emotionJob(M, PLACE, 11).guide, "남성 휴식 칸은 제 규칙대로");
+  assert.ok(!emotionJob(F, PLACE, 1).guide, "여성 인물은 밑그림 없이");
+  assert.ok(emotionJob(F, PLACE, 11).guide, "여성 휴식 칸의 밑그림은 그대로");
 });
