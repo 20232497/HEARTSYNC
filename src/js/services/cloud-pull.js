@@ -37,7 +37,9 @@ export async function applyRows(rows, hold, since) {
     const merged = mergeRoomLists(full ? [] : S.rooms, remote, gone);
     S.rooms = merged;
     KV.setLocal("rooms", merged);
-    if (!full && !sameRoomList(merged, remote)) CLOUD.put("rooms", merged); // 이 기기에만 있던 방이 있거나 지운 방이 계정 목록에 남아 있음 — 합친 목록을 계정에
+    // 못 올린(올리는 중인) 목록이 있으면 합친 것으로 바꿔 올림 — 그대로 두면 옛 목록이 올라가 방금 받은 다른 기기의 새 방을 계정 목록에서 뺌
+    const queued = "rooms" in CLOUD.pending || CLOUD.sending.has("rooms");
+    if (!full && (queued || !sameRoomList(merged, remote))) CLOUD.put("rooms", merged); // 이 기기에만 있던 방이 있거나 지운 방이 계정 목록에 남아 있음 — 합친 목록을 계정에
   };
   rows.forEach((x) => {
     if (x.updated_at && x.updated_at > (localStorage.getItem(CLOUD.lastKey()) || ""))
@@ -132,6 +134,10 @@ export async function retakeRows() {
     // 계정에 그 방이 없거나, 그사이 이 기기에서 고침(올리기까지 끝났어도) — 받을 것이 없음
     if (!got[0] || k in CLOUD.pending || CLOUD.sending.has(k) || (CLOUD.putSeq[k] || 0) > since) {
       CLOUD.skip(k, false);
+      continue;
+    }
+    if (goneRooms()[k.slice(5)]) {
+      CLOUD.skip(k, false); // 요청하는 사이 지운 방(다른 받기가 표식을 처리함) — 읽어 온 옛 본문을 쓰지 않음
       continue;
     }
     if (room && roomKey(room.id) === k) setRoom(null); // 쓰기 전에 놓음 — 쓰는 사이 그 방을 다시 열면 저장소에서 새로 읽음(쓰기 뒤의 값)

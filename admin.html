@@ -3030,11 +3030,11 @@ const epLength = (ep) => ep.beats[ep.beats.length - 1].at[1];
            src/js/core/constants.js { LIMITS, SERIES }
            src/js/core/episode.js { epInit }
            src/js/core/events.js { emit }
-           src/js/core/state.js { S, room, setRoom }
+           src/js/core/state.js { S, gen, room, setRoom }
            src/js/core/storage.js { KV }
            src/js/core/util.js { uid }
    내보냄: curText, roomKey, sortRooms, setFav, roomUnsaved, saveRoom, goneRooms, removeRoom, roomGone, deletedRooms, defaultSet, fixSet, newRoom, memoryMark
-   쓰는 곳: src/js/core/room-read.js, src/js/core/room-fork.js, src/js/core/room-list.js, src/js/services/cloud-pull.js, src/js/services/load.js, src/js/services/sync.js, src/js/ai/prompt/input.js, src/js/ai/prompt/rules.js, src/js/ai/prompt/memory.js, src/js/ui/room-tools.js, src/js/ui/chat/search.js, src/js/ui/drawer/browse.js, src/js/ui/drawer/main.js, src/js/ui/pins.js, src/js/ui/drawer/memory.js, src/js/services/cloud-push.js, src/js/ui/account.js, src/js/ui/me.js, src/js/ui/drawer/settings.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/suggest.js, src/js/ui/chat/view.js, src/js/ui/report.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/ui/start-sheet.js, src/js/ui/chats.js, src/js/app.js
+   쓰는 곳: src/js/core/room-read.js, src/js/core/room-fork.js, src/js/core/room-list.js, src/js/services/cloud-pull.js, src/js/services/cloud.js, src/js/services/load.js, src/js/services/sync.js, src/js/ai/prompt/input.js, src/js/ai/prompt/rules.js, src/js/ai/prompt/memory.js, src/js/ui/room-tools.js, src/js/ui/chat/search.js, src/js/ui/drawer/browse.js, src/js/ui/drawer/main.js, src/js/ui/pins.js, src/js/ui/drawer/memory.js, src/js/services/cloud-push.js, src/js/ui/account.js, src/js/ui/me.js, src/js/ui/drawer/settings.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/suggest.js, src/js/ui/chat/view.js, src/js/ui/report.js, src/js/ui/chat/log.js, src/js/ui/chat/generate.js, src/js/ui/start-sheet.js, src/js/ui/chats.js, src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 대화방 저장·목록·삭제(removeRoom)·새 방 만들기(newRoom), 메시지의 현재 버전 글(curText). 저장된 방을 여는 쪽은 core/room-read.js, 분기·외전·시작 상황 찾기는 core/room-fork.js */
 
@@ -3226,7 +3226,10 @@ function removeRoom(id) {
 function roomGone(id, at) {
   const had = S.rooms.some((r) => r.id === id) || (!!room && room.id === id);
   forgetRoom(id, at || Date.now());
-  if (room && room.id === id) setRoom(null);
+  if (room && room.id === id) {
+    if (gen) gen.ctl.abort(); // 이 방에 쓰던 응답을 멈춤(응답은 지금 방에서만 돎) — 끝나며 하는 저장은 지운 방이라 버려짐
+    setRoom(null);
+  }
   if (had) {
     KV.set("rooms", S.rooms);
     emit("rooms");
@@ -3526,7 +3529,7 @@ function sideRoom(r, kind, who) {
    src/js/core/room-list.js
    가져옴: src/js/core/rooms.js { sortRooms }
    내보냄: mergeRoomLists, sameRoomList, isTomb
-   쓰는 곳: src/js/services/cloud-pull.js, src/js/services/sync.js, src/js/ui/account.js, src/js/app.js
+   쓰는 곳: src/js/services/cloud-pull.js, src/js/services/cloud.js, src/js/services/sync.js, src/js/ui/account.js, src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 두 기기의 대화방 목록 합치기(mergeRoomLists) — 계정에서 받은 목록으로 이 기기의 목록을 덮지 않고 방마다 합침. 지운 방의 표식(삭제 표식)을 읽는 isTomb도 여기 */
 
@@ -3846,7 +3849,9 @@ async function applyRows(rows, hold, since) {
     const merged = mergeRoomLists(full ? [] : S.rooms, remote, gone);
     S.rooms = merged;
     KV.setLocal("rooms", merged);
-    if (!full && !sameRoomList(merged, remote)) CLOUD.put("rooms", merged); // 이 기기에만 있던 방이 있거나 지운 방이 계정 목록에 남아 있음 — 합친 목록을 계정에
+    // 못 올린(올리는 중인) 목록이 있으면 합친 것으로 바꿔 올림 — 그대로 두면 옛 목록이 올라가 방금 받은 다른 기기의 새 방을 계정 목록에서 뺌
+    const queued = "rooms" in CLOUD.pending || CLOUD.sending.has("rooms");
+    if (!full && (queued || !sameRoomList(merged, remote))) CLOUD.put("rooms", merged); // 이 기기에만 있던 방이 있거나 지운 방이 계정 목록에 남아 있음 — 합친 목록을 계정에
   };
   rows.forEach((x) => {
     if (x.updated_at && x.updated_at > (localStorage.getItem(CLOUD.lastKey()) || ""))
@@ -3943,6 +3948,10 @@ async function retakeRows() {
       CLOUD.skip(k, false);
       continue;
     }
+    if (goneRooms()[k.slice(5)]) {
+      CLOUD.skip(k, false); // 요청하는 사이 지운 방(다른 받기가 표식을 처리함) — 읽어 온 옛 본문을 쓰지 않음
+      continue;
+    }
     if (room && roomKey(room.id) === k) setRoom(null); // 쓰기 전에 놓음 — 쓰는 사이 그 방을 다시 열면 저장소에서 새로 읽음(쓰기 뒤의 값)
     if (await KV.put(k, got[0].value)) {
       CLOUD.skip(k, false);
@@ -3966,6 +3975,8 @@ async function pullRows() {
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/services/cloud.js
    가져옴: src/js/core/events.js { emit, on }
+           src/js/core/room-list.js { isTomb }
+           src/js/core/rooms.js { goneRooms }
            src/js/core/shelf.js { shelfSyncOn }
            src/js/core/storage.js { KV }
            src/js/services/cloud-settings.js { cloudSettings }
@@ -3982,6 +3993,8 @@ async function pullRows() {
 
 
 
+
+
 /* KV ↔ 계정 동기화. 쓰기는 KV.set → put()이 키마다 0.8초 모아 upsert(지우기는 DELETE).
    읽기는 그림(img…)을 뺀 키를 받아 이 기기에 씀 — 처음 로그인하면 전부, 그 뒤엔 updated_at이 바뀐 것만. 그림(페르소나 사진)은 IMG.load가 필요할 때 한 장씩.
    이 기기에서 아직 못 올린 키(pending)와 올리는 중인 키(sending)는 받은 값으로 덮지 않음. 설정은 "settings" 키(글자 크기·Enter로 보내기는 기기마다 따로) */
@@ -3991,6 +4004,12 @@ const SYNCED_RE = /^(wallet|personas|rooms|room-.+)$/;
 /* 내 서재(찜·최근 본·수집 기록)는 정해진 날짜부터만 계정과 주고받음(shelfSyncOn) — 그 전에는 이 기기에만. 다른 키와 달리 받은 값으로 덮지 않고 합침(takeShelf) */
 const SHELF_KEY = "shelf";
 const synced = (k) => SYNCED_RE.test(k) || (k === SHELF_KEY && shelfSyncOn());
+/* 지운 방의 키면 본문 대신 삭제 표식을 올림 — 표식을 받기 전에 시작한 저장·전송이 뒤늦게 끝나면서 계정의 표식을 본문으로 덮지 않게(대기열에 넣을 때·되돌려 넣을 때·보낸 뒤에 봄) */
+const tombFor = (k, x) => {
+  if (!x || k.indexOf("room-") !== 0 || isTomb(x.v)) return x;
+  const at = goneRooms()[k.slice(5)];
+  return at ? { v: { gone: at } } : x;
+};
 const IMG_KEY_RE = /^img[a-z0-9]{6,30}$/;
 /**
  * 계정 저장(Supabase kv 표). start()/stop() 로그인·로그아웃 때 · put(k, v) 0.8초 모아 upsert(KV.remote 고리) · flush() 바로 올리고 결과를 돌려줌(한 번에 하나) ·
@@ -4025,6 +4044,17 @@ const CLOUD = {
       else localStorage.removeItem(this.skipKey());
     } catch {}
   },
+  // 아직 계정에 올리지 못한 삭제 표식(키 → 지운 때). 대기열은 메모리에만 있어 올리기 전에 새로고침하면 지움이 이 기기에만 남으므로, localStorage에도 적어 두고
+  // 다음에 계정에 연결할 때 다시 올림. set을 주면 그것으로 바꿔 적음
+  tombs(set) {
+    const key = "hv1_cloudtomb_" + this.uid;
+    try {
+      if (!set) return JSON.parse(localStorage.getItem(key) || "{}") || {};
+      if (Object.keys(set).length) localStorage.setItem(key, JSON.stringify(set));
+      else localStorage.removeItem(key);
+    } catch {}
+    return set || {};
+  },
   lastKey() {
     return "hv1_cloudlast_" + this.uid;
   },
@@ -4042,6 +4072,17 @@ const CLOUD = {
         if (o && o.uid === this.uid) this.owed = { keys: Array.isArray(o.keys) ? o.keys : null };
         this.skipped = new Set(JSON.parse(localStorage.getItem(this.skipKey()) || "[]"));
       } catch {}
+    // 지난번에 올리지 못한 삭제 표식을 다시 대기열에
+    if (this.on) {
+      const t = this.tombs();
+      Object.keys(t).forEach((k) => {
+        this.pending[k] = { v: { gone: t[k] } };
+      });
+      if (Object.keys(t).length) {
+        clearTimeout(this.timer);
+        this.timer = setTimeout(() => this.flush(), 800);
+      }
+    }
   },
   stop() {
     this.on = false;
@@ -4061,7 +4102,15 @@ const CLOUD = {
   },
   put(k, v) {
     if (!this.on || this.noTable || !(k === "settings" || synced(k) || IMG_KEY_RE.test(k))) return;
-    this.pending[k] = v === undefined ? null : { v };
+    const x = v === undefined ? null : tombFor(k, { v });
+    this.pending[k] = x;
+    if (x && isTomb(x.v)) {
+      const t = this.tombs();
+      if (!t[k]) {
+        t[k] = x.v.gone;
+        this.tombs(t); // 올라간 것을 확인할 때까지 기억(send가 지움)
+      }
+    }
     this.putSeq[k] = ++this.seq;
     clearTimeout(this.timer);
     this.timer = setTimeout(() => this.flush(), 800);
@@ -4125,6 +4174,18 @@ const CLOUD = {
         await call("/rest/v1/kv?user_id=eq." + encodeURIComponent(uid) + "&key=in.(" + encodeURIComponent(keys) + ")", { method: "DELETE" });
       }
       this.sending = new Set();
+      // 올라간 삭제 표식은 '못 올린 표식'에서 지우고, 보낸 본문이 그사이 지운 방의 것이면 표식을 이어서 올림(본문이 계정의 표식을 덮었을 수 있음)
+      const t = this.tombs();
+      let changed = false;
+      items.forEach(([k, x]) => {
+        if (x && isTomb(x.v) && t[k]) {
+          delete t[k];
+          changed = true;
+        }
+        const y = tombFor(k, x);
+        if (y !== x && !(k in this.pending)) this.put(k, y.v);
+      });
+      if (changed) this.tombs(t);
       this.setState("ok");
       // 도는 사이 새로 바뀐 것이 있으면 이어서 올림 — "ok"는 남은 것이 없다는 뜻이어야 함(로그아웃이 이 결과를 보고 기기를 지움)
       return Object.keys(this.pending).length ? this.send() : "ok";
@@ -4133,7 +4194,7 @@ const CLOUD = {
       this.sending = new Set();
       // 못 올린 것은 되돌려 두고(그사이 새로 바뀐 값이 있으면 그게 우선) 15초 뒤 다시
       items.forEach(([k, x]) => {
-        if (!(k in this.pending)) this.pending[k] = x;
+        if (!(k in this.pending)) this.pending[k] = tombFor(k, x); // 그사이 지운 방의 본문이면 표식으로
       });
       if (this.noTable) {
         this.pending = {};
@@ -10175,7 +10236,7 @@ ${recent}`
            src/js/core/commands.js { commandHelp, findCommand, parseCommand }
            src/js/core/events.js { on }
            src/js/core/room-read.js { migrateRoom }
-           src/js/core/rooms.js { roomKey, roomUnsaved, saveRoom }
+           src/js/core/rooms.js { goneRooms, roomKey, roomUnsaved, saveRoom }
            src/js/core/state.js { S, gen, room, setRoom }
            src/js/core/storage.js { KV }
            src/js/core/util.js { $, esc, num, toast, uid }
@@ -10233,6 +10294,7 @@ async function viewChat(id) {
       v0 = KV.stamp(key);
       r = await KV.get(key);
     } while (KV.stamp(key) !== v0);
+    if (goneRooms()[id]) r = undefined; // 지운 방(이 기기에서 지웠거나 삭제 표식을 받음) — 본문이 어쩌다 남아 있어도 열지 않음
     if (location.hash.slice(1) !== "r-" + id) return;
     // 방 읽기의 경계(core/room-read.js migrateRoom): 열 수 없는 모양이면 저장된 원본은 그대로 두고 안내만 — 방 하나 때문에 화면이 멈추지 않게
     let ok = null;

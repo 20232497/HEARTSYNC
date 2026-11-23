@@ -307,8 +307,8 @@ grant execute on function public.bump_chat_usage(uuid, text) to service_role;
 -- create or replace function public.kv_keep_gone() returns trigger
 -- language plpgsql set search_path = '' as $$
 -- begin
---   if old.key like 'room-%' and jsonb_typeof(old.value) = 'object' and old.value ? 'gone' and not (old.value ? 'msgs')
---      and not (jsonb_typeof(new.value) = 'object' and new.value ? 'gone' and not (new.value ? 'msgs')) then
+--   if old.key like 'room-%' and jsonb_typeof(old.value) = 'object' and jsonb_typeof(old.value->'gone') = 'number' and not (old.value ? 'msgs')
+--      and not (jsonb_typeof(new.value) = 'object' and jsonb_typeof(new.value->'gone') = 'number' and not (new.value ? 'msgs')) then
 --     return null; -- 이 행은 그대로 둠
 --   end if;
 --   return new;
@@ -317,4 +317,5 @@ grant execute on function public.bump_chat_usage(uuid, text) to service_role;
 -- drop trigger if exists kv_keep_gone on public.kv;
 -- create trigger kv_keep_gone before update on public.kv
 --   for each row execute function public.kv_keep_gone();
--- (트리거는 이름 순으로 돌므로 kv_keep_gone이 kv_touch보다 먼저 — 건너뛴 행은 updated_at도 바뀌지 않는다)
+-- (트리거는 이름 순으로 돌므로 kv_keep_gone이 kv_touch보다 먼저 — 건너뛴 행은 updated_at도 바뀌지 않는다. 표식의 판정은 앱(core/room-list.js isTomb)과 같게:
+--  gone이 숫자이고 msgs 칸이 없음. 행을 지우는 요청(DELETE — MY의 '모든 데이터 지우기', 표식을 모르는 예전 빌드의 방 삭제)은 막지 않는다)

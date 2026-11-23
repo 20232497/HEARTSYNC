@@ -2703,7 +2703,10 @@ function removeRoom(id) {
 function roomGone(id, at) {
   const had = S.rooms.some((r) => r.id === id) || (!!room && room.id === id);
   forgetRoom(id, at || Date.now());
-  if (room && room.id === id) setRoom(null);
+  if (room && room.id === id) {
+    if (gen) gen.ctl.abort();
+    setRoom(null);
+  }
   if (had) {
     KV.set("rooms", S.rooms);
     emit("rooms");
@@ -3112,7 +3115,8 @@ async function applyRows(rows, hold, since) {
     const merged = mergeRoomLists(full ? [] : S.rooms, remote, gone);
     S.rooms = merged;
     KV.setLocal("rooms", merged);
-    if (!full && !sameRoomList(merged, remote)) CLOUD.put("rooms", merged);
+    const queued = "rooms" in CLOUD.pending || CLOUD.sending.has("rooms");
+    if (!full && (queued || !sameRoomList(merged, remote))) CLOUD.put("rooms", merged);
   };
   rows.forEach((x) => {
     if (x.updated_at && x.updated_at > (localStorage.getItem(CLOUD.lastKey()) || ""))
@@ -3201,6 +3205,10 @@ async function retakeRows() {
       CLOUD.skip(k, false);
       continue;
     }
+    if (goneRooms()[k.slice(5)]) {
+      CLOUD.skip(k, false);
+      continue;
+    }
     if (room && roomKey(room.id) === k) setRoom(null);
     if (await KV.put(k, got[0].value)) {
       CLOUD.skip(k, false);
@@ -3224,6 +3232,11 @@ async function pullRows() {
 const SYNCED_RE = /^(wallet|personas|rooms|room-.+)$/;
 const SHELF_KEY = "shelf";
 const synced = (k) => SYNCED_RE.test(k) || (k === SHELF_KEY && shelfSyncOn());
+const tombFor = (k, x) => {
+  if (!x || k.indexOf("room-") !== 0 || isTomb(x.v)) return x;
+  const at = goneRooms()[k.slice(5)];
+  return at ? { v: { gone: at } } : x;
+};
 const IMG_KEY_RE = /^img[a-z0-9]{6,30}$/;
 const CLOUD = {
   on: false,
@@ -3252,6 +3265,15 @@ const CLOUD = {
       else localStorage.removeItem(this.skipKey());
     } catch {}
   },
+  tombs(set) {
+    const key = "hv1_cloudtomb_" + this.uid;
+    try {
+      if (!set) return JSON.parse(localStorage.getItem(key) || "{}") || {};
+      if (Object.keys(set).length) localStorage.setItem(key, JSON.stringify(set));
+      else localStorage.removeItem(key);
+    } catch {}
+    return set || {};
+  },
   lastKey() {
     return "hv1_cloudlast_" + this.uid;
   },
@@ -3268,6 +3290,16 @@ const CLOUD = {
         if (o && o.uid === this.uid) this.owed = { keys: Array.isArray(o.keys) ? o.keys : null };
         this.skipped = new Set(JSON.parse(localStorage.getItem(this.skipKey()) || "[]"));
       } catch {}
+    if (this.on) {
+      const t = this.tombs();
+      Object.keys(t).forEach((k) => {
+        this.pending[k] = { v: { gone: t[k] } };
+      });
+      if (Object.keys(t).length) {
+        clearTimeout(this.timer);
+        this.timer = setTimeout(() => this.flush(), 800);
+      }
+    }
   },
   stop() {
     this.on = false;
@@ -3287,7 +3319,15 @@ const CLOUD = {
   },
   put(k, v) {
     if (!this.on || this.noTable || !(k === "settings" || synced(k) || IMG_KEY_RE.test(k))) return;
-    this.pending[k] = v === undefined ? null : { v };
+    const x = v === undefined ? null : tombFor(k, { v });
+    this.pending[k] = x;
+    if (x && isTomb(x.v)) {
+      const t = this.tombs();
+      if (!t[k]) {
+        t[k] = x.v.gone;
+        this.tombs(t);
+      }
+    }
     this.putSeq[k] = ++this.seq;
     clearTimeout(this.timer);
     this.timer = setTimeout(() => this.flush(), 800);
@@ -3341,13 +3381,24 @@ const CLOUD = {
         await call("/rest/v1/kv?user_id=eq." + encodeURIComponent(uid) + "&key=in.(" + encodeURIComponent(keys) + ")", { method: "DELETE" });
       }
       this.sending = new Set();
+      const t = this.tombs();
+      let changed = false;
+      items.forEach(([k, x]) => {
+        if (x && isTomb(x.v) && t[k]) {
+          delete t[k];
+          changed = true;
+        }
+        const y = tombFor(k, x);
+        if (y !== x && !(k in this.pending)) this.put(k, y.v);
+      });
+      if (changed) this.tombs(t);
       this.setState("ok");
       return Object.keys(this.pending).length ? this.send() : "ok";
     } catch (e) {
       if (gone()) return "off";
       this.sending = new Set();
       items.forEach(([k, x]) => {
-        if (!(k in this.pending)) this.pending[k] = x;
+        if (!(k in this.pending)) this.pending[k] = tombFor(k, x);
       });
       if (this.noTable) {
         this.pending = {};
@@ -7967,6 +8018,7 @@ async function viewChat(id) {
       v0 = KV.stamp(key);
       r = await KV.get(key);
     } while (KV.stamp(key) !== v0);
+    if (goneRooms()[id]) r = undefined;
     if (location.hash.slice(1) !== "r-" + id) return;
     let ok = null;
     try {
