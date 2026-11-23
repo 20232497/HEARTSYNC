@@ -1,0 +1,87 @@
+{
+  "id": "mdaily",
+  "name": "남성향 일상(여성 인물)",
+  "version": "v8",
+  "decided": "2026-11-23(후보 — 비교 생성으로 맞추는 중)",
+  "base": "mdaily.json",
+  "model": {
+    "id": "civitai:548016@861939",
+    "name": "세미리얼 PonyXL (Run七八造 v2)",
+    "arch": "pony"
+  },
+  "lora": [
+    {
+      "model": "civitai:390892@1286572",
+      "weight": 0.3
+    },
+    {
+      "model": "civitai:690861@773211",
+      "weight": 0.3
+    }
+  ],
+  "gen": {
+    "cfg": 5,
+    "steps": 35,
+    "scheduler": "DPM++ 2M Karras",
+    "modelNeg": false,
+    "width": 832,
+    "height": 1216,
+    "outputFormat": "WEBP"
+  },
+  "prompt": "(facing viewer:1.35), (head tilt:1.1), source_anime, (digital illustration:1.4), (semi-realistic:1.1), (sharp focus:1.1), korean, 2.5d, soft gradient shading, smooth skin, soft bloom, warm palette, gentle lighting, (small face:1.2), (small head:1.15), (defined facial features:1.2), (sharp features:1.1), (defined eyes:1.2), (sharp nose:1.1), (double eyelids:1.1), (beautiful face:1.2), (beautiful detailed eyes:1.15), (detailed iris:1.1), (glossy lips:1.05), (charming:1.1), long eyelashes, (mature female:1.45), (adult woman:1.45), (28 years old:1.25), mature face, slender face, (slender body:1.25), (slim:1.15), (narrow shoulders:1.1), (very thin hair strands:1.3), (voluminous hair:1.2), (many fine hair strands:1.3), (full bangs:1.3), dense bangs, long bangs, bangs reaching eyes, bangs covering forehead, hair between eyes, silky hair, (hair framing face:0.85), (fair skin:1.05), soft diffused light, brighter exposure, (rim light:0.8), (shiny hair:1.15), hair highlights, (eye highlights:1.1), light blush, (clear skin:0.9)",
+  "coolPrompt": "(facing viewer:1.35), (head tilt:1.1), source_anime, (digital illustration:1.4), (semi-realistic:1.1), (sharp focus:1.1), korean, 2.5d, soft gradient shading, smooth skin, soft bloom, cool palette, gentle lighting, (small face:1.2), (small head:1.15), (defined facial features:1.2), (sharp features:1.1), (defined eyes:1.2), (sharp nose:1.1), (double eyelids:1.1), (beautiful face:1.2), (beautiful detailed eyes:1.15), (detailed iris:1.1), (glossy lips:1.05), (charming:1.1), long eyelashes, (mature female:1.45), (adult woman:1.45), (28 years old:1.25), mature face, slender face, (slender body:1.25), (slim:1.15), (narrow shoulders:1.1), (very thin hair strands:1.3), (voluminous hair:1.2), (many fine hair strands:1.3), (full bangs:1.3), dense bangs, long bangs, bangs reaching eyes, bangs covering forehead, hair between eyes, silky hair, (hair framing face:0.85), (fair skin:1.05), soft diffused light, brighter exposure, (rim light:0.8), (shiny hair:1.15), hair highlights, (eye highlights:1.1), light blush, (clear skin:0.9), cool lighting",
+  "blackTag": "(black hair:1.3)",
+  "bangs": "(full bangs:1.3), dense bangs, long bangs, bangs reaching eyes, bangs covering forehead, hair between eyes",
+  "bangsNeg": "(side-swept bangs:1.3), swept bangs, asymmetrical bangs, (forehead:1.4), (see-through bangs:1.3), sparse bangs, wispy bangs, gaps in bangs",
+  "neg": "(3d, cgi, plastic skin, doll:1.2), high contrast, harsh shadows, underexposed, glowing eyes, vivid eye color, hime cut, hairband, headband, hair ornament, earrings, (see-through clothes:1.3), hair over one eye, windblown hair, thin hair, clumped hair, (baby face:1.3), (childish face:1.2), round face, chubby cheeks, (side-swept bangs:1.3), swept bangs, asymmetrical bangs, (forehead:1.4), (see-through bangs:1.3), sparse bangs, wispy bangs, gaps in bangs, (graphic print:1.3), (text on clothes:1.3), emblem, (pendant:1.2), (cross necklace:1.2), brooch, badge, tanned skin, dark skin, (realistic:1.3), photo, (photorealistic:1.3), skin pores, skin texture, nose shadow, source_cartoon, monochrome, greyscale, (twintails:1.3), (hair bun:1.2), updo, animal ears, (red eyeshadow:1.3), (eyeshadow:1.3), eye makeup, (heavy makeup:1.2), (red lips:1.2), (eye bags:1.3), (red eyelids:1.2), (under-eye shadow:1.2), (framed picture:1.5), (picture frame:1.5), (ornate frame:1.5), (gold frame:1.4), (painting (object):1.4), (wall art:1.3), (framed:1.4), border, poster, (outstretched hand:1.3), (raised hands:1.2), (index finger raised:1.3), pointing, (large eyes:1.3), big eyes, (moe:1.3), (cute:1.2), (youthful:1.3), (teen:1.4), (young:1.3), (gradient hair:1.3), (multicolored hair:1.3), (cleavage:1.5), revealing clothes, (detailed background:1.2), (broad shoulders:1.3), (muscular female:1.3), (thick arms:1.2), (large breasts:1.2), (wide face:1.2), sleeveless, bare shoulders, (vest:1.1), (low neckline:1.3), (breast focus:1.3), (collarbone:1.2), (long neck:1.2)",
+  "contentWeight": 1.2,
+  "exprWeight": 1.1,
+  "fits": [
+    {
+      "when": "/(^|[^a-z])(?:from behind|from above|from below|from side|three-quarter view|profile|lying|sleeping)\\b/i",
+      "moves": true,
+      "drop": [
+        "(facing viewer:1.35), (straight-on:1.25), (front view:1.1)"
+      ]
+    },
+    {
+      "moves": true,
+      "negDrop": [
+        "(outstretched hand:1.3)",
+        "(raised hands:1.2)",
+        "(index finger raised:1.3)",
+        "pointing"
+      ]
+    }
+  ],
+  "post": {
+    "lift": "rgb(22,22,26)",
+    "soft": 0.1,
+    "blurK": 3,
+    "blurA": 0.45,
+    "veil": {
+      "center": 0,
+      "edge": 0.3,
+      "mul": "rgb(255,255,255)",
+      "a": 0.04,
+      "color": "rgb(190,190,195)"
+    }
+  },
+  "bg": {
+    "rule": "인물 태그 뒤, 화풍 앞에 넣음. 장소 낱말은 작품 artTags·장소(MP)에서 고르고 가중치 0.8 — 네온·보케·술병 같은 센 낱말은 피함(그림에서 또렷해짐). hanok은 traditional korean house로. 고정 네거티브 IMG_NEG의 blurry는 뺌",
+    "template": "(blurry background:1.5), (depth of field:1.3), light haze, (<장소 낱말>:0.8)",
+    "example": "(blurry background:1.5), (depth of field:1.3), light haze, (office:0.8), (glass window:0.8)"
+  },
+  "sceneTag0": "upper body, looking at viewer, light smile, half-lidded eyes, relaxed expression, soft gaze",
+  "note": "v7에 전체적으로 흐릿한 분위기를 되돌림(사용자 2026-11-23: 실루엣은 마음에 듦, 전체적으로 흐릿하게 분위기 있게). 후처리로 어두운 면을 들어 올리고(lift·soft) 흐림을 v6과 v7 사이로(blurA 0.45), 옅은 회색 막을 씌움. 빛 번짐(soft bloom)과 배경 안개(기본 배경 문구)를 되살림. 얼굴까지 흐리는 문구(soft focus·low contrast·lifted shadows)는 되살리지 않고, v7의 홍채·윤기·가장자리 빛·가는 눈 빼기는 그대로. 모델·LoRA·생성 값은 그대로",
+  "lightDay": "soft diffused light, brighter exposure",
+  "lightNight": "soft lamp light, dim lighting",
+  "act": {
+    "drop": [
+      "narrow eyes"
+    ],
+    "scale": {
+      "half-closed eyes": 0.5
+    }
+  }
+}

@@ -1,5 +1,5 @@
 // 일상 화풍의 조립(archive/style-mdaily/code/assemble.js) — 그림 도구(npm run art)가 쓰는 화풍 규칙. 앱 코드가 아니다.
-// 2026-11-23: 구도·표정은 애니 화풍과 같게(acting), 남성 인물은 날카로운 후보(v9), 여성은 뿌연 막을 걷은 후보(v7). 작품 글(content/)이 바뀌어도 막지 않게 규칙의 성질만 본다.
+// 2026-11-23: 구도·표정은 애니 화풍과 같게(acting), 남성 인물은 날카로운 후보(v10), 여성은 또렷한 얼굴에 흐릿한 분위기를 되돌린 후보(v8). 작품 글(content/)이 바뀌어도 막지 않게 규칙의 성질만 본다.
 import fs from "node:fs";
 import path from "node:path";
 import { test } from "node:test";
@@ -77,7 +77,7 @@ test("일상 화풍: 구도·표정은 애니 화풍의 것 — 프로필은 얼
 });
 
 // 가중치는 비교 생성으로 계속 맞추는 값이라 낱말이 있는지만 본다(성인 표시처럼 지킬 것은 가중치까지)
-test("일상 화풍: 남성 인물은 날카로운 후보(v9) — 눈 사이로 떨어지는 앞머리·옆빛, 가르마 머리와 부드러운 칠이 없음 / 여성(v7)은 뿌연 막을 걷음", () => {
+test("일상 화풍: 남성 인물은 날카로운 후보(v10) — 눈 사이로 떨어지는 앞머리·옆빛, 가르마 머리와 부드러운 칠이 없음 / 여성(v8)은 얼굴은 또렷하게, 분위기는 흐릿하게", () => {
   const m = emotionJob(M, PLACE, 1),
     f = emotionJob(F, PLACE, 1),
     mp = names(m.pos),
@@ -98,11 +98,12 @@ test("일상 화풍: 남성 인물은 날카로운 후보(v9) — 눈 사이로 
   ])
     assert.ok(!mp.includes(t), "남성 v9에 없어야 함: " + t);
   assert.ok(names(m.neg).includes("soft focus") && !names(m.neg).includes("hard shadows") && !names(m.neg).includes("messy hair"));
-  assert.ok(m.post.blurA < 0.6, "후처리를 덜 뿌옇게");
+  assert.ok(m.post.blurA > 0 && m.post.blurA < f.post.blurA, "남성은 여성보다 옅게 흐림(날카로운 인상을 지킴)");
   assert.ok(fp.includes("soft gradient shading") && f.pos.includes("(adult woman:1.45)"), "여성의 칠과 성인 표시는 그대로");
-  for (const t of ["soft bloom", "soft focus", "low contrast", "lifted shadows", "pale skin", "narrow eyes"])
-    assert.ok(!fp.includes(t), "여성 v7에 없어야 함: " + t);
-  assert.ok(fp.includes("detailed iris") && fp.includes("rim light") && !names(f.neg).includes("rim light"), "여성 v7: 홍채·가장자리 빛");
+  // 분위기는 후처리와 빛·배경 문구로 — 얼굴까지 흐리는 문구는 되살리지 않는다
+  for (const t of ["soft focus", "low contrast", "lifted shadows", "pale skin", "narrow eyes"]) assert.ok(!fp.includes(t), "여성 v8에 없어야 함: " + t);
+  assert.ok(fp.includes("soft bloom") && fp.includes("light haze") && f.post.blurA >= 0.3 && f.post.blurA < 0.6, "여성 v8: 빛 번짐·배경 안개·후처리 흐림");
+  assert.ok(fp.includes("detailed iris") && fp.includes("rim light") && !names(f.neg).includes("rim light"), "여성: 홍채·가장자리 빛은 그대로");
   assert.ok(!isFem(M) && isFem(F));
   // 올백·이마를 드러낸 머리의 인물에게는 앞머리 문구를 붙이지 않음
   const back = names(emotionJob({ ...M, tags: "black hair, slicked back hair, grey eyes, navy blue suit, white shirt" }, PLACE, 1).pos);
