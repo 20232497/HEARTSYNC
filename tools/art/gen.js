@@ -28,7 +28,7 @@ export const ready = () => meta.mock || !!key();
       다시 보내면 같은 그림을 두 번 사게 된다 — 접수가 확인된 작업은 어떤 경우에도 다시 보내지 않는다.
    ② 응답을 못 받았거나(연결 끊김·본문이 끊김·본문 없는 5xx) 응답에 그림이 없으면 접수됐는지 알 수 없다 → 다시 보내지 않고 같은 taskUUID로 조회한다.
       서비스가 모르는 작업은 오류가 아니라 taskType이 "getResponse"인 '처리 중' 한 줄로 온다(실제 호출로 확인 — 진짜 작업은 제 taskType으로 옴).
-      접수가 확인된 적이 없고 두 번 잇달아 그렇게 오면 받지 않은 것으로 보고 다시 보낸다(막 보낸 요청이 늦게 닿는 드문 경우에는 두 번 그려질 수 있음 — 끊길 때마다 몇 분씩 기다리게 하지 않으려는 선택).
+      접수가 확인된 적이 없고 두 번 잇달아 그렇게 오면 멈추고 알린다 — 자동으로 다시 보내지 않는다. 그 taskUUID를 기억해 두고(pending), 같은 칸을 다시 누르면 그 작업부터 조회한다.
    ③ 바로 다시 보내는 것은 서비스가 받지 않았거나 작업이 실패로 끝났다고 답했을 때뿐: HTTP 429, 그 작업의 오류 코드가 RETRY_CODE일 때. 기다리는 시간은 서비스가 알려 준 값(retryAfter)이 먼저.
    ④ 키·잔액·문구 같은 오류(HTTP 400~404, 그 밖의 오류 코드)는 다시 걸어도 같으니 바로 알린다. 조회 요청 자체의 실패(429·5xx)는 작업의 결과가 아니므로 다시 조회한다.
    waits: 다시 보내기 전에 기다리는 시간(그 수만큼만 다시 보냄) · poll: 조회 사이(마지막 값을 되풀이) · post: 요청 하나의 응답을 기다리는 한도
@@ -90,37 +90,64 @@ function read(task, res) {
     why: rows.length ? "그림이 아직 그려지는 중이에요" : "그림이 오지 않았어요(빈 응답)"
   };
 }
-/** 같은 작업의 결과를 조회로 기다린다(getResponse) → 그림이 온 항목. null이면 다시 보내도 된다(작업이 다시 걸 만한 오류로 끝났거나, 접수된 적이 없고 서비스도 그 작업을 모름) */
+/** 같은 작업의 결과를 조회로 기다린다(getResponse) → { x } 그림이 옴 · { again, why, after } 그 작업이 다시 걸 만한 오류로 끝남(다시 보내도 됨)
+    · { unknown: true } 접수된 적이 확인되지 않았고 서비스도 두 번 잇달아 그 작업을 모른다고 함(taskType이 getResponse인 줄만 옴) */
 async function poll(task, why, accepted) {
   const until = Date.now() + retry.limit;
   for (let i = 0, unknown = 0; ; i++) {
-    const left = until - Date.now();
-    if (left <= 0)
+    await sleep(Math.max(0, Math.min(until - Date.now(), retry.poll[Math.min(i, retry.poll.length - 1)])));
+    if (Date.now() >= until)
       throw fatal(
         `${why} — ${Math.round(retry.limit / 60000)}분을 기다렸지만 그림이 오지 않아 멈췄어요. 서비스 쪽에서는 그려졌을 수 있어요(값이 나갔을 수 있음) — 잠시 뒤 다시 눌러 주세요`
       );
-    await sleep(Math.min(left, retry.poll[Math.min(i, retry.poll.length - 1)]));
     let res;
     try {
       res = await post({ taskType: "getResponse", taskUUID: task.taskUUID }, Math.min(retry.post, Math.max(1, until - Date.now())));
     } catch {
-      continue; // 조회가 끊겼으면 한도까지 다시 조회
+      unknown = 0; // 조회가 끊겼으면 한도까지 다시 조회(잇달아 센 것은 처음부터)
+      continue;
     }
     const e = mine(res.d.errors, task).find((x) => x.taskType !== "getResponse");
     if (e) {
-      if (RETRY_CODE.test(String(e.code))) return null; // 그 작업이 다시 걸 만한 오류로 끝났다
+      if (RETRY_CODE.test(String(e.code))) return { again: true, why: textOf(e), after: e.retryAfter * 1000 || 0 }; // 그 작업이 다시 걸 만한 오류로 끝났다
       throw fatal(textOf(e));
     }
     if ([401, 402, 403].includes(res.status)) throw fatal("HTTP " + res.status);
-    if (!res.ok) continue; // 조회 요청 자체의 실패(429·5xx 등)는 작업의 결과가 아니다 → 다시 조회
+    if (!res.ok) {
+      unknown = 0; // 조회 요청 자체의 실패(429·5xx 등)는 작업의 결과가 아니다 → 다시 조회
+      continue;
+    }
     const rows = mine(res.d.data, task),
       x = rows.find((o) => o.status !== "processing" && uriOf(o));
-    if (x) return x;
+    if (x) return { x };
     if (rows.some((o) => o.taskType !== "getResponse")) ((accepted = true), (unknown = 0));
-    else if (!accepted && ++unknown >= 2) return null;
+    else if (!rows.length)
+      unknown = 0; // 그 작업의 줄이 아예 없는 응답은 '모른다'는 답이 아니다
+    else if (!accepted && ++unknown >= 2) return { unknown: true };
   }
 }
+/* 접수됐는지 모른 채 끝난 요청: 내용(taskUUID를 뺀 것)의 지문 → 그때의 taskUUID. 같은 내용을 다시 그리려 하면 새로 보내기 전에 그 작업부터 조회한다
+   (서비스가 실은 받아서 그려 뒀다면 그 그림을 받아 온다 — 두 번 사지 않게). 그때도 모른다고 하면 받지 않은 것으로 보고 새로 보낸다 */
+const pending = new Map();
+const printOf = (task) => {
+  const s = JSON.stringify({ ...task, taskUUID: "" });
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619);
+  return s.length + ":" + (h >>> 0);
+};
 async function call(task) {
+  const print = printOf(task);
+  const done = (x) => {
+    pending.delete(print);
+    spent.usd += x.cost || 0;
+    return x;
+  };
+  if (pending.has(print)) {
+    // 지난번에 접수 여부를 모른 채 끝난 같은 요청 — 그 작업을 먼저 확인한다
+    const got = await poll({ taskUUID: pending.get(print) }, "지난번에 보낸 요청을 확인하는 중이에요", false);
+    pending.delete(print);
+    if (got.x) return done(got.x);
+  }
   for (let t = 0; ; t++) {
     let out;
     try {
@@ -129,11 +156,16 @@ async function call(task) {
       if (!e.lost) throw e;
       out = { wait: true, why: e.message }; // 접수됐는지 모름 → 같은 작업을 조회해 되찾는다
     }
-    const x = out.x || (out.wait ? await poll(task, out.why, !!out.accepted) : null);
-    if (x) {
-      spent.usd += x.cost || 0;
-      return x;
+    if (out.wait) {
+      const why = out.why;
+      out = await poll(task, why, !!out.accepted);
+      if (out.unknown) {
+        // 서비스에 닿았는지 끝내 알 수 없다 → 자동으로 다시 보내지 않는다(두 번 살 수 있음). 같은 칸을 다시 누르면 이 작업부터 확인한다
+        pending.set(print, task.taskUUID);
+        throw new Error(`${why} — 요청이 닿았는지 알 수 없어 멈췄어요. 같은 칸을 다시 누르면 먼저 이 요청부터 확인해요`);
+      }
     }
+    if (out.x) return done(out.x);
     // 여기까지 왔으면 서비스가 그 작업을 받지 않았거나 작업이 실패로 끝난 것 — 새 taskUUID로 다시 보낸다(waits의 수만큼)
     if (t >= retry.waits.length) throw new Error(`${out.why} — ${t + 1}번 해 봤어요. 잠시 뒤 다시 눌러 주세요`);
     const hold = out.after || retry.waits[t];

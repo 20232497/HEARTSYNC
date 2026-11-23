@@ -51,9 +51,11 @@ export async function saveCand(work, row, c) {
   return api(`/api/save?${where(work, row)}`, { method: "POST", headers: { ...HEAD, "content-type": "image/webp" }, body: blob });
 }
 /** 단체 표지의 조각을 보관함에(자리마다 가장 최근 것 하나) */
-export async function savePart(work, name, blob, fresh) {
-  if (fresh) parts[work.id] = []; // 새 묶음 — 예전 조각은 서버가 지운다
-  await api(`/api/part?work=${encodeURIComponent(work.id)}&name=${encodeURIComponent(name)}${fresh ? "&fresh=1" : ""}`, {
+/** 조각 하나를 보관함에. o: { bundle(묶음 번호), fresh(묶음의 첫 조각 — 예전 조각을 지움), last(마지막 조각 — 묶음이 다 됨) } — o 없이 부르면 조각 하나만 바꾼다 */
+export async function savePart(work, name, blob, o = {}) {
+  if (o.fresh) parts[work.id] = []; // 새 묶음 — 예전 조각은 서버가 지운다
+  const more = (o.bundle ? "&bundle=" + o.bundle : "") + (o.fresh ? "&fresh=1" : "") + (o.last ? "&last=1" : "");
+  await api(`/api/part?work=${encodeURIComponent(work.id)}&name=${encodeURIComponent(name)}${more}`, {
     method: "POST",
     headers: { ...HEAD, "content-type": blob.type },
     body: blob

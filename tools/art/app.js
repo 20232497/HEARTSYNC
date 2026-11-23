@@ -79,6 +79,7 @@ async function make(work, row) {
     say(k, out.nsfw ? "생성 서비스가 노출로 판정했어요 — 이 그림은 실을 수 없어요." : "후보가 나왔어요. 크게 보고 괜찮으면 싣기.", out.nsfw ? "warn" : "");
   } catch (e) {
     const why = String((e && e.message) || e);
+    state.vary[k] = vary; // 그리지 못했으니 시드를 넘기지 않는다 — 다시 누르면 같은 내용의 요청이 되어, 닿았는지 몰랐던 작업을 되찾는다(gen.js pending)
     say(k, "실패: " + why, "warn");
     // 실패한 까닭을 보관함 기록에 남긴다(남기지 못해도 그만)
     const at = `work=${encodeURIComponent(work.id)}&code=${encodeURIComponent(row.code)}`;

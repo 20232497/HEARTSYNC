@@ -5,7 +5,8 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { generate, removeBg, retry, spent } from "../../tools/art/gen.js";
 
-const JOB = { pos: "a", neg: "b", model: "m", width: 64, height: 64, steps: 1, cfg: 1, scheduler: "x", seed: 1 };
+let seed = 0;
+const job = () => ({ pos: "a", neg: "b", model: "m", width: 64, height: 64, steps: 1, cfg: 1, scheduler: "x", seed: ++seed });
 const IMG = "data:image/webp;base64,UklGRg==";
 const json = (v, status = 200, headers = {}) => new Response(JSON.stringify(v), { status, headers });
 const done = (task, more = {}) => ({ taskType: "imageInference", taskUUID: task.taskUUID, imageDataURI: IMG, cost: 0.001, ...more });
@@ -17,6 +18,7 @@ function service(replies) {
   const sent = [],
     known = {}, // taskUUID → 조회가 몇 번 남았는지(0이면 그림)
     ghost = {}, // taskUUID → 남은 동안 조회 응답이 '모르는 작업' 모양으로 옴(접수는 됐음)
+    late = {}, // taskUUID → 조회 몇 번 뒤에야 서비스가 그 작업을 알게 됨(응답은 잃었지만 늦게 접수된 요청)
     pollFail = { n: 0 }; // 조회 요청 자체가 503으로 실패할 횟수
   let polls = 0;
   globalThis.fetch = async (url, init) => {
@@ -27,6 +29,7 @@ function service(replies) {
       if (pollFail.n-- > 0) return json({}, 503);
       if (ghost[task.taskUUID] && known[task.taskUUID] > 0 && known[task.taskUUID]--)
         return json({ data: [{ taskType: "getResponse", taskUUID: task.taskUUID, status: "processing" }] });
+      if (task.taskUUID in late && late[task.taskUUID]-- <= 0) known[task.taskUUID] = 0;
       if (!(task.taskUUID in known)) return json({ data: [{ taskType: "getResponse", taskUUID: task.taskUUID, status: "processing" }] }); // 모르는 작업은 이렇게 온다(실제 호출로 확인)
       if (known[task.taskUUID]-- > 0) return json({ data: [{ taskType: "imageInference", taskUUID: task.taskUUID, status: "processing" }] });
       return json({ data: [done(task, { status: "success" })] });
@@ -49,6 +52,10 @@ function service(replies) {
       ghost[task.taskUUID] = true;
       return json({ data: [{ taskType: task.taskType, taskUUID: task.taskUUID, status: "processing" }] });
     }
+    if (r === "late") {
+      late[task.taskUUID] = 2;
+      throw new TypeError("fetch failed");
+    }
     if (r === "lost+pollfail") {
       known[task.taskUUID] = 0;
       pollFail.n = 2;
@@ -70,7 +77,7 @@ retry.poll = [0];
 test("그림 받아오기: 2분을 넘겨 '처리 중'으로 돌아온 작업은 다시 보내지 않고 같은 작업을 조회해 받는다", async () => {
   const s = service(["slow:3", "slow:1"]),
     before = spent.usd;
-  const out = await generate({ ...JOB, hires: { w: 96, h: 96, strength: 0.4 } }); // 첫 그림도, 키워 다시 그린 그림도 처리 중으로 옴
+  const out = await generate({ ...job(), hires: { w: 96, h: 96, strength: 0.4 } }); // 첫 그림도, 키워 다시 그린 그림도 처리 중으로 옴
   assert.ok(out.blob.size > 0);
   assert.equal(s.sent.length, 2, "그림 요청은 단계마다 한 번씩만(다시 보내지 않음)");
   assert.equal(s.polls(), 4);
@@ -81,35 +88,53 @@ test("그림 받아오기: 2분을 넘겨 '처리 중'으로 돌아온 작업은
 test("그림 받아오기: 응답만 잃은 요청(연결 끊김·본문 끊김)은 조회로 되찾는다 — 같은 그림을 두 번 사지 않는다", async () => {
   for (const how of ["lost", "cut"]) {
     const s = service([how]);
-    const out = await generate(JOB);
+    const out = await generate(job());
     assert.ok(out.blob.size > 0, how);
     assert.equal(s.sent.length, 1, how + ": 다시 보내지 않음");
     assert.equal(s.polls(), 1);
   }
 });
 
-test("그림 받아오기: 서비스가 받지 않은 요청(닿지 못함·빈 응답·429·5xx·다시 걸 만한 오류 코드)만 새 taskUUID로 다시 보낸다 — 두 번까지", async () => {
+test("그림 받아오기: 서비스가 받지 않았거나 실패로 끝났다고 답한 요청(429·다시 걸 만한 오류 코드)만 새 taskUUID로 바로 다시 보낸다 — 두 번까지", async () => {
   const over = { errors: [{ code: "serviceOverloaded", message: "busy", retryAfter: 0 }], status: 429, headers: { "retry-after": "0" } };
   for (const first of [
-    "down",
-    "empty",
-    503,
-    504,
+    429,
     over,
     { errors: [{ code: "timeoutProvider", message: "provider" }], status: 504 },
     { errors: [{ code: "failedModelLoad", message: "loading" }] }
   ]) {
     const s = service([first, "ok"]);
-    await generate(JOB);
+    await generate(job());
     assert.equal(s.sent.length, 2, JSON.stringify(first));
     assert.notEqual(s.sent[0].taskUUID, s.sent[1].taskUUID);
+    assert.equal(s.polls(), 0);
   }
-  const s = service(["down", 502, "ok"]);
-  await generate(JOB);
+  const s = service([429, over, "ok"]);
+  await generate(job());
   assert.equal(s.sent.length, 3);
-  const never = service([503]);
-  await assert.rejects(generate(JOB), /HTTP 503 — 3번 해 봤어요/);
+  const never = service([429]);
+  await assert.rejects(generate(job()), /HTTP 429 — 3번 해 봤어요/);
   assert.equal(never.sent.length, 3, "세 번 해 보고 멈춤");
+});
+
+test("그림 받아오기: 닿았는지 알 수 없는 요청(연결 끊김·빈 응답·본문 없는 5xx)은 자동으로 다시 보내지 않는다 — 같은 칸을 다시 누르면 그 요청부터 확인", async () => {
+  for (const first of ["down", "empty", 503, 504]) {
+    const j = job(),
+      s = service([first, "ok"]);
+    await assert.rejects(generate(j), /요청이 닿았는지 알 수 없어 멈췄어요/, JSON.stringify(first));
+    assert.equal(s.sent.length, 1, "자동으로 다시 보내지 않음");
+    assert.equal(s.polls(), 2, "두 번 조회해 봄");
+    await generate(j); // 다시 누름 — 그 요청을 먼저 확인(여전히 모름)한 뒤에야 새로 보낸다
+    assert.equal(s.sent.length, 2);
+    assert.equal(s.polls(), 4);
+  }
+  // 응답은 잃었지만 늦게 접수된 요청: 다시 눌렀을 때 그 그림을 받아 온다 — 새로 보내지 않는다
+  const j = job(),
+    s = service(["late", "ok"]);
+  await assert.rejects(generate(j), /요청이 닿았는지 알 수 없어 멈췄어요/);
+  const out = await generate(j);
+  assert.ok(out.blob.size > 0);
+  assert.equal(s.sent.length, 1, "같은 그림을 두 번 사지 않음");
 });
 
 test("그림 받아오기: 다시 걸어도 같은 실패(키·잔액·문구·잘못된 요청)는 한 번에 알린다 — 설명 글에 timeout·provider가 들어 있어도", async () => {
@@ -121,7 +146,7 @@ test("그림 받아오기: 다시 걸어도 같은 실패(키·잔액·문구·�
     [403, /HTTP 403$/]
   ]) {
     const s = service([reply, "ok"]);
-    await assert.rejects(generate(JOB), re);
+    await assert.rejects(generate(job()), re);
     assert.equal(s.sent.length, 1, "다시 보내지 않음: " + re);
     assert.equal(s.polls(), 0);
   }
@@ -129,18 +154,18 @@ test("그림 받아오기: 다시 걸어도 같은 실패(키·잔액·문구·�
 
 test("그림 받아오기: 접수가 확인된 작업은 조회가 '모르는 작업' 모양으로 와도 다시 보내지 않는다 · 조회 요청 자체의 실패는 다시 조회한다", async () => {
   const s = service(["ghost:4"]);
-  await generate(JOB);
+  await generate(job());
   assert.equal(s.sent.length, 1, "접수된 작업을 두 번 사지 않음");
   assert.equal(s.polls(), 5);
   const p = service(["lost+pollfail"]);
-  await generate(JOB);
+  await generate(job());
   assert.equal(p.sent.length, 1, "조회가 503으로 실패해도 그림을 다시 보내지 않음");
   assert.equal(p.polls(), 3);
 });
 
 test("그림 받아오기: 서비스가 오래 기다리라고 하면(Retry-After) 기다렸다 다시 보내지 않고 그 회차를 끝낸다", async () => {
   const s = service([{ errors: [{ code: "serviceOverloaded", message: "busy", retryAfter: 120 }], status: 429 }, "ok"]);
-  await assert.rejects(generate(JOB), /serviceOverloaded — busy — 생성 서비스가 120초 뒤에 다시 하라고 해요/);
+  await assert.rejects(generate(job()), /serviceOverloaded — busy — 생성 서비스가 120초 뒤에 다시 하라고 해요/);
   assert.equal(s.sent.length, 1);
 });
 
@@ -150,7 +175,7 @@ test("그림 받아오기: 처리 중인 작업이 한도까지 안 끝나면 �
   retry.poll = [10];
   try {
     const s = service(["slow:99999"]);
-    await assert.rejects(generate(JOB), /그림이 아직 그려지는 중이에요 — .*기다렸지만 그림이 오지 않아 멈췄어요/);
+    await assert.rejects(generate(job()), /그림이 아직 그려지는 중이에요 — .*기다렸지만 그림이 오지 않아 멈췄어요/);
     assert.equal(s.sent.length, 1);
     assert.ok(s.polls() >= 1);
   } finally {
