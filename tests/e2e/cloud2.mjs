@@ -364,6 +364,53 @@ try {
   res.oneAtATime = { firstHeld, overlapped, memo: (((db.rows.find((r) => r.key === "personas") || {}).value || [])[0] || {}).memo };
   if (!firstHeld || overlapped || res.oneAtATime.memo !== "두 번째")
     errs.push("전송은 한 번에 하나(마지막 값이 계정에 남음)가 다름: " + JSON.stringify(res.oneAtATime));
+  // 두 기기의 방 목록 합치기: 두 기기가 각각 새 방을 만듦(서로의 것을 아직 모름) → 한 바퀴 주고받으면 양쪽 목록과 계정 목록에 둘 다 남음.
+  // 전에는 받은 목록으로 통째로 덮어(못 올린 목록이 있으면 받은 목록을 건너뛰고 제 목록을 올려) 한쪽의 새 방이 목록에서 빠졌음
+  const rA = await A.page.evaluate(() => newRoom(normalizeChar(getChar("hasuk")), 0, S.personas[0]).id);
+  const rB = await B.page.evaluate(async () => {
+    const r = newRoom(normalizeChar(getChar("lethe")), 0, S.personas[0]);
+    await CLOUD.flush();
+    return r.id;
+  });
+  const round = async (ids) => {
+    await CLOUD.pull();
+    await reloadFromCloud();
+    await CLOUD.flush();
+    return ids.map((id) => S.rooms.some((r) => r.id === id));
+  };
+  await A.page.evaluate(round, [rA, rB]);
+  const onB = await B.page.evaluate(round, [rA, rB]);
+  const onA = await A.page.evaluate(round, [rA, rB]);
+  const accountList = () => ((db.rows.find((r) => r.key === "rooms") || {}).value || []).map((r) => r.id);
+  res.twoAdds = { onA, onB, onServer: [rA, rB].map((id) => accountList().includes(id)) };
+  if (Object.values(res.twoAdds).some((x) => x.join() !== "true,true"))
+    errs.push("두 기기가 각각 만든 방이 목록에 둘 다 남지 않음: " + JSON.stringify(res.twoAdds));
+  // 삭제 표식: 한쪽에서 지운 방은 다른 쪽에서도 사라지고(목록·본문), 그쪽이 들고 있던 사본의 늦은 저장으로 되살아나지 않으며, 계정에는 방 대신 표식이 남음
+  await A.page.evaluate(async (id) => {
+    window.__stale = await KV.get(roomKey(id));
+  }, rB);
+  await B.page.evaluate(async (id) => {
+    removeRoom(id);
+    await CLOUD.flush();
+  }, rB);
+  res.tomb = await A.page.evaluate(async (id) => {
+    const had = !!window.__stale;
+    await CLOUD.pull();
+    await reloadFromCloud();
+    const listed = S.rooms.some((r) => r.id === id),
+      body = !!(await KV.get(roomKey(id)));
+    const saved = await saveRoom(window.__stale); // 들고 있던 사본의 늦은 저장
+    await CLOUD.flush();
+    return { had, listed, body, saved, listedAfter: S.rooms.some((r) => r.id === id) };
+  }, rB);
+  {
+    const row = (db.rows.find((r) => r.key === "room-" + rB) || {}).value,
+      t = res.tomb;
+    t.server = !!(row && row.gone && !row.msgs);
+    t.serverList = accountList().includes(rB);
+    if (!t.had || t.listed || t.body || t.saved || t.listedAfter || !t.server || t.serverList)
+      errs.push("삭제 표식(한쪽에서 지운 방이 다른 쪽에서도 사라지고 되살아나지 않음)이 다름: " + JSON.stringify(t));
+  }
   // 내 서재(찜·최근 본)의 날짜 관문 — 날짜 전에는 계정으로 가지 않고, 날짜가 되면 이 기기에만 쌓인 것이 올라가 다른 기기의 것과 합쳐짐(덮지 않음). 찜을 푼 것도 전해짐. 시험은 날짜 상수를 바꿔 양쪽을 모두 봄
   const shelfRow = () => (db.rows.find((r) => r.key === "shelf") || {}).value;
   await A.page.evaluate(async () => {

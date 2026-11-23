@@ -6,7 +6,7 @@ import { LIMITS, OPENING_ID_RE } from "../../src/js/core/constants.js";
 import { on } from "../../src/js/core/events.js";
 import { migrateRoom } from "../../src/js/core/room-read.js";
 import { forkRoom, openingIndex } from "../../src/js/core/room-fork.js";
-import { deletedRooms, newRoom, removeRoom, roomKey, roomUnsaved, saveRoom, setFav, sortRooms } from "../../src/js/core/rooms.js";
+import { deletedRooms, newRoom, removeRoom, roomGone, roomKey, roomUnsaved, saveRoom, setFav, sortRooms } from "../../src/js/core/rooms.js";
 import { S, holdRoom, releaseRoom, roomInUse } from "../../src/js/core/state.js";
 import { KV } from "../../src/js/core/storage.js";
 
@@ -259,6 +259,23 @@ test("즐겨찾기: 본문을 읽는 사이 지운 방은 다시 쓰지 않음, 
   KV.set = real;
   assert.equal(await setFav(b.id, true), true);
   assert.equal((await KV.get(roomKey(b.id))).fav, true);
+});
+test("다른 기기가 지운 방(roomGone): 목록·본문에서 빼고 지운 방으로 적음 — 뒤늦은 저장이 되살리지 않고, 목록 항목에는 바뀐 때(mt)가 찍힘", async () => {
+  S.rooms = [];
+  const a = newRoom(work(), 0, P),
+    b = newRoom(work(), 1, P);
+  await saveRoom(a);
+  assert.equal(typeof S.rooms[0].mt, "number", "목록 항목의 바뀐 때");
+  assert.equal(roomGone(a.id, 12345), true);
+  assert.deepEqual(
+    S.rooms.map((x) => x.id),
+    [b.id]
+  );
+  assert.ok(deletedRooms.has(a.id));
+  await new Promise((res) => setTimeout(res, 0));
+  assert.equal(await KV.get(roomKey(a.id)), undefined);
+  assert.equal(await saveRoom(a), false);
+  assert.equal(roomGone("없던-방", 1), false);
 });
 test('방 삭제(removeRoom): 지운 방으로 적고 목록에서 빼며 "rooms" 알림 — 그 뒤의 저장은 방을 되살리지 않음', async () => {
   S.rooms = [];

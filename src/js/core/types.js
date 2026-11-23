@@ -273,6 +273,7 @@
  * @property {string} motif
  * @property {ImageRef|""} img
  * @property {number} at
+ * @property {number} [mt] 이 항목이 바뀐 때(저장·즐겨찾기) — 두 기기의 목록을 합칠 때 어느 쪽이 새것인지(core/room-list.js). 없으면(예전 항목) at으로 견줌
  * @property {string} last 마지막 줄 미리보기
  * @property {boolean} [fork] 분기한 방(대화 목록 카드의 '분기' 표시)
  * @property {string} [ep] 에피소드 방의 진행 표시("2장" · "결말") — 대화 목록 카드

@@ -297,3 +297,24 @@ language sql security definer set search_path = '' as $$
 $$;
 revoke all on function public.bump_chat_usage(uuid, text) from public, anon, authenticated;
 grant execute on function public.bump_chat_usage(uuid, text) to service_role;
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- (초안 — 아직 실행하지 않았음. 운영 DB에 넣는 것은 사용자 승인 사항. 실행하려면 아래 줄들의 맨 앞 '-- '를 떼고 돌린다)
+-- 지운 대화방의 표식 지키기: 앱은 방을 지우면 kv의 room-<id> 행을 없애는 대신 값에 {"gone": 지운 때}를 써 둔다(다른 기기가
+-- '바뀐 것만 받기'로 지움을 알게 — docs/app/storage.md '삭제 표식'). 아직 그 표식을 못 받은 기기가 예전 본문을 올리면 표식이 덮여 방이
+-- 되살아나므로, 표식이 있는 행은 표식이 아닌 값으로 바뀌지 않게 한다. 오류를 내지 않고 그 행의 갱신만 건너뛴다(같은 요청의 다른 행은 그대로 저장됨 —
+-- 앱은 한 요청에 여러 키를 묶어 보낸다). 표식을 지우거나 방을 되살리는 길은 두지 않았다(필요해지면 service_role로).
+-- create or replace function public.kv_keep_gone() returns trigger
+-- language plpgsql set search_path = '' as $$
+-- begin
+--   if old.key like 'room-%' and jsonb_typeof(old.value) = 'object' and old.value ? 'gone' and not (old.value ? 'msgs')
+--      and not (jsonb_typeof(new.value) = 'object' and new.value ? 'gone' and not (new.value ? 'msgs')) then
+--     return null; -- 이 행은 그대로 둠
+--   end if;
+--   return new;
+-- end;
+-- $$;
+-- drop trigger if exists kv_keep_gone on public.kv;
+-- create trigger kv_keep_gone before update on public.kv
+--   for each row execute function public.kv_keep_gone();
+-- (트리거는 이름 순으로 돌므로 kv_keep_gone이 kv_touch보다 먼저 — 건너뛴 행은 updated_at도 바뀌지 않는다)

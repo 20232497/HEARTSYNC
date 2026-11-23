@@ -1,7 +1,9 @@
 /* 계정에서 받기: 받은 행을 이 기기에 적용(applyRows)·열려 있어 넘어간 방을 다시 받기(retakeRows)·바뀐 행 받기(pullRows). CLOUD.apply·retake·pull이 이것을 부름(services/cloud.js) */
-import { roomKey } from "../core/rooms.js";
+import { emit } from "../core/events.js";
+import { isTomb, mergeRoomLists, sameRoomList } from "../core/room-list.js";
+import { goneRooms, roomGone, roomKey } from "../core/rooms.js";
 import { shelfSyncOn } from "../core/shelf.js";
-import { room, roomInUse, setRoom } from "../core/state.js";
+import { S, room, roomInUse, setRoom } from "../core/state.js";
 import { KV } from "../core/storage.js";
 import { CLOUD, SHELF_KEY, SYNCED_RE } from "./cloud.js";
 import { mergeCloudSettings } from "./cloud-settings.js";
@@ -19,6 +21,24 @@ export async function applyRows(rows, hold, since) {
     newer = (k) => !full && (CLOUD.putSeq[k] || 0) > since;
   let n = 0;
   const open = room && location.hash === "#r-" + room.id ? roomKey(room.id) : "";
+  // 지운 방의 표식부터: 지움이 이김 — 열려 있거나 못 올린 변경이 있어도 이 기기에서 지우고, 올리려던 본문은 거둠(표식을 덮지 않게).
+  // 보고 있던 방이면 화면을 다시 그림('찾을 수 없어요')
+  rows.forEach((x) => {
+    if (x.key.indexOf("room-") !== 0 || !isTomb(x.value)) return;
+    delete CLOUD.pending[x.key];
+    CLOUD.skip(x.key, false);
+    if (roomGone(x.key.slice(5), x.value.gone)) n++;
+    if (x.key === open) emit("route");
+  });
+  const gone = goneRooms();
+  // 방 목록: 받은 것으로 덮지 않고 방마다 합침 — 두 기기가 각각 새 방을 만들어도 둘 다 남음(core/room-list.js). 지운 방은 뺌.
+  // 처음 로그인의 전부 받기(full)는 계정 목록 그대로 — 이 기기에만 있던 방을 더할지는 '합칠까요?'가 정함(ui/account.js)
+  const takeList = (remote) => {
+    const merged = mergeRoomLists(full ? [] : S.rooms, remote, gone);
+    S.rooms = merged;
+    KV.setLocal("rooms", merged);
+    if (!full && !sameRoomList(merged, remote)) CLOUD.put("rooms", merged); // 이 기기에만 있던 방이 있거나 지운 방이 계정 목록에 남아 있음 — 합친 목록을 계정에
+  };
   rows.forEach((x) => {
     if (x.updated_at && x.updated_at > (localStorage.getItem(CLOUD.lastKey()) || ""))
       try {
@@ -28,6 +48,19 @@ export async function applyRows(rows, hold, since) {
       if (shelfSyncOn() && takeShelf(x.value)) n++;
       return;
     } // 보내지 못한 것이 있어도 합침
+    if (x.key === "rooms") {
+      takeList(x.value); // 못 올린 목록이 있어도 건너뛰지 않고 합침 — 건너뛰면 이 기기의 목록이 올라가 다른 기기의 새 방이 빠짐
+      n++;
+      return;
+    }
+    if (x.key.indexOf("room-") === 0) {
+      if (isTomb(x.value)) return; // 위에서 처리함
+      const at = gone[x.key.slice(5)];
+      if (at) {
+        CLOUD.put(x.key, { gone: at }); // 이 기기가 지운 방의 본문이 다시 옴(표식을 못 받은 기기가 올림) — 받지 않고 표식을 다시 올림
+        return;
+      }
+    }
     if (x.key in CLOUD.pending || CLOUD.sending.has(x.key) || (hold && hold.has(x.key)) || newer(x.key)) return; // 이 기기의 값이 올라가(올라갔거나) 계정 것을 대신함
     if (KV.writing(x.key)) {
       CLOUD.skip(x.key); // 본문을 쓰는 중(아직 대기열에 들어가기 전) — 그 쓰기가 되면 올라가 계정 것을 대신하고, 안 되면 다시 받을 것으로
@@ -86,6 +119,15 @@ export async function retakeRows() {
       if (r.ok) got = await r.json();
     } catch {}
     if (CLOUD.uid !== uid) break;
+    if (got && got[0] && isTomb(got[0].value)) {
+      // 그사이 다른 기기가 지운 방 — 지움이 이김
+      const was = isOpen(k);
+      delete CLOUD.pending[k];
+      CLOUD.skip(k, false);
+      if (roomGone(k.slice(5), got[0].value.gone)) n++;
+      if (was) emit("route");
+      continue;
+    }
     if (!got || isOpen(k) || using(k) || KV.writing(k)) continue; // 못 받았거나 그사이 다시 열었으면 다음에(적어 둔 채로)
     // 계정에 그 방이 없거나, 그사이 이 기기에서 고침(올리기까지 끝났어도) — 받을 것이 없음
     if (!got[0] || k in CLOUD.pending || CLOUD.sending.has(k) || (CLOUD.putSeq[k] || 0) > since) {

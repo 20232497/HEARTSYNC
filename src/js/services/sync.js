@@ -1,6 +1,7 @@
 /* 처음 로그인 합치기(mergeGuest)·계정 것만 쓰기(dropGuestRooms), 계정에서 다시 받기, 기기 지우기 */
 import { emit } from "../core/events.js";
-import { roomKey } from "../core/rooms.js";
+import { mergeRoomLists } from "../core/room-list.js";
+import { goneRooms, roomKey } from "../core/rooms.js";
 import { applySettings } from "../core/settings.js";
 import { gen } from "../core/state.js";
 import { IDB, KV } from "../core/storage.js";
@@ -25,10 +26,7 @@ export async function mergeGuest(remote, local) {
       if (v) mine.push(r);
       else missed++; // 본문을 읽지 못함(또는 없음) — 목록에 더하지 않음. 본문은 이 기기에 그대로
     }
-  KV.set(
-    "rooms",
-    byId(remote.rooms, mine).sort((x, y) => (y.at || 0) - (x.at || 0))
-  );
+  KV.set("rooms", mergeRoomLists(mine, remote.rooms, goneRooms())); // 계정의 목록 + 이 기기에만 있던 방(지운 방은 빼고, 순서는 sortRooms)
   const ps = byId(
     remote.personas,
     list(local.personas).map((p) => Object.assign({}, p, { def: false }))
