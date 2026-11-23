@@ -1,5 +1,6 @@
 /* 일상 화풍 두 개의 프롬프트 조립 — 남성향 일상(여성 인물)·여성향 일상(남성 인물). 작품 데이터(cast[]·places[])를 칸에 끼워 긍정·부정 프롬프트와 생성 값을 만든다.
-   그림 값(화풍 문구·네거티브·LoRA·후처리)은 보관본 그대로 읽는다: ../mdaily-v6.json(여성) · ../../style-fdaily/fdaily-v7.json(남성) · 고정 태그와 칸 태그는 ../mdaily.json.
+   그림 값(화풍 문구·네거티브·LoRA·후처리)은 값 파일에서 읽는다: ../mdaily-v7.json(여성) · ../../style-fdaily/fdaily-v9.json(남성) — 앞 판(v6·v7·v8)은 보관 · 고정 태그는 ../mdaily.json.
+   값 파일이 정할 수 있는 것: prompt·coolPrompt·neg·fits·lora·post + lightDay·lightNight(낮·밤 빛 문구) · bgTag(배경 문구) · act(연기 문구 손질 — drop·scale).
    이 파일은 그 값을 인물마다 손대지 않고 쓰는 규칙이다 — 2026-11-13 사용자와 비교 생성으로 정함(경위와 표는 ../README.md '조립 규칙').
    2026-11-23(사용자): 구도와 표정(칸마다의 구도 자리·눈·표정·손동작)은 애니 화풍과 같게 — ../../style-manime/code/assemble.js의 acting()이 고른 것을 그대로 쓴다.
    남성 인물은 부드러운 v7 대신 날카로운 v8 후보(../../style-fdaily/fdaily-v8.json). 둘 다 그려서 확인하기 전의 값이다.
@@ -19,7 +20,7 @@ const load = (rel) => {
 };
 const BASE = J("../mdaily.json");
 export const FIX = BASE.fixed; // 품질·수위·규격·미성년 금지 태그
-export const STYLE = { f: load("../mdaily-v6.json"), m: load("../../style-fdaily/fdaily-v8.json") };
+export const STYLE = { f: load("../mdaily-v7.json"), m: load("../../style-fdaily/fdaily-v9.json") };
 /* 그림 규격(tools/content-art.mjs ART_SPECS) — 프로필 768×1152, 감정 1024×1024. 멀리 잡는 휴식 칸만 1536으로 키워 다시 그린다(얼굴이 작아져 무너짐) */
 export const SIZE = { profile: { width: 768, height: 1152 }, emotion: { width: 1024, height: 1024 } };
 const HIRES = { w: 1536, h: 1536, strength: 0.4 };
@@ -44,10 +45,15 @@ const HAND_NEG = ["outstretched hand", "raised hands", "index finger raised", "p
     · neg(그 표정에 딸린 네거티브) · free(그 칸에서 풀어 줄 화풍 네거티브의 이름) */
 function sceneOf(c, slot) {
   const a = acting(c, slot, { symbols: false }),
-    scene = split([a.frame, a.eyes, a.emo].join(", ")).filter((x) => !NO_SCENE.test(x)).join(", ");
+    act = STYLE[isFem(c) ? "f" : "m"].act || {}, // 화풍이 연기 문구를 손질: drop(뺄 낱말) · scale(낱말 → 가중치에 곱할 값)
+    scene = split([a.frame, a.eyes, a.emo].join(", "))
+      .filter((x) => !NO_SCENE.test(x) && !(act.drop || []).includes(bareTag(x)))
+      .map((x) => ((act.scale || {})[bareTag(x)] ? `(${bareTag(x)}:${+(weightOf(x) * act.scale[bareTag(x)]).toFixed(2)})` : x))
+      .join(", ");
+  // 같은 낱말이 눈매 규칙과 기본 표정에서 두 번 들어오면 하나만(센 쪽) — dedupe는 네거티브와 같은 규칙
   const neg = split(actingNeg(c, slot)).filter((x) => !NO_NEG.test(x)).join(", "); // 남자의 놀람·공포는 애니 규칙이 큰 눈을 일부러 막는다(앳돼 보임) — 그때는 큰 눈 네거티브를 풀지 않는다
   return {
-    scene: boost(scene),
+    scene: boost(dedupe(scene)),
     still: (slot ? "upper body, " : "portrait, ") + (a.look ? "looking to the side" : "looking at viewer"),
     neg,
     free: [...(/\bhands?\b|\bfist\b|waving|pointing/.test(scene) ? HAND_NEG : []), ...(/wide-eyed/.test(scene) && !/big eyes/.test(neg) ? WIDE_NEG : [])],
@@ -192,8 +198,8 @@ function build(c, place, scene, kind, negAdd, still, free) {
   if (male) style = split(style).filter((t) => !MALE.strip.test(t)).join(", ");
   const tags = (place && place.tags) || "",
     dark = DARK.test(tags);
-  if (dark) style = style.replace(LIGHT_DAY, LIGHT_NIGHT);
-  const bg = [BG, placeTags(tags), dark ? "(night:1.2), (dark:0.8)" : ""].filter(Boolean).join(", ");
+  if (dark) style = style.replace(st.lightDay || LIGHT_DAY, st.lightNight || LIGHT_NIGHT); // 화풍이 제 낮·밤 빛 문구를 정했으면 그것으로
+  const bg = [st.bgTag || BG, placeTags(tags), dark ? "(night:1.2), (dark:0.8)" : ""].filter(Boolean).join(", ");
   const shirt = male && /\bshirt\b/.test(c.tags) && !/t-shirt|v-neck|turtleneck|collared shirt/.test(c.tags) ? ", (collared shirt:1.2), (buttons:1.0)" : "";
   const lead = male ? st.lead.tags + ", (fully clothed:1.2)" + shirt : "";
   const under = UNDER.test(c.tags) && !TOP.test(c.tags) ? "(long sleeves:1.2), (shirt:1.2)" : "";
