@@ -36,3 +36,18 @@ export function setGen(v) {
 export function setRoom(v) {
   return (room = v);
 }
+/* 응답 생성·요약이 아직 쓰고 있는 방 — 그 일이 끝나면 들고 있던 방 객체를 저장하므로, 그사이 계정에서 받은 것으로 그 방을 덮으면 곧 옛 사본에 다시 덮임.
+   계정 받기(services/cloud.js)가 이 표를 보고 그 방을 미룸. 생성과 요약이 겹칠 수 있어 수를 셈 */
+const inUse = new Map();
+/** 이 방을 쓰기 시작함(끝나면 꼭 releaseRoom). @param {string} id @returns {void} */
+export function holdRoom(id) {
+  inUse.set(id, (inUse.get(id) || 0) + 1);
+}
+/** 이 방을 다 씀. @param {string} id @returns {void} */
+export function releaseRoom(id) {
+  const n = (inUse.get(id) || 0) - 1;
+  if (n > 0) inUse.set(id, n);
+  else inUse.delete(id);
+}
+/** 응답 생성·요약이 아직 쓰고 있는 방인지. @param {string} id @returns {boolean} */
+export const roomInUse = (id) => inUse.has(id);

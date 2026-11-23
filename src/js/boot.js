@@ -26,6 +26,10 @@ export async function boot() {
   bootBack(askLogin); // 작품 주소로 처음 들어왔으면 로그인·둘러보기 뒤 그 작품으로
   route();
   window.addEventListener("hashchange", route);
+  // 방을 열어 둔 사이 다른 기기가 그 방을 고쳤으면(받기가 덮지 않고 넘어감) 방에서 나올 때 그 방만 다시 받음
+  window.addEventListener("hashchange", () => {
+    if (CLOUD.on && CLOUD.skipped.size) CLOUD.retake();
+  });
   if (SB.s)
     afterLogin(!!authType).then(() => {
       if (authType === "recovery") newPasswordSheet();

@@ -62,14 +62,14 @@ export const GROUPS = {
     right: { code: "LUK", pose: "(hand on hilt:1.1), (sheathed sword:1.0), (silver armor:1.2), (blue cape:0.9)", tint: "#cbd9ef", head: [0.06, 0.22, 0.53] }
   },
   /* F급 던전(2026-11-23 설계 · 같은 날 첫 그림 — head·flip·cx는 그 그림(보관함의 조각)에서 눈으로 잰 값. 자동 어림은 가온의 정수리를 뿔에 걸어 머리를 크게 잡았다 → 머리카락 정수리로 고침).
-     세라는 첫 그림의 앞치마에 글자가 그려져 문구를 고쳤다(민무늬 앞치마·글자 막기) — 다시 그리면 세라의 head는 다시 잰다.
+     세라는 첫 그림의 앞치마에 글자가 그려져 문구를 고쳐(민무늬 앞치마·글자 막기) 다시 그렸다 — 값은 그 그림에서 잰 것. 잇기(0.1)에서 비오의 보라색 눈이 갈색으로 흐려졌다(눈으로 확인할 것).
      직원 셋: 가운데 보스 가온, 왼쪽 무대 기술자 세라, 오른쪽 안내원 비오. 배경은 보스방(붉은 현수막·가짜 기둥·작업등). 글자가 그려지는 간판·포스터 낱말은 넣지 않는다.
      종족 낱말은 표지에서만 바꾼다(swap): minotaur girl은 소 무늬 비키니·방울 목걸이를, slime girl은 비치는 몸을 부른다 → 뿔·귀·머리카락 낱말로만 종족을 보인다 */
   fdungeon: {
     bg: { tags: "underground circular stone arena, labyrinth boss room, crumbling stone pillars, red banners hanging from the walls, stone archway gate, string lights, warm work lights, stage spotlights, light haze, stone floor, theme park attraction, indoors, cozy", seed: 9851, zoom: 1.05, at: [0.5, 0.3], shift: [0, -0.12] },
     grade: "#e8a45c",
     left: { code: "SER", swap: [["slime girl", "liquid hair"]], pose: "(holding wrench:1.0), (hand on own hip:0.8), (goggles on head:1.1), (light blue hair:1.2), (plain apron:1.2)",
-      neg: ", (slime girl:1.3), (transparent body:1.4), (blue skin:1.3), (tears:1.3), (crying:1.3), (paint on face:1.3), (writing:1.4), (letters:1.3)", head: [0.084, 0.257, 0.513], cx: 0.165 },
+      neg: ", (slime girl:1.3), (transparent body:1.4), (blue skin:1.3), (tears:1.3), (crying:1.3), (paint on face:1.3), (writing:1.4), (letters:1.3)", flip: 1, head: [0.045, 0.27, 0.513], cx: 0.165 },
     mid: { code: "GAO", swap: [["minotaur girl", "bull horns"]], pose: "(hand behind head:0.9), (embarrassed smile:0.7), (large curved horns:1.2), (cow ears:1.0), (red cape:1.1), (yellow safety vest:1.1)",
       neg: ", (cow print:1.4), (bikini:1.4), (cowbell:1.3), (neck bell:1.3), (midriff:1.3), (crop top:1.3), (navel:1.3), (animal head:1.4), (furry:1.3), (head tilt:1.2)", head: [0.14, 0.27] },
     // 비오: 발밑의 연기는 허리 위 구도에 안 보이고 몸 둘레에 번져 오리기를 어렵게 함 → 표지에서는 뺌

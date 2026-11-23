@@ -2,7 +2,7 @@
 import { llm } from "../llm.js";
 import { speakerName } from "./rules.js";
 import { curText, memoryMark, saveRoom } from "../../core/rooms.js";
-import { S } from "../../core/state.js";
+import { S, holdRoom, releaseRoom } from "../../core/state.js";
 import { $, $$, toast } from "../../core/util.js";
 import { plan } from "../../core/wallet.js";
 /** @typedef {import("../../core/types.js").MemCfg} MemCfg */
@@ -29,6 +29,7 @@ export async function maybeSummarize(r, manual = false) {
   const msgs = r.msgs.filter((m) => !m.sys && curText(m)).slice(-(n * 2));
   if (!msgs.length) return;
   summarizing = true;
+  holdRoom(r.id); // 요약이 끝나 이 방 객체를 저장할 때까지, 계정에서 받은 것으로 이 방을 덮지 않게(services/cloud.js)
   flagMemo(true, "장기기억을 정리하는 중…");
   const to = r.turn || 0,
     from = Math.max(1, to - n + 1);
@@ -92,6 +93,7 @@ ${excerpt}`
   } catch (e) {
     if (manual) toast("요약하지 못했어요. 잠시 뒤 다시 시도해 주세요.");
   } finally {
+    releaseRoom(r.id);
     summarizing = false;
     flagMemo(false);
   }

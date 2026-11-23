@@ -3,8 +3,12 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { ORIGINALS } from "../../src/js/content/index.js";
 import { LIMITS, OPENING_ID_RE } from "../../src/js/core/constants.js";
-import { forkRoom, newRoom, openingIndex, saveRoom, setFav, sortRooms } from "../../src/js/core/rooms.js";
-import { S } from "../../src/js/core/state.js";
+import { on } from "../../src/js/core/events.js";
+import { migrateRoom } from "../../src/js/core/room-read.js";
+import { forkRoom, openingIndex } from "../../src/js/core/room-fork.js";
+import { deletedRooms, newRoom, removeRoom, roomKey, roomUnsaved, saveRoom, setFav, sortRooms } from "../../src/js/core/rooms.js";
+import { S, holdRoom, releaseRoom, roomInUse } from "../../src/js/core/state.js";
+import { KV } from "../../src/js/core/storage.js";
 
 const P = { id: "p1", name: "지호", memo: "", desc: "" };
 // 시작 상황 셋짜리 가짜 작품(실제 작품의 모양을 빌리되 id·제목은 시험용 — 작품이 실제로 적은 값에 기대지 않게)
@@ -117,4 +121,163 @@ test("즐겨찾기: 방을 저장하면 목록 항목에 따라가고, 분기한
   assert.equal("fav" in f, false);
   assert.equal(!!S.rooms.find((x) => x.id === f.id).fav, false);
   assert.equal(S.rooms[0].id, r.id, "나중에 만든 방보다 즐겨찾기가 앞");
+});
+test("방 읽기 경계(migrateRoom): 기본값이 분명한 빠짐만 채우고, 복구할 수 없으면 null — 원본은 그대로", () => {
+  const good = newRoom(work(), 0, P);
+  // v2인데 설정 칸이 없는 방(다른 기기·예전 빌드가 남긴 것) — 전에는 여기서 예외가 나 방 화면이 멈췄음
+  const noSet = JSON.parse(JSON.stringify(good));
+  delete noSet.set;
+  delete noSet.persona;
+  delete noSet.bookmarks;
+  delete noSet.pins;
+  delete noSet.memHist;
+  const fixed = migrateRoom(noSet);
+  assert.ok(fixed, "설정 칸이 없어도 열림");
+  assert.deepEqual(fixed.set, good.set, "새 방의 기본 설정으로");
+  assert.equal(typeof fixed.persona.name, "string");
+  assert.deepEqual([fixed.bookmarks, fixed.pins, fixed.memHist], [[], [], []]);
+  // 설정 칸은 있는데 모델이 빠졌거나 표에 없는 값인 방 — 화면이 그 값을 읽다가 멈추지 않게 기본값으로(다른 칸은 그대로)
+  const partial = JSON.parse(JSON.stringify(good));
+  partial.set = { len: "mid", autoSug: true };
+  assert.deepEqual(migrateRoom(partial).set, { ...good.set, autoSug: true });
+  const wrong = JSON.parse(JSON.stringify(good));
+  wrong.set = { ...good.set, model: "없는-모델", len: "없는-길이", mem: 0 };
+  assert.deepEqual(migrateRoom(wrong).set, good.set);
+  const inherited = JSON.parse(JSON.stringify(good));
+  inherited.set = { ...good.set, model: "constructor", len: "toString" }; // 표에 없는데 객체가 물려받은 이름
+  assert.deepEqual(migrateRoom(inherited).set, good.set);
+  // 버전 번호가 범위를 벗어난 응답 → 마지막 버전으로, 버전이 하나도 없는 응답·글이 없는 내 메시지는 뺌
+  const odd = JSON.parse(JSON.stringify(good));
+  odd.msgs.push(
+    { id: "u1", role: "user", text: "안녕" },
+    { id: "a1", role: "ai", idx: 5, alts: [{ text: "하나" }, { text: "둘" }] },
+    { id: "a2", role: "ai", idx: 0, alts: [] },
+    { id: "u2", role: "user" }
+  );
+  const o = migrateRoom(odd);
+  assert.deepEqual(o.msgs.map((m) => m.id).slice(1), ["u1", "a1"]);
+  assert.equal(o.msgs[2].idx, 1);
+  // 복구할 수 없는 방: 메시지가 없음 · 작품 사본이 없음 · 방이 아님 — null을 돌려주고 받은 객체는 건드리지 않음
+  for (const broken of [{ ...good, msgs: undefined }, { ...good, msgs: [] }, { ...good, char: null }, { id: good.id }, null, "글"]) {
+    const before = JSON.stringify(broken);
+    assert.equal(migrateRoom(broken), null);
+    assert.equal(JSON.stringify(broken), before);
+  }
+  // 멀쩡한 방은 그대로
+  const same = JSON.parse(JSON.stringify(good));
+  assert.deepEqual(migrateRoom(same), good);
+});
+test("쓰고 있는 방(holdRoom·releaseRoom): 생성과 요약이 겹쳐도 둘 다 끝나야 풀림", () => {
+  assert.equal(roomInUse("r-x"), false);
+  holdRoom("r-x");
+  holdRoom("r-x");
+  releaseRoom("r-x");
+  assert.equal(roomInUse("r-x"), true);
+  releaseRoom("r-x");
+  assert.equal(roomInUse("r-x"), false);
+  releaseRoom("r-x"); // 더 놓아도 음수가 되지 않음
+  holdRoom("r-x");
+  assert.equal(roomInUse("r-x"), true);
+  releaseRoom("r-x");
+});
+test("방 저장이 실패하면(본문이 저장소에 들어가지 못함) 목록을 마지막으로 저장된 모양으로 되돌리고 저장 안 됨으로 적음 — 다음 저장이 되면 풀림", async () => {
+  S.rooms = [];
+  const r = newRoom(work(), 0, P);
+  assert.equal(await saveRoom(r), true);
+  const good = JSON.stringify(S.rooms.find((x) => x.id === r.id));
+  const stored = (await KV.get(roomKey(r.id))).msgs.length;
+  // 저장소가 가득 찬 것을 흉내: 방 본문 쓰기만 실패
+  const real = KV.set;
+  KV.set = function (k, v, o) {
+    return k.indexOf("room-") === 0 ? Promise.resolve(false) : real.call(this, k, v, o);
+  };
+  let told = 0;
+  on("rooms", () => told++);
+  r.msgs.push({ id: "u-new", role: "user", text: "저장되지 못할 말" }, { id: "a-new", role: "ai", idx: 0, alts: [{ text: "저장되지 못할 답" }] });
+  const p = saveRoom(r);
+  assert.match(S.rooms.find((x) => x.id === r.id).last, /저장되지 못할 답/, "목록은 바로 고쳐 둠(화면이 기다리지 않게)");
+  assert.equal(await p, false);
+  assert.equal(JSON.stringify(S.rooms.find((x) => x.id === r.id)), good, "실패하면 마지막으로 저장된 모양으로");
+  assert.equal(roomUnsaved(r.id), true);
+  assert.equal(told, 2); // 저장을 시작할 때 한 번(목록을 고침), 실패해 되돌릴 때 한 번
+  // 처음부터 저장되지 못한 새 방은 목록에 남지 않음
+  const ghost = newRoom(work(), 1, P);
+  await new Promise((res) => setTimeout(res, 0));
+  assert.equal(
+    S.rooms.some((x) => x.id === ghost.id),
+    false
+  );
+  assert.equal(roomUnsaved(ghost.id), true);
+  KV.set = real;
+  assert.equal(await saveRoom(r), true);
+  assert.equal(roomUnsaved(r.id), false);
+  assert.match(S.rooms.find((x) => x.id === r.id).last, /저장되지 못할 답/);
+  assert.equal((await KV.get(roomKey(r.id))).msgs.length, stored + 2);
+});
+test("잇단 저장: 먼저 시작한 저장이 되고 뒤의 저장이 실패하면, 저장된 앞의 것에 맞는 목록으로 되돌림(더 옛 모양이나 목록에서 빠지는 일 없이)", async () => {
+  S.rooms = [];
+  const real = KV.set,
+    waits = [];
+  // 방 본문 쓰기를 붙잡아 두고 시험이 차례대로 끝냄
+  KV.set = function (k, v, o) {
+    return k.indexOf("room-") === 0 ? new Promise((res) => waits.push(res)) : real.call(this, k, v, o);
+  };
+  const r = newRoom(work(), 0, P); // 저장 ①(새 방)
+  r.msgs.push({ id: "u2", role: "user", text: "둘째" }, { id: "a2", role: "ai", idx: 0, alts: [{ text: "둘째 답" }] });
+  const p2 = saveRoom(r); // 저장 ②
+  const first = JSON.stringify(S.rooms.length);
+  waits[0](true); // ①은 저장됨
+  await new Promise((res) => setTimeout(res, 0));
+  waits[1](false); // ②는 실패
+  assert.equal(await p2, false);
+  assert.equal(first, "1");
+  const e = S.rooms.find((x) => x.id === r.id);
+  assert.ok(e, "첫 본문은 저장됐으니 목록에 남음");
+  assert.doesNotMatch(e.last, /둘째 답/, "저장되지 못한 둘째의 미리보기는 아님");
+  assert.equal(roomUnsaved(r.id), true);
+  KV.set = real;
+  assert.equal(await saveRoom(r), true);
+  assert.match(S.rooms.find((x) => x.id === r.id).last, /둘째 답/);
+});
+test("즐겨찾기: 본문을 읽는 사이 지운 방은 다시 쓰지 않음, 본문에 적지 못하면 목록도 그대로", async () => {
+  S.rooms = [];
+  const a = newRoom(work(), 0, P),
+    b = newRoom(work(), 1, P);
+  await saveRoom(a);
+  await saveRoom(b);
+  const p = setFav(a.id, true); // 닫힌 방 — 본문을 읽는 동안
+  removeRoom(a.id); // 지움
+  assert.equal(await p, false);
+  await new Promise((res) => setTimeout(res, 0));
+  assert.equal(await KV.get(roomKey(a.id)), undefined, "지운 방의 본문이 되살아나지 않음");
+  const real = KV.set;
+  KV.set = function (k, v, o) {
+    return k.indexOf("room-") === 0 ? Promise.resolve(false) : real.call(this, k, v, o);
+  };
+  assert.equal(await setFav(b.id, true), false);
+  assert.equal(!!S.rooms.find((x) => x.id === b.id).fav, false);
+  KV.set = real;
+  assert.equal(await setFav(b.id, true), true);
+  assert.equal((await KV.get(roomKey(b.id))).fav, true);
+});
+test('방 삭제(removeRoom): 지운 방으로 적고 목록에서 빼며 "rooms" 알림 — 그 뒤의 저장은 방을 되살리지 않음', async () => {
+  S.rooms = [];
+  const a = newRoom(work(), 0, P),
+    b = newRoom(work(), 1, P);
+  let told = 0;
+  on("rooms", () => told++);
+  removeRoom(a.id);
+  assert.ok(deletedRooms.has(a.id));
+  assert.deepEqual(
+    S.rooms.map((x) => x.id),
+    [b.id]
+  );
+  assert.equal(told, 1);
+  await new Promise((res) => setTimeout(res, 0));
+  assert.equal(await KV.get(roomKey(a.id)), undefined, "본문도 지워짐");
+  saveRoom(a); // 지운 뒤에 끝난 응답·요약의 저장
+  assert.deepEqual(
+    S.rooms.map((x) => x.id),
+    [b.id]
+  );
 });

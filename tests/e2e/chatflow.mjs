@@ -567,6 +567,138 @@ for (const [dev, engine] of targets) {
       save: !!document.querySelector("#setSave"),
       overflowX: document.documentElement.scrollWidth - innerWidth
     }));
+    // 방 읽기 경계: 설정 칸이 없는 방(다른 기기·예전 빌드가 남긴 것)은 기본 설정으로 열리고, 메시지가 없는 방은 안내만 뜨며 저장된 내용은 그대로 —
+    // 전에는 설정 칸이 없는 방 하나가 예외로 방 화면을 멈췄음
+    res.boundary = await p.evaluate(async () => {
+      const nap = (ms) => new Promise((r) => setTimeout(r, ms)),
+        a = newRoom(normalizeChar(ORIGINALS[0]), 0, S.personas[0]),
+        b = newRoom(normalizeChar(ORIGINALS[1]), 0, S.personas[0]),
+        ra = await KV.get(roomKey(a.id)),
+        rb = await KV.get(roomKey(b.id));
+      delete ra.set;
+      delete rb.msgs;
+      if (!(await KV.put(roomKey(a.id), ra)) || !(await KV.put(roomKey(b.id), rb)))
+        throw new Error("깨진 방을 저장소에 넣지 못함 — 방 읽기 경계 시험이 그 방에 닿지 못함");
+      setRoom(null);
+      location.hash = "r-" + a.id;
+      await nap(800);
+      const opened = !!document.querySelector("#inp") && !!room && room.id === a.id && !!room.set && !!room.set.model;
+      location.hash = "r-" + b.id;
+      await nap(800);
+      const left = await KV.get(roomKey(b.id));
+      return { opened, notice: (document.querySelector("#view .empty") || {}).textContent || "", kept: !!left && !("msgs" in left), room: room ? room.id : "" };
+    });
+    {
+      const x = res.boundary;
+      if (!x.opened || !/열 수 없어요/.test(x.notice) || !x.kept) errs.push("방 읽기 경계(깨진 방 하나가 화면을 멈추지 않음)가 다름: " + JSON.stringify(x));
+    }
+    // 방 본문은 큰 저장소(IndexedDB)에: 예전 설치가 localStorage에 둔 본문으로도 방이 열리고, 큰 저장소에 들어간 것을 확인한 뒤에만 옛 키를 지움.
+    // 본문이 저장되지 못하면(저장소 쓰기 실패) 목록을 마지막으로 저장된 모양으로 되돌리고 '저장하지 못했어요 · 다시 저장'을 보임 — 화면의 대화는 그대로
+    res.bodies = await p.evaluate(async () => {
+      const nap = (ms) => new Promise((r) => setTimeout(r, ms)),
+        r = newRoom(normalizeChar(ORIGINALS[0]), 0, S.personas[0]);
+      await saveRoom(r);
+      const key = roomKey(r.id),
+        lsKey = "hv1_" + key,
+        body = await KV.get(key),
+        inIdb0 = !!(await IDB.get(key)) && !localStorage.getItem(lsKey);
+      // 예전 설치 흉내: 본문을 localStorage에만 둠
+      await IDB.set(key, undefined);
+      localStorage.setItem(lsKey, JSON.stringify(body));
+      // ① 큰 저장소 쓰기가 실패하는 동안: 옛 본문으로 열리고 옛 키는 그대로 남음
+      const realSet = IDB.set,
+        realAdd = IDB.add;
+      IDB.set = async () => false;
+      IDB.add = async () => "fail"; // 옛 본문을 옮기는 길(없을 때만 넣기)도 실패
+      setRoom(null);
+      location.hash = "r-" + r.id;
+      await nap(900);
+      const openedOld = !!room && room.id === r.id && !!document.querySelector("#inp"),
+        keptOld = !!localStorage.getItem(lsKey),
+        before = JSON.stringify(S.rooms.find((x) => x.id === r.id));
+      // 새 턴을 저장하려 해도 실패 → 목록은 그대로, '저장하지 못했어요' 줄이 보임
+      room.msgs.push({ id: uid("m"), role: "user", text: "저장되지 못할 뻔한 말" });
+      const ok1 = await saveRoom(room);
+      await nap(150);
+      const failShown = !document.querySelector("#saveFail").hidden,
+        listSame = JSON.stringify(S.rooms.find((x) => x.id === r.id)) === before,
+        stillOld = !!localStorage.getItem(lsKey) && !(await IDB.get(key));
+      // ② 저장소가 돌아온 뒤 '다시 저장' → 저장되고 줄이 사라짐, 본문은 큰 저장소에 있고 옛 키는 지워짐
+      IDB.set = realSet;
+      IDB.add = realAdd;
+      document.querySelector("#saveRetry").click();
+      await nap(600);
+      const moved = await IDB.get(key);
+      return {
+        inIdb0,
+        openedOld,
+        keptOld,
+        ok1,
+        failShown,
+        listSame,
+        stillOld,
+        retried: document.querySelector("#saveFail").hidden,
+        inIdb: !!moved && moved.msgs.some((m) => m.text === "저장되지 못할 뻔한 말"),
+        oldGone: !localStorage.getItem(lsKey),
+        listed: S.rooms.some((x) => x.id === r.id)
+      };
+    });
+    {
+      const x = res.bodies;
+      if (!x.inIdb0 || !x.openedOld || !x.keptOld || x.ok1 || !x.failShown || !x.listSame || !x.stillOld || !x.retried || !x.inIdb || !x.oldGone || !x.listed)
+        errs.push("방 본문 저장소(예전 본문으로 열림·실패하면 목록을 되돌리고 알림·다시 저장)가 다름: " + JSON.stringify(x));
+    }
+    // 부팅 뒤에는 열지 않은 방의 예전 본문도 큰 저장소로 옮겨 둠(localStorage 자리를 비움) — 옮긴 뒤에도 그 방이 열림
+    {
+      const id = await p.evaluate(async () => {
+        const r = newRoom(normalizeChar(ORIGINALS[1]), 0, S.personas[0]);
+        await saveRoom(r);
+        const key = roomKey(r.id),
+          body = await KV.get(key);
+        await IDB.set(key, undefined);
+        localStorage.setItem("hv1_" + key, JSON.stringify(body));
+        return r.id;
+      });
+      await p.reload({ waitUntil: "load" });
+      await p.waitForTimeout(1500);
+      res.sweep = await p.evaluate(async (id) => {
+        const key = roomKey(id);
+        const moved = !!(await IDB.get(key)) && !localStorage.getItem("hv1_" + key);
+        location.hash = "r-" + id;
+        await new Promise((r) => setTimeout(r, 900));
+        return { moved, opened: !!room && room.id === id && !!document.querySelector("#inp") };
+      }, id);
+      if (!res.sweep.moved || !res.sweep.opened) errs.push("부팅 뒤 예전 방 본문 옮기기가 다름: " + JSON.stringify(res.sweep));
+    }
+    // 장기기억 설정의 원본은 설정(settings.memCfg) 하나 — 예전 빌드가 따로 두던 사본(hv1_memcfg)과 값이 달라도 설정의 값을 쓰고,
+    // 설정에 그 칸이 없는 예전 설치에서만 따로 둔 사본을 읽어 설정으로 옮김. 저장할 때 따로 둔 사본은 더 쓰지 않음
+    {
+      const seed = (withCfg) =>
+        p.evaluate((withCfg) => {
+          const s = JSON.parse(localStorage.getItem("hv1_settings") || "{}");
+          if (withCfg) s.memCfg = { ...(s.memCfg || {}), every: 7 };
+          else delete s.memCfg;
+          localStorage.setItem("hv1_settings", JSON.stringify(s));
+          localStorage.setItem("hv1_memcfg", JSON.stringify({ every: 3 }));
+        }, withCfg);
+      await seed(true);
+      await p.reload({ waitUntil: "load" });
+      await p.waitForTimeout(1200);
+      const both = await p.evaluate(() => S.settings.memCfg.every);
+      await seed(false);
+      await p.reload({ waitUntil: "load" });
+      await p.waitForTimeout(1200);
+      const legacy = await p.evaluate(() => {
+        const saved = (JSON.parse(localStorage.getItem("hv1_settings") || "{}").memCfg || {}).every;
+        const every = S.settings.memCfg.every;
+        S.settings.memCfg.every = 9;
+        saveSettings();
+        return { every, saved, extra: JSON.parse(localStorage.getItem("hv1_memcfg")).every };
+      });
+      res.memcfg = { both, legacy };
+      if (both !== 7 || legacy.every !== 3 || legacy.saved !== 3 || legacy.extra !== 3)
+        errs.push("장기기억 설정의 원본(설정 하나, 예전 사본은 옛 설치에서만 읽음)이 다름: " + JSON.stringify(res.memcfg));
+    }
   } catch (e) {
     res.fail = String(e).slice(0, 300);
   }

@@ -8,7 +8,7 @@ import { exampleCast } from "../../core/character.js";
 import { epAfter, epPick } from "../../core/episode.js";
 import { markEnding } from "../../core/shelf.js";
 import { curText, saveRoom } from "../../core/rooms.js";
-import { gen, room, setGen } from "../../core/state.js";
+import { gen, holdRoom, releaseRoom, room, setGen } from "../../core/state.js";
 import { $, esc, uid } from "../../core/util.js";
 import { charge, qShort, quote, refund, refundSug } from "../../core/wallet.js";
 import { imgTag, imgTags } from "../../images/codes.js";
@@ -185,6 +185,7 @@ export async function generate(target, q, direction = "", isEdit = false) {
       syncJump();
     }
   };
+  holdRoom(r.id); // 응답이 끝나 이 방 객체를 저장할 때까지, 계정에서 받은 것으로 이 방을 덮지 않게(services/cloud.js)
   try {
     const text = await llm(input, {
       tier: MODELS[model].tier,
@@ -233,18 +234,22 @@ export async function generate(target, q, direction = "", isEdit = false) {
       if (copy) r.lastErr = copy;
     }
   } finally {
-    setGen(null);
-    saveRoom(r);
-    collectSeen(r);
-    if (room === r && $("#logInner")) {
-      renderLog(stick && autoScroll());
-      syncJump();
-      updateComposer();
-      updateMeter();
-      $("#inp")?.focus({ preventScroll: true });
-      if (q.sug) showSug(); // 자동 받기로 온 추천은 바로 펼쳐 보임(값을 낸 것이라 누르지 않아도)
+    try {
+      setGen(null);
+      saveRoom(r);
+      collectSeen(r);
+      if (room === r && $("#logInner")) {
+        renderLog(stick && autoScroll());
+        syncJump();
+        updateComposer();
+        updateMeter();
+        $("#inp")?.focus({ preventScroll: true });
+        if (q.sug) showSug(); // 자동 받기로 온 추천은 바로 펼쳐 보임(값을 낸 것이라 누르지 않아도)
+      }
+      maybeSummarize(r); // 요약은 시작하면서 스스로 방을 잡음 — 아래에서 놓아도 틈이 없음
+    } finally {
+      releaseRoom(r.id); // 위에서 무엇이 던져도 방은 꼭 놓음(안 놓으면 그 방은 계정에서 받지 못함)
     }
-    maybeSummarize(r);
   }
 }
 export function stopGen() {

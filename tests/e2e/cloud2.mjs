@@ -283,8 +283,87 @@ try {
   res.pcPull = await A.page.evaluate(async (id) => {
     const n = await CLOUD.pull();
     await reloadFromCloud();
-    return { n, has: S.rooms.some((r) => r.id === id), roomBody: !!KV.getLocal(roomKey(id)) };
+    return { n, has: S.rooms.some((r) => r.id === id), roomBody: !!(await KV.get(roomKey(id))) };
   }, room2);
+  // 건너뛴 행 다시 받기: PC가 방을 열어 둔 사이 휴대폰이 그 방을 고침 → PC의 받기는 열린 방을 덮지 않고 넘어감(받은 자리 표시는 이미 그 행을 지나감) →
+  // 방에서 나오면 그 방만 다시 받아 옴(이쪽에서 더 고치지 않아도). 다시 받은 방은 메모리에 든 옛 사본 대신 저장된 것으로 다시 열림
+  await A.page.evaluate((id) => {
+    location.hash = "r-" + id;
+  }, room2);
+  await A.page.waitForFunction((id) => !!room && room.id === id && !!document.querySelector("#inp"), room2, { timeout: 8000 });
+  await B.page.evaluate(async (id) => {
+    const r = await KV.get(roomKey(id));
+    r.userNote = "휴대폰에서 고침";
+    saveRoom(r);
+    await CLOUD.flush();
+  }, room2);
+  const heldNote = await A.page.evaluate(async (id) => {
+    await CLOUD.pull();
+    return ((await KV.get(roomKey(id))) || {}).userNote || "";
+  }, room2);
+  await A.page.evaluate(() => {
+    location.hash = "home";
+  });
+  await A.page.waitForFunction(async (id) => ((await KV.get(roomKey(id))) || {}).userNote === "휴대폰에서 고침", room2, { timeout: 5000 }).catch(() => {});
+  res.retake = await A.page.evaluate(async (id) => ({ note: ((await KV.get(roomKey(id))) || {}).userNote || "", inMemory: !!(room && room.id === id) }), room2);
+  res.retake.held = heldNote;
+  // 그 방을 다시 열면 받은 내용으로 열림(메모리의 옛 사본이 아니라)
+  await A.page.evaluate((id) => {
+    location.hash = "r-" + id;
+  }, room2);
+  await A.page.waitForFunction((id) => !!room && room.id === id && !!document.querySelector("#inp"), room2, { timeout: 5000 }).catch(() => {});
+  res.retake.reopened = await A.page.evaluate(() => (room && document.querySelector("#inp") ? room.userNote : "(방이 안 열림)"));
+  await A.page.evaluate(() => {
+    location.hash = "home";
+  });
+  await A.page.waitForTimeout(300);
+  // 응답 생성·요약이 아직 쓰고 있는 방은(화면을 떠났어도) 받은 것으로 덮지 않고 미뤘다가, 그 일이 끝난 뒤에 받음 — 끝나면서 저장하는 옛 사본이 받은 것을 덮지 않게
+  await A.page.evaluate((id) => holdRoom(id), room2);
+  await B.page.evaluate(async (id) => {
+    const r = await KV.get(roomKey(id));
+    r.userNote = "휴대폰에서 또 고침";
+    saveRoom(r);
+    await CLOUD.flush();
+  }, room2);
+  res.retake.busy = await A.page.evaluate(async (id) => {
+    await CLOUD.pull();
+    const during = ((await KV.get(roomKey(id))) || {}).userNote || "";
+    releaseRoom(id);
+    await CLOUD.retake();
+    return { during, after: ((await KV.get(roomKey(id))) || {}).userNote || "" };
+  }, room2);
+  if (
+    heldNote !== "" ||
+    res.retake.note !== "휴대폰에서 고침" ||
+    res.retake.inMemory ||
+    res.retake.reopened !== "휴대폰에서 고침" ||
+    res.retake.busy.during !== "휴대폰에서 고침" ||
+    res.retake.busy.after !== "휴대폰에서 또 고침"
+  )
+    errs.push("건너뛴 행 다시 받기(열어 둔 방에 온 변경이 방을 나온 뒤 반영됨)가 다름: " + JSON.stringify(res.retake));
+  // 전송은 한 번에 하나: 앞의 저장 요청이 서버에 붙잡혀 있는 동안 같은 키를 또 바꾸면, 뒤의 값은 앞의 요청이 끝난 뒤에 올라가 계정에 마지막 값이 남음
+  // (겹쳐 나가면 늦게 끝난 옛 값이 새 값을 덮을 수 있었음)
+  {
+    let open;
+    db.gate = { opened: new Promise((r) => (open = r)), open: () => open() };
+  }
+  const setMemo = (memo) =>
+    KV.set(
+      "personas",
+      S.personas.map((x, i) => (i ? x : { ...x, memo }))
+    );
+  await A.page.evaluate(setMemo, "첫 번째");
+  for (let i = 0; i < 50 && !db.holding; i++) await A.page.waitForTimeout(100);
+  const firstHeld = (db.holding || 0) > 0;
+  await A.page.evaluate(setMemo, "두 번째");
+  await A.page.waitForTimeout(1400); // 두 번째 모으기(0.8초)가 끝남 — 겹쳐 나갔다면 붙잡힌 요청이 둘
+  const overlapped = (db.holding || 0) > 1;
+  db.gate.open();
+  db.gate = null;
+  await A.page.waitForTimeout(1000);
+  res.oneAtATime = { firstHeld, overlapped, memo: (((db.rows.find((r) => r.key === "personas") || {}).value || [])[0] || {}).memo };
+  if (!firstHeld || overlapped || res.oneAtATime.memo !== "두 번째")
+    errs.push("전송은 한 번에 하나(마지막 값이 계정에 남음)가 다름: " + JSON.stringify(res.oneAtATime));
   // 내 서재(찜·최근 본)의 날짜 관문 — 날짜 전에는 계정으로 가지 않고, 날짜가 되면 이 기기에만 쌓인 것이 올라가 다른 기기의 것과 합쳐짐(덮지 않음). 찜을 푼 것도 전해짐. 시험은 날짜 상수를 바꿔 양쪽을 모두 봄
   const shelfRow = () => (db.rows.find((r) => r.key === "shelf") || {}).value;
   await A.page.evaluate(async () => {
@@ -388,7 +467,8 @@ try {
     () => document.querySelector(".overlay h2")?.textContent + " / " + document.querySelector(".overlay .sub")?.textContent
   );
   if (out) await C.page.screenshot({ path: `${out}/galaxy_merge.png` });
-  await C.page.click("#mYes");
+  // 합치기 창을 버튼이 아닌 길(Esc)로 닫아도 뒤처리가 끝남 — '그냥 닫으면 아무것도 잃지 않게 합침'. 전에는 Esc·화면 이동으로 닫으면 합치지도 않고 로그인 뒤 처리가 멈췄음
+  await C.page.keyboard.press("Escape");
   await C.page.waitForTimeout(2000);
   res.merged = {
     local: await C.page.evaluate(() => S.rooms.map((r) => r.charId)),
@@ -396,6 +476,12 @@ try {
     room3Body: db.rows.some((r) => r.key === "room-" + room3),
     aud: await C.page.evaluate(() => S.settings.audience)
   };
+  res.merged.state = await C.page.evaluate(() => CLOUD.state);
+  {
+    const g = res.merged;
+    if (!g.local.includes("daeyeon") || !(g.server || []).includes("daeyeon") || !g.room3Body || g.state !== "ok")
+      errs.push("합치기 창을 Esc로 닫았을 때의 뒤처리(합치고 로그인 뒤 처리가 끝남)가 다름: " + JSON.stringify(g));
+  }
   // 로그아웃 보호 ①: 새 대화를 계정에 올리는 전송이 도는 중(가짜 서버가 첫 저장 요청을 붙잡아 둠)에 '이 기기의 데이터도 지우기'로 로그아웃 →
   // 도는 전송을 기다리며 화면을 막음(가림막이 화면을 덮고 키 눌림도 막음) → 붙잡은 요청이 실패로 끝나면 지우지 않고 '아직 올리지 못한 것이 있어요' 창 →
   // 실패하는 동안 '다시 올리기'를 눌러도 그대로 → 서버가 돌아온 뒤 '다시 올리기' → 올라간 뒤에야 지우고 로그아웃
@@ -424,14 +510,14 @@ try {
     btn.focus();
   });
   await C.page.keyboard.press("Enter"); // 진짜 키 눌림 — 막지 않으면 포커스가 있는 버튼이 눌림
-  const waiting = await C.page.evaluate((id) => {
+  const waiting = await C.page.evaluate(async (id) => {
     const v = document.querySelector(".veil"),
       r = v ? v.getBoundingClientRect() : { width: 0, height: 0 };
     return {
       held: true,
       covers: r.width >= innerWidth && r.height >= innerHeight,
       keyBlocked: window.__behind === 0,
-      body: !!KV.getLocal(roomKey(id)),
+      body: !!(await KV.get(roomKey(id))),
       signedIn: !!SB.s,
       sheet: !!document.querySelector("#lRetry")
     };
@@ -440,7 +526,7 @@ try {
   db.gate.open(); // 붙잡은 요청을 놓아 줌 → 실패로 끝남 → 이어 붙은 로그아웃의 전송도 실패
   db.gate = null;
   await C.page.waitForTimeout(1500);
-  const guardNow = (id) => ({ body: !!KV.getLocal(roomKey(id)), sheet: !!document.querySelector("#lRetry"), signedIn: !!SB.s });
+  const guardNow = async (id) => ({ body: !!(await KV.get(roomKey(id))), sheet: !!document.querySelector("#lRetry"), signedIn: !!SB.s });
   const guard1 = await C.page.evaluate(guardNow, room4);
   if (guard1.sheet) await C.page.click("#lRetry");
   await C.page.waitForTimeout(1200);
@@ -515,8 +601,8 @@ try {
   if (keepSheet) await D.page.click("#lKeep");
   await D.page.waitForTimeout(900);
   res.logoutKeep = await D.page.evaluate(
-    (id) => ({
-      body: !!KV.getLocal(roomKey(id)),
+    async (id) => ({
+      body: !!(await KV.get(roomKey(id))),
       listed: S.rooms.some((r) => r.id === id),
       signedIn: !!SB.s,
       guest: localStorage.getItem("hv1_guest")
@@ -530,6 +616,44 @@ try {
     if (!keepSheet || !k.body || !k.listed || k.signedIn || k.guest !== "1")
       errs.push("로그아웃 보호(지우지 않고 로그아웃)가 다름: " + JSON.stringify({ keepSheet, ...k }));
   }
+  // '계정 것만 쓰기': 계정에 대화 목록 행이 없어도(올리다 실패한 계정 등) 이 기기의 목록이 남아 다시 올라가지 않음 — 목록에서 빼고 본문은 이 기기에 그대로 둠
+  db.rows = db.rows.filter((r) => r.key !== "rooms");
+  await D.page.evaluate(() => {
+    location.hash = "login";
+  });
+  await D.page.waitForTimeout(400);
+  await D.page.fill("#lmail", "tester@example.test");
+  await D.page.fill("#lpw", "test-pass-1");
+  await D.page.click("#lgo");
+  await D.page.waitForTimeout(1500);
+  const onlySheet = await D.page.evaluate(() => !!document.querySelector("#mNo"));
+  if (onlySheet) await D.page.click("#mNo");
+  await D.page.waitForTimeout(2000);
+  res.accountOnly = await D.page.evaluate(async (id) => {
+    await CLOUD.flush();
+    return { rooms: S.rooms.map((r) => r.id), body: !!(await KV.get(roomKey(id))) };
+  }, room5);
+  res.accountOnly.server = ((db.rows.find((r) => r.key === "rooms") || {}).value || []).map((r) => r.id);
+  if (!onlySheet || res.accountOnly.rooms.length || !res.accountOnly.body || res.accountOnly.server.length)
+    errs.push("계정 것만 쓰기(계정에 목록이 없으면 이 기기의 목록도 비우고 본문은 남김)가 다름: " + JSON.stringify({ onlySheet, ...res.accountOnly }));
+  // 기기 지우기가 큰 저장소(IndexedDB)를 비우지 못하면 '지웠다'고 하지 않고 알림 — 같이 쓰는 기기에 대화가 남은 채 지운 줄 알게 되지 않게
+  await D.page.evaluate(() => {
+    IDB.clear = async () => false;
+    location.hash = "me";
+  });
+  await D.page.waitForTimeout(400);
+  await D.page.click("#cOut");
+  await D.page.waitForTimeout(200);
+  await D.page.click("#lwipe");
+  await D.page.click("#lok");
+  await D.page.waitForTimeout(1800);
+  res.wipeFail = await D.page.evaluate(() => ({
+    title: (document.querySelector(".overlay h2") || {}).textContent || "",
+    veil: !!document.querySelector(".veil"),
+    signedIn: !!SB.s
+  }));
+  if (!/다 지우지 못했어요/.test(res.wipeFail.title) || res.wipeFail.veil || res.wipeFail.signedIn)
+    errs.push("기기 지우기 실패 알림이 다름: " + JSON.stringify(res.wipeFail));
   await D.browser.close();
   // PC: 계정 삭제
   await A.page.evaluate(() => {

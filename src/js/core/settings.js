@@ -1,7 +1,6 @@
 /* 설정 저장·적용(글자 크기·줄 간격 등 CSS 변수), API 키 형식 안내. 저장하면 "settings" 이벤트 — 계정 저장(services/cloud.js)이 받음 */
 import { emit } from "./events.js";
 import { S } from "./state.js";
-import { KV } from "./storage.js";
 
 /** 형식이 다른 키 안내. @returns {string[]} 안내 문구(비면 이상 없음) */
 export function cleanKeys() {
@@ -10,12 +9,14 @@ export function cleanKeys() {
   if (s.apiKey && !/^sk-ant-/.test(s.apiKey)) warn.push("Anthropic 키는 sk-ant-로 시작해요");
   return warn;
 }
-/** 설정 저장(localStorage + memcfg KV) 후 "settings" 이벤트(계정 저장이 받음). @returns {void} */
+/**
+ * 설정 저장(localStorage) 후 "settings" 이벤트(계정 저장이 받아 "settings" 행으로 올림). 장기기억 설정(memCfg)도 설정의 한 칸으로만 저장 —
+ * 예전에는 따로 둔 사본(KV memcfg)에도 같이 써서 원본이 둘이었음(2026-11-23). 예전 설치의 사본은 core/migrate.js가 한 번 읽어 옮김. @returns {void}
+ */
 export function saveSettings() {
   try {
     localStorage.setItem("hv1_settings", JSON.stringify(S.settings));
   } catch {}
-  KV.set("memcfg", S.settings.memCfg);
   emit("settings");
 }
 /**
