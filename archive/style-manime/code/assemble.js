@@ -4,6 +4,9 @@
    v9(2026-11-19): 가볍고 만화 같던 v8을 반실사 만화 마감으로 바꿈 — 마감(FIN)·빛(BG)·얼굴(FACE_*·SKIN)·기본 표정(CALM)·정면 구도(FRAME)·후처리(POST). 견본은 ../samples */
 
 import { TEMPER_EMO, LEAD_EMO } from "./expressions.js";
+import { policyOf, liftOf, relax, MINOR_NEG } from "./exposure.js";
+// 노출 수위를 정하는 값(늘 넣는 노출 네거티브·긴소매·옷 태그가 푸는 것)과 그리기 전 검사는 exposure.js — 여기서는 고른 정책(P)의 값을 제자리에 끼운다
+export { assertSafe, assertAdult, policyOf } from "./exposure.js";
 
 export const MODEL = { air: "civitai:967405@1428332", name: "Nova Orange XL v6.0", steps: 28, cfg: 4, scheduler: "Euler a" };
 /* 크기는 64의 배수(Runware) — 프로필 768×1152(2:3), 감정 1024×1024. 첫 그림을 hires 크기로 키워 같은 프롬프트로 다시 그린다(strength 0.4) */
@@ -26,9 +29,8 @@ const SUBJ = {
 const FIN =
   "(shiny hair:1.1), (hair strands:1.4), (detailed hair:1.3), (detailed face:1.3), (detailed skin:0.9), (semi-realistic:1.15), (manhwa:1.0), (digital painting:1.2), " +
   "(painterly:1.1), (realistic shading:1.0), (soft skin shading:1.0), (depth of field:1.1), (bokeh:0.7), (sharp focus:0.9)";
-/* 몸: 여성은 가녀리게(가슴·허리 문구 대신 slender·slim), 소매 길이를 적지 않은 옷은 긴소매 */
+/* 몸: 여성은 가녀리게(가슴·허리 문구 대신 slender·slim), 소매 길이를 적지 않은 옷은 긴소매(문구는 노출 정책의 sleeves) */
 const BODY = { f: { profile: "slender, (slim:1.1)", emotion: "slender, (slim:1.2)" }, m: "slender, (bishounen:1.0)", elder: "(broad shoulders:0.5), (bishounen:0.5)" };
-const SLEEVES = "(long sleeves:1.2)";
 const SLEEVE_TAG = /sleeves|sleeveless/;
 /* 남성의 감정 그림 비율: 어깨가 넓고 머리가 작게(류건이 기준 — 사용자 2026-11-13). 태그에 broad shoulders가 없는 인물에만 붙인다. 프로필은 얼굴 구도라 그대로 */
 const SHOULDERS = "(broad shoulders:1.1)";
@@ -138,12 +140,11 @@ export const EMOTIONS = {
 };
 
 /* ── 네거티브 ── */
-const NEG_BASE = (g) =>
+const NEG_BASE = (g, P) =>
   [
     "lowres, bad anatomy, bad hands, text, error, missing fingers, extra digits, fewer digits, cropped, worst quality, low quality, signature, watermark, username, jpeg artifacts", // 품질
-    "child, loli, shota, underage, toddler, aged down, baby face, (young:1.1), (teenager:1.1), chibi", // 미성년 금지 — 늘 넣음
-    "nsfw, nude, (cleavage:1.3), revealing clothes, (no pants:1.4), (bottomless:1.3), (naked sweater:1.2), (sweater dress:1.2), (plunging neckline:1.2), (bare legs:1.3), huge breasts, " +
-      "(side slit:1.3), pelvic curtain, (skin tight:1.2), (impossible clothes:1.2), (covered navel:1.2), cameltoe, (bodysuit:1.1)", // 노출·달라붙는 옷
+    MINOR_NEG, // 미성년 금지 — 늘 넣음(어느 트랙에서도)
+    P.neg.base, // 노출·달라붙는 옷(노출 정책)
     "(wide shot:1.1), (full body:1.1), feet, knees, (thick thighs:1.1)", // 구도·과장
     "(thick lineart:1.1), (thick outlines:1.2), sketch, (cartoon:1.1), (anime screencap:1.1), (cel shading:1.1), (flat color:1.1), 3d, realistic, photorealistic", // 화풍
     g === "f" ? "(big head:1.2)" : "(big head:1.2), round face", // 성인 인상(여성은 부드러운 얼굴형을 두려고 round face를 막지 않음)
@@ -152,22 +153,15 @@ const NEG_BASE = (g) =>
   ].join(", ");
 const NEG_F = ", (old:1.2), (middle-aged:1.2), (wrinkles:1.2), nasolabial folds, eye bags";
 const NEG_M = ", facial hair, beard, stubble, old man, (wrinkles:1.1), (old:1.2), (middle-aged:1.2), burly, (young boy:1.3), (shota:1.4), (long hair:1.2)";
-const NEG_SKIN =
-  ", (cleavage:1.5), (see-through:1.4), (see-through clothes:1.3), (open clothes:1.3), (open shirt:1.2), (unbuttoned:1.2), (downblouse:1.4), (lingerie:1.3), (bra:1.3), " +
-  "(bare shoulders:1.2), (off shoulder:1.2)";
 const NEG_LINE = ", (thick outlines:1.4), (bold lineart:1.2), (black outline:1.2)";
-// v9: 만화 같은 칠·큰 눈·빛나는 눈을 막음(반실사 만화 마감) / 여성 — 굴곡 과장과 드러난 어깨·팔 / 남성 — 풀어 헤친 셔츠
+// v9: 만화 같은 칠·큰 눈·빛나는 눈을 막음(반실사 만화 마감). 여성의 굴곡 과장과 드러난 어깨·팔, 남성의 풀어 헤친 셔츠는 노출 정책(neg.f·neg.m)
 const NEG_FLAT = ", (flat color:1.2), (cel shading:1.3), (anime screencap:1.3), (cartoon:1.2), (big eyes:1.2), (moe:1.2), (glowing eyes:1.2), (harsh shadows:1.1), (from behind:1.3)";
-const NEG_SLIM =
-  ", (large breasts:1.5), (huge breasts:1.5), (curvy:1.3), (wide hips:1.2), (bare shoulders:1.6), (bare arms:1.5), (sleeveless:1.6), (shoulder cutout:1.6), (detached sleeves:1.5), (clothing cutout:1.5), (collarbone:1.3)";
-const NEG_SHIRT = ", (open shirt:1.4), (unbuttoned shirt:1.3), (bare chest:1.5), (pectorals:1.3), (sleeveless:1.5), (bare shoulders:1.5), (bare arms:1.3)"; // 조끼 차림이 소매 없는 옷으로 그려짐(장태산)
 // 기본 표정 칸(0·1)에서만: 감은 눈·둥근 눈·벌린 입(남자는 웃음도)을 막음 — 감정 칸은 그 표정을 써야 하므로 넣지 않음
 const NEG_CALM = {
   f: ", (closed eyes:1.4), (sleeping:1.3), (round eyes:1.2), (open mouth:1.2), (teeth:1.2), (grin:1.2)",
   m: ", (closed eyes:1.4), (sleeping:1.3), (large eyes:1.3), (round eyes:1.2), (open mouth:1.2), (teeth:1.2), (grin:1.2), (smile:1.2), (smirk:1.3)",
 };
 const NEG_SOFT = ", (glaring:1.2), (angry:1.1), (sanpaku:1.1)"; // 여성 — 노려보는 눈 막기(분노·공격·각성 칸은 뺌)
-const NEG_NECK = ", (collarbone:1.1), (plunging neckline:1.3)";
 const NEG_LEAN = ", (leaning forward:1.2), (bent over:1.2)";
 const NEG_POSE = ", (sitting:1.3), (leaning forward:1.2), (bent over:1.2), (lying:1.2), (desk:0.8), (leaning on table:1.2), (arms on table:1.2), (arm support:1.1), (elbow rest:1.1)";
 const NEG_ARMS = ", (holding gun:1.2), (holding weapon:1.1), (aiming:1.2)";
@@ -177,11 +171,8 @@ const NEG_HAIR_BLEED = ", (multicolored hair:1.2), streaked hair, colored inner 
 const NEG_LIGHT = ", (overexposed:1.3), (flat lighting:1.3), (washed out:1.2), (bright:1.1), (white sky:1.2), (white background:1.3)";
 const NEG_TEXT = ", (text on clothes:1.3), (logo:1.3), (text:1.4)";
 const NEG_TRAIN = ", (train:1.3), (locomotive:1.3), (railroad tracks:1.2)";
-// 물가 장소(폭포·강·비)는 흰 옷을 젖어 비치게 그림(십절곡 낙혼폭 — 2026-11-14) → 젖은 옷·비치는 옷을 막음
-const NEG_WET = ", (wet clothes:1.4), (see-through:1.5), (wet shirt:1.4), (wet:1.1)";
+// 물가 장소의 젖은 옷, 누더기 옷의 찢어진 자리를 막는 네거티브는 노출 정책(neg.wet·neg.torn)
 const NEG_SHORT_CAPE = ", (capelet:1.4), (short cape:1.3), (shoulder cape:1.3)";
-// 누더기 옷(patched ragged clothes)은 가슴께가 찢어져 살이 보임(화린 — 2026-11-14) → 기운 옷으로만
-const NEG_TORN = ", (torn clothes:1.4), (clothing cutout:1.4), (torn shirt:1.4)";
 const TWO_TONE = /multicolored hair|streaked hair|gradient hair|two-tone hair|colored inner hair/;
 
 /* ── 인물 칸 ── 작품 태그 그대로 ×1.1, 눈색 ×1.0, 수염 ×0.7 + 앞머리·속옷 규칙 */
@@ -227,7 +218,7 @@ const inner = (tags) =>
       : tags;
 /** 인물 칸과 그에 딸린 네거티브. tags는 칸에 맞게 걸러 낸 작품 태그 */
 const BODY_MARK = / on (forearm|arm|hand|back)s?$|^sleeves rolled up$/; // 팔·손의 흉터 같은 낱말은 얼굴로 옮겨 붙음 → 뺌(가슴 위 구도라 보이지도 않음)
-function person(c, tags0, boost) {
+function person(c, tags0, boost, P) {
   const tags = tags0.split(", ").filter((t) => !BODY_MARK.test(t)).join(", ");
   const tier = tierOf(c), man = tier !== "f";
   const hr = hairRule(man && !HAIR_LENGTH.test(tags) ? tags.replace(/ hair, /, " hair, short hair, ") : tags, tier);
@@ -236,8 +227,8 @@ function person(c, tags0, boost) {
   let sex = man ? NEG_M : NEG_F;
   if (man && tags.split(", ").some((t) => FACIAL.test(t))) sex = sex.replace(", facial hair, beard, stubble,", ", (long beard:1.2), (mustache:1.1),"); // 수염이 설정인 인물
   const tail =
-    hr.neg + (TWO_TONE.test(tags) ? "" : NEG_HAIR_BLEED) + (/long (cloak|cape|poncho)/.test(tags) ? NEG_SHORT_CAPE : "") + (/ragged|tattered|torn/.test(tags) ? NEG_TORN : "");
-  return { tier, man, g: man ? "m" : "f", pos, negHead: NEG_BASE(man ? "m" : "f") + sex + NEG_SKIN + NEG_LINE + NEG_FLAT + (man ? NEG_SHIRT : NEG_SLIM), negTail: tail };
+    hr.neg + (TWO_TONE.test(tags) ? "" : NEG_HAIR_BLEED) + (/long (cloak|cape|poncho)/.test(tags) ? NEG_SHORT_CAPE : "") + (/ragged|tattered|torn/.test(tags) ? P.neg.torn : "");
+  return { tier, man, g: man ? "m" : "f", pos, negHead: NEG_BASE(man ? "m" : "f", P) + sex + P.neg.skin + NEG_LINE + NEG_FLAT + (man ? P.neg.m : P.neg.f), negTail: tail };
 }
 
 /* ── 장소 칸(감정 그림) ── 작품의 장소 태그 ×1.1. 사람·클로즈업·기차 낱말은 뺀다(혼자 서 있는 그림). 시간 낱말이 없으면 밤 */
@@ -257,21 +248,27 @@ function placeBlock(tags) {
 
 /** 인물마다 시드 하나 — 칸마다 구도와 옷이 바뀌지 않게(인물 코드의 글자 합) */
 export const seedOf = (c) => 7500 + ([...c.code].reduce((a, ch) => a + ch.charCodeAt(0), 0) % 400);
-const job = (kind, pos, neg, seed) => ({ pos, neg, model: MODEL.air, steps: MODEL.steps, cfg: MODEL.cfg, scheduler: MODEL.scheduler, seed, ...SIZE[kind], post: kind === "emotion" ? POST_EMOTION : POST });
+/** lift: 이 그림에서 뺀 노출 네거티브의 이름(노출 정책 — 옷 태그·강조 지정). 뺀 것이 있을 때만 작업에 적어 둔다(그리기 전 검사 assertSafe가 읽음) */
+const job = (kind, pos, neg, seed, lift) => ({
+  pos, neg: relax(neg, lift), model: MODEL.air, steps: MODEL.steps, cfg: MODEL.cfg, scheduler: MODEL.scheduler, seed, ...SIZE[kind], post: kind === "emotion" ? POST_EMOTION : POST,
+  ...(lift.length ? { lift } : {}),
+});
 
-/** 프로필(칸 0): 얼굴이 화면을 채우는 구도 + 어두운 단색 배경. place는 쓰지 않는다(자리만 맞춤) */
+/** 프로필(칸 0): 얼굴이 화면을 채우는 구도 + 어두운 단색 배경. place는 쓰지 않는다(자리만 맞춤). o: { seed, track(노출 정책의 트랙 — 없으면 일반), accent: false면 강조를 쓰지 않음 } */
 export function profileJob(c, place, o = {}) {
-  const p = person(c, c.tags.split(", ").filter((t) => !BOTTOM_TAG.test(t)).join(", ")), ch = charm(c);
+  const P = policyOf(o.track), lift = liftOf(c, isFem(c), P, o);
+  const p = person(c, c.tags.split(", ").filter((t) => !BOTTOM_TAG.test(t)).join(", "), false, P), ch = charm(c);
   const face = (p.man ? EYES_M + ", " + (p.tier === "elder" ? elderFace(FACE_M.profile) : FACE_M.profile) : ch.eyes + ", " + FACE_F) + ", " + skinOf(p.tier) + ", " + LIPS[p.g];
   const body = p.man ? BODY[p.tier] : BODY.f.profile;
   const pos = [SUBJ[p.tier], p.pos, ch.emo, FRAME.profile, face, body, FIN, BG.profile, Q].join(", ");
-  return job("profile", pos, p.negHead + p.negTail + NEG_CALM[p.g] + (p.man ? "" : NEG_SOFT + NEG_NECK + NEG_LEAN), o.seed || 7301);
+  return job("profile", pos, p.negHead + p.negTail + NEG_CALM[p.g] + (p.man ? "" : NEG_SOFT + P.neg.neck + NEG_LEAN), o.seed || 7301, lift);
 }
 
-/** 감정 그림(칸 1~14): 가슴까지 + 작품의 장소. 칸 1은 인물의 기본 표정 */
+/** 감정 그림(칸 1~14): 가슴까지 + 작품의 장소. 칸 1은 인물의 기본 표정. o는 profileJob과 같음(+ symbols: false면 만화 기호를 뺌) */
 export function emotionJob(c, place, slot, o = {}) {
+  const P = policyOf(o.track), lift = liftOf(c, isFem(c), P, o);
   const E = EMOTIONS[slot] || {}, tags0 = E.armed ? c.tags : c.tags.split(", ").filter((t) => !WEAPON_TAG.test(t)).join(", ");
-  const p = person(c, inner(tags0), true), g = p.g, ch = charm(c), elder = p.tier === "elder";
+  const p = person(c, inner(tags0), true, P), g = p.g, ch = charm(c), elder = p.tier === "elder";
   const T = slot > 1 ? (TEMPER_EMO[temperOf(c)] || {})[slot] : null; // 대표 칸은 성격별 표정(expressions.js), 없으면 공통 표정
   const L = slot > 1 ? (LEAD_EMO[c.code + ":" + c.name] || {})[slot] : null; // 작품의 대표 인물은 그 인물만의 버릇·소품
   const eyes = (L && L.eyes) || (T && T.eyes && T.eyes[g]) || (E.eyes && E.eyes[g]) || (p.man ? EYES_M : ch.eyes);
@@ -284,26 +281,19 @@ export function emotionJob(c, place, slot, o = {}) {
   const look = (L && L.look) || (T && T.look) || E.look; // "viewer"는 마주 봄
   const frame = look && LOOK[look] ? FRAME.emotion.replace("looking at viewer", LOOK[look]) : FRAME.emotion;
   const day = TIME.test(place.tags) && !DARK.test(place.tags);
-  const sleeves = SLEEVE_TAG.test(c.tags) ? "" : SLEEVES; // 소매 길이를 적지 않은 옷은 긴소매(여·남 모두)
+  // 소매 길이를 적지 않은 옷은 긴소매(여·남 모두) — 어깨·팔을 드러내는 옷을 적어 그 네거티브를 푼 그림은 뺌
+  const sleeves = SLEEVE_TAG.test(c.tags) || lift.includes("bare arms") || lift.includes("bare shoulders") ? "" : P.sleeves;
   const body = p.man ? [/broad shoulders/.test(c.tags) ? "" : SHOULDERS, BODY_M_EMOTION[p.tier], sleeves].filter(Boolean).join(", ") : BODY.f.emotion + (sleeves ? ", " + sleeves : "");
   let pos = [SUBJ[p.tier], p.pos, emo, frame, placeBlock(place.tags), eyes + ", " + face, body, FIN, day ? BG.emotion.replace("(dim lighting:0.8), ", "") : BG.emotion, Q]
     .filter(Boolean)
     .join(", ");
   if (E.noEyeColor) pos = pos.replace(/\((?:[a-z ]+) eyes:1\), /, ""); // 자는 칸은 눈색 태그를 뺌(눈을 뜨게 함)
   const neg =
-    p.negHead + p.negTail + (slot === 1 || !E.emo ? NEG_CALM[g] : "") + (!p.man && !E.hard ? NEG_SOFT : "") + (p.man ? "" : NEG_NECK) + (day ? "" : NEG_DAY) + NEG_POSE + (E.armed ? "" : NEG_ARMS) + (E.neg || "") +
+    p.negHead + p.negTail + (slot === 1 || !E.emo ? NEG_CALM[g] : "") + (!p.man && !E.hard ? NEG_SOFT : "") + (p.man ? "" : P.neg.neck) + (day ? "" : NEG_DAY) + NEG_POSE + (E.armed ? "" : NEG_ARMS) + (E.neg || "") +
     (place.tags.split(", ").some((t) => VEHICLE.test(t)) ? NEG_TRAIN : "") +
-    (WATER.test(place.tags) ? NEG_WET : "") +
+    (WATER.test(place.tags) ? P.neg.wet : "") +
     (place.tags.split(", ").some((t) => PLACE_ANIMAL.test(t)) ? NEG_ANIMAL : "") +
     NEG_LIGHT + NEG_TEXT +
     (p.man ? NEG_PROPORTION + (E.negM || "") : "");
-  return job("emotion", pos, neg, o.seed || seedOf(c));
-}
-
-/** 꼭 있어야 하는 것 — 성인 표시와 미성년·노출 네거티브. 빠졌으면 던진다(그리기 전에 부를 것) */
-export function assertSafe(j) {
-  if (!/\(adult (woman|man):1\.[23]\)/.test(j.pos) || !/\bsolo\b/.test(j.pos)) throw new Error("성인·혼자 표시가 없어요");
-  for (const t of ["child", "loli", "shota", "underage", "aged down", "teenager", "nsfw", "nude", "(cleavage:1.5)", "revealing clothes", "chibi", "(big head:1.2)"])
-    if (!j.neg.includes(t)) throw new Error("네거티브에 없어요: " + t);
-  return j;
+  return job("emotion", pos, neg, o.seed || seedOf(c), lift);
 }
