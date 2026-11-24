@@ -273,6 +273,7 @@ export function updateComposer() {
         ? `오늘 무료 턴이 ${freeLeft()}번 남았어요. 다 쓰면 라이트 모델은 턴당 ♥${listPrice("lite", room.set.len, room.set.mem)}이에요.`
         : "";
 }
+on("wallet", updateComposer); // 하트·무료 턴이 바뀜 — 보내기 버튼의 값과 안내를 맞춤(전에는 틀 ui/shell.js가 직접 불렀음)
 on("rooms", updateComposer); // 방 저장이 실패했거나 실패했던 방이 저장됨 — '저장하지 못했어요' 줄을 맞춤(core/rooms.js saveRoom)
 export function lastAi(r) {
   for (let i = r.msgs.length - 1; i >= 0; i--) if (r.msgs[i].role === "ai") return r.msgs[i];

@@ -32,7 +32,7 @@
 ## 빌드와 모듈 규칙
 
 - index.html(사용자 사이트) · admin.html(관리자 도구) — 둘 다 커밋·배포. 같은 src/에서 진입점만 다름(src/js/main.js ↔ src/js/admin.js, 뼈대 src/page.html ↔ src/admin.html, 공통 모듈 묶음 src/js/app.js의 USER_VIEWS·USER_NAVS)
-- **index.html·admin.html은 빌드 결과물 — 직접 고치지 않기.** src/·content/를 고친 뒤 npm run build(둘 다 만듦), 바뀐 결과를 같이 커밋. npm run check는 둘이 소스 빌드 결과와 같은지만. GitHub Actions '빌드 확인'(.github/workflows/build.yml)이 PR·main마다 npm ci → npm run check → npm test, '흐름 시험'(e2e.yml)이 PR마다 npm run e2e -- --retry(실패한 시험만 한 번 더 · 처음 두 주(2026-11-26쯤까지)는 알림만, 그 뒤 필수 검사로 — 2026-11-11 사용자 결정, tests/README.md 'CI')
+- **index.html·admin.html은 빌드 결과물 — 직접 고치지 않기.** src/·content/를 고친 뒤 npm run build(둘 다 만듦), 바뀐 결과를 같이 커밋. npm run check(병합 전 검사)는 둘이 소스 빌드 결과와 같은지에 더해 순서 잠금·코드 정렬·긴 줄 예외·문서(이 문서의 크기와 지도 표의 경로)까지. GitHub Actions '빌드 확인'(.github/workflows/build.yml)이 PR·main마다 npm ci → npm run check → npm test, '흐름 시험'(e2e.yml)이 PR마다 npm run e2e -- --retry(실패한 시험만 한 번 더 · 처음 두 주(2026-11-26쯤까지)는 알림만, 그 뒤 필수 검사로 — 2026-11-11 사용자 결정, tests/README.md 'CI')
 - npm install은 devDependencies만(빌드 검사용 espree·eslint-scope, 흐름 시험용 playwright, 코드 정렬용 prettier — 버전 고정). 앱 런타임 의존성 0. package.json "type": "module"은 지우지 않기(src/js와 content/**/work.js를 Node가 ESM으로 읽음)
 - 뼈대 src/page.html(사용자)·src/admin.html(관리자): doctype·메타·마크업·부팅 안내 ES5 스크립트. `<!-- @include css/*.css -->` 자리에 CSS 조각(이름 순), `<!-- @script js/main.js -->` 자리에 모듈 번들. 맨 위 <!doctype html>·<html lang="ko">·charset·viewport는 지우지 않기(없으면 쿼크 모드)
 - 주석 정책: 소스에는 설명을 자세히. 사용자 빌드는 주석·빈 줄을 벗기고(`//!`·`/*!`·`<!--!`만 남김) 모듈마다 `/* ── 파일 — 첫 줄 주석의 첫 문장 */` 한 줄 → **모듈 첫 줄 주석의 첫 문장이 곧 사용자 빌드에 남는 설명**. 관리자 빌드는 주석을 모두 남기고 모듈마다 가져옴·내보냄·쓰는 곳 머리를 붙임. 결과 파일은 둘 다 직접 고치지 않음

@@ -10,7 +10,6 @@ import { $, $$, esc, num } from "../core/util.js";
 import { freeLeft, isPro } from "../core/wallet.js";
 import { IMG } from "../services/images.js";
 import { stopGen } from "./chat/generate.js";
-import { updateComposer } from "./chat/view.js";
 import { coverHTML } from "./cover.js";
 import { ICON } from "./icons.js";
 import { closeOverlays } from "./sheet.js";
@@ -109,7 +108,6 @@ export function renderWalletChips() {
     w.innerHTML = walletHTML();
     w.classList.toggle("pro", isPro());
   });
-  updateComposer();
 }
 export function topbar(extra = "") {
   return `<div class="topbar">${LOGO}${extra}<span class="spacer"></span>

@@ -8240,6 +8240,7 @@ function updateComposer() {
         ? `오늘 무료 턴이 ${freeLeft()}번 남았어요. 다 쓰면 라이트 모델은 턴당 ♥${listPrice("lite", room.set.len, room.set.mem)}이에요.`
         : "";
 }
+on("wallet", updateComposer);
 on("rooms", updateComposer);
 function lastAi(r) {
   for (let i = r.msgs.length - 1; i >= 0; i--) if (r.msgs[i].role === "ai") return r.msgs[i];
@@ -9057,7 +9058,6 @@ function renderWalletChips() {
     w.innerHTML = walletHTML();
     w.classList.toggle("pro", isPro());
   });
-  updateComposer();
 }
 function topbar(extra = "") {
   return `<div class="topbar">${LOGO}${extra}<span class="spacer"></span>
