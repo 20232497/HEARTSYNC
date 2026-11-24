@@ -1,5 +1,6 @@
 // 일상 화풍의 조립(archive/style-mdaily/code/assemble.js) — 그림 도구(npm run art)가 쓰는 화풍 규칙. 앱 코드가 아니다.
-// 2026-11-23~24: 구도·표정은 애니 화풍과 같게(acting), 여성은 또렷한 얼굴에 흐릿한 분위기(v8), 남성은 애니 화풍으로 그리고 이 화풍의 흐림만 입힘(v12).
+// 2026-11-23~24: 구도·표정은 애니 화풍과 같게(acting), 여성은 또렷한 얼굴에 흐릿한 분위기(v8) + 감정 그림을 조금 멀리(v9),
+// 남성은 애니 화풍으로 그리고 이 화풍의 흐림만 입힘(v12) + 칠·배경을 여성 쪽으로(v13). 나이 든 남자의 나이 문구는 애니 화풍의 조립이 정함.
 // 작품 글(content/)이 바뀌어도 막지 않게 규칙의 성질만 본다.
 import fs from "node:fs";
 import path from "node:path";
@@ -7,7 +8,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { profileJob, emotionJob, assertSafe, isFem, STYLE, guided, SIZE } from "../../archive/style-mdaily/code/assemble.js";
-import { acting, MODEL, emotionJob as animeEmotion, profileJob as animeProfile } from "../../archive/style-manime/code/assemble.js";
+import { acting, agedOf, MODEL, emotionJob as animeEmotion, profileJob as animeProfile } from "../../archive/style-manime/code/assemble.js";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const walk = (d) =>
@@ -72,6 +73,11 @@ test("일상 화풍: 구도·표정은 애니 화풍의 것 — 프로필은 얼
   // 애니에서 가져오지 않는 것(이 화풍이 조립하는 여성 인물): 이모티콘 입(:d), 겹친 구도(cowboy shot), 낮 장소에서 낮을 막는 네거티브
   const laugh = names(emotionJob(F, PLACE, 2).pos);
   assert.ok(!laugh.includes(":d") && !laugh.includes("cowboy shot") && laugh.includes("upper body"));
+  // 감정 그림의 거리(값 파일의 act.frame·frameNeg): 이 모델은 얼굴 가까이 잡으므로 구도 낱말과 가까운 구도 네거티브를 더한다 — 프로필(얼굴 구도)에는 넣지 않음
+  const far = emotionJob(F, PLACE, 2),
+    near = profileJob(F, PLACE);
+  assert.ok(STYLE.f.act.frame && far.pos.includes(STYLE.f.act.frame) && names(far.neg).includes("close-up"), "감정 그림: 거리 문구");
+  assert.ok(!near.pos.includes(STYLE.f.act.frame) && !names(near.neg).includes("close-up"), "프로필: 얼굴 구도 그대로");
   const DAY = { tags: "library, bookshelves, daylight" };
   assert.ok(!names(emotionJob(F, DAY, 5).neg).includes("day"), "놀람: 낮 장소에서 낮을 막지 않음");
   assert.ok(names(emotionJob(F, PLACE, 5).neg).includes("day"), "밤 장소는 이 화풍이 스스로 낮을 막음");
@@ -87,7 +93,7 @@ test("일상 화풍: 구도·표정은 애니 화풍의 것 — 프로필은 얼
 });
 
 // 가중치는 비교 생성으로 계속 맞추는 값이라 낱말이 있는지만 본다(성인 표시처럼 지킬 것은 가중치까지)
-test("일상 화풍: 여성(v8)은 얼굴은 또렷하게, 분위기는 흐릿하게 — 이 화풍의 모델과 문구로 그림", () => {
+test("일상 화풍: 여성(v8~v9)은 얼굴은 또렷하게, 분위기는 흐릿하게 — 이 화풍의 모델과 문구로 그림", () => {
   const f = emotionJob(F, PLACE, 1),
     fp = names(f.pos);
   assert.ok(isFem(F) && !isFem(M));
@@ -103,26 +109,73 @@ test("일상 화풍: 여성(v8)은 얼굴은 또렷하게, 분위기는 흐릿�
 
 test("일상 화풍: 남성 인물은 애니 화풍으로 그리고 이 화풍의 흐림만 입힌다(값 파일의 draw) — 밑그림 없이, 만화 기호 없이", () => {
   assert.equal(STYLE.m.draw, "anime");
+  const T = STYLE.m.anime;
   for (const slot of [0, 1, 3, 11, 14]) {
     const m = slot ? emotionJob(M, PLACE, slot) : profileJob(M, PLACE),
       a = slot ? animeEmotion(M, PLACE, slot, { symbols: false }) : animeProfile(M, PLACE, { symbols: false });
     assert.equal(m.model, MODEL.air, `칸 ${slot}: 애니 화풍의 모델`);
-    assert.deepEqual(
-      [m.pos, m.neg, m.seed, m.width, m.height, m.post],
-      [a.pos, a.neg, a.seed, a.width, a.height, a.post],
-      `칸 ${slot}: 애니 화풍의 작업 그대로`
-    );
+    assert.deepEqual([m.seed, m.width, m.height, m.hires], [a.seed, a.width, a.height, a.hires], `칸 ${slot}: 애니 화풍의 시드·크기 그대로`);
+    assert.ok(m.neg.startsWith(a.neg), `칸 ${slot}: 애니 화풍의 네거티브는 빼지 않음`);
     assert.ok(m.postAs === "anime" && m.haze === STYLE.m.post && !m.guide && !m.lora, `칸 ${slot}: 애니 후처리 뒤에 이 화풍의 흐림, 밑그림·LoRA 없음`);
     assert.ok(/adult man/.test(m.pos) && names(m.neg).includes("child"), `칸 ${slot}: 성인 표시와 미성년 네거티브`);
     for (const sym of SYMBOLS) assert.ok(!names(m.pos).includes(sym), `칸 ${slot}: 만화 기호 ${sym}`);
     assert.ok(!guided(M, slot), `칸 ${slot}: 값 어림에서 밑그림으로 세지 않음`);
+    // 칠을 여성 쪽으로(값 파일의 anime): 센 명암 낱말은 빠지고, 부드러운 칠 문구가 붙고, 대비를 올리는 애니 후처리는 쓰지 않음
+    const got = names(m.pos);
+    for (const t of T.drop) assert.ok(!got.includes(t), `칸 ${slot}: 빠져야 하는 낱말 ${t}`);
+    assert.ok(m.pos.endsWith(T.add) && m.post === T.post && !m.post.filter, `칸 ${slot}: 부드러운 칠·대비 없는 후처리`);
+    // 배경은 여성 인물과 같은 문구: 흐린 배경 + 장소 낱말 0.8(애니 화풍의 1.1·단색 배경이 아님)
+    assert.ok(m.pos.includes("(blurry background:1.5)") && m.pos.includes("(library:0.8)") && !m.pos.includes("(library:1.1)"), `칸 ${slot}: 흐린 배경`);
+    for (const t of T.bg.plain) assert.ok(!got.includes(t), `칸 ${slot}: 단색 배경 낱말 ${t}`);
+    assert.ok(m.pos.includes(T.bg.night), `칸 ${slot}: 밤 장소의 빛 문구`);
   }
-  // 흐림은 여성보다 옅게(날카로운 인상을 지킴)
-  assert.ok(STYLE.m.post.blurA > 0 && STYLE.m.post.blurA < STYLE.f.post.blurA);
+  // 값 파일이 이름으로 가리키는 낱말은 애니 화풍의 문구에 실제로 있다(낱말이 바뀌거나 오타가 나면 여기서 알림)
+  const src = names(animeEmotion(M, PLACE, 1, { symbols: false }).pos);
+  for (const t of [...T.drop, ...Object.keys(T.set)]) assert.ok(src.includes(t), "애니 화풍의 문구에 없는 낱말: " + t);
+  for (const t of T.bg.plain.slice(0, 1)) assert.ok(names(animeProfile(M, PLACE).pos).includes(t), "애니 프로필에 없는 단색 배경 낱말: " + t);
+  // 가중치 손질(set)이 실제로 들어감 — 배경 흐림은 배경 문구가 따로 넣으므로 그것 말고 나머지로 본다
+  const tuned = emotionJob(M, PLACE, 1).pos;
+  for (const [t, w] of Object.entries(T.set)) if (t !== "blurry background") assert.ok(tuned.includes(`(${t}:${w})`), "가중치가 안 바뀜: " + t);
+  // 애니 화풍의 장소 문구만 통째로 바뀐다: 장소 낱말과 이름이 같은 인물 태그·성인 표시는 그대로, 애니 화풍이 뺀 동물은 다시 들어가지 않음
+  const same = emotionJob(M, { tags: "office, black hair, solo, gray cat on desk, night" }, 1);
+  assert.ok(same.pos.includes("(black hair:1.1)") && /\bsolo\b/.test(same.pos) && !same.pos.includes("(office:1.1)"), "인물 태그는 그대로, 장소 문구만 바뀜");
+  assert.ok(!same.pos.includes("cat") && names(same.neg).includes("cat"), "뺀 동물은 배경 문구에도 없음");
+  // 시간 낱말이 없는 장소: 애니 화풍이 밤으로 보고 더한 night는 남김 · tags가 없는 장소 객체도 그릴 수 있음
+  assert.ok(names(emotionJob(M, { tags: "office, desk" }, 1).pos).includes("night"));
+  assertSafe(emotionJob(M, {}, 1));
+  // 밤 장소의 프로필은 낮을 막고(애니 프로필에는 없음), 낮 장소는 밤 빛 문구를 넣지 않고, 장소가 없으면 애니 화풍의 단색 배경 그대로
+  assert.ok(names(profileJob(M, PLACE).neg).includes("daylight"));
+  assert.ok(!emotionJob(M, { tags: "library, bookshelves, daylight" }, 1).pos.includes(T.bg.night));
+  assert.ok(names(profileJob(M, undefined).pos).includes("simple background"));
+  // 흐림은 여성과 같은 값(한 작품의 인물은 한 분위기) — 선이 또렷한 애니 그림은 같은 세기에서도 눈이 뭉개지지 않았다
+  assert.deepEqual(STYLE.m.post, STYLE.f.post);
   // 시드를 주면 그 값으로(그림 도구의 '다시 그리기'), 안 주면 애니 화풍의 시드 그대로 — 같은 인물의 애니 그림과 같은 얼굴
   assert.equal(emotionJob(M, PLACE, 1, { seed: 9 }).seed, 9);
   assert.equal(profileJob(M, PLACE, { seed: 9 }).seed, 9);
   // 장소가 없어도, 작품의 모든 장소에서도(물가 장소는 젖은 옷 네거티브가 더 붙음) 그리기 전 검사를 통과
   assertSafe(emotionJob(M, undefined, 1));
   for (const { c, places } of CAST.filter((x) => !isFem(x.c))) for (const place of places) for (let s = 1; s <= 14; s++) assertSafe(emotionJob(c, place, s));
+});
+
+test("애니 화풍: 나이 든 남자(40·50 이상)는 나이를 막는 문구를 빼고 나이 문구를 넣는다 — 벗어진 이마는 앞머리로 덮지 않음, 미성년 네거티브는 그대로", () => {
+  const man = (age, tags) => ({ ...M, age, look: age + "세 남성", tags: tags || M.tags });
+  const old = man(58, "grey hair, short hair, receding hairline, brown eyes, glasses, beige cardigan, white collared shirt");
+  assert.deepEqual([agedOf(man(36)), agedOf(man(45)).from, agedOf(old).from, agedOf({ ...F, age: 58 })], [null, 40, 50, null]);
+  for (let slot = 0; slot <= 14; slot++) {
+    const j = slot ? animeEmotion(old, PLACE, slot) : animeProfile(old, PLACE),
+      pos = names(j.pos),
+      neg = names(j.neg);
+    assert.ok(j.pos.includes("(58 years old:1.1)") && pos.includes("middle-aged man") && /adult man/.test(j.pos), `칸 ${slot}: 나이 문구와 성인 표시`);
+    for (const t of ["30 years old", "flawless skin", "clear skin", "bishounen", "curtained hair", "hair parted in the middle"])
+      assert.ok(!pos.includes(t), `칸 ${slot}: 젊게 만드는 문구 ${t}`);
+    assert.ok(!j.pos.includes("(hair between eyes:0.8)") && pos.includes("forehead"), `칸 ${slot}: 벗어진 이마를 덮지 않음`);
+    for (const t of ["old man", "wrinkles", "old", "middle-aged"]) assert.ok(!neg.includes(t), `칸 ${slot}: 나이를 막는 네거티브 ${t}`);
+    for (const t of ["child", "shota", "underage", "young boy", "aged down"]) assert.ok(neg.includes(t), `칸 ${slot}: 미성년 네거티브 ${t}`);
+  }
+  // 40대는 한 단계 약하게, 서른 넘은 남자(40 미만)와 여성은 그대로
+  const mid = animeEmotion(man(45), PLACE, 1),
+    young = animeEmotion(man(36), PLACE, 1);
+  assert.ok(mid.pos.includes("(45 years old:1.1)") && mid.pos.includes("(mature male:1.15)") && !names(mid.neg).includes("old man"));
+  assert.ok(young.pos.includes("(30 years old:0.6)") && names(young.neg).includes("old man") && names(young.pos).includes("curtained hair"));
+  assert.ok(names(animeEmotion({ ...F, age: 58 }, PLACE, 1).neg).includes("middle-aged"), "여성은 정하지 않음(이 화풍의 작품에 나이 든 여성이 없음)");
 });

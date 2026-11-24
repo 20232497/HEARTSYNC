@@ -1,14 +1,22 @@
 /* 일상 화풍 두 개의 프롬프트 조립 — 남성향 일상(여성 인물)·여성향 일상(남성 인물). 작품 데이터(cast[]·places[])를 칸에 끼워 긍정·부정 프롬프트와 생성 값을 만든다.
-   그림 값(화풍 문구·네거티브·LoRA·후처리)은 값 파일에서 읽는다: ../mdaily-v8.json(여성) · ../../style-fdaily/fdaily-v12.json(남성) — 앞 판(여성 v6·v7, 남성 v7~v11)은 보관 · 고정 태그는 ../mdaily.json.
-   값 파일이 정할 수 있는 것: prompt·coolPrompt·neg·fits·lora·post + lightDay·lightNight(낮·밤 빛 문구) · bgTag(배경 문구) · act(연기 문구 손질 — drop·scale)
-   · draw("anime"면 그 성별의 인물을 애니 화풍의 작업으로 그리고 이 화풍의 후처리만 한 겹 입힘 — 아래 '애니 화풍으로 그리는 인물').
+   그림 값(화풍 문구·네거티브·LoRA·후처리)은 값 파일에서 읽는다: ../mdaily-v9.json(여성) · ../../style-fdaily/fdaily-v13.json(남성) — 앞 판(여성 v6~v8, 남성 v7~v12)은 보관 · 고정 태그는 ../mdaily.json.
+   값 파일이 정할 수 있는 것: prompt·coolPrompt·neg·fits·lora·post + lightDay·lightNight(낮·밤 빛 문구) · bgTag(배경 문구) · act(연기 문구 손질 — drop·scale, 감정 그림의 거리 frame·frameNeg)
+   · draw("anime"면 그 성별의 인물을 애니 화풍의 작업으로 그리고 이 화풍의 후처리만 한 겹 입힘 — 아래 '애니 화풍으로 그리는 인물') · anime(그때 애니 문구를 손질하는 값).
    이 파일은 그 값을 인물마다 손대지 않고 쓰는 규칙이다 — 2026-11-13 사용자와 비교 생성으로 정함(경위와 표는 ../README.md '조립 규칙').
    2026-11-23(사용자): 구도와 표정(칸마다의 구도 자리·눈·표정·손동작)은 애니 화풍과 같게 — ../../style-manime/code/assemble.js의 acting()이 고른 것을 그대로 쓴다.
    2026-11-23~24(사용자): 전체적으로 흐릿한 분위기(후처리 값 — 여성 v8·남성 v10부터). 남성 인물은 애니 화풍으로 그리고 이 화풍의 흐림만 입힌다(값 파일의 draw — v12).
    profileJob(인물, 장소) → 프로필(칸 0) · emotionJob(인물, 장소, 칸 1~14) → 감정 그림. Node에서만 돈다(값 파일을 읽음). 앱은 이 파일을 쓰지 않는다 */
 import fs from "node:fs";
 import { fitStyle, weighTags } from "./style-fit.js";
-import { acting, actingNeg, profileJob as animeProfile, emotionJob as animeEmotion, assertSafe as animeSafe } from "../../style-manime/code/assemble.js";
+import {
+  acting,
+  actingNeg,
+  profileJob as animeProfile,
+  emotionJob as animeEmotion,
+  assertSafe as animeSafe,
+  placeBlock as animePlace,
+  placeKept as animeKept,
+} from "../../style-manime/code/assemble.js";
 
 const J = (rel) => JSON.parse(fs.readFileSync(new URL(rel, import.meta.url), "utf8"));
 const toRe = (s) => {
@@ -21,7 +29,7 @@ const load = (rel) => {
 };
 const BASE = J("../mdaily.json");
 export const FIX = BASE.fixed; // 품질·수위·규격·미성년 금지 태그
-export const STYLE = { f: load("../mdaily-v8.json"), m: load("../../style-fdaily/fdaily-v12.json") };
+export const STYLE = { f: load("../mdaily-v9.json"), m: load("../../style-fdaily/fdaily-v13.json") };
 /* 그림 규격(tools/content-art.mjs ART_SPECS) — 프로필 768×1152, 감정 1024×1024. 멀리 잡는 휴식 칸만 1536으로 키워 다시 그린다(얼굴이 작아져 무너짐) */
 export const SIZE = { profile: { width: 768, height: 1152 }, emotion: { width: 1024, height: 1024 } };
 const HIRES = { w: 1536, h: 1536, strength: 0.4 };
@@ -53,10 +61,12 @@ function sceneOf(c, slot) {
       .join(", ");
   // 같은 낱말이 눈매 규칙과 기본 표정에서 두 번 들어오면 하나만(센 쪽) — dedupe는 네거티브와 같은 규칙
   const neg = split(actingNeg(c, slot)).filter((x) => !NO_NEG.test(x)).join(", "); // 남자의 놀람·공포는 애니 규칙이 큰 눈을 일부러 막는다(앳돼 보임) — 그때는 큰 눈 네거티브를 풀지 않는다
+  // 감정 그림의 거리(act.frame·frameNeg): 이 모델은 같은 구도 낱말에도 얼굴 가까이 잡는다 → 애니 화풍처럼 허리 위까지 보이게 값 파일이 구도 낱말과 네거티브를 더한다(프로필은 얼굴 구도 그대로)
+  const far = slot ? act : {};
   return {
-    scene: boost(dedupe(scene)),
+    scene: [far.frame, boost(dedupe(scene))].filter(Boolean).join(", "),
     still: (slot ? "upper body, " : "portrait, ") + (a.look ? "looking to the side" : "looking at viewer"),
-    neg,
+    neg: [neg, far.frameNeg].filter(Boolean).join(", "),
     free: [...(/\bhands?\b|\bfist\b|waving|pointing/.test(scene) ? HAND_NEG : []), ...(/wide-eyed/.test(scene) && !/big eyes/.test(neg) ? WIDE_NEG : [])],
   };
 }
@@ -268,10 +278,35 @@ export const guided = (c, slot) => slot === 11 && isFem(c) && !viaAnime(c);
    명암은 움직이지 않았고, 애니 그림을 밑그림으로 다시 그리는 방식은 쓰지 않기로 했다. 만화 기호는 뺀다(이 화풍에는 없음). 시드는 애니 화풍의 것 그대로 — 같은 인물을 애니 화풍으로
    그린 그림과 같은 얼굴이 된다(o.seed를 주면 그 값). 프로필의 어두운 단색 배경, 휴식 칸의 조는 모습도 애니 화풍의 것 그대로 */
 const viaAnime = (c) => STYLE[isFem(c) ? "f" : "m"].draw === "anime";
+/** 문구의 낱말을 이름으로 손질: drop(뺄 낱말의 이름) · set(이름 → 새 가중치) */
+const retag = (s, drop = [], set = {}) =>
+  split(s)
+    .filter((x) => !drop.includes(bareTag(x)))
+    .map((x) => (set[bareTag(x)] ? `(${bareTag(x)}:${set[bareTag(x)]})` : x))
+    .join(", ");
+/* 칠을 이 화풍의 여성 인물 쪽으로(사용자 2026-11-24 '칠의 차이' — 같은 작품에서 여성은 부드러운 2.5D에 흐린 배경, 남성은 또렷한 배경에 센 명암이었음):
+   값 파일의 anime가 애니 화풍의 문구를 이름으로 손질한다 — drop(뺄 낱말: 센 명암) · set(낱말 → 가중치: 배경 흐림·빛) · add(더할 문구: 부드러운 칠) · neg(더할 네거티브)
+   · post(애니 후처리 대신 쓸 값 — 대비 올리기를 뺌)
+   · bg(배경을 이 화풍의 것으로 — 장소가 있으면 애니 화풍의 장소 문구(가중치 1.1로 일곱 개까지 — 배경이 또렷함)와 프로필의 단색 배경 낱말(plain)을 빼고
+     여성 인물과 같은 배경 문구(흐린 배경 + 장소 낱말 0.8 다섯 개)를 넣는다. night는 밤 장소에 더할 빛 문구) */
 function animeDrawn(c, place, slot, o) {
+  const st = STYLE[isFem(c) ? "f" : "m"],
+    t = st.anime || {},
+    tags = (place && place.tags) || "",
+    dark = DARK.test(tags),
+    own = tags && t.bg; // 배경을 이 화풍의 문구로 바꾸는가
   const ao = { symbols: false, ...(o.seed ? { seed: o.seed } : {}) };
-  const a = animeSafe(slot ? animeEmotion(c, place || { tags: "" }, slot, ao) : animeProfile(c, place, ao));
-  return { ...a, postAs: "anime", haze: STYLE[isFem(c) ? "f" : "m"].post };
+  const a = slot ? animeEmotion(c, { tags }, slot, ao) : animeProfile(c, place, ao);
+  // 애니 화풍의 장소 문구는 통째로 찾아 뺀다 — 낱말 이름으로 빼면 같은 이름의 인물 태그(나 성인 표시)까지 빠진다. 시간 낱말이 없어 애니 화풍이 더한 night는 남긴다
+  const block = own && slot ? animePlace(tags) : "";
+  if (block && !a.pos.includes(block)) throw new Error("애니 화풍의 장소 문구를 찾지 못했어요");
+  const base = block ? a.pos.replace(block, split(block).includes("night") ? "night" : "") : a.pos;
+  const drop = [...(t.drop || []), ...(own ? t.bg.plain || [] : [])];
+  // 장소 낱말은 애니 화풍이 고른 것만(사람·동물·기차를 뺀 것 — 동물은 네거티브로도 막으므로 다시 넣으면 부딪침)
+  const bg = own ? [st.bgTag || BG, placeTags(animeKept(tags).join(", ")), dark ? "(night:1.2), (dark:0.8)" : "", dark ? t.bg.night : ""] : [];
+  const pos = [retag(base, drop, t.set), ...bg, t.add].filter(Boolean).join(", ");
+  const neg = [a.neg, t.neg, own && dark && !slot ? NEG_DAY : ""].filter(Boolean).join(", "); // 감정 그림은 애니 화풍이 이미 낮을 막는다 — 프로필에만
+  return animeSafe({ ...a, pos, neg, post: t.post || a.post, postAs: "anime", haze: st.post });
 }
 /** 만든 작업이 지킬 것을 지키는지: 성인 표시, 한 사람, 미성년·노출 네거티브(밑그림 작업도) */
 export function assertSafe(j) {
