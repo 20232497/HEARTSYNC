@@ -93,12 +93,28 @@ test("일상 화풍: 구도·표정은 애니 화풍의 것 — 프로필은 얼
 });
 
 // 가중치는 비교 생성으로 계속 맞추는 값이라 낱말이 있는지만 본다(성인 표시처럼 지킬 것은 가중치까지)
-test("일상 화풍: 여성(v8~v9)은 얼굴은 또렷하게, 분위기는 흐릿하게 — 이 화풍의 모델과 문구로 그림", () => {
+test("일상 화풍: 여성(v8~v10)은 얼굴은 또렷하게, 분위기는 흐릿하게 — 이 화풍의 모델과 문구로 그리고, 감정 그림은 구도 밑그림으로 허리 위까지", () => {
   const f = emotionJob(F, PLACE, 1),
-    fp = names(f.pos);
+    fp = names(f.pos),
+    G = STYLE.f.guide;
   assert.ok(isFem(F) && !isFem(M));
-  assert.ok(f.model === STYLE.f.model.id && !f.postAs && !f.haze && !f.guide, "여성 인물은 이 화풍의 모델로, 밑그림 없이");
-  assert.deepEqual([f.width, profileJob(F, PLACE).width], [SIZE.emotion.width, SIZE.profile.width], "규격 크기 그대로");
+  assert.ok(f.model === STYLE.f.model.id && !f.postAs && !f.haze && !f.hires, "여성 인물은 이 화풍의 모델로");
+  // 구도 밑그림(값 파일의 guide): 같은 칸을 애니 화풍으로 먼저(배경·빛은 이 화풍의 문구, 크게 다시 그리기·후처리 없음), 본 그림은 크게 — 프로필에는 붙지 않음
+  const g = f.guide.job,
+    p = profileJob(F, PLACE);
+  assert.deepEqual([f.width, f.height, f.guide.strength], [G.width, G.height, G.strength], "본 그림은 값 파일의 크기·세기로");
+  assert.ok(
+    g.model === MODEL.air && g.width === SIZE.emotion.width && g.seed === f.seed && !g.hires && !g.post && !g.haze,
+    "밑그림은 애니 화풍의 모델로 규격 크기 한 번"
+  );
+  assert.ok(
+    g.pos.includes("(blurry background:1.5)") && g.pos.includes("(library:0.8)") && /adult woman/.test(g.pos) && names(g.neg).includes("child"),
+    "밑그림의 배경과 지킬 것"
+  );
+  assert.ok(names(g.pos).includes("upper body") && !SYMBOLS.some((s) => names(g.pos).includes(s)), "밑그림의 구도는 애니 화풍의 것, 만화 기호 없음");
+  assert.ok(!p.guide && p.width === SIZE.profile.width, "프로필은 밑그림 없이 규격 크기 그대로");
+  assert.equal(emotionJob(F, PLACE, 1, { seed: 9 }).guide.job.seed, 9, "시드를 주면 밑그림도 그 값으로");
+  assert.equal(emotionJob(F, PLACE, 1, { size: { width: 1024, height: 1024 } }).width, 1024, "크기를 주면 그 크기로");
   assert.ok(fp.includes("soft gradient shading") && f.pos.includes("(adult woman:1.45)"), "여성의 칠과 성인 표시는 그대로");
   // 분위기는 후처리와 빛·배경 문구로 — 얼굴까지 흐리는 문구는 되살리지 않는다
   for (const t of ["soft focus", "low contrast", "lifted shadows", "pale skin", "narrow eyes"]) assert.ok(!fp.includes(t), "여성 v8에 없어야 함: " + t);
