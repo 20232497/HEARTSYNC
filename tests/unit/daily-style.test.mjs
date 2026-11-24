@@ -1,5 +1,5 @@
 // 일상 화풍의 조립(archive/style-mdaily/code/assemble.js) — 그림 도구(npm run art)가 쓰는 화풍 규칙. 앱 코드가 아니다.
-// 2026-11-23~24: 구도·표정은 애니 화풍과 같게(acting), 여성은 또렷한 얼굴에 흐릿한 분위기(v8) + 감정 그림을 조금 멀리(v9),
+// 2026-11-23~24: 구도·표정은 애니 화풍과 같게(acting), 여성은 또렷한 얼굴에 흐릿한 분위기(v8) + 표정을 과하지 않게(v11 — 거리 문구 v9·구도 밑그림 v10은 쓰지 않음),
 // 남성은 애니 화풍으로 그리고 이 화풍의 흐림만 입힘(v12) + 칠·배경을 여성 쪽으로(v13). 나이 든 남자의 나이 문구는 애니 화풍의 조립이 정함.
 // 작품 글(content/)이 바뀌어도 막지 않게 규칙의 성질만 본다.
 import fs from "node:fs";
@@ -7,7 +7,7 @@ import path from "node:path";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { profileJob, emotionJob, assertSafe, isFem, STYLE, guided, SIZE } from "../../archive/style-mdaily/code/assemble.js";
+import { profileJob, emotionJob, assertSafe, isFem, STYLE, guided, SIZE, split } from "../../archive/style-mdaily/code/assemble.js";
 import { acting, agedOf, MODEL, emotionJob as animeEmotion, profileJob as animeProfile } from "../../archive/style-manime/code/assemble.js";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
@@ -73,11 +73,9 @@ test("일상 화풍: 구도·표정은 애니 화풍의 것 — 프로필은 얼
   // 애니에서 가져오지 않는 것(이 화풍이 조립하는 여성 인물): 이모티콘 입(:d), 겹친 구도(cowboy shot), 낮 장소에서 낮을 막는 네거티브
   const laugh = names(emotionJob(F, PLACE, 2).pos);
   assert.ok(!laugh.includes(":d") && !laugh.includes("cowboy shot") && laugh.includes("upper body"));
-  // 감정 그림의 거리(값 파일의 act.frame·frameNeg): 이 모델은 얼굴 가까이 잡으므로 구도 낱말과 가까운 구도 네거티브를 더한다 — 프로필(얼굴 구도)에는 넣지 않음
-  const far = emotionJob(F, PLACE, 2),
-    near = profileJob(F, PLACE);
-  assert.ok(STYLE.f.act.frame && far.pos.includes(STYLE.f.act.frame) && names(far.neg).includes("close-up"), "감정 그림: 거리 문구");
-  assert.ok(!near.pos.includes(STYLE.f.act.frame) && !names(near.neg).includes("close-up"), "프로필: 얼굴 구도 그대로");
+  // 여성의 구도는 그대로(사용자 2026-11-24 "그냥 그대로 두자") — 거리 문구(v9)와 구도 밑그림(v10)은 쓰지 않는다
+  const emo = emotionJob(F, PLACE, 2);
+  assert.ok(!STYLE.f.act.frame && !STYLE.f.guide && !emo.guide && !emo.pos.includes("waist up") && !names(emo.neg).includes("close-up"));
   const DAY = { tags: "library, bookshelves, daylight" };
   assert.ok(!names(emotionJob(F, DAY, 5).neg).includes("day"), "놀람: 낮 장소에서 낮을 막지 않음");
   assert.ok(names(emotionJob(F, PLACE, 5).neg).includes("day"), "밤 장소는 이 화풍이 스스로 낮을 막음");
@@ -92,29 +90,39 @@ test("일상 화풍: 구도·표정은 애니 화풍의 것 — 프로필은 얼
   assert.ok(rest.pos.includes("(full body:1.5)") && rest.hires && rest.guide, "여성의 휴식(칸 11)은 멀리서 몸 전체 그대로");
 });
 
+test("일상 화풍: 여성의 표정은 과하지 않게(값 파일의 act.soften·scale) — 표정 칸의 센 낱말만 누그러지고, 낱말은 남고, 기본 표정·구도·소품 칸은 그대로", () => {
+  const S = STYLE.f.act.soften,
+    top = +(S.knee + (1.7 - S.knee) * S.ratio).toFixed(2), // 가장 센 낱말(1.7까지 올린 것)이 닿는 값
+    wOf = (x) => +(/:([\d.]+)\)$/.exec(x) || [0, 0])[1],
+    plain = { ...F, temper: "" }; // 성격이 없으면 공통 표정(가장 센 값)
+  for (const slot of S.slots) {
+    const a = acting(plain, slot, { symbols: false }),
+      tags = split(emotionJob(plain, PLACE, slot).pos);
+    for (const raw of split(a.eyes + ", " + a.emo)) {
+      const t = names(raw)[0],
+        x = tags.find((y) => names(y)[0] === t);
+      if (t === ":d") continue; // 이모티콘 입은 이 화풍에 넣지 않음
+      assert.ok(x, `칸 ${slot}: 표정 낱말이 남아 있어야 함 — ${t}`);
+      // 가중치 없이 온 낱말(closed mouth 등 — 표정을 누르는 쪽)은 이 화풍의 표정 가중치를 그대로 받는다
+      if (wOf(raw)) assert.ok(wOf(x) <= top, `칸 ${slot}: ${x}가 ${top}보다 셈`);
+    }
+  }
+  // 낮춰도 과한 낱말은 따로 더: 놀람의 부릅뜬 눈과 벌린 입은 1 아래로
+  const shock = split(emotionJob(plain, PLACE, 5).pos);
+  for (const t of ["wide-eyed", "open mouth"]) assert.ok(wOf(shock.find((y) => names(y)[0] === t)) < 1, "놀람: " + t);
+  // 그대로인 것: 기본 표정(칸 1)의 옅은 미소, 표정 칸의 구도 낱말, 소품·효과가 특징인 칸(각성의 빛나는 눈·부상의 붕대)
+  assert.ok(emotionJob(F, PLACE, 1).pos.includes("(light smile:1.08)") && shock.includes("(upper body:1.32)"));
+  assert.ok(emotionJob(F, PLACE, 13).pos.includes("(glowing eyes:1.7)") && emotionJob(F, PLACE, 9).pos.includes("(bandaged head:1.44)"));
+  assert.ok(!S.slots.some((s) => [0, 1, 9, 10, 11, 12, 13].includes(s)));
+});
+
 // 가중치는 비교 생성으로 계속 맞추는 값이라 낱말이 있는지만 본다(성인 표시처럼 지킬 것은 가중치까지)
-test("일상 화풍: 여성(v8~v10)은 얼굴은 또렷하게, 분위기는 흐릿하게 — 이 화풍의 모델과 문구로 그리고, 감정 그림은 구도 밑그림으로 허리 위까지", () => {
+test("일상 화풍: 여성(v8의 모습 그대로)은 얼굴은 또렷하게, 분위기는 흐릿하게 — 이 화풍의 모델과 문구로 그림", () => {
   const f = emotionJob(F, PLACE, 1),
-    fp = names(f.pos),
-    G = STYLE.f.guide;
+    fp = names(f.pos);
   assert.ok(isFem(F) && !isFem(M));
-  assert.ok(f.model === STYLE.f.model.id && !f.postAs && !f.haze && !f.hires, "여성 인물은 이 화풍의 모델로");
-  // 구도 밑그림(값 파일의 guide): 같은 칸을 애니 화풍으로 먼저(배경·빛은 이 화풍의 문구, 크게 다시 그리기·후처리 없음), 본 그림은 크게 — 프로필에는 붙지 않음
-  const g = f.guide.job,
-    p = profileJob(F, PLACE);
-  assert.deepEqual([f.width, f.height, f.guide.strength], [G.width, G.height, G.strength], "본 그림은 값 파일의 크기·세기로");
-  assert.ok(
-    g.model === MODEL.air && g.width === SIZE.emotion.width && g.seed === f.seed && !g.hires && !g.post && !g.haze,
-    "밑그림은 애니 화풍의 모델로 규격 크기 한 번"
-  );
-  assert.ok(
-    g.pos.includes("(blurry background:1.5)") && g.pos.includes("(library:0.8)") && /adult woman/.test(g.pos) && names(g.neg).includes("child"),
-    "밑그림의 배경과 지킬 것"
-  );
-  assert.ok(names(g.pos).includes("upper body") && !SYMBOLS.some((s) => names(g.pos).includes(s)), "밑그림의 구도는 애니 화풍의 것, 만화 기호 없음");
-  assert.ok(!p.guide && p.width === SIZE.profile.width, "프로필은 밑그림 없이 규격 크기 그대로");
-  assert.equal(emotionJob(F, PLACE, 1, { seed: 9 }).guide.job.seed, 9, "시드를 주면 밑그림도 그 값으로");
-  assert.equal(emotionJob(F, PLACE, 1, { size: { width: 1024, height: 1024 } }).width, 1024, "크기를 주면 그 크기로");
+  assert.ok(f.model === STYLE.f.model.id && !f.postAs && !f.haze && !f.guide, "여성 인물은 이 화풍의 모델로, 밑그림 없이");
+  assert.deepEqual([f.width, profileJob(F, PLACE).width], [SIZE.emotion.width, SIZE.profile.width], "규격 크기 그대로");
   assert.ok(fp.includes("soft gradient shading") && f.pos.includes("(adult woman:1.45)"), "여성의 칠과 성인 표시는 그대로");
   // 분위기는 후처리와 빛·배경 문구로 — 얼굴까지 흐리는 문구는 되살리지 않는다
   for (const t of ["soft focus", "low contrast", "lifted shadows", "pale skin", "narrow eyes"]) assert.ok(!fp.includes(t), "여성 v8에 없어야 함: " + t);
