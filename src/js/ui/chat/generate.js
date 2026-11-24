@@ -64,15 +64,19 @@ export async function regen(i, direction = "") {
     q = await ensurePay(r);
   if (!q || r !== room) return;
   // 새 버전이 본문 하나 없이 실패하면 되돌릴 것 — 그대로 두면 에피소드 진행이 이 응답 앞으로 돌아간 채 남음
-  const was = { msgs: r.msgs, ep: r.ep ? epCopy(r.ep) : null };
+  // (보고 있던 버전도 — 실패 처리는 남은 마지막 버전을 고르므로, 앞 버전을 보다가 다시 쓰면 본문과 진행이 어긋남)
+  const m = r.msgs[i],
+    was = { msgs: r.msgs, ep: r.ep ? epCopy(r.ep) : null, idx: m.idx };
+  r.lastErr = ""; // 새로 시도하므로 앞의 오류 줄은 거둠(실패하면 다시 적힘)
   r.msgs = r.msgs.slice(0, i + 1);
-  if (r.ep && r.msgs[i].ep0) r.ep = epCopy(r.msgs[i].ep0); // 에피소드: 이 응답 직전 상태에서 다시
+  if (r.ep && m.ep0) r.ep = epCopy(m.ep0); // 에피소드: 이 응답 직전 상태에서 다시
   const undo = () => {
     r.msgs = was.msgs;
+    m.idx = was.idx;
     if (was.ep) r.ep = was.ep;
     return "";
   };
-  generate(r.msgs[i], q, direction, { undo });
+  generate(m, q, direction, { undo });
 }
 /* 매 응답, 장면에 나온 인물마다 그림 한 장: AI가 [[코드번호]]를 빠뜨린 인물은 그 인물이 처음 말하거나(이름: …) 지문에 나오는 줄 위에 붙임.
    번호는 처음 등장이면 0, 아니면 그 인물의 대사·지문 낱말(×2)과 유저 입력 낱말(그 인물을 불렀거나, 아무도 안 불렀으면 처음 나온 인물만)로
@@ -176,13 +180,15 @@ export async function generate(target, q, direction = "", opt = {}) {
     const u = r.msgs[r.msgs.indexOf(msg) - 1];
     return u && u.role === "user" && !u.sys && !u.text.startsWith("//") ? u.text : "";
   })();
-  const show = (t) => {
-    // 화면엔 본문만: 상태 구분자가 오기 시작했거나(=== STATE 일부) JSON·코드블록 줄이 시작되면 그 줄부터 숨김
-    const body = dropEcho(splitReply(t).body, said)
+  // 화면엔 본문만: 상태 구분자가 오기 시작했거나(=== STATE 일부) JSON·코드블록 줄이 시작되면 그 줄부터 숨김 — 끊긴 답을 남길 때도 같은 손질
+  const clean = (t) =>
+    dropEcho(splitReply(t).body, said)
       .replace(/\n?[ \t]*=+[ \t]*[A-Z]*[ \t]*=*\s*$/, "")
       .replace(/\n[ \t]*(?:```|\{)[^\n]*$/, "")
-      .replace(/\[\[[^\]]*$/, "");
-    msg.alts[altIdx].text = body.trim();
+      .replace(/\[\[[^\]]*$/, "")
+      .trim();
+  const show = (t) => {
+    msg.alts[altIdx].text = clean(t);
     if (room !== r) return;
     const el = $("#liveBubble");
     if (el) {
@@ -230,11 +236,11 @@ export async function generate(target, q, direction = "", opt = {}) {
       r.sinceMem = (r.sinceMem || 0) + 1;
     }
   } catch (e) {
-    // 사용자가 멈췄거나 스트림이 중간에 끊긴(timeout) 경우: 받은 본문까지 남김. 멈춘 것은 값 그대로, 끊긴 것은 값을 돌려줌(2026-11-21 사용자 결정) —
-    // 끊긴 거면 '다시 시도'(= 다시 쓰기) 안내
-    const keep = e && e.text ? splitReply(e.text).body.trim() : "";
-    if (keep && (e.code === "cancelled" || e.code === "timeout")) {
-      const lost = e.code === "timeout";
+    // 사용자가 멈췄거나 스트림이 중간에 끊긴 경우(시간 초과 timeout · 끝난 신호 없이 닫힘이나 중간의 오류 조각 upstream_error): 받은 본문까지 남김.
+    // 멈춘 것은 값 그대로, 끊긴 것은 값을 돌려줌(2026-11-21 사용자 결정) — 끊긴 거면 '다시 시도'(= 다시 쓰기) 안내. 거절(refused)은 받은 글이 있어도 남기지 않음
+    const keep = e && e.text ? clean(e.text) : "";
+    const lost = !!e && (e.code === "timeout" || e.code === "upstream_error");
+    if (keep && (e.code === "cancelled" || lost)) {
       if (lost) refund(q, label);
       else refundSug(q, label); // 본문만 남긴 답에는 추천이 없음 — 추천 값은 되돌림
       Object.assign(msg.alts[altIdx], { text: keep, status: msg.statusBefore, cost: lost ? "" : qShort(q) });

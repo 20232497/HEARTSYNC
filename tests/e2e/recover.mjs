@@ -100,11 +100,22 @@ for (const [dev, engine] of targets) {
           stored: kept.msgs.length === n0 && kept.msgs[i].text === "첫 말이에요",
           dom: $$("#logInner .msg").length
         };
-        // ③ 다시 쓰기가 실패해도 그대로(에피소드 진행이 그 응답 앞으로 돌아간 채 남지 않음)
+        // ③ 다시 쓰기가 실패해도 그대로 — 에피소드 진행(그 응답 앞으로 돌아간 채 남지 않음)도, 보고 있던 버전도(버전을 둘 만들고 앞 버전을 고른 채로 다시 쓰기)
+        window.llm = window.__ok;
+        await Promise.race([regen(room.msgs.length - 1), nap(4000)]);
+        await idle();
+        $$('[data-act="prev"]').pop().click();
+        await nap(150);
+        const lastMsg = room.msgs[room.msgs.length - 1],
+          base2 = snap(),
+          free0 = S.wallet.freeUsed;
+        out.versions = { n: lastMsg.alts.length, idx: lastMsg.idx };
+        window.llm = window.__fail;
         room.lastErr = "";
         await Promise.race([regen(room.msgs.length - 1), nap(4000)]);
         await idle();
-        out.regen = { same: snap() === base, free: S.wallet.freeUsed };
+        out.regen = { same: snap() === base2, free: S.wallet.freeUsed - free0, idx: lastMsg.idx };
+        room.lastErr = "";
         // ④ 성공하면 전처럼: 고친 글 + 새 답, 그 뒤의 대화는 없어짐
         window.llm = window.__ok;
         await edit(i, "고친 말이에요");
@@ -118,7 +129,8 @@ for (const [dev, engine] of targets) {
         errs.push(`[${id}] 수정의 값 확인을 멈췄는데 대화가 바뀜: ` + JSON.stringify(e.cancel));
       if (!e.fail.same || !/고치기 전/.test(e.fail.err) || e.fail.line || e.fail.free !== 0 || !e.fail.stored)
         errs.push(`[${id}] 수정 뒤 새 답이 실패했는데 고치기 전으로 안 돌아감: ` + JSON.stringify(e.fail));
-      if (!e.regen.same || e.regen.free !== 0) errs.push(`[${id}] 다시 쓰기가 실패한 뒤 대화·진행이 달라짐: ` + JSON.stringify(e.regen));
+      if (e.versions.n !== 2 || e.versions.idx !== 0 || !e.regen.same || e.regen.free !== 0 || e.regen.idx !== 0)
+        errs.push(`[${id}] 다시 쓰기가 실패한 뒤 대화·진행·고른 버전이 달라짐: ` + JSON.stringify({ ...e.versions, ...e.regen }));
       if (e.ok.n !== e.ok.want || e.ok.text !== "고친 말이에요" || e.ok.ai !== "ai")
         errs.push(`[${id}] 수정이 성공했을 때의 모양이 다름: ` + JSON.stringify(e.ok));
     }
@@ -139,33 +151,31 @@ for (const [dev, engine] of targets) {
         free: S.wallet.freeUsed,
         err: room.lastErr || ""
       };
-      // 오는 중에 끊긴 답(받은 글이 있음): 글은 남기고 값은 돌려줌, '다시 시도' 안내
-      window.llm = async (input, opt) => {
-        opt.onText({ text: "*받다 만 글.*" });
-        throw { code: "timeout", text: "*받다 만 글.*" };
-      };
-      room.lastErr = "";
-      await window.__turn("끊길 말");
-      await idle();
-      const cutMsg = room.msgs[room.msgs.length - 1];
-      out.cut = {
-        role: cutMsg.role,
-        text: cutMsg.role === "ai" ? cutMsg.alts[cutMsg.idx].text : "",
-        cost: cutMsg.role === "ai" ? cutMsg.alts[cutMsg.idx].cost || "" : "?",
-        free: S.wallet.freeUsed,
-        err: room.lastErr || ""
-      };
+      // 오는 중에 끊긴 답(받은 글이 있음 — 시간 초과든, 끝난 신호 없이 닫혔든): 글은 남기고 값은 돌려줌, '다시 시도' 안내
+      out.cut = [];
+      for (const code of ["timeout", "upstream_error"]) {
+        window.llm = async (input, opt) => {
+          opt.onText({ text: "*받다 만 글.*" });
+          throw { code, text: "*받다 만 글.*" };
+        };
+        room.lastErr = "";
+        await window.__turn("끊길 말 " + code);
+        await idle();
+        const cutMsg = room.msgs[room.msgs.length - 1];
+        out.cut.push({
+          code,
+          role: cutMsg.role,
+          text: cutMsg.role === "ai" ? cutMsg.alts[cutMsg.idx].text : "",
+          cost: cutMsg.role === "ai" ? cutMsg.alts[cutMsg.idx].cost || "" : "?",
+          free: S.wallet.freeUsed,
+          err: room.lastErr || ""
+        });
+      }
       room.lastErr = "";
       window.llm = window.__ok;
       return out;
     });
-    if (
-      res.empty.cut.role !== "ai" ||
-      res.empty.cut.text !== "*받다 만 글.*" ||
-      res.empty.cut.cost ||
-      res.empty.cut.free !== 0 ||
-      !/돌려/.test(res.empty.cut.err)
-    )
+    if (!res.empty.cut.every((c) => c.role === "ai" && c.text === "*받다 만 글.*" && !c.cost && c.free === 0 && /돌려/.test(c.err)))
       errs.push("끊긴 답의 글을 남기고 값을 돌려주는 것이 다름: " + JSON.stringify(res.empty.cut));
     if (res.empty.added !== 1 || res.empty.last !== "user" || res.empty.blank || res.empty.free !== 0 || !res.empty.err)
       errs.push("본문 없는 답이 저장되거나 값이 나감: " + JSON.stringify(res.empty));

@@ -2597,7 +2597,6 @@ function indexRoom(r) {
       .slice(0, 70)
   };
   S.rooms = sortRooms([entry, ...S.rooms.filter((x) => x.id !== r.id)]);
-  KV.set("rooms", S.rooms);
   emit("rooms");
 }
 function sortRooms(list) {
@@ -2632,7 +2631,7 @@ async function setFav(id, on) {
       return y;
     })
   );
-  KV.set("rooms", S.rooms);
+  persistRooms();
   const se = savedEntry.get(id);
   if (se) se.entry = S.rooms.find((x) => x.id === id);
   emit("rooms");
@@ -2642,6 +2641,15 @@ const unsaved = new Set();
 const roomUnsaved = (id) => unsaved.has(id);
 const saveSeq = new Map(),
   savedEntry = new Map();
+function storableRooms(list) {
+  return list.filter((x) => {
+    const se = savedEntry.get(x.id);
+    return !se || !!se.entry;
+  });
+}
+function persistRooms() {
+  KV.set("rooms", storableRooms(S.rooms));
+}
 function saveRoom(r) {
   if (deletedRooms.has(r.id)) return Promise.resolve(false);
   r.at = Date.now();
@@ -2661,14 +2669,22 @@ function saveRoom(r) {
   const entry = S.rooms.find((x) => x.id === id);
   return Promise.resolve(KV.set(roomKey(id), r)).then((ok) => {
     if (ok && seq > savedEntry.get(id).seq) savedEntry.set(id, { seq, entry });
-    if (saveSeq.get(id) !== seq || deletedRooms.has(id)) return !!ok;
+    if (deletedRooms.has(id)) return !!ok;
+    if (ok) {
+      if (!S.rooms.some((x) => x.id === id)) {
+        S.rooms = sortRooms([entry, ...S.rooms]);
+        emit("rooms");
+      }
+      persistRooms();
+    }
+    if (saveSeq.get(id) !== seq) return !!ok;
     if (ok) {
       if (unsaved.delete(id)) emit("rooms");
     } else {
       unsaved.add(id);
       const good = savedEntry.get(id).entry;
       S.rooms = sortRooms(good ? S.rooms.map((x) => (x.id === id ? good : x)) : S.rooms.filter((x) => x.id !== id));
-      KV.set("rooms", S.rooms);
+      persistRooms();
       emit("rooms");
     }
     return !!ok;
@@ -2697,7 +2713,7 @@ function removeRoom(id) {
   const at = Date.now();
   forgetRoom(id, at);
   KV.set(roomKey(id), { gone: at }, { local: false });
-  KV.set("rooms", S.rooms);
+  persistRooms();
   emit("rooms");
 }
 function roomGone(id, at) {
@@ -2706,7 +2722,7 @@ function roomGone(id, at) {
   if (gen && gen.roomId === id) gen.ctl.abort();
   if (room && room.id === id) setRoom(null);
   if (had) {
-    KV.set("rooms", S.rooms);
+    persistRooms();
     emit("rooms");
   }
   return had;
@@ -3117,9 +3133,10 @@ async function applyRows(rows, hold, since) {
   const takeList = (remote) => {
     const merged = mergeRoomLists(full ? [] : S.rooms, remote, gone);
     S.rooms = merged;
-    KV.setLocal("rooms", merged);
+    const keep = storableRooms(merged);
+    KV.setLocal("rooms", keep);
     const queued = "rooms" in CLOUD.pending || CLOUD.sending.has("rooms") || (!!hold && hold.has("rooms")) || newer("rooms");
-    if (queued || (!full && !sameRoomList(merged, remote))) CLOUD.put("rooms", merged);
+    if (queued || (!full && !sameRoomList(keep, remote))) CLOUD.put("rooms", keep);
   };
   rows.forEach((x) => {
     if (x.updated_at && x.updated_at > (localStorage.getItem(CLOUD.lastKey()) || ""))
@@ -3256,6 +3273,7 @@ const CLOUD = {
   at: 0,
   pulledAt: 0,
   noTable: false,
+  wiped: false,
   shelfUp: false,
   skipKey() {
     return "hv1_cloudskip_" + this.uid;
@@ -3284,6 +3302,7 @@ const CLOUD = {
     this.on = SB.on() && !!(SB.s && SB.s.user && SB.s.user.id);
     this.uid = this.on ? SB.s.user.id : null;
     this.noTable = false;
+    this.wiped = false;
     this.shelfUp = false;
     this.owed = null;
     this.skipped = new Set();
@@ -3307,6 +3326,7 @@ const CLOUD = {
   stop() {
     this.on = false;
     this.uid = null;
+    this.wiped = false;
     this.pending = {};
     this.sending = new Set();
     this.skipped = new Set();
@@ -3321,7 +3341,7 @@ const CLOUD = {
     emit("cloud");
   },
   put(k, v) {
-    if (!this.on || this.noTable || !(k === "settings" || synced(k) || IMG_KEY_RE.test(k))) return;
+    if (!this.on || this.noTable || this.wiped || !(k === "settings" || synced(k) || IMG_KEY_RE.test(k))) return;
     const x = v === undefined ? null : tombFor(k, { v });
     this.pending[k] = x;
     if (x && isTomb(x.v)) {
@@ -3354,7 +3374,7 @@ const CLOUD = {
   async send() {
     const uid = this.uid,
       gone = () => this.uid !== uid;
-    if (!this.on) return "off";
+    if (!this.on || this.wiped) return "off";
     if (this.noTable) return "notable";
     const items = Object.entries(this.pending);
     if (!items.length) return "ok";
@@ -3456,12 +3476,6 @@ const CLOUD = {
   },
   pull() {
     return pullRows();
-  },
-  async wipe() {
-    if (this.on && !this.noTable) {
-      this.pending = {};
-      await SB.req("/rest/v1/kv?user_id=eq." + encodeURIComponent(this.uid), { method: "DELETE" });
-    }
   }
 };
 function chunkBy(items, max) {
@@ -6302,6 +6316,48 @@ function localKVKeys() {
   } catch {}
   return Array.from(new Set(ls.concat(S.rooms.map((r) => roomKey(r.id))))).filter(synced);
 }
+/* ── src/js/services/cloud-wipe.js — 계정의 데이터를 모두 지움(wipeAccount — MY '모든 데이터 초기화'): 방 행은 삭제 표식으로 바꾸고 나머지 행은 지움 */
+async function wipeAccount() {
+  const C = CLOUD;
+  if (!C.on || C.noTable) return "ok";
+  const uid = C.uid,
+    q = "/rest/v1/kv?user_id=eq." + encodeURIComponent(uid) + "&key=";
+  const call = async (path, opts) => {
+    const r = await SB.req(path, opts);
+    if (C.uid !== uid) throw 0;
+    await C.check(r);
+  };
+  C.wiped = true;
+  clearTimeout(C.timer);
+  const kept = C.pending;
+  C.pending = {};
+  let step = 0;
+  try {
+    await (C.busy || Promise.resolve()).then(
+      () => {},
+      () => {}
+    );
+    if (C.uid !== uid) throw 0;
+    Object.assign(kept, C.pending);
+    C.pending = {};
+    await call(q + "not.like.room-*", { method: "DELETE" });
+    step = 1;
+    await call(q + "like.room-*", { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ value: { gone: Date.now() } }) });
+  } catch {
+    if (C.uid !== uid) return "fail";
+    C.wiped = false;
+    C.pending = Object.assign(kept, C.pending);
+    if (Object.keys(C.pending).length) C.timer = setTimeout(() => C.flush(), 800);
+    return step ? "half" : "fail";
+  }
+  C.pending = {};
+  C.tombs({});
+  C.owed = null;
+  try {
+    localStorage.removeItem("hv1_cloudowed");
+  } catch {}
+  return "ok";
+}
 /* ── src/js/ui/account.js — MY → 계정 칸: 처음 로그인 합치기(firstSync), 동기화 상태·로그아웃·계정 삭제 */
 async function firstSync() {
   try {
@@ -6334,10 +6390,18 @@ async function firstSync() {
         : "이 기기의 데이터를 계정에 합쳤어요";
     toast(merge ? done : "계정 데이터를 불러왔어요");
   };
-  if (!onlyRooms.length && !onlyLikes.length) return use(false);
-  const what = [onlyRooms.length ? `대화 ${onlyRooms.length}개` : "", onlyLikes.length ? `찜한 작품 ${onlyLikes.length}개` : ""].filter(Boolean).join("와 ");
+  const onlyPersonas = Array.isArray(remote.personas) ? local.personas.filter((p) => p && p.id !== "p1" && !has(remote.personas, p.id)) : [];
+  if (!onlyRooms.length && !onlyLikes.length && !onlyPersonas.length) return use(false);
+  const what = [
+    onlyRooms.length ? `대화 ${onlyRooms.length}개` : "",
+    onlyLikes.length ? `찜한 작품 ${onlyLikes.length}개` : "",
+    onlyPersonas.length ? `페르소나 ${onlyPersonas.length}개` : ""
+  ]
+    .filter(Boolean)
+    .join(" · ");
+  const head = onlyRooms.length ? "대화를" : onlyLikes.length ? "찜을" : "페르소나를";
   const ov =
-    sheet(`<h2>이 기기의 ${onlyRooms.length ? "대화를" : "찜을"} 합칠까요?</h2><p class="sub">계정에 이미 저장된 데이터가 있어요. 이 기기에만 있는 ${what}를 계정에 합칠 수 있어요. 계정에 있던 것은 그대로 남아요.</p>
+    sheet(`<h2>이 기기의 ${head} 합칠까요?</h2><p class="sub">계정에 이미 저장된 데이터가 있어요. 이 기기에만 있는 ${what}를 계정에 합칠 수 있어요. 계정에 있던 것은 그대로 남아요.</p>
     <div class="cta-row"><button class="btn ghost" id="mNo">계정 것만 쓰기</button><span class="spacer"></span><button class="btn pri" id="mYes">합치기</button></div>`);
   return new Promise((res, rej) => {
     let done = false;
@@ -7394,20 +7458,61 @@ function viewMe() {
         (CLOUD.on ? " 로그인되어 있어서 계정에 저장된 데이터도 지워져요." : "") +
         " 되돌릴 수 없어요.",
       "전부 삭제",
-      () => {
-        S.rooms.forEach((r) => KV.set(roomKey(r.id), undefined));
-        ["rooms", "mine", "wallet", "personas", "shelf", "profile", "imgpacks", "motionpacks", "coverpacks", "lorepacks", "tagpacks", "ponytags"].forEach((k) =>
-          KV.set(k, undefined)
-        );
-        IDB.clear();
-        try {
-          Object.keys(localStorage)
-            .filter((k) => /^hv1_img[a-z0-9]{10,30}$/.test(k))
-            .forEach((k) => localStorage.removeItem(k));
-        } catch {}
-        (CLOUD.on ? CLOUD.wipe().catch(() => {}) : Promise.resolve()).then(() => setTimeout(() => location.reload(), 400));
-      }
+      wipeAll
     );
+}
+let wiping = false,
+  accountWiped = false;
+async function wipeAll() {
+  if (wiping) return;
+  wiping = true;
+  try {
+    await wipeNow();
+  } finally {
+    wiping = false;
+  }
+}
+async function wipeNow() {
+  toast("지우는 중이에요…");
+  const uid = CLOUD.uid,
+    got = CLOUD.on && !accountWiped ? await wipeAccount() : "ok";
+  if (got !== "ok") {
+    if (got === "half" && CLOUD.on && CLOUD.uid === uid)
+      try {
+        await pushAll();
+      } catch {}
+    return wipeFailed("계정의 데이터를 지우지 못했어요", "네트워크를 확인하고 다시 시도해 주세요. 이 기기의 데이터도 아직 그대로예요.");
+  }
+  accountWiped = true;
+  S.rooms.forEach((r) => KV.set(roomKey(r.id), undefined));
+  ["rooms", "mine", "wallet", "personas", "shelf", "profile", "imgpacks", "motionpacks", "coverpacks", "lorepacks", "tagpacks", "ponytags"].forEach((k) =>
+    KV.set(k, undefined)
+  );
+  await KV.settled();
+  const clean = await IDB.clear();
+  try {
+    Object.keys(localStorage)
+      .filter((k) => /^hv1_img[a-z0-9]{10,30}$/.test(k))
+      .forEach((k) => localStorage.removeItem(k));
+  } catch {}
+  if (!clean) return wipeFailed("이 기기의 데이터를 다 지우지 못했어요", "이 사이트를 연 다른 탭을 닫고 다시 시도해 주세요.", true);
+  location.reload();
+}
+function wipeFailed(title, sub, half) {
+  const ov = sheet(
+    `<h2>${esc(title)}</h2><p class="sub">${esc(sub)}</p><div class="cta-row"><span class="spacer"></span>` +
+      `<button class="btn ghost" data-x>닫기</button><button class="btn pri" id="wRetry">다시 시도</button></div>`
+  );
+  let again = false;
+  $("#wRetry", ov).onclick = () => {
+    again = true;
+    ov.remove();
+    wipeAll();
+  };
+  if (half)
+    ov.onShut = () => {
+      if (!again) location.reload();
+    };
 }
 function personaSheet(p, after) {
   let img = p?.img || "";
@@ -8722,9 +8827,10 @@ function bindLog(box) {
             const r = room;
             ensurePay(r).then((q) => {
               if (!q || r !== room) return renderLog();
-              const was = { text: m.text, msgs: r.msgs, status: r.status, ep: r.ep ? epCopy(r.ep) : null },
+              const was = { text: m.text, msgs: r.msgs, status: r.status, ep: r.ep ? epCopy(r.ep) : null, err: r.lastErr },
                 gone = r.msgs[i + 1];
               m.text = t;
+              r.lastErr = "";
               r.msgs = r.msgs.slice(0, i + 1);
               restoreStatus();
               if (r.ep && gone && gone.ep0) r.ep = epCopy(gone.ep0);
@@ -8732,6 +8838,7 @@ function bindLog(box) {
                 m.text = was.text;
                 r.msgs = was.msgs;
                 r.status = was.status;
+                r.lastErr = was.err;
                 if (was.ep) r.ep = was.ep;
                 return "고치기 전 대화로 되돌렸어요.";
               };
@@ -8811,15 +8918,18 @@ async function regen(i, direction = "") {
   const r = room,
     q = await ensurePay(r);
   if (!q || r !== room) return;
-  const was = { msgs: r.msgs, ep: r.ep ? epCopy(r.ep) : null };
+  const m = r.msgs[i],
+    was = { msgs: r.msgs, ep: r.ep ? epCopy(r.ep) : null, idx: m.idx };
+  r.lastErr = "";
   r.msgs = r.msgs.slice(0, i + 1);
-  if (r.ep && r.msgs[i].ep0) r.ep = epCopy(r.msgs[i].ep0);
+  if (r.ep && m.ep0) r.ep = epCopy(m.ep0);
   const undo = () => {
     r.msgs = was.msgs;
+    m.idx = was.idx;
     if (was.ep) r.ep = was.ep;
     return "";
   };
-  generate(r.msgs[i], q, direction, { undo });
+  generate(m, q, direction, { undo });
 }
 function addCastImages(body, r, prev, said) {
   const c = r.char,
@@ -8917,12 +9027,14 @@ async function generate(target, q, direction = "", opt = {}) {
     const u = r.msgs[r.msgs.indexOf(msg) - 1];
     return u && u.role === "user" && !u.sys && !u.text.startsWith("//") ? u.text : "";
   })();
-  const show = (t) => {
-    const body = dropEcho(splitReply(t).body, said)
+  const clean = (t) =>
+    dropEcho(splitReply(t).body, said)
       .replace(/\n?[ \t]*=+[ \t]*[A-Z]*[ \t]*=*\s*$/, "")
       .replace(/\n[ \t]*(?:```|\{)[^\n]*$/, "")
-      .replace(/\[\[[^\]]*$/, "");
-    msg.alts[altIdx].text = body.trim();
+      .replace(/\[\[[^\]]*$/, "")
+      .trim();
+  const show = (t) => {
+    msg.alts[altIdx].text = clean(t);
     if (room !== r) return;
     const el = $("#liveBubble");
     if (el) {
@@ -8966,9 +9078,9 @@ async function generate(target, q, direction = "", opt = {}) {
       r.sinceMem = (r.sinceMem || 0) + 1;
     }
   } catch (e) {
-    const keep = e && e.text ? splitReply(e.text).body.trim() : "";
-    if (keep && (e.code === "cancelled" || e.code === "timeout")) {
-      const lost = e.code === "timeout";
+    const keep = e && e.text ? clean(e.text) : "";
+    const lost = !!e && (e.code === "timeout" || e.code === "upstream_error");
+    if (keep && (e.code === "cancelled" || lost)) {
       if (lost) refund(q, label);
       else refundSug(q, label);
       Object.assign(msg.alts[altIdx], { text: keep, status: msg.statusBefore, cost: lost ? "" : qShort(q) });

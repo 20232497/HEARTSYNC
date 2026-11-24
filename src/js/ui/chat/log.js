@@ -282,9 +282,10 @@ function bindLog(box) {
               if (!q || r !== room) return renderLog();
               // 새 답이 본문 하나 없이 실패하면 되돌릴 것: 원문·뒤 메시지·상태창·에피소드 진행(generate가 undo를 부름).
               // 자른 대화는 여기서 저장하지 않음 — 응답이 끝날 때 한 번(그 전에 창이 닫히면 저장된 것은 고치기 전 대화)
-              const was = { text: m.text, msgs: r.msgs, status: r.status, ep: r.ep ? epCopy(r.ep) : null },
+              const was = { text: m.text, msgs: r.msgs, status: r.status, ep: r.ep ? epCopy(r.ep) : null, err: r.lastErr },
                 gone = r.msgs[i + 1];
               m.text = t;
+              r.lastErr = "";
               r.msgs = r.msgs.slice(0, i + 1);
               restoreStatus();
               if (r.ep && gone && gone.ep0) r.ep = epCopy(gone.ep0);
@@ -292,6 +293,7 @@ function bindLog(box) {
                 m.text = was.text;
                 r.msgs = was.msgs;
                 r.status = was.status;
+                r.lastErr = was.err;
                 if (was.ep) r.ep = was.ep;
                 return "고치기 전 대화로 되돌렸어요.";
               };
