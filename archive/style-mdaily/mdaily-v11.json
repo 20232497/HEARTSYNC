@@ -73,7 +73,7 @@
     "example": "(blurry background:1.5), (depth of field:1.3), light haze, (office:0.8), (glass window:0.8)"
   },
   "sceneTag0": "upper body, looking at viewer, light smile, half-lidded eyes, relaxed expression, soft gaze",
-  "note": "v8에 감정 칸의 표정 세기만 손질(act.soften·act.scale) — 구도·화풍 문구·네거티브·LoRA·후처리·기본 표정(칸 0·1)은 v8 그대로. soften: 표정이 내용인 칸(slots — 웃음·부끄러움·슬픔·놀람·분노·삐침·공포·설렘)의 눈·표정 낱말 가운데 올린 가중치가 knee를 넘는 만큼만 ratio로 줄임(센 낱말만 누그러짐 — 1.2→1.08, 1.7→1.28). soften.scale: 낮춰도 과한 낱말(부릅뜬 눈·크게 벌린 입·악문 이·노려봄·치켜 올린 눈썹·찌푸림·물결 입·눈물·부풀린 볼·얼굴 가득한 홍조·떨림·땀·창백함)은 낱말마다 더 줄임 — 그 칸들에서만 건다. 옅은 미소·벌어진 입술·올린 눈썹·손동작처럼 매력을 싣는 약한 낱말은 그대로. Codex와 정한 시작값 — 그려서 맞출 값",
+  "note": "v8에 감정 칸의 표정 세기만 손질(act.soften·act.scale) — 구도·화풍 문구·네거티브·LoRA·후처리·기본 표정(칸 0·1)은 v8 그대로. soften: 표정이 내용인 칸(slots — 웃음·부끄러움·슬픔·놀람·분노·삐침·공포·설렘)의 눈·표정 낱말 가운데 올린 가중치가 knee를 넘는 만큼만 ratio로 줄임(센 낱말만 누그러짐 — 1.2→1.08, 1.7→1.28). soften.scale: 낮춰도 과한 낱말(부릅뜬 눈·크게 벌린 입·악문 이·노려봄·치켜 올린 눈썹·찌푸림·물결 입·눈물·부풀린 볼·얼굴 가득한 홍조·떨림·땀·창백함)은 낱말마다 더 줄임 — 그 칸들에서만 건다. 옅은 미소·벌어진 입술·올린 눈썹·손동작처럼 매력을 싣는 약한 낱말은 그대로. Codex와 정한 값. 그려서 본 것(오다은 여덟 칸·한겨울 두 칸): 일곱 칸은 과하지 않으면서 그 표정으로 읽히고, 내색이 적은 성격의 공포는 옅음(README)",
   "lightDay": "soft diffused light, brighter exposure",
   "lightNight": "soft lamp light, dim lighting",
   "act": {
