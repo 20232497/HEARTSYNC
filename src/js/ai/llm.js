@@ -174,7 +174,12 @@ async function pump(res, T, parse, onText, firstMs = TIMEOUT.stall) {
         const e = parse(ev);
         if (e.delta) {
           text += e.delta;
-          onText && onText({ text, delta: e.delta });
+          if (onText)
+            try {
+              onText({ text, delta: e.delta });
+            } catch (err) {
+              console.error("[HEART SYNC] 응답을 화면에 그리다 난 오류", err); // 받은 글은 유지 — 스트림을 끊지 않음
+            }
         }
         if (e.stop) {
           stop = e.stop;

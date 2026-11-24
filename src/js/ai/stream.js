@@ -25,9 +25,13 @@ export async function readSSE(body, onData, onChunk) {
       buf = buf.slice(i + 1);
       if (!line.startsWith("data:")) continue;
       onChunk && onChunk();
+      let ev;
       try {
-        onData(JSON.parse(line.slice(5)));
-      } catch {}
+        ev = JSON.parse(line.slice(5));
+      } catch {
+        continue; // 깨진 줄·[DONE]은 넘어감
+      }
+      onData(ev); // 해석에서 난 오류는 삼키지 않음 — 조용히 빠진 조각이 완성된 답처럼 저장되지 않게 부른 쪽이 끊긴 답으로 처리
     }
   }
 }

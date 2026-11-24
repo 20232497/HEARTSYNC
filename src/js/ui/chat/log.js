@@ -276,16 +276,26 @@ function bindLog(box) {
           delete m.editing;
           if (!t) return renderLog();
           if (m.role === "user") {
-            m.text = t;
-            const keep = room.msgs.slice(0, i + 1),
-              gone = room.msgs[i + 1];
-            ensurePay(room).then((q) => {
-              if (!q) return renderLog();
-              room.msgs = keep;
+            // 값 확인이 끝난 뒤에만 고침 — 그 창을 닫으면 아무것도 바뀌지 않음
+            const r = room;
+            ensurePay(r).then((q) => {
+              if (!q || r !== room) return renderLog();
+              // 새 답이 본문 하나 없이 실패하면 되돌릴 것: 원문·뒤 메시지·상태창·에피소드 진행(generate가 undo를 부름).
+              // 자른 대화는 여기서 저장하지 않음 — 응답이 끝날 때 한 번(그 전에 창이 닫히면 저장된 것은 고치기 전 대화)
+              const was = { text: m.text, msgs: r.msgs, status: r.status, ep: r.ep ? epCopy(r.ep) : null },
+                gone = r.msgs[i + 1];
+              m.text = t;
+              r.msgs = r.msgs.slice(0, i + 1);
               restoreStatus();
-              if (room.ep && gone && gone.ep0) room.ep = epCopy(gone.ep0);
-              saveRoom(room);
-              generate(null, q, "", true);
+              if (r.ep && gone && gone.ep0) r.ep = epCopy(gone.ep0);
+              const undo = () => {
+                m.text = was.text;
+                r.msgs = was.msgs;
+                r.status = was.status;
+                if (was.ep) r.ep = was.ep;
+                return "고치기 전 대화로 되돌렸어요.";
+              };
+              generate(null, q, "", { edit: true, undo });
             });
           } else {
             m.alts[m.idx].text = t;

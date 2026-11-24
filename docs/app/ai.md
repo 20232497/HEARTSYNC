@@ -9,6 +9,7 @@
 ## AI 호출
 
 - AI 호출(ai/llm.js): llm(messages, {tier, onText, signal, json, maxTokens}) → Anthropic 스트리밍(사용자 키, 또는 CFG.anthropicUrl 프록시 + serverKeys). 키가 없으면 {code:"no_engine"}. 모델 ID claude-haiku-5-5·claude-sonnet-5-5·claude-opus-5-5(MODEL_OF quick·default·complex — claude-3-x로 되돌리지 않기). Sonnet·Opus 요청에는 server-side fallback(fallbacks: "default", 헤더 server-side-fallback-2026-07-01, 기본 Anthropic 주소일 때만, 400이면 빼고 한 번 재시도). stop_reason "refusal"은 {code:"refused"}. **생각(thinking) 설정 THINKING**(ai/llm.js): 이 세대 모델은 생각이 기본으로 켜져 있고 생각 토큰도 max_tokens에서 빠져, 그대로 두면 본문이 잘리고 상태창이 빠짐(2026-11-10 실측: Sonnet 기본 effort high가 3,200 중 2,051을 생각에 씀) → 요청에 output_config.effort "low", 출력 한도에 생각 몫 room 2,000을 더함(실측: Sonnet low 생각 약 1,200·Haiku low 0). 끝난 이유(stop) 없이 닫힌 스트림과 스트림 안의 error 조각은 끊긴 답 → upstream_error(하트 환불). 네트워크 시간 제한 TIMEOUT(connect 45초·stall 60초·api 20초, timeoutSignal·abortCode) — 시간 초과는 {code:"timeout"}, 끊기면 받은 본문까지 남기고 '다시 시도'. 오류 문구는 errCopy
+- 스트림 읽기의 오류(2026-11-24 프레임 8차): `readSSE`(ai/stream.js)는 깨진 줄·`[DONE]`만 넘기고, 조각 해석(`anthropicEvent`·`openaiEvent`)에서 난 오류는 삼키지 않음 → `pump`가 upstream_error(받은 글은 text에)로 바꿔 던짐(조용히 빠진 조각이 완성된 답처럼 저장되지 않게). 화면 갱신(`onText`)에서 난 오류는 콘솔에만 남기고 받은 글과 스트림은 유지. 본문이 비어 있는 답은 llm이 upstream_error로, 상태 블록만 있고 본문이 없는 답은 `generate`가 같은 코드로 실패 처리(docs/app/chat.md '실패의 뒤처리')
 
 ## 대화 트랙
 
