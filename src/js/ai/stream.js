@@ -5,7 +5,8 @@
  */
 
 /**
- * SSE 본문을 끝까지 읽어 `data:` 줄의 JSON마다 onData. 읽을 수 없는 줄과 onData 안의 오류는 넘어감(조각 하나가 깨져도 스트림은 계속).
+ * SSE 본문을 끝까지 읽어 `data:` 줄의 JSON 객체마다 onData. 읽을 수 없는 줄(깨진 JSON·[DONE]·객체가 아닌 값)은 넘어감.
+ * onData 안의 오류는 삼키지 않고 부른 쪽으로 던짐 — 끝까지 읽지 않고 나갈 때는 스트림을 닫아(reader.cancel) 서버가 뒤에서 답을 계속 보내지 않게.
  * @param {ReadableStream<Uint8Array>} body
  * @param {(ev: any) => void} onData
  * @param {() => void} [onChunk] data 줄이 올 때마다(멈춤 시간 제한을 다시 셈) — 주석 줄(": …" keep-alive)만 오는 동안은 부르지 않아, 답 없이 연결만 붙들린 스트림이 시간 제한에 걸림
@@ -14,25 +15,34 @@
 export async function readSSE(body, onData, onChunk) {
   const reader = body.getReader(),
     dec = new TextDecoder();
-  let buf = "";
-  for (;;) {
-    const { value, done } = await reader.read();
-    if (done) break;
-    buf += dec.decode(value, { stream: true });
-    let i;
-    while ((i = buf.indexOf("\n")) >= 0) {
-      const line = buf.slice(0, i).trim();
-      buf = buf.slice(i + 1);
-      if (!line.startsWith("data:")) continue;
-      onChunk && onChunk();
-      let ev;
-      try {
-        ev = JSON.parse(line.slice(5));
-      } catch {
-        continue; // 깨진 줄·[DONE]은 넘어감
+  let buf = "",
+    ended = false;
+  try {
+    for (;;) {
+      const { value, done } = await reader.read();
+      if (done) {
+        ended = true;
+        break;
       }
-      onData(ev); // 해석에서 난 오류는 삼키지 않음 — 조용히 빠진 조각이 완성된 답처럼 저장되지 않게 부른 쪽이 끊긴 답으로 처리
+      buf += dec.decode(value, { stream: true });
+      let i;
+      while ((i = buf.indexOf("\n")) >= 0) {
+        const line = buf.slice(0, i).trim();
+        buf = buf.slice(i + 1);
+        if (!line.startsWith("data:")) continue;
+        onChunk && onChunk();
+        let ev;
+        try {
+          ev = JSON.parse(line.slice(5));
+        } catch {
+          continue; // 깨진 줄·[DONE]은 넘어감
+        }
+        if (!ev || typeof ev !== "object") continue; // null·숫자·글 한 줄로 답 전체가 끊기지 않게
+        onData(ev); // 해석에서 난 오류는 삼키지 않음 — 조용히 빠진 조각이 완성된 답처럼 저장되지 않게 부른 쪽이 끊긴 답으로 처리
+      }
     }
+  } finally {
+    if (!ended) reader.cancel().catch(() => {}); // 해석 오류·취소로 나감 — 기다리지 않음(닫기가 늦어도 부른 쪽은 바로 끊긴 답으로)
   }
 }
 /** Anthropic Messages 스트림의 이벤트 하나. 답을 보내던 중의 오류 조각(type "error" — 과부하 등)은 failed. @param {any} ev @returns {StreamPart} */
