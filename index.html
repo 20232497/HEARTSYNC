@@ -3112,6 +3112,306 @@ function mergeCloudSettings(v) {
     localStorage.setItem("hv1_settings", JSON.stringify(S.settings));
   } catch {}
 }
+/* ── src/js/services/images.js — 그림 저장(IMG): IndexedDB → localStorage, 축소(shrink), 참조 모양 검사(validRef) — 작품 폴더에 실린 그림(content/… 상대… */
+function validRef(ref) {
+  return (
+    typeof ref === "string" &&
+    (/^kv:img[a-z0-9]{6,30}$/.test(ref) ||
+      /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(ref) ||
+      /^content\/(?!.*\.\.)[A-Za-z0-9_./-]+\.(webp|png|jpe?g)$/.test(ref))
+  );
+}
+const IMG = {
+  cache: {},
+  async put(file) {
+    const idb = !!(await IDB.open());
+    const data = await shrink(file, idb ? 960 : 560, idb ? 0.86 : 0.8);
+    const key = uid("img");
+    this.cache[key] = data;
+    const saved = idb && (await IDB.set(key, data));
+    KV.set(key, data, { local: !saved });
+    return "kv:" + key;
+  },
+  async local(k) {
+    if (this.cache[k]) return this.cache[k];
+    let v = await IDB.get(k);
+    if (typeof v !== "string") v = await KV.get(k);
+    if (validRef(v)) this.cache[k] = v;
+    return this.cache[k];
+  },
+  keep(k, v) {
+    if (validRef(v)) {
+      this.cache[k] = v;
+      IDB.set(k, v);
+    }
+  },
+  async load(k) {
+    const v = await this.local(k);
+    if (v || !CLOUD.on) return v;
+    this.keep(k, await CLOUD.getOne(k));
+    return this.cache[k];
+  },
+  drop(ref) {
+    if (typeof ref === "string" && ref.startsWith("kv:")) {
+      const k = ref.slice(3);
+      KV.set(k, undefined);
+      IDB.set(k, undefined);
+      delete this.cache[k];
+    }
+  },
+  async migrate() {
+    if (!(await IDB.open())) return 0;
+    let n = 0;
+    try {
+      for (const lk of Object.keys(localStorage)) {
+        if (!/^hv1_img[a-z0-9]{10,30}$/.test(lk)) continue;
+        const k = lk.slice(4),
+          v = KV.getLocal(k);
+        if (typeof v === "string" && (await IDB.set(k, v))) {
+          localStorage.removeItem(lk);
+          n++;
+        }
+      }
+    } catch {}
+    return n;
+  },
+  tag(ref) {
+    if (!validRef(ref)) return "";
+    if (ref.startsWith("kv:")) {
+      const k = ref.slice(3);
+      return this.cache[k] ? `<img src="${this.cache[k]}" alt="">` : `<img data-kv="${k}" alt="">`;
+    }
+    return `<img src="${ref}" alt="" loading="lazy">`;
+  },
+  async hydrate(root = document) {
+    const els = $$("img[data-kv]", root).map((el) => {
+      const k = el.dataset.kv;
+      el.removeAttribute("data-kv");
+      el.classList.add("img-wait");
+      return [el, k];
+    });
+    await Promise.all([...new Set(els.map((x) => x[1]))].map((k) => this.load(k).catch(() => null)));
+    els.forEach(([el, k]) => {
+      if (this.cache[k]) el.src = this.cache[k];
+      el.classList.remove("img-wait");
+      if (!el.src) {
+        el.classList.add("img-miss");
+        const cv = el.closest(".cover");
+        if (cv) cv.classList.remove("has-img");
+      }
+    });
+  }
+};
+function shrink(file, max, q) {
+  return new Promise((res, rej) => {
+    const fr = new FileReader();
+    fr.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const k = Math.min(1, max / Math.max(img.width, img.height)),
+          cv = document.createElement("canvas");
+        cv.width = Math.round(img.width * k);
+        cv.height = Math.round(img.height * k);
+        cv.getContext("2d").drawImage(img, 0, 0, cv.width, cv.height);
+        res(cv.toDataURL("image/jpeg", q));
+      };
+      img.onerror = rej;
+      img.src = fr.result;
+    };
+    fr.onerror = rej;
+    fr.readAsDataURL(file);
+  });
+}
+/* ── src/js/services/load.js — 저장된 데이터를 S에 읽어 들임(loadAll): 지갑·페르소나·대화방 목록·내 서재(장기기억 설정은 설정의 한 칸 — core/migrate.js와 계정의 settings 행) */
+async function loadAll() {
+  const [w, p, rooms, shelf] = await Promise.all(["wallet", "personas", "rooms", "shelf"].map((k) => KV.get(k)));
+  if (w && typeof w === "object")
+    S.wallet = {
+      ...S.wallet,
+      ...w,
+      history: Array.isArray(w.history) ? w.history : [],
+      ledger: Array.isArray(w.ledger) ? w.ledger : [],
+      ack: w.ack && typeof w.ack === "object" ? w.ack : {}
+    };
+  else if (!S.wallet.welcomed) {
+    S.wallet.hearts = WELCOME;
+    S.wallet.welcomed = true;
+    ledger(WELCOME, "첫 방문 보너스");
+    KV.set("wallet", S.wallet);
+  }
+  if (Array.isArray(p) && p.length) S.personas = p.map((x) => ({ memo: "", img: "", ...x }));
+  if (Array.isArray(rooms)) S.rooms = sortRooms(rooms);
+  S.shelf = mergeShelf(shelf);
+  IMG.migrate().catch(() => {});
+  refreshFree();
+  KV.moveBodies().catch(() => {});
+}
+/* ── src/js/services/sync.js — 처음 로그인 합치기(mergeGuest)·계정 것만 쓰기(dropGuestRooms), 계정에서 다시 받기, 기기 지우기 */
+async function mergeGuest(remote, local) {
+  const list = (a) => (Array.isArray(a) ? a : []);
+  const byId = (a, b) => {
+    const ids = new Set(list(a).map((x) => x && x.id));
+    return list(a).concat(list(b).filter((x) => x && !ids.has(x.id)));
+  };
+  const mine = [];
+  let missed = 0;
+  for (const r of local.rooms)
+    if (!list(remote.rooms).some((x) => x.id === r.id)) {
+      let v;
+      try {
+        v = await KV.get(roomKey(r.id), true);
+      } catch {}
+      if (v) mine.push(r);
+      else missed++;
+    }
+  KV.set("rooms", mergeRoomLists(mine, remote.rooms, goneRooms()));
+  const ps = byId(
+    remote.personas,
+    list(local.personas).map((p) => Object.assign({}, p, { def: false }))
+  );
+  if (ps.length && !ps.some((p) => p.def)) ps[0].def = true;
+  if (ps.length) KV.set("personas", ps);
+  return { keys: mine.map((r) => roomKey(r.id)), missed };
+}
+function dropGuestRooms(remote) {
+  if (!Array.isArray(remote.rooms)) KV.setLocal("rooms", []);
+}
+async function reloadFromCloud() {
+  await loadAll();
+  applySettings();
+  emit("rooms");
+  emit("wallet");
+  const h = location.hash.slice(1) || "home",
+    typing = document.activeElement && /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName);
+  if (!gen && !typing && !h.startsWith("r-")) emit("route");
+}
+async function clearDevice() {
+  S.rooms.forEach((r) => KV.set(roomKey(r.id), undefined));
+  ["rooms", "mine", "wallet", "personas", "shelf", "profile", "imgpacks", "motionpacks", "coverpacks", "lorepacks", "tagpacks", "ponytags"].forEach((k) =>
+    KV.set(k, undefined)
+  );
+  await KV.settled();
+  const clean = await IDB.clear();
+  try {
+    Object.keys(localStorage)
+      .filter((k) => /^hv1_img[a-z0-9]{10,30}$/.test(k))
+      .forEach((k) => localStorage.removeItem(k));
+  } catch {}
+  return clean;
+}
+async function wipeDevice() {
+  const clean = await IDB.clear();
+  try {
+    Object.keys(localStorage)
+      .filter((k) => k.indexOf("hv1_") === 0)
+      .forEach((k) => localStorage.removeItem(k));
+  } catch {}
+  return clean;
+}
+/* ── src/js/services/cloud-wipe.js — 계정의 데이터를 모두 지움(wipeAccount — MY '모든 데이터 초기화')과 그 '전부 지움' 표식을 다른 기기가 받기(takeWipe·noteWipe) */
+const WIPE_KEY = "wipe";
+const wipeAt = (rows) => {
+  const w = rows.find((x) => x.key === WIPE_KEY);
+  return w && isTomb(w.value) ? w.value.gone : 0;
+};
+const seenKey = () => "hv1_cloudwipe_" + CLOUD.uid;
+function seen(at) {
+  try {
+    if (at === undefined) return localStorage.getItem(seenKey()) || "";
+    localStorage.setItem(seenKey(), String(at));
+    return localStorage.getItem(seenKey()) === String(at);
+  } catch {
+    return at === undefined ? "" : false;
+  }
+}
+async function wipeAccount() {
+  const C = CLOUD;
+  if (!C.on || C.noTable) return "ok";
+  const uid = C.uid,
+    at = Date.now(),
+    q = "/rest/v1/kv?user_id=eq." + encodeURIComponent(uid) + "&key=";
+  const call = async (path, opts) => {
+    const r = await SB.req(path, opts);
+    if (C.uid !== uid) throw 0;
+    await C.check(r);
+  };
+  C.wiped = true;
+  clearTimeout(C.timer);
+  const kept = C.pending;
+  C.pending = {};
+  let step = 0;
+  try {
+    await (C.busy || Promise.resolve()).then(
+      () => {},
+      () => {}
+    );
+    if (C.uid !== uid) throw 0;
+    Object.assign(kept, C.pending);
+    C.pending = {};
+    await call(q + "not.like.room-*&key=neq." + WIPE_KEY, { method: "DELETE" });
+    step = 1;
+    await call(q + "like.room-*", { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ value: { gone: at } }) });
+  } catch {
+    if (C.uid !== uid) return "fail";
+    C.wiped = false;
+    C.pending = Object.assign(kept, C.pending);
+    if (Object.keys(C.pending).length) C.timer = setTimeout(() => C.flush(), 800);
+    return step ? "half" : "fail";
+  }
+  C.pending = {};
+  seen(at);
+  for (let i = 0; i < 2; i++)
+    try {
+      await call("/rest/v1/kv?on_conflict=user_id,key", {
+        method: "POST",
+        headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
+        body: JSON.stringify([{ user_id: uid, key: WIPE_KEY, value: { gone: at } }])
+      });
+      break;
+    } catch {
+      if (C.uid !== uid) break;
+    }
+  if (C.uid !== uid) return "ok";
+  C.tombs({});
+  C.owed = null;
+  try {
+    localStorage.removeItem("hv1_cloudowed");
+  } catch {}
+  return "ok";
+}
+function noteWipe(rows) {
+  const at = wipeAt(rows);
+  if (at) seen(at);
+}
+async function takeWipe(rows) {
+  const C = CLOUD,
+    uid = C.uid,
+    at = wipeAt(rows);
+  if (!at || seen() === String(at)) return false;
+  if (C.wiped) return true;
+  C.wiped = true;
+  clearTimeout(C.timer);
+  C.pending = {};
+  await (C.busy || Promise.resolve()).then(
+    () => {},
+    () => {}
+  );
+  if (C.uid !== uid) return true;
+  if (!(await clearDevice())) {
+    toast("다른 기기에서 모든 데이터를 초기화했는데, 이 기기의 데이터를 다 지우지 못했어요. 이 사이트를 연 다른 탭을 닫고 새로고침해 주세요");
+    return true;
+  }
+  if (!seen(at)) {
+    toast("다른 기기에서 모든 데이터를 초기화해서 이 기기의 데이터도 지웠어요. 새로고침해 주세요");
+    return true;
+  }
+  try {
+    [C.lastKey(), C.skipKey(), "hv1_cloudowed"].forEach((k) => localStorage.removeItem(k));
+    localStorage.setItem("hv1_wipenote", "1");
+  } catch {}
+  location.reload();
+  return true;
+}
 /* ── src/js/services/cloud-shelf.js — 계정의 내 서재(찜·최근 본·수집 기록) 행을 이 기기의 서재와 합침(takeShelf) — 다른 키와 달리 받은 값으로 덮지 않고 합치고, 이 기기에만 있던 것은 계정으로 올림 */
 function takeShelf(remote) {
   const local = KV.getLocal(SHELF_KEY),
@@ -3138,11 +3438,12 @@ async function applyRows(rows, hold, since) {
       const t = CLOUD.tombs();
       t[x.key] = x.value.gone;
       CLOUD.tombs(t);
-    }
+    } else if (hold && hold.has(x.key)) CLOUD.put(x.key, x.value);
     CLOUD.skip(x.key, false);
     if (roomGone(x.key.slice(5), x.value.gone)) n++;
     if (x.key === open) emit("route");
   });
+  if (!full && (await takeWipe(rows))) return 0;
   const gone = goneRooms();
   const takeList = (remote) => {
     const merged = mergeRoomLists(full ? [] : S.rooms, remote, gone);
@@ -3252,10 +3553,14 @@ async function retakeRows() {
   return n;
 }
 async function pullRows() {
-  const hold = new Set(CLOUD.sending),
+  if (CLOUD.first) return 0;
+  const uid = CLOUD.uid,
+    hold = new Set(CLOUD.sending),
     since = CLOUD.seq,
     again = await CLOUD.retake();
-  let n = again + (await CLOUD.apply(await CLOUD.rows(localStorage.getItem(CLOUD.lastKey()) || ""), hold, since));
+  const rows = await CLOUD.rows(localStorage.getItem(CLOUD.lastKey()) || "");
+  if (CLOUD.uid !== uid) return again;
+  let n = again + (await CLOUD.apply(rows, hold, since));
   if (!CLOUD.shelfUp && shelfSyncOn()) {
     CLOUD.shelfUp = true;
     if (takeShelf(await CLOUD.getOne(SHELF_KEY))) n++;
@@ -3288,6 +3593,7 @@ const CLOUD = {
   pulledAt: 0,
   noTable: false,
   wiped: false,
+  first: false,
   shelfUp: false,
   skipKey() {
     return "hv1_cloudskip_" + this.uid;
@@ -3325,6 +3631,10 @@ const CLOUD = {
         const o = JSON.parse(localStorage.getItem("hv1_cloudowed") || "null");
         if (o && o.uid === this.uid) this.owed = { keys: Array.isArray(o.keys) ? o.keys : null };
         this.skipped = new Set(JSON.parse(localStorage.getItem(this.skipKey()) || "[]"));
+        if (localStorage.getItem("hv1_wipenote")) {
+          localStorage.removeItem("hv1_wipenote");
+          toast("다른 기기에서 모든 데이터를 초기화해서, 이 기기의 대화·하트·페르소나도 지웠어요");
+        }
       } catch {}
     if (this.on) {
       const t = this.tombs();
@@ -3732,188 +4042,6 @@ function acctName() {
   const u = SB.s && SB.s.user;
   if (!u) return "";
   return u.email || (provName(u.provider) || "소셜") + " 계정";
-}
-/* ── src/js/services/images.js — 그림 저장(IMG): IndexedDB → localStorage, 축소(shrink), 참조 모양 검사(validRef) — 작품 폴더에 실린 그림(content/… 상대… */
-function validRef(ref) {
-  return (
-    typeof ref === "string" &&
-    (/^kv:img[a-z0-9]{6,30}$/.test(ref) ||
-      /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(ref) ||
-      /^content\/(?!.*\.\.)[A-Za-z0-9_./-]+\.(webp|png|jpe?g)$/.test(ref))
-  );
-}
-const IMG = {
-  cache: {},
-  async put(file) {
-    const idb = !!(await IDB.open());
-    const data = await shrink(file, idb ? 960 : 560, idb ? 0.86 : 0.8);
-    const key = uid("img");
-    this.cache[key] = data;
-    const saved = idb && (await IDB.set(key, data));
-    KV.set(key, data, { local: !saved });
-    return "kv:" + key;
-  },
-  async local(k) {
-    if (this.cache[k]) return this.cache[k];
-    let v = await IDB.get(k);
-    if (typeof v !== "string") v = await KV.get(k);
-    if (validRef(v)) this.cache[k] = v;
-    return this.cache[k];
-  },
-  keep(k, v) {
-    if (validRef(v)) {
-      this.cache[k] = v;
-      IDB.set(k, v);
-    }
-  },
-  async load(k) {
-    const v = await this.local(k);
-    if (v || !CLOUD.on) return v;
-    this.keep(k, await CLOUD.getOne(k));
-    return this.cache[k];
-  },
-  drop(ref) {
-    if (typeof ref === "string" && ref.startsWith("kv:")) {
-      const k = ref.slice(3);
-      KV.set(k, undefined);
-      IDB.set(k, undefined);
-      delete this.cache[k];
-    }
-  },
-  async migrate() {
-    if (!(await IDB.open())) return 0;
-    let n = 0;
-    try {
-      for (const lk of Object.keys(localStorage)) {
-        if (!/^hv1_img[a-z0-9]{10,30}$/.test(lk)) continue;
-        const k = lk.slice(4),
-          v = KV.getLocal(k);
-        if (typeof v === "string" && (await IDB.set(k, v))) {
-          localStorage.removeItem(lk);
-          n++;
-        }
-      }
-    } catch {}
-    return n;
-  },
-  tag(ref) {
-    if (!validRef(ref)) return "";
-    if (ref.startsWith("kv:")) {
-      const k = ref.slice(3);
-      return this.cache[k] ? `<img src="${this.cache[k]}" alt="">` : `<img data-kv="${k}" alt="">`;
-    }
-    return `<img src="${ref}" alt="" loading="lazy">`;
-  },
-  async hydrate(root = document) {
-    const els = $$("img[data-kv]", root).map((el) => {
-      const k = el.dataset.kv;
-      el.removeAttribute("data-kv");
-      el.classList.add("img-wait");
-      return [el, k];
-    });
-    await Promise.all([...new Set(els.map((x) => x[1]))].map((k) => this.load(k).catch(() => null)));
-    els.forEach(([el, k]) => {
-      if (this.cache[k]) el.src = this.cache[k];
-      el.classList.remove("img-wait");
-      if (!el.src) {
-        el.classList.add("img-miss");
-        const cv = el.closest(".cover");
-        if (cv) cv.classList.remove("has-img");
-      }
-    });
-  }
-};
-function shrink(file, max, q) {
-  return new Promise((res, rej) => {
-    const fr = new FileReader();
-    fr.onload = () => {
-      const img = new Image();
-      img.onload = () => {
-        const k = Math.min(1, max / Math.max(img.width, img.height)),
-          cv = document.createElement("canvas");
-        cv.width = Math.round(img.width * k);
-        cv.height = Math.round(img.height * k);
-        cv.getContext("2d").drawImage(img, 0, 0, cv.width, cv.height);
-        res(cv.toDataURL("image/jpeg", q));
-      };
-      img.onerror = rej;
-      img.src = fr.result;
-    };
-    fr.onerror = rej;
-    fr.readAsDataURL(file);
-  });
-}
-/* ── src/js/services/load.js — 저장된 데이터를 S에 읽어 들임(loadAll): 지갑·페르소나·대화방 목록·내 서재(장기기억 설정은 설정의 한 칸 — core/migrate.js와 계정의 settings 행) */
-async function loadAll() {
-  const [w, p, rooms, shelf] = await Promise.all(["wallet", "personas", "rooms", "shelf"].map((k) => KV.get(k)));
-  if (w && typeof w === "object")
-    S.wallet = {
-      ...S.wallet,
-      ...w,
-      history: Array.isArray(w.history) ? w.history : [],
-      ledger: Array.isArray(w.ledger) ? w.ledger : [],
-      ack: w.ack && typeof w.ack === "object" ? w.ack : {}
-    };
-  else if (!S.wallet.welcomed) {
-    S.wallet.hearts = WELCOME;
-    S.wallet.welcomed = true;
-    ledger(WELCOME, "첫 방문 보너스");
-    KV.set("wallet", S.wallet);
-  }
-  if (Array.isArray(p) && p.length) S.personas = p.map((x) => ({ memo: "", img: "", ...x }));
-  if (Array.isArray(rooms)) S.rooms = sortRooms(rooms);
-  S.shelf = mergeShelf(shelf);
-  IMG.migrate().catch(() => {});
-  refreshFree();
-  KV.moveBodies().catch(() => {});
-}
-/* ── src/js/services/sync.js — 처음 로그인 합치기(mergeGuest)·계정 것만 쓰기(dropGuestRooms), 계정에서 다시 받기, 기기 지우기 */
-async function mergeGuest(remote, local) {
-  const list = (a) => (Array.isArray(a) ? a : []);
-  const byId = (a, b) => {
-    const ids = new Set(list(a).map((x) => x && x.id));
-    return list(a).concat(list(b).filter((x) => x && !ids.has(x.id)));
-  };
-  const mine = [];
-  let missed = 0;
-  for (const r of local.rooms)
-    if (!list(remote.rooms).some((x) => x.id === r.id)) {
-      let v;
-      try {
-        v = await KV.get(roomKey(r.id), true);
-      } catch {}
-      if (v) mine.push(r);
-      else missed++;
-    }
-  KV.set("rooms", mergeRoomLists(mine, remote.rooms, goneRooms()));
-  const ps = byId(
-    remote.personas,
-    list(local.personas).map((p) => Object.assign({}, p, { def: false }))
-  );
-  if (ps.length && !ps.some((p) => p.def)) ps[0].def = true;
-  if (ps.length) KV.set("personas", ps);
-  return { keys: mine.map((r) => roomKey(r.id)), missed };
-}
-function dropGuestRooms(remote) {
-  if (!Array.isArray(remote.rooms)) KV.setLocal("rooms", []);
-}
-async function reloadFromCloud() {
-  await loadAll();
-  applySettings();
-  emit("rooms");
-  emit("wallet");
-  const h = location.hash.slice(1) || "home",
-    typing = document.activeElement && /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName);
-  if (!gen && !typing && !h.startsWith("r-")) emit("route");
-}
-async function wipeDevice() {
-  const clean = await IDB.clear();
-  try {
-    Object.keys(localStorage)
-      .filter((k) => k.indexOf("hv1_") === 0)
-      .forEach((k) => localStorage.removeItem(k));
-  } catch {}
-  return clean;
 }
 /* ── src/js/services/support.js — 고객센터 서버(SUPPORT): 공지사항 읽기·쓰기, 문의 남기기·내 문의·받은 문의·답변 — Supabase REST(표 notices·inquiries·admins,… */
 const ASK_CATS = [
@@ -6330,59 +6458,18 @@ function localKVKeys() {
   } catch {}
   return Array.from(new Set(ls.concat(S.rooms.map((r) => roomKey(r.id))))).filter(synced);
 }
-/* ── src/js/services/cloud-wipe.js — 계정의 데이터를 모두 지움(wipeAccount — MY '모든 데이터 초기화'): 방 행은 삭제 표식으로 바꾸고 나머지 행은 지움 */
-async function wipeAccount() {
-  const C = CLOUD;
-  if (!C.on || C.noTable) return "ok";
-  const uid = C.uid,
-    q = "/rest/v1/kv?user_id=eq." + encodeURIComponent(uid) + "&key=";
-  const call = async (path, opts) => {
-    const r = await SB.req(path, opts);
-    if (C.uid !== uid) throw 0;
-    await C.check(r);
-  };
-  C.wiped = true;
-  clearTimeout(C.timer);
-  const kept = C.pending;
-  C.pending = {};
-  let step = 0;
-  try {
-    await (C.busy || Promise.resolve()).then(
-      () => {},
-      () => {}
-    );
-    if (C.uid !== uid) throw 0;
-    Object.assign(kept, C.pending);
-    C.pending = {};
-    await call(q + "not.like.room-*", { method: "DELETE" });
-    step = 1;
-    await call(q + "like.room-*", { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ value: { gone: Date.now() } }) });
-  } catch {
-    if (C.uid !== uid) return "fail";
-    C.wiped = false;
-    C.pending = Object.assign(kept, C.pending);
-    if (Object.keys(C.pending).length) C.timer = setTimeout(() => C.flush(), 800);
-    return step ? "half" : "fail";
-  }
-  C.pending = {};
-  C.tombs({});
-  C.owed = null;
-  try {
-    localStorage.removeItem("hv1_cloudowed");
-  } catch {}
-  return "ok";
-}
 /* ── src/js/ui/account.js — MY → 계정 칸: 처음 로그인 합치기(firstSync), 동기화 상태·로그아웃·계정 삭제 */
 async function firstSync() {
   try {
     localStorage.removeItem(CLOUD.lastKey());
   } catch {}
   const rows = await CLOUD.rows("");
+  noteWipe(rows);
   const remote = {};
   rows.forEach((x) => {
     remote[x.key] = x.value;
   });
-  if (!rows.some((x) => x.key !== "settings")) {
+  if (!rows.some((x) => x.key !== "settings" && x.key !== WIPE_KEY)) {
     await pushAll();
     toast("이 기기의 데이터를 계정에 저장했어요");
     return;
@@ -7469,7 +7556,7 @@ function viewMe() {
     confirmSheet(
       "모든 데이터를 지울까요?",
       "대화방, 하트, 페르소나와 페르소나 사진이 모두 지워져요." +
-        (CLOUD.on ? " 로그인되어 있어서 계정에 저장된 데이터도 지워져요." : "") +
+        (CLOUD.on ? " 로그인되어 있어서 계정에 저장된 데이터와, 이 계정으로 쓰던 다른 기기의 데이터도 그 기기가 다음에 접속할 때 지워져요." : "") +
         " 되돌릴 수 없어요.",
       "전부 삭제",
       wipeAll
@@ -7497,18 +7584,9 @@ async function wipeNow() {
       } catch {}
     return wipeFailed("계정의 데이터를 지우지 못했어요", "네트워크를 확인하고 다시 시도해 주세요. 이 기기의 데이터도 아직 그대로예요.");
   }
+  if (CLOUD.uid !== uid) return toast("계정이 바뀌어서 이 기기의 데이터는 지우지 않았어요");
   accountWiped = true;
-  S.rooms.forEach((r) => KV.set(roomKey(r.id), undefined));
-  ["rooms", "mine", "wallet", "personas", "shelf", "profile", "imgpacks", "motionpacks", "coverpacks", "lorepacks", "tagpacks", "ponytags"].forEach((k) =>
-    KV.set(k, undefined)
-  );
-  await KV.settled();
-  const clean = await IDB.clear();
-  try {
-    Object.keys(localStorage)
-      .filter((k) => /^hv1_img[a-z0-9]{10,30}$/.test(k))
-      .forEach((k) => localStorage.removeItem(k));
-  } catch {}
+  const clean = await clearDevice();
   if (!clean) return wipeFailed("이 기기의 데이터를 다 지우지 못했어요", "이 사이트를 연 다른 탭을 닫고 다시 시도해 주세요.", true);
   location.reload();
 }
@@ -9697,8 +9775,14 @@ async function afterLogin(fresh) {
   CLOUD.start();
   if (!CLOUD.on) return;
   try {
-    if (fresh) await firstSync();
-    else if (await CLOUD.pull()) await reloadFromCloud();
+    if (fresh) {
+      CLOUD.first = true;
+      try {
+        await firstSync();
+      } finally {
+        CLOUD.first = false;
+      }
+    } else if (await CLOUD.pull()) await reloadFromCloud();
     CLOUD.setState(CLOUD.state === "notable" ? "notable" : "ok");
   } catch (e) {
     if (!CLOUD.noTable) CLOUD.setState("err");

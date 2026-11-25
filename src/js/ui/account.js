@@ -7,6 +7,7 @@ import { S } from "../core/state.js";
 import { $, ago, esc, toast } from "../core/util.js";
 import { CLOUD } from "../services/cloud.js";
 import { pushAll } from "../services/cloud-push.js";
+import { WIPE_KEY, noteWipe } from "../services/cloud-wipe.js";
 import { SB, acctName, provName } from "../services/supabase.js";
 import { dropGuestRooms, mergeGuest, reloadFromCloud, wipeDevice } from "../services/sync.js";
 import { viewMe } from "./me.js";
@@ -19,11 +20,12 @@ export async function firstSync() {
     localStorage.removeItem(CLOUD.lastKey());
   } catch {}
   const rows = await CLOUD.rows("");
+  noteWipe(rows); // 계정을 지운 표식은 처음 로그인에서는 따르지 않고 본 것으로만(이 기기의 것은 아래 '합칠까요?'가 정함) — 그 뒤의 받기가 이 기기를 지우지 않게
   const remote = {};
   rows.forEach((x) => {
     remote[x.key] = x.value;
   });
-  if (!rows.some((x) => x.key !== "settings")) {
+  if (!rows.some((x) => x.key !== "settings" && x.key !== WIPE_KEY)) {
     await pushAll();
     toast("이 기기의 데이터를 계정에 저장했어요");
     return;
