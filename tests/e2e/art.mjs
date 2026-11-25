@@ -1,6 +1,6 @@
 // 그림이 실린 작품의 흐름(지금 저장소에는 그림이 0장이라 가짜 그림으로 틀만 확인): 작품에 images·장소·컷씬·비공개 칸을 주입하고 content/…/images/* 요청을 가로채 작은 PNG를 돌려준다.
 // 본문 태그 [[코드번호]] → <img>(그 칸 그림이 없으면 1 기본 그림), 갤러리·장소 목록, 도감·인물 시트 미리보기, 비공개(hidden) 그림은 대화에서 본 뒤에야 도감에서도 열림,
-// 내 서재의 수집 기록(S.shelf.seen)과 '모은 그림 n / m' 배지, 인물 시트의 '본 칸 ✓' 표시.
+// 내 서재의 수집 기록(S.shelf.seen)과 '본 그림 n장' 배지, 인물 시트의 '본 칸 ✓' 표시.
 import { chromium, webkit, devices } from "playwright";
 import { noSupabase } from "./_offline.mjs";
 const [, , url, out] = process.argv;
@@ -59,7 +59,20 @@ for (const [dev, engine, opts] of [
         const nap = (ms) => new Promise((r) => setTimeout(r, ms));
         location.hash = "c-" + w.id;
         await nap(350);
-        const detail = ($("#collect") || {}).textContent || "";
+        const detail = ($("#collect") || {}).textContent || "",
+          aiArt = ($("#dAiArt") || {}).textContent || "";
+        // 그림이 없는 작품에는 그림 안내 한 줄이 없고, 잠긴 컷씬 그림만 실린 작품(상세에 그림이 안 그려짐)에는 있음
+        const other = ORIGINALS[1];
+        location.hash = "c-" + other.id;
+        await nap(350);
+        const plainArt = !!$("#dAiArt");
+        const cuts0 = other.cuts;
+        other.cuts = [{ title: "잠긴 시험 컷씬", when: "끝", hidden: true }];
+        other.images = { [w.EV]: { 1: `content/_test/images/${w.EV}1.png` } };
+        viewDetail(other.id);
+        const lockedArt = !!$("#dAiArt") && !$$("img", $("#view")).some((i) => !i.closest("#d-near, .d-rooms")); // 안내는 있고 이 작품의 그림은 화면에 없음
+        other.cuts = cuts0;
+        delete other.images;
         location.hash = "codex-" + w.id;
         await nap(350);
         const cards = $$(".codex-grid .wcard").map((f) => ({
@@ -77,7 +90,7 @@ for (const [dev, engine, opts] of [
         document.querySelector('.overlay [data-sit="3"]').click();
         const pv3 = !!document.querySelector(".overlay #cxPv img");
         closeOverlays();
-        return { detail, codex: ($("#collect") || {}).textContent || "", cards, chips, pv3 };
+        return { detail, aiArt, plainArt, lockedArt, codex: ($("#collect") || {}).textContent || "", cards, chips, pv3 };
       }, w);
     res.before = await look();
     if (out) await p.screenshot({ path: `${out}/art_${tag}_codex_before.png` });
@@ -141,7 +154,9 @@ for (const [dev, engine, opts] of [
       J = JSON.stringify;
     const card = (list, code) => list.find((x) => x.code === code) || {};
     // 대화 전: 0 / 6, 공개 장소만 그림, 비공개 장소·컷씬·3번 칸은 잠김
-    if (bf.detail !== "모은 그림 0 / 6" || bf.codex !== bf.detail) errs.push("대화 전 수집률이 다름: " + J([bf.detail, bf.codex]));
+    if (bf.detail !== "본 그림 0장" || bf.codex !== bf.detail) errs.push("대화 전 수집률이 다름: " + J([bf.detail, bf.codex]));
+    if (bf.aiArt !== "이 작품의 그림은 AI로 만들었어요." || bf.plainArt || !bf.lockedArt)
+      errs.push("상세의 'AI로 만든 그림' 한 줄이 그림이 실린 작품에만 있지 않음: " + J([bf.aiArt, bf.plainArt, bf.lockedArt]));
     if (!card(bf.cards, MP + 1).img || card(bf.cards, MP + 2).img || !card(bf.cards, MP + 2).lock || card(bf.cards, EV + 1).img || !card(bf.cards, EV + 1).lock)
       errs.push("대화 전 장소·컷씬 카드가 다름: " + J(bf.cards));
     if (bf.chips[0] !== "ready" || bf.chips[1] !== "ready" || bf.chips[3] !== "locked" || bf.chips[7] !== "" || bf.pv3)
@@ -153,7 +168,7 @@ for (const [dev, engine, opts] of [
     if (J(ch.seen.slice().sort()) !== J([A + 1, A + 3, A + 7, MP + 2].sort()) || J(ch.saved) !== J(ch.seen))
       errs.push("수집 기록이 다름: " + J([ch.seen, ch.saved]));
     // 대화 뒤: 본 비공개 그림은 도감에서도 열리고(안 본 컷씬은 그대로 잠김), 본 칸 ✓, 3 / 6
-    if (af.detail !== "모은 그림 3 / 6" || af.codex !== af.detail) errs.push("대화 뒤 수집률이 다름: " + J([af.detail, af.codex]));
+    if (af.detail !== "본 그림 3장" || af.codex !== af.detail) errs.push("대화 뒤 수집률이 다름: " + J([af.detail, af.codex]));
     if (!card(af.cards, MP + 2).img || card(af.cards, MP + 2).lock || card(af.cards, EV + 1).img || !card(af.cards, EV + 1).lock)
       errs.push("대화 뒤 장소·컷씬 카드가 다름: " + J(af.cards));
     if (af.chips[0] !== "ready" || af.chips[1] !== "seen" || af.chips[3] !== "seen" || af.chips[7] !== "seen" || !af.pv3)
