@@ -208,8 +208,14 @@ export async function afterLogin(fresh) {
   CLOUD.start();
   if (!CLOUD.on) return;
   try {
-    if (fresh) await firstSync();
-    else if (await CLOUD.pull()) await reloadFromCloud();
+    if (fresh) {
+      CLOUD.first = true; // 맞추는 동안 바뀐 행 받기를 미룸(services/cloud-pull.js pullRows)
+      try {
+        await firstSync();
+      } finally {
+        CLOUD.first = false;
+      }
+    } else if (await CLOUD.pull()) await reloadFromCloud();
     CLOUD.setState(CLOUD.state === "notable" ? "notable" : "ok");
   } catch (e) {
     if (!CLOUD.noTable) CLOUD.setState("err");

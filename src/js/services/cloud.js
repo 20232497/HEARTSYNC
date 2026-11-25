@@ -4,6 +4,7 @@ import { isTomb } from "../core/room-list.js";
 import { goneRooms } from "../core/rooms.js";
 import { shelfSyncOn } from "../core/shelf.js";
 import { KV } from "../core/storage.js";
+import { toast } from "../core/util.js";
 import { cloudSettings } from "./cloud-settings.js";
 import { applyRows, pullRows, retakeRows } from "./cloud-pull.js";
 import { SB } from "./supabase.js";
@@ -45,6 +46,7 @@ export const CLOUD = {
   pulledAt: 0,
   noTable: false,
   wiped: false, // 계정 데이터를 지운 뒤(wipe) — 이 화면에서는 더 올리지 않음(곧 새로고침)
+  first: false, // 처음 로그인 맞추기(firstSync) 중 — 바뀐 행 받기(pull)를 미룸(ui/login.js afterLogin이 켜고 끔)
   shelfUp: false,
   skipKey() {
     return "hv1_cloudskip_" + this.uid;
@@ -86,6 +88,11 @@ export const CLOUD = {
         const o = JSON.parse(localStorage.getItem("hv1_cloudowed") || "null");
         if (o && o.uid === this.uid) this.owed = { keys: Array.isArray(o.keys) ? o.keys : null };
         this.skipped = new Set(JSON.parse(localStorage.getItem(this.skipKey()) || "[]"));
+        // 다른 기기의 초기화를 따라 이 기기를 지우고 새로고침했으면 알림(services/cloud-wipe.js takeWipe)
+        if (localStorage.getItem("hv1_wipenote")) {
+          localStorage.removeItem("hv1_wipenote");
+          toast("다른 기기에서 모든 데이터를 초기화해서, 이 기기의 대화·하트·페르소나도 지웠어요");
+        }
       } catch {}
     // 지난번에 올리지 못한 삭제 표식을 다시 대기열에
     if (this.on) {
