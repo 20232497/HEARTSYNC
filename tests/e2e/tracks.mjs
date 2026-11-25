@@ -193,7 +193,7 @@ for (const [dev, engine] of [
       S.settings.memCfg = keep;
     });
     const sys = (i) => (claude[i] || { body: { system: "" } }).body.system,
-      privateLine = (s) => /건강·성적 지향·종교·정치적 견해는/.test(s) && /어디에도 남기지 않는다/.test(s);
+      privateLine = (s) => /건강·성적 지향·종교·정치적 견해는/.test(s) && /실제 주변 사람/.test(s) && /어디에도 남기지 않는다/.test(s);
     check("일반 방의 요약·압축도 Anthropic으로", claude.length === 3 && gate.length === 5 && /압축하라/.test(sys(2)));
     check("압축한 기억이 방에 들어감", (await p.evaluate(() => room.memory)) === "클로드 압축 기억");
     // 이용자가 고른 지침이어도 실제 민감 정보를 남기지 않는 줄은 요약·압축 모두에 늘 붙음(ai-policy 6-4)
