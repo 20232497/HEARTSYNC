@@ -17,6 +17,7 @@
 //   common.mjs        폴더 위치·TARGETS·AUD_DIRS·BuildError·읽기 쓰기 도우미
 //   bundle.mjs        뼈대 펼치기 + 모듈 번들러(모듈 검사) + 주석 벗기기
 //   layers.mjs        층 방향 검사(아래층 → 윗층 import 금지, 사용자 빌드에 admin/ 금지)와 알려진 예외 표
+//   css-check.mjs     오래된 아이폰용 CSS 검사(inset 약칭·접두사 없는 backdrop-filter·물러날 줄 없는 color-mix())
 //   app-rules.mjs     작품 검사에 쓰는 앱 규칙을 src/js에서 꺼냄(APP_RULES)
 //   content.mjs       content/ 읽기 → generated.js (폴더 구조·순서 잠금)
 //   work-check.mjs    작품 하나의 검사(checkWork) · episode-check.mjs 에피소드 진행표 · images-scan.mjs 그림 파일 이름
