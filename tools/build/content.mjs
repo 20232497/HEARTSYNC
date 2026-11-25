@@ -3,7 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { LOCK_FILE, checkLock, lockOf, readLock } from "../content-lock.mjs";
-import { AUD_DIRS, BuildError, CONTENT, GEN_FILE, isObj, jsSafe, readText, str, subdirs, visible, writeIfChanged } from "./common.mjs";
+import { AUD_DIRS, BuildError, CONTENT, GEN_FILE, GEN_USER_FILE, isObj, jsSafe, readText, str, subdirs, visible, writeIfChanged } from "./common.mjs";
 import { scanImages } from "./images-scan.mjs";
 import { checkWork } from "./work-check.mjs";
 
@@ -116,26 +116,10 @@ export async function buildContent(R, opt = {}) {
   const byOrder = (a, b) => (a.order ?? Infinity) - (b.order ?? Infinity) || (a.rel < b.rel ? -1 : a.rel > b.rel ? 1 : 0);
   works.sort(byOrder);
   rows.sort(byOrder);
-  const objs = works.map((w) => {
-    const { c, aud, row, rel } = w,
-      o = { ...c };
-    if (row && o.row === undefined) o.row = row.key;
-    if (o.aud === undefined) o.aud = aud;
-    if (w.images) o.images = w.images; // 작품 폴더 images/의 그림(content/… 상대 경로) — 사용자는 이 그림을 봄
-    if (w.img) o.img = w.img;
-    if (w.loreImages) o.loreImages = w.loreImages;
-    return `/* ${rel.slice("content/".length)} */ ${ser(o, "")}`;
-  });
-  const code = `/* 빌드가 content/ 폴더로 만든 작품 데이터 — 직접 고치지 말고 content/<f|m|all>/…/work.js를 고치세요(content/README.md). git에 넣지 않음 */
-export const ORIGINALS = [
-${objs.join(",\n")}
-];
-// 홈의 가로 줄(content/<aud>/<줄>/_row.json) — 관심있는 대화에 맞는 작품이 있을 때만 보임
-export const HOME_ROWS = [
-${rows.map((r) => "  " + JSON.stringify({ key: r.key, title: r.title, sub: r.sub })).join(",\n")}
-];
-`;
-  writeIfChanged(GEN_FILE, jsSafe(code));
+  // 작품 목록 둘: generated.js는 전부(관리자 빌드·단위 시험·도구), generated-user.js는 출시판 제외(hold) 작품을 뺀 것 — 사용자 빌드(index.html)가 읽음(bundle.mjs loadModule)
+  const gen = genModules(works, rows);
+  writeIfChanged(GEN_FILE, gen.all);
+  writeIfChanged(GEN_USER_FILE, gen.user);
   const count = (a) => works.filter((w) => w.aud === a).length,
     pics = works.reduce(
       (a, w) => a + Object.values(w.images || {}).reduce((b, m) => b + Object.keys(m).length, 0) + (w.img ? 1 : 0) + Object.keys(w.loreImages || {}).length,
@@ -151,10 +135,51 @@ ${rows.map((r) => "  " + JSON.stringify({ key: r.key, title: r.title, sub: r.sub
       m: count("m"),
       all: count("all"),
       rows: rows.length,
+      held: works.filter((w) => w.c.hold).map((w) => w.c.id),
       pics,
       unlocked: stale.reduce((n, w) => n + Math.max(1, w.res.changes.length), 0),
       stale: stale.map((w) => w.id)
     }
+  };
+}
+
+/** 작품 목록 모듈의 글 둘(빌드가 쓰는 generated.js·generated-user.js): all은 전부, user는 출시판 제외(work.js hold — 작품 검사가 빈 글이 아닌지 봄) 작품을 뺀 것.
+ * hold 작품은 사용자 빌드(index.html)에 아예 실리지 않고, 그 작품으로 이미 만든 방은 방 사본으로 열림(core/character.js liveWork) */
+export function genModules(works, rows) {
+  const obj = (w) => {
+    const { c, aud, row, rel } = w,
+      o = { ...c };
+    if (row && o.row === undefined) o.row = row.key;
+    if (o.aud === undefined) o.aud = aud;
+    if (w.images) o.images = w.images; // 작품 폴더 images/의 그림(content/… 상대 경로) — 사용자는 이 그림을 봄
+    if (w.img) o.img = w.img;
+    if (w.loreImages) o.loreImages = w.loreImages;
+    return `/* ${rel.slice("content/".length)} */ ${ser(o, "")}`;
+  };
+  const code = (
+    list,
+    rowList,
+    who
+  ) => `/* 빌드가 content/ 폴더로 만든 작품 데이터(${who}) — 직접 고치지 말고 content/<f|m|all>/…/work.js를 고치세요(content/README.md). git에 넣지 않음 */
+export const ORIGINALS = [
+${list.map(obj).join(",\n")}
+];
+// 홈의 가로 줄(content/<aud>/<줄>/_row.json) — 관심있는 대화에 맞는 작품이 있을 때만 보임
+export const HOME_ROWS = [
+${rowList.map((r) => "  " + JSON.stringify({ key: r.key, title: r.title, sub: r.sub })).join(",\n")}
+];
+`;
+  // 줄의 작품이 모두 hold면 그 줄의 이름·소개도 사용자 목록에 싣지 않음(줄 이름에 작품을 드러내는 말이 있을 수 있어서)
+  const allHeld = (r) => works.some((w) => w.row === r) && works.every((w) => w.row !== r || w.c.hold);
+  return {
+    all: jsSafe(code(works, rows, "전부 — 관리자 빌드·단위 시험·도구가 읽음")),
+    user: jsSafe(
+      code(
+        works.filter((w) => !w.c.hold),
+        rows.filter((r) => !allHeld(r)),
+        "사용자 빌드 — 출시판 제외 작품은 뺌"
+      )
+    )
   };
 }
 

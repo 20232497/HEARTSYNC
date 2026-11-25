@@ -58,7 +58,8 @@ export function viewDetail(id) {
       <div class="d-side">
         <div class="d-top">${coverHTML(c, "", { vt: true })}
           <div class="d-info"><span class="note">${esc(c.cat)}${c.world_mode ? " · 세계관" : ""} · ${metaHTML(c)}</span>
-          <h1>${esc(c.title)}</h1><p class="lead">${esc(c.oneLiner)}</p></div>
+          <h1>${esc(c.title)}</h1><p class="lead">${esc(c.oneLiner)}</p>` +
+    `${c.hold ? `<p class="d-hold" id="dHold">출시판 제외 — ${esc(c.hold)}</p>` : ""}</div>
         </div>
         <div class="tags">${(c.tags || []).map((t) => `<span>#${esc(t)}</span>`).join("")}</div>
         <div class="d-cta"><button class="btn ghost like-btn" id="like" aria-pressed="${liked(c.id)}">${likeHTML(liked(c.id))}</button>` +
