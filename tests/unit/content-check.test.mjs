@@ -10,7 +10,7 @@ import { ROOT, appRules, checkWork, scanImages, checkForbidden } from "../../too
 
 const R = appRules();
 /* 검사 함수 안의 오류 자리 수(맨 아래 '규칙 자리 수' 시험) — 2026-11-12에 자리마다 번호를 달아 재 보니 아래 표가 110곳(작품 70 · 그림 6 · 에피소드 34)을 모두 한 번 이상 건드림. 그 뒤 더한 것: 인물의 성격·나이 칸 3곳(2026-11-13) */
-const WORK_SITES = 73,
+const WORK_SITES = 74,
   IMAGE_SITES = 6,
   EP_SITES = 34;
 const KIND = Object.keys(R.LORE_KINDS)[0],
@@ -595,6 +595,20 @@ const RULES = [
     new RegExp(`noteTemplate\\(유저노트 양식\\)는 ${R.LIMITS.userNote}자 이내`)
   ],
   [
+    "hold가 빈 글",
+    (c) => {
+      c.hold = "  ";
+    },
+    /hold\(출시판 제외\)는 까닭을 적은 글/
+  ],
+  [
+    "hold가 참거짓",
+    (c) => {
+      c.hold = true;
+    },
+    /hold\(출시판 제외\)는 까닭을 적은 글/
+  ],
+  [
     "lookTags에 한글",
     (c) => {
       c.lookTags = "검은 머리";
@@ -898,6 +912,18 @@ test("checkWork: 통과해야 하는 모양 — track general, cast 없는 1:1 �
     }).errors,
     []
   );
+  // 출시판 제외: 까닭을 적은 글이면 통과(빌드가 사용자 빌드에서 뺌 — tests/unit/hold.test.mjs)
+  assert.deepEqual(
+    run((c) => {
+      c.hold = "게임위 회신 대기";
+    }),
+    { errors: [], warnings: [] }
+  );
+  // 빌드(content.mjs)는 checkWork가 돌려준 작품을 그대로 목록에 넣음 — 거기서 hold가 빠지면 사용자 빌드에 그 작품이 실려 버림
+  const held = Object.assign(base(), { hold: "게임위 회신 대기" }),
+    ctx = { aud: "f", row: null, id: "zz-check", wrel: "content/f/zz-check", R, errors: [], warnings: [] };
+  assert.equal(checkWork({ default: held }, ctx).hold, "게임위 회신 대기");
+  assert.deepEqual(ctx.errors, []);
   // 성격·나이 칸: 목록 안의 성격, look의 두 자리 'N세'와 같은 나이. look에 'N세'가 없거나('900살'·'겉보기 20대') 세 자리면 견주지 않음
   assert.deepEqual(
     run((c) => {

@@ -1,6 +1,6 @@
 // 작품 완성도 보고서(npm run content:report): 작품마다 뼈대 칸이 얼마나 채워졌는지 한 표로 — 설정 글자 수·키워드북·시작 상황·장소·컷씬·명령어·가이드·첫 답변 추천·배경 장소·그림 수.
 // 기준(BASE)보다 얕은 칸에는 ▽를 붙이고 맨 아래에 작품별 얕은 칸을 모아 적는다. 검사가 아니라 안내 — 늘 exit 0(빌드 규칙은 tools/build.mjs).
-// 데이터는 빌드가 만든 src/js/content/generated.js(앱이 보는 것과 같은 ORIGINALS)에서 읽으므로 먼저 npm run build. 의존성 없음.
+// 데이터는 빌드가 만든 src/js/content/generated.js(관리자 빌드가 보는 것과 같은 ORIGINALS — 출시판 제외 hold 작품까지 전부)에서 읽으므로 먼저 npm run build. 의존성 없음.
 //   node tools/content-report.mjs          표(마크다운)
 //   node tools/content-report.mjs --json   숫자만 JSON으로(앞뒤 비교용)
 import fs from "node:fs";

@@ -2,7 +2,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import vm from "node:vm";
-import { BuildError, GEN_FILE, JS, readText } from "./common.mjs";
+import { BuildError, GEN_FILE, GEN_USER_FILE, JS, readText } from "./common.mjs";
 
 /* 빌드 검사에 쓰는 앱 규칙 — src/js에서 같은 코드를 꺼내 쓴다(규칙이 두 군데로 갈라지지 않게) */
 const APP_RULES = [
@@ -37,7 +37,7 @@ export function appRules() {
     for (const e of fs.readdirSync(d, { withFileTypes: true })) {
       const p = path.join(d, e.name);
       if (e.isDirectory()) walk(p);
-      else if (e.name.endsWith(".js") && p !== GEN_FILE) files.push(p);
+      else if (e.name.endsWith(".js") && p !== GEN_FILE && p !== GEN_USER_FILE) files.push(p);
     }
   })(JS);
   const lines = files.flatMap((f) => readText(f).split("\n")),
