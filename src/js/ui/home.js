@@ -73,6 +73,27 @@ const HOME_KINDS = {
 const kindOK = (c) => (S.kind === "ep" ? !!c.episode : S.kind === "free" ? !c.episode : true);
 export function viewHome() {
   const v = $("#view");
+  v.innerHTML = `<div class="page">
+    ${topbar(`<label class="search">${ICON.search}<span class="sr">캐릭터 검색</span><input id="q" placeholder="캐릭터, 작품, 태그 검색" value="${esc(S.q)}"></label>`)}
+    ${!hasClaudeKey() ? `<div class="engine-warn">AI 연결이 아직 없어요. <b>MY → 설정</b>에서 Anthropic API 키를 넣어 주세요.</div>` : ""}
+    <div id="homeBody"></div></div>`;
+  const q = $("#q");
+  // 입력칸은 그대로 두고 아래 결과만 다시 그림 — 입력마다 화면 전체를 그리면 입력칸이 새로 생겨 한글 조합이 끊김(2026-11-21 프레임 7차 C9)
+  q.oninput = () => {
+    S.q = q.value;
+    paintHome();
+  };
+  bindGo($(".topbar", v));
+  paintHome();
+  if (audLater) {
+    audLater = false;
+    askAud();
+  }
+}
+/* 홈의 검색칸 아래(추천작·둘러보기·작품 줄 또는 검색 결과) — 검색어·장르·형식·관심있는 대화를 바꾸면 이것만 다시 그림 */
+function paintHome() {
+  const v = $("#homeBody");
+  if (!v) return;
   const match = (c) =>
     (S.cat === "전체" || c.cat === S.cat) && (!S.q || [c.name, c.title, c.oneLiner, ...(c.tags || [])].join(" ").toLowerCase().includes(S.q.toLowerCase()));
   const pool = ORIGINALS.filter(audOK), // 관심있는 대화로 거른 것 — 추천작은 여기서
@@ -127,21 +148,18 @@ export function viewHome() {
           }
           return out;
         })();
-  v.innerHTML = `<div class="page">
-    ${topbar(`<label class="search">${ICON.search}<span class="sr">캐릭터 검색</span><input id="q" placeholder="캐릭터, 작품, 태그 검색" value="${esc(S.q)}"></label>`)}
-    ${!hasClaudeKey() ? `<div class="engine-warn">AI 연결이 아직 없어요. <b>MY → 설정</b>에서 Anthropic API 키를 넣어 주세요.</div>` : ""}
-    ${
-      !S.q && hero.length
-        ? `<h2 class="sec">추천작</h2><div class="hero">${hero
-            .map(
-              (c) => `
+  v.innerHTML = `${
+    !S.q && hero.length
+      ? `<h2 class="sec">추천작</h2><div class="hero">${hero
+          .map(
+            (c) => `
       <button class="hero-card" data-char="${esc(c.id)}">${coverHTML(c, "", { vt: true })}
         <div class="body"><span class="k">${c.isNew ? "NEW · " : ""}${esc(c.cat)} · HEART SYNC 오리지널</span><h3>${esc(c.title)}</h3><p>${esc(c.desc)}</p>
         <span class="who">${c.world_mode ? "세계관 입장하기" : esc(c.name) + "와 대화하기"} →</span></div></button>`
-            )
-            .join("")}</div>`
-        : ""
-    }
+          )
+          .join("")}</div>`
+      : ""
+  }
     <h2 class="sec">둘러보기 <small>관심있는 대화 · 이야기 형식 · 장르</small></h2>
     ${audSegHTML()}
     <div class="seg kind-seg">${Object.keys(HOME_KINDS)
@@ -154,43 +172,29 @@ export function viewHome() {
     <div class="chips" style="margin-top:10px">${["전체", ...CATS]
       .map((c) => `<button class="chip ${S.cat === c ? "on" : ""}" ` + `data-cat="${c}">${c}</button>`)
       .join("")}</div>
-    ${zones || empty}
-  </div>`;
+    ${zones || empty}`;
   $$("[data-char]", v).forEach((b) => (b.onclick = () => go("c-" + b.dataset.char)));
   $$("[data-cat]", v).forEach(
     (b) =>
       (b.onclick = () => {
         S.cat = b.dataset.cat;
-        viewHome();
+        paintHome();
       })
   );
   $$("[data-kind]", v).forEach(
     (b) =>
       (b.onclick = () => {
         S.kind = HOME_KINDS[b.dataset.kind] ? b.dataset.kind : "all";
-        viewHome();
+        paintHome();
       })
   );
   $$("[data-aud]", v).forEach(
     (b) =>
       (b.onclick = () => {
         setAudience(b.dataset.aud);
-        viewHome();
+        paintHome();
       })
   );
-  const q = $("#q");
-  q.oninput = () => {
-    S.q = q.value;
-    const pos = q.selectionStart;
-    viewHome();
-    const n = $("#q");
-    n.focus();
-    n.setSelectionRange(pos, pos);
-  };
   bindGo(v);
   IMG.hydrate(v);
-  if (audLater) {
-    audLater = false;
-    askAud();
-  }
 }

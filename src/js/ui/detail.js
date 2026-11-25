@@ -17,7 +17,8 @@ import { bindCast, bindCodex, castGridHTML, collectHTML, commandsHTML, guideHTML
 import { coverHTML, lightbox } from "./cover.js";
 import { rowHTML } from "./home.js";
 import { ICON } from "./icons.js";
-import { bindGo, favMark, go, topbar } from "./shell.js";
+import { bindGo, favMark, go, roomSetupHTML, topbar } from "./shell.js";
+import { sheet } from "./sheet.js";
 import { opBrief, opPlace, startChat, startNote } from "./start-sheet.js";
 import { worldArtHTML } from "./worldart.js";
 /** @typedef {import("../core/types.js").Work} Work */
@@ -61,8 +62,10 @@ export function viewDetail(id) {
           <h1>${esc(c.title)}</h1><p class="lead">${esc(c.oneLiner)}</p></div>
         </div>
         <div class="tags">${(c.tags || []).map((t) => `<span>#${esc(t)}</span>`).join("")}</div>
-        <div class="d-cta"><button class="btn ghost like-btn" id="like" aria-pressed="${liked(c.id)}">${likeHTML(liked(c.id))}</button>` +
-    `<button class="btn pri big" id="start">${c.episode ? "에피소드 시작" : "새 대화 시작"}</button></div>
+        <div class="d-cta${rooms.length ? " has-resume" : ""}">` +
+    `<button class="btn ghost like-btn" id="like" aria-pressed="${liked(c.id)}">${likeHTML(liked(c.id))}</button>` +
+    resumeHTML(rooms) +
+    `<button class="btn ${rooms.length ? "" : "pri "}big" id="start">${c.episode ? "에피소드 시작" : "새 대화 시작"}</button></div>
         <p class="note d-price">${startNote(c)}</p>${hasArt(c) ? `<p class="note d-aiart" id="dAiArt">${AI_ART_NOTE}</p>` : ""}
         ${rooms.length ? `<div class="d-rooms"><h3>이어서 하기 <small>이 작품의 내 대화방</small></h3><div class="cont">${rooms.map(roomHTML).join("")}</div></div>` : ""}
       </div>
@@ -112,13 +115,30 @@ export function viewDetail(id) {
       more.textContent = open ? "접기" : "더 보기";
       more.setAttribute("aria-expanded", open);
     };
-  $("#start").onclick = () => startChat(c, 0);
+  $("#start").onclick = () => startChat(c);
+  const resume = $("#resume");
+  if (resume) resume.onclick = () => (rooms.length === 1 ? go("r-" + rooms[0].id) : resumeSheet(rooms));
   $$("[data-op]", v).forEach((b) => (b.onclick = () => startChat(c, +b.dataset.op)));
 }
-/* 이 작품의 내 대화방 한 줄(왼쪽 '이어서 하기') — r은 방 목록 항목 */
+/* 이 작품의 내 대화방 한 줄(왼쪽 '이어서 하기'·이어하기 고르기 창) — r은 방 목록 항목 */
 const roomHTML = (r) =>
-  `<button data-room="${esc(r.id)}">${coverHTML(r)}<span class="x"><b>${favMark(r)}${esc(r.name)}</b>` +
+  `<button data-room="${esc(r.id)}">${coverHTML(r)}<span class="x"><b>${favMark(r)}${esc(r.name)}</b>${roomSetupHTML(r)}` +
   `<span>${esc(r.last)}</span></span><span class="note">${ago(r.at)}</span></button>`;
+/* 시작 버튼 줄의 '이어하기'(하던 방이 있을 때만 — 그때는 이것이 주 버튼이고 '새 대화 시작'은 옆에). 방이 하나면 그 방의 시작 상황과 마지막 글 한 줄,
+   여럿이면 고르는 창(무조건 최근 방으로 보내지 않음 — 2026-11-21 프레임 7차 C6) */
+function resumeHTML(rooms) {
+  if (!rooms.length) return "";
+  const sub = rooms.length > 1 ? `대화방 ${rooms.length}개` : [rooms[0].opening, rooms[0].last].filter(Boolean).join(" · ");
+  return `<button class="btn pri big d-resume" id="resume"><span>이어하기</span>${sub ? `<small>${esc(sub)}</small>` : ""}</button>`;
+}
+function resumeSheet(rooms) {
+  const ov = sheet(
+    `<div class="sheet-head"><h2>이어서 할 대화방</h2><button class="icon-btn" data-x aria-label="닫기">${ICON.close}</button></div>` +
+      `<div class="cont d-rooms-pick">${rooms.map(roomHTML).join("")}</div>`
+  );
+  IMG.hydrate(ov);
+  $$("[data-room]", ov).forEach((b) => (b.onclick = () => go("r-" + b.dataset.room))); // 화면 이동이 창을 닫음(route → closeOverlays)
+}
 /* 소개 칸 — 길면 접어 두고 '더 보기' */
 function descHTML(c) {
   const long = (c.desc || "").length > LONG_DESC;

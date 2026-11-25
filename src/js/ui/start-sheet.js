@@ -1,6 +1,7 @@
 /* 새 대화 시작 창: 시작 상황과 페르소나를 고르고 시작 — 상세 페이지의 시작 버튼과 시작 상황 카드가 엶(startChat).
    처음 한 번은 같은 창의 첫 장이 AI 안내(ui/ai-notice.js)라 창이 연달아 뜨지 않음. 고를 것이 없으면(시작 상황 하나·페르소나 하나·안내를 이미 봄) 창 없이 바로 시작 */
 import { MODELS } from "../ai/models.js";
+import { findOpening } from "../core/room-fork.js";
 import { defaultSet, newRoom } from "../core/rooms.js";
 import { S, room, setRoom } from "../core/state.js";
 import { $, $$, esc } from "../core/util.js";
@@ -36,12 +37,27 @@ export function startNote(c) {
   );
 }
 /**
- * 이 작품으로 새 대화를 시작 — 방 수 한도를 먼저 보고, 고를 것이 있거나 AI 안내를 아직 안 봤으면 시작 창을 엶.
- * @param {Work} c 작품(normalizeChar를 거친 것) @param {number} [opIdx] 처음에 골라 둘 시작 상황 번호
+ * 이 작품의 가장 최근 방(S.rooms 순서는 즐겨찾기 먼저라 최근 시각으로 다시 고름)의 시작 상황 번호와 페르소나. 시작 상황은 방을 다시 찾는 규칙 그대로(core/room-fork.js findOpening),
+ * 페르소나는 id로 — 어느 하나라도 지금 없으면 null(기본값으로 시작). 예전 목록 항목(시작 상황 칸이 없음)도 null.
+ * @param {Work} c @returns {{ op: number, persona: import("../core/types.js").Persona }|null}
  */
-export function startChat(c, opIdx = 0) {
+export function lastSetup(c) {
+  const e = S.rooms.filter((r) => r.charId === c.id).sort((a, b) => b.at - a.at)[0];
+  if (!e || !e.personaId || !(e.openingId || e.opening)) return null;
+  const op = findOpening(c, e),
+    persona = S.personas.find((p) => p.id === e.personaId);
+  return op >= 0 && persona ? { op, persona } : null;
+}
+/**
+ * 이 작품으로 새 대화를 시작 —방 수 한도를 먼저 보고, 고를 것이 있거나 AI 안내를 아직 안 봤으면 시작 창을 엶.
+ * 시작 상황을 주지 않으면(상세의 시작 버튼) 이 작품에서 가장 최근 방의 시작 상황·페르소나를 골라 둠 — 둘 다 지금도 있을 때만(lastSetup).
+ * @param {Work} c 작품(normalizeChar를 거친 것) @param {number} [opIdx] 처음에 골라 둘 시작 상황 번호(상세의 시작 상황 카드)
+ */
+export function startChat(c, opIdx) {
   if (S.rooms.filter((r) => r.charId === c.id).length >= plan().rooms) return plusSheet("rooms");
-  const def = S.personas.find((p) => p.def) || S.personas[0];
+  const last = opIdx === undefined ? lastSetup(c) : null;
+  if (opIdx === undefined) opIdx = last ? last.op : 0;
+  const def = (last && last.persona) || S.personas.find((p) => p.def) || S.personas[0];
   const begin = (i, p) => {
     closeOverlays();
     setRoom(newRoom(c, i, p));
@@ -62,6 +78,7 @@ export function startChat(c, opIdx = 0) {
       `<label class="opening pick${on ? " on" : ""}"><input type="radio" name="${name}" value="${esc(value)}"${on ? " checked" : ""}>` +
       `<b>${head}</b>${sub ? `<span class="brief">${sub}</span>` : ""}</label>`;
     body.innerHTML =
+      (last ? `<p class="note st-last" id="stLast">지난번 설정으로 골라 뒀어요 — 시작하면 새 대화방이 하나 더 생겨요.</p>` : "") +
       `<h3 class="st-h">${c.world_mode ? "게임 모드 · 시작 상황" : "시작 상황"}</h3><div class="openings">` +
       c.openings.map((o, i) => card("op", String(i), i === opIdx, esc(o.title) + opPlace(c, o), esc(opBrief(o)) + "…")).join("") +
       `</div><h3 class="st-h">대화할 내 페르소나<span class="spacer"></span><button class="btn sm ghost" id="stMe">페르소나 관리</button></h3>` +
