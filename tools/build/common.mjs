@@ -7,7 +7,9 @@ export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "
 export const SRC = path.join(ROOT, "src"),
   JS = path.join(SRC, "js"),
   CONTENT = path.join(ROOT, "content");
+/* GEN_FILE: 작품 목록 전부(관리자 빌드·단위 시험·도구가 읽음). GEN_USER_FILE: 사용자 빌드(index.html)가 그 자리에 대신 읽는 목록 — 출시판 제외(hold) 작품을 뺌(bundle.mjs loadModule) */
 export const GEN_FILE = path.join(JS, "content", "generated.js"),
+  GEN_USER_FILE = path.join(JS, "content", "generated-user.js"),
   BUILD_DIR = path.join(ROOT, ".build");
 
 /* 빌드 대상: page(뼈대, src/ 아래) → out(저장소 루트). strip이면 주석·빈 줄을 벗기고, doc이면 모듈마다 설명 머리를 붙임.
