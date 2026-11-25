@@ -13,6 +13,14 @@ import { afterLogin, bootBack, newPasswordSheet } from "./ui/login.js";
 import { closeOverlays } from "./ui/sheet.js";
 import { renderShell, route } from "./ui/shell.js";
 
+/* 부팅이 던지면 '불러오는 중…'에 머물지 않게 이유를 보여 줌 — 뼈대의 앞쪽 ES5 스크립트는 error 이벤트만 받아, 약속이 거부된 것은 못 봄.
+   첫 화면이 이미 그려진 뒤(#bootMsg가 없음)의 실패는 전처럼 전역 처리기(core/util.js)로 */
+export function bootFail(e) {
+  const m = typeof document !== "undefined" ? document.getElementById("bootMsg") : null;
+  if (!m) throw e;
+  console.error("[HEART SYNC] 부팅 실패", e);
+  m.textContent = "화면을 불러오지 못했어요. 새로고침해 주세요. (" + ((e && e.message) || "알 수 없는 오류") + ")";
+}
 export async function boot() {
   migrateSettings();
   applySettings();

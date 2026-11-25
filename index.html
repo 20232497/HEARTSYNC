@@ -2597,7 +2597,6 @@ function indexRoom(r) {
       .slice(0, 70)
   };
   S.rooms = sortRooms([entry, ...S.rooms.filter((x) => x.id !== r.id)]);
-  KV.set("rooms", S.rooms);
   emit("rooms");
 }
 function sortRooms(list) {
@@ -2632,7 +2631,7 @@ async function setFav(id, on) {
       return y;
     })
   );
-  KV.set("rooms", S.rooms);
+  persistRooms();
   const se = savedEntry.get(id);
   if (se) se.entry = S.rooms.find((x) => x.id === id);
   emit("rooms");
@@ -2642,6 +2641,15 @@ const unsaved = new Set();
 const roomUnsaved = (id) => unsaved.has(id);
 const saveSeq = new Map(),
   savedEntry = new Map();
+function storableRooms(list) {
+  return list.filter((x) => {
+    const se = savedEntry.get(x.id);
+    return !se || !!se.entry;
+  });
+}
+function persistRooms() {
+  KV.set("rooms", storableRooms(S.rooms));
+}
 function saveRoom(r) {
   if (deletedRooms.has(r.id)) return Promise.resolve(false);
   r.at = Date.now();
@@ -2661,14 +2669,22 @@ function saveRoom(r) {
   const entry = S.rooms.find((x) => x.id === id);
   return Promise.resolve(KV.set(roomKey(id), r)).then((ok) => {
     if (ok && seq > savedEntry.get(id).seq) savedEntry.set(id, { seq, entry });
-    if (saveSeq.get(id) !== seq || deletedRooms.has(id)) return !!ok;
+    if (deletedRooms.has(id)) return !!ok;
+    if (ok) {
+      if (!S.rooms.some((x) => x.id === id)) {
+        S.rooms = sortRooms([entry, ...S.rooms]);
+        emit("rooms");
+      }
+      persistRooms();
+    }
+    if (saveSeq.get(id) !== seq) return !!ok;
     if (ok) {
       if (unsaved.delete(id)) emit("rooms");
     } else {
       unsaved.add(id);
       const good = savedEntry.get(id).entry;
       S.rooms = sortRooms(good ? S.rooms.map((x) => (x.id === id ? good : x)) : S.rooms.filter((x) => x.id !== id));
-      KV.set("rooms", S.rooms);
+      persistRooms();
       emit("rooms");
     }
     return !!ok;
@@ -2697,7 +2713,7 @@ function removeRoom(id) {
   const at = Date.now();
   forgetRoom(id, at);
   KV.set(roomKey(id), { gone: at }, { local: false });
-  KV.set("rooms", S.rooms);
+  persistRooms();
   emit("rooms");
 }
 function roomGone(id, at) {
@@ -2706,7 +2722,7 @@ function roomGone(id, at) {
   if (gen && gen.roomId === id) gen.ctl.abort();
   if (room && room.id === id) setRoom(null);
   if (had) {
-    KV.set("rooms", S.rooms);
+    persistRooms();
     emit("rooms");
   }
   return had;
@@ -3117,9 +3133,10 @@ async function applyRows(rows, hold, since) {
   const takeList = (remote) => {
     const merged = mergeRoomLists(full ? [] : S.rooms, remote, gone);
     S.rooms = merged;
-    KV.setLocal("rooms", merged);
+    const keep = storableRooms(merged);
+    KV.setLocal("rooms", keep);
     const queued = "rooms" in CLOUD.pending || CLOUD.sending.has("rooms") || (!!hold && hold.has("rooms")) || newer("rooms");
-    if (queued || (!full && !sameRoomList(merged, remote))) CLOUD.put("rooms", merged);
+    if (queued || (!full && !sameRoomList(keep, remote))) CLOUD.put("rooms", keep);
   };
   rows.forEach((x) => {
     if (x.updated_at && x.updated_at > (localStorage.getItem(CLOUD.lastKey()) || ""))
@@ -3256,6 +3273,7 @@ const CLOUD = {
   at: 0,
   pulledAt: 0,
   noTable: false,
+  wiped: false,
   shelfUp: false,
   skipKey() {
     return "hv1_cloudskip_" + this.uid;
@@ -3284,6 +3302,7 @@ const CLOUD = {
     this.on = SB.on() && !!(SB.s && SB.s.user && SB.s.user.id);
     this.uid = this.on ? SB.s.user.id : null;
     this.noTable = false;
+    this.wiped = false;
     this.shelfUp = false;
     this.owed = null;
     this.skipped = new Set();
@@ -3307,6 +3326,7 @@ const CLOUD = {
   stop() {
     this.on = false;
     this.uid = null;
+    this.wiped = false;
     this.pending = {};
     this.sending = new Set();
     this.skipped = new Set();
@@ -3321,7 +3341,7 @@ const CLOUD = {
     emit("cloud");
   },
   put(k, v) {
-    if (!this.on || this.noTable || !(k === "settings" || synced(k) || IMG_KEY_RE.test(k))) return;
+    if (!this.on || this.noTable || this.wiped || !(k === "settings" || synced(k) || IMG_KEY_RE.test(k))) return;
     const x = v === undefined ? null : tombFor(k, { v });
     this.pending[k] = x;
     if (x && isTomb(x.v)) {
@@ -3354,7 +3374,7 @@ const CLOUD = {
   async send() {
     const uid = this.uid,
       gone = () => this.uid !== uid;
-    if (!this.on) return "off";
+    if (!this.on || this.wiped) return "off";
     if (this.noTable) return "notable";
     const items = Object.entries(this.pending);
     if (!items.length) return "ok";
@@ -3456,12 +3476,6 @@ const CLOUD = {
   },
   pull() {
     return pullRows();
-  },
-  async wipe() {
-    if (this.on && !this.noTable) {
-      this.pending = {};
-      await SB.req("/rest/v1/kv?user_id=eq." + encodeURIComponent(this.uid), { method: "DELETE" });
-    }
   }
 };
 function chunkBy(items, max) {
@@ -3628,15 +3642,21 @@ const SB = {
       hit = (t) => /(^|&)(access_token|error_description)=/.test(t);
     if (!hit(h) && !hit(q)) return "";
     const p = {};
-    (hit(h) ? h : q).split("&").forEach((kv) => {
-      const i = kv.indexOf("=");
-      if (i > 0) p[decodeURIComponent(kv.slice(0, i))] = decodeURIComponent(kv.slice(i + 1).replace(/\+/g, " "));
-    });
+    let bad = false;
+    try {
+      (hit(h) ? h : q).split("&").forEach((kv) => {
+        const i = kv.indexOf("=");
+        if (i > 0) p[decodeURIComponent(kv.slice(0, i))] = decodeURIComponent(kv.slice(i + 1).replace(/\+/g, " "));
+      });
+    } catch {
+      bad = true;
+    }
     try {
       history.replaceState(null, "", location.pathname + (hit(q) ? "" : location.search));
     } catch {
       location.hash = "";
     }
+    if (bad) return "";
     if (p.error_description) {
       setTimeout(() => toast(oauthMsg(p)), 300);
       return "";
@@ -4302,9 +4322,13 @@ async function readSSE(body, onData, onChunk) {
       buf = buf.slice(i + 1);
       if (!line.startsWith("data:")) continue;
       onChunk && onChunk();
+      let ev;
       try {
-        onData(JSON.parse(line.slice(5)));
-      } catch {}
+        ev = JSON.parse(line.slice(5));
+      } catch {
+        continue;
+      }
+      onData(ev);
     }
   }
 }
@@ -4461,7 +4485,12 @@ async function pump(res, T, parse, onText, firstMs = TIMEOUT.stall) {
         const e = parse(ev);
         if (e.delta) {
           text += e.delta;
-          onText && onText({ text, delta: e.delta });
+          if (onText)
+            try {
+              onText({ text, delta: e.delta });
+            } catch (err) {
+              console.error("[HEART SYNC] 응답을 화면에 그리다 난 오류", err);
+            }
         }
         if (e.stop) {
           stop = e.stop;
@@ -6287,6 +6316,48 @@ function localKVKeys() {
   } catch {}
   return Array.from(new Set(ls.concat(S.rooms.map((r) => roomKey(r.id))))).filter(synced);
 }
+/* ── src/js/services/cloud-wipe.js — 계정의 데이터를 모두 지움(wipeAccount — MY '모든 데이터 초기화'): 방 행은 삭제 표식으로 바꾸고 나머지 행은 지움 */
+async function wipeAccount() {
+  const C = CLOUD;
+  if (!C.on || C.noTable) return "ok";
+  const uid = C.uid,
+    q = "/rest/v1/kv?user_id=eq." + encodeURIComponent(uid) + "&key=";
+  const call = async (path, opts) => {
+    const r = await SB.req(path, opts);
+    if (C.uid !== uid) throw 0;
+    await C.check(r);
+  };
+  C.wiped = true;
+  clearTimeout(C.timer);
+  const kept = C.pending;
+  C.pending = {};
+  let step = 0;
+  try {
+    await (C.busy || Promise.resolve()).then(
+      () => {},
+      () => {}
+    );
+    if (C.uid !== uid) throw 0;
+    Object.assign(kept, C.pending);
+    C.pending = {};
+    await call(q + "not.like.room-*", { method: "DELETE" });
+    step = 1;
+    await call(q + "like.room-*", { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ value: { gone: Date.now() } }) });
+  } catch {
+    if (C.uid !== uid) return "fail";
+    C.wiped = false;
+    C.pending = Object.assign(kept, C.pending);
+    if (Object.keys(C.pending).length) C.timer = setTimeout(() => C.flush(), 800);
+    return step ? "half" : "fail";
+  }
+  C.pending = {};
+  C.tombs({});
+  C.owed = null;
+  try {
+    localStorage.removeItem("hv1_cloudowed");
+  } catch {}
+  return "ok";
+}
 /* ── src/js/ui/account.js — MY → 계정 칸: 처음 로그인 합치기(firstSync), 동기화 상태·로그아웃·계정 삭제 */
 async function firstSync() {
   try {
@@ -6319,10 +6390,18 @@ async function firstSync() {
         : "이 기기의 데이터를 계정에 합쳤어요";
     toast(merge ? done : "계정 데이터를 불러왔어요");
   };
-  if (!onlyRooms.length && !onlyLikes.length) return use(false);
-  const what = [onlyRooms.length ? `대화 ${onlyRooms.length}개` : "", onlyLikes.length ? `찜한 작품 ${onlyLikes.length}개` : ""].filter(Boolean).join("와 ");
+  const onlyPersonas = Array.isArray(remote.personas) ? local.personas.filter((p) => p && p.id !== "p1" && !has(remote.personas, p.id)) : [];
+  if (!onlyRooms.length && !onlyLikes.length && !onlyPersonas.length) return use(false);
+  const what = [
+    onlyRooms.length ? `대화 ${onlyRooms.length}개` : "",
+    onlyLikes.length ? `찜한 작품 ${onlyLikes.length}개` : "",
+    onlyPersonas.length ? `페르소나 ${onlyPersonas.length}개` : ""
+  ]
+    .filter(Boolean)
+    .join(" · ");
+  const head = onlyRooms.length ? "대화를" : onlyLikes.length ? "찜을" : "페르소나를";
   const ov =
-    sheet(`<h2>이 기기의 ${onlyRooms.length ? "대화를" : "찜을"} 합칠까요?</h2><p class="sub">계정에 이미 저장된 데이터가 있어요. 이 기기에만 있는 ${what}를 계정에 합칠 수 있어요. 계정에 있던 것은 그대로 남아요.</p>
+    sheet(`<h2>이 기기의 ${head} 합칠까요?</h2><p class="sub">계정에 이미 저장된 데이터가 있어요. 이 기기에만 있는 ${what}를 계정에 합칠 수 있어요. 계정에 있던 것은 그대로 남아요.</p>
     <div class="cta-row"><button class="btn ghost" id="mNo">계정 것만 쓰기</button><span class="spacer"></span><button class="btn pri" id="mYes">합치기</button></div>`);
   return new Promise((res, rej) => {
     let done = false;
@@ -6781,7 +6860,10 @@ function faqGroups() {
           "에피소드와 외전은 뭔가요?",
           "작품은 두 가지예요. <b>자유형</b>은 끝이 정해지지 않은 대화이고, <b>에피소드형</b>(홈 카드·상세에 '에피소드')은 정해진 장을 지나 결말에서 끝나는 이야기예요. 대화방 위 막대에 지금 몇 장인지 보이고, <b>갈림길</b> 카드가 나오면 골라서(또는 직접 써서) 길을 정해요. 사건은 대화 흐름에 맞춰 일어나고, 고른 길과 상태창 수치에 따라 결말이 갈려요. 어떤 결말들이 있는지는 상세 페이지에서 미리 볼 수 있어요. 결말을 본 뒤에는 <b>외전 이어 가기</b>로 그 대화를 이어받아 — 고른 인물과 단둘이 못다 한 이야기를 나누거나, 같은 사건을 그 인물의 눈으로 처음부터 다시 보거나, 결말 뒤의 이야기를 — 자유 대화로 이어 갈 수 있어요(새 대화방이 생기고 원래 방은 그대로). 요금은 자유형·에피소드형·외전 모두 같은 턴당 하트예요."
         ],
-        ["응답이 중간에 끊겼어요.", "연결이 끊기거나 시간이 너무 오래 걸리면 받은 데까지 남기고 멈춰요. 그 메시지의 <b>다시 시도</b>를 누르면 다시 써요."]
+        [
+          "응답이 중간에 끊겼어요.",
+          "연결이 끊기거나 시간이 너무 오래 걸리면 받은 데까지 남기고 멈춰요. 끊긴 답에 쓴 하트(또는 무료 턴)는 돌려드려요. 그 메시지의 <b>다시 시도</b>를 누르면 다시 써요."
+        ]
       ]
     ],
     [
@@ -7376,20 +7458,61 @@ function viewMe() {
         (CLOUD.on ? " 로그인되어 있어서 계정에 저장된 데이터도 지워져요." : "") +
         " 되돌릴 수 없어요.",
       "전부 삭제",
-      () => {
-        S.rooms.forEach((r) => KV.set(roomKey(r.id), undefined));
-        ["rooms", "mine", "wallet", "personas", "shelf", "profile", "imgpacks", "motionpacks", "coverpacks", "lorepacks", "tagpacks", "ponytags"].forEach((k) =>
-          KV.set(k, undefined)
-        );
-        IDB.clear();
-        try {
-          Object.keys(localStorage)
-            .filter((k) => /^hv1_img[a-z0-9]{10,30}$/.test(k))
-            .forEach((k) => localStorage.removeItem(k));
-        } catch {}
-        (CLOUD.on ? CLOUD.wipe().catch(() => {}) : Promise.resolve()).then(() => setTimeout(() => location.reload(), 400));
-      }
+      wipeAll
     );
+}
+let wiping = false,
+  accountWiped = false;
+async function wipeAll() {
+  if (wiping) return;
+  wiping = true;
+  try {
+    await wipeNow();
+  } finally {
+    wiping = false;
+  }
+}
+async function wipeNow() {
+  toast("지우는 중이에요…");
+  const uid = CLOUD.uid,
+    got = CLOUD.on && !accountWiped ? await wipeAccount() : "ok";
+  if (got !== "ok") {
+    if (got === "half" && CLOUD.on && CLOUD.uid === uid)
+      try {
+        await pushAll();
+      } catch {}
+    return wipeFailed("계정의 데이터를 지우지 못했어요", "네트워크를 확인하고 다시 시도해 주세요. 이 기기의 데이터도 아직 그대로예요.");
+  }
+  accountWiped = true;
+  S.rooms.forEach((r) => KV.set(roomKey(r.id), undefined));
+  ["rooms", "mine", "wallet", "personas", "shelf", "profile", "imgpacks", "motionpacks", "coverpacks", "lorepacks", "tagpacks", "ponytags"].forEach((k) =>
+    KV.set(k, undefined)
+  );
+  await KV.settled();
+  const clean = await IDB.clear();
+  try {
+    Object.keys(localStorage)
+      .filter((k) => /^hv1_img[a-z0-9]{10,30}$/.test(k))
+      .forEach((k) => localStorage.removeItem(k));
+  } catch {}
+  if (!clean) return wipeFailed("이 기기의 데이터를 다 지우지 못했어요", "이 사이트를 연 다른 탭을 닫고 다시 시도해 주세요.", true);
+  location.reload();
+}
+function wipeFailed(title, sub, half) {
+  const ov = sheet(
+    `<h2>${esc(title)}</h2><p class="sub">${esc(sub)}</p><div class="cta-row"><span class="spacer"></span>` +
+      `<button class="btn ghost" data-x>닫기</button><button class="btn pri" id="wRetry">다시 시도</button></div>`
+  );
+  let again = false;
+  $("#wRetry", ov).onclick = () => {
+    again = true;
+    ov.remove();
+    wipeAll();
+  };
+  if (half)
+    ov.onShut = () => {
+      if (!again) location.reload();
+    };
 }
 function personaSheet(p, after) {
   let img = p?.img || "";
@@ -7794,7 +7917,7 @@ function askPay(q, r) {
     if (tp)
       tp.onclick = () => {
         fin(false);
-        checkout(PLUS);
+        checkout(PLUS, afterBuy);
       };
     const tl = $("#toLite", ov);
     if (tl)
@@ -8701,16 +8824,25 @@ function bindLog(box) {
           delete m.editing;
           if (!t) return renderLog();
           if (m.role === "user") {
-            m.text = t;
-            const keep = room.msgs.slice(0, i + 1),
-              gone = room.msgs[i + 1];
-            ensurePay(room).then((q) => {
-              if (!q) return renderLog();
-              room.msgs = keep;
+            const r = room;
+            ensurePay(r).then((q) => {
+              if (!q || r !== room) return renderLog();
+              const was = { text: m.text, msgs: r.msgs, status: r.status, ep: r.ep ? epCopy(r.ep) : null, err: r.lastErr },
+                gone = r.msgs[i + 1];
+              m.text = t;
+              r.lastErr = "";
+              r.msgs = r.msgs.slice(0, i + 1);
               restoreStatus();
-              if (room.ep && gone && gone.ep0) room.ep = epCopy(gone.ep0);
-              saveRoom(room);
-              generate(null, q, "", true);
+              if (r.ep && gone && gone.ep0) r.ep = epCopy(gone.ep0);
+              const undo = () => {
+                m.text = was.text;
+                r.msgs = was.msgs;
+                r.status = was.status;
+                r.lastErr = was.err;
+                if (was.ep) r.ep = was.ep;
+                return "고치기 전 대화로 되돌렸어요.";
+              };
+              generate(null, q, "", { edit: true, undo });
             });
           } else {
             m.alts[m.idx].text = t;
@@ -8783,11 +8915,21 @@ function regenAsk(i) {
 }
 async function regen(i, direction = "") {
   if (gen) return;
-  const q = await ensurePay(room);
-  if (!q) return;
-  room.msgs = room.msgs.slice(0, i + 1);
-  if (room.ep && room.msgs[i].ep0) room.ep = epCopy(room.msgs[i].ep0);
-  generate(room.msgs[i], q, direction);
+  const r = room,
+    q = await ensurePay(r);
+  if (!q || r !== room) return;
+  const m = r.msgs[i],
+    was = { msgs: r.msgs, ep: r.ep ? epCopy(r.ep) : null, idx: m.idx };
+  r.lastErr = "";
+  r.msgs = r.msgs.slice(0, i + 1);
+  if (r.ep && m.ep0) r.ep = epCopy(m.ep0);
+  const undo = () => {
+    r.msgs = was.msgs;
+    m.idx = was.idx;
+    if (was.ep) r.ep = was.ep;
+    return "";
+  };
+  generate(m, q, direction, { undo });
 }
 function addCastImages(body, r, prev, said) {
   const c = r.char,
@@ -8855,7 +8997,7 @@ function addCastImages(body, r, prev, said) {
     .forEach((a) => lines.splice(a.at, 0, a.tag, ""));
   return lines.join("\n");
 }
-async function generate(target, q, direction = "", isEdit = false) {
+async function generate(target, q, direction = "", opt = {}) {
   const r = room,
     c = r.char,
     model = r.set.model;
@@ -8885,12 +9027,14 @@ async function generate(target, q, direction = "", isEdit = false) {
     const u = r.msgs[r.msgs.indexOf(msg) - 1];
     return u && u.role === "user" && !u.sys && !u.text.startsWith("//") ? u.text : "";
   })();
-  const show = (t) => {
-    const body = dropEcho(splitReply(t).body, said)
+  const clean = (t) =>
+    dropEcho(splitReply(t).body, said)
       .replace(/\n?[ \t]*=+[ \t]*[A-Z]*[ \t]*=*\s*$/, "")
       .replace(/\n[ \t]*(?:```|\{)[^\n]*$/, "")
-      .replace(/\[\[[^\]]*$/, "");
-    msg.alts[altIdx].text = body.trim();
+      .replace(/\[\[[^\]]*$/, "")
+      .trim();
+  const show = (t) => {
+    msg.alts[altIdx].text = clean(t);
     if (room !== r) return;
     const el = $("#liveBubble");
     if (el) {
@@ -8912,9 +9056,10 @@ async function generate(target, q, direction = "", isEdit = false) {
       room: r
     });
     show(text);
+    if (!msg.alts[altIdx].text) throw { code: "upstream_error", text: "" };
     const parsed = parseState(text, c, msg.statusBefore),
       prevMsgs = r.msgs.slice(0, r.msgs.indexOf(msg));
-    const bodyText = msg.alts[altIdx].text ? addCastImages(msg.alts[altIdx].text, r, prevMsgs, said) : "(빈 응답)";
+    const bodyText = addCastImages(msg.alts[altIdx].text, r, prevMsgs, said);
     const rep = parsed.ep;
     delete parsed.ep;
     if (!q.sug) parsed.suggestions = [];
@@ -8928,23 +9073,27 @@ async function generate(target, q, direction = "", isEdit = false) {
       a.ep1 = epCopy(r.ep);
       if (r.ep.over) markEnding(c.id, r.ep.end);
     }
-    if (!target && !isEdit) {
+    if (!target && !opt.edit) {
       r.turn = (r.turn || 0) + 1;
       r.sinceMem = (r.sinceMem || 0) + 1;
     }
   } catch (e) {
-    const keep = e && e.text ? splitReply(e.text).body.trim() : "";
-    if (keep && (e.code === "cancelled" || e.code === "timeout")) {
-      refundSug(q, label);
-      Object.assign(msg.alts[altIdx], { text: keep, status: msg.statusBefore, cost: qShort(q) });
-      if (e.code === "timeout") r.lastErr = "응답이 오는 중에 끊겨 여기까지만 남겼어요. '다시 시도'를 누르면 다시 써요.";
+    const keep = e && e.text ? clean(e.text) : "";
+    const lost = !!e && (e.code === "timeout" || e.code === "upstream_error");
+    if (keep && (e.code === "cancelled" || lost)) {
+      if (lost) refund(q, label);
+      else refundSug(q, label);
+      Object.assign(msg.alts[altIdx], { text: keep, status: msg.statusBefore, cost: lost ? "" : qShort(q) });
+      if (lost) r.lastErr = "응답이 오는 중에 끊겨 여기까지만 남겼어요. 값은 돌려드렸어요. '다시 시도'를 누르면 다시 써요.";
     } else {
       msg.alts.splice(altIdx, 1);
       if (!msg.alts.length) r.msgs.splice(r.msgs.indexOf(msg), 1);
       else msg.idx = msg.alts.length - 1;
       refund(q, label);
-      const copy = errCopy(e);
-      if (copy) r.lastErr = copy;
+      const copy = errCopy(e),
+        note = opt.undo ? opt.undo() : "";
+      if (note) toast([copy, note].filter(Boolean).join(" "));
+      else if (copy) r.lastErr = copy;
     }
   } finally {
     try {
@@ -9616,6 +9765,12 @@ function migrateSettings() {
   if (moved) saveSettings();
 }
 /* ── src/js/boot.js — 부팅(boot): 설정 이전 → 저장 데이터 읽기 → 셸·첫 화면 → 계정 연결 */
+function bootFail(e) {
+  const m = typeof document !== "undefined" ? document.getElementById("bootMsg") : null;
+  if (!m) throw e;
+  console.error("[HEART SYNC] 부팅 실패", e);
+  m.textContent = "화면을 불러오지 못했어요. 새로고침해 주세요. (" + ((e && e.message) || "알 수 없는 오류") + ")";
+}
 async function boot() {
   migrateSettings();
   applySettings();
@@ -9656,6 +9811,6 @@ async function boot() {
 /* ── src/js/main.js — 사용자 사이트(index.html) 진입점: 사용자 화면·메뉴를 등록하고 부팅한다 */
 registerViews(USER_VIEWS);
 setNavs(USER_NAVS);
-boot();
+boot().catch(bootFail);
 </script>
 </html>

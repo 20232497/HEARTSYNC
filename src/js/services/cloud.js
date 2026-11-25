@@ -27,7 +27,7 @@ export const IMG_KEY_RE = /^img[a-z0-9]{6,30}$/;
 /**
  * 계정 저장(Supabase kv 표). start()/stop() 로그인·로그아웃 때 · put(k, v) 0.8초 모아 upsert(KV.remote 고리) · flush() 바로 올리고 결과를 돌려줌(한 번에 하나) ·
  * pull() → Promise<number> 바뀐 행 받아 적용
- * getOne(k) 그림 본문 받기 · wipe() 계정 행 전부 삭제 · state: ""|"sync"|"ok"|"err"|"notable"("cloud" 이벤트)
+ * getOne(k) 그림 본문 받기 · 계정 데이터 지우기는 services/cloud-wipe.js(wipeAccount — 끝나면 wiped를 켬) · state: ""|"sync"|"ok"|"err"|"notable"("cloud" 이벤트)
  */
 export const CLOUD = {
   on: false,
@@ -44,6 +44,7 @@ export const CLOUD = {
   at: 0,
   pulledAt: 0,
   noTable: false,
+  wiped: false, // 계정 데이터를 지운 뒤(wipe) — 이 화면에서는 더 올리지 않음(곧 새로고침)
   shelfUp: false,
   skipKey() {
     return "hv1_cloudskip_" + this.uid;
@@ -75,6 +76,7 @@ export const CLOUD = {
     this.on = SB.on() && !!(SB.s && SB.s.user && SB.s.user.id);
     this.uid = this.on ? SB.s.user.id : null;
     this.noTable = false;
+    this.wiped = false;
     this.shelfUp = false;
     // 새로고침 뒤에도 기억하는 둘: 덜 끝난 처음 올리기(owed — 올릴 키와 함께)와 다시 받을 방(skipped)
     this.owed = null;
@@ -100,6 +102,7 @@ export const CLOUD = {
   stop() {
     this.on = false;
     this.uid = null;
+    this.wiped = false;
     this.pending = {};
     this.sending = new Set();
     this.skipped = new Set();
@@ -114,7 +117,7 @@ export const CLOUD = {
     emit("cloud");
   },
   put(k, v) {
-    if (!this.on || this.noTable || !(k === "settings" || synced(k) || IMG_KEY_RE.test(k))) return;
+    if (!this.on || this.noTable || this.wiped || !(k === "settings" || synced(k) || IMG_KEY_RE.test(k))) return;
     const x = v === undefined ? null : tombFor(k, { v });
     this.pending[k] = x;
     if (x && isTomb(x.v)) {
@@ -154,7 +157,7 @@ export const CLOUD = {
   async send() {
     const uid = this.uid,
       gone = () => this.uid !== uid;
-    if (!this.on) return "off";
+    if (!this.on || this.wiped) return "off";
     if (this.noTable) return "notable";
     const items = Object.entries(this.pending);
     if (!items.length) return "ok";
@@ -265,12 +268,6 @@ export const CLOUD = {
   },
   pull() {
     return pullRows();
-  },
-  async wipe() {
-    if (this.on && !this.noTable) {
-      this.pending = {};
-      await SB.req("/rest/v1/kv?user_id=eq." + encodeURIComponent(this.uid), { method: "DELETE" });
-    }
   }
 };
 function chunkBy(items, max) {

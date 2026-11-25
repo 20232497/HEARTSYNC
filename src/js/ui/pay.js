@@ -77,7 +77,7 @@ function askPay(q, r) {
     if (tp)
       tp.onclick = () => {
         fin(false);
-        checkout(PLUS);
+        checkout(PLUS, afterBuy); // 결제 뒤 같은 방으로 — 콜백이 없으면 화면을 통째로 다시 그려 쓰던 글이 사라짐
       };
     const tl = $("#toLite", ov);
     if (tl)

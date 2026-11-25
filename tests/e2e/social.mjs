@@ -338,6 +338,43 @@ try {
   res.plain = ["sk-ant-test-fake-A", "sk-ant-test-fake-B"].filter(plainOnServer);
   check(!res.plain.length, "API 키가 계정에 올라감", res.plain);
 
+  // ---------- 셋째 기기: 대화도 찜도 없이 직접 만든 페르소나만 있음 → 로그인하면 합치기를 묻고(묻지 않고 계정 것으로 덮으면 사라짐), 합치면 남음
+  const C = await device(chromium, "Galaxy S9+");
+  await C.goto(url, { waitUntil: "load" });
+  await C.waitForTimeout(1000);
+  await C.click("#lguest");
+  await C.waitForTimeout(300);
+  await C.click(".overlay [data-aud=all]");
+  await C.waitForTimeout(200);
+  await C.evaluate(() => {
+    S.personas.push({ id: uid("p"), name: "태블릿 페르소나", memo: "", desc: "셋째 기기에서 만든 사람", img: "", def: false });
+    KV.set("personas", S.personas);
+    location.hash = "login";
+  });
+  await C.waitForTimeout(400);
+  await C.click("[data-oauth=kakao]");
+  await C.waitForLoadState("load");
+  await C.waitForTimeout(3000);
+  res.C_sheet = await C.evaluate(() => {
+    const o = document.querySelector(".overlay .sheet");
+    return o ? o.textContent.replace(/\s+/g, " ").slice(0, 160) : null;
+  });
+  check(/페르소나 1개/.test(res.C_sheet || "") && !/대화 \d+개/.test(res.C_sheet || ""), "페르소나만 있을 때의 합치기 창", res.C_sheet);
+  if (res.C_sheet) {
+    await C.click("#mYes");
+    await C.waitForTimeout(3500);
+  }
+  res.C_merged = {
+    here: await C.evaluate(() => S.personas.map((p) => p.name)),
+    defs: await C.evaluate(() => S.personas.filter((p) => p.def).length),
+    server: (row("personas") || []).map((p) => p.name)
+  };
+  check(
+    ["PC 사진", "폰 사진", "태블릿 페르소나"].every((n) => res.C_merged.here.includes(n) && res.C_merged.server.includes(n)) && res.C_merged.defs === 1,
+    "페르소나만 합친 뒤",
+    res.C_merged
+  );
+
   // ---------- 취소하고 돌아옴(#error) → 안내
   const D = await device(chromium, "Galaxy S9+");
   await D.goto(url + "#error=access_denied&error_code=access_denied&error_description=User+cancelled+login", { waitUntil: "load" });

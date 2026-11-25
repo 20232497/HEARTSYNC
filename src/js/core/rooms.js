@@ -46,7 +46,6 @@ function indexRoom(r) {
       .slice(0, 70)
   };
   S.rooms = sortRooms([entry, ...S.rooms.filter((x) => x.id !== r.id)]);
-  KV.set("rooms", S.rooms);
   emit("rooms");
 }
 /**
@@ -91,7 +90,7 @@ export async function setFav(id, on) {
       return y;
     })
   );
-  KV.set("rooms", S.rooms);
+  persistRooms();
   const se = savedEntry.get(id);
   if (se) se.entry = S.rooms.find((x) => x.id === id); // 저장된 본문에 맞는 목록 항목도 이 표시로 — 다음 저장이 실패해 되돌릴 때 표시가 사라지지 않게
   emit("rooms");
@@ -104,9 +103,20 @@ export const roomUnsaved = (id) => unsaved.has(id);
 /* 방마다: 저장 차례 번호(늦게 끝난 옛 저장이 목록을 건드리지 않게)와, 마지막으로 본문이 저장됐을 때의 목록 항목(실패하면 이 모양으로 되돌림 — 없던 방이면 undefined) */
 const saveSeq = new Map(),
   savedEntry = new Map();
+/* 저장소(와 계정)에 적어도 되는 목록(storableRooms)과 그것을 적는 일(persistRooms) — 본문이 아직 한 번도 저장되지 않은 새 방은 뺌: 목록이 먼저 적힌 뒤 창이 닫히면 목록에는 있는데 열 수 없는 방이 남음.
+   화면용 목록(S.rooms)에는 그 방이 바로 있음. 새 방인지는 savedEntry로(이 세션의 첫 저장 때 목록에 없었고 아직 저장된 본문이 없음) */
+export function storableRooms(list) {
+  return list.filter((x) => {
+    const se = savedEntry.get(x.id);
+    return !se || !!se.entry;
+  });
+}
+function persistRooms() {
+  KV.set("rooms", storableRooms(S.rooms));
+}
 /**
  * 대화방 저장 + 목록(S.rooms) 갱신 + "rooms" 이벤트. 지운 방(deletedRooms)은 저장하지 않고, 오래된 메시지는 MAX_MSGS_KEEP개만 남김.
- * 본문은 큰 저장소(IndexedDB — core/storage.js)에 쓰므로 끝나는 때가 뒤임: 목록은 바로 고치고(화면이 기다리지 않게), **본문이 저장되지 못하면 목록을 마지막으로 저장된 모양으로
+ * 본문은 큰 저장소(IndexedDB — core/storage.js)에 쓰므로 끝나는 때가 뒤임: 화면용 목록은 바로 고치고(화면이 기다리지 않게) 저장소의 목록은 본문이 저장된 뒤에 적음(persistRooms), **본문이 저장되지 못하면 목록을 마지막으로 저장된 모양으로
  * 되돌리고**(목록과 본문이 어긋나지 않게) 그 방을 '저장 안 됨'으로 적은 뒤 "rooms" 알림. 계정 올리기는 본문이 저장된 뒤에만(KV.set).
  * @param {Room} r @returns {Promise<boolean>} 본문이 저장됐는지
  */
@@ -130,14 +140,23 @@ export function saveRoom(r) {
   return Promise.resolve(KV.set(roomKey(id), r)).then((ok) => {
     // 저장된 것은 차례와 상관없이 기록 — 먼저 시작한 저장이 됐고 뒤의 저장이 실패하면, 앞의 것(저장된 본문)에 맞는 항목으로 되돌려야 함
     if (ok && seq > savedEntry.get(id).seq) savedEntry.set(id, { seq, entry });
-    if (saveSeq.get(id) !== seq || deletedRooms.has(id)) return !!ok; // 더 새 저장이 뒤에 있음(화면·되돌리기는 그쪽이 정함) · 그사이 지운 방
+    if (deletedRooms.has(id)) return !!ok; // 그사이 지운 방
+    if (ok) {
+      // 그사이 목록을 저장소에서 다시 읽어(계정 받기 뒤의 reloadFromCloud — 저장 중이던 새 방은 저장된 목록에 없었음) 이 방이 빠졌으면 다시 넣음
+      if (!S.rooms.some((x) => x.id === id)) {
+        S.rooms = sortRooms([entry, ...S.rooms]);
+        emit("rooms");
+      }
+      persistRooms(); // 목록은 본문이 저장된 뒤에만 적음(계정 올리기도 이때) — 뒤에 더 새 저장이 있어도 본문이 생겼으니 적어 둠
+    }
+    if (saveSeq.get(id) !== seq) return !!ok; // 더 새 저장이 뒤에 있음(화면·되돌리기는 그쪽이 정함)
     if (ok) {
       if (unsaved.delete(id)) emit("rooms"); // 실패했던 방이 저장됨 — 방 화면이 '저장하지 못했어요' 줄을 거둠
     } else {
       unsaved.add(id);
       const good = savedEntry.get(id).entry;
       S.rooms = sortRooms(good ? S.rooms.map((x) => (x.id === id ? good : x)) : S.rooms.filter((x) => x.id !== id));
-      KV.set("rooms", S.rooms);
+      persistRooms();
       emit("rooms");
     }
     return !!ok;
@@ -177,7 +196,7 @@ export function removeRoom(id) {
   const at = Date.now();
   forgetRoom(id, at);
   KV.set(roomKey(id), { gone: at }, { local: false });
-  KV.set("rooms", S.rooms);
+  persistRooms();
   emit("rooms");
 }
 /**
@@ -191,7 +210,7 @@ export function roomGone(id, at) {
   if (gen && gen.roomId === id) gen.ctl.abort(); // 이 방에 쓰던 응답을 멈춤(다른 방의 응답은 그대로) — 끝나며 하는 저장은 지운 방이라 버려짐
   if (room && room.id === id) setRoom(null);
   if (had) {
-    KV.set("rooms", S.rooms);
+    persistRooms();
     emit("rooms");
   }
   return had;

@@ -48,10 +48,20 @@ export async function firstSync() {
         : "이 기기의 데이터를 계정에 합쳤어요";
     toast(merge ? done : "계정 데이터를 불러왔어요");
   };
-  if (!onlyRooms.length && !onlyLikes.length) return use(false);
-  const what = [onlyRooms.length ? `대화 ${onlyRooms.length}개` : "", onlyLikes.length ? `찜한 작품 ${onlyLikes.length}개` : ""].filter(Boolean).join("와 ");
+  // 이 기기에서 직접 만든 페르소나 가운데 계정에 없는 것 — 묻지 않고 계정 것으로 덮으면 사라짐. 처음부터 있는 기본 페르소나(p1)는 새 데이터로 세지 않고,
+  // 계정에 페르소나 행이 아예 없으면 받기가 이 기기 것을 건드리지 않으므로 세지 않음
+  const onlyPersonas = Array.isArray(remote.personas) ? local.personas.filter((p) => p && p.id !== "p1" && !has(remote.personas, p.id)) : [];
+  if (!onlyRooms.length && !onlyLikes.length && !onlyPersonas.length) return use(false);
+  const what = [
+    onlyRooms.length ? `대화 ${onlyRooms.length}개` : "",
+    onlyLikes.length ? `찜한 작품 ${onlyLikes.length}개` : "",
+    onlyPersonas.length ? `페르소나 ${onlyPersonas.length}개` : ""
+  ]
+    .filter(Boolean)
+    .join(" · ");
+  const head = onlyRooms.length ? "대화를" : onlyLikes.length ? "찜을" : "페르소나를";
   const ov =
-    sheet(`<h2>이 기기의 ${onlyRooms.length ? "대화를" : "찜을"} 합칠까요?</h2><p class="sub">계정에 이미 저장된 데이터가 있어요. 이 기기에만 있는 ${what}를 계정에 합칠 수 있어요. 계정에 있던 것은 그대로 남아요.</p>
+    sheet(`<h2>이 기기의 ${head} 합칠까요?</h2><p class="sub">계정에 이미 저장된 데이터가 있어요. 이 기기에만 있는 ${what}를 계정에 합칠 수 있어요. 계정에 있던 것은 그대로 남아요.</p>
     <div class="cta-row"><button class="btn ghost" id="mNo">계정 것만 쓰기</button><span class="spacer"></span><button class="btn pri" id="mYes">합치기</button></div>`);
   return new Promise((res, rej) => {
     let done = false;

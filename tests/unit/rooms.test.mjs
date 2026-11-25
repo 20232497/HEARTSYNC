@@ -6,7 +6,7 @@ import { LIMITS, OPENING_ID_RE } from "../../src/js/core/constants.js";
 import { on } from "../../src/js/core/events.js";
 import { migrateRoom } from "../../src/js/core/room-read.js";
 import { forkRoom, openingIndex } from "../../src/js/core/room-fork.js";
-import { deletedRooms, newRoom, removeRoom, roomGone, roomKey, roomUnsaved, saveRoom, setFav, sortRooms } from "../../src/js/core/rooms.js";
+import { deletedRooms, newRoom, removeRoom, roomGone, roomKey, roomUnsaved, saveRoom, setFav, sortRooms, storableRooms } from "../../src/js/core/rooms.js";
 import { S, holdRoom, releaseRoom, roomInUse } from "../../src/js/core/state.js";
 import { KV } from "../../src/js/core/storage.js";
 
@@ -238,6 +238,66 @@ test("잇단 저장: 먼저 시작한 저장이 되고 뒤의 저장이 실패�
   KV.set = real;
   assert.equal(await saveRoom(r), true);
   assert.match(S.rooms.find((x) => x.id === r.id).last, /둘째 답/);
+});
+test("새 방의 목록은 본문이 저장된 뒤에만 저장소(와 계정)에 적힘 — 화면용 목록에는 바로, 본문이 실패하면 저장된 목록에 끝내 없음", async () => {
+  S.rooms = [];
+  const real = KV.set,
+    waits = [],
+    listSaves = []; // 목록을 저장소에 적을 때마다의 방 id들
+  KV.set = function (k, v, o) {
+    if (k === "rooms") listSaves.push(v.map((x) => x.id));
+    return k.indexOf("room-") === 0 ? new Promise((res) => waits.push(res)) : real.call(this, k, v, o);
+  };
+  try {
+    const r = newRoom(work(), 0, P); // 새 방의 저장이 시작됨 — 본문 쓰기는 붙잡혀 있음(이때 창이 닫히면 저장된 것이 남는 전부)
+    assert.equal(
+      S.rooms.some((x) => x.id === r.id),
+      true,
+      "화면용 목록에는 바로"
+    );
+    assert.equal(
+      listSaves.some((ids) => ids.includes(r.id)),
+      false,
+      "본문이 저장되기 전에는 목록에 적지 않음(목록에는 있는데 열 수 없는 방이 남지 않게)"
+    );
+    // 계정에서 받은 목록을 적는 쪽(services/cloud-pull.js)도 같은 규칙으로 거름
+    assert.equal(
+      storableRooms(S.rooms).some((x) => x.id === r.id),
+      false
+    );
+    // 그 사이 다른 일로 목록이 저장돼도 아직 본문이 없는 새 방은 빠짐
+    const other = newRoom(work(), 1, P);
+    waits[1](true);
+    await new Promise((res) => setTimeout(res, 0));
+    const mid = listSaves[listSaves.length - 1];
+    assert.deepEqual([mid.includes(other.id), mid.includes(r.id)], [true, false]);
+    waits[0](true);
+    await new Promise((res) => setTimeout(res, 0));
+    assert.equal(listSaves[listSaves.length - 1].includes(r.id), true, "본문이 저장된 뒤에 목록을 적음");
+    // 새 방의 본문을 쓰는 사이 목록을 저장소에서 다시 읽으면(계정 받기 뒤 — 저장된 목록에는 그 방이 아직 없음) 화면용 목록에서 빠짐 → 본문이 저장되면 다시 들어옴
+    const late = newRoom(work(), 1, P),
+      w = waits.length - 1;
+    S.rooms = S.rooms.filter((x) => x.id !== late.id);
+    waits[w](true);
+    await new Promise((res) => setTimeout(res, 0));
+    assert.equal(
+      S.rooms.some((x) => x.id === late.id),
+      true,
+      "본문이 저장된 방은 목록에 있어야 함"
+    );
+    assert.equal(listSaves[listSaves.length - 1].includes(late.id), true);
+    // 본문이 끝내 저장되지 못한 새 방
+    const n = listSaves.length,
+      ghost = newRoom(work(), 2, P);
+    waits[waits.length - 1](false);
+    await new Promise((res) => setTimeout(res, 0));
+    assert.equal(
+      listSaves.slice(n).some((ids) => ids.includes(ghost.id)),
+      false
+    );
+  } finally {
+    KV.set = real;
+  }
 });
 test("즐겨찾기: 본문을 읽는 사이 지운 방은 다시 쓰지 않음, 본문에 적지 못하면 목록도 그대로", async () => {
   S.rooms = [];

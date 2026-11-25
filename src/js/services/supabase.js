@@ -164,15 +164,21 @@ export const SB = {
       hit = (t) => /(^|&)(access_token|error_description)=/.test(t);
     if (!hit(h) && !hit(q)) return "";
     const p = {};
-    (hit(h) ? h : q).split("&").forEach((kv) => {
-      const i = kv.indexOf("=");
-      if (i > 0) p[decodeURIComponent(kv.slice(0, i))] = decodeURIComponent(kv.slice(i + 1).replace(/\+/g, " "));
-    });
+    let bad = false;
+    try {
+      (hit(h) ? h : q).split("&").forEach((kv) => {
+        const i = kv.indexOf("=");
+        if (i > 0) p[decodeURIComponent(kv.slice(0, i))] = decodeURIComponent(kv.slice(i + 1).replace(/\+/g, " "));
+      });
+    } catch {
+      bad = true; // 잘못 인코딩된 복귀 주소(잘린 %E0%A4… 등) — 여기서 던지면 부팅이 첫 화면 앞에서 멈춤. 주소만 정리하고 넘어감
+    }
     try {
       history.replaceState(null, "", location.pathname + (hit(q) ? "" : location.search));
     } catch {
       location.hash = "";
     }
+    if (bad) return ""; // 이미 있던 세션은 건드리지 않음
     if (p.error_description) {
       setTimeout(() => toast(oauthMsg(p)), 300);
       return "";

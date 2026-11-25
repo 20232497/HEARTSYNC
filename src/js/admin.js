@@ -6,9 +6,11 @@ import { setTarget } from "./core/target.js";
 import { registerViews, setNavs } from "./ui/shell.js";
 import "./admin/support.js";
 import { gate } from "./admin/gate.js";
-import { boot } from "./boot.js";
+import { boot, bootFail } from "./boot.js";
 
 setTarget("admin");
 registerViews(USER_VIEWS);
 setNavs(USER_NAVS);
-gate().then(() => boot());
+gate()
+  .then(() => boot())
+  .catch(bootFail);
