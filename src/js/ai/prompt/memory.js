@@ -10,6 +10,12 @@ import { plan } from "../../core/wallet.js";
 
 /* ---------------------------------------------------------------- 장기기억: N턴마다 자동 요약, 한도 초과 시 압축 후 히스토리 보관 */
 let summarizing = false;
+/* 요약·압축 지침과 따로 늘 붙는 줄(이용자가 고른 지침도 못 바꿈) — 이용자 본인과 이용자가 말한 실제 주변 사람의 민감 정보는 기억에 남기지 않음
+   (docs/legal/ai-policy.md 6-4 — 2026-11-25 사용자 결정: 처음엔 '이용자 본인의 실제 정보'로 좁혔다가 같은 날 실제 주변 사람까지 넓힘) */
+const MEM_PRIVATE =
+  "유저(이용자 본인)가 자기 실제 삶이나 실제 주변 사람(가족·친구·동료 등)에 대해 말한 건강·성적 지향·종교·정치적 견해는 " +
+  "// 없이 말했거나 유저 캐릭터 이름으로 적혀 있어도 제목과 요약 어디에도 남기지 않는다. " +
+  "이야기 속 인물(유저 캐릭터 포함)의 설정과 상태는 그대로 남긴다.";
 /** 요약 설정(한도는 요금제 memoMax로 자름). @returns {MemCfg} */
 export function memCfg() {
   const c = S.settings.memCfg;
@@ -55,6 +61,7 @@ export async function maybeSummarize(r, manual = false) {
           role: "user",
           content: `롤플레이 「${r.char.title}」의 최근 ${n}턴을 장기기억용으로 요약하라. 유저 캐릭터 이름은 ${r.persona.name}.
 요약 지침: ${guide}
+꼭 지킬 것: ${MEM_PRIVATE}
 JSON {"title":"이 구간의 짧은 제목(15자 이내)","summary":"4~8문장 요약"} 하나로만 답하라.
 
 [직전까지의 기억 끝부분]
@@ -78,7 +85,7 @@ ${excerpt}`
         [
           {
             role: "user",
-            content: `다음 장기기억 노트를 ${Math.round(cfg.limit * 0.6)}자 이내로 압축하라. [a-b턴] 구간 표시는 합쳐도 되지만 사건 순서는 유지하고, 관계·약속·비밀·능력·수치·떡밥을 우선 남겨라. JSON {"memory":"..."} 하나로만 답하라.\n\n${r.memory}`
+            content: `다음 장기기억 노트를 ${Math.round(cfg.limit * 0.6)}자 이내로 압축하라. [a-b턴] 구간 표시는 합쳐도 되지만 사건 순서는 유지하고, 관계·약속·비밀·능력·수치·떡밥을 우선 남겨라. ${MEM_PRIVATE} JSON {"memory":"..."} 하나로만 답하라.\n\n${r.memory}`
           }
         ],
         { tier: "quick", json: true, room: r }

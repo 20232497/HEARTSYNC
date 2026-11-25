@@ -54,7 +54,7 @@ export function epTailHTML(r) {
       <span class="ep-k">결말</span><b class="ep-title">${esc(end.title)}</b>
       <span class="note">${st.t}턴${path.length ? " · 고른 길: " + path.map(esc).join(" → ") : ""}</span>
       ${endsHTML(ep, got)}
-      <span class="note">모은 결말 ${n} / ${ep.endings.length} — 다른 길을 고르면 다른 결말에 닿아요</span>
+      <span class="note ep-count">본 결말 ${n}개 — 다른 길을 고르면 다른 결말에 닿아요</span>
       <div class="cta-row"><button class="btn pri" id="epSide">외전 이어 가기</button><button class="btn" id="epAgain">처음부터 다시</button></div>
     </div>`;
   }

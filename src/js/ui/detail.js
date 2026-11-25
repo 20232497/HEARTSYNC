@@ -3,12 +3,14 @@
    탭은 내용을 갈아 끼우지 않고 같은 페이지의 그 자리로 옮김(내용이 모두 문서에 있어 찾기·시험이 쉬움). 시작 버튼과 시작 상황 카드는 시작 창(ui/start-sheet.js)을 엶 */
 import { HOME_ROWS, ORIGINALS } from "../content/index.js";
 import { audOK } from "../core/audience.js";
-import { getChar, normalizeChar } from "../core/character.js";
+import { getChar, liveWork, normalizeChar } from "../core/character.js";
 import { epLength } from "../core/episode.js";
 import { endsSet, liked, toggleLike, touchRecent } from "../core/shelf.js";
 import { S } from "../core/state.js";
 import { $, $$, ago, esc, toast } from "../core/util.js";
-import { IMG } from "../services/images.js";
+import { imagesOf } from "../images/pick.js";
+import { IMG, validRef } from "../services/images.js";
+import { AI_ART_NOTE } from "./ai-notice.js";
 import { endsHTML } from "./chat/episode.js";
 import { fmt } from "./chat/render.js";
 import { bindCast, bindCodex, castGridHTML, collectHTML, commandsHTML, guideHTML, metaHTML, placesHTML } from "./codex.js";
@@ -20,6 +22,9 @@ import { opBrief, opPlace, startChat, startNote } from "./start-sheet.js";
 import { worldArtHTML } from "./worldart.js";
 /** @typedef {import("../core/types.js").Work} Work */
 
+/* 이 작품에 실린 그림(표지·인물 칸·장소 MP·컷씬 EV·키워드북)이 한 장이라도 있는지 — 상세의 'AI로 만든 그림' 한 줄. 화면에 그려진 것이 아니라 실린 것으로 셈(잠긴 컷씬·안 보이는 감정 칸도) */
+const hasArt = (c) =>
+  validRef(c.img) || Object.values(imagesOf(c)).some((m) => Object.values(m).some(validRef)) || Object.values(liveWork(c).loreImages || {}).some(validRef);
 /* 소개가 이보다 길면 접어 두고 '더 보기', 플레이 가이드가 이보다 길면 접는 칸으로 */
 const LONG_DESC = 320,
   LONG_GUIDE = 240;
@@ -58,7 +63,7 @@ export function viewDetail(id) {
         <div class="tags">${(c.tags || []).map((t) => `<span>#${esc(t)}</span>`).join("")}</div>
         <div class="d-cta"><button class="btn ghost like-btn" id="like" aria-pressed="${liked(c.id)}">${likeHTML(liked(c.id))}</button>` +
     `<button class="btn pri big" id="start">${c.episode ? "에피소드 시작" : "새 대화 시작"}</button></div>
-        <p class="note d-price">${startNote(c)}</p>
+        <p class="note d-price">${startNote(c)}</p>${hasArt(c) ? `<p class="note d-aiart" id="dAiArt">${AI_ART_NOTE}</p>` : ""}
         ${rooms.length ? `<div class="d-rooms"><h3>이어서 하기 <small>이 작품의 내 대화방</small></h3><div class="cont">${rooms.map(roomHTML).join("")}</div></div>` : ""}
       </div>
       <div class="d-main">
@@ -182,6 +187,6 @@ function epInfoHTML(c) {
     <p>${ep.beats.length}장 · 결말 ${ep.endings.length}개 · 약 ${epLength(ep)}턴 — 고른 길과 행동에 따라 결말이 갈려요. 결말을 본 뒤에는 그 대화를 이어받아 외전 — 인물과 더 ` +
     `나누는 이야기, 다른 인물의 눈으로 다시 보는 사건 — 으로 이어 갈 수 있어요. 요금은 자유 대화와 같은 턴당 하트예요.</p>
     ${endsHTML(ep, got)}
-    <span class="note">모은 결말 ${n} / ${ep.endings.length}</span></div>`
+    <span class="note">본 결말 ${n}개</span></div>`
   );
 }
