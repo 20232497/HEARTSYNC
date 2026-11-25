@@ -1,4 +1,4 @@
-// 에피소드형 작품: 상세(시작 칸이 위로·에피소드 안내·결말 이름) → 대화방 장 막대 → 갈림길 카드 → 결말 카드(입력창 숨김·모은 결말) → 외전 방,
+// 에피소드형 작품: 상세(시작 칸이 위로·에피소드 안내·결말 이름) → 대화방 장 막대 → 갈림길 카드 → 결말 카드(입력창 숨김·본 결말) → 외전 방,
 // 대화 목록의 '결말'·'외전' 표시, 홈 카드의 '에피소드'와 인원(폼 빼고). AI는 가짜(llm을 바꿔 끼움) — 진행은 앱이 정하므로 턴 수만 당겨 놓고 돌림
 import { webkit, chromium, devices } from "playwright";
 import { noSupabase } from "./_offline.mjs";
@@ -157,6 +157,7 @@ for (const [dev, engine] of targets) {
           .map((s) => s.textContent)
           .join(),
         hidden: $("#view").textContent.includes("???"),
+        note: ($(".ep-end .ep-count") || {}).textContent || "",
         composer: getComputedStyle($(".composer")).display,
         prompt: window.__lastInput[0].content.includes("이번 응답으로 이야기를 끝낸다"),
         shelf: (S.shelf.ends.daeyeon || []).join(),
@@ -175,6 +176,7 @@ for (const [dev, engine] of targets) {
       res.end.chips !== 5 ||
       res.end.seen !== "✓ 생존 · 덮어 둔 진상" ||
       res.end.hidden ||
+      res.end.note !== "본 결말 1개 — 다른 길을 고르면 다른 결말에 닿아요" || // 분모(전체 결말 수)는 쓰지 않음 — 완성률이 업적처럼 읽혀서(2026-11-25)
       res.end.composer !== "none" ||
       !res.end.prompt ||
       res.end.shelf !== "survival" ||

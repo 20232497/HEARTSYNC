@@ -21,7 +21,9 @@ const answer = (sys, who) =>
     ? JSON.stringify({ suggestions: [who + " 추천 1", who + " 추천 2", who + " 추천 3"] })
     : /장기기억용으로 요약/.test(sys)
       ? JSON.stringify({ title: "요약", summary: who + " 요약이에요." })
-      : `*바람이 간판을 흔들었다.*\n\n한서윤: "${who}에서 온 대답이에요."` + state;
+      : /장기기억 노트를 .*압축하라/.test(sys)
+        ? JSON.stringify({ memory: who + " 압축 기억" })
+        : `*바람이 간판을 흔들었다.*\n\n한서윤: "${who}에서 온 대답이에요."` + state;
 
 for (const [dev, engine] of [
   ["iPhone 13", webkit],
@@ -184,9 +186,18 @@ for (const [dev, engine] of [
     check("일반 트랙 프롬프트: 암전 지시 있음", /암전/.test(c.body.system));
     check("Anthropic 스트림을 본문으로 읽음", /클로드에서 온 대답/.test(c1.text) && c1.shown && !c1.err);
     await p.evaluate(async () => {
+      const keep = S.settings.memCfg;
+      // 한도를 아주 작게 — 요약 뒤 바로 압축까지 감(요청 둘. 가짜 요약만으로 20자가 되므로 그보다 작게)
+      S.settings.memCfg = { ...keep, guide: "custom", custom: "직접 쓴 요약 지침", limit: 10 };
       await maybeSummarize(room, true);
+      S.settings.memCfg = keep;
     });
-    check("일반 방의 요약도 Anthropic으로", claude.length === 2 && gate.length === 5);
+    const sys = (i) => (claude[i] || { body: { system: "" } }).body.system,
+      privateLine = (s) => /건강·성적 지향·종교·정치적 견해는/.test(s) && /어디에도 남기지 않는다/.test(s);
+    check("일반 방의 요약·압축도 Anthropic으로", claude.length === 3 && gate.length === 5 && /압축하라/.test(sys(2)));
+    check("압축한 기억이 방에 들어감", (await p.evaluate(() => room.memory)) === "클로드 압축 기억");
+    // 이용자가 고른 지침이어도 실제 민감 정보를 남기지 않는 줄은 요약·압축 모두에 늘 붙음(ai-policy 6-4)
+    check("요약·압축 지침 밖의 민감 정보 줄", /직접 쓴 요약 지침/.test(sys(1)) && privateLine(sys(1)) && privateLine(sys(2)));
     // ⑤ 일반 트랙의 무료 길: 내 키가 없으면 관문으로(로그인 필요), 서버에 없는 등급·무료 길이 없는 서버는 키 안내
     await p.evaluate(() => {
       S.settings.apiKey = "";
@@ -196,7 +207,7 @@ for (const [dev, engine] of [
       fg = gate[gate.length - 1] || { body: { messages: [{}] } };
     check(
       "키 없는 일반 방은 관문의 무료 길로",
-      gate.length === 6 && claude.length === 2 && fg.body.track === "general" && fg.body.tier === "quick" && /암전/.test(fg.body.messages[0].content)
+      gate.length === 6 && claude.length === 3 && fg.body.track === "general" && fg.body.tier === "quick" && /암전/.test(fg.body.messages[0].content)
     );
     check("무료 길의 Anthropic 모양 스트림을 본문으로 읽음", /무료에서 온 대답/.test(f1.text) && f1.shown && f1.charged === 1 && !f1.err);
     gateFail = { status: 403, code: "need_key" };
@@ -209,7 +220,7 @@ for (const [dev, engine] of [
       SB.s = null;
     });
     const f3 = await turn("계속");
-    check("무료 길도 로그인이 없으면 보내지 않고 안내", gate.length === 8 && claude.length === 2 && /로그인하면/.test(f3.err) && f3.charged === 0);
+    check("무료 길도 로그인이 없으면 보내지 않고 안내", gate.length === 8 && claude.length === 3 && /로그인하면/.test(f3.err) && f3.charged === 0);
     res.counts = { gate: gate.length, claude: claude.length };
   } catch (e) {
     res.fail = String(e).slice(0, 300);
