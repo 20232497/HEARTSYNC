@@ -197,8 +197,12 @@ const BANGS = {
 };
 const SWEPT = /^(side-swept bangs|swept bangs|parted bangs|asymmetrical bangs|hair slicked back)$/;
 const OWN_BANGS = /blunt bangs|curtain bangs|hair over one eye|hair between eyes|hime cut/;
+// 이마가 벗어진 머리 — 앞머리·가르마 규칙을 넣지 않고 이마를 드러낸다(가르마가 이마를 덮어 58세가 서른처럼 나옴 — 2026-11-24)
+const BARE_BROW = /receding hairline|balding|\bbald\b/;
+const NEG_BARE_BROW = ", (bangs:1.2), (hair between eyes:1.2), (curtained hair:1.1)";
 function hairRule(tags, tier) {
   const ts = tags.split(", ");
+  if (BARE_BROW.test(tags)) return { tags, add: "(forehead:1.1)", neg: NEG_BARE_BROW };
   if (ts.includes("forehead")) return { tags: ts.filter((t) => !/^(side-swept bangs|swept bangs)$/.test(t)).join(", "), add: PART, neg: NEG_PART };
   if (OWN_BANGS.test(tags)) return { tags, add: "", neg: "" };
   return { tags: ts.filter((t) => !SWEPT.test(t)).join(", "), ...BANGS[tier] };
@@ -240,10 +244,39 @@ const WATER = /waterfall|river|\bsea\b|ocean|\blake\b|\brain|\bwet\b|pond|beach|
 const VEHICLE = /^(steam locomotive|locomotive|steam train|train)$/; // 기차 그 자체만 — 'train car infirmary'처럼 열차 안인 장소는 그대로
 const TIME = /night|dawn|dusk|sunset|sunrise|morning|afternoon|evening|midnight|twilight|moonlight|\bday\b|daytime|noon|sunlight/;
 const DARK = /night|moonlight|midnight|dusk|twilight|evening/;
-function placeBlock(tags) {
-  const ts = tags.split(", ").filter((t) => t && !PLACE_DROP.test(t) && !PLACE_ANIMAL.test(t) && !VEHICLE.test(t)).map((t) => `(${t}:1.1)`);
+/** 감정 그림에 넣는 장소 낱말(사람·동물·기차를 뺀 것) — 일상 화풍이 애니 화풍으로 그리는 인물의 배경을 제 문구로 짤 때도 같은 낱말만 쓴다(뺀 동물이 다시 들어가지 않게) */
+export const placeKept = (tags) => tags.split(", ").filter((t) => t && !PLACE_DROP.test(t) && !PLACE_ANIMAL.test(t) && !VEHICLE.test(t));
+/** 감정 그림의 장소 문구 — 일상 화풍(style-mdaily)이 이 문구를 통째로 찾아 제 배경 문구로 바꾼다 */
+export function placeBlock(tags) {
+  const ts = placeKept(tags).map((t) => `(${t}:1.1)`);
   if (!TIME.test(tags)) ts.push("night");
   return ts.join(", ") + ", (blurry background:1.2)";
+}
+
+/* ── 나이 든 남자(40·50 이상) ── 서른 넘은 남자(elder)의 문구는 서른 초반까지만 맞는다(58세가 서른처럼 나옴 — 사용자 2026-11-24 '나이 문제').
+   다 조립한 문구에서 나이를 막는 것(늙음·주름 네거티브, 30세·흠 없는 피부·미소년)을 빼고 나이 문구를 넣는다. 성인 표시와 미성년 네거티브(young boy·shota)는 그대로.
+   바꿀 자리가 문구에 없으면 던진다 — 위의 SUBJ·SKIN·BODY·NEG_M을 고치면 여기도 같이. 여성은 나이 든 인물이 이 화풍의 작품에 없어 정하지 않음.
+   그려서 본 것: 58세(반석호). 40대는 인물이 없어 못 그려 봄 */
+const AGED_M = [
+  { from: 50, mature: 1.2, add: "(middle-aged man:1.15), (crow's feet:1.05), (nasolabial folds:1.1)" },
+  { from: 40, mature: 1.15, add: "(middle-aged man:1.05), (smile lines:1.0)" },
+];
+const AGED_NEG = "old man, (wrinkles:1.1), (old:1.2), (middle-aged:1.2), ";
+/** 이 인물에 쓰는 나이 단계(없으면 null) — 남자 40·50 이상 */
+export const agedOf = (c) => (isFem(c) ? null : AGED_M.find((t) => ageOf(c) >= t.from) || null);
+function aged(c, pos, neg) {
+  if (BARE_BROW.test(c.tags)) pos = pos.replace("(hair between eyes:0.8), ", ""); // 얼굴 문구의 '눈 사이 머리'가 벗어진 이마를 덮음
+  const t = agedOf(c);
+  if (!t) return [pos, neg];
+  const swap = (s, a, b) => {
+    if (!s.includes(a)) throw new Error("나이 규칙: 문구에 없어요 — " + a);
+    return s.replace(a, b);
+  };
+  pos = swap(pos, "(mature male:0.85)", `(mature male:${t.mature})`);
+  pos = swap(pos, "(mature:0.5), (30 years old:0.6), ", `(${ageOf(c)} years old:1.1), ${t.add}, `);
+  pos = swap(pos, "(flawless skin:0.9), (clear skin:0.7), ", "");
+  pos = swap(pos, ", (bishounen:0.5)", "");
+  return [pos, swap(neg, AGED_NEG, "")];
 }
 
 /** 인물마다 시드 하나 — 칸마다 구도와 옷이 바뀌지 않게(인물 코드의 글자 합) */
@@ -254,6 +287,28 @@ const job = (kind, pos, neg, seed, lift) => ({
   ...(lift.length ? { lift } : {}),
 });
 
+/** 칸의 연기 — 눈·표정과 손동작·구도 자리(시선). 화풍과 상관없이 '무엇을 하고 있나'만 고른다: 감정 그림이 쓰고, 일상 화풍(style-mdaily)이 같은 구도·표정을 내려고 가져다 쓴다.
+    칸 0은 프로필(얼굴 구도 + 기본 표정), 칸 1과 표정이 없는 칸은 기본 표정(base). o.symbols === false면 만화 기호를 뺀다. look은 시선을 돌린 칸의 방향(away·down — 마주 보면 빈 글) */
+export function acting(c, slot, o = {}) {
+  const man = !isFem(c), g = man ? "m" : "f", ch = charm(c);
+  if (!slot) return { g, E: {}, eyes: man ? EYES_M : ch.eyes, emo: ch.emo, frame: FRAME.profile, look: "", base: true };
+  const E = EMOTIONS[slot] || {};
+  const T = slot > 1 ? (TEMPER_EMO[temperOf(c)] || {})[slot] : null; // 대표 칸은 성격별 표정(expressions.js), 없으면 공통 표정
+  const L = slot > 1 ? (LEAD_EMO[c.code + ":" + c.name] || {})[slot] : null; // 작품의 대표 인물은 그 인물만의 버릇·소품
+  const eyes = (L && L.eyes) || (T && T.eyes && T.eyes[g]) || (E.eyes && E.eyes[g]) || (man ? EYES_M : ch.eyes);
+  const own = L ? L.emo : T ? T[g] : typeof E.emo === "function" ? E.emo(c) : E.emo && E.emo[g];
+  const base = slot === 1 || !E.emo;
+  const emo = base ? ch.emo : own + (E.sym && o.symbols !== false ? ", " + E.sym : "");
+  const look = (L && L.look) || (T && T.look) || E.look; // "viewer"는 마주 봄
+  const turned = !!(look && LOOK[look]);
+  return { g, E, eyes, emo, frame: turned ? FRAME.emotion.replace("looking at viewer", LOOK[look]) : FRAME.emotion, look: turned ? look : "", base };
+}
+/** 그 연기에 딸린 네거티브(표정) — 화풍의 것(빛·옷·비율·자세)은 뺀 것. 일상 화풍이 쓴다: 기본 표정 칸의 감은 눈·벌린 입, 여성의 노려보는 눈, 칸마다의 것(감정 그림의 네거티브와 같은 조건) */
+export function actingNeg(c, slot) {
+  const g = isFem(c) ? "f" : "m", E = EMOTIONS[slot] || {};
+  return (slot <= 1 || !E.emo ? NEG_CALM[g] : "") + (g === "f" && !E.hard ? NEG_SOFT : "") + (E.neg || "") + (g === "m" ? E.negM || "" : "");
+}
+
 /** 프로필(칸 0): 얼굴이 화면을 채우는 구도 + 어두운 단색 배경. place는 쓰지 않는다(자리만 맞춤). o: { seed, track(노출 정책의 트랙 — 없으면 일반), accent: false면 강조를 쓰지 않음 } */
 export function profileJob(c, place, o = {}) {
   const P = policyOf(o.track), lift = liftOf(c, isFem(c), P, o);
@@ -261,25 +316,20 @@ export function profileJob(c, place, o = {}) {
   const face = (p.man ? EYES_M + ", " + (p.tier === "elder" ? elderFace(FACE_M.profile) : FACE_M.profile) : ch.eyes + ", " + FACE_F) + ", " + skinOf(p.tier) + ", " + LIPS[p.g];
   const body = p.man ? BODY[p.tier] : BODY.f.profile;
   const pos = [SUBJ[p.tier], p.pos, ch.emo, FRAME.profile, face, body, FIN, BG.profile, Q].join(", ");
-  return job("profile", pos, p.negHead + p.negTail + NEG_CALM[p.g] + (p.man ? "" : NEG_SOFT + P.neg.neck + NEG_LEAN), o.seed || 7301, lift);
+  const [pos1, neg1] = aged(c, pos, p.negHead + p.negTail + NEG_CALM[p.g] + (p.man ? "" : NEG_SOFT + P.neg.neck + NEG_LEAN));
+  return job("profile", pos1, neg1, o.seed || 7301, lift);
 }
 
 /** 감정 그림(칸 1~14): 가슴까지 + 작품의 장소. 칸 1은 인물의 기본 표정. o는 profileJob과 같음(+ symbols: false면 만화 기호를 뺌) */
 export function emotionJob(c, place, slot, o = {}) {
   const P = policyOf(o.track), lift = liftOf(c, isFem(c), P, o);
   const E = EMOTIONS[slot] || {}, tags0 = E.armed ? c.tags : c.tags.split(", ").filter((t) => !WEAPON_TAG.test(t)).join(", ");
-  const p = person(c, inner(tags0), true, P), g = p.g, ch = charm(c), elder = p.tier === "elder";
-  const T = slot > 1 ? (TEMPER_EMO[temperOf(c)] || {})[slot] : null; // 대표 칸은 성격별 표정(expressions.js), 없으면 공통 표정
-  const L = slot > 1 ? (LEAD_EMO[c.code + ":" + c.name] || {})[slot] : null; // 작품의 대표 인물은 그 인물만의 버릇·소품
-  const eyes = (L && L.eyes) || (T && T.eyes && T.eyes[g]) || (E.eyes && E.eyes[g]) || (p.man ? EYES_M : ch.eyes);
+  const p = person(c, inner(tags0), true, P), g = p.g, elder = p.tier === "elder";
+  const { eyes, emo, frame } = acting(c, slot, o);
   let face = E.face ? E.face[g] : p.man ? FACE_M.emotion : FACE_F;
   if (elder) face = elderFace(face);
   if (E.lowBlush) face = face.replace("(blush:0.3)", "(blush:0.1)"); // 화난 얼굴의 홍조는 수줍어 보임
   face += ", " + skinOf(p.tier) + ", " + LIPS[g];
-  const own = L ? L.emo : T ? T[g] : typeof E.emo === "function" ? E.emo(c) : E.emo && E.emo[g];
-  const emo = slot === 1 || !E.emo ? ch.emo : own + (E.sym && o.symbols !== false ? ", " + E.sym : "");
-  const look = (L && L.look) || (T && T.look) || E.look; // "viewer"는 마주 봄
-  const frame = look && LOOK[look] ? FRAME.emotion.replace("looking at viewer", LOOK[look]) : FRAME.emotion;
   const day = TIME.test(place.tags) && !DARK.test(place.tags);
   // 소매 길이를 적지 않은 옷은 긴소매(여·남 모두) — 어깨·팔을 드러내는 옷을 적어 그 네거티브를 푼 그림은 뺌
   const sleeves = SLEEVE_TAG.test(c.tags) || lift.includes("bare arms") || lift.includes("bare shoulders") ? "" : P.sleeves;
@@ -295,5 +345,6 @@ export function emotionJob(c, place, slot, o = {}) {
     (place.tags.split(", ").some((t) => PLACE_ANIMAL.test(t)) ? NEG_ANIMAL : "") +
     NEG_LIGHT + NEG_TEXT +
     (p.man ? NEG_PROPORTION + (E.negM || "") : "");
-  return job("emotion", pos, neg, o.seed || seedOf(c), lift);
+  const [pos1, neg1] = aged(c, pos, neg);
+  return job("emotion", pos1, neg1, o.seed || seedOf(c), lift);
 }

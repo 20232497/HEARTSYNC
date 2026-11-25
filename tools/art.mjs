@@ -21,7 +21,12 @@ import { groupPlan } from "../archive/style-works/code/cover-group.js";
 import { LOGOS, LOGO_PAL } from "../archive/style-works/code/logos.js";
 import { publish, status as siteStatus } from "./art/publish.mjs";
 import { profileJob as animeProfile, emotionJob as animeEmotion, assertSafe as animeSafe } from "../archive/style-manime/code/assemble.js";
-import { profileJob as dailyProfile, emotionJob as dailyEmotion, assertSafe as dailySafe } from "../archive/style-mdaily/code/assemble.js";
+import {
+  profileJob as dailyProfile,
+  emotionJob as dailyEmotion,
+  assertSafe as dailySafe,
+  guided as dailyGuided
+} from "../archive/style-mdaily/code/assemble.js";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const arg = (name) => {
@@ -83,10 +88,17 @@ function listing(all) {
         ...r,
         has: fs.existsSync(path.join(ROOT, r.path)),
         size: sizeOf(r.spec),
+        guide: guideOf(c, r), // 일상 화풍으로 그릴 때 밑그림 단계가 붙는 칸 — 페이지의 값 어림이 한 장을 더 센다
         can: CAN[r.spec] && (r.spec === "cover" || r.tags)
       }))
     };
   });
+}
+/** 인물 그림 칸이 일상 화풍에서 밑그림 단계를 거치는지(규칙은 화풍의 조립 코드 한 곳 — guided) */
+function guideOf(c, row) {
+  const m = row.spec === "cover" || row.spec === "place" ? null : /^([A-Z]+)(\d+)$/.exec(row.code || ""),
+    who = m && (c.cast || []).find((x) => x.code === m[1]);
+  return !!who && dailyGuided(who, +m[2]);
 }
 const shift = (j, vary) =>
   vary ? { ...j, seed: j.seed + vary * 101, ...(j.guide ? { guide: { ...j.guide, job: { ...j.guide.job, seed: j.guide.job.seed + vary * 101 } } } : {}) } : j;
@@ -117,7 +129,9 @@ function jobFor(c, row, vary, style) {
     else job = dailySafe(slot ? dailyEmotion(who, place, slot) : dailyProfile(who, place));
   }
   // 장소 그림의 후처리는 작품의 화풍을 따른다(인물 화풍만 바꿔 그려 보는 것)
-  return { job: shift(job, vary), post: (row.spec === "place" ? styleOf(c.id) === "anime" : anime) ? "anime" : "daily", cover: false, size: sizeOf(row.spec) };
+  // 작업이 스스로 후처리의 종류를 적어 왔으면 그것으로(일상 화풍 작품의 남성 인물은 애니 화풍으로 그려 애니 후처리 → 그 위에 일상 화풍의 흐림 — job.postAs·job.haze)
+  const post = job.postAs || ((row.spec === "place" ? styleOf(c.id) === "anime" : anime) ? "anime" : "daily");
+  return { job: shift(job, vary), post, cover: false, size: sizeOf(row.spec) };
 }
 
 /* ── 보관함 ── <LIB>/<작품>/<코드>/<시각>.webp(후보) · <LIB>/<작품>/cover-parts/<자리>-<raw|cut>.<webp|png>(단체 표지의 조각 — 다시 붙일 때 다시 그리지 않음) · <LIB>/log.jsonl(그린 기록) */
