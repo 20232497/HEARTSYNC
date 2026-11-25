@@ -2,16 +2,17 @@
 import { engineName } from "../ai/llm.js";
 import { AUDS, audience } from "../core/audience.js";
 import { LIMITS } from "../core/constants.js";
-import { roomKey, saveRoom } from "../core/rooms.js";
+import { saveRoom } from "../core/rooms.js";
 import { applySettings, cleanKeys, saveSettings } from "../core/settings.js";
 import { S, room } from "../core/state.js";
-import { IDB, KV } from "../core/storage.js";
+import { KV } from "../core/storage.js";
 import { $, $$, esc, num, toast, uid } from "../core/util.js";
 import { isPro } from "../core/wallet.js";
 import { CLOUD } from "../services/cloud.js";
 import { pushAll } from "../services/cloud-push.js";
 import { wipeAccount } from "../services/cloud-wipe.js";
 import { IMG } from "../services/images.js";
+import { clearDevice } from "../services/sync.js";
 import { accountBoxHTML, bindAccount } from "./account.js";
 import { bindChatSettings, chatSettingsHTML } from "./chat-settings.js";
 import { renderLog } from "./chat/log.js";
@@ -124,7 +125,7 @@ export function viewMe() {
     confirmSheet(
       "모든 데이터를 지울까요?",
       "대화방, 하트, 페르소나와 페르소나 사진이 모두 지워져요." +
-        (CLOUD.on ? " 로그인되어 있어서 계정에 저장된 데이터도 지워져요." : "") +
+        (CLOUD.on ? " 로그인되어 있어서 계정에 저장된 데이터와, 이 계정으로 쓰던 다른 기기의 데이터도 그 기기가 다음에 접속할 때 지워져요." : "") +
         " 되돌릴 수 없어요.",
       "전부 삭제",
       wipeAll
@@ -155,18 +156,10 @@ async function wipeNow() {
       } catch {}
     return wipeFailed("계정의 데이터를 지우지 못했어요", "네트워크를 확인하고 다시 시도해 주세요. 이 기기의 데이터도 아직 그대로예요.");
   }
+  // 지우는 사이 계정이 바뀌었으면(로그아웃·다른 계정) 이 기기에 있는 것은 이제 다른 계정의 것 — 지우지 않음
+  if (CLOUD.uid !== uid) return toast("계정이 바뀌어서 이 기기의 데이터는 지우지 않았어요");
   accountWiped = true;
-  S.rooms.forEach((r) => KV.set(roomKey(r.id), undefined));
-  ["rooms", "mine", "wallet", "personas", "shelf", "profile", "imgpacks", "motionpacks", "coverpacks", "lorepacks", "tagpacks", "ponytags"].forEach((k) =>
-    KV.set(k, undefined)
-  );
-  await KV.settled();
-  const clean = await IDB.clear(); // 큰 저장소(방 본문·그림)를 비웠는지
-  try {
-    Object.keys(localStorage)
-      .filter((k) => /^hv1_img[a-z0-9]{10,30}$/.test(k))
-      .forEach((k) => localStorage.removeItem(k));
-  } catch {}
+  const clean = await clearDevice(); // 큰 저장소(방 본문·그림)를 비웠는지
   if (!clean) return wipeFailed("이 기기의 데이터를 다 지우지 못했어요", "이 사이트를 연 다른 탭을 닫고 다시 시도해 주세요.", true);
   location.reload();
 }

@@ -7,6 +7,7 @@ import { S, room, roomInUse, setRoom } from "../core/state.js";
 import { KV } from "../core/storage.js";
 import { CLOUD, SHELF_KEY, SYNCED_RE } from "./cloud.js";
 import { mergeCloudSettings } from "./cloud-settings.js";
+import { takeWipe } from "./cloud-wipe.js";
 import { takeShelf } from "./cloud-shelf.js";
 import { SB } from "./supabase.js";
 
@@ -31,11 +32,14 @@ export async function applyRows(rows, hold, since) {
       const t = CLOUD.tombs();
       t[x.key] = x.value.gone;
       CLOUD.tombs(t);
-    }
+    } else if (hold && hold.has(x.key)) CLOUD.put(x.key, x.value); // 받기를 시작할 때 올리는 중이던 방 — 그 본문이 표식을 읽은 뒤 도착해 덮었을 수 있어 표식을 다시 올림
     CLOUD.skip(x.key, false);
     if (roomGone(x.key.slice(5), x.value.gone)) n++;
     if (x.key === open) emit("route");
   });
+  // 다른 기기가 계정을 모두 지움('전부 지움' 표식) — 이 기기도 지우고 새로고침(services/cloud-wipe.js). 방의 표식을 먼저 처리해 올리는 중이던 방의 표식을 적어 둔 뒤에.
+  // 처음 로그인의 전부 받기는 따르지 않음(firstSync가 본 것으로 적음)
+  if (!full && (await takeWipe(rows))) return 0;
   const gone = goneRooms();
   // 방 목록: 받은 것으로 덮지 않고 방마다 합침 — 두 기기가 각각 새 방을 만들어도 둘 다 남음(core/room-list.js). 지운 방은 뺌.
   // 처음 로그인의 전부 받기(full)는 계정 목록 그대로 — 이 기기에만 있던 방을 더할지는 '합칠까요?'가 정함(ui/account.js)
@@ -157,10 +161,16 @@ export async function retakeRows() {
   return n;
 }
 export async function pullRows() {
-  const hold = new Set(CLOUD.sending),
+  // 처음 로그인 맞추기(firstSync — ui/login.js afterLogin이 켬)가 끝날 때까지 미룸: 그 사이의 받기(탭 복귀 등)가 '합칠까요?' 전의 이 기기 것을 덮거나,
+  // 계정의 '전부 지움' 표식을 본 것으로 적기 전에 따라서 이 기기를 지우지 않게
+  if (CLOUD.first) return 0;
+  const uid = CLOUD.uid,
+    hold = new Set(CLOUD.sending),
     since = CLOUD.seq,
     again = await CLOUD.retake();
-  let n = again + (await CLOUD.apply(await CLOUD.rows(localStorage.getItem(CLOUD.lastKey()) || ""), hold, since));
+  const rows = await CLOUD.rows(localStorage.getItem(CLOUD.lastKey()) || "");
+  if (CLOUD.uid !== uid) return again; // 받는 사이 계정이 바뀜(로그아웃·다른 계정) — 그 계정의 행을 이 기기에 쓰지 않음
+  let n = again + (await CLOUD.apply(rows, hold, since));
   // 로그인한 뒤(또는 날짜가 된 뒤) 처음 한 번: 바뀐 행만 받는 pull에는 서재 행이 안 올 수 있어 따로 받아 합침 — 날짜 전에 이 기기에만 쌓인 것이 이때 계정으로
   if (!CLOUD.shelfUp && shelfSyncOn()) {
     CLOUD.shelfUp = true;
