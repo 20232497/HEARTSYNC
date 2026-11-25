@@ -181,6 +181,8 @@ h2.sec small, h1.sec small { font-family:var(--sans); font-size:12.5px; color:va
 .card .d { color:var(--muted); font-size:12.5px; line-height:1.45; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; min-height:2.9em; }
 .card .meta { display:flex; gap:6px; font-size:11.5px; color:var(--muted); flex-wrap:wrap; }
 .card .meta .aud-tag { color:var(--accent); font-weight:700; }
+/* 출시판 제외 작품(work.js hold) — 관리자 빌드에만 실림 */
+.card .meta .hold-tag { color:var(--err); font-weight:700; }
 /* 로그인 */
 .login-page { min-height:calc(100vh - 140px); display:flex; align-items:center; justify-content:center; padding:24px 0; }
 .login-card { width:100%; max-width:400px; background:var(--surface); border:1px solid var(--line); border-radius:20px; padding:26px 20px 20px; }
@@ -262,6 +264,8 @@ h2.sec small, h1.sec small { font-family:var(--sans); font-size:12.5px; color:va
 .d-tab.on { background:var(--accent-soft); color:var(--accent); }
 .d-main > section + section, .d-main section > * + *, .d-main [data-fold] > * + * { margin-top:12px; }
 .d-price { margin:0 0 4px; }
+/* 출시판 제외 작품(work.js hold — 관리자 빌드에만 실림)의 까닭 */
+.d-hold { margin:6px 0 0; font-size:12.5px; font-weight:700; color:var(--err); }
 .d-desc.clamp { display:-webkit-box; -webkit-line-clamp:7; -webkit-box-orient:vertical; overflow:hidden; }
 .d-more { margin-top:8px; }
 .d-fields { margin-top:10px; }
@@ -1710,7 +1714,7 @@ function refundSug(q, label) {
    내보냄: ORIGINALS, HOME_ROWS
    쓰는 곳: src/js/content/index.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
-/* 빌드가 content/ 폴더로 만든 작품 데이터 — 직접 고치지 말고 content/<f|m|all>/…/work.js를 고치세요(content/README.md). git에 넣지 않음 */
+/* 빌드가 content/ 폴더로 만든 작품 데이터(전부 — 관리자 빌드·단위 시험·도구가 읽음) — 직접 고치지 말고 content/<f|m|all>/…/work.js를 고치세요(content/README.md). git에 넣지 않음 */
 const ORIGINALS = [
 /* f/fate/hwanghu */ {
   "id": "hwanghu",
@@ -9473,7 +9477,7 @@ function cardHTML(c) {
   const aud = audience() === "all" && audOf(c) !== "all" ? `<span class="aud-tag">${AUDS[audOf(c)].name}</span>` : "";
   return `<button class="card" data-char="${esc(c.id)}"><div style="position:relative">${coverHTML(c, "", { vt: true, cat: true })}${info}</div>
     <span class="t">${esc(c.name)}</span><span class="d">${esc(c.oneLiner)}</span>
-    <span class="meta">${aud}${(c.tags || [])
+    <span class="meta">${c.hold ? `<span class="hold-tag">출시판 제외</span>` : ""}${aud}${(c.tags || [])
       .slice(0, 3)
       .map((t) => `<span>#${esc(t)}</span>`)
       .join("")}</span></button>`;
@@ -12274,7 +12278,8 @@ function viewDetail(id) {
       <div class="d-side">
         <div class="d-top">${coverHTML(c, "", { vt: true })}
           <div class="d-info"><span class="note">${esc(c.cat)}${c.world_mode ? " · 세계관" : ""} · ${metaHTML(c)}</span>
-          <h1>${esc(c.title)}</h1><p class="lead">${esc(c.oneLiner)}</p></div>
+          <h1>${esc(c.title)}</h1><p class="lead">${esc(c.oneLiner)}</p>` +
+    `${c.hold ? `<p class="d-hold" id="dHold">출시판 제외 — ${esc(c.hold)}</p>` : ""}</div>
         </div>
         <div class="tags">${(c.tags || []).map((t) => `<span>#${esc(t)}</span>`).join("")}</div>
         <div class="d-cta"><button class="btn ghost like-btn" id="like" aria-pressed="${liked(c.id)}">${likeHTML(liked(c.id))}</button>` +

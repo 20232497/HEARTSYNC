@@ -63,7 +63,7 @@ test("지킴이: getChar 호출과 ORIGINALS 사용은 허용한 모듈에만(�
     for (const e of fs.readdirSync(d, { withFileTypes: true })) {
       const p = path.join(d, e.name);
       if (e.isDirectory()) walk(p);
-      else if (e.name.endsWith(".js") && e.name !== "generated.js") files.push(p);
+      else if (e.name.endsWith(".js") && !/^generated(-user)?\.js$/.test(e.name)) files.push(p); // 빌드가 만든 작품 목록 둘
     }
   })(root);
   const count = (text, word) => text.split(word).length - 1,

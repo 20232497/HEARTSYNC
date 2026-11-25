@@ -19,7 +19,7 @@
 //   layers.mjs        층 방향 검사(아래층 → 윗층 import 금지, 사용자 빌드에 admin/ 금지)와 알려진 예외 표
 //   css-check.mjs     오래된 아이폰용 CSS 검사(inset 약칭·접두사 없는 backdrop-filter·물러날 줄 없는 color-mix())
 //   app-rules.mjs     작품 검사에 쓰는 앱 규칙을 src/js에서 꺼냄(APP_RULES)
-//   content.mjs       content/ 읽기 → generated.js (폴더 구조·순서 잠금)
+//   content.mjs       content/ 읽기 → generated.js(전부)·generated-user.js(출시판 제외 hold를 뺀 사용자 빌드용) (폴더 구조·순서 잠금)
 //   work-check.mjs    작품 하나의 검사(checkWork) · episode-check.mjs 에피소드 진행표 · images-scan.mjs 그림 파일 이름
 //   output-check.mjs  결과 검사(스크립트 문법·오래된 iOS 문법·들어가면 안 되는 것)
 // 다른 도구와 시험이 가져다 쓰는 이름(ROOT·TARGETS·AUD_DIRS·BuildError·appRules·buildContent·checkWork·scanImages·checkForbidden·build·buildAll)은 전처럼 이 파일에서 내보냄
@@ -115,7 +115,10 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     const { content, outs } = await buildAll(names);
     [...new Set([...content.warnings, ...outs.flatMap((o) => o.warnings)])].forEach((x) => console.warn("⚠ " + x));
     const s = content.stats;
-    console.log(`작품 ${s.works}개(여성향 ${s.f} · 남성향 ${s.m} · 전체 ${s.all}), 홈 줄 ${s.rows}개, 실린 그림 ${s.pics}장`);
+    console.log(
+      `작품 ${s.works}개(여성향 ${s.f} · 남성향 ${s.m} · 전체 ${s.all}), 홈 줄 ${s.rows}개, 실린 그림 ${s.pics}장` +
+        (s.held.length ? ` · 출시판 제외 ${s.held.length}개(${s.held.join(", ")} — 관리자 빌드에만)` : "")
+    );
     let fail = false;
     // 순서 잠금이 지금 내용보다 뒤처져 있으면(뒤에 더한 항목·고친 이름): 빌드는 알리기만 하고, 병합 전 검사(--check)는 실패로 — main에 들어간 것은 모두 잠긴 상태가 되게(2026-11-11 사용자 결정)
     if (s.stale.length) {

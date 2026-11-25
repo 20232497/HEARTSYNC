@@ -79,7 +79,7 @@ let timer = null;
 for (const dir of ["src", "content"]) {
   fs.watch(path.join(ROOT, dir), { recursive: true }, (ev, file) => {
     if (!file || /(^|[\\/])\.|~$|\.swp$/.test(file)) return;
-    if (/generated\.js$/.test(file)) return; // 빌드가 content/로 만드는 파일 — 다시 빌드를 일으키면 무한 반복
+    if (/generated(-user)?\.js$/.test(file)) return; // 빌드가 content/로 만드는 파일 둘 — 다시 빌드를 일으키면 무한 반복
     clearTimeout(timer);
     timer = setTimeout(() => rebuild(`${dir}/${String(file).split(path.sep).join("/")}`), 120);
   });
