@@ -68,6 +68,7 @@
 | `layers.test.mjs` | 빌드의 층 방향 검사(`tools/build/layers.mjs` `layerErrors` — 아래층이 윗층을 import하지 못함, 사용자 빌드에 admin/ 모듈이 못 들어감): 가짜 그래프로 판정(원본 파일:줄 · 같은 층과 윗층 → 아래층은 통과 · 예외는 적힌 파일 쌍만 · 표에 없는 폴더와 src/js 밖의 파일은 오류)을 보고, 가짜 소스 폴더로 실제 번들러(`bundleModules`)가 멈추는지(core → ui import · 사용자 빌드의 admin/ 모듈(관리자 빌드는 통과) · `import()`), **지킴이**: src/js의 폴더가 모두 층 표(`LAYERS`)에 있고 예외 표(`LAYER_EXCEPTIONS`)의 쌍이 지금도 있는 import인지 |
 | `css-check.test.mjs` | 오래된 아이폰용 CSS 검사(`tools/build/css-check.mjs` `cssErrors`): `inset` 약칭(원본 파일:줄 — `@media` 안의 규칙·대문자 속성도, `safe-area-inset` 같은 다른 이름과 따옴표 안의 글은 건드리지 않음), 같은 규칙 안의 앞에 `-webkit-backdrop-filter`가 없는 `backdrop-filter`, `@supports (color:color-mix(…))` 밖의 `color-mix()`(앞줄에 평범한 선언을 더한 것도 오류 — `var()`가 든 선언은 버려지지 않음)와 그 블록 밖(맨 바깥 규칙)에 같은 선택자·같은 속성의 평범한 선언이 없는 경우, 조건이 정해진 모양이 아닌 경우(not·or·var()), 선택자의 빈칸 차이는 같은 것으로·따옴표 값은 다른 것으로, 규칙 안의 규칙(CSS 중첩 — `@media`·`@keyframes` 묶음은 통과). **지킴이**: 지금 `src/css`의 모든 조각이 통과 |
 | `content-art.test.mjs` | 그림 의뢰 목록(`tools/content-art.mjs`): 가짜 작품 하나로 줄 수·종류·넣을 경로·우선순위(직접 적힌 그림·배경 장소)·비공개·실림·태그 표시와 합계, 규격 표가 모두 초안이고 README '그림 싣기'와 같은 크기인지·적힌 비율이 크기와 맞는지 |
+| `cast-seeds.test.mjs` | 인물별 씨앗(`archive/style-works/code/seeds.js` — 그림 도구가 인물 그림의 시드를 먼저 찾는 표): 키와 값의 꼴, `content/`에 있는 작품이면 그 인물 코드가 출연진에 있는지(아직 없는 작품은 건너뜀), 표에 없으면 undefined |
 | `content-report.test.mjs` | 작품 완성도 보고서(`tools/content-report.mjs`)의 셈과 얕은 칸 판정 |
 | `parse.test.mjs` | 응답 파싱(`ai/parse.js` — 구분자 변형·끊긴 JSON·다인원 칸) |
 | `safety.test.mjs` | 미성년 인물 막기(`core/safety.js` minorFlags·minorHint) |
