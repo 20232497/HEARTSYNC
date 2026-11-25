@@ -3,7 +3,7 @@ import { emit } from "../core/events.js";
 import { mergeRoomLists } from "../core/room-list.js";
 import { goneRooms, roomKey } from "../core/rooms.js";
 import { applySettings } from "../core/settings.js";
-import { gen } from "../core/state.js";
+import { S, gen } from "../core/state.js";
 import { IDB, KV } from "../core/storage.js";
 import { loadAll } from "./load.js";
 
@@ -52,6 +52,24 @@ export async function reloadFromCloud() {
   const h = location.hash.slice(1) || "home",
     typing = document.activeElement && /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName);
   if (!gen && !typing && !h.startsWith("r-")) emit("route");
+}
+/**
+ * 이 기기의 대화·하트·페르소나·서재·사진을 지움(설정·API 키는 남김) — MY '모든 데이터 초기화'(ui/me.js)와, 다른 기기의 초기화 표식을 받았을 때(services/cloud-wipe.js).
+ * 계정에 지우기가 올라가지 않게 부르기 전에 CLOUD.wiped를 켜 둘 것. @returns {Promise<boolean>} 큰 저장소(방 본문·그림)를 비웠는지
+ */
+export async function clearDevice() {
+  S.rooms.forEach((r) => KV.set(roomKey(r.id), undefined));
+  ["rooms", "mine", "wallet", "personas", "shelf", "profile", "imgpacks", "motionpacks", "coverpacks", "lorepacks", "tagpacks", "ponytags"].forEach((k) =>
+    KV.set(k, undefined)
+  );
+  await KV.settled();
+  const clean = await IDB.clear();
+  try {
+    Object.keys(localStorage)
+      .filter((k) => /^hv1_img[a-z0-9]{10,30}$/.test(k))
+      .forEach((k) => localStorage.removeItem(k));
+  } catch {}
+  return clean;
 }
 /** 이 기기의 HEART SYNC 데이터 전부 삭제(설정·키·그림 포함) — 같이 쓰는 기기에서 로그아웃할 때. @returns {Promise<void>} */
 export async function wipeDevice() {

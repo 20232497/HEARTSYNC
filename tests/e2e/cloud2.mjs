@@ -30,6 +30,7 @@ function match(row, q) {
     const val =
       k === "key" ? row.key : k === "updated_at" ? row.updated_at : k === "user_id" ? row.user_id : k === "value->>kid" ? row.value && row.value.kid : null;
     if (v.startsWith("eq.") && val !== v.slice(3)) return false;
+    if (v.startsWith("neq.") && val === v.slice(4)) return false;
     if (v.startsWith("gt.") && !(val > v.slice(3))) return false;
     if (v.startsWith("like.") && !String(val).startsWith(v.slice(5).replace("*", ""))) return false;
     if (v.startsWith("not.like.") && String(val).startsWith(v.slice(9).replace("*", ""))) return false;
@@ -104,6 +105,11 @@ async function handler(route) {
     if (m === "POST" && db.failKv) return json(route, 500, { message: "mock: 저장 실패" });
     // '모든 데이터 초기화' 시험용: 계정 쪽 지우기(고치기·지우기 요청)만 실패시킴
     if ((m === "PATCH" || m === "DELETE") && (db.failWipe === true || db.failWipe === m)) return json(route, 500, { message: "mock: 지우기 실패" });
+    // '전부 지움' 표식 올리기만 정한 횟수만큼 실패시킴(한 번 더 해 보는지)
+    if (m === "POST" && db.failMark > 0 && body && body.some((x) => x.key === "wipe")) {
+      db.failMark--;
+      return json(route, 500, { message: "mock: 표식 실패" });
+    }
     const q = [...u.searchParams.entries()],
       prefer = req.headers()["prefer"] || "",
       sel = u.searchParams.get("select");
@@ -818,6 +824,28 @@ try {
       errs.push("모든 데이터 초기화: 계정 지우기가 실패했는데 멈춰 알리지 않음: " + JSON.stringify(f));
   }
   db.failWipe = false;
+  // 덜 지워진 계정(half)에는 '전부 지움' 표식이 없음(표식은 맨 뒤) — 휴대폰이 그사이 받아도 자기 것을 지우지 않음
+  res.wipeAllFail.mark = mine().some((r) => r.key === "wipe");
+  res.wipeAllFail.phone = await B.page
+    .evaluate(async () => {
+      window.__alive = 1;
+      localStorage.removeItem(CLOUD.lastKey()); // 계정의 행을 전부 다시 받게 — 표식이 있으면 반드시 보게
+      await CLOUD.pull();
+      await new Promise((r) => setTimeout(r, 300));
+      return { alive: window.__alive === 1, rooms: S.rooms.length };
+    })
+    .catch(() => ({ alive: false }));
+  if (res.wipeAllFail.mark || !res.wipeAllFail.phone.alive || res.wipeAllFail.phone.rooms !== w0.phone)
+    errs.push("모든 데이터 초기화: 덜 지워진 계정을 받은 다른 기기가 지워짐: " + JSON.stringify(res.wipeAllFail));
+  // 휴대폰에서 만든 페르소나와 하트 — 계정을 지운 뒤 휴대폰의 다음 받기에서 같이 지워져야 함(전에는 휴대폰이 고치면 다시 올라왔음)
+  await B.page.evaluate(async () => {
+    S.personas.push({ id: "pPhone", name: "폰 페르소나", memo: "", desc: "", img: "" });
+    KV.set("personas", S.personas);
+    S.wallet.hearts = 77;
+    KV.set("wallet", S.wallet);
+    await CLOUD.flush();
+  });
+  db.failMark = 1; // 다시 시도에서는 '전부 지움' 표식 올리기가 한 번 실패 — 한 번 더 해 봐서 올라가야 함
   if (res.wipeAllFail.retry) await A.page.click("#wRetry");
   await A.page.waitForTimeout(3000);
   res.wipeAll = await A.page.evaluate(() => ({ reloaded: window.__alive !== 1, rooms: S.rooms.length, signedIn: !!SB.s }));
@@ -827,14 +855,44 @@ try {
     list: ((mine().find((r) => r.key === "rooms") || {}).value || []).length,
     personas: ((mine().find((r) => r.key === "personas") || {}).value || []).length
   };
-  res.wipeAll.phone = await B.page.evaluate(async () => {
-    const before = S.rooms.length;
-    await CLOUD.pull();
-    await reloadFromCloud();
-    await CLOUD.flush();
-    return { before, after: S.rooms.length };
+  res.wipeAll.server.mark = (mine().find((r) => r.key === "wipe") || {}).value || null;
+  res.wipeAll.server.markRetried = db.failMark === 0; // 첫 표식 올리기는 실패했음(위에서 한 번 실패시킴)
+  // 휴대폰: 다음 받기에서 '전부 지움' 표식을 보고 이 기기의 대화·페르소나도 지운 뒤 새로고침하고 알림(2026-11-25 사용자 결정) — 계정에 되살려 올리지 않음
+  await B.page.evaluate(() => {
+    window.__alive = 1;
+    CLOUD.pull().catch(() => {});
   });
+  const note = await B.page
+    .locator(".toast", { hasText: "다른 기기에서" })
+    .waitFor({ timeout: 8000 })
+    .then(
+      () => true,
+      () => false
+    );
+  await B.page.waitForTimeout(800);
+  res.wipeAll.phone = await B.page.evaluate(async () => {
+    await CLOUD.flush();
+    return {
+      reloaded: window.__alive !== 1,
+      after: S.rooms.length,
+      personas: S.personas.map((p) => p.id),
+      hearts: S.wallet.hearts,
+      seen: !!localStorage.getItem("hv1_cloudwipe_" + SB.s.user.id)
+    };
+  });
+  res.wipeAll.phone.note = note;
   res.wipeAll.liveAfterPhone = liveRooms();
+  res.wipeAll.phonePersonaUp = mine().some((r) => r.key === "personas" && JSON.stringify(r.value).includes("pPhone"));
+  // 같은 표식은 다시 따르지 않음: 지운 PC(스스로 올린 표식)와 방금 따른 휴대폰이 계정의 행을 전부 다시 받아도(표식이 응답에 들어옴) 새로고침하지 않음
+  const stays = (P) =>
+    P.evaluate(async () => {
+      window.__alive = 2;
+      localStorage.removeItem(CLOUD.lastKey());
+      await CLOUD.pull();
+      await new Promise((r) => setTimeout(r, 300));
+      return window.__alive === 2;
+    }).catch(() => false);
+  res.wipeAll.again = { pc: await stays(A.page), phone: await stays(B.page) };
   {
     const w = res.wipeAll;
     if (
@@ -844,11 +902,55 @@ try {
       w.server.tombs < w0.live ||
       w.server.list ||
       w.server.personas > 1 ||
+      !w.server.mark ||
+      typeof w.server.mark.gone !== "number" ||
+      !w.server.markRetried ||
       !w0.phone ||
+      !w.phone.reloaded ||
+      !w.phone.note ||
+      !w.phone.seen ||
       w.phone.after ||
-      w.liveAfterPhone
+      w.phone.personas.includes("pPhone") ||
+      w.phone.hearts === 77 ||
+      w.liveAfterPhone ||
+      w.phonePersonaUp ||
+      !w.again.pc ||
+      !w.again.phone
     )
-      errs.push("모든 데이터 초기화: 계정의 방이 표식으로 바뀌지 않았거나 다른 기기에서 되살아남: " + JSON.stringify(w));
+      errs.push("모든 데이터 초기화: 계정이나 다른 기기에서 지워지지 않았거나 되살아남·같은 표식을 다시 따름: " + JSON.stringify(w));
+  }
+  // 처음 로그인하는 기기(게스트로 페르소나를 만든 PC 하나 더)는 계정의 '전부 지움' 표식을 따르지 않음 — 본 것으로만 적고, 그 뒤의 받기에서도 지우지 않음
+  {
+    const E = await device(chromium, "Desktop Chrome");
+    await E.page.goto(url, { waitUntil: "load" });
+    await E.page.waitForTimeout(900);
+    await E.page.click("#lguest");
+    await E.page.waitForTimeout(300);
+    await E.page.click(".overlay [data-aud=m]");
+    await E.page.evaluate(() => {
+      S.personas.push({ id: "pTab", name: "새 기기 페르소나", memo: "", desc: "", img: "" });
+      KV.set("personas", S.personas);
+      location.hash = "login";
+    });
+    await E.page.waitForTimeout(400);
+    await E.page.fill("#lmail", "tester@example.test");
+    await E.page.fill("#lpw", "test-pass-1");
+    await E.page.click("#lgo");
+    await E.page.waitForTimeout(2000);
+    if (await E.page.$(".overlay #mYes")) await E.page.click(".overlay #mYes");
+    await E.page.waitForTimeout(500);
+    res.wipeAll.fresh = await E.page
+      .evaluate(async () => {
+        window.__alive = 3;
+        localStorage.removeItem(CLOUD.lastKey()); // 처음 로그인 뒤의 받기도 표식을 다시 받게
+        await CLOUD.pull();
+        await new Promise((r) => setTimeout(r, 300));
+        return { alive: window.__alive === 3, persona: S.personas.some((p) => p.id === "pTab"), seen: !!localStorage.getItem("hv1_cloudwipe_" + SB.s.user.id) };
+      })
+      .catch((e) => ({ alive: false, err: String(e).slice(0, 100) }));
+    await E.browser.close();
+    const f = res.wipeAll.fresh;
+    if (!f.alive || !f.persona || !f.seen) errs.push("모든 데이터 초기화: 처음 로그인한 기기가 계정의 표식을 따라 지워짐: " + JSON.stringify(f));
   }
   // PC: 계정 삭제
   await A.page.evaluate(() => {
