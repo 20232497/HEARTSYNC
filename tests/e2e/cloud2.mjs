@@ -102,6 +102,8 @@ async function handler(route) {
       db.holding--;
     }
     if (m === "POST" && db.failKv) return json(route, 500, { message: "mock: 저장 실패" });
+    // '모든 데이터 초기화' 시험용: 계정 쪽 지우기(고치기·지우기 요청)만 실패시킴
+    if ((m === "PATCH" || m === "DELETE") && (db.failWipe === true || db.failWipe === m)) return json(route, 500, { message: "mock: 지우기 실패" });
     const q = [...u.searchParams.entries()],
       prefer = req.headers()["prefer"] || "",
       sel = u.searchParams.get("select");
@@ -756,6 +758,98 @@ try {
   if (!/다 지우지 못했어요/.test(res.wipeFail.title) || res.wipeFail.veil || res.wipeFail.signedIn)
     errs.push("기기 지우기 실패 알림이 다름: " + JSON.stringify(res.wipeFail));
   await D.browser.close();
+  // '모든 데이터 초기화'(MY): 계정 쪽 지우기가 실패하면 이 기기도 지우지 않고 멈춰 알림(성공처럼 새로고침하지 않음) → 다시 시도하면 계정의 방은 삭제 표식으로,
+  // 나머지 행은 지워지고 새로고침 — 그 방을 가진 다른 기기가 받아도·다시 올려도 되살아나지 않음
+  const uidA = await A.page.evaluate(() => SB.s.user.id);
+  const mine = () => db.rows.filter((r) => r.user_id === uidA),
+    roomRows = () => mine().filter((r) => r.key.indexOf("room-") === 0),
+    liveRooms = () => roomRows().filter((r) => r.value && r.value.msgs).length;
+  await A.page.evaluate(async () => {
+    if (!S.rooms.length) newRoom(normalizeChar(getChar("hasuk")), 0, S.personas[0]);
+    await KV.settled();
+    CLOUD.put("rooms", S.rooms); // 앞 장면이 계정의 목록 행을 비웠으므로 PC의 목록을 다시 올려 둠
+    await CLOUD.flush();
+    window.__alive = 1;
+    location.hash = "me";
+  });
+  await A.page.waitForTimeout(500);
+  // 휴대폰(앞에서 로그아웃하며 비운 기기)을 다시 로그인시켜 계정의 방을 받아 둠 — 지운 뒤에도 그 방을 가진 '다른 기기'
+  await B.page.evaluate(() => {
+    location.hash = "login";
+  });
+  await B.page.waitForTimeout(400);
+  await B.page.fill("#lmail", "tester@example.test");
+  await B.page.fill("#lpw", "test-pass-1");
+  await B.page.click("#lgo");
+  await B.page.waitForTimeout(2500);
+  const w0 = { rooms: await A.page.evaluate(() => S.rooms.length), rows: mine().length, live: liveRooms(), phone: await B.page.evaluate(() => S.rooms.length) };
+  // 가장 까다로운 실패: 방이 아닌 행은 지워졌는데 방을 표식으로 바꾸는 마지막 요청이 실패 — 방은 어디서도 사라지지 않고, 이 기기의 것을 다시 올려 계정을 되돌림
+  db.failWipe = "PATCH";
+  await A.page.click("#reset");
+  await A.page.waitForTimeout(200);
+  await A.page.click(".overlay #ok");
+  await A.page.waitForTimeout(4000);
+  res.wipeAllFail = await A.page.evaluate(async () => ({
+    alive: window.__alive === 1,
+    title: (document.querySelector(".overlay h2") || {}).textContent || "",
+    retry: !!document.querySelector("#wRetry"),
+    rooms: S.rooms.length,
+    body: S.rooms.length ? !!(await KV.get(roomKey(S.rooms[0].id))) : false
+  }));
+  Object.assign(res.wipeAllFail, {
+    live: liveRooms(),
+    healed: ["rooms", "wallet", "personas"].filter((k) => mine().some((r) => r.key === k)).length,
+    list: ((mine().find((r) => r.key === "rooms") || {}).value || []).length,
+    before: w0
+  });
+  {
+    const f = res.wipeAllFail;
+    if (
+      !w0.live ||
+      !f.alive ||
+      !/지우지 못했어요/.test(f.title) ||
+      !f.retry ||
+      f.rooms !== w0.rooms ||
+      !f.body ||
+      f.live !== w0.live ||
+      f.healed !== 3 ||
+      f.list !== w0.rooms
+    )
+      errs.push("모든 데이터 초기화: 계정 지우기가 실패했는데 멈춰 알리지 않음: " + JSON.stringify(f));
+  }
+  db.failWipe = false;
+  if (res.wipeAllFail.retry) await A.page.click("#wRetry");
+  await A.page.waitForTimeout(3000);
+  res.wipeAll = await A.page.evaluate(() => ({ reloaded: window.__alive !== 1, rooms: S.rooms.length, signedIn: !!SB.s }));
+  res.wipeAll.server = {
+    live: liveRooms(),
+    tombs: roomRows().filter((r) => r.value && typeof r.value.gone === "number" && !r.value.msgs).length,
+    list: ((mine().find((r) => r.key === "rooms") || {}).value || []).length,
+    personas: ((mine().find((r) => r.key === "personas") || {}).value || []).length
+  };
+  res.wipeAll.phone = await B.page.evaluate(async () => {
+    const before = S.rooms.length;
+    await CLOUD.pull();
+    await reloadFromCloud();
+    await CLOUD.flush();
+    return { before, after: S.rooms.length };
+  });
+  res.wipeAll.liveAfterPhone = liveRooms();
+  {
+    const w = res.wipeAll;
+    if (
+      !w.reloaded ||
+      w.rooms ||
+      w.server.live ||
+      w.server.tombs < w0.live ||
+      w.server.list ||
+      w.server.personas > 1 ||
+      !w0.phone ||
+      w.phone.after ||
+      w.liveAfterPhone
+    )
+      errs.push("모든 데이터 초기화: 계정의 방이 표식으로 바뀌지 않았거나 다른 기기에서 되살아남: " + JSON.stringify(w));
+  }
   // PC: 계정 삭제
   await A.page.evaluate(() => {
     location.hash = "me";
@@ -773,7 +867,8 @@ try {
   await A.browser.close();
   await B.browser.close();
 } catch (e) {
-  res.fail = String(e).slice(0, 400);
+  // 어디서 멈췄는지 알 수 있게 마지막으로 끝난 장면의 이름을 같이 적음
+  res.fail = String(e).slice(0, 400) + " | 마지막으로 끝난 장면: " + Object.keys(res).slice(-2).join(", ");
 }
 res.errors = errs;
 res.requests = db.log.length;

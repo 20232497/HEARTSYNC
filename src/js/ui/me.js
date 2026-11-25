@@ -9,6 +9,8 @@ import { IDB, KV } from "../core/storage.js";
 import { $, $$, esc, num, toast, uid } from "../core/util.js";
 import { isPro } from "../core/wallet.js";
 import { CLOUD } from "../services/cloud.js";
+import { pushAll } from "../services/cloud-push.js";
+import { wipeAccount } from "../services/cloud-wipe.js";
 import { IMG } from "../services/images.js";
 import { accountBoxHTML, bindAccount } from "./account.js";
 import { bindChatSettings, chatSettingsHTML } from "./chat-settings.js";
@@ -125,20 +127,65 @@ export function viewMe() {
         (CLOUD.on ? " 로그인되어 있어서 계정에 저장된 데이터도 지워져요." : "") +
         " 되돌릴 수 없어요.",
       "전부 삭제",
-      () => {
-        S.rooms.forEach((r) => KV.set(roomKey(r.id), undefined));
-        ["rooms", "mine", "wallet", "personas", "shelf", "profile", "imgpacks", "motionpacks", "coverpacks", "lorepacks", "tagpacks", "ponytags"].forEach((k) =>
-          KV.set(k, undefined)
-        );
-        IDB.clear();
-        try {
-          Object.keys(localStorage)
-            .filter((k) => /^hv1_img[a-z0-9]{10,30}$/.test(k))
-            .forEach((k) => localStorage.removeItem(k));
-        } catch {}
-        (CLOUD.on ? CLOUD.wipe().catch(() => {}) : Promise.resolve()).then(() => setTimeout(() => location.reload(), 400));
-      }
+      wipeAll
     );
+}
+/* 모든 데이터 초기화: 계정(로그인했으면) → 이 기기 순서. 계정 쪽이 실패하면 이 기기도 지우지 않고 멈춰 알림 — 한쪽만 지워진 상태를 만들지 않음(2026-11-24 사용자 결정,
+   전에는 실패를 삼키고 새로고침해 다음 받기에서 지운 대화가 되살아났음). 둘 다 끝난 것을 확인한 뒤에만 새로고침. 지우는 범위는 전과 같음(설정·API 키는 남김) */
+let wiping = false,
+  accountWiped = false; // 계정 쪽은 끝났고 이 기기만 남았음(기기 지우기를 다시 시도할 때 계정을 또 지우지 않음)
+async function wipeAll() {
+  if (wiping) return; // 확인 창을 두 번 눌러도 한 번만 — 둘째가 '계정은 끝났다'고 보고 기기부터 지우지 않게
+  wiping = true;
+  try {
+    await wipeNow();
+  } finally {
+    wiping = false;
+  }
+}
+async function wipeNow() {
+  toast("지우는 중이에요…");
+  const uid = CLOUD.uid,
+    got = CLOUD.on && !accountWiped ? await wipeAccount() : "ok";
+  if (got !== "ok") {
+    // 계정 쪽이 중간까지만 지워졌으면(방이 아닌 행) 이 기기에 그대로 있는 것을 다시 올려 둠 — 대화는 어느 쪽에서도 지워지지 않았음
+    if (got === "half" && CLOUD.on && CLOUD.uid === uid)
+      try {
+        await pushAll();
+      } catch {}
+    return wipeFailed("계정의 데이터를 지우지 못했어요", "네트워크를 확인하고 다시 시도해 주세요. 이 기기의 데이터도 아직 그대로예요.");
+  }
+  accountWiped = true;
+  S.rooms.forEach((r) => KV.set(roomKey(r.id), undefined));
+  ["rooms", "mine", "wallet", "personas", "shelf", "profile", "imgpacks", "motionpacks", "coverpacks", "lorepacks", "tagpacks", "ponytags"].forEach((k) =>
+    KV.set(k, undefined)
+  );
+  await KV.settled();
+  const clean = await IDB.clear(); // 큰 저장소(방 본문·그림)를 비웠는지
+  try {
+    Object.keys(localStorage)
+      .filter((k) => /^hv1_img[a-z0-9]{10,30}$/.test(k))
+      .forEach((k) => localStorage.removeItem(k));
+  } catch {}
+  if (!clean) return wipeFailed("이 기기의 데이터를 다 지우지 못했어요", "이 사이트를 연 다른 탭을 닫고 다시 시도해 주세요.", true);
+  location.reload();
+}
+function wipeFailed(title, sub, half) {
+  const ov = sheet(
+    `<h2>${esc(title)}</h2><p class="sub">${esc(sub)}</p><div class="cta-row"><span class="spacer"></span>` +
+      `<button class="btn ghost" data-x>닫기</button><button class="btn pri" id="wRetry">다시 시도</button></div>`
+  );
+  let again = false;
+  $("#wRetry", ov).onclick = () => {
+    again = true;
+    ov.remove();
+    wipeAll();
+  };
+  // 계정은 지워졌고 이 기기만 덜 지워진 채 닫으면 새로고침 — 이 화면은 계정에 더 올리지 않는 상태(CLOUD.wiped)라 그대로 쓰게 두지 않음(새로고침하면 풀림)
+  if (half)
+    ov.onShut = () => {
+      if (!again) location.reload();
+    };
 }
 /* 페르소나 만들기·수정 시트. 사진은 이용자가 올린 것만 */
 export function personaSheet(p, after) {

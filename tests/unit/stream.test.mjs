@@ -13,7 +13,7 @@ const stream = (chunks) =>
     }
   });
 
-test("readSSE: 줄이 조각 사이에서 끊겨도 data 줄마다 한 번, 깨진 줄·[DONE]·onData 오류는 넘어감, 주석 줄은 시간 제한을 되돌리지 않음", async () => {
+test("readSSE: 줄이 조각 사이에서 끊겨도 data 줄마다 한 번, 깨진 줄·[DONE]은 넘어감, 해석(onData)의 오류는 삼키지 않음, 주석 줄은 시간 제한을 되돌리지 않음", async () => {
   const got = [];
   let ticks = 0;
   const han = new TextEncoder().encode('data: {"t":"한글"}\n'); // 한글 글자 중간에서 끊긴 조각
@@ -29,7 +29,6 @@ test("readSSE: 줄이 조각 사이에서 끊겨도 data 줄마다 한 번, 깨�
     ]),
     (ev) => {
       got.push(ev.t);
-      if (ev.t === 2) throw new Error("화면 오류");
     },
     () => ticks++
   );
@@ -42,6 +41,16 @@ test("readSSE: 줄이 조각 사이에서 끊겨도 data 줄마다 한 번, 깨�
     () => alive++
   );
   assert.equal(alive, 0);
+  // 해석에서 난 오류는 부른 쪽으로 — 조용히 빠진 조각이 완성된 답처럼 저장되지 않게(전에는 JSON 읽기와 한 try라 같이 삼켰음)
+  const seen = [];
+  await assert.rejects(
+    readSSE(stream(['data: {"t":1}\ndata: {"t":2}\ndata: {"t":3}\n']), (ev) => {
+      seen.push(ev.t);
+      if (ev.t === 2) throw new Error("해석 오류");
+    }),
+    /해석 오류/
+  );
+  assert.deepEqual(seen, [1, 2]);
 });
 
 test("anthropicEvent: 글 조각·끝난 이유·거절 분류", () => {
@@ -86,6 +95,27 @@ test("llm: 끝난 이유가 온 스트림만 답 — 중간의 오류 조각·�
       (e) => e.code === "upstream_error" && e.text === "삼백… 년."
     );
     await assert.rejects(run(delta("*한 번")), (e) => e.code === "upstream_error" && e.text === "*한 번");
+    // 해석기가 던지는 조각(모양이 다른 data 줄)이 섞이면 성공으로 끝나지 않음 — 받은 글은 text에
+    const end = d({ type: "message_delta", delta: { stop_reason: "end_turn" } });
+    await assert.rejects(run(delta("앞 글") + "data: null\n\n" + delta("뒤 글") + end), (e) => e.code === "upstream_error" && e.text === "앞 글");
+    // 화면 갱신(onText)이 던져도 받은 글은 유지하고 끝까지 받음(오류는 콘솔에만)
+    const keepErr = console.error;
+    let logged = 0;
+    console.error = () => logged++;
+    try {
+      globalThis.fetch = async () => new Response(stream([delta("하나") + delta(" 둘") + end]));
+      const got = await llm([{ role: "user", content: "u" }], {
+        tier: "quick",
+        maxTokens: 100,
+        onText: () => {
+          throw new Error("화면 오류");
+        }
+      });
+      assert.equal(got, "하나 둘");
+      assert.equal(logged, 2);
+    } finally {
+      console.error = keepErr;
+    }
   } finally {
     delete globalThis.fetch;
     S.settings.apiKey = "";

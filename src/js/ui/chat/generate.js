@@ -9,7 +9,7 @@ import { epAfter, epPick } from "../../core/episode.js";
 import { markEnding } from "../../core/shelf.js";
 import { curText, saveRoom } from "../../core/rooms.js";
 import { gen, holdRoom, releaseRoom, room, setGen } from "../../core/state.js";
-import { $, esc, uid } from "../../core/util.js";
+import { $, esc, toast, uid } from "../../core/util.js";
 import { charge, qShort, quote, refund, refundSug } from "../../core/wallet.js";
 import { imgTag, imgTags } from "../../images/codes.js";
 import { imagesOf } from "../../images/pick.js";
@@ -60,11 +60,23 @@ export function regenAsk(i) {
 }
 export async function regen(i, direction = "") {
   if (gen) return;
-  const q = await ensurePay(room);
-  if (!q) return;
-  room.msgs = room.msgs.slice(0, i + 1);
-  if (room.ep && room.msgs[i].ep0) room.ep = epCopy(room.msgs[i].ep0); // 에피소드: 이 응답 직전 상태에서 다시
-  generate(room.msgs[i], q, direction);
+  const r = room,
+    q = await ensurePay(r);
+  if (!q || r !== room) return;
+  // 새 버전이 본문 하나 없이 실패하면 되돌릴 것 — 그대로 두면 에피소드 진행이 이 응답 앞으로 돌아간 채 남음
+  // (보고 있던 버전도 — 실패 처리는 남은 마지막 버전을 고르므로, 앞 버전을 보다가 다시 쓰면 본문과 진행이 어긋남)
+  const m = r.msgs[i],
+    was = { msgs: r.msgs, ep: r.ep ? epCopy(r.ep) : null, idx: m.idx };
+  r.lastErr = ""; // 새로 시도하므로 앞의 오류 줄은 거둠(실패하면 다시 적힘)
+  r.msgs = r.msgs.slice(0, i + 1);
+  if (r.ep && m.ep0) r.ep = epCopy(m.ep0); // 에피소드: 이 응답 직전 상태에서 다시
+  const undo = () => {
+    r.msgs = was.msgs;
+    m.idx = was.idx;
+    if (was.ep) r.ep = was.ep;
+    return "";
+  };
+  generate(m, q, direction, { undo });
 }
 /* 매 응답, 장면에 나온 인물마다 그림 한 장: AI가 [[코드번호]]를 빠뜨린 인물은 그 인물이 처음 말하거나(이름: …) 지문에 나오는 줄 위에 붙임.
    번호는 처음 등장이면 0, 아니면 그 인물의 대사·지문 낱말(×2)과 유저 입력 낱말(그 인물을 불렀거나, 아무도 안 불렀으면 처음 나온 인물만)로
@@ -136,8 +148,9 @@ function addCastImages(body, r, prev, said) {
     .forEach((a) => lines.splice(a.at, 0, a.tag, ""));
   return lines.join("\n");
 }
-/* target 없으면 새 AI 메시지, 있으면 그 메시지에 새 버전(alt) 추가 */
-export async function generate(target, q, direction = "", isEdit = false) {
+/* target 없으면 새 AI 메시지, 있으면 그 메시지에 새 버전(alt) 추가.
+   opt.edit: 메시지를 고친 뒤의 새 답(턴 수를 세지 않음) · opt.undo: 본문 하나 없이 실패했을 때 부를 되돌리기(자르기 전 대화로 — 돌려준 글이 있으면 토스트로 알림) */
+export async function generate(target, q, direction = "", opt = {}) {
   const r = room,
     c = r.char,
     model = r.set.model;
@@ -167,13 +180,15 @@ export async function generate(target, q, direction = "", isEdit = false) {
     const u = r.msgs[r.msgs.indexOf(msg) - 1];
     return u && u.role === "user" && !u.sys && !u.text.startsWith("//") ? u.text : "";
   })();
-  const show = (t) => {
-    // 화면엔 본문만: 상태 구분자가 오기 시작했거나(=== STATE 일부) JSON·코드블록 줄이 시작되면 그 줄부터 숨김
-    const body = dropEcho(splitReply(t).body, said)
+  // 화면엔 본문만: 상태 구분자가 오기 시작했거나(=== STATE 일부) JSON·코드블록 줄이 시작되면 그 줄부터 숨김 — 끊긴 답을 남길 때도 같은 손질
+  const clean = (t) =>
+    dropEcho(splitReply(t).body, said)
       .replace(/\n?[ \t]*=+[ \t]*[A-Z]*[ \t]*=*\s*$/, "")
       .replace(/\n[ \t]*(?:```|\{)[^\n]*$/, "")
-      .replace(/\[\[[^\]]*$/, "");
-    msg.alts[altIdx].text = body.trim();
+      .replace(/\[\[[^\]]*$/, "")
+      .trim();
+  const show = (t) => {
+    msg.alts[altIdx].text = clean(t);
     if (room !== r) return;
     const el = $("#liveBubble");
     if (el) {
@@ -195,9 +210,11 @@ export async function generate(target, q, direction = "", isEdit = false) {
       room: r
     });
     show(text);
+    // 본문 없이 상태 블록만 온 답은 답으로 치지 않음 — 저장하지 않고 아래의 실패 길로(값을 돌려줌)
+    if (!msg.alts[altIdx].text) throw { code: "upstream_error", text: "" };
     const parsed = parseState(text, c, msg.statusBefore),
       prevMsgs = r.msgs.slice(0, r.msgs.indexOf(msg));
-    const bodyText = msg.alts[altIdx].text ? addCastImages(msg.alts[altIdx].text, r, prevMsgs, said) : "(빈 응답)";
+    const bodyText = addCastImages(msg.alts[altIdx].text, r, prevMsgs, said);
     const rep = parsed.ep;
     delete parsed.ep;
     // 답변 추천: 값을 낸 턴(자동 받기 — q.sug)에 온 것만 저장함. 값을 내지 않은 턴에 모델이 시키지 않은 추천을 내보내면 버림(저장된 추천은 값 없이 펼쳐지므로),
@@ -214,24 +231,30 @@ export async function generate(target, q, direction = "", isEdit = false) {
       a.ep1 = epCopy(r.ep);
       if (r.ep.over) markEnding(c.id, r.ep.end);
     }
-    if (!target && !isEdit) {
+    if (!target && !opt.edit) {
       r.turn = (r.turn || 0) + 1;
       r.sinceMem = (r.sinceMem || 0) + 1;
     }
   } catch (e) {
-    // 사용자가 멈췼거나 스트림이 중간에 끊긴(timeout) 경우: 받은 본문까지 남김(하트 환불 없음). 끊긴 거면 '다시 시도'(= 다시 쓰기) 안내
-    const keep = e && e.text ? splitReply(e.text).body.trim() : "";
-    if (keep && (e.code === "cancelled" || e.code === "timeout")) {
-      refundSug(q, label); // 본문만 남긴 답에는 추천이 없음 — 추천 값은 되돌림
-      Object.assign(msg.alts[altIdx], { text: keep, status: msg.statusBefore, cost: qShort(q) });
-      if (e.code === "timeout") r.lastErr = "응답이 오는 중에 끊겨 여기까지만 남겼어요. '다시 시도'를 누르면 다시 써요.";
+    // 사용자가 멈췄거나 스트림이 중간에 끊긴 경우(시간 초과 timeout · 끝난 신호 없이 닫힘이나 중간의 오류 조각 upstream_error): 받은 본문까지 남김.
+    // 멈춘 것은 값 그대로, 끊긴 것은 값을 돌려줌(2026-11-21 사용자 결정) — 끊긴 거면 '다시 시도'(= 다시 쓰기) 안내. 거절(refused)은 받은 글이 있어도 남기지 않음
+    const keep = e && e.text ? clean(e.text) : "";
+    const lost = !!e && (e.code === "timeout" || e.code === "upstream_error");
+    if (keep && (e.code === "cancelled" || lost)) {
+      if (lost) refund(q, label);
+      else refundSug(q, label); // 본문만 남긴 답에는 추천이 없음 — 추천 값은 되돌림
+      Object.assign(msg.alts[altIdx], { text: keep, status: msg.statusBefore, cost: lost ? "" : qShort(q) });
+      if (lost) r.lastErr = "응답이 오는 중에 끊겨 여기까지만 남겼어요. 값은 돌려드렸어요. '다시 시도'를 누르면 다시 써요.";
     } else {
       msg.alts.splice(altIdx, 1);
       if (!msg.alts.length) r.msgs.splice(r.msgs.indexOf(msg), 1);
       else msg.idx = msg.alts.length - 1;
       refund(q, label);
-      const copy = errCopy(e);
-      if (copy) r.lastErr = copy;
+      // 메시지 수정·다시 쓰기는 자르기 전 대화로 되돌림(opt.undo). 수정은 '다시 시도' 줄 대신 토스트로 알림 — 그 줄의 버튼은 마지막 답을 다시 쓰는 것이라 뜻이 달라짐
+      const copy = errCopy(e),
+        note = opt.undo ? opt.undo() : "";
+      if (note) toast([copy, note].filter(Boolean).join(" "));
+      else if (copy) r.lastErr = copy;
     }
   } finally {
     try {

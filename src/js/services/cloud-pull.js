@@ -1,7 +1,7 @@
 /* 계정에서 받기: 받은 행을 이 기기에 적용(applyRows)·열려 있어 넘어간 방을 다시 받기(retakeRows)·바뀐 행 받기(pullRows). CLOUD.apply·retake·pull이 이것을 부름(services/cloud.js) */
 import { emit } from "../core/events.js";
 import { isTomb, mergeRoomLists, sameRoomList } from "../core/room-list.js";
-import { goneRooms, roomGone, roomKey } from "../core/rooms.js";
+import { goneRooms, roomGone, roomKey, storableRooms } from "../core/rooms.js";
 import { shelfSyncOn } from "../core/shelf.js";
 import { S, room, roomInUse, setRoom } from "../core/state.js";
 import { KV } from "../core/storage.js";
@@ -42,11 +42,12 @@ export async function applyRows(rows, hold, since) {
   const takeList = (remote) => {
     const merged = mergeRoomLists(full ? [] : S.rooms, remote, gone);
     S.rooms = merged;
-    KV.setLocal("rooms", merged);
+    const keep = storableRooms(merged); // 본문 저장이 아직 안 끝난 새 방은 저장소·계정의 목록에 적지 않음(core/rooms.js — 그 방의 저장이 끝나면 적힘)
+    KV.setLocal("rooms", keep);
     // 이 기기의 목록이 올라가는 길에 있으면(못 올림 · 올리는 중 · 이 받기를 시작할 때 올리는 중이었음 · 받는 사이 바뀜) 합친 것으로 바꿔 올림 —
     // 그대로 두면 옛 목록이 올라가(올라가서) 방금 받은 다른 기기의 새 방을 계정 목록에서 뺌. 처음 로그인의 전부 받기도 같음(표식 처리가 목록을 대기열에 넣었을 수 있음)
     const queued = "rooms" in CLOUD.pending || CLOUD.sending.has("rooms") || (!!hold && hold.has("rooms")) || newer("rooms");
-    if (queued || (!full && !sameRoomList(merged, remote))) CLOUD.put("rooms", merged); // 이 기기에만 있던 방이 있거나 지운 방이 계정 목록에 남아 있을 때도
+    if (queued || (!full && !sameRoomList(keep, remote))) CLOUD.put("rooms", keep); // 이 기기에만 있던 방이 있거나 지운 방이 계정 목록에 남아 있을 때도
   };
   rows.forEach((x) => {
     if (x.updated_at && x.updated_at > (localStorage.getItem(CLOUD.lastKey()) || ""))
