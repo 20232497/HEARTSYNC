@@ -92,7 +92,8 @@ test("일상 화풍: 구도·표정은 애니 화풍의 것 — 프로필은 얼
 
 test("일상 화풍: 여성의 표정은 과하지 않게(값 파일의 act.soften·scale) — 표정 칸의 센 낱말만 누그러지고, 낱말은 남고, 기본 표정·구도·소품 칸은 그대로", () => {
   const S = STYLE.f.act.soften,
-    top = +(S.knee + (1.7 - S.knee) * S.ratio).toFixed(2), // 가장 센 낱말(1.7까지 올린 것)이 닿는 값
+    kneeOf = (t) => (S.knees || {})[t] || S.knee, // 덜 누그러뜨리는 감정 낱말(knees)은 제 턱으로
+    topOf = (t) => +(kneeOf(t) + (1.7 - kneeOf(t)) * S.ratio).toFixed(2), // 가장 센 낱말(1.7까지 올린 것)이 닿는 값
     wOf = (x) => +(/:([\d.]+)\)$/.exec(x) || [0, 0])[1],
     plain = { ...F, temper: "" }; // 성격이 없으면 공통 표정(가장 센 값)
   for (const slot of S.slots) {
@@ -104,12 +105,14 @@ test("일상 화풍: 여성의 표정은 과하지 않게(값 파일의 act.soft
       if (t === ":d") continue; // 이모티콘 입은 이 화풍에 넣지 않음
       assert.ok(x, `칸 ${slot}: 표정 낱말이 남아 있어야 함 — ${t}`);
       // 가중치 없이 온 낱말(closed mouth 등 — 표정을 누르는 쪽)은 이 화풍의 표정 가중치를 그대로 받는다
-      if (wOf(raw)) assert.ok(wOf(x) <= top, `칸 ${slot}: ${x}가 ${top}보다 셈`);
+      if (wOf(raw)) assert.ok(wOf(x) <= topOf(t), `칸 ${slot}: ${x}가 ${topOf(t)}보다 셈`);
     }
   }
-  // 낮춰도 과한 낱말은 따로 더: 놀람의 부릅뜬 눈과 벌린 입은 1 아래로
-  const shock = split(emotionJob(plain, PLACE, 5).pos);
-  for (const t of ["wide-eyed", "open mouth"]) assert.ok(wOf(shock.find((y) => names(y)[0] === t)) < 1, "놀람: " + t);
+  // 낮춰도 과한 낱말은 따로 더: 놀람의 부릅뜬 눈은 흰자위가 드러나던 값(1.44)보다 한참 아래, 벌린 입은 1 아래로.
+  // 감정 낱말(surprised·scared)은 덜 누그러뜨린다 — 그 낱말이 약하면 눈 낱말을 올려도 표정이 안 읽혔다(그려서 확인)
+  const shock = split(emotionJob(plain, PLACE, 5).pos),
+    at = (t) => wOf(shock.find((y) => names(y)[0] === t));
+  assert.ok(at("wide-eyed") <= 1.1 && at("open mouth") < 1 && at("surprised") > S.knees.surprised && at("surprised") < 1.68, "놀람의 세기");
   // 그대로인 것: 기본 표정(칸 1)의 옅은 미소, 표정 칸의 구도 낱말, 소품·효과가 특징인 칸(각성의 빛나는 눈·부상의 붕대)
   assert.ok(emotionJob(F, PLACE, 1).pos.includes("(light smile:1.08)") && shock.includes("(upper body:1.32)"));
   assert.ok(emotionJob(F, PLACE, 13).pos.includes("(glowing eyes:1.7)") && emotionJob(F, PLACE, 9).pos.includes("(bandaged head:1.44)"));

@@ -47,7 +47,10 @@ const boost = (s) => s.replace(/\(([^()]+):([\d.]+)\)/g, (m, tag, w) => `(${tag}
 /* 표정이 과하지 않게(사용자 2026-11-24 "표정이 너무 과하지 않으면서도 그 특징과 매력이 나타나도록" — 값 파일의 act.soften, 여성 v11): 올린 가중치가 knee를 넘는 만큼만 ratio로 줄인다.
    센 낱말(놀람·분노·눈물·홍조)만 누그러지고 약한 낱말(손동작·시선·옅은 미소)은 그대로라, 그 표정의 특징은 남고 과장만 빠진다. 눈을 부릅뜨거나 입을 크게 벌리는 낱말처럼
    낮춰도 과한 것은 값 파일의 act.scale이 낱말마다 따로 줄인다 */
-const soften = (x, k) => (weightOf(x) > k.knee ? `(${bareTag(x)}:${+(k.knee + (weightOf(x) - k.knee) * k.ratio).toFixed(2)})` : x);
+const soften = (x, k) => {
+  const knee = (k.knees || {})[bareTag(x)] || k.knee; // knees: 낱말마다 다른 턱 — 덜 누그러뜨릴 낱말(그 낱말이 약하면 표정이 안 읽히는 것)
+  return weightOf(x) > knee ? `(${bareTag(x)}:${+(knee + (weightOf(x) - knee) * k.ratio).toFixed(2)})` : x;
+};
 /* 애니에서 가져오지 않는 것: 이모티콘 입(:d — 만화 기호), 낮을 막는 네거티브(이 화풍은 장소가 밤일 때만 스스로 낮을 막는다 — 낮 장소의 daylight와 부딪침) */
 const NO_SCENE = /^\(:d:[\d.]+\)$/,
   NO_NEG = /^\((?:day|blue sky):[\d.]+\)$/;
