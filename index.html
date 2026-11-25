@@ -5097,7 +5097,8 @@ function rulesPrompt(r, lore = [], hist = r.msgs) {
 /* ── src/js/ai/prompt/memory.js — 장기기억: N턴마다 요약·압축(maybeSummarize), 요약 지침 */
 let summarizing = false;
 const MEM_PRIVATE =
-  "유저(이용자 본인)가 자기 실제 삶에 대해 말한 건강·성적 지향·종교·정치적 견해는 // 없이 말했거나 유저 캐릭터 이름으로 적혀 있어도 제목과 요약 어디에도 남기지 않는다. " +
+  "유저(이용자 본인)가 자기 실제 삶이나 실제 주변 사람(가족·친구·동료 등)에 대해 말한 건강·성적 지향·종교·정치적 견해는 " +
+  "// 없이 말했거나 유저 캐릭터 이름으로 적혀 있어도 제목과 요약 어디에도 남기지 않는다. " +
   "이야기 속 인물(유저 캐릭터 포함)의 설정과 상태는 그대로 남긴다.";
 function memCfg() {
   const c = S.settings.memCfg;
