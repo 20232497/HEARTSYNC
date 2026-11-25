@@ -6,6 +6,7 @@ import * as espree from "espree";
 import * as scope from "eslint-scope";
 import { BROWSER_GLOBALS } from "../globals.mjs";
 import { BuildError, GEN_FILE, SIZE_LIMITS, SRC, readText, rel, visible } from "./common.mjs";
+import { cssErrors } from "./css-check.mjs";
 import { layerErrors } from "./layers.mjs";
 
 /* ---------------------------------------------------------------- 주석 벗기기(사용자 빌드) */
@@ -80,6 +81,9 @@ export async function assemble(t) {
       const files = includeFiles(inc[1], page)
         .map((f) => ({ f, text: readText(f) }))
         .filter((x) => x.text.trim());
+      // 오래된 아이폰에서 자리·배경이 사라지는 CSS(물러날 줄 없는 새 기능) — 규칙은 tools/build/css-check.mjs
+      const bad = files.flatMap(({ f, text }) => cssErrors(rel(f), text));
+      if (bad.length) throw new BuildError(bad);
       files.forEach(({ f, text }, k) => {
         if (k && !t.strip) push("\n", "(빈 줄)");
         if (t.strip) {
