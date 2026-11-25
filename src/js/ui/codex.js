@@ -119,7 +119,8 @@ function hiddenOf(c, code) {
   return e ? e.hidden.filter((n) => !seen.has(code + n)) : [];
 }
 /**
- * 수집률 배지 — 이 작품에 실린 그림 가운데 대화에서 본 것: '모은 그림 n / m'(다 모으면 초록). 실린 그림이 없으면 빈 문자열. 상세 페이지·도감의 등장인물 머리에.
+ * 본 그림 배지 — 이 작품에 실린 그림 가운데 대화에서 본 것: '본 그림 n장'. 실린 그림이 없으면 빈 문자열. 상세 페이지·도감의 등장인물 머리에.
+ * 전체 수(분모)·다 모음 표시는 두지 않음 — 완성률이 업적처럼 읽혀 게임물 오해를 부를 수 있어서(2026-11-25 사용자 결정, docs/legal compliance 14)
  * @param {Work} c @returns {string}
  */
 export function collectHTML(c) {
@@ -134,9 +135,7 @@ export function collectHTML(c) {
       if (seen.has(code + n)) got++;
     })
   );
-  return all
-    ? ` <span class="pill${got === all ? " ok" : ""}" id="collect" title="대화에서 본 그림 / 이 작품에 실린 그림">모은 그림 ${got} / ${all}</span>`
-    : "";
+  return all ? ` <span class="pill" id="collect" title="대화에서 본 그림">본 그림 ${got}장</span>` : "";
 }
 /* 시리즈(장소 MP·컷씬 EV) 한 칸: 코드·이름·설명(장소 desc / 컷씬 when)과 그림 — 목록이 비면 빈 문자열.
    비공개 항목은 그림만 🔒로 가림 — 이름·설명은 보임(2026-11-09 사용자 결정: 무엇을 모으는지는 알 수 있게. 제목이 스포일러면 제작자가 에둘러 적음) */

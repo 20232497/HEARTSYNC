@@ -5,6 +5,7 @@ import assert from "node:assert/strict";
 import { llm } from "../../src/js/ai/llm.js";
 import { PROMPT_CACHE } from "../../src/js/ai/models.js";
 import { buildInput } from "../../src/js/ai/prompt/input.js";
+import { ratingRules } from "../../src/js/ai/prompt/rating.js";
 import { rulesParts, rulesPrompt } from "../../src/js/ai/prompt/rules.js";
 import { ORIGINALS } from "../../src/js/content/index.js";
 import { MARK } from "../../src/js/core/constants.js";
@@ -75,6 +76,14 @@ test("rulesParts 고정부: 턴이 바뀌어도(대화·상태창·기억·유�
     r.turn = 7;
     const b = rulesParts(r, [{ keys: ["비"], text: "키워드북 표식" }]);
     assert.equal(b.fixed, a.fixed, id + ": 고정부가 달라짐");
+    // 수위·안전 줄(ai/prompt/rating.js)은 [연기 규칙] 안, 고정부에 통째로
+    const rr = ratingRules(r),
+      at = b.fixed.indexOf(rr);
+    assert.ok(at > b.fixed.indexOf("\n[연기 규칙]") && at < b.fixed.indexOf("\n[서사 원칙"), id + ": 수위·안전 줄은 [연기 규칙] 안");
+    assert.ok(
+      rr.split("\n").every((l) => l.startsWith("- ")),
+      id + ": 줄마다 '- '"
+    );
     assert.notEqual(b.vary, a.vary);
     assert.ok(
       b.vary.indexOf("\n[고정 기억") > b.vary.indexOf("\n[유저노트") && b.vary.indexOf("\n[고정 기억") < b.vary.indexOf("\n[장기 기억"),

@@ -9,6 +9,8 @@ export const AI_BADGE = "AI 캐릭터";
 export const AI_NOTICE =
   "캐릭터의 답은 생성형 AI가 만들어요. 작품 설정에 따른 허구이고, 틀리거나 이상한 답을 할 수 있어요. 진지하게 물으면 캐릭터는 자기가 AI라는 걸 숨기지 않아요.";
 export const AI_NOTICE_OK = "알겠어요";
+/** 그림이 실린 작품의 상세 페이지에 한 줄(docs/legal/ai-policy.md 6-4 '작품 상세의 AI로 만든 그림 안내') */
+export const AI_ART_NOTE = "이 작품의 그림은 AI로 만들었어요.";
 /** 대화를 내보낸 파일의 첫 줄 */
 export const AI_EXPORT_LINE = "※ 이 파일의 캐릭터 대사와 서술은 생성형 AI(HEART SYNC)가 만든 것입니다.";
 /** AI 말풍선의 접근성 이름. @param {string} name 화자 이름 @returns {string} */
