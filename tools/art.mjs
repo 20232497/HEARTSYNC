@@ -19,6 +19,7 @@ import { styleOf, placeJob, assertPlace } from "../archive/style-works/code/plac
 import { coverPlan, coverOf } from "../archive/style-works/code/cover.js";
 import { groupPlan } from "../archive/style-works/code/cover-group.js";
 import { LOGOS, LOGO_PAL } from "../archive/style-works/code/logos.js";
+import { castSeed } from "../archive/style-works/code/seeds.js";
 import { publish, status as siteStatus } from "./art/publish.mjs";
 import { profileJob as animeProfile, emotionJob as animeEmotion, assertSafe as animeSafe } from "../archive/style-manime/code/assemble.js";
 import {
@@ -125,8 +126,10 @@ function jobFor(c, row, vary, style) {
     const who = base ? { ...c0, temper: c0.temper || base.temper, age: c0.age === undefined ? base.age : c0.age } : c0;
     const place = (c.places || [])[0],
       slot = +m[2];
-    if (anime) job = animeSafe(slot ? animeEmotion(who, place, slot) : animeProfile(who, place));
-    else job = dailySafe(slot ? dailyEmotion(who, place, slot) : dailyProfile(who, place));
+    const seed = castSeed(c.id, c0.code),
+      o = seed ? { seed } : {}; // 인물별 씨앗(style-works/code/seeds.js) — 없으면 화풍 규칙의 기본 씨앗
+    if (anime) job = animeSafe(slot ? animeEmotion(who, place, slot, o) : animeProfile(who, place, o));
+    else job = dailySafe(slot ? dailyEmotion(who, place, slot, o) : dailyProfile(who, place, o));
   }
   // 장소 그림의 후처리는 작품의 화풍을 따른다(인물 화풍만 바꿔 그려 보는 것)
   // 작업이 스스로 후처리의 종류를 적어 왔으면 그것으로(일상 화풍 작품의 남성 인물은 애니 화풍으로 그려 애니 후처리 → 그 위에 일상 화풍의 흐림 — job.postAs·job.haze)
