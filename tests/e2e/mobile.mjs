@@ -153,6 +153,31 @@ for (const url of urls) {
       });
       if (res.chatRow.head > 64 || res.chatRow.composer > 96 || !res.chatRow.badge || !res.chatRow.wallet)
         errors.push("대화방 머리·입력창 묶음이 다름: " + JSON.stringify(res.chatRow));
+      // 오래된 아이폰 흉내(iOS 16.2 미만): color-mix()를 모르는 브라우저는 @supports (color:color-mix(…)) 블록을 통째로 건너뜀 — 그 블록들을 지운 스타일에서도
+      // 대화방 머리·입력창의 배경이 남아 글이 겹치지 않음. color-mix()가 그 블록 밖에 하나도 없어야 이 흉내가 맞음(left — 빌드의 CSS 검사도 같은 것을 봄:
+      // var()가 든 color-mix() 선언은 블록 밖에 있으면 버려지지 않고 배경을 통째로 없앰)
+      res.oldCss = await page.evaluate(() => {
+        const st = Array.from(document.querySelectorAll("style")),
+          keep = st.map((s) => s.textContent);
+        const noMix = (t) => {
+          for (let a = t.indexOf("@supports (color:color-mix("); a >= 0; a = t.indexOf("@supports (color:color-mix(")) {
+            let i = t.indexOf("{", a) + 1,
+              depth = 1;
+            for (; i < t.length && depth; i++) depth += t[i] === "{" ? 1 : t[i] === "}" ? -1 : 0;
+            t = t.slice(0, a) + t.slice(i);
+          }
+          return t;
+        };
+        st.forEach((s) => {
+          s.textContent = noMix(s.textContent);
+        });
+        const bg = (sel) => getComputedStyle(document.querySelector(sel)).backgroundColor;
+        const out = { left: st.some((s) => s.textContent.includes("color-mix(")), head: bg(".chat-head"), composer: bg(".composer") };
+        st.forEach((s, i) => (s.textContent = keep[i]));
+        return out;
+      });
+      if (res.oldCss.left || [res.oldCss.head, res.oldCss.composer].some((c) => /rgba\(0, 0, 0, 0\)|transparent/.test(c)))
+        errors.push("오래된 아이폰 흉내에서 대화방 머리·입력창의 배경이 사라짐: " + JSON.stringify(res.oldCss));
       // 입력칸과 보내기 버튼이 화면 안에 보이고, 말풍선이 가운데에 섬: 휴대폰에서는 AI 말풍선의 좌우 여백이 같고(전에는 아바타 칸 때문에 왼쪽 60px·오른쪽 14px),
       // 내 말풍선의 오른쪽 여백도 그와 같음(페르소나 사진은 휴대폰에서 숨김 — 2026-11-21 사용자 결정)
       res.chatFit = await page.evaluate(() => {

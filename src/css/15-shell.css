@@ -43,9 +43,12 @@
 .wallet.pro { border-color:var(--gold); }
 .badge-pro { font-size:10.5px; font-weight:700; letter-spacing:.06em; color:var(--gold); border:1px solid var(--gold); border-radius:5px; padding:0 5px; line-height:17px; }
 .pill { font-size:11px; font-weight:700; border-radius:6px; padding:1px 7px; background:var(--accent-soft); color:var(--accent); white-space:nowrap; }
-.pill.gold { background:color-mix(in srgb, var(--gold) 16%, transparent); color:var(--gold); }
-.pill.ok { background:color-mix(in srgb, var(--ok) 15%, transparent); color:var(--ok); }
-.pill.err { background:color-mix(in srgb, var(--err) 14%, transparent); color:var(--err); } /* 우선 처리할 신고 */
+.pill.gold { background:var(--surface2); color:var(--gold); }
+@supports (color:color-mix(in srgb, red, blue)) { .pill.gold { background:color-mix(in srgb, var(--gold) 16%, transparent); } } /* 오래된 아이폰(iOS 16.2 미만)은 이 블록을 건너뛰고 위의 평범한 배경을 씀 — tools/build/css-check.mjs */
+.pill.ok { background:var(--surface2); color:var(--ok); }
+@supports (color:color-mix(in srgb, red, blue)) { .pill.ok { background:color-mix(in srgb, var(--ok) 15%, transparent); } }
+.pill.err { background:var(--surface2); color:var(--err); } /* 우선 처리할 신고 */
+@supports (color:color-mix(in srgb, red, blue)) { .pill.err { background:color-mix(in srgb, var(--err) 14%, transparent); } }
 
 h1.sec, h2.sec { font-family:var(--display); font-weight:700; font-size:19px; margin:30px 0 12px; display:flex; align-items:baseline; gap:10px; text-wrap:balance; flex-wrap:wrap; }
 h2.sec small, h1.sec small { font-family:var(--sans); font-size:12.5px; color:var(--muted); font-weight:400; }
