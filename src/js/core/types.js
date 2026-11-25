@@ -102,6 +102,7 @@
  * @property {string} desc
  * @property {string} [guide] 플레이 가이드 — 제작자가 독자에게 주는 안내문(줄바꿈만, LIMITS.guide자 이내). 상세 페이지·도감·대화방 드로어에 보임(AI에는 보내지 않음)
  * @property {string} [noteTemplate] 유저노트 양식 — 대화방 유저노트의 '이 작품의 양식 넣기'가 넣는 글(LIMITS.userNote자 이내). 있을 때만 버튼이 뜸
+ * @property {string} [hold] 출시판 제외의 까닭 — 있으면 빌드가 사용자 빌드(index.html)에 싣지 않고 관리자 빌드에만(홈 카드·상세에 '출시판 제외'). 그 작품으로 만든 방은 방 사본으로 열림
  * @property {ModelKey} [recommend] 권장 모델 — 새 대화방이 이 모델로 시작하고(core/rooms.js defaultSet), 모델 선택 시트에서 '권장' 배지가 붙음. 없으면 앱 기본 추천(ai/models.js RECOMMEND_DEFAULT
  * "story")으로 시작하고 배지는 없음
  * @property {string} persona AI에게 주는 인물·진상 설정

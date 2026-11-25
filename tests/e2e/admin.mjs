@@ -53,6 +53,24 @@ for (const [dev, engine, opts] of [
     res.detail = await p.evaluate(() => ({ start: !!$("#start"), cast: $$("[data-cast]").length }));
     if (!res.detail.start || !res.detail.cast) errs.push("상세: " + JSON.stringify(res.detail));
     if (out) await p.screenshot({ path: `${out}/${tag}_admin_detail.png` });
+    // 출시판 제외(work.js hold): 관리자 빌드는 그 작품을 싣고 상세에 '출시판 제외 — 까닭', 홈 카드에 표시. 사용자 빌드에 안 실리는 것은 단위 시험 hold.test
+    res.hold = await p.evaluate(async () => {
+      const nap = (ms) => new Promise((r) => setTimeout(r, ms));
+      const c = ORIGINALS.find((x) => x.id === "hwanghu");
+      c.hold = "시험 — 회신 대기";
+      location.hash = "home";
+      await nap(400);
+      location.hash = "c-hwanghu";
+      await nap(400);
+      const detail = ($("#dHold") || {}).textContent || "";
+      location.hash = "home";
+      await nap(400);
+      const card = $(`.card[data-char="hwanghu"] .hold-tag`),
+        others = $$(".card .hold-tag").length;
+      delete c.hold;
+      return { detail, card: card ? card.textContent : "", others };
+    });
+    if (res.hold.detail !== "출시판 제외 — 시험 — 회신 대기" || res.hold.card !== "출시판 제외") errs.push("출시판 제외 표시: " + JSON.stringify(res.hold));
     // 비밀번호 관문: 로컬 주소에서는 세우지 않음(웹 주소에서만) — 함수가 있고, 이 서버(127.0.0.1)에서는 gateNeeded가 거짓이라 MY에 잠그기 버튼도 없음
     await p.evaluate(() => {
       location.hash = "me";
