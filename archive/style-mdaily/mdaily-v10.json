@@ -1,0 +1,94 @@
+{
+  "id": "mdaily",
+  "name": "남성향 일상(여성 인물)",
+  "version": "v10",
+  "decided": "2026-11-24 — 사용자: '일상 화풍의 여성 또한 애니 화풍과 비슷하게 전체적인 몸이 보이는 구도를 맞춰줘' → 문구만으로는 가슴 위(v9) → '네, 다듬어 봐'(구도 밑그림). 세기는 0.75와 0.85를 그려 보고 0.85로",
+  "base": "mdaily.json",
+  "model": {
+    "id": "civitai:548016@861939",
+    "name": "세미리얼 PonyXL (Run七八造 v2)",
+    "arch": "pony"
+  },
+  "lora": [
+    {
+      "model": "civitai:390892@1286572",
+      "weight": 0.3
+    },
+    {
+      "model": "civitai:690861@773211",
+      "weight": 0.3
+    }
+  ],
+  "gen": {
+    "cfg": 5,
+    "steps": 35,
+    "scheduler": "DPM++ 2M Karras",
+    "modelNeg": false,
+    "width": 832,
+    "height": 1216,
+    "outputFormat": "WEBP"
+  },
+  "prompt": "(facing viewer:1.35), (head tilt:1.1), source_anime, (digital illustration:1.4), (semi-realistic:1.1), (sharp focus:1.1), korean, 2.5d, soft gradient shading, smooth skin, soft bloom, warm palette, gentle lighting, (small face:1.2), (small head:1.15), (defined facial features:1.2), (sharp features:1.1), (defined eyes:1.2), (sharp nose:1.1), (double eyelids:1.1), (beautiful face:1.2), (beautiful detailed eyes:1.15), (detailed iris:1.1), (glossy lips:1.05), (charming:1.1), long eyelashes, (mature female:1.45), (adult woman:1.45), (28 years old:1.25), mature face, slender face, (slender body:1.25), (slim:1.15), (narrow shoulders:1.1), (very thin hair strands:1.3), (voluminous hair:1.2), (many fine hair strands:1.3), (full bangs:1.3), dense bangs, long bangs, bangs reaching eyes, bangs covering forehead, hair between eyes, silky hair, (hair framing face:0.85), (fair skin:1.05), soft diffused light, brighter exposure, (rim light:0.8), (shiny hair:1.15), hair highlights, (eye highlights:1.1), light blush, (clear skin:0.9)",
+  "coolPrompt": "(facing viewer:1.35), (head tilt:1.1), source_anime, (digital illustration:1.4), (semi-realistic:1.1), (sharp focus:1.1), korean, 2.5d, soft gradient shading, smooth skin, soft bloom, cool palette, gentle lighting, (small face:1.2), (small head:1.15), (defined facial features:1.2), (sharp features:1.1), (defined eyes:1.2), (sharp nose:1.1), (double eyelids:1.1), (beautiful face:1.2), (beautiful detailed eyes:1.15), (detailed iris:1.1), (glossy lips:1.05), (charming:1.1), long eyelashes, (mature female:1.45), (adult woman:1.45), (28 years old:1.25), mature face, slender face, (slender body:1.25), (slim:1.15), (narrow shoulders:1.1), (very thin hair strands:1.3), (voluminous hair:1.2), (many fine hair strands:1.3), (full bangs:1.3), dense bangs, long bangs, bangs reaching eyes, bangs covering forehead, hair between eyes, silky hair, (hair framing face:0.85), (fair skin:1.05), soft diffused light, brighter exposure, (rim light:0.8), (shiny hair:1.15), hair highlights, (eye highlights:1.1), light blush, (clear skin:0.9), cool lighting",
+  "blackTag": "(black hair:1.3)",
+  "bangs": "(full bangs:1.3), dense bangs, long bangs, bangs reaching eyes, bangs covering forehead, hair between eyes",
+  "bangsNeg": "(side-swept bangs:1.3), swept bangs, asymmetrical bangs, (forehead:1.4), (see-through bangs:1.3), sparse bangs, wispy bangs, gaps in bangs",
+  "neg": "(3d, cgi, plastic skin, doll:1.2), high contrast, harsh shadows, underexposed, glowing eyes, vivid eye color, hime cut, hairband, headband, hair ornament, earrings, (see-through clothes:1.3), hair over one eye, windblown hair, thin hair, clumped hair, (baby face:1.3), (childish face:1.2), round face, chubby cheeks, (side-swept bangs:1.3), swept bangs, asymmetrical bangs, (forehead:1.4), (see-through bangs:1.3), sparse bangs, wispy bangs, gaps in bangs, (graphic print:1.3), (text on clothes:1.3), emblem, (pendant:1.2), (cross necklace:1.2), brooch, badge, tanned skin, dark skin, (realistic:1.3), photo, (photorealistic:1.3), skin pores, skin texture, nose shadow, source_cartoon, monochrome, greyscale, (twintails:1.3), (hair bun:1.2), updo, animal ears, (red eyeshadow:1.3), (eyeshadow:1.3), eye makeup, (heavy makeup:1.2), (red lips:1.2), (eye bags:1.3), (red eyelids:1.2), (under-eye shadow:1.2), (framed picture:1.5), (picture frame:1.5), (ornate frame:1.5), (gold frame:1.4), (painting (object):1.4), (wall art:1.3), (framed:1.4), border, poster, (outstretched hand:1.3), (raised hands:1.2), (index finger raised:1.3), pointing, (large eyes:1.3), big eyes, (moe:1.3), (cute:1.2), (youthful:1.3), (teen:1.4), (young:1.3), (gradient hair:1.3), (multicolored hair:1.3), (cleavage:1.5), revealing clothes, (detailed background:1.2), (broad shoulders:1.3), (muscular female:1.3), (thick arms:1.2), (large breasts:1.2), (wide face:1.2), sleeveless, bare shoulders, (vest:1.1), (low neckline:1.3), (breast focus:1.3), (collarbone:1.2), (long neck:1.2)",
+  "contentWeight": 1.2,
+  "exprWeight": 1.1,
+  "fits": [
+    {
+      "when": "/(^|[^a-z])(?:from behind|from above|from below|from side|three-quarter view|profile|lying|sleeping)\\b/i",
+      "moves": true,
+      "drop": [
+        "(facing viewer:1.35), (straight-on:1.25), (front view:1.1)"
+      ]
+    },
+    {
+      "moves": true,
+      "negDrop": [
+        "(outstretched hand:1.3)",
+        "(raised hands:1.2)",
+        "(index finger raised:1.3)",
+        "pointing"
+      ]
+    }
+  ],
+  "post": {
+    "lift": "rgb(22,22,26)",
+    "soft": 0.1,
+    "blurK": 3,
+    "blurA": 0.45,
+    "veil": {
+      "center": 0,
+      "edge": 0.3,
+      "mul": "rgb(255,255,255)",
+      "a": 0.04,
+      "color": "rgb(190,190,195)"
+    }
+  },
+  "bg": {
+    "rule": "인물 태그 뒤, 화풍 앞에 넣음. 장소 낱말은 작품 artTags·장소(MP)에서 고르고 가중치 0.8 — 네온·보케·술병 같은 센 낱말은 피함(그림에서 또렷해짐). hanok은 traditional korean house로. 고정 네거티브 IMG_NEG의 blurry는 뺌",
+    "template": "(blurry background:1.5), (depth of field:1.3), light haze, (<장소 낱말>:0.8)",
+    "example": "(blurry background:1.5), (depth of field:1.3), light haze, (office:0.8), (glass window:0.8)"
+  },
+  "sceneTag0": "upper body, looking at viewer, light smile, half-lidded eyes, relaxed expression, soft gaze",
+  "note": "v9에 감정 그림의 구도 밑그림을 더함(guide) — 같은 칸을 애니 화풍으로 먼저 그리고(배경·빛은 이 화풍의 문구로 손질), 그 그림을 밑그림으로 이 화풍이 1536으로 다시 그린다(세기 0.85). 허리 위까지 보이고(남성과 같은 거리), 밑그림의 배경을 이 화풍의 문구로 바꿔 전등빛의 흐릿한 분위기가 남고, 크게 그려 작아진 얼굴의 눈이 또렷하다. 한 장에 생성이 한 번 더 든다. 그려서 본 것: 오다은 기본 표정(0.75·0.85)·놀람, 홍 여사 기본 표정. 프로필은 그대로, 휴식 칸은 제 밑그림 그대로. 화풍 문구·네거티브·LoRA·후처리와 v9의 거리 문구(act.frame·frameNeg)는 그대로. guide를 지우면 v9와 같아진다",
+  "lightDay": "soft diffused light, brighter exposure",
+  "lightNight": "soft lamp light, dim lighting",
+  "act": {
+    "drop": [
+      "narrow eyes"
+    ],
+    "scale": {
+      "half-closed eyes": 0.5
+    },
+    "frame": "(waist up:1.25)",
+    "frameNeg": "(close-up:1.3), (face focus:1.2)"
+  },
+  "guide": {
+    "strength": 0.85,
+    "width": 1536,
+    "height": 1536
+  }
+}
