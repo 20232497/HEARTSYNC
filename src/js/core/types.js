@@ -255,6 +255,7 @@
  * @property {number} at 마지막 저장 시각
  * @property {number} created
  * @property {string} [lastErr] 마지막 오류 안내(대화방 아래 오류 줄 + 다시 시도)
+ * @property {boolean} [lastErrEdit] 그 오류가 메시지 수정의 실패인지 — 참이면 오류 줄에 '다시 시도'를 두지 않음(ui/chat/generate.js)
  * @property {{ roomId: string, msgId: string }} [forkedFrom] 분기한 방이면 원래 방과 갈라진 메시지(core/rooms.js forkRoom) — opening 끝에 ' (분기)'
  * @property {EpState} [ep] 에피소드 방의 진행 상태(작품에 episode가 있을 때 newRoom이 만듦). 메시지마다 ep0(그 메시지 직전 상태)를 적어 두어 다시 쓰기·삭제가 되돌림
  * @property {Side} [side] 외전 방(끝난 에피소드에서 이어받은 자유 대화) — sideAfter(메시지 id) 뒤부터가 외전
