@@ -33,6 +33,7 @@ content/
 │  │  ├─ _row.json
 │  │  ├─ daeyeon/  baekya/  sipjeol/
 │  ├─ godseats/work.js        신님들, 관전 매너 좀
+│  ├─ uyeon/work.js           우연 설계실 — 시작 상황 셋이 곧 유저의 자리(팀원·의뢰인·표적)
 │  ├─ yunhaera/work.js
 │  └─ hangyeoul/work.js
 └─ all/                       전체(남녀 혼성)
@@ -114,7 +115,7 @@ episode: {
 - **화면에 보이는 것**: 장 제목·사건 제목·갈림길·결말 제목(처음부터 모두 — 상세 페이지에도). goal·text·brief는 AI에게만 가지만 저장소는 공개라 누구나 읽을 수 있어요 — 제목에 진상을 적지 않기.
 - 에피소드형 작품은 `world`에 '결말은 …로 갈린다' 같은 줄을 두지 않아요(결말은 `endings`가 정함).
 
-**분류(2026-11-11)** — 에피소드형: `f/fate`의 hwanghu·hasuk·lethe·geumseo, `m/survive`의 daeyeon·baekya·sipjeol, `all/minwon`(기한과 결말이 이미 설정에 있는 군상극). 자유형: `m/godseats`와 1:1 다섯 편(seodoyun·yunhaera·kael·hangyeoul·baekyeon). **지금 `episode`를 적은 작품은 시범으로 daeyeon 하나** — 나머지 일곱 편은 시범을 본 뒤 세계관 세션이 옮겨요.
+**분류(2026-11-11)** — 에피소드형: `f/fate`의 hwanghu·hasuk·lethe·geumseo, `m/survive`의 daeyeon·baekya·sipjeol, `all/minwon`, `m/uyeon`(기한과 결말이 이미 설정에 있는 군상극). 자유형: `m/godseats`와 1:1 다섯 편(seodoyun·yunhaera·kael·hangyeoul·baekyeon). **지금 `episode`를 적은 작품은 시범으로 daeyeon 하나** — 나머지 여덟 편은 시범을 본 뒤 세계관 세션이 옮겨요.
 
 ## work.js 모양
 
@@ -255,6 +256,7 @@ content/<f|m|all>/[<줄>/]<id>/images/
 | baekya 백야호 | SHJ 서하진 · HRN 홍레나 · CYR 차유리 · MSO 미소 · YDG 윤도경 |
 | sipjeol 십절곡 | NGS 남궁설 · DSS 당소소 · HWN 혜원 · MKR 묵란 · HRN 화린 |
 | minwon 야간 민원실 B1 | BSH 반석호 · ODE 오다은 · HME 홍 여사(HMF 본모습 — 폼) · JTS 장태산 · SYJ 서윤재 |
+| uyeon 우연 설계실 | SEJ 설은조 · MHR 민하루 · OSR 오세린 · BMC 봉만철 · YGO 유가온 · JSH 진서하 |
 | 1:1 | BY 백연 · KAEL 카엘 · SDY 서도윤 · HGU 한겨울 · YHR 윤해라 |
 
 한국 이름은 성·이름 첫 자음(한서윤 → HSY), 외국 이름은 짧은 로마자(카시안 → KAS). 작품 안에서만 안 겹치면 돼요(다른 작품의 SHJ·HRN은 다른 사람).
