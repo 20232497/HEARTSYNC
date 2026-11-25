@@ -219,6 +219,44 @@ for (const url of urls) {
         await fit(label);
         await page.evaluate(() => closeOverlays());
       }
+      // 'AI 캐릭터' 배지는 대화를 끝까지 내려도 화면 안에 보임(docs/legal/ai-policy.md 6-4 — 배지는 화면을 내려도 보이게): 긴 방을 열어 대화 칸과 창을 모두 맨 아래로
+      await page.evaluate(() => {
+        const r = newRoom(normalizeChar(ORIGINALS[0]), 0, S.personas[0]);
+        for (let i = 0; i < 30; i++)
+          r.msgs.push(
+            { id: uid("m"), role: "user", text: "계속 가 보자 " + i },
+            {
+              id: uid("m"),
+              role: "ai",
+              idx: 0,
+              statusBefore: r.status,
+              alts: [{ text: '*고개를 든다.*\n\n"따라와. 이쪽이야."', status: r.status, suggestions: [] }]
+            }
+          );
+        saveRoom(r);
+        location.hash = "r-" + r.id;
+      });
+      await page.waitForTimeout(900);
+      res.badgeLow = await page.evaluate(async () => {
+        const log = $("#log");
+        log.scrollTop = log.scrollHeight;
+        scrollTo(0, document.documentElement.scrollHeight);
+        await new Promise((r) => setTimeout(r, 300));
+        const b = $(".chat-head .ai-badge").getBoundingClientRect(),
+          hit = document.elementFromPoint(b.left + b.width / 2, b.top + b.height / 2);
+        return {
+          // 대화 칸이 실제로 길고(내릴 거리가 있고) 맨 아래까지 내려가 있음
+          scrolled: log.scrollHeight - log.clientHeight > 200 && log.scrollHeight - log.clientHeight - log.scrollTop < 4,
+          t: Math.round(b.top),
+          b: Math.round(b.bottom),
+          H: innerHeight,
+          hit: !!hit && hit.classList.contains("ai-badge")
+        };
+      });
+      {
+        const b = res.badgeLow;
+        if (!b.scrolled || b.t < 0 || b.b > b.H || !b.hit) errors.push("대화를 맨 아래로 내리면 AI 배지가 보이지 않음: " + JSON.stringify(b));
+      }
     } catch (e) {
       res.fail = String(e).slice(0, 200);
     }

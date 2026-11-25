@@ -57,7 +57,7 @@ export const SIZE_LIMITS = {
   lineChars: 160,
   // 160자를 넘는 줄을 둬도 되는 모듈과 개수(그 밖의 모듈은 0) — 프롬프트 글(한 문장이 한 줄)·외전 안내 글·SVG 아이콘 문자열·FAQ 글·안전 규칙의 긴 정규식
   longLines: {
-    "ai/prompt/rules.js": 11,
+    "ai/prompt/rules.js": 10, // 수위 줄이 ai/prompt/rating.js로 나가 하나 줆(2026-11-25)
     "ai/prompt/input.js": 1,
     "ai/prompt/memory.js": 1,
     "core/episode.js": 2,
