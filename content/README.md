@@ -252,7 +252,7 @@ content/<f|m|all>/[<줄>/]<id>/images/
 | hasuk 서촌 오월 하숙집 | KTH 강태하 · YSH 윤시후 · BDH 백도현 · LHG 이한결 · SJH 서진혁 |
 | lethe 호텔 레테 | CSH 차사현 · HIG 한이결 · KMH 강무혁 · SHJ 서하준 · RU 루 |
 | geumseo 금서고의 사서 | ADL 아델 · GRT 가렛 · NOX 녹스 · TEO 테오도르 · LNX 레녹스(먹빛 모습 폼: ADLI · GRTI · NOXI · TEOI) |
-| godseats 신님들, 관전 매너 좀 | 파티원 후보: HSY 한서윤 · DHR 도하린 · RGN 류건 · SRN 세레나 바이스 · YNH 연화 · YCI 윤채이 · KYL 카일 노스 · BYU 백여울 / 인연(자리는 처음 등장할 때 정함): ARN 아린 · MIR 미르 · HYL 하율 · KRA 카라 · SRI 서리 · NOL 노을 · EDA 에다 · VIV 비비안 · SOH 소하 · INA 이나 · LEA 레아 · SIO 시온 · MAY 마야 · DAO 다온 / 성좌(층 순서): MBY · MUS · HJW · CJB · AGS · HGM · BRJ · DBC · TKY · AZR · DJJ · SMH · BJK · ORT · TSA · NSH · DBL · WGG · TYB · ZHR · GSM · SBB · DGG · YCG · BGR · MRS · MGS · GUS · CYU · IEG, 성소의 JSI · DJG (이름은 work.js cast) |
+| godseats 신님들, 관전 매너 좀 | 동료: RGN 류건 · KYL 카일 노스 / 히로인(자리는 처음 등장할 때 정함): HSY 한서윤 · DHR 도하린 · SRN 세레나 바이스 · YNH 연화 · YCI 윤채이 · BYU 백여울 · ARN 아린 · MIR 미르 · HYL 하율 · KRA 카라 · SRI 서리 · NOL 노을 · EDA 에다 · VIV 비비안 · SOH 소하 · INA 이나 · LEA 레아 · SIO 시온 · MAY 마야 · DAO 다온 / 성좌(층 순서): MBY · MUS · HJW · CJB · AGS · HGM · BRJ · DBC · TKY · AZR · DJJ · SMH · BJK · ORT · TSA · NSH · DBL · WGG · TYB · ZHR · GSM · SBB · DGG · YCG · BGR · MRS · MGS · GUS · CYU · IEG, 성소의 JSI · DJG (이름은 work.js cast) |
 | daeyeon 대연궁 검시록 | IHW 이화 · SRY 설련 · JOK 정옥 · WLH 월하 · DNB 단비 |
 | baekya 백야호 | SHJ 서하진 · HRN 홍레나 · CYR 차유리 · MSO 미소 · YDG 윤도경 |
 | sipjeol 십절곡 | NGS 남궁설 · DSS 당소소 · HWN 혜원 · MKR 묵란 · HRN 화린 |
