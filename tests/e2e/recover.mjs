@@ -41,7 +41,8 @@ for (const [dev, engine] of targets) {
         await window.__nap(250);
       };
       window.__edit = async (i, text) => {
-        document.querySelector(`[data-act="edit"][data-i="${i}"]`).click();
+        const open = document.querySelector(`[data-act="edit"][data-i="${i}"]`); // 값 확인을 닫은 뒤에는 수정 칸이 열린 채 남아 있음
+        if (open) open.click();
         await window.__nap(60);
         $("#ed" + i).value = text;
         document.querySelector(`[data-act="save"][data-i="${i}"]`).click();
@@ -85,6 +86,8 @@ for (const [dev, engine] of targets) {
         await nap(300);
         out.cancel = { same: snap() === base, shown: room.msgs[i].text, wall: !!$(".overlay") };
         closeOverlays();
+        await nap(150);
+        out.cancel.draft = ($("#ed" + i) || {}).value || ""; // 고쳐 쓴 글은 수정 칸에 그대로(하트를 사고 와서 다시 누르게)
         // ② 승인 뒤 모델 오류: 고치기 전 대화로 되돌리고(원문·뒤 답·상태창·에피소드 진행) 알림, 무료 턴도 돌아옴 — 저장된 본문도 같음
         Object.assign(S.wallet, { freeUsed: 0, hearts: 0 });
         saveWallet();
@@ -96,6 +99,9 @@ for (const [dev, engine] of targets) {
           same: snap() === base,
           err: ($(".toast") || {}).textContent || "",
           line: room.lastErr || "",
+          want: errCopy({ code: "server" }),
+          shownLine: ($(".err-line") || {}).textContent || "",
+          retry: !!$("#retry"),
           free: S.wallet.freeUsed,
           stored: kept.msgs.length === n0 && kept.msgs[i].text === "첫 말이에요",
           dom: $$("#logInner .msg").length
@@ -114,7 +120,7 @@ for (const [dev, engine] of targets) {
         room.lastErr = "";
         await Promise.race([regen(room.msgs.length - 1), nap(4000)]);
         await idle();
-        out.regen = { same: snap() === base2, free: S.wallet.freeUsed - free0, idx: lastMsg.idx };
+        out.regen = { same: snap() === base2, free: S.wallet.freeUsed - free0, idx: lastMsg.idx, retry: !!$("#retry") }; // 앞의 수정 실패(다시 시도 숨김)가 남지 않고 이 실패에는 다시 시도가 있음
         room.lastErr = "";
         // ④ 성공하면 전처럼: 고친 글 + 새 답, 그 뒤의 대화는 없어짐
         window.llm = window.__ok;
@@ -125,11 +131,13 @@ for (const [dev, engine] of targets) {
       });
       res.edit.push({ id, ...e });
       if (!e.setup) errs.push(`[${id}] 준비가 안 됨: ` + JSON.stringify(e));
-      if (!e.cancel.same || e.cancel.shown !== "첫 말이에요" || !e.cancel.wall)
-        errs.push(`[${id}] 수정의 값 확인을 멈췄는데 대화가 바뀜: ` + JSON.stringify(e.cancel));
-      if (!e.fail.same || !/고치기 전/.test(e.fail.err) || e.fail.line || e.fail.free !== 0 || !e.fail.stored)
+      if (!e.cancel.same || e.cancel.shown !== "첫 말이에요" || !e.cancel.wall || e.cancel.draft !== "고친 말이에요")
+        errs.push(`[${id}] 수정의 값 확인을 멈췄는데 대화가 바뀌거나 고쳐 쓴 글이 사라짐: ` + JSON.stringify(e.cancel));
+      // 까닭은 오류 줄에도(토스트로만 지나가지 않게) — 수정의 실패라 '다시 시도'는 없음
+      const failLine = e.fail.line === e.fail.want && !!e.fail.want && e.fail.shownLine.trim() === e.fail.want && !e.fail.retry;
+      if (!e.fail.same || !/고치기 전/.test(e.fail.err) || !failLine || e.fail.free !== 0 || !e.fail.stored)
         errs.push(`[${id}] 수정 뒤 새 답이 실패했는데 고치기 전으로 안 돌아감: ` + JSON.stringify(e.fail));
-      if (e.versions.n !== 2 || e.versions.idx !== 0 || !e.regen.same || e.regen.free !== 0 || e.regen.idx !== 0)
+      if (e.versions.n !== 2 || e.versions.idx !== 0 || !e.regen.same || e.regen.free !== 0 || e.regen.idx !== 0 || !e.regen.retry)
         errs.push(`[${id}] 다시 쓰기가 실패한 뒤 대화·진행·고른 버전이 달라짐: ` + JSON.stringify({ ...e.versions, ...e.regen }));
       if (e.ok.n !== e.ok.want || e.ok.text !== "고친 말이에요" || e.ok.ai !== "ai")
         errs.push(`[${id}] 수정이 성공했을 때의 모양이 다름: ` + JSON.stringify(e.ok));

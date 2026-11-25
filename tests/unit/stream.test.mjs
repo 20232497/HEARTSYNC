@@ -52,6 +52,74 @@ test("readSSE: 줄이 조각 사이에서 끊겨도 data 줄마다 한 번, 깨�
   );
   assert.deepEqual(seen, [1, 2]);
 });
+test("readSSE: 객체가 아닌 JSON 줄(null·숫자·글)은 넘어가고, 해석 오류로 나가면 스트림을 닫음(서버가 뒤에서 계속 보내지 않게)", async () => {
+  const got = [];
+  await readSSE(stream(['data: null\ndata: 3\ndata: "글"\ndata: {"t":1}\n']), (ev) => {
+    got.push(anthropicEvent(ev)); // 전에는 null에서 ev.type이 던져 답 전체가 끊긴 답이 됐음
+  });
+  assert.deepEqual(got, [{}]);
+  let cancelled = null;
+  const open = new ReadableStream({
+    start(c) {
+      c.enqueue(new TextEncoder().encode('data: {"t":1}\n')); // 닫지 않음 — 서버가 아직 보내는 중
+    },
+    cancel(why) {
+      cancelled = why === undefined ? "닫힘" : why;
+    }
+  });
+  await assert.rejects(
+    readSSE(open, () => {
+      throw new Error("해석 오류");
+    }),
+    /해석 오류/
+  );
+  await new Promise((r) => setTimeout(r, 0));
+  assert.equal(cancelled, "닫힘");
+  // 닫기 부름을 reader에서 직접 셈(이미 닫힌 스트림은 cancel을 불러도 소스의 cancel이 안 불려, 소스 쪽으로는 '안 불렀음'을 볼 수 없음 — Codex 검토)
+  const spied = (body) => {
+    const s = { cancels: 0 };
+    s.body = {
+      getReader() {
+        const rd = body.getReader();
+        return {
+          read: () => rd.read(),
+          cancel: (why) => {
+            s.cancels++;
+            return rd.cancel(why);
+          }
+        };
+      }
+    };
+    return s;
+  };
+  const done = spied(stream(['data: {"t":1}\n']));
+  await readSSE(done.body, () => {});
+  assert.equal(done.cancels, 0, "끝까지 읽은 스트림은 닫기를 부르지 않음");
+  const bad = spied(stream(['data: {"t":1}\n']));
+  await assert.rejects(
+    readSSE(bad.body, () => {
+      throw new Error("해석 오류");
+    }),
+    /해석 오류/
+  );
+  assert.equal(bad.cancels, 1);
+  // 사용자 취소(읽기가 AbortError로 끊김): 닫기를 부르되 그 실패가 원래 오류를 덮지 않음 — 부른 쪽(llm)은 abortCode로 cancelled를 고름
+  const aborted = spied(
+    new ReadableStream({
+      start(c) {
+        c.enqueue(new TextEncoder().encode('data: {"t":1}\n'));
+        setTimeout(() => c.error(Object.assign(new Error("멈춤"), { name: "AbortError" })), 0);
+      }
+    })
+  );
+  const seen = [];
+  await assert.rejects(
+    readSSE(aborted.body, (ev) => seen.push(ev.t)),
+    (e) => e.name === "AbortError"
+  );
+  assert.deepEqual(seen, [1], "멈추기 전에 받은 조각은 그대로 넘겼음");
+  assert.equal(aborted.cancels, 1);
+});
 
 test("anthropicEvent: 글 조각·끝난 이유·거절 분류", () => {
   assert.deepEqual(anthropicEvent({ type: "content_block_delta", delta: { type: "text_delta", text: "안" } }), { delta: "안" });
@@ -95,9 +163,9 @@ test("llm: 끝난 이유가 온 스트림만 답 — 중간의 오류 조각·�
       (e) => e.code === "upstream_error" && e.text === "삼백… 년."
     );
     await assert.rejects(run(delta("*한 번")), (e) => e.code === "upstream_error" && e.text === "*한 번");
-    // 해석기가 던지는 조각(모양이 다른 data 줄)이 섞이면 성공으로 끝나지 않음 — 받은 글은 text에
+    // 객체가 아닌 data 줄(null)은 넘어가고 답은 그대로 끝남 — 전에는 해석기가 null에서 던져 답 전체가 끊긴 답이 됐음(해석 오류를 부른 쪽으로 던지는 것은 readSSE 시험)
     const end = d({ type: "message_delta", delta: { stop_reason: "end_turn" } });
-    await assert.rejects(run(delta("앞 글") + "data: null\n\n" + delta("뒤 글") + end), (e) => e.code === "upstream_error" && e.text === "앞 글");
+    assert.equal(await run(delta("앞 글") + "data: null\n\n" + delta(" 뒤 글") + end), "앞 글 뒤 글");
     // 화면 갱신(onText)이 던져도 받은 글은 유지하고 끝까지 받음(오류는 콘솔에만)
     const keepErr = console.error;
     let logged = 0;

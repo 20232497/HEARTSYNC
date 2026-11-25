@@ -181,6 +181,8 @@ h2.sec small, h1.sec small { font-family:var(--sans); font-size:12.5px; color:va
 .card .d { color:var(--muted); font-size:12.5px; line-height:1.45; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; min-height:2.9em; }
 .card .meta { display:flex; gap:6px; font-size:11.5px; color:var(--muted); flex-wrap:wrap; }
 .card .meta .aud-tag { color:var(--accent); font-weight:700; }
+/* 출시판 제외 작품(work.js hold) — 관리자 빌드에만 실림 */
+.card .meta .hold-tag { color:var(--err); font-weight:700; }
 /* 로그인 */
 .login-page { min-height:calc(100vh - 140px); display:flex; align-items:center; justify-content:center; padding:24px 0; }
 .login-card { width:100%; max-width:400px; background:var(--surface); border:1px solid var(--line); border-radius:20px; padding:26px 20px 20px; }
@@ -262,6 +264,8 @@ h2.sec small, h1.sec small { font-family:var(--sans); font-size:12.5px; color:va
 .d-tab.on { background:var(--accent-soft); color:var(--accent); }
 .d-main > section + section, .d-main section > * + *, .d-main [data-fold] > * + * { margin-top:12px; }
 .d-price { margin:0 0 4px; }
+/* 출시판 제외 작품(work.js hold — 관리자 빌드에만 실림)의 까닭 */
+.d-hold { margin:6px 0 0; font-size:12.5px; font-weight:700; color:var(--err); }
 .d-desc.clamp { display:-webkit-box; -webkit-line-clamp:7; -webkit-box-orient:vertical; overflow:hidden; }
 .d-more { margin-top:8px; }
 .d-fields { margin-top:10px; }
@@ -1710,7 +1714,7 @@ function refundSug(q, label) {
    내보냄: ORIGINALS, HOME_ROWS
    쓰는 곳: src/js/content/index.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
-/* 빌드가 content/ 폴더로 만든 작품 데이터 — 직접 고치지 말고 content/<f|m|all>/…/work.js를 고치세요(content/README.md). git에 넣지 않음 */
+/* 빌드가 content/ 폴더로 만든 작품 데이터(전부 — 관리자 빌드·단위 시험·도구가 읽음) — 직접 고치지 말고 content/<f|m|all>/…/work.js를 고치세요(content/README.md). git에 넣지 않음 */
 const ORIGINALS = [
 /* f/fate/hwanghu */ {
   "id": "hwanghu",
@@ -4194,7 +4198,9 @@ function seen(at) {
  * 시작부터 이 화면은 더 올리지 않음(CLOUD.wiped) — 지우는 사이의 저장(늦게 끝난 요약 등)이나 이어지는 기기 지우기가 방금 쓴 표식을 덮거나 지우지 않게. 실패하면 다시 풂.
  * 알려진 한계: 아직 표식을 받지 못한 다른 기기가 그 사이 방 본문이나 페르소나·지갑을 올리면 계정에 다시 생김 — 서버 쪽 확인(docs/supabase.sql 끝의 트리거 초안)이 들어가야 막힘.
  * 방의 표식 요청이 서버에는 적용됐는데 응답만 잃으면 "half"로 보여 다시 올리게 됨(그 사이 표식을 받은 다른 기기는 방을 지운 뒤 — 다시 시도하면 맞춰짐).
- * @returns {Promise<"ok"|"fail"|"half">} fail: 아무것도 못 지움 · half: 방이 아닌 행만 지워짐
+ * 첫 DELETE가 서버의 답 없이 끊기면(연결 실패·시간 초과·5xx) 적용됐는지 알 수 없어 "unsure" — 부른 쪽(ui/me.js wipeNow)이 방이 아닌 행을 다시 올림.
+ * 서버가 받지 않는다고 답했으면(4xx) 적용되지 않은 것이 확실해 "fail" — 다시 올리지 않음(다른 기기가 올린 더 새 지갑·페르소나를 옛 값으로 덮지 않게, Codex 검토).
+ * @returns {Promise<"ok"|"fail"|"unsure"|"half">} fail: 아무것도 못 지움 · unsure: 방이 아닌 행이 지워졌는지 모름 · half: 방이 아닌 행만 지워짐
  */
 async function wipeAccount() {
   const C = CLOUD;
@@ -4202,9 +4208,11 @@ async function wipeAccount() {
   const uid = C.uid,
     at = Date.now(),
     q = "/rest/v1/kv?user_id=eq." + encodeURIComponent(uid) + "&key=";
+  let refused = false; // 마지막 요청에 서버가 받지 않는다고 답함(4xx) — 적용되지 않은 것이 확실
   const call = async (path, opts) => {
     const r = await SB.req(path, opts);
     if (C.uid !== uid) throw 0;
+    refused = !r.ok && r.status < 500;
     await C.check(r);
   };
   C.wiped = true;
@@ -4228,7 +4236,7 @@ async function wipeAccount() {
     C.wiped = false;
     C.pending = Object.assign(kept, C.pending); // 기다리던 변경을 되돌려 놓고 다시 올림
     if (Object.keys(C.pending).length) C.timer = setTimeout(() => C.flush(), 800);
-    return step ? "half" : "fail";
+    return step ? "half" : refused ? "fail" : "unsure";
   }
   C.pending = {};
   seen(at); // 스스로 올린 표식은 따르지 않음(새로고침 뒤의 받기가 이 기기를 또 지우지 않게)
@@ -5654,7 +5662,8 @@ function parseState(text, c, before) {
  */
 
 /**
- * SSE 본문을 끝까지 읽어 `data:` 줄의 JSON마다 onData. 읽을 수 없는 줄과 onData 안의 오류는 넘어감(조각 하나가 깨져도 스트림은 계속).
+ * SSE 본문을 끝까지 읽어 `data:` 줄의 JSON 객체마다 onData. 읽을 수 없는 줄(깨진 JSON·[DONE]·객체가 아닌 값)은 넘어감.
+ * onData 안의 오류는 삼키지 않고 부른 쪽으로 던짐 — 끝까지 읽지 않고 나갈 때는 스트림을 닫아(reader.cancel) 서버가 뒤에서 답을 계속 보내지 않게.
  * @param {ReadableStream<Uint8Array>} body
  * @param {(ev: any) => void} onData
  * @param {() => void} [onChunk] data 줄이 올 때마다(멈춤 시간 제한을 다시 셈) — 주석 줄(": …" keep-alive)만 오는 동안은 부르지 않아, 답 없이 연결만 붙들린 스트림이 시간 제한에 걸림
@@ -5663,25 +5672,34 @@ function parseState(text, c, before) {
 async function readSSE(body, onData, onChunk) {
   const reader = body.getReader(),
     dec = new TextDecoder();
-  let buf = "";
-  for (;;) {
-    const { value, done } = await reader.read();
-    if (done) break;
-    buf += dec.decode(value, { stream: true });
-    let i;
-    while ((i = buf.indexOf("\n")) >= 0) {
-      const line = buf.slice(0, i).trim();
-      buf = buf.slice(i + 1);
-      if (!line.startsWith("data:")) continue;
-      onChunk && onChunk();
-      let ev;
-      try {
-        ev = JSON.parse(line.slice(5));
-      } catch {
-        continue; // 깨진 줄·[DONE]은 넘어감
+  let buf = "",
+    ended = false;
+  try {
+    for (;;) {
+      const { value, done } = await reader.read();
+      if (done) {
+        ended = true;
+        break;
       }
-      onData(ev); // 해석에서 난 오류는 삼키지 않음 — 조용히 빠진 조각이 완성된 답처럼 저장되지 않게 부른 쪽이 끊긴 답으로 처리
+      buf += dec.decode(value, { stream: true });
+      let i;
+      while ((i = buf.indexOf("\n")) >= 0) {
+        const line = buf.slice(0, i).trim();
+        buf = buf.slice(i + 1);
+        if (!line.startsWith("data:")) continue;
+        onChunk && onChunk();
+        let ev;
+        try {
+          ev = JSON.parse(line.slice(5));
+        } catch {
+          continue; // 깨진 줄·[DONE]은 넘어감
+        }
+        if (!ev || typeof ev !== "object") continue; // null·숫자·글 한 줄로 답 전체가 끊기지 않게
+        onData(ev); // 해석에서 난 오류는 삼키지 않음 — 조용히 빠진 조각이 완성된 답처럼 저장되지 않게 부른 쪽이 끊긴 답으로 처리
+      }
     }
+  } finally {
+    if (!ended) reader.cancel().catch(() => {}); // 해석 오류·취소로 나감 — 기다리지 않음(닫기가 늦어도 부른 쪽은 바로 끊긴 답으로)
   }
 }
 /** Anthropic Messages 스트림의 이벤트 하나. 답을 보내던 중의 오류 조각(type "error" — 과부하 등)은 failed. @param {any} ev @returns {StreamPart} */
@@ -8388,7 +8406,7 @@ function bindChatSettings(root, after) {
            src/js/services/cloud.js { CLOUD, IMG_KEY_RE, synced }
            src/js/services/cloud-settings.js { cloudSettings }
            src/js/services/images.js { validRef }
-   내보냄: pushAll
+   내보냄: pushAll, localKVKeys
    쓰는 곳: src/js/ui/account.js, src/js/ui/me.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 처음 로그인의 올리기(pushAll): 이 기기의 데이터와 그림을 계정에 올림 — 계정이 비었을 때·합칠 때(ui/account.js firstSync). 전송은 CLOUD의 줄(한 번에 하나)에 세움 */
@@ -9459,7 +9477,7 @@ function cardHTML(c) {
   const aud = audience() === "all" && audOf(c) !== "all" ? `<span class="aud-tag">${AUDS[audOf(c)].name}</span>` : "";
   return `<button class="card" data-char="${esc(c.id)}"><div style="position:relative">${coverHTML(c, "", { vt: true, cat: true })}${info}</div>
     <span class="t">${esc(c.name)}</span><span class="d">${esc(c.oneLiner)}</span>
-    <span class="meta">${aud}${(c.tags || [])
+    <span class="meta">${c.hold ? `<span class="hold-tag">출시판 제외</span>` : ""}${aud}${(c.tags || [])
       .slice(0, 3)
       .map((t) => `<span>#${esc(t)}</span>`)
       .join("")}</span></button>`;
@@ -9645,7 +9663,7 @@ function viewHome() {
            src/js/core/util.js { $, $$, esc, num, toast, uid }
            src/js/core/wallet.js { isPro }
            src/js/services/cloud.js { CLOUD }
-           src/js/services/cloud-push.js { pushAll }
+           src/js/services/cloud-push.js { localKVKeys, pushAll }
            src/js/services/cloud-wipe.js { wipeAccount }
            src/js/services/images.js { IMG }
            src/js/services/sync.js { clearDevice }
@@ -9813,10 +9831,12 @@ async function wipeNow() {
   const uid = CLOUD.uid,
     got = CLOUD.on && !accountWiped ? await wipeAccount() : "ok";
   if (got !== "ok") {
-    // 계정 쪽이 중간까지만 지워졌으면(방이 아닌 행) 이 기기에 그대로 있는 것을 다시 올려 둠 — 대화는 어느 쪽에서도 지워지지 않았음
-    if (got === "half" && CLOUD.on && CLOUD.uid === uid)
+    // 계정 쪽이 실패하면 이 기기에 그대로 있는 것을 다시 올려 둠 — 대화는 어느 쪽에서도 지워지지 않았음. "half"(방이 아닌 행만 지워짐)는 방의 표식 요청이 서버에
+    // 적용됐을 수 있어 방 본문까지. "unsure"(첫 DELETE의 답을 잃음 — 2026-11-25 디렉터 검토: 전에는 목록·지갑·페르소나가 빠진 계정이 남았음)는 방 행을 건드리기
+    // 전이라 방이 아닌 행만(다른 기기가 올린 더 새 방 본문을 옛 본문으로 덮지 않게). "fail"(서버가 거절 — 지워진 것 없음)은 올리지 않음(Codex 검토)
+    if (got !== "fail" && CLOUD.on && CLOUD.uid === uid)
       try {
-        await pushAll();
+        await pushAll(got === "unsure" ? localKVKeys().filter((k) => !/^room-/.test(k)) : undefined);
       } catch {}
     return wipeFailed("계정의 데이터를 지우지 못했어요", "네트워크를 확인하고 다시 시도해 주세요. 이 기기의 데이터도 아직 그대로예요.");
   }
@@ -11289,6 +11309,9 @@ function setStick(v) {
   return (stick = v);
 }
 const autoScroll = () => !!(room && room.set.autoScroll);
+// 수정 칸에 고쳐 쓰던 글(메시지 id → 글) — 값 확인을 닫거나 하트가 모자라도 남게. 방 객체 밖에 둠: 계정 올리기 대기열이 방 객체를 그대로 들고 있다가
+// 보낼 때 글로 바꾸므로, 메시지에 두면 승인하지 않은 글이 계정에 올라갈 수 있음(Codex 검토)
+const drafts = new Map();
 function followLog() {
   const log = $("#log");
   if (log && stick && autoScroll()) log.scrollTop = log.scrollHeight;
@@ -11366,7 +11389,7 @@ function renderLog(scroll) {
       html += `<div class="msg me ${ooc ? "ooc" : ""}" data-id="${esc(m.id)}">${ooc ? "" : pavHTML(r.persona)}<div class="col">
         ${
           m.editing
-            ? editBox(m.text, i)
+            ? editBox(drafts.has(m.id) ? drafts.get(m.id) : m.text, i)
             : `<div class="bubble">${ooc ? esc(m.text) : fmt(m.text, c, r.persona)}</div>
         <div class="tools-row">${m.canned ? "" : `<button data-act="edit" data-i="${i}">수정</button>`}` +
               `<button data-act="del" data-i="${i}">삭제</button>${
@@ -11416,7 +11439,9 @@ function renderLog(scroll) {
     html += `</div></div>`;
   });
   if (r.side && r.msgs.length && r.msgs[r.msgs.length - 1].id === r.sideAfter) html += sidePill(r);
-  if (r.lastErr) html += `<div class="err-line" role="alert">${esc(r.lastErr)} <button class="btn sm" id="retry">다시 시도</button></div>`;
+  // 메시지 수정의 실패(lastErrEdit)는 '다시 시도'를 숨김 — 그 버튼은 마지막 답을 다시 쓰는 것이라 고친 글을 다시 보내는 것과 뜻이 다름
+  if (r.lastErr)
+    html += `<div class="err-line" role="alert">${esc(r.lastErr)}${r.lastErrEdit ? "" : ` <button class="btn sm" id="retry">다시 시도</button>`}</div>`;
   html += epTailHTML(r); // 에피소드: 갈림길 카드 또는 결말 카드
   box.innerHTML = html;
   const lb = $("#liveBubble", box),
@@ -11528,20 +11553,25 @@ function bindLog(box) {
           });
         } else if (act === "edit" || act === "editai") {
           m.editing = true;
+          drafts.delete(m.id);
           renderLog();
           $("#ed" + i)?.focus();
         } else if (act === "cancel") {
           delete m.editing;
+          drafts.delete(m.id);
           renderLog();
         } else if (act === "save") {
           const t = $("#ed" + i).value.trim();
-          delete m.editing;
+          if (!t || m.role !== "user") delete m.editing;
           if (!t) return renderLog();
           if (m.role === "user") {
-            // 값 확인이 끝난 뒤에만 고침 — 그 창을 닫으면 아무것도 바뀌지 않음
+            // 값 확인이 끝난 뒤에만 고침 — 그 창을 닫거나 하트가 모자라면 대화는 그대로, 고쳐 쓴 글은 수정 칸에 그대로 남김(쓰던 글 그대로 — 하트를 사고 와서 다시 누르게)
             const r = room;
+            drafts.set(m.id, t);
             ensurePay(r).then((q) => {
               if (!q || r !== room) return renderLog();
+              delete m.editing;
+              drafts.delete(m.id);
               // 새 답이 본문 하나 없이 실패하면 되돌릴 것: 원문·뒤 메시지·상태창·에피소드 진행(generate가 undo를 부름).
               // 자른 대화는 여기서 저장하지 않음 — 응답이 끝날 때 한 번(그 전에 창이 닫히면 저장된 것은 고치기 전 대화)
               const was = { text: m.text, msgs: r.msgs, status: r.status, ep: r.ep ? epCopy(r.ep) : null, err: r.lastErr },
@@ -11872,17 +11902,24 @@ async function generate(target, q, direction = "", opt = {}) {
       if (lost) refund(q, label);
       else refundSug(q, label); // 본문만 남긴 답에는 추천이 없음 — 추천 값은 되돌림
       Object.assign(msg.alts[altIdx], { text: keep, status: msg.statusBefore, cost: lost ? "" : qShort(q) });
-      if (lost) r.lastErr = "응답이 오는 중에 끊겨 여기까지만 남겼어요. 값은 돌려드렸어요. '다시 시도'를 누르면 다시 써요.";
+      if (lost) {
+        r.lastErr = "응답이 오는 중에 끊겨 여기까지만 남겼어요. 값은 돌려드렸어요. '다시 시도'를 누르면 다시 써요.";
+        r.lastErrEdit = false;
+      }
     } else {
       msg.alts.splice(altIdx, 1);
       if (!msg.alts.length) r.msgs.splice(r.msgs.indexOf(msg), 1);
       else msg.idx = msg.alts.length - 1;
       refund(q, label);
-      // 메시지 수정·다시 쓰기는 자르기 전 대화로 되돌림(opt.undo). 수정은 '다시 시도' 줄 대신 토스트로 알림 — 그 줄의 버튼은 마지막 답을 다시 쓰는 것이라 뜻이 달라짐
+      // 메시지 수정·다시 쓰기는 자르기 전 대화로 되돌림(opt.undo — 수정은 '되돌렸어요'를 토스트로). 까닭은 오류 줄에 남김 — 로그인·키처럼 할 일을 알려 주는
+      // 긴 글이 토스트로만 지나가지 않게. 수정의 실패는 그 줄에 '다시 시도'를 두지 않음(lastErrEdit — 그 버튼은 마지막 답을 다시 쓰는 것이라 뜻이 달라짐)
       const copy = errCopy(e),
         note = opt.undo ? opt.undo() : "";
-      if (note) toast([copy, note].filter(Boolean).join(" "));
-      else if (copy) r.lastErr = copy;
+      if (note) toast(note);
+      if (copy) {
+        r.lastErr = copy;
+        r.lastErrEdit = !!note;
+      }
     }
   } finally {
     try {
@@ -12241,7 +12278,8 @@ function viewDetail(id) {
       <div class="d-side">
         <div class="d-top">${coverHTML(c, "", { vt: true })}
           <div class="d-info"><span class="note">${esc(c.cat)}${c.world_mode ? " · 세계관" : ""} · ${metaHTML(c)}</span>
-          <h1>${esc(c.title)}</h1><p class="lead">${esc(c.oneLiner)}</p></div>
+          <h1>${esc(c.title)}</h1><p class="lead">${esc(c.oneLiner)}</p>` +
+    `${c.hold ? `<p class="d-hold" id="dHold">출시판 제외 — ${esc(c.hold)}</p>` : ""}</div>
         </div>
         <div class="tags">${(c.tags || []).map((t) => `<span>#${esc(t)}</span>`).join("")}</div>
         <div class="d-cta"><button class="btn ghost like-btn" id="like" aria-pressed="${liked(c.id)}">${likeHTML(liked(c.id))}</button>` +

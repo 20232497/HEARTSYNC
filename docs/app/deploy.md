@@ -14,6 +14,7 @@
 ## 관리자 관문
 
 - 관리자 도구 비밀번호 관문 admin/gate.js: 웹 주소에서만 SHA-256 해시 비교, 맞으면 localStorage hv1_admin, MY의 '관리자 잠그기'로 해제. localhost·127.0.0.1·file://은 묻지 않음. 클라이언트 관문이라 무심코 들어오는 것만 막음 — 비밀번호를 바꾸려면 gate.js의 HASH
+- 출시판 제외(work.js `hold` — content/README.md 칸 표): 그 작품은 index.html에 실리지 않지만 admin.html에는 남음. 관리자 빌드는 같은 공개 주소에 함께 배포되고 관리자 관문의 막는 힘이 약해서, 관리자 도구를 출시 배포에서 빼기(M6 — docs/legal/README.md) 전에는 공개 주소로 열릴 수 있음
 
 ## 배포 확장
 

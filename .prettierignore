@@ -3,6 +3,7 @@
 index.html
 admin.html
 src/js/content/generated.js
+src/js/content/generated-user.js
 content/
 docs/
 archive/

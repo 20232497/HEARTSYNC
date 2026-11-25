@@ -102,6 +102,7 @@
  * @property {string} desc
  * @property {string} [guide] 플레이 가이드 — 제작자가 독자에게 주는 안내문(줄바꿈만, LIMITS.guide자 이내). 상세 페이지·도감·대화방 드로어에 보임(AI에는 보내지 않음)
  * @property {string} [noteTemplate] 유저노트 양식 — 대화방 유저노트의 '이 작품의 양식 넣기'가 넣는 글(LIMITS.userNote자 이내). 있을 때만 버튼이 뜸
+ * @property {string} [hold] 출시판 제외의 까닭 — 있으면 빌드가 사용자 빌드(index.html)에 싣지 않고 관리자 빌드에만(홈 카드·상세에 '출시판 제외'). 그 작품으로 만든 방은 방 사본으로 열림
  * @property {ModelKey} [recommend] 권장 모델 — 새 대화방이 이 모델로 시작하고(core/rooms.js defaultSet), 모델 선택 시트에서 '권장' 배지가 붙음. 없으면 앱 기본 추천(ai/models.js RECOMMEND_DEFAULT
  * "story")으로 시작하고 배지는 없음
  * @property {string} persona AI에게 주는 인물·진상 설정
@@ -255,6 +256,7 @@
  * @property {number} at 마지막 저장 시각
  * @property {number} created
  * @property {string} [lastErr] 마지막 오류 안내(대화방 아래 오류 줄 + 다시 시도)
+ * @property {boolean} [lastErrEdit] 그 오류가 메시지 수정의 실패인지 — 참이면 오류 줄에 '다시 시도'를 두지 않음(ui/chat/generate.js)
  * @property {{ roomId: string, msgId: string }} [forkedFrom] 분기한 방이면 원래 방과 갈라진 메시지(core/rooms.js forkRoom) — opening 끝에 ' (분기)'
  * @property {EpState} [ep] 에피소드 방의 진행 상태(작품에 episode가 있을 때 newRoom이 만듦). 메시지마다 ep0(그 메시지 직전 상태)를 적어 두어 다시 쓰기·삭제가 되돌림
  * @property {Side} [side] 외전 방(끝난 에피소드에서 이어받은 자유 대화) — sideAfter(메시지 id) 뒤부터가 외전

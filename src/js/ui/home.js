@@ -20,7 +20,7 @@ export function cardHTML(c) {
   const aud = audience() === "all" && audOf(c) !== "all" ? `<span class="aud-tag">${AUDS[audOf(c)].name}</span>` : "";
   return `<button class="card" data-char="${esc(c.id)}"><div style="position:relative">${coverHTML(c, "", { vt: true, cat: true })}${info}</div>
     <span class="t">${esc(c.name)}</span><span class="d">${esc(c.oneLiner)}</span>
-    <span class="meta">${aud}${(c.tags || [])
+    <span class="meta">${c.hold ? `<span class="hold-tag">출시판 제외</span>` : ""}${aud}${(c.tags || [])
       .slice(0, 3)
       .map((t) => `<span>#${esc(t)}</span>`)
       .join("")}</span></button>`;
