@@ -2,7 +2,7 @@
 // 모듈을 Node에서 바로 import한다(브라우저 없이). 요청·응답 형식(MARK·status JSON)은 docs/app/prompt.md '응답 형식'
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { splitReply, multiPairs, parseState, dropEcho, looseJSON } from "../../src/js/ai/parse.js";
+import { splitReply, multiPairs, multiMax, parseState, dropEcho, looseJSON } from "../../src/js/ai/parse.js";
 import { MARK } from "../../src/js/core/constants.js";
 
 const CHAR = { fields: ["📍 장소", "❤️ 호감도", "💭 속마음"], gauge: "❤️ 호감도" };
@@ -46,6 +46,29 @@ test("parseState: 다인원 칸은 빠진 인물을 직전 값으로 채우고 �
   assert.equal(out.status["❤️ 호감도"], "이화 58 · 설련 40");
   assert.equal(out.status["📍 장소"], "황후궁", "빈 값은 직전 값을 덮지 않음");
   assert.deepEqual(out.suggestions, ["하나", "둘", "셋"], "앞 번호를 빼고 3개까지");
+});
+test("multiMax: 다인원 칸 한도는 작품의 인물 수(다른 모습 빼고) — 적어도 12, 많아야 30", () => {
+  const cast = (n) => Array.from({ length: n }, (_, i) => ({ code: "P" + i, name: "인물" + i }));
+  assert.equal(multiMax({}), 12, "인물 칸이 없으면 예전 한도");
+  assert.equal(multiMax({ cast: cast(5) }), 12, "인물이 적은 작품도 새로 나온 사람을 12명까지");
+  assert.equal(multiMax({ cast: [...cast(22), { code: "F", name: "폼", of: "P0" }] }), 22, "다른 모습은 세지 않음");
+  assert.equal(multiMax({ cast: cast(40) }), 30);
+});
+test("parseState: 인물이 스물인 작품 — 처음 채울 때 200자에서 자르지 않고, 합칠 때 12명에서 끊지 않는다", () => {
+  const names = [..."가나다라마바사아자차카타파하거너더러머버"].map((x) => "세레나 바이스" + x),
+    c = { ...CHAR, cast: names.map((name, i) => ({ code: "H" + i, name })) },
+    line = (n) =>
+      names
+        .slice(0, n)
+        .map((k) => `${k} 10`)
+        .join(" · ");
+  const first = parseState(`x\n${MARK}\n{"status":{"❤️ 호감도":"${line(20)}"}}`, c, { "❤️ 호감도": "없음" }).status["❤️ 호감도"];
+  assert.ok(line(20).length > 200, "시험 값이 예전 200자 한도를 넘어야 뜻이 있음");
+  assert.equal(first, line(20));
+  const merged = parseState(`x\n${MARK}\n{"status":{"❤️ 호감도":"${line(20)}"}}`, c, { "❤️ 호감도": line(2) }).status["❤️ 호감도"];
+  assert.equal(merged, line(20), "새 인물이 뒤에 붙어 스물 모두");
+  const few = parseState(`x\n${MARK}\n{"status":{"❤️ 호감도":"${line(20)}"}}`, CHAR, { "❤️ 호감도": line(2) }).status["❤️ 호감도"];
+  assert.equal(few, line(12), "인물 칸이 없는 작품은 예전처럼 12명까지");
 });
 test("parseState: 숫자 게이지는 직전 값에서 -10~+8, 0~100 안에서만 움직인다", () => {
   const c = { fields: ["호감도"], gauge: "호감도" };
