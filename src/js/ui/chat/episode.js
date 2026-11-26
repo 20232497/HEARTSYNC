@@ -91,7 +91,7 @@ export function bindEp(box, r) {
  * 외전 고르기: 세 갈래(SIDE — 결말 뒤 · 다른 인물의 시점 · 다른 인물과 다시) 중 하나와, 인물이 필요한 갈래면 인물(다른 모습은 빼고 본체만).
  * 고르면 이 대화와 결말을 이어받은 새 자유 대화방(core/rooms.js sideRoom)으로 감 — 작품당 방 수 한도는 분기와 같음. @param {Room} r
  */
-export function sideSheet(r) {
+function sideSheet(r) {
   if (S.rooms.filter((x) => x.charId === r.char.id).length >= plan().rooms) return plusSheet("rooms");
   const cast = (r.char.cast || []).filter((x) => !x.of);
   let kind = Object.keys(SIDE)[0],

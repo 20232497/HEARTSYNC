@@ -46,7 +46,7 @@ export function appRules() {
     const fn = new RegExp(`^(?:export )?function\\s+${name}\\s*\\(`),
       cn = new RegExp(`^(?:export )?const\\s+${name}\\s*=`);
     const i = lines.findIndex((l) => fn.test(l) || cn.test(l));
-    if (i < 0) throw new BuildError([`src/js에서 ${name}을(를) 찾지 못했어요 — 이름을 바꿨다면 tools/build.mjs의 APP_RULES도 고쳐 주세요`]);
+    if (i < 0) throw new BuildError([`src/js에서 ${name}을(를) 찾지 못했어요 — 이름을 바꿨다면 tools/build/app-rules.mjs의 APP_RULES도 고쳐 주세요`]);
     let j = i;
     if (fn.test(lines[i])) {
       if (!/}\s*$/.test(lines[i])) while (j < lines.length && lines[j] !== "}") j++;

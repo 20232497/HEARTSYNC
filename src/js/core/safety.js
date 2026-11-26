@@ -1,4 +1,6 @@
 /* 안전: 미성년 인물 막기(minorFlags·minorHint·settingHint·roomMinorHint·messagesMinorHint)와 위기 신호 찾기(crisisLevel·crisisDue) — 순수 함수라 빌드의 작품 검사와 단위 테스트가 그대로 import */
+/* 이 파일은 옮기거나 이름을 바꾸지 말고, 다른 모듈을 import하지도 말 것: 서버 대화 관문(docs/edge/chat.ts)이 배포된 사이트의 이 경로(src/js/core/safety.js)를
+   실행 중에 그대로 가져옴 — 옮기거나 import를 넣으면 관문이 뜨지 않음(막는 쪽). 단위 시험 safety가 지킴. 아래 typedef는 주석이라 괜찮음 */
 /** @typedef {import("./types.js").CastMember} CastMember */
 /** @typedef {import("./types.js").LoreEntry} LoreEntry */
 /** @typedef {import("./types.js").Room} Room */

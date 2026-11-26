@@ -21,7 +21,7 @@ export const ASK_CATS = [
   ["etc", "기타"]
 ];
 /** 메시지 신고의 분류 값 */
-export const REPORT_CAT = "report";
+const REPORT_CAT = "report";
 /** 신고 사유 [값, 이름, 우선] — 운영정책 등급에 맞춘 출시판 목록(법률 초안 docs/legal/ui-copy.md §8, 2026-11-10 사용자 결정). 우선(true)인 사유는 가장 급하게 처리할 것: 받은 문의 목록 맨 위에 따로 보임 */
 export const REPORT_REASONS = [
   ["minor", "미성년자 관련 성적 내용", true],

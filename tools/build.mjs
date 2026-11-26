@@ -32,7 +32,7 @@ import { appRules } from "./build/app-rules.mjs";
 import { assemble } from "./build/bundle.mjs";
 import { BUILD_DIR, BuildError, LS, PS, ROOT, SIZE_LIMITS, SRC, TARGETS, readText } from "./build/common.mjs";
 import { buildContent } from "./build/content.mjs";
-import { checkDocs } from "./build/docs-check.mjs";
+import { DOC_LINE_WARN, checkDocs } from "./build/docs-check.mjs";
 import { checkForbidden, checkScripts } from "./build/output-check.mjs";
 import { checkBase, readBaseLocks } from "./content-lock.mjs";
 import { runFormat } from "./format.mjs";
@@ -214,6 +214,11 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
         fail = true;
         console.error("✗ 문서 검사\n" + d.errors.map((x) => "  - " + x).join("\n"));
       } else console.log("✓ " + d.note);
+      if (d.long.length)
+        console.log(
+          `△ 영역 문서의 긴 줄(알림 — ${DOC_LINE_WARN}자 넘음, 실패 아님): 한 항목에 사실 하나씩 아래 줄(  - )로 나눠 주세요\n` +
+            d.long.map((x) => "  - " + x).join("\n")
+        );
     }
     if (fail) process.exit(1);
   } catch (e) {
