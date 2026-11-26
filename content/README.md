@@ -34,6 +34,7 @@ content/
 │  │  ├─ daeyeon/  baekya/  sipjeol/
 │  ├─ godseats/work.js        신님들, 관전 매너 좀
 │  ├─ uyeon/work.js           우연 설계실 — 시작 상황 셋이 곧 유저의 자리(팀원·의뢰인·표적)
+│  ├─ endings/work.js         백 개의 종말 — 한 왕국의 마지막 100일(한 층 = 하루), 부름은 지정(확률 없음)
 │  ├─ yunhaera/work.js
 │  └─ hangyeoul/work.js
 └─ all/                       전체(남녀 혼성)
@@ -115,7 +116,7 @@ episode: {
 - **화면에 보이는 것**: 장 제목·사건 제목·갈림길·결말 제목(처음부터 모두 — 상세 페이지에도). goal·text·brief는 AI에게만 가지만 저장소는 공개라 누구나 읽을 수 있어요 — 제목에 진상을 적지 않기.
 - 에피소드형 작품은 `world`에 '결말은 …로 갈린다' 같은 줄을 두지 않아요(결말은 `endings`가 정함).
 
-**분류(2026-11-11)** — 에피소드형: `f/fate`의 hwanghu·hasuk·lethe·geumseo, `m/survive`의 daeyeon·baekya·sipjeol, `all/minwon`, `m/uyeon`(기한과 결말이 이미 설정에 있는 군상극). 자유형: `m/godseats`와 1:1 다섯 편(seodoyun·yunhaera·kael·hangyeoul·baekyeon). **지금 `episode`를 적은 작품은 시범으로 daeyeon 하나** — 나머지 여덟 편은 시범을 본 뒤 세계관 세션이 옮겨요.
+**분류(2026-11-11)** — 에피소드형: `f/fate`의 hwanghu·hasuk·lethe·geumseo, `m/survive`의 daeyeon·baekya·sipjeol, `all/minwon`, `m/uyeon`(기한과 결말이 이미 설정에 있는 군상극). 자유형: `m/godseats`·`m/endings`와 1:1 다섯 편(seodoyun·yunhaera·kael·hangyeoul·baekyeon). **지금 `episode`를 적은 작품은 시범으로 daeyeon 하나** — 나머지 여덟 편은 시범을 본 뒤 세계관 세션이 옮겨요.
 
 ## work.js 모양
 
@@ -171,7 +172,7 @@ export default {
 | `artTags` | 그 세계관의 영문 낱말(시대·장소·조명·분위기, 예: `joseon dynasty, korean royal palace, paper lanterns, night`). 앱 밖에서 표지·세계관 일러스트를 만들 때 붙여 작품마다 분위기를 맞춰요 |
 | `openings[].place`·`suggestions`·`lead` | 시작 상황의 선택 칸. `place`는 **배경 장소** — `places`의 n번째 번호(1부터): 새 대화의 첫 장면 맨 위에 그 장소 카드(`[[MP<n>]]`)가 붙고 상세 페이지의 시작 상황 카드에 장소 이름이 보여요(본문에 이미 그 태그를 적었으면 한 번만). `suggestions`는 **첫 답변 추천** — 독자가 첫마디를 고르기 쉽게 1~3개, 각 40자 이내('✦ AI 추천'을 누르면 AI 호출 없이 보임). `lead`는 **시작 연출** `{ text, turns }` — 이야기를 연 뒤 `turns`턴(1~20) 동안만 AI에 주는 지시(500자 이내). `directive`는 방이 끝날 때까지 가고, `lead`는 도입부에만(예: "처음 세 턴은 사건을 일으키지 말고 인물 소개에 쓴다") |
 | `openings[].id` | **시작 상황 id(필수)** — 영문 소문자로 시작하는 소문자·숫자·하이픈 2~24자(`first-night`·`tea-party`), 작품 안에서 겹치지 않게. 화면에는 보이지 않고, 대화방이 시작 상황을 **제목이 아니라 이 id로** 기억해요('처음부터 다시'가 같은 시작 상황을 찾을 때). 그래서 `title`은 언제든 고쳐도 되지만 **id는 한 번 공개하면 고치지 않아요**(이 칸이 생기기 전에 만든 방은 제목으로 찾아요) |
-| `openings` | 시작 상황(게임 모드). 인물이 처음 등장하는 줄 위에 `[[코드0]]`(예: `[[KAS0]]` — 코드가 `cast`에 있고 번호가 0~14인지 빌드가 검사). 예전 `[[img:코드:번호]]` 모양은 더 쓰지 않아요 |
+| `openings` | 시작 상황(게임 모드 — 화면의 이름 '게임 모드'는 게임위 질의서(`docs/legal/grac-inquiry.md`)와 같게 회신까지 그대로). 인물이 처음 등장하는 줄 위에 `[[코드0]]`(예: `[[KAS0]]` — 코드가 `cast`에 있고 번호가 0~14인지 빌드가 검사). 예전 `[[img:코드:번호]]` 모양은 더 쓰지 않아요 |
 
 `work.js` 안에서는 `const`로 같이 쓸 값을 만들거나(`m/godseats/work.js`의 상태창), 다른 파일을 `import`해도 돼요(예: 키워드북이 길면 `lore.js`로 빼서 `import lore from "./lore.js"`). 빌드가 Node에서 실행한 **결과 값**만 `index.html`에 넣어요 — 그래서 함수 같은 건 넣을 수 없고 글·숫자·참거짓·배열·객체만 돼요.
 
@@ -258,6 +259,7 @@ content/<f|m|all>/[<줄>/]<id>/images/
 | sipjeol 십절곡 | NGS 남궁설 · DSS 당소소 · HWN 혜원 · MKR 묵란 · HRN 화린 |
 | minwon 야간 민원실 B1 | BSH 반석호 · ODE 오다은 · HME 홍 여사(HMF 본모습 — 폼) · JTS 장태산 · SYJ 서윤재 |
 | uyeon 우연 설계실 | SEJ 설은조 · MHR 민하루 · OSR 오세린 · BMC 봉만철 · YGO 유가온 · JSH 진서하 |
+| endings 백 개의 종말 | 대표: HAE 에일린 · MEA 메리엘 · RIU 리비엔 · SOL 솔베이 · SUY 이소벨 / 길의 영웅: MRK 마르카 · OND 오넬라 · SBL 사비네 · NAR 나디아 · RYH 로위나 / 동료: RYT 라이너 · BIA 비앙카 · DRM 도란 · SEO 세드릭 · MKJ 모르텐(관리인) / 집행자: HGY 오스릭 · RSP 라스무스 · GLM 갈렌 · RUG 루고르 · DHW 다리안 · HOJ 호르스트 · EDA 에다 · GNS 게르다 · IDO 이드리스 · CHR 카스파르 / 서명자: YGK 요르겐 · IZL 이졸데 · HAS 하랄드 · SAM 세아니스 · DAY 다그니 · ROH 토르빈 · BRK 베르톨트 · HNL 헬레나 · UMN 우르반 · SUR 세브린 |
 | 1:1 | BY 백연 · KAEL 카엘 · SDY 서도윤 · HGU 한겨울 · YHR 윤해라 |
 
 한국 이름은 성·이름 첫 자음(한서윤 → HSY), 외국 이름은 짧은 로마자(카시안 → KAS). 작품 안에서만 안 겹치면 돼요(다른 작품의 SHJ·HRN은 다른 사람).
