@@ -1,5 +1,5 @@
 {
   "framework": null,
-  "buildCommand": "npm run build",
+  "buildCommand": "node tools/build.mjs --only user",
   "outputDirectory": "."
 }

@@ -6,11 +6,12 @@ README에서 옮겨 둔 운영 메모예요. 코드 구조는 [ARCHITECTURE.md](
 | 무엇 | 주소 | 어떻게 올라가나 |
 |---|---|---|
 | 사용자 사이트 | https://20232497.github.io/HEARTSYNC/ | GitHub Pages가 `main` 루트의 `index.html`을 그대로 띄움(병합하면 자동) |
-| 관리자 도구 | https://20232497.github.io/HEARTSYNC/admin.html | 같은 빌드가 만든 `admin.html`(커밋됨). 웹 주소로 열면 **비밀번호 관문**(`src/js/admin/gate.js`, 해시만 저장) — 로컬(localhost·file://)은 묻지 않음. 공지 쓰기·문의 답변은 **관리자 계정**도 필요(아래) |
+| 관리자 도구 | 이 PC에서만 — `npm run dev` → http://localhost:5173/admin.html | 같은 빌드가 만드는 `admin.html`(**커밋·배포하지 않음** — 2026-11-26 사용자 결정 M6, `.gitignore`). 예전 공개 주소 …/HEARTSYNC/admin.html은 404. 혹시 웹 주소로 열리면 **비밀번호 관문**(`src/js/admin/gate.js`, 해시만 저장)이 서고, 로컬(localhost·file://)은 묻지 않음. 공지 쓰기·문의 답변은 **관리자 계정**도 필요(아래) |
 | 데모(claude.ai) | https://claude.ai/artifact/3sfDYFeJ13dHrkWwBFj1YG | 같은 파일 경로로 다시 publish하면 같은 주소. `icons/`·`content/**/images/`도 files로 함께 |
 
 - GitHub Pages 경로는 대소문자를 구분해요(`/HEARTSYNC/`). 주소를 바꾸면 아래 Supabase URL Configuration·Google 브랜딩·네이버 서비스 URL도 같이 바꿔요.
 - 관리자 비밀번호 관문은 정적 페이지의 클라이언트 관문이라 소스를 읽는 사람은 우회할 수 있어요(무심코 들어오는 것만 막음). 실제 데이터(API 키·대화)는 관리자의 브라우저와 계정(RLS)에만 있어요. 비밀번호를 바꾸려면 `gate.js`의 HASH를 새 비밀번호의 SHA-256으로 바꿔요. 웹 주소의 관리자 도구 MY에 있는 **이 브라우저에서 관리자 잠그기**가 기억을 지워요.
+- 관리자 도구를 localhost에서 쓸 때 로그인: **이메일·비밀번호로 해요**(2026-11-27 사용자 결정 — Redirect URLs에는 localhost를 더하지 않고 공개 주소만 둠). 이메일 로그인은 돌아올 주소가 필요 없어 그대로 돼요. 소셜 로그인(구글·카카오·네이버)은 돌아올 주소가 `http://localhost:5173/admin.html`이라 공개 사이트로 가 버려요. 관리자 계정에 비밀번호가 없으면(소셜로만 가입) 공개 사이트 로그인 화면의 **비밀번호를 잊었어요**로 재설정 메일을 받아 비밀번호를 만든 뒤 이메일로 들어와요. 그래도 소셜 로그인이 꼭 필요해지면 아래 URL Configuration의 Redirect URLs에 `http://localhost:5173/**`를 더해요(대시보드에서 사용자가 직접).
 
 ## 관리자 계정(공지·문의 답변, 한 번만)
 비밀번호 관문은 화면만 가려요. 실제 권한은 Supabase `admins` 표에 있는 계정이 가져요(공지 쓰기·받은 문의 보기·답변).
