@@ -307,11 +307,12 @@ Pony 계열(Run七八造와 두 LoRA)은 **수익 모델 서비스 안에서 돌
 
 | 모델 | 그림 판매 | 앱 안 생성 | 비고 |
 |---|---|---|---|
-| Run七八造 v2 · Add More Details · KoreanAI | O | Pony 라이선스상 허가 필요 | 남성향 일상(이 화풍) |
+| Run七八造 v2 · Add More Details | O | Pony 라이선스상 허가 필요 | 남성향 일상(이 화풍) |
+| KoreanAI | O | Pony 허가 필요 + Civitai 표시에 다른 서비스 대여(Rent) 없음 | 남성향 일상(이 화풍) — 뺀 시험을 먼저 함(2026-11-27 사용자 결정) |
 | YabaL Mix | **X** | X | 바꿔야 할 대상(이 화풍의 `noHumans`) |
 | Hassaku XL | O | O | Illustrious 계열(비공개 병합 수익화 금지) |
 | WAI · semILust | O | X | |
-| Nova Orange XL v6.0 | **불확실** | Civitai 표시 O | 이 화풍 휴식 칸(11)의 밑그림. 모델 설명 규칙 "편집하지 않은 그림은 상업 이용 불가" + 바탕 NoobAI-XL 라이선스가 생성물 상업 이용 금지 — 교체 여부는 사용자 결정 전(2026-11-26, `archive/style-manime/README.md` 모델 줄) |
+| Nova Orange XL v6.0 | **불확실** | Civitai 표시 O | 이 화풍 휴식 칸(11)의 밑그림. 모델 설명 규칙 "편집하지 않은 그림은 상업 이용 불가" + 바탕 NoobAI-XL 라이선스가 생성물 상업 이용 금지 — 출시판에 싣지 않음, Animagine XL 4.0으로 교체 준비(2026-11-26 사용자 결정, 기록 `archive/style-works/model-licences.md`) |
 | **Animagine XL 4.0** | O | O | **조건이 가장 깔끔**(CreativeML Open RAIL++-M) |
 
 ### 남은 일(인계 지침서 §5 기준)

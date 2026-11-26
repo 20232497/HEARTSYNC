@@ -23,6 +23,7 @@
 | [youth-protection.md](youth-protection.md) | 청소년 보호 정책(연령 확인·청소년 설정·보호자 창구) + Anthropic 미성년자 지침 대응 + 구현 메모 | 공개 예정 |
 | [ai-policy.md](ai-policy.md) | AI 이용 안내(인공지능 기본법 투명성) + 표시 위치·고영향 검토 기록 + 구현 메모 | 앞부분 공개 |
 | [grac-inquiry.md](grac-inquiry.md) | 게임물관리위원회 질의서 초안 — 게임 장치가 있는 작품이 게임물인지. 보내는 것은 운영자 | 내부(채운 본은 커밋하지 않음) |
+| [그림 모델 라이선스 기록](../../archive/style-works/model-licences.md) | 그림 모델·생성 서비스의 라이선스 핵심 조항 한 줄·지금의 결정·원문 사본의 SHA-256(전문은 저장소 밖 보관함) | 공개 저장소에 있음 |
 | [ui-copy.md](ui-copy.md) | 화면 문구: 사업자 정보, 가입 동의, 결제 전 고지, 보호자 동의, 다크패턴, AI 표시, 위기 카드, 신고 | 내부 |
 | 보안 점검 결과(2026-11) | 코드·설정 보안 점검(H·M·L 등급) — 아직 고치지 않은 약점이 있어 공개 저장소에 두지 않고 따로 보관 | 내부 |
 | [security/internal-plan.md](security/internal-plan.md) | 개인정보 내부 관리계획(시행령 제30조) | 내부 |

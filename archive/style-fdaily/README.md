@@ -286,5 +286,7 @@ AI 대화에는 쓰이지 않는 그림용 태그(`tags`)만 고쳤습니다.
 
 - 그림 원칙(관리자만 만듦·참고 그림 커밋 금지·모든 인물 성인·키를 채팅과 저장소에 넣지 않기)과 모델별 상업 조건은 `archive/style-mdaily/README.md`의 '라이선스' 절을 따릅니다.
 - Run七八造와 두 LoRA는 Pony 계열이라, 수익 모델 서비스에서 쓰려면 **PurpleSmart 허가**가 필요합니다. 문의 메일 초안은 같은 README 부록에 있고, 아직 보내지 않았습니다.
-- **Age Slider LoRA(`civitai:468265`)의 상업 조건은 아직 확인하지 않았습니다.** 유료 출시 전에 확인합니다.
+- Age Slider LoRA(`civitai:468265`)는 Civitai 표시에 그림 판매·다른 서비스 대여·판매가 모두 있습니다(2026-11-26 원문 사본).
+- KoreanAI LoRA(`civitai:690861`)는 Civitai 표시에 다른 생성 서비스 대여(Rent)가 없어, Runware에서 돌리는 것이 표시 밖입니다. 뺀 시험을 먼저 합니다(2026-11-27 사용자 결정).
+- 모델별 원문 요지와 지금의 결정은 `archive/style-works/model-licences.md`에 있습니다.
 - WAI(사람 없는 그림)는 그림 판매 O, 앱 안 생성 X입니다.
