@@ -212,12 +212,14 @@ h2.sec small, h1.sec small { font-family:var(--sans); font-size:12.5px; color:va
 .fav-mark { color:var(--gold); font-style:normal; margin-right:3px; }
 .chats-viewed { display:none; }
 @media (max-width:899px) { .chats-viewed { display:block; } }
-.chats-viewed .chip { display:inline-flex; align-items:center; gap:7px; padding:4px 12px 4px 5px; color:var(--fg); }
-.chats-viewed .chip .cover { width:26px; height:26px; border-radius:50%; flex:none; }
+.chats-viewed .chip, .me-shelf .chip { display:inline-flex; align-items:center; gap:7px; padding:4px 12px 4px 5px; color:var(--fg); }
+.chats-viewed .chip .cover, .me-shelf .chip .cover { width:26px; height:26px; border-radius:50%; flex:none; }
+.me-shelf h3 { margin:12px 0 8px; font-size:13px; color:var(--muted); }
 .cont .cover { width:52px; height:52px; border-radius:12px; flex:none; }
 .cont .x { min-width:0; flex:1; }
 .cont .x b { display:block; font-size:14px; }
 .cont .x span { display:block; color:var(--muted); font-size:12.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.cont .x .r-setup { font-size:11.5px; margin:1px 0 2px; }
 .detail { display:grid; grid-template-columns:minmax(0,340px) minmax(0,1fr); gap:28px; align-items:start; }
 .d-side { position:sticky; top:12px; max-height:calc(100vh - 24px); overflow-y:auto; padding-bottom:4px; }
 @media (max-width:899px) { .d-side { max-height:calc(100vh - 96px); } }
@@ -227,7 +229,14 @@ h2.sec small, h1.sec small { font-family:var(--sans); font-size:12.5px; color:va
 .detail .tags { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px; }
 .detail .tags span { font-size:12.5px; background:var(--surface2); border-radius:7px; padding:2px 9px; color:var(--muted); }
 .d-cta { display:flex; gap:8px; align-items:center; margin:2px 0 10px; }
-.d-cta .btn.pri.big { flex:1; min-width:0; height:48px; font-size:15px; }
+.d-cta .btn.big { flex:1; min-width:0; height:48px; font-size:15px; }
+.d-cta .d-resume { flex-direction:column; gap:0; line-height:1.2; padding:0 12px; }
+.d-cta .d-resume small { display:block; max-width:100%; overflow:hidden; text-overflow:ellipsis; font-size:11px; font-weight:500; opacity:.85; }
+.d-rooms-pick { grid-template-columns:1fr; }
+@media (max-width:380px) {
+  .d-cta.has-resume .like-btn { padding:0 13px; }
+  .d-cta.has-resume .like-btn span { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); }
+}
 .d-cta .like-btn { flex:none; height:48px; gap:6px; }
 .like-btn svg { width:15px; height:15px; }
 .like-btn[aria-pressed="true"] { color:var(--accent); border-color:var(--accent); background:var(--accent-soft); }
@@ -622,6 +631,13 @@ details.stat[open] summary::after { content:"▴"; }
 .setcard h4 { margin:0; font-size:14.5px; }
 .setcard .d { color:var(--muted); font-size:12.5px; margin-top:-4px; }
 .setcard .res { color:var(--accent); font-size:12.5px; font-weight:600; }
+.mem-sent { margin-bottom:14px; }
+.mem-sent h4 small { color:var(--muted); font-weight:500; font-size:12px; }
+.mem-sent ol { margin:0; padding:0; list-style:none; counter-reset:sent; display:grid; gap:4px; font-size:13px; }
+.mem-sent li { display:flex; justify-content:space-between; gap:10px; counter-increment:sent; }
+.mem-sent li span { color:var(--muted); flex:none; }
+.mem-sent li span::before { content:counter(sent) ". "; }
+.mem-sent li b { font-weight:600; text-align:right; min-width:0; overflow-wrap:anywhere; }
 .rp-why { display:flex; flex-wrap:wrap; gap:7px; }
 .rp-quote { margin:10px 0 0; padding:10px 12px; border-left:3px solid var(--line); background:var(--surface2); border-radius:0 9px 9px 0; font-size:13px; color:var(--muted); max-height:96px; overflow:auto; overflow-wrap:anywhere; }
 .toggle { display:flex; align-items:center; justify-content:space-between; gap:12px; }
@@ -695,6 +711,18 @@ table.tbl .plus { color:var(--gold); font-weight:700; }
 .statline { display:flex; gap:10px; flex-wrap:wrap; }
 .statline .box { flex:1; min-width:150px; margin:0; }
 .statline .box b { font-family:var(--display); font-size:24px; display:block; font-variant-numeric:tabular-nums; }
+@media (max-width:560px) {
+  .store-stat { flex-wrap:nowrap; gap:6px; }
+  .store-stat .box { min-width:0; padding:10px; }
+  .store-stat .box h3 { font-size:11.5px; }
+  .store-stat .box b { font-size:18px; }
+  .store-stat .box .note { font-size:11px; line-height:1.35; }
+  table.price-tbl td:first-child { white-space:normal; min-width:84px; }
+  table.price-tbl td, table.price-tbl th { padding:9px 8px; }
+}
+@media (max-width:360px) {
+  table.price-tbl td, table.price-tbl th { padding:9px 5px; }
+}
 .plist { display:grid; gap:8px; }
 .prow { display:flex; gap:12px; align-items:center; padding:12px 14px; border:1px solid var(--line); border-radius:14px; background:var(--bg); }
 .prow.on { border-color:var(--accent); box-shadow:0 0 0 1px var(--accent) inset; }
@@ -2756,6 +2784,10 @@ function indexRoom(r) {
     ep: r.ep ? (r.ep.end ? "결말" : r.ep.beat + 1 + "장") : "",
     side: !!r.side,
     ...(r.fav ? { fav: true } : {}),
+    opening: r.opening || "",
+    openingId: r.openingId || "",
+    personaId: (r.persona && r.persona.id) || "",
+    personaName: (r.persona && r.persona.name) || "",
     last: (lastAi ? curText(lastAi) : "")
       .replace(/\[\[[^\]]*\]\]/g, "")
       .replace(/[*"\[\]]/g, "")
@@ -3060,10 +3092,12 @@ function baseOpening(r) {
   return t.slice(-FORK_MARK.length) === FORK_MARK ? t.slice(0, -FORK_MARK.length) : t;
 }
 function openingIndex(c, r) {
+  return Math.max(0, findOpening(c, r));
+}
+function findOpening(c, r) {
   const ops = (c && c.openings) || [];
-  let i = r.openingId ? ops.findIndex((o) => o.id === r.openingId) : -1;
-  if (i < 0) i = ops.findIndex((o) => o.title === baseOpening(r));
-  return Math.max(0, i);
+  const i = r.openingId ? ops.findIndex((o) => o.id === r.openingId) : -1;
+  return i >= 0 ? i : ops.findIndex((o) => o.title === baseOpening(r));
 }
 function forkRoom(r, msgId) {
   const i = r.msgs.findIndex((m) => m.id === msgId);
@@ -5060,6 +5094,12 @@ function commandList(text, c) {
   return allCommands(c).filter((x) => x.names.some((n) => n.toLowerCase().indexOf(p) === 0));
 }
 /* ── src/js/ai/prompt/input.js — 유저 메시지 끝에 붙는 [이번 응답] 지시(buildInput)와 [이미 쓴 문장](usedOpeners) */
+function recentOf(r, hist) {
+  return hist.slice(-(r.set.mem * 2 + 1));
+}
+function pinsSent(r) {
+  return (r.pins || []).slice(0, plan().pins);
+}
 function usedOpeners(hist) {
   const out = [];
   for (const m of hist.filter((x) => x.role === "ai" && curText(x)).slice(-2))
@@ -5077,7 +5117,7 @@ function usedOpeners(hist) {
 }
 function buildInput(r, uptoIdx, statusBefore, direction, sug = !!r.set.autoSug) {
   const hist = r.msgs.slice(0, uptoIdx).filter((m) => curText(m));
-  const recent = hist.slice(-(r.set.mem * 2 + 1));
+  const recent = recentOf(r, hist);
   const lore = matchLore(
     liveWork(r.char).lore || r.char.lore,
     recent.slice(-LORE.scan).map((m) => (m.role === "ai" ? curText(m) : m.text) || "")
@@ -5163,7 +5203,7 @@ function rulesParts(r, lore = [], hist = r.msgs, sug = !!(r.set && r.set.autoSug
   const fields = c.fields.map((f) => `"${f}":${f === c.gauge && typeof r.status?.[f] === "number" ? "0~100 정수" : '"짧은 값"'}`).join(",");
   const cast = c.cast || [],
     byCode = (code) => cast.find((x) => x.code === code);
-  const pins = (r.pins || []).slice(0, plan().pins);
+  const pins = pinsSent(r);
   const seen = new Set(),
     cutsUsed = new Set(),
     PLACE = seriesCode("place"),
@@ -6378,7 +6418,25 @@ function bindPins(body, r, repaint) {
       })
   );
 }
-/* ── src/js/ui/drawer/memory.js — 대화방 드로어의 장기기억 화면: 현재 기억(자동 업데이트·지금 요약하기)·고정 기억·히스토리·요약 설정 네 탭 */
+/* ── src/js/ui/drawer/memory.js — 대화방 드로어의 장기기억 화면: 현재 기억(맨 위에 지금 AI에게 보내는 것·자동 업데이트·지금 요약하기)·고정 기억·히스토리·요약 설정 네 탭 */
+function sentHTML(r) {
+  const pins = (r.pins || []).length,
+    sent = pinsSent(r).length,
+    recent = recentOf(
+      r,
+      r.msgs.filter((m) => curText(m)).concat([{}])
+    ).length;
+  const row = (k, v) => `<li><span>${k}</span><b>${v}</b></li>`;
+  return (
+    `<div class="setcard mem-sent" id="memSent"><h4>지금 AI에게 매 턴 보내는 것 <small>이 순서로</small></h4><ol>` +
+    row("내 페르소나", esc(r.persona.name)) +
+    row("유저노트", r.userNote ? num(r.userNote.length) + "자" : "없음") +
+    row("고정 기억", sent + "줄" + (pins > sent ? ` · ${pins - sent}줄은 한도를 넘어 안 보내요` : "")) +
+    row("장기기억 <small>아래 내용</small>", r.memory ? num(r.memory.length) + "자" : "아직 없음") +
+    row("최근 대화", `보낼 말 포함 메시지 ${recent}개 · 기억력 ${esc(String(r.set.mem))}턴`) +
+    `</ol></div>`
+  );
+}
 function drawerMemory({ r, ov, body, cfg }) {
   let tab = "cur";
   const paint = () => {
@@ -6393,6 +6451,7 @@ function drawerMemory({ r, ov, body, cfg }) {
     if (tab === "cur") {
       body.innerHTML =
         tabs +
+        sentHTML(r) +
         (`<b>현재 대화방에 적용 중인 기억이에요</b><p class="note" style="margin:4px 0 12px">설정한 요약 주기마다 지금까지 나눈 대화를 자동으로 요약해 업데이트해요.</p>
           <div class="setcard"><div class="toggle"><label for="mAuto">자동 업데이트</label><input type="checkbox" id="mAuto" ${cfg.auto ? "checked" : ""}></div>
             <div class="toggle" style="border-top:1px solid var(--line);padding-top:9px"><span>다음 업데이트까지</span>` +
@@ -6909,7 +6968,7 @@ function viewStore() {
   v.innerHTML =
     `<div class="page">${topbar()}
     <h1 class="sec" style="margin-top:4px">스토어</h1>
-    <div class="statline">
+    <div class="statline store-stat">
       <div class="box"><h3>오늘 무료 턴</h3><b>${pro ? "무제한" : freeLeft() + " / " + FREE_DAILY}</b><span class="note">라이트 모델 · 매일 자정에 다시 채워져요</span></div>
       <div class="box"><h3>보유 하트</h3><b>♥ ${num(S.wallet.hearts)}</b>` +
     `<span class="note">스토리 모델 약 ${Math.floor(S.wallet.hearts / (pro ? Math.ceil(story / 2) : story))}턴</span></div>
@@ -6917,7 +6976,7 @@ function viewStore() {
     `<span class="note">${pro ? new Date(S.wallet.pro.until).toLocaleDateString("ko-KR") + "까지" : "기본 요금제"}</span></div>
     </div>
     <h2 class="sec">한 턴에 얼마나 드나요? <small>기억력 10턴 기준 · 10턴 늘 때마다 스토리 +♥1, 마스터 +♥2</small></h2>
-    <div class="tbl-wrap"><table class="tbl"><thead><tr><th>모델</th><th class="num">적게</th><th class="num">보통</th>` +
+    <div class="tbl-wrap"><table class="tbl price-tbl"><thead><tr><th>모델</th><th class="num">적게</th><th class="num">보통</th>` +
     `<th class="num">많게</th><th class="num plus">PLUS</th></tr></thead><tbody>
       <tr><td><b>라이트</b> <span class="pill ok">매일 ${FREE_DAILY}턴 무료</span><div class="note">빠르고 가벼운 일상 대화</div></td>` +
     `<td class="num">${cell("lite", "short")}</td><td class="num">${cell("lite", "mid")}</td><td class="num">${cell("lite", "long")}</td>` +
@@ -7538,6 +7597,25 @@ const HOME_KINDS = {
 const kindOK = (c) => (S.kind === "ep" ? !!c.episode : S.kind === "free" ? !c.episode : true);
 function viewHome() {
   const v = $("#view");
+  v.innerHTML = `<div class="page">
+    ${topbar(`<label class="search">${ICON.search}<span class="sr">캐릭터 검색</span><input id="q" placeholder="캐릭터, 작품, 태그 검색" value="${esc(S.q)}"></label>`)}
+    ${!hasClaudeKey() ? `<div class="engine-warn">AI 연결이 아직 없어요. <b>MY → 설정</b>에서 Anthropic API 키를 넣어 주세요.</div>` : ""}
+    <div id="homeBody"></div></div>`;
+  const q = $("#q");
+  q.oninput = () => {
+    S.q = q.value;
+    paintHome();
+  };
+  bindGo($(".topbar", v));
+  paintHome();
+  if (audLater) {
+    audLater = false;
+    askAud();
+  }
+}
+function paintHome() {
+  const v = $("#homeBody");
+  if (!v) return;
   const match = (c) =>
     (S.cat === "전체" || c.cat === S.cat) && (!S.q || [c.name, c.title, c.oneLiner, ...(c.tags || [])].join(" ").toLowerCase().includes(S.q.toLowerCase()));
   const pool = ORIGINALS.filter(audOK),
@@ -7590,21 +7668,18 @@ function viewHome() {
           }
           return out;
         })();
-  v.innerHTML = `<div class="page">
-    ${topbar(`<label class="search">${ICON.search}<span class="sr">캐릭터 검색</span><input id="q" placeholder="캐릭터, 작품, 태그 검색" value="${esc(S.q)}"></label>`)}
-    ${!hasClaudeKey() ? `<div class="engine-warn">AI 연결이 아직 없어요. <b>MY → 설정</b>에서 Anthropic API 키를 넣어 주세요.</div>` : ""}
-    ${
-      !S.q && hero.length
-        ? `<h2 class="sec">추천작</h2><div class="hero">${hero
-            .map(
-              (c) => `
+  v.innerHTML = `${
+    !S.q && hero.length
+      ? `<h2 class="sec">추천작</h2><div class="hero">${hero
+          .map(
+            (c) => `
       <button class="hero-card" data-char="${esc(c.id)}">${coverHTML(c, "", { vt: true })}
         <div class="body"><span class="k">${c.isNew ? "NEW · " : ""}${esc(c.cat)} · HEART SYNC 오리지널</span><h3>${esc(c.title)}</h3><p>${esc(c.desc)}</p>
         <span class="who">${c.world_mode ? "세계관 입장하기" : esc(c.name) + "와 대화하기"} →</span></div></button>`
-            )
-            .join("")}</div>`
-        : ""
-    }
+          )
+          .join("")}</div>`
+      : ""
+  }
     <h2 class="sec">둘러보기 <small>관심있는 대화 · 이야기 형식 · 장르</small></h2>
     ${audSegHTML()}
     <div class="seg kind-seg">${Object.keys(HOME_KINDS)
@@ -7617,47 +7692,52 @@ function viewHome() {
     <div class="chips" style="margin-top:10px">${["전체", ...CATS]
       .map((c) => `<button class="chip ${S.cat === c ? "on" : ""}" ` + `data-cat="${c}">${c}</button>`)
       .join("")}</div>
-    ${zones || empty}
-  </div>`;
+    ${zones || empty}`;
   $$("[data-char]", v).forEach((b) => (b.onclick = () => go("c-" + b.dataset.char)));
   $$("[data-cat]", v).forEach(
     (b) =>
       (b.onclick = () => {
         S.cat = b.dataset.cat;
-        viewHome();
+        paintHome();
       })
   );
   $$("[data-kind]", v).forEach(
     (b) =>
       (b.onclick = () => {
         S.kind = HOME_KINDS[b.dataset.kind] ? b.dataset.kind : "all";
-        viewHome();
+        paintHome();
       })
   );
   $$("[data-aud]", v).forEach(
     (b) =>
       (b.onclick = () => {
         setAudience(b.dataset.aud);
-        viewHome();
+        paintHome();
       })
   );
-  const q = $("#q");
-  q.oninput = () => {
-    S.q = q.value;
-    const pos = q.selectionStart;
-    viewHome();
-    const n = $("#q");
-    n.focus();
-    n.setSelectionRange(pos, pos);
-  };
   bindGo(v);
   IMG.hydrate(v);
-  if (audLater) {
-    audLater = false;
-    askAud();
-  }
 }
-/* ── src/js/ui/me.js — MY: 페르소나·관심있는 대화·채팅 설정·AI 연결·계정·고객센터·약관 및 정책 */
+/* ── src/js/ui/me-shelf.js — MY의 '내 서재' 칸: 찜한 작품(누르면 작품 상세)과 도감 바로가기 — 휴대폰에서 찜·도감을 찾아 홈을 내려가지 않게(2026-11-21 프레임 7차 C9) */
+function shelfHTML() {
+  const likes = shownWorks(likedIds());
+  return (
+    `<h2 class="sec">내 서재</h2><div class="box me-shelf" id="meShelf">` +
+    `<div class="menu-list"><button data-go="codex">도감<span class="v">인물·장소·컷씬</span></button></div>` +
+    `<h3>찜한 작품 <small>${likes.length}</small></h3>` +
+    (likes.length
+      ? `<div class="chips">${likes.map(chipHTML).join("")}</div>`
+      : `<p class="note">아직 없어요 — 작품 상세에서 찜하기를 누르면 여기에 모여요.</p>`) +
+    `</div>`
+  );
+}
+function chipHTML(c) {
+  return `<button class="chip" data-char="${esc(c.id)}">${coverHTML(c)}<span>${esc(c.title)}</span></button>`;
+}
+function bindShelf(root) {
+  $$("#meShelf [data-char]", root).forEach((b) => (b.onclick = () => go("c-" + b.dataset.char)));
+}
+/* ── src/js/ui/me.js — MY: 내 서재(찜·도감 — ui/me-shelf.js)·페르소나·관심있는 대화·채팅 설정·AI 연결·계정·고객센터·약관 및 정책 */
 function viewMe() {
   const v = $("#view"),
     cur = S.personas.find((p) => p.def) || S.personas[0];
@@ -7670,6 +7750,7 @@ function viewMe() {
       <div class="box"><h3>요금제</h3><b>${isPro() ? "PLUS" : "무료"}</b></div>
     </div>
     ${accountBoxHTML()}
+    ${shelfHTML()}
     <h2 class="sec">내 페르소나 <small>대화에서 내가 연기하는 캐릭터</small></h2>
     <div class="box">
       <div class="avatar-pick">${pavHTML(cur)}<div style="min-width:0"><b style="font-size:17px">${esc(cur.name)}</b> ` +
@@ -7716,6 +7797,7 @@ function viewMe() {
       <a href="${esc(docUrl("privacy.html"))}" target="_blank" rel="noopener">개인정보처리방침</a></div></div>
   </div>`;
   bindGo(v);
+  bindShelf(v);
   IMG.hydrate(v);
   checkNotices();
   runExt("me", v);
@@ -9480,6 +9562,10 @@ function setNav(k) {
 function favMark(r) {
   return r.fav ? '<i class="fav-mark" title="즐겨찾기">★</i>' : "";
 }
+function roomSetupHTML(r) {
+  const t = [r.opening, r.personaName].filter(Boolean).map(esc).join(" · ");
+  return t ? `<span class="r-setup">${t}</span>` : "";
+}
 function renderRailRecent() {
   const el = $("#railRecent");
   if (!el) return;
@@ -9491,10 +9577,8 @@ function renderRailRecent() {
   $$("[data-room]", el).forEach((b) => (b.onclick = () => go("r-" + b.dataset.room)));
   IMG.hydrate(el);
 }
-const viewedWorks = () =>
-  recentIds()
-    .map((id) => getChar(id))
-    .filter((c) => c && audOK(c));
+const shownWorks = (ids) => ids.map((id) => getChar(id)).filter((c) => c && audOK(c));
+const viewedWorks = () => shownWorks(recentIds());
 function renderRailViewed() {
   const el = $("#railViewed");
   if (!el) return;
@@ -9549,9 +9633,18 @@ function startNote(c) {
     `라이트 모델은 하루 ${FREE_DAILY}턴 무료.`
   );
 }
-function startChat(c, opIdx = 0) {
+function lastSetup(c) {
+  const e = S.rooms.filter((r) => r.charId === c.id).sort((a, b) => b.at - a.at)[0];
+  if (!e || !e.personaId || !(e.openingId || e.opening)) return null;
+  const op = findOpening(c, e),
+    persona = S.personas.find((p) => p.id === e.personaId);
+  return op >= 0 && persona ? { op, persona } : null;
+}
+function startChat(c, opIdx) {
   if (S.rooms.filter((r) => r.charId === c.id).length >= plan().rooms) return plusSheet("rooms");
-  const def = S.personas.find((p) => p.def) || S.personas[0];
+  const last = opIdx === undefined ? lastSetup(c) : null;
+  if (opIdx === undefined) opIdx = last ? last.op : 0;
+  const def = (last && last.persona) || S.personas.find((p) => p.def) || S.personas[0];
   const begin = (i, p) => {
     closeOverlays();
     setRoom(newRoom(c, i, p));
@@ -9572,6 +9665,7 @@ function startChat(c, opIdx = 0) {
       `<label class="opening pick${on ? " on" : ""}"><input type="radio" name="${name}" value="${esc(value)}"${on ? " checked" : ""}>` +
       `<b>${head}</b>${sub ? `<span class="brief">${sub}</span>` : ""}</label>`;
     body.innerHTML =
+      (last ? `<p class="note st-last" id="stLast">지난번 설정으로 골라 뒀어요 — 시작하면 새 대화방이 하나 더 생겨요.</p>` : "") +
       `<h3 class="st-h">${c.world_mode ? "게임 모드 · 시작 상황" : "시작 상황"}</h3><div class="openings">` +
       c.openings.map((o, i) => card("op", String(i), i === opIdx, esc(o.title) + opPlace(c, o), esc(opBrief(o)) + "…")).join("") +
       `</div><h3 class="st-h">대화할 내 페르소나<span class="spacer"></span><button class="btn sm ghost" id="stMe">페르소나 관리</button></h3>` +
@@ -9640,8 +9734,10 @@ function viewDetail(id) {
     `${c.hold ? `<p class="d-hold" id="dHold">출시판 제외 — ${esc(c.hold)}</p>` : ""}</div>
         </div>
         <div class="tags">${(c.tags || []).map((t) => `<span>#${esc(t)}</span>`).join("")}</div>
-        <div class="d-cta"><button class="btn ghost like-btn" id="like" aria-pressed="${liked(c.id)}">${likeHTML(liked(c.id))}</button>` +
-    `<button class="btn pri big" id="start">${c.episode ? "에피소드 시작" : "새 대화 시작"}</button></div>
+        <div class="d-cta${rooms.length ? " has-resume" : ""}">` +
+    `<button class="btn ghost like-btn" id="like" aria-pressed="${liked(c.id)}">${likeHTML(liked(c.id))}</button>` +
+    resumeHTML(rooms) +
+    `<button class="btn ${rooms.length ? "" : "pri "}big" id="start">${c.episode ? "에피소드 시작" : "새 대화 시작"}</button></div>
         <p class="note d-price">${startNote(c)}</p>${hasArt(c) ? `<p class="note d-aiart" id="dAiArt">${AI_ART_NOTE}</p>` : ""}
         ${rooms.length ? `<div class="d-rooms"><h3>이어서 하기 <small>이 작품의 내 대화방</small></h3><div class="cont">${rooms.map(roomHTML).join("")}</div></div>` : ""}
       </div>
@@ -9691,12 +9787,27 @@ function viewDetail(id) {
       more.textContent = open ? "접기" : "더 보기";
       more.setAttribute("aria-expanded", open);
     };
-  $("#start").onclick = () => startChat(c, 0);
+  $("#start").onclick = () => startChat(c);
+  const resume = $("#resume");
+  if (resume) resume.onclick = () => (rooms.length === 1 ? go("r-" + rooms[0].id) : resumeSheet(rooms));
   $$("[data-op]", v).forEach((b) => (b.onclick = () => startChat(c, +b.dataset.op)));
 }
 const roomHTML = (r) =>
-  `<button data-room="${esc(r.id)}">${coverHTML(r)}<span class="x"><b>${favMark(r)}${esc(r.name)}</b>` +
+  `<button data-room="${esc(r.id)}">${coverHTML(r)}<span class="x"><b>${favMark(r)}${esc(r.name)}</b>${roomSetupHTML(r)}` +
   `<span>${esc(r.last)}</span></span><span class="note">${ago(r.at)}</span></button>`;
+function resumeHTML(rooms) {
+  if (!rooms.length) return "";
+  const sub = rooms.length > 1 ? `대화방 ${rooms.length}개` : [rooms[0].opening, rooms[0].last].filter(Boolean).join(" · ");
+  return `<button class="btn pri big d-resume" id="resume"><span>이어하기</span>${sub ? `<small>${esc(sub)}</small>` : ""}</button>`;
+}
+function resumeSheet(rooms) {
+  const ov = sheet(
+    `<div class="sheet-head"><h2>이어서 할 대화방</h2><button class="icon-btn" data-x aria-label="닫기">${ICON.close}</button></div>` +
+      `<div class="cont d-rooms-pick">${rooms.map(roomHTML).join("")}</div>`
+  );
+  IMG.hydrate(ov);
+  $$("[data-room]", ov).forEach((b) => (b.onclick = () => go("r-" + b.dataset.room)));
+}
 function descHTML(c) {
   const long = (c.desc || "").length > LONG_DESC;
   return (
@@ -9769,7 +9880,7 @@ const chatRowHTML = (r) =>
   `<span class="note" style="display:inline;font-weight:400">· ${esc(r.name)}</span>` +
   `${r.fork ? ' <span class="pill">분기</span>' : ""}` +
   `${r.ep ? ` <span class="pill">${r.ep === "결말" ? "결말" : "에피소드 · " + esc(r.ep)}</span>` : ""}` +
-  `${r.side ? ' <span class="pill">외전</span>' : ""}</b>` +
+  `${r.side ? ' <span class="pill">외전</span>' : ""}</b>${roomSetupHTML(r)}` +
   `<span>${esc(r.last) || "대화를 시작해 보세요"}</span></span><span class="note">${ago(r.at)}</span></button>` +
   `<button type="button" class="fav-btn" data-fav="${esc(r.id)}" aria-pressed="${!!r.fav}" aria-label="즐겨찾기"` +
   ` title="${r.fav ? "즐겨찾기 풀기" : "즐겨찾기 — 목록 맨 위에 고정"}">${r.fav ? "★" : "☆"}</button></div>`;

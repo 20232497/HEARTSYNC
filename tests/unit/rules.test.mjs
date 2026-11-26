@@ -4,7 +4,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { llm } from "../../src/js/ai/llm.js";
 import { PROMPT_CACHE } from "../../src/js/ai/models.js";
-import { buildInput } from "../../src/js/ai/prompt/input.js";
+import { buildInput, pinsSent, recentOf } from "../../src/js/ai/prompt/input.js";
 import { ratingRules } from "../../src/js/ai/prompt/rating.js";
 import { rulesParts, rulesPrompt } from "../../src/js/ai/prompt/rules.js";
 import { ORIGINALS } from "../../src/js/content/index.js";
@@ -114,6 +114,24 @@ test("고정 기억은 지금 요금제 한도 안의 앞쪽 줄만 보냄 — P
   assert.ok(rulesParts(r).vary.includes("고정 표식 " + (PLAN.free.pins + 2) + "번"), "PLUS면 모두");
   assert.equal(r.pins.length, PLAN.free.pins + 2, "방의 줄은 지우지 않음");
   S.wallet.pro = was;
+});
+test("장기기억 화면의 '지금 AI에게 보내는 것'이 쓰는 두 함수(pinsSent·recentOf)가 실제 프롬프트와 같은 줄·같은 메시지를 고름", () => {
+  const r = room(ORIGINALS[0].id),
+    was = S.wallet.pro;
+  r.pins = Array.from({ length: PLAN.free.pins + 1 }, (_, i) => ({ id: "p" + i, text: "고정 표식 " + (i + 1) + "번", at: i }));
+  S.wallet.pro = null;
+  const vary = rulesParts(r).vary,
+    sent = pinsSent(r);
+  assert.equal(sent.length, PLAN.free.pins);
+  assert.ok(sent.every((p) => vary.includes(p.text)) && !vary.includes(r.pins[PLAN.free.pins].text), "보낸다고 센 줄만 프롬프트에");
+  S.wallet.pro = was;
+  // 최근 대화: 기억력 r.set.mem턴의 주고받음 + 이번 유저 메시지 — buildInput이 넘기는 대화 메시지와 같은 수
+  for (let i = 0; i < 30; i++) r.msgs.push({ id: "u" + i, role: "user", text: "말 " + i }, { id: "a" + i, role: "ai", alts: [{ text: "답 " + i }], idx: 0 });
+  r.set.mem = 3;
+  const hist = r.msgs.filter((m) => (m.role === "ai" ? m.alts[0].text : m.text));
+  assert.equal(recentOf(r, hist).length, 7);
+  const msgs = buildInput(r, r.msgs.length, {});
+  assert.equal(msgs.length - 1, recentOf(r, hist).length, "시스템 하나 + 최근 대화");
 });
 test("이미 등장한 인물에는 인물 코드만 — 장소 태그(MP)·작품에 없는 코드는 넣지 않고, 컷씬은 따로 센다", () => {
   const r = room(ORIGINALS[0].id),

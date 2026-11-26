@@ -6,7 +6,7 @@ import { S } from "../core/state.js";
 import { $, $$, ago, esc, toast } from "../core/util.js";
 import { IMG } from "../services/images.js";
 import { coverHTML } from "./cover.js";
-import { bindGo, go, topbar, viewedWorks } from "./shell.js";
+import { bindGo, go, roomSetupHTML, topbar, viewedWorks } from "./shell.js";
 
 /* 방 한 줄: 방으로 가는 버튼 + 즐겨찾기 별(버튼 안에 버튼을 넣지 않으려고 나란히 둠) */
 const chatRowHTML = (r) =>
@@ -14,7 +14,7 @@ const chatRowHTML = (r) =>
   `<span class="note" style="display:inline;font-weight:400">· ${esc(r.name)}</span>` +
   `${r.fork ? ' <span class="pill">분기</span>' : ""}` +
   `${r.ep ? ` <span class="pill">${r.ep === "결말" ? "결말" : "에피소드 · " + esc(r.ep)}</span>` : ""}` +
-  `${r.side ? ' <span class="pill">외전</span>' : ""}</b>` +
+  `${r.side ? ' <span class="pill">외전</span>' : ""}</b>${roomSetupHTML(r)}` +
   `<span>${esc(r.last) || "대화를 시작해 보세요"}</span></span><span class="note">${ago(r.at)}</span></button>` +
   `<button type="button" class="fav-btn" data-fav="${esc(r.id)}" aria-pressed="${!!r.fav}" aria-label="즐겨찾기"` +
   ` title="${r.fav ? "즐겨찾기 풀기" : "즐겨찾기 — 목록 맨 위에 고정"}">${r.fav ? "★" : "☆"}</button></div>`;

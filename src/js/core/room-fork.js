@@ -37,10 +37,16 @@ export function baseOpening(r) {
  * @param {Work} c 최신 작품 @param {Room} r @returns {number}
  */
 export function openingIndex(c, r) {
+  return Math.max(0, findOpening(c, r));
+}
+/**
+ * openingIndex의 찾기만(첫 시작 상황으로 물러나지 않음) — 못 찾으면 -1. 시작 창의 '지난번 설정'(ui/start-sheet.js lastSetup)이 그 시작 상황이 아직 있는지 볼 때.
+ * @param {Work} c @param {{ openingId?: string, opening?: string }} r 방 또는 방 목록 항목 @returns {number}
+ */
+export function findOpening(c, r) {
   const ops = (c && c.openings) || [];
-  let i = r.openingId ? ops.findIndex((o) => o.id === r.openingId) : -1;
-  if (i < 0) i = ops.findIndex((o) => o.title === baseOpening(r));
-  return Math.max(0, i);
+  const i = r.openingId ? ops.findIndex((o) => o.id === r.openingId) : -1;
+  return i >= 0 ? i : ops.findIndex((o) => o.title === baseOpening(r));
 }
 /**
  * 분기: 그 메시지까지를 깊은 복사한 새 대화방 — 같은 작품 사본·페르소나·설정·유저노트·시작 상황 id(openingId), 상태창은 그 시점의 것, 시작 상황 제목에 '(분기)', forkedFrom에 출처.

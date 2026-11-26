@@ -27,6 +27,7 @@
 ## 고정 기억
 
 - 고정 기억(핀 — 2026-11-09 프레임 3차, ui/pins.js): 방의 r.pins [{ id, text, at, msgId? }] — 말풍선 메뉴 '📌 고정'(pinSheet가 그 메시지 앞부분을 채운 한 줄 입력, 고쳐서 저장) 또는 드로어 장기기억의 '고정 기억' 탭(pinsHTML·bindPins — 수정·삭제·직접 추가, 한도 표시). 프롬프트 변동부의 [고정 기억 — 반드시 지킨다]로 유저노트와 장기 기억 사이에 매 턴 그대로(요약·압축은 건드리지 않음). 한도(2026-11-09 사용자 결정): 한 줄 LIMITS.pin 200자, 개수 PLAN.free.pins 5 · PLAN.pro.pins 20(넘으면 무료는 plusSheet("pins"), PLUS는 알림). **프롬프트에는 지금 요금제 한도 안의 앞쪽 줄만**(rules.js `(r.pins).slice(0, plan().pins)` — 2026-11-10 사용자 결정: PLUS가 끝나 한도가 줄면 넘는 줄은 지우지 않고 목록에 '보관 중'으로 두되 AI에는 보내지 않음, 다시 PLUS가 되면 모두 보냄). 분기하면 그 메시지까지에서 고정한 것(과 직접 적은 것)만 따라감. roomMinorHint도 고정 기억을 봄. 참고: Character.AI 기억 고정
+- 장기기억 화면 맨 위 **'지금 AI에게 매 턴 보내는 것'**(2026-11-26 프레임 7차 C9, ui/drawer/memory.js sentHTML): 프롬프트 변동부의 순서대로 내 페르소나 → 유저노트(글자 수) → 고정 기억(보내는 줄 수, 한도를 넘은 줄이 있으면 'n줄은 한도를 넘어 안 보내요') → 장기기억(글자 수) → 최근 대화(다음 턴에 보낼 메시지 수 — 이번에 보낼 말 포함·기억력). 수는 **실제 프롬프트와 같은 함수**로 셈 — ai/prompt/input.js pinsSent(rules.js rulesParts가 씀)·recentOf(buildInput이 씀). 시험 tests/unit/rules.test.mjs·e2e views '길 찾기'
 
 ## 메시지 피드백·분기
 
