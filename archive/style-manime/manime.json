@@ -8,7 +8,7 @@
   "model": {
     "id": "civitai:967405@1428332",
     "name": "Nova Orange XL v6.0",
-    "license": "Civitai 표시 기준 그림 판매 허용 · 작가 표기 의무 없음(법률 검토는 아님)"
+    "license": "상업 이용 불확실(2026-11-26 정정 — 사용자 결정·법률 검토 전): Civitai 표시는 그림 판매 허용·작가 표기 불필요, 모델 설명 규칙은 '편집하지 않은 그림은 상업 이용 불가', 바탕 NoobAI-XL 라이선스는 생성물 상업 이용 금지 — README '생성 설정'의 모델 줄"
   },
   "gen": { "steps": 28, "scheduler": "Euler a", "cfg": 4, "promptWeighting": "sdEmbeds(가중치가 있을 때)" },
   "size": {

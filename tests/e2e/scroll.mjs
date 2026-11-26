@@ -3,7 +3,7 @@
 import { chromium, webkit, devices } from "playwright";
 import { noSupabase } from "./_offline.mjs";
 const [, , url, out] = process.argv; // out: 스크린샷 폴더(없으면 안 찍음)
-const CARD = ".page > .row-scroll:last-of-type .card"; // 홈 맨 아래 구역(장르별 줄의 마지막)의 첫 카드 — 홈을 내려야 보이는 자리
+const CARD = "#homeBody > .row-scroll:last-of-type .card"; // 홈 맨 아래 구역(장르별 줄의 마지막)의 첫 카드 — 홈을 내려야 보이는 자리(검색칸 아래 #homeBody — 2026-11-26)
 for (const [dev, engine] of [
   ["Desktop Chrome", chromium],
   ["iPhone 13", webkit]

@@ -3,13 +3,12 @@
 import { LEN } from "../models.js";
 import { castField } from "../parse.js";
 import { epProgress, modeHead } from "./episode.js";
-import { usedOpeners } from "./input.js";
+import { pinsSent, usedOpeners } from "./input.js";
 import { ratingRules } from "./rating.js";
 import { exampleCast, liveWork } from "../../core/character.js";
 import { MARK, SIT } from "../../core/constants.js";
 import { epPlan } from "../../core/episode.js";
 import { curText } from "../../core/rooms.js";
-import { plan } from "../../core/wallet.js";
 import { imgTags, seriesCode } from "../../images/codes.js";
 import { imagesOf } from "../../images/pick.js";
 import { validRef } from "../../services/images.js";
@@ -53,7 +52,7 @@ export function rulesParts(r, lore = [], hist = r.msgs, sug = !!(r.set && r.set.
   const fields = c.fields.map((f) => `"${f}":${f === c.gauge && typeof r.status?.[f] === "number" ? "0~100 정수" : '"짧은 값"'}`).join(",");
   const cast = c.cast || [],
     byCode = (code) => cast.find((x) => x.code === code);
-  const pins = (r.pins || []).slice(0, plan().pins); // 고정 기억은 지금 요금제 한도 안의 앞쪽 줄만 보냄 — PLUS가 끝나 한도가 줄면 넘는 줄은 방에 남기되 보내지 않음(2026-11-10 사용자 결정)
+  const pins = pinsSent(r); // 고정 기억은 지금 요금제 한도 안의 앞쪽 줄만(input.js pinsSent — 장기기억 화면도 같은 함수)
   // 이미 등장한 인물(폼 태그는 본체도 등장한 것으로)·이미 나온 컷씬 번호
   const seen = new Set(),
     cutsUsed = new Set(),
