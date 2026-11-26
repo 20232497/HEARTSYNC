@@ -1,5 +1,6 @@
 /* AI 표시: 대화 화면 머리의 배지 · AI 말풍선의 접근성 이름 · 첫 대화 전 한 번의 안내 · 내보낸 파일의 첫 줄.
-   문구는 docs/legal/ui-copy.md §6의 글자 그대로 — 고칠 때는 그 문서(주인은 법률 세션)와 같이. 그림에 붙는 표기 두 줄은 그림이 실릴 때(docs/ROADMAP.md) */
+   문구는 docs/legal/ui-copy.md §6의 글자 그대로 — 고칠 때는 그 문서(주인은 법률 세션)와 같이. 그림에 붙는 표기 두 줄(ui-copy §6)은 그림이 이미 배포에 실렸으므로 다음 안전 묶음에서
+   크게 보기(ui/cover.js lightbox)에 넣음(2026-11-26 사용자 "7차 병합 직후 바로" — 상세에는 AI 그림 줄이 이미 있음) */
 import { saveSettings } from "../core/settings.js";
 import { S } from "../core/state.js";
 
