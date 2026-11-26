@@ -68,7 +68,7 @@ export function faqGroups() {
         ],
         [
           "PLUS는 무엇인가요?",
-          `월 ${plus} 멤버십이에요. 라이트 모델 무제한, 스토리·마스터 50% 할인, 매달 하트 ${num(PLUS_MONTHLY)}개, 장기기억 ${num(PLAN.free.memoMax)}자 → ` +
+          `월 ${plus} 멤버십이에요. 라이트 모델 무제한, 매달 하트 ${num(PLUS_MONTHLY)}개, 장기기억 ${num(PLAN.free.memoMax)}자 → ` +
             `${num(PLAN.pro.memoMax)}자, 기억력 ${PLAN.free.memTurns}턴 → ${PLAN.pro.memTurns}턴, 고정 기억 ${PLAN.free.pins}개 → ${PLAN.pro.pins}개로 늘어나요. ` +
             `PLUS가 끝나면 고정 기억은 지워지지 않고 앞의 ${PLAN.free.pins}개만 AI에 전해져요(나머지는 보관).`
         ],

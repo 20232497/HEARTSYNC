@@ -1638,7 +1638,7 @@ function ledger(d, label) {
   S.wallet.ledger.unshift({ at: Date.now(), d, label });
   S.wallet.ledger = S.wallet.ledger.slice(0, 80);
 }
-/* 가격: 모델 기본가 × 출력량 + 기억력 가산. 무료 턴은 라이트 모델에만, PLUS는 라이트 무제한·나머지 50% */
+/* 가격: 모델 기본가 × 출력량 + 기억력 가산. 무료 턴은 라이트 모델에만, PLUS는 라이트 무제한·나머지는 정가(할인 없음 — 2026-11-26 사용자 결정) */
 /** 정가(하트). @param {string} model ModelKey @param {string} len LenKey @param {number} mem 기억력 @returns {number} */
 function listPrice(model, len, mem) {
   const m = MODELS[model] || MODELS.lite;
@@ -1648,13 +1648,14 @@ function listPrice(model, len, mem) {
 function quote(set) {
   const list = listPrice(set.model, set.len, set.mem);
   /** @type {Quote} */
-  const q = isPro()
-    ? set.model === "lite"
-      ? { type: "plus", n: 0, list, sug: 0 }
-      : { type: "heart", n: Math.ceil(list / 2), list, sug: 0 }
-    : set.model === "lite" && freeLeft() > 0
-      ? { type: "free", n: 0, list, sug: 0 }
-      : { type: "heart", n: list, list, sug: 0 };
+  const q =
+    set.model !== "lite"
+      ? { type: "heart", n: list, list, sug: 0 }
+      : isPro()
+        ? { type: "plus", n: 0, list, sug: 0 }
+        : freeLeft() > 0
+          ? { type: "free", n: 0, list, sug: 0 }
+          : { type: "heart", n: list, list, sug: 0 };
   // 답변 추천 자동 받기(방 설정 autoSug): 턴 값에 추천 값을 더함 — 무료 턴·PLUS에서도 추천 값은 냄. 하트가 그만큼 없으면 이 턴은 추천 없이 보냄
   // (버튼에 보이는 값만 내게 — 추천 때문에 턴이 막히지 않음)
   if (set.autoSug && S.wallet.hearts >= q.n + SUGGEST_COST) q.sug = SUGGEST_COST;
@@ -8774,8 +8775,8 @@ const PACKS = [
   { id: "h3000", n: 3000, bonus: 600, price: 39000 }
 ];
 const PLUS = { id: "plus", name: "HEART SYNC+ 1개월", price: 9900 };
-/** PLUS 혜택을 적는 자리마다 같이 적는 한 줄 — 답변 추천은 PLUS의 무료 이용·할인에 들지 않음(적지 않으면 혜택을 부풀린 표시로 읽힐 수 있음 — docs/legal/ui-copy.md §3) */
-const PLUS_SUG_NOTE = `답변 추천은 PLUS에서도 받을 때마다 ♥${SUGGEST_COST}(무료 턴·할인에 들지 않아요)`;
+/** PLUS 혜택을 적는 자리마다 같이 적는 한 줄 — 답변 추천은 PLUS의 라이트 무제한에 들지 않음(적지 않으면 혜택을 부풀린 표시로 읽힐 수 있음 — docs/legal/ui-copy.md §3) */
+const PLUS_SUG_NOTE = `답변 추천은 PLUS에서도 받을 때마다 ♥${SUGGEST_COST}(무제한에 들지 않아요)`;
 function buyPack(id, after) {
   const p = PACKS.find((x) => x.id === id);
   checkout({ id: p.id, name: "하트 " + num(p.n + p.bonus) + "개", price: p.price, hearts: p.n + p.bonus }, after);
@@ -8794,7 +8795,7 @@ function viewStore() {
     <div class="statline">
       <div class="box"><h3>오늘 무료 턴</h3><b>${pro ? "무제한" : freeLeft() + " / " + FREE_DAILY}</b><span class="note">라이트 모델 · 매일 자정에 다시 채워져요</span></div>
       <div class="box"><h3>보유 하트</h3><b>♥ ${num(S.wallet.hearts)}</b>` +
-    `<span class="note">스토리 모델 약 ${Math.floor(S.wallet.hearts / (pro ? Math.ceil(story / 2) : story))}턴</span></div>
+    `<span class="note">스토리 모델 약 ${Math.floor(S.wallet.hearts / story)}턴</span></div>
       <div class="box"><h3>요금제</h3><b>${pro ? "PLUS" : "무료"}</b>` +
     `<span class="note">${pro ? new Date(S.wallet.pro.until).toLocaleDateString("ko-KR") + "까지" : "기본 요금제"}</span></div>
     </div>
@@ -8807,9 +8808,9 @@ function viewStore() {
     `<td class="num plus">무제한</td></tr>
       <tr><td><b>스토리</b> <span class="pill">추천</span><div class="note">풍부한 묘사, 안정적인 캐릭터 연기</div></td>` +
     `<td class="num">${cell("story", "short")}</td><td class="num">${cell("story", "mid")}</td>` +
-    `<td class="num">${cell("story", "long")}</td><td class="num plus">50% 할인</td></tr>
+    `<td class="num">${cell("story", "long")}</td><td class="num plus">같은 값</td></tr>
       <tr><td><b>마스터</b><div class="note">소설 같은 몰입감, 복잡한 RPG 계산</div></td><td class="num">${cell("master", "short")}</td>` +
-    `<td class="num">${cell("master", "mid")}</td><td class="num">${cell("master", "long")}</td><td class="num plus">50% 할인</td></tr>
+    `<td class="num">${cell("master", "mid")}</td><td class="num">${cell("master", "long")}</td><td class="num plus">같은 값</td></tr>
     </tbody></table></div>
     <p class="note" style="margin-top:8px">보내기 버튼에 이번 턴 비용이 항상 표시돼요. 응답이 실패하면 자동으로 환불돼요. ` +
     `답변 추천은 받을 때마다 ♥${SUGGEST_COST}(추천 버튼에 표시 — 작가가 써 둔 첫 추천은 무료)이고, 장기기억 요약·캐릭터 초안은 무료예요.</p>
@@ -8818,7 +8819,7 @@ function viewStore() {
     <div class="member">
       <h2>HEART SYNC<em>+</em></h2>
       <ul>
-        <li>라이트 모델 무제한</li><li>스토리·마스터 모델 50% 할인</li><li>매달 하트 ${PLUS_MONTHLY}개 지급</li>
+        <li>라이트 모델 무제한</li><li>매달 하트 ${PLUS_MONTHLY}개 지급</li>
         <li>장기기억 ${num(PLAN.free.memoMax)}자 → ${num(PLAN.pro.memoMax)}자</li>` +
     `<li>기억력 최대 ${PLAN.free.memTurns}턴 → ${PLAN.pro.memTurns}턴</li><li>대화방 무제한 · 기억 히스토리 ${PLAN.pro.hist}개</li>` +
     `<li class="plus-note">${PLUS_SUG_NOTE}</li>
@@ -8833,7 +8834,7 @@ function viewStore() {
     <div class="tbl-wrap" style="margin-top:12px"><table class="tbl"><thead><tr><th></th><th>무료</th><th class="plus">PLUS</th></tr></thead><tbody>
       <tr><td>라이트 모델</td><td>하루 ${FREE_DAILY}턴, 이후 턴당 ♥1~2</td><td class="plus">무제한</td></tr>
       <tr><td>스토리 · 마스터</td><td>턴당 ♥${listPrice("story", "mid", 10)} · ♥${listPrice("master", "mid", 10)}</td>` +
-    `<td class="plus">턴당 ♥${Math.ceil(listPrice("story", "mid", 10) / 2)} · ♥${Math.ceil(listPrice("master", "mid", 10) / 2)}</td></tr>
+    `<td class="plus">턴당 ♥${listPrice("story", "mid", 10)} · ♥${listPrice("master", "mid", 10)}</td></tr>
       <tr><td>매달 하트</td><td>없음 (첫 방문 ♥${WELCOME})</td><td class="plus">♥${PLUS_MONTHLY}</td></tr>
       <tr><td>장기기억 · 기억력</td><td>${num(PLAN.free.memoMax)}자 · ${PLAN.free.memTurns}턴</td>` +
     `<td class="plus">${num(PLAN.pro.memoMax)}자 · ${PLAN.pro.memTurns}턴</td></tr>
@@ -9012,7 +9013,7 @@ function faqGroups() {
         ],
         [
           "PLUS는 무엇인가요?",
-          `월 ${plus} 멤버십이에요. 라이트 모델 무제한, 스토리·마스터 50% 할인, 매달 하트 ${num(PLUS_MONTHLY)}개, 장기기억 ${num(PLAN.free.memoMax)}자 → ` +
+          `월 ${plus} 멤버십이에요. 라이트 모델 무제한, 매달 하트 ${num(PLUS_MONTHLY)}개, 장기기억 ${num(PLAN.free.memoMax)}자 → ` +
             `${num(PLAN.pro.memoMax)}자, 기억력 ${PLAN.free.memTurns}턴 → ${PLAN.pro.memTurns}턴, 고정 기억 ${PLAN.free.pins}개 → ${PLAN.pro.pins}개로 늘어나요. ` +
             `PLUS가 끝나면 고정 기억은 지워지지 않고 앞의 ${PLAN.free.pins}개만 AI에 전해져요(나머지는 보관).`
         ],
@@ -10242,7 +10243,7 @@ function openRoomDrawer(view = "main") {
            src/js/core/rooms.js { saveRoom }
            src/js/core/state.js { S, room }
            src/js/core/util.js { $, $$, esc, num, toast }
-           src/js/core/wallet.js { freeLeft, isPro, quote }
+           src/js/core/wallet.js { freeLeft, quote }
            src/js/ui/chat/view.js { updateComposer }
            src/js/ui/icons.js { ICON }
            src/js/ui/room-drawer.js { openRoomDrawer }
@@ -10277,17 +10278,11 @@ function openModelSheet() {
     const m = MODELS[k],
       q = quote({ ...r.set, model: k }); // q.list = 정가(listPrice), q.n = 지금 낼 하트
     const price =
-      q.type === "free"
-        ? `오늘 무료 ${freeLeft()}턴 남음 · 이후 턴당 ♥${q.list}`
-        : q.type === "plus"
-          ? `PLUS 무제한 <s>턴당 ♥${q.list}</s>`
-          : isPro() && q.n < q.list
-            ? `턴당 <s>♥${q.list}</s>♥${q.n}`
-            : `턴당 ♥${q.n}`;
+      q.type === "free" ? `오늘 무료 ${freeLeft()}턴 남음 · 이후 턴당 ♥${q.list}` : q.type === "plus" ? `PLUS 무제한 <s>턴당 ♥${q.list}</s>` : `턴당 ♥${q.n}`;
     const free = k === "lite" ? "무료 턴은 자정에 다시 채워져요" : "무료 턴은 라이트 모델에만 있어요";
     return (
       `<button class="model-card ${r.set.model === k ? "on" : ""}" data-m="${k}"><span class="k">${esc(m.badge)}</span>` +
-      `<b>${m.name}${k === rec ? ' <span class="pill ok">권장</span>' : ""}${isPro() && k !== "lite" ? ' <span class="pill gold">PLUS -50%</span>' : ""}</b>` +
+      `<b>${m.name}${k === rec ? ' <span class="pill ok">권장</span>' : ""}</b>` +
       `<p>${esc(m.desc)}</p><div class="price">${price}${q.sug ? ` + 답변 추천 ♥${q.sug}` : ""}<small>${free}</small></div>` +
       `<span class="chk">✓</span></button>`
     );
@@ -10436,7 +10431,7 @@ function paywall(q, r) {
       .join("")}</div>
     <div class="member" style="padding:16px"><div class="row"><b style="font-family:var(--display);font-size:18px">HEART SYNC` +
       `<em style="font-style:normal;color:#f0b54a">+</em></b><span class="spacer"></span><span>${won(PLUS.price)}/월</span></div>
-      <p style="margin:6px 0 12px;color:#e9dfcf;font-size:13px">라이트 무제한 · 스토리·마스터 50% 할인 · 매달 ♥${PLUS_MONTHLY}<br>${PLUS_SUG_NOTE}</p>` +
+      <p style="margin:6px 0 12px;color:#e9dfcf;font-size:13px">라이트 무제한 · 매달 ♥${PLUS_MONTHLY}<br>${PLUS_SUG_NOTE}</p>` +
       `<button class="btn gold block" id="upPlus">PLUS 시작하기</button></div>
     ${
       r.set.model !== "lite"
@@ -10487,7 +10482,7 @@ function plusSheet(reason) {
     `<h2>${esc(copy[0])}</h2><p class="sub">${esc(copy[1])}</p>
     <div class="member" style="padding:16px"><div class="row"><b style="font-family:var(--display);font-size:18px">HEART SYNC` +
       `<em style="font-style:normal;color:#f0b54a">+</em></b><span class="spacer"></span><span>${won(PLUS.price)}/월</span></div>
-    <p style="margin:6px 0 12px;color:#e9dfcf;font-size:13px">라이트 무제한 · 스토리·마스터 50% 할인 · 매달 ♥${PLUS_MONTHLY} · 기억 3배 이상<br>${PLUS_SUG_NOTE}</p>` +
+    <p style="margin:6px 0 12px;color:#e9dfcf;font-size:13px">라이트 무제한 · 매달 ♥${PLUS_MONTHLY} · 기억 3배 이상<br>${PLUS_SUG_NOTE}</p>` +
       `<button class="btn gold block" id="upPlus">PLUS 시작하기</button></div>
     <button class="btn ghost block" data-x style="margin-top:8px">닫기</button>`
   );

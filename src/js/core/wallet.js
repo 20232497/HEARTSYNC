@@ -43,7 +43,7 @@ export function ledger(d, label) {
   S.wallet.ledger.unshift({ at: Date.now(), d, label });
   S.wallet.ledger = S.wallet.ledger.slice(0, 80);
 }
-/* 가격: 모델 기본가 × 출력량 + 기억력 가산. 무료 턴은 라이트 모델에만, PLUS는 라이트 무제한·나머지 50% */
+/* 가격: 모델 기본가 × 출력량 + 기억력 가산. 무료 턴은 라이트 모델에만, PLUS는 라이트 무제한·나머지는 정가(할인 없음 — 2026-11-26 사용자 결정) */
 /** 정가(하트). @param {string} model ModelKey @param {string} len LenKey @param {number} mem 기억력 @returns {number} */
 export function listPrice(model, len, mem) {
   const m = MODELS[model] || MODELS.lite;
@@ -53,13 +53,14 @@ export function listPrice(model, len, mem) {
 export function quote(set) {
   const list = listPrice(set.model, set.len, set.mem);
   /** @type {Quote} */
-  const q = isPro()
-    ? set.model === "lite"
-      ? { type: "plus", n: 0, list, sug: 0 }
-      : { type: "heart", n: Math.ceil(list / 2), list, sug: 0 }
-    : set.model === "lite" && freeLeft() > 0
-      ? { type: "free", n: 0, list, sug: 0 }
-      : { type: "heart", n: list, list, sug: 0 };
+  const q =
+    set.model !== "lite"
+      ? { type: "heart", n: list, list, sug: 0 }
+      : isPro()
+        ? { type: "plus", n: 0, list, sug: 0 }
+        : freeLeft() > 0
+          ? { type: "free", n: 0, list, sug: 0 }
+          : { type: "heart", n: list, list, sug: 0 };
   // 답변 추천 자동 받기(방 설정 autoSug): 턴 값에 추천 값을 더함 — 무료 턴·PLUS에서도 추천 값은 냄. 하트가 그만큼 없으면 이 턴은 추천 없이 보냄
   // (버튼에 보이는 값만 내게 — 추천 때문에 턴이 막히지 않음)
   if (set.autoSug && S.wallet.hearts >= q.n + SUGGEST_COST) q.sug = SUGGEST_COST;

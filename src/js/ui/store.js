@@ -12,8 +12,8 @@ export const PACKS = [
   { id: "h3000", n: 3000, bonus: 600, price: 39000 }
 ];
 export const PLUS = { id: "plus", name: "HEART SYNC+ 1개월", price: 9900 };
-/** PLUS 혜택을 적는 자리마다 같이 적는 한 줄 — 답변 추천은 PLUS의 무료 이용·할인에 들지 않음(적지 않으면 혜택을 부풀린 표시로 읽힐 수 있음 — docs/legal/ui-copy.md §3) */
-export const PLUS_SUG_NOTE = `답변 추천은 PLUS에서도 받을 때마다 ♥${SUGGEST_COST}(무료 턴·할인에 들지 않아요)`;
+/** PLUS 혜택을 적는 자리마다 같이 적는 한 줄 — 답변 추천은 PLUS의 라이트 무제한에 들지 않음(적지 않으면 혜택을 부풀린 표시로 읽힐 수 있음 — docs/legal/ui-copy.md §3) */
+export const PLUS_SUG_NOTE = `답변 추천은 PLUS에서도 받을 때마다 ♥${SUGGEST_COST}(무제한에 들지 않아요)`;
 export function buyPack(id, after) {
   const p = PACKS.find((x) => x.id === id);
   checkout({ id: p.id, name: "하트 " + num(p.n + p.bonus) + "개", price: p.price, hearts: p.n + p.bonus }, after);
@@ -32,7 +32,7 @@ export function viewStore() {
     <div class="statline">
       <div class="box"><h3>오늘 무료 턴</h3><b>${pro ? "무제한" : freeLeft() + " / " + FREE_DAILY}</b><span class="note">라이트 모델 · 매일 자정에 다시 채워져요</span></div>
       <div class="box"><h3>보유 하트</h3><b>♥ ${num(S.wallet.hearts)}</b>` +
-    `<span class="note">스토리 모델 약 ${Math.floor(S.wallet.hearts / (pro ? Math.ceil(story / 2) : story))}턴</span></div>
+    `<span class="note">스토리 모델 약 ${Math.floor(S.wallet.hearts / story)}턴</span></div>
       <div class="box"><h3>요금제</h3><b>${pro ? "PLUS" : "무료"}</b>` +
     `<span class="note">${pro ? new Date(S.wallet.pro.until).toLocaleDateString("ko-KR") + "까지" : "기본 요금제"}</span></div>
     </div>
@@ -45,9 +45,9 @@ export function viewStore() {
     `<td class="num plus">무제한</td></tr>
       <tr><td><b>스토리</b> <span class="pill">추천</span><div class="note">풍부한 묘사, 안정적인 캐릭터 연기</div></td>` +
     `<td class="num">${cell("story", "short")}</td><td class="num">${cell("story", "mid")}</td>` +
-    `<td class="num">${cell("story", "long")}</td><td class="num plus">50% 할인</td></tr>
+    `<td class="num">${cell("story", "long")}</td><td class="num plus">같은 값</td></tr>
       <tr><td><b>마스터</b><div class="note">소설 같은 몰입감, 복잡한 RPG 계산</div></td><td class="num">${cell("master", "short")}</td>` +
-    `<td class="num">${cell("master", "mid")}</td><td class="num">${cell("master", "long")}</td><td class="num plus">50% 할인</td></tr>
+    `<td class="num">${cell("master", "mid")}</td><td class="num">${cell("master", "long")}</td><td class="num plus">같은 값</td></tr>
     </tbody></table></div>
     <p class="note" style="margin-top:8px">보내기 버튼에 이번 턴 비용이 항상 표시돼요. 응답이 실패하면 자동으로 환불돼요. ` +
     `답변 추천은 받을 때마다 ♥${SUGGEST_COST}(추천 버튼에 표시 — 작가가 써 둔 첫 추천은 무료)이고, 장기기억 요약·캐릭터 초안은 무료예요.</p>
@@ -56,7 +56,7 @@ export function viewStore() {
     <div class="member">
       <h2>HEART SYNC<em>+</em></h2>
       <ul>
-        <li>라이트 모델 무제한</li><li>스토리·마스터 모델 50% 할인</li><li>매달 하트 ${PLUS_MONTHLY}개 지급</li>
+        <li>라이트 모델 무제한</li><li>매달 하트 ${PLUS_MONTHLY}개 지급</li>
         <li>장기기억 ${num(PLAN.free.memoMax)}자 → ${num(PLAN.pro.memoMax)}자</li>` +
     `<li>기억력 최대 ${PLAN.free.memTurns}턴 → ${PLAN.pro.memTurns}턴</li><li>대화방 무제한 · 기억 히스토리 ${PLAN.pro.hist}개</li>` +
     `<li class="plus-note">${PLUS_SUG_NOTE}</li>
@@ -71,7 +71,7 @@ export function viewStore() {
     <div class="tbl-wrap" style="margin-top:12px"><table class="tbl"><thead><tr><th></th><th>무료</th><th class="plus">PLUS</th></tr></thead><tbody>
       <tr><td>라이트 모델</td><td>하루 ${FREE_DAILY}턴, 이후 턴당 ♥1~2</td><td class="plus">무제한</td></tr>
       <tr><td>스토리 · 마스터</td><td>턴당 ♥${listPrice("story", "mid", 10)} · ♥${listPrice("master", "mid", 10)}</td>` +
-    `<td class="plus">턴당 ♥${Math.ceil(listPrice("story", "mid", 10) / 2)} · ♥${Math.ceil(listPrice("master", "mid", 10) / 2)}</td></tr>
+    `<td class="plus">턴당 ♥${listPrice("story", "mid", 10)} · ♥${listPrice("master", "mid", 10)}</td></tr>
       <tr><td>매달 하트</td><td>없음 (첫 방문 ♥${WELCOME})</td><td class="plus">♥${PLUS_MONTHLY}</td></tr>
       <tr><td>장기기억 · 기억력</td><td>${num(PLAN.free.memoMax)}자 · ${PLAN.free.memTurns}턴</td>` +
     `<td class="plus">${num(PLAN.pro.memoMax)}자 · ${PLAN.pro.memTurns}턴</td></tr>
