@@ -8374,7 +8374,7 @@ function costNote(q) {
     ? `이번 턴에 하트 ${heartsOf(q)}개가 사용돼요` + (q.sug ? ` · 답변 추천 자동 받기 ♥${q.sug} 포함` : "")
     : q.type === "free"
       ? (q.sug ? "이번 턴은 무료 턴이에요" : "오늘의 무료 턴으로 보내요") + sugNote
-      : (q.sug ? "이번 턴은 PLUS로 보내요" : "PLUS 무제한") + sugNote;
+      : "이번 턴은 PLUS로 보내요" + (q.sug ? sugNote : " — 하트가 나가지 않아요");
 }
 const regenText = (q) => ["↻ 다시 쓰기 · " + qShort(q), "새로 한 번 더 써요 — " + costNote(q)];
 function updateComposer() {
