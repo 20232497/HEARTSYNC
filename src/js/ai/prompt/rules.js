@@ -1,7 +1,7 @@
 /* 시스템 프롬프트(rulesParts·rulesPrompt): 세 블록 — 고정부(작품 설정·연기 규칙·서사 원칙·장면 이미지 규칙) · 변동부(유저 캐릭터·유저노트·기억·키워드북·지금 상태) · 꼬리(안전 재확인 + 출력 형식), 관계 단계(relStage).
    고정부는 같은 방에서 턴이 바뀌어도 글자 하나까지 같아야 함(프롬프트 캐시의 앞머리 — ai/llm.js가 고정부 끝에 캐시 표시를 붙임). 턴마다 달라지는 것은 모두 변동부에 */
 import { LEN } from "../models.js";
-import { multiPairs } from "../parse.js";
+import { castField } from "../parse.js";
 import { epProgress, modeHead } from "./episode.js";
 import { usedOpeners } from "./input.js";
 import { ratingRules } from "./rating.js";
@@ -165,7 +165,7 @@ ${epProgress(c.episode, r.ep, ep)}${used.length ? `\n[이미 쓴 문장 — 이�
 3) JSON 한 개 (코드블록 금지)
 {"status":{${fields}}${sug ? ',"suggestions":["…","…","…"]' : ""}${ep && !ep.ending ? `,"_ep":{"done":false${ep.ask ? ',"pick":""' : ""}}` : ""}}${ep && !ep.ending ? `\n- _ep.done: 이번 응답에서 지금 장의 목표가 이뤄졌으면 true, 아니면 false.${ep.ask ? ' _ep.pick: 위 [에피소드 진행]의 갈림길에서 유저의 이번 입력에 가까운 보기 id(어느 쪽도 아니면 "").' : ""}` : ""}
 - status는 이번 장면이 끝난 시점의 값. 모든 항목을 채운다.${typeof r.status?.[c.gauge] === "number" ? ` "${c.gauge}"는 0~100 정수이고 한 턴에 -10~+8 범위에서만 움직인다.` : ""}${c.fields.some((f) => f.includes("속마음")) ? ' "속마음"은 인물의 진짜 속마음 한 문장.' : ""}${(() => {
-    const mf = c.fields.filter((f) => multiPairs(r.status?.[f]).length >= 2);
+    const mf = c.fields.filter((f) => castField(c, f, r.status?.[f])); // 인물 수치 칸에만 — 골드·스탯 칸에 '한 사람당' 지시가 붙던 문제
     return mf.length
       ? ` ${mf.map((f) => `"${f}"`).join("·")}는 '이름 숫자 · 이름 숫자' 형식과 인물 순서를 그대로 지키고 한 명도 빼지 않는다(한 사람당 한 턴에 -10~+8).`
       : "";
