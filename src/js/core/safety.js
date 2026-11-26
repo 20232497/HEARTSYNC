@@ -1,4 +1,4 @@
-/* 안전: 미성년 인물 막기(minorFlags·minorHint·settingHint·roomMinorHint·messagesMinorHint) — 순수 함수라 빌드의 작품 검사와 단위 테스트가 그대로 import */
+/* 안전: 미성년 인물 막기(minorFlags·minorHint·settingHint·roomMinorHint·messagesMinorHint)와 위기 신호 찾기(crisisLevel·crisisDue) — 순수 함수라 빌드의 작품 검사와 단위 테스트가 그대로 import */
 /** @typedef {import("./types.js").CastMember} CastMember */
 /** @typedef {import("./types.js").LoreEntry} LoreEntry */
 /** @typedef {import("./types.js").Room} Room */
@@ -136,4 +136,53 @@ export function messagesMinorHint(messages) {
         .replace(/"/g, "")
     )
   );
+}
+/**
+ * 위기 신호(docs/legal/ai-policy.md 6-4): 유저 메시지의 자해·자살 표현 — 0 없음 · 1 신호 · 2 구체적(방법이나 때가 같이 나옴).
+ * 바라는 꼴(죽고 싶다·살기 싫다·더는 못 살겠다·자살하고 싶다)·자해, 일인칭의 '나 죽을 거야'와 주어 없이 문장을 여는 '오늘 죽을 거야'를 봄.
+ * 이야기 속에서 흔한 말(남을 위협하는 '죽고 싶냐'·'죽고 싶으면'·'너 오늘 죽을 거야', 부끄러움의 '창피해서 죽고 싶어', 남의 일인 '자살한 채'·'자살을 선택했다'·
+ * '자살로 위장'·'자살 사건', '자해공갈', 부정 '죽을 생각은 없어'·'죽고 싶은 건 아니야', 희생의 '내가 죽을게')은 먼저 지우거나 보지 않음.
+ * 구체적: 방법은 메시지 어디에 있어도, 때(오늘·내일 등)는 신호와 같은 문장에 있을 때. 글자로 찾는 것이라 모든 표현을 잡지는 못함 —
+ * 카드는 닫을 수 있고 대화가 이어지므로 애매하면 띄우는 쪽으로. 지금은 브라우저가 보낼 때 부르고(ui/chat/crisis.js), 서버 관문이 서면 같은 함수로.
+ * @param {string} t @returns {0|1|2}
+ */
+export function crisisLevel(t) {
+  // 일인칭의 시도('나 오늘 자살했어')는 남의 일을 지우기 전의 글(raw)에서 봄 — 아래의 '자살했다' 지우기에 같이 지워지지 않게
+  const raw = String(t || "")
+      .normalize("NFKC")
+      .replace(/[ \t]+/g, " "),
+    self = /(?:^|[^가-힣])(?:나|난|내가|제가) (?:[^ .!?\n]+ ){0,2}(?:자살|자해)(?: ?시도를?)? ?(?:했|하려|할)/;
+  t = raw
+    .replace(
+      /(?:부끄러|창피|쪽팔|민망)[가-힣]* ?죽고 ?싶|죽고 ?싶(?:[지진] ?않|냐|니|나 ?보|으면|은 ?(?:건|게) ?아니)|자살(?:골|특공|폭탄|테러)|자살 ?(?:사건|사고)/g,
+      " "
+    )
+    .replace(/자살로 ?(?:위장|꾸미|꾸민|보이)|자살이 ?아니|자살할 ?리|자해 ?공갈|자살(?:을 ?(?:선택|택))? ?(?:했|한(?!다))/g, " ")
+    .replace(
+      /(?:자살|자해|죽을|죽고 ?싶은) ?(?:생각|마음)(?:은|도|이)? ?(?:전혀 ?)?없|(?:자살|자해)(?:은|를)? ?(?:생각해 ?)?(?:본|한) ?적(?:은|도|이)? ?없/g,
+      " "
+    );
+  const core = [
+    /죽고 ?싶|죽어 ?버리고 ?싶|죽어 ?버릴|살고 ?싶지 ?않|살기 ?싫|그만 ?살고 ?싶|더(?:는| 이상)? ?못 ?살겠|살 ?(?:이유|의미|자신)(?:가|이)? ?없|자살|자해/,
+    /스스로 ?목숨|목숨을 ?끊고 ?싶|생을 ?마감하고 ?싶|극단적(?:인)? ?선택|유서를? ?(?:썼|쓰|써|남기|남겼)/,
+    // '나 죽을 거야'·문장을 여는 '오늘은 죽을 거야'('죽을 거 같아'는 아님 — 웃겨 죽을 거 같아)
+    /(?:^|[^가-힣])(?:나|난|내가|제가) (?:[^ .!?\n]+ ){0,2}죽(?:을 ?(?:거(?! ?같)|래)|어 ?버릴)/,
+    /(?:^|[.!?\n] ?)(?:(?:오늘|지금|내일|이제|그냥)(?:은|도|만)? )*죽을 ?(?:거(?! ?같)|래)/,
+    /\b(?:suicid(?:e|al)|kill(?:ing)? myself|self[- ]?harm|want to die|end my life)\b/i
+  ];
+  const hit = (s, r) => self.test(r) || core.some((re) => re.test(s)),
+    rs = raw.split(/[.!?\n]+/); // 지우기는 문장 끝 글자를 건드리지 않아 t와 문장 수가 같음
+  if (!hit(t, raw)) return 0;
+  const how =
+    /수면제|약을? ?(?:모아|모았|잔뜩|한꺼번에|한 ?움큼)|번개탄|목을 ?매|밧줄|올가미|손목을? ?(?:긋|그어|그었|그을)|뛰어 ?내[리릴려]|투신|옥상|한강|다리 ?위|선로|유서|\b(?:pills|overdose|hang myself|jump off)\b/i;
+  const when = /오늘|지금 ?당장|내일|이따가?|조만간|이번 ?주|주말에|\d{1,2} ?시에|\b(?:tonight|tomorrow)\b/i;
+  return how.test(t) || t.split(/[.!?\n]+/).some((s, i) => when.test(s) && hit(s, rs[i] || "")) ? 2 : 1;
+}
+/**
+ * 이번 유저 메시지에 위기 안내 카드를 붙일지 — 구체적이면 매번, 신호만이면 이 방에서 24시간 안에 붙인 적이 없을 때(ai-policy 6-4).
+ * @param {string} text @param {number} last 이 방에서 마지막으로 붙인 시각(없으면 0) @param {number} [now] @returns {boolean}
+ */
+export function crisisDue(text, last, now = Date.now()) {
+  const lv = crisisLevel(text);
+  return lv === 2 || (lv === 1 && now - (last || 0) >= 864e5);
 }

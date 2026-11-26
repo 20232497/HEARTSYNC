@@ -170,6 +170,15 @@ details.stat[open] summary::after { content:"▴"; }
 .save-fail { display:flex; align-items:center; gap:10px; margin-top:8px; padding:8px 12px; border-radius:12px; background:var(--accent-soft); color:var(--fg); font-size:12.5px; }
 .save-fail span { flex:1; min-width:0; } .save-fail .btn { flex:none; }
 .err-line { color:var(--err); font-size:13px; align-self:center; text-align:center; }
+/* 위기 안내 카드(ui/chat/crisis.js) — 유저 말풍선 아래, 그 턴 AI 답의 위. 번호는 눌러서 바로 걸 수 있게(tel:) */
+.crisis { align-self:stretch; padding:12px 14px; border:1px solid var(--line); border-left:3px solid var(--sys); border-radius:var(--r); background:var(--surface); font-size:14px; line-height:1.6; }
+.crisis b { display:block; }
+.crisis p { margin:2px 0 6px; color:var(--muted); }
+.crisis ul { margin:0 0 8px; padding:0; list-style:none; }
+.crisis a { color:var(--sys); font-weight:700; }
+@media (pointer:coarse) {
+  .crisis .btn { height:44px; }
+}
 .memo-flag { position:absolute; z-index:3; top:64px; left:50%; transform:translateX(-50%); font-size:12px; color:var(--muted); background:var(--surface); border:1px solid var(--line); border-radius:999px; padding:3px 12px; white-space:nowrap; }
 /* 에피소드(ui/chat/episode.js) — 장 막대·사건 띠·갈림길·결말 카드, 외전 고르기 */
 .ep-bar { position:relative; z-index:2; display:flex; align-items:center; gap:8px; padding:6px max(14px, env(safe-area-inset-right,0px)) 6px max(14px, env(safe-area-inset-left,0px)); font-size:12.5px; border-bottom:1px solid var(--line); background:var(--surface); }

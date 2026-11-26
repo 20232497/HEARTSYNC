@@ -1,6 +1,6 @@
-/* AI 표시: 대화 화면 머리의 배지 · AI 말풍선의 접근성 이름 · 첫 대화 전 한 번의 안내 · 내보낸 파일의 첫 줄.
-   문구는 docs/legal/ui-copy.md §6의 글자 그대로 — 고칠 때는 그 문서(주인은 법률 세션)와 같이. 그림에 붙는 표기 두 줄(ui-copy §6)은 그림이 이미 배포에 실렸으므로 다음 안전 묶음에서
-   크게 보기(ui/cover.js lightbox)에 넣음(2026-11-26 사용자 "7차 병합 직후 바로" — 상세에는 AI 그림 줄이 이미 있음) */
+/* AI 표시: 대화 화면 머리의 배지 · AI 말풍선의 접근성 이름 · 첫 대화 전 한 번의 안내 · 내보낸 파일의 첫 줄 · 그림 크게 보기의 표기.
+   문구는 docs/legal/ui-copy.md §6의 글자 그대로 — 고칠 때는 그 문서(주인은 법률 세션)와 같이. 크게 보기(ui/cover.js lightbox)의 'AI로 만든 그림'은 2026-11-27 안전 묶음,
+   반실사 그림 안 모서리의 'AI'는 그 화풍의 그림이 실릴 때(이미지 세션) */
 import { saveSettings } from "../core/settings.js";
 import { S } from "../core/state.js";
 
@@ -12,6 +12,8 @@ export const AI_NOTICE =
 export const AI_NOTICE_OK = "알겠어요";
 /** 그림이 실린 작품의 상세 페이지에 한 줄(docs/legal/ai-policy.md 6-4 '작품 상세의 AI로 만든 그림 안내') */
 export const AI_ART_NOTE = "이 작품의 그림은 AI로 만들었어요.";
+/** 그림 크게 보기(ui/cover.js lightbox)의 오른쪽 아래 작은 글씨 */
+export const AI_ZOOM_NOTE = "AI로 만든 그림";
 /** 대화를 내보낸 파일의 첫 줄 */
 export const AI_EXPORT_LINE = "※ 이 파일의 캐릭터 대사와 서술은 생성형 AI(HEART SYNC)가 만든 것입니다.";
 /** AI 말풍선의 접근성 이름. @param {string} name 화자 이름 @returns {string} */

@@ -6,6 +6,7 @@ import { codebook } from "../images/codes.js";
 import { pickImg } from "../images/pick.js";
 import { sitName } from "../images/situations.js";
 import { IMG } from "../services/images.js";
+import { AI_ZOOM_NOTE } from "./ai-notice.js";
 
 export function coverHTML(c, cls = "", opts = {}) {
   const pal = PALETTES[c.pal] || PALETTES[0],
@@ -62,11 +63,11 @@ export function portraitHTML(c, cast) {
   const ref = pickImg(c, cast.code, 0);
   return `<div class="portrait thumb-art">${ref ? IMG.tag(ref) : artHTML(c, cast, 0)}</div>`;
 }
-/* 크게 보기 */
+/* 크게 보기 — 오른쪽 아래에 AI_ZOOM_NOTE(작품에 실리는 그림은 모두 AI로 만든 것). 일상 화풍 그림이 실리면 모델 출처 줄도 이 자리에(이미지 세션) */
 export function lightbox(src) {
   const lb = document.createElement("div");
   lb.className = "lightbox";
-  lb.innerHTML = `<img src="${esc(src)}" alt="확대 이미지">`;
+  lb.innerHTML = `<img src="${esc(src)}" alt="확대 이미지"><span class="ai-mark">${AI_ZOOM_NOTE}</span>`;
   lb.onclick = () => lb.remove();
   document.body.append(lb);
 }
