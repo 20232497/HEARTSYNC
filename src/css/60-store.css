@@ -51,3 +51,7 @@ table.tbl .plus { color:var(--gold); font-weight:700; }
   table.price-tbl td:first-child { white-space:normal; min-width:84px; }
   table.price-tbl td, table.price-tbl th { padding:9px 8px; }
 }
+/* 가장 좁은 휴대폰(320px — Galaxy S9+): 칸 여백을 줄여 PLUS 칸까지 들어오게 — 리눅스의 한글 대체 글꼴은 더 넓어 8px 넘쳤음(CI, 2026-11-26) */
+@media (max-width:360px) {
+  table.price-tbl td, table.price-tbl th { padding:9px 5px; }
+}

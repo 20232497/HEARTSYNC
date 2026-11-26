@@ -720,6 +720,9 @@ table.tbl .plus { color:var(--gold); font-weight:700; }
   table.price-tbl td:first-child { white-space:normal; min-width:84px; }
   table.price-tbl td, table.price-tbl th { padding:9px 8px; }
 }
+@media (max-width:360px) {
+  table.price-tbl td, table.price-tbl th { padding:9px 5px; }
+}
 .plist { display:grid; gap:8px; }
 .prow { display:flex; gap:12px; align-items:center; padding:12px 14px; border:1px solid var(--line); border-radius:14px; background:var(--bg); }
 .prow.on { border-color:var(--accent); box-shadow:0 0 0 1px var(--accent) inset; }
