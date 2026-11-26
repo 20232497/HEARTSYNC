@@ -12,7 +12,7 @@ export const GAUGE_COND_RE = /^(<=|>=|<|>)\s*(\d{1,3})$/;
 export const EP = { quiet: 3, wait: 2 };
 
 /** 게이지 값이 조건에 맞는지 — 조건 모양이 틀리거나 값이 숫자가 아니면 거짓. @param {string} cond @param {unknown} v @returns {boolean} */
-export function gaugeOK(cond, v) {
+function gaugeOK(cond, v) {
   const m = GAUGE_COND_RE.exec(String(cond || "").trim());
   if (!m || typeof v !== "number") return false;
   const n = +m[2];

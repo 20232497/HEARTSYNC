@@ -1,4 +1,4 @@
-// 대화방(core/rooms.js): 방이 시작 상황을 찾는 순서(openingIndex — id 우선 · 제목 대체 · 못 찾으면 첫째)와 작품에 적힌 시작 상황 id
+// 대화방(core/rooms.js·core/room-fork.js): 방이 시작 상황을 찾는 순서(room-fork.js openingIndex — id 우선 · 제목 대체 · 못 찾으면 첫째)와 작품에 적힌 시작 상황 id
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { ORIGINALS } from "../../src/js/content/index.js";

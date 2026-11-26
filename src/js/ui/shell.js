@@ -112,7 +112,7 @@ function walletHTML() {
     ? `<span class="badge-pro">PLUS</span><span class="h">♥ ${num(S.wallet.hearts)}</span>`
     : `<span class="f">무료 <b style="color:var(--fg)">${freeLeft()}</b>턴</span><span class="h">♥ ${num(S.wallet.hearts)}</span>`;
 }
-export function renderWalletChips() {
+function renderWalletChips() {
   $$(".wallet").forEach((w) => {
     w.innerHTML = walletHTML();
     w.classList.toggle("pro", isPro());

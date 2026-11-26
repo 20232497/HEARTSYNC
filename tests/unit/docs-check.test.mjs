@@ -5,7 +5,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { CLAUDE_MAX, checkDocs, docModules, mapPaths } from "../../tools/build/docs-check.mjs";
+import { CLAUDE_MAX, DOC_LINE_WARN, checkDocs, docModules, mapPaths } from "../../tools/build/docs-check.mjs";
 
 const claude = (rows = "| 대화방 | `docs/app/chat.md` | `src/js/ui/chat/` · `src/js/core/rooms.js` |", extra = "") =>
   `# 이름\n\n규칙과 지도.\n\n## 지도 — 어느 영역은 어느 문서\n\n| 영역 | 읽을 문서 | 주요 모듈 |\n|---|---|---|\n${rows}\n\n## 코딩 규칙\n\n- \`여기는 지도가 아님.js\`\n${extra}`;
@@ -48,6 +48,14 @@ test("checkDocs: 지도 표나 영역 문서가 가리키는 경로가 없으면
     /docs\/app\/chat\.md: '\*\*이 문서가 다루는 모듈\*\*:' 줄이 없어요/
   );
   assert.match(run(claude(), new Set(["src/js/ui/chat/", "src/js/core/rooms.js"])).errors[0], /지도 표의 경로가 없어요: docs\/app\/chat\.md/);
+});
+test("checkDocs: 영역 문서의 긴 줄은 알리기만(실패 아님) — 표와 코드 블록은 세지 않음", () => {
+  const big = "가".repeat(DOC_LINE_WARN + 1),
+    doc = `${area}- ${big}\n  - 짧은 아래 줄\n| ${big} |\n\`\`\`\n${big}\n\`\`\`\n~~~\n\`\`\`\n${big}\n~~~\n`,
+    r = run(claude(), HAVE, { "docs/app/chat.md": doc });
+  assert.deepEqual(r.errors, []);
+  assert.deepEqual(r.long, [`docs/app/chat.md:8 ${DOC_LINE_WARN + 3}자`]);
+  assert.deepEqual(run(claude()).long, []);
 });
 test("지금 저장소의 문서가 통과: CLAUDE.md가 상한 안이고 지도 표·영역 문서의 경로가 모두 있음", () => {
   const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", ".."),

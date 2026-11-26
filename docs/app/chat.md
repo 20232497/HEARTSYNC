@@ -21,7 +21,7 @@
 
 ## 시작 상황
 
-- 시작 상황 id(2026-11-11 프레임 4차 — 식별자 안정화): work.js openings[].id(필수, core/constants.js OPENING_ID_RE). 방은 시작 상황을 **id로** 기억함 — newRoom이 r.openingId에 적고(r.opening 제목은 화면 표시용), 다시 찾는 규칙은 core/rooms.js **openingIndex(c, r) 한 곳**: id → 제목(이 칸이 생기기 전의 방이거나 id를 못 찾을 때, 분기 표시는 떼고) → 첫 시작 상황. '처음부터 다시'(ui/room-drawer.js)가 씀, 분기한 방은 openingId를 그대로 가져감. 그래서 작품은 시작 상황의 제목을 자유롭게 고칠 수 있고 id는 고치지 않음(예전에는 제목을 고치면 조용히 첫 시작 상황으로 갔음). 예전 방에 id를 채워 넣는 이전 코드는 두지 않음(제목 대체 길로 충분)
+- 시작 상황 id(2026-11-11 프레임 4차 — 식별자 안정화): work.js openings[].id(필수, core/constants.js OPENING_ID_RE). 방은 시작 상황을 **id로** 기억함 — newRoom이 r.openingId에 적고(r.opening 제목은 화면 표시용), 다시 찾는 규칙은 core/room-fork.js **openingIndex(c, r) 한 곳**: id → 제목(이 칸이 생기기 전의 방이거나 id를 못 찾을 때, 분기 표시는 떼고) → 첫 시작 상황. '처음부터 다시'(ui/room-drawer.js)가 씀, 분기한 방은 openingId를 그대로 가져감. 그래서 작품은 시작 상황의 제목을 자유롭게 고칠 수 있고 id는 고치지 않음(예전에는 제목을 고치면 조용히 첫 시작 상황으로 갔음). 예전 방에 id를 채워 넣는 이전 코드는 두지 않음(제목 대체 길로 충분)
 - 시작 상황의 선택 칸(2026-11-09 프레임 3차): openings[].place(배경 장소 — places의 n번째) → newRoom(core/rooms.js)이 첫 메시지 맨 위에 그 장소 태그를 넣고(본문에 이미 있으면 그대로) 상세 페이지 시작 상황 카드에 장소 이름 · suggestions(첫 답변 추천 — 첫 메시지의 alt.suggestions로, '✦ AI 추천'이 호출 없이 보여 줌) · lead({ text, turns } — 방에 r.lead로 복사, r.turn이 turns에 닿기 전까지만 프롬프트 변동부 [지금 상태]의 '시작 연출'; directive는 고정부에 끝까지). 예약 시리즈 표 SERIES는 core/constants.js에 두고 images/codes.js가 다시 내보냄(core/rooms.js가 층 규칙을 어기지 않게). 참고: 리루의 시작 프롬프트(지속 턴수)·배경 이미지, 캐럿·베이비챗의 첫 답변 추천
 
 ## 고정 기억

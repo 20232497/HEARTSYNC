@@ -3,6 +3,8 @@
 //     결정의 경위는 docs/DECISIONS.md로 옮기고(2026-11-12), 다시 불어나거나 지도가 낡으면 병합 전에 걸리게 함
 /** CLAUDE.md의 크기 상한(바이트). 목표는 15KB 안팎(2026-11-11 사용자 결정) — 규칙 몇 줄이 늘 여유만 둠. 넘으면 내용을 영역 문서로 옮길 것(상한을 올리는 것은 사용자 결정) */
 export const CLAUDE_MAX = 20 * 1024;
+/** 영역 문서(docs/app/) 한 줄의 알림 기준(글자 수) — 넘으면 알리기만(실패 아님). 한 항목에 사실을 이어 붙이면 고칠 자리를 찾기 어려워서(2026-11-27 구조 정리). 표와 코드 블록은 빼고 셈 */
+export const DOC_LINE_WARN = 1500;
 const MAP_HEAD = "\n## 지도",
   MODS_HEAD = "**이 문서가 다루는 모듈**:";
 const ticks = (text) => [...text.matchAll(/`([^`]+)`/g)].map((m) => m[1]);
@@ -23,12 +25,12 @@ export function docModules(text) {
 /**
  * 문서 검사(순수 — 파일은 넘겨받은 함수로만 봄). @param {string|null} claude CLAUDE.md의 글(없으면 null)
  * @param {(p: string) => boolean} exists 저장소 루트 기준 경로가 있는지 @param {(p: string) => string|null} read 문서의 글(없으면 null)
- * @returns {{ errors: string[], note: string }} note = 통과했을 때 보여 줄 한 줄
+ * @returns {{ errors: string[], note: string, long: string[] }} note = 통과했을 때 보여 줄 한 줄, long = DOC_LINE_WARN을 넘는 영역 문서의 줄("문서:줄 n자" — 알림)
  */
 export function checkDocs(claude, exists, read) {
   const errors = [],
     kb = (n) => (n / 1024).toFixed(1) + "KB";
-  if (claude === null) return { errors: ["CLAUDE.md가 없어요"], note: "" };
+  if (claude === null) return { errors: ["CLAUDE.md가 없어요"], note: "", long: [] };
   const bytes = Buffer.byteLength(claude);
   if (bytes > CLAUDE_MAX)
     errors.push(
@@ -37,17 +39,30 @@ export function checkDocs(claude, exists, read) {
   const paths = mapPaths(claude);
   if (!paths || !paths.length) {
     errors.push("CLAUDE.md에 '## 지도' 절의 표가 없어요 — 영역마다 읽을 문서와 주요 모듈을 `경로`로 적은 표가 있어야 해요");
-    return { errors, note: "" };
+    return { errors, note: "", long: [] };
   }
+  const long = [];
   paths.filter((p) => !exists(p)).forEach((p) => errors.push(`CLAUDE.md 지도 표의 경로가 없어요: ${p} — 파일을 옮기거나 지웠으면 표도 같이 고쳐 주세요`));
   let mods = 0;
   for (const doc of paths.filter((p) => /^docs\/app\/.+\.md$/.test(p) && exists(p))) {
-    const list = docModules(read(doc) || "");
+    const body = read(doc) || "",
+      list = docModules(body);
+    let fence = "";
+    body.split(/\r?\n/).forEach((l, i) => {
+      // shortcut: 펜스의 길이는 보지 않음(네 개 백틱 블록 안의 ``` 는 닫힘으로 셈) — 알림뿐이라 그런 문서가 생기면 길이도 기억하게
+      const f = l.match(/^\s*(```|~~~)/);
+      if (f) fence = !fence ? f[1] : f[1] === fence ? "" : fence;
+      else if (!fence && !/^\s*\|/.test(l) && l.length > DOC_LINE_WARN) long.push(`${doc}:${i + 1} ${l.length}자`);
+    });
     if (!list.length) errors.push(`${doc}: '${MODS_HEAD}' 줄이 없어요 — 영역 문서는 맨 위에 다루는 모듈을 \`경로\`로 적어요`);
     list
       .filter((p) => !exists(p))
       .forEach((p) => errors.push(`${doc}의 '다루는 모듈' 경로가 없어요: ${p} — 모듈을 옮기거나 나눴으면 이 문서도 같이 고쳐 주세요`));
     mods += list.length;
   }
-  return { errors, note: `CLAUDE.md ${kb(bytes)}(상한 ${kb(CLAUDE_MAX)}) · 지도 표의 경로 ${paths.length}개와 영역 문서의 모듈 경로 ${mods}개가 모두 있어요` };
+  return {
+    errors,
+    note: `CLAUDE.md ${kb(bytes)}(상한 ${kb(CLAUDE_MAX)}) · 지도 표의 경로 ${paths.length}개와 영역 문서의 모듈 경로 ${mods}개가 모두 있어요`,
+    long
+  };
 }

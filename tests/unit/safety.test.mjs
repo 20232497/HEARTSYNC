@@ -501,3 +501,13 @@ test("위기 안내 카드의 상태는 방마다(분기한 방과 섞이지 않
   assert.equal(crisisHTML("roomA", "m2", 1), "", "24시간 안의 신호만으로는 새 카드 없음");
   closeCrisis("roomA", "m1");
 });
+test("대화 관문(docs/edge/chat.ts)이 배포된 사이트에서 바로 가져오는 core/safety.js — 그 경로에 있고, 아무것도 import하지 않고, messagesMinorHint를 내보냄", async () => {
+  const ts = fs.readFileSync(new URL("../../docs/edge/chat.ts", import.meta.url), "utf8"),
+    m = ts.match(/import\("https:\/\/20232497\.github\.io\/HEARTSYNC\/(src\/js\/core\/safety\.js)"\)/);
+  assert.ok(m, "chat.ts가 배포된 사이트(GitHub Pages https://20232497.github.io/HEARTSYNC/)의 src/js/core/safety.js를 가져옴 — 배포 주소를 바꾸면 여기도");
+  const file = new URL("../../" + m[1], import.meta.url),
+    code = fs.readFileSync(file, "utf8").replace(/\/\*[\s\S]*?\*\//g, ""); // typedef의 import("…")는 주석이라 뺌
+  assert.ok(!/^\s*(?:import|export\s+(?:\*|\{[^}]*\})\s+from)\b/m.test(code) && !/\bimport\s*\(/.test(code), "safety.js는 다른 모듈을 가져오지 않음");
+  const mod = await import(file.href);
+  assert.equal(typeof mod.messagesMinorHint, "function");
+});

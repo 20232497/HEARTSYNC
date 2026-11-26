@@ -13,7 +13,7 @@ import { ICON } from "./icons.js";
 import { closeOverlays, sheet } from "./sheet.js";
 import { bindGo, go, topbar } from "./shell.js";
 
-export function cardHTML(c) {
+function cardHTML(c) {
   const body = (c.cast || []).filter((x) => !x.of).length; // 다른 모습(폼)은 한 사람으로 — 예전엔 폼까지 세어 인원이 부풀었음
   const bits = [c.episode ? "에피소드" : "", c.world_mode && body > 1 ? `👥 ${body}인 · 🎬 ${(c.openings || []).length}` : ""].filter(Boolean);
   const info = bits.length ? `<span class="cast-n">${bits.join(" · ")}</span>` : "";
