@@ -40,7 +40,7 @@ test("지금 저장소: 긴 줄이 예외 표 안이고, 예외 표에 남는 �
   );
 });
 test("코드 정렬: src/js·tools·tests가 정렬 도구(prettier)의 모양과 같음 — 다르면 npm run format", () => {
-  assert.deepEqual(FORMAT_GLOBS, ["src/js/**/*.js", "tools/**/*.mjs", "tests/**/*.mjs"]);
+  assert.deepEqual(FORMAT_GLOBS, ["src/js/**/*.js", "tools/**/*.mjs", "tools/**/*.js", "tests/**/*.mjs"]);
   const r = runFormat(false);
   assert.equal(r.missing, false, "정렬 도구가 깔려 있어야 함(npm ci)");
   assert.deepEqual(r.files, [], "정렬 안 된 파일 — npm run format");
