@@ -1,5 +1,5 @@
 // 작품 검사 — 작품 하나(work.js의 export default)가 규칙에 맞는지(checkWork): 필수 칸·분류·출연진 코드와 폼·비공개 칸·장소와 컷씬·본문 그림 태그·명령어·메타·키워드북·시작 상황·
-// 트랙·미성년 인물·폴더와 성별. 그림 코드가 그 작품에서 맞는지 보는 codeRange는 그림 파일 검사(images-scan.mjs)도 같이 씀. 규칙을 더하면 tests/unit/content-check.test.mjs의 표에도 한 줄
+// 트랙·작품 글의 '하트'·미성년 인물·폴더와 성별. 그림 코드가 그 작품에서 맞는지 보는 codeRange는 그림 파일 검사(images-scan.mjs)도 같이 씀. 규칙을 더하면 tests/unit/content-check.test.mjs의 표에도 한 줄
 import { AUD_DIRS, isObj, str } from "./common.mjs";
 import { checkEpisode } from "./episode-check.mjs";
 
@@ -15,6 +15,15 @@ export function plainData(v, at, bad) {
   if (Array.isArray(v)) return v.forEach((x, i) => plainData(x, `${at}[${i}]`, bad));
   if (isObj(v)) return Object.keys(v).forEach((k) => plainData(v[k], `${at}.${k}`, bad));
   bad.push(at);
+}
+
+/** 작품의 글 값(객체의 키 포함)에서 '하트'가 든 자리들. @param {unknown} v @param {string} [at] @param {string[]} [out] @returns {string[]} */
+export function heartSpots(v, at = "작품", out = []) {
+  if (typeof v === "string") {
+    if (v.includes("하트")) out.push(at);
+  } else if (Array.isArray(v)) v.forEach((x, i) => heartSpots(x, `${at}[${i}]`, out));
+  else if (isObj(v)) Object.keys(v).forEach((k) => (k.includes("하트") ? out.push(`${at}.${k}`) : heartSpots(v[k], `${at}.${k}`, out)));
+  return out;
 }
 
 /* 그림 코드(글자 + 번호)가 이 작품에서 맞는지 검사하는 함수를 만듦 — 틀리면 이유 글, 맞으면 "".
@@ -289,6 +298,13 @@ export function checkWork(mod, { aud, row, id, wrel, R, errors, warnings }) {
   if (c.episode !== undefined) checkEpisode(c.episode, e, R);
   // 공개 저장소의 작품은 일반 트랙만 — 성인 트랙 작품은 서버 쪽 비공개 데이터로만 둠(CLAUDE.md 원칙)
   if (c.track !== undefined && c.track !== "general") e(`track: "${c.track}" — content/의 작품은 일반 트랙만 둘 수 있어요(track 칸을 지우거나 "general")`);
+  // 하트(결제 재화)는 AI 대화에만(2026-11-27 사용자 결정) — AI·화면에 가는 글에 '하트'가 있으면 이야기 속 물건·재화와 엮일 수 있어 막음(주석은 데이터가 아니라 안 봄)
+  const hearts = heartSpots(c);
+  if (hearts.length)
+    e(
+      `작품 글에 '하트'가 있어요: ${hearts.slice(0, 5).join(", ")} — 하트(결제 재화)는 AI 대화에만 써요(2026-11-27 사용자 결정). ` +
+        "이야기 속 재화·물건은 다른 이름으로(모양을 말할 때는 '심장 모양' 등)"
+    );
   // 앱과 같은 규칙: 미성년 인물 막기(minorFlags), 출연진 성별로 짐작한 aud(guessAud) — 다른 오류가 있어도 늘 검사
   if (!cast.length || !cast.every(isObj)) return c;
   const probe = { ...c, cast };

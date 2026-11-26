@@ -86,5 +86,6 @@
 | `stream.test.mjs` | AI 응답 스트림 읽기(`ai/stream.js` — 조각 사이에서 끊긴 줄·한글, 객체가 아닌 JSON 줄은 넘김, 해석 오류로 나가면 스트림을 닫고 끝까지 읽은 것은 닫지 않음, Anthropic·OpenAI 호환 조각 해석, 내용 필터는 거절)와 트랙 고르기(`ai/models.js` trackOf) |
 | `input.test.mjs` | 한 턴의 요청 묶음(`ai/prompt/input.js` buildInput): 직전 응답 하나에만 상태창을 출력 형식 그대로 붙이는지(앱의 파서가 그대로 읽음), 마지막 입력에 상태창으로 마치라는 다짐이 있는지, 추천 칸은 추천을 받는 턴(자동 받기)에만 들어가고 고정부는 그대로인지 |
 | `wallet.test.mjs` | 요금 계산(`core/wallet.js`): 턴 견적(무료 턴·하트·PLUS), 답변 추천의 값 — 자동 받기가 턴 값에 더해짐(무료 턴·PLUS에서도), 하트가 모자라면 그 턴만 쉼, 차감과 실패 환불, 추천 값만 되돌리기(두 번 되돌리지 않음), 눌러서 받는 값 |
+| `hearts-use.test.mjs` | 하트의 쓰임(2026-11-27 사용자 결정 — AI 대화에만): `core/wallet.js` charge를 부르는 모듈이 `ui/chat/generate.js`·`ui/chat/suggest.js`뿐인지, 아무도 charge를 다시 내보내지 않는지, 하트를 줄이는 코드가 wallet.js 밖에 없는지(값을 따로 적는 곳은 첫 지급 `services/load.js` 한 줄 — 저장된 지갑을 되살리는 것은 보지 않음. 글자 모양으로 보는 걸림줄이라 일부러 돌아가는 코드는 못 잡음) — 대화가 아닌 곳에 하트를 쓰려면 먼저 사용자 결정 |
 | `search.test.mjs` | 대화 검색(`ui/chat/search.js` searchRoom): 최근 것부터·말한 쪽 이름·찾은 말의 앞뒤 글, 대소문자를 가리지 않고 그림 태그는 뺌, 지금 보이는 버전만(다시 쓰기 전의 글·상태창·이어서 쓰기 표시는 빼고), 긴 글 줄임과 60건 상한 |
 | `skeleton.test.mjs` | 뼈대(`src/page.html`·`src/admin.html`)의 뷰포트 메타: 두 빌드가 같은 값이고 화면 확대 잠금(`maximum-scale=1`)·안드로이드 크롬이 자판에 맞춰 레이아웃을 줄이는 `interactive-widget=resizes-content`(C1)가 들어 있음 |
