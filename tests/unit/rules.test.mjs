@@ -256,3 +256,11 @@ test("llm 프롬프트 캐싱: 스위치가 켜지면 시스템을 블록 둘로
     PROMPT_CACHE.on = false;
   }
 });
+test("출력 형식의 다인원 지시('한 사람당 한 턴에 -10~+8')는 인물 수치 칸에만 — 신님들 스탯에는 붙지 않음", () => {
+  const r = room("godseats");
+  const line = rulesParts(r)
+    .tail.split("\n")
+    .find((l) => l.includes("한 사람당"));
+  assert.ok(line && line.includes('"❤️ 호감도"'), "호감도 칸에는 붙음");
+  assert.ok(!line.includes('"스탯"'), "스탯 칸에는 붙지 않음");
+});

@@ -119,7 +119,7 @@ flowchart LR
   B --> U["index.html<br/>사용자 사이트"]
   B --> A["admin.html<br/>관리자 도구"]
   U --> P["GitHub Pages<br/>main에 병합하면 자동 배포"]
-  A --> P
+  A --> L["이 PC에서만<br/>npm run dev — 커밋·배포 안 함"]
 ```
 
 그림은 앱 밖에서 만들어 작품 폴더 `content/…/images/`에 이름 규칙대로 넣으면 빌드가 실어요(`<인물코드>-<0~14>.webp`, `cover.webp`, `lore-<n>.webp` — [content/README.md](content/README.md)). 남성향 일상 화풍의 프롬프트·설정은 [archive/style-mdaily/](archive/style-mdaily/)에 보관돼 있어요. 브라우저는 Anthropic 말고 다른 AI·그림 서비스를 부르지 않고, 결과에 그런 주소가 들어가면 빌드가 실패해요.
@@ -143,17 +143,17 @@ npm install
 npm run dev
 ```
 
-http://localhost:5173 (관리자 도구는 `/admin.html`)에서 열리고, 저장할 때마다 다시 빌드해 새로 고침해요.
+http://localhost:5173 (관리자 도구는 `/admin.html` — 관리자 도구는 이렇게 이 PC에서만 열어요)에서 열리고, 저장할 때마다 다시 빌드해 새로 고침해요.
 
 | 명령 | 하는 일 |
 |---|---|
 | `npm run build` | `index.html`과 `admin.html`을 만들어요(모듈·문법·작품 폴더 검사 포함) |
-| `npm run check` | 두 결과 파일이 지금 소스와 같은지 확인해요. PR과 main마다 GitHub Actions가 실행해요 |
+| `npm run check` | `index.html`이 지금 소스와 같은지(`admin.html`은 만들어지는지) 확인해요. PR과 main마다 GitHub Actions가 실행해요 |
 | `npm test` | 단위 테스트(1초 안팎) |
 | `npm run e2e` | Playwright 흐름 시험(4~5분). 처음엔 `npx playwright install webkit chromium` |
 
 > [!IMPORTANT]
-> - **`index.html`·`admin.html`은 빌드 결과물이에요.** 직접 고치지 말고 `src/`·`content/`를 고친 뒤 빌드해서 함께 커밋해요.
+> - **`index.html`·`admin.html`은 빌드 결과물이에요.** 직접 고치지 말고 `src/`·`content/`를 고친 뒤 빌드해서 `index.html`을 함께 커밋해요. `admin.html`은 커밋하지 않아요(`.gitignore`).
 > - **배포물은 파일 하나를 유지해요.** `file://`·GitHub Pages·claude.ai에서 그대로 돌아야 해서 다른 js·css 파일을 불러오지 않아요.
 > - **주석은 소스에 자세히 적어요.** 사용자 빌드는 주석을 벗기고 모듈마다 한 줄 설명만 남겨요.
 

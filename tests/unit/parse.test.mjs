@@ -2,10 +2,18 @@
 // 모듈을 Node에서 바로 import한다(브라우저 없이). 요청·응답 형식(MARK·status JSON)은 docs/app/prompt.md '응답 형식'
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { splitReply, multiPairs, multiMax, parseState, dropEcho, looseJSON } from "../../src/js/ai/parse.js";
+import { splitReply, multiPairs, multiMax, castMulti, castField, parseState, dropEcho, looseJSON } from "../../src/js/ai/parse.js";
 import { MARK } from "../../src/js/core/constants.js";
+import { ORIGINALS } from "../../src/js/content/index.js";
 
-const CHAR = { fields: ["📍 장소", "❤️ 호감도", "💭 속마음"], gauge: "❤️ 호감도" };
+const CHAR = {
+  fields: ["📍 장소", "❤️ 호감도", "💭 속마음"],
+  gauge: "❤️ 호감도",
+  cast: [
+    { code: "IH", name: "이화" },
+    { code: "SR", name: "설련" }
+  ]
+};
 
 test("splitReply: 구분자로 본문과 상태 JSON을 나눈다", () => {
   const r = splitReply(`본문 한 줄\n${MARK}\n{"status":{"📍 장소":"궁"}}`);
@@ -67,8 +75,75 @@ test("parseState: 인물이 스물인 작품 — 처음 채울 때 200자에서 
   assert.equal(first, line(20));
   const merged = parseState(`x\n${MARK}\n{"status":{"❤️ 호감도":"${line(20)}"}}`, c, { "❤️ 호감도": line(2) }).status["❤️ 호감도"];
   assert.equal(merged, line(20), "새 인물이 뒤에 붙어 스물 모두");
-  const few = parseState(`x\n${MARK}\n{"status":{"❤️ 호감도":"${line(20)}"}}`, CHAR, { "❤️ 호감도": line(2) }).status["❤️ 호감도"];
-  assert.equal(few, line(12), "인물 칸이 없는 작품은 예전처럼 12명까지");
+  const small = { ...CHAR, cast: c.cast.slice(0, 2) };
+  const few = parseState(`x\n${MARK}\n{"status":{"❤️ 호감도":"${line(20)}"}}`, small, { "❤️ 호감도": line(2) }).status["❤️ 호감도"];
+  assert.equal(few, line(12), "인물이 적은 작품은 예전처럼 12명까지");
+});
+test("castMulti: 이름의 절반 넘게가 출연진 이름인 칸만 인물 수치 칸 — 줄인 이름('레나')도 셈", () => {
+  const c = {
+    cast: [
+      { code: "HR", name: "홍레나" },
+      { code: "IH", name: "이화" },
+      { code: "SB", name: "세레나 바이스" }
+    ]
+  };
+  assert.equal(castMulti("레나 5 · 이화 3", c), true);
+  assert.equal(castMulti("세레나 바이스 5 · 낯선이 3 · 이화 1", c), true, "새로 나온 사람이 섞여도 절반 넘게면");
+  assert.equal(castMulti("이화 5 · 낯선이 3", c), false, "절반은 넘어야 함");
+  assert.equal(castMulti("체력 1 · 근력 1", c), false);
+  assert.equal(castMulti("이화 5", c), false, "한 사람뿐이면 다인원이 아님");
+});
+test("parseState: 사람 이름이 아닌 '이름 숫자' 칸(💰 자원·📖 명부·신님들 스탯)은 합치지 않고 AI가 쓴 그대로 — 세계관 평가 2026-11-26", () => {
+  const w = {
+    fields: ["💰 자원", "📖 명부", "스탯", "❤️ 호감도"],
+    gauge: "HP",
+    cast: ["메아르", "미록", "도람", "세오", "한서윤", "도하린"].map((name, i) => ({ code: "P" + i, name }))
+  };
+  const res = "골드 1400 · 소환권 1 · 교본 2 · 승급석 1",
+    roster = "대기 메아르★4 Lv39 · 미록★4 Lv36 · 도람★3 Lv30 · 세오★3 Lv30",
+    stat = "체력 2 · 근력 1 · 민첩 2 · 마력 1 · 매력 2 · SP 0";
+  const before = {
+    "💰 자원": "골드 1200 · 소환권 1 · 교본 2 · 승급석 0",
+    "📖 명부": "대기 메아르★4 Lv39 · 미록★4 Lv36 · 원정 도람★3 · 세오★3",
+    스탯: "체력 1 · 근력 1 · 민첩 1 · 마력 1 · 매력 1 · SP 3",
+    "❤️ 호감도": "한서윤 40 · 도하린 30"
+  };
+  const reply = (st) => `x\n${MARK}\n${JSON.stringify({ status: st })}`;
+  const out = parseState(reply({ "💰 자원": res, "📖 명부": roster, 스탯: stat, "❤️ 호감도": "한서윤 90" }), w, before).status;
+  assert.equal(out["💰 자원"], res, "골드가 0~100에 묶이지 않음(예전엔 '골드 100')");
+  assert.equal(out["📖 명부"], roster, "명부 항목이 겹쳐 늘어나지 않음");
+  assert.equal(out["스탯"], stat, "레벨업에 맞춘 스탯이 그대로");
+  assert.equal(out["❤️ 호감도"], "한서윤 48 · 도하린 30", "인물 칸은 그대로 합침");
+  const first = parseState(reply({ "📖 명부": roster }), w, {}).status["📖 명부"];
+  assert.equal(first, roster, "처음 채울 때도 '메아르★ 4'처럼 띄어 고치지 않음");
+});
+test("castField: 칸은 작품의 시작 값으로 가림 — 새로 나온 사람이 쌓여도 호감도는 계속 합치고, 이름만 남은 명부는 합치지 않음(Codex 검토)", () => {
+  const w = {
+    fields: ["❤️ 호감도", "📖 명부"],
+    gauge: "HP",
+    cast: ["이화", "설련", "메아르", "미록"].map((name, i) => ({ code: "P" + i, name })),
+    openings: [{ status: { "❤️ 호감도": "이화 50 · 설련 40", "📖 명부": "대기 메아르★4 Lv39 · 미록★4 Lv36" } }]
+  };
+  const reply = (st) => `x\n${MARK}\n${JSON.stringify({ status: st })}`;
+  const crowd = "이화 50 · 설련 40 · 낯선이 10 · 길손 5"; // 출연진이 꼭 절반 — 이름만 보면 인물 칸이 아님
+  assert.equal(castMulti(crowd, w), false);
+  assert.equal(castField(w, "❤️ 호감도", crowd), true);
+  const st = parseState(reply({ "❤️ 호감도": "이화 150", "📖 명부": "메아르 60 · 미록 36" }), w, {
+    "❤️ 호감도": crowd,
+    "📖 명부": "메아르 39 · 미록 36"
+  }).status;
+  assert.equal(st["❤️ 호감도"], "이화 58 · 설련 40 · 낯선이 10 · 길손 5", "빠진 사람은 직전 값, 한 턴 +8까지");
+  assert.equal(st["📖 명부"], "메아르 60 · 미록 36", "이름이 출연진이어도 시작 값이 명부면 레벨을 묶지 않음");
+  const first = parseState(reply({ "❤️ 호감도": "이화 150 · 설련 -20" }), w, {}).status["❤️ 호감도"];
+  assert.equal(first, "이화 100 · 설련 0", "처음 채울 때도 0~100");
+});
+test("castField: 실제 작품의 시작 상태창 — 신님들 스탯은 인물 칸이 아니고, ❤️ 호감도는 어느 작품·시작 상황이든 인물 칸", () => {
+  const gs = ORIGINALS.find((x) => x.id === "godseats");
+  const starts = (c) => [c.status, ...(c.openings || []).map((o) => o.status)].filter(Boolean);
+  assert.ok(starts(gs).every((st) => !castField(gs, "스탯", st["스탯"])));
+  for (const c of ORIGINALS)
+    for (const st of starts(c))
+      if (multiPairs(st["❤️ 호감도"]).length >= 2) assert.ok(castField(c, "❤️ 호감도", st["❤️ 호감도"]), `${c.id}: ${st["❤️ 호감도"]}`);
 });
 test("parseState: 숫자 게이지는 직전 값에서 -10~+8, 0~100 안에서만 움직인다", () => {
   const c = { fields: ["호감도"], gauge: "호감도" };

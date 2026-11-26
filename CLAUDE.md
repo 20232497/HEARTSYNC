@@ -1,6 +1,6 @@
 # HEART SYNC
 
-버블챗 스타일의 캐릭터 대화형 에피소드 플랫폼. 배포물은 단일 파일(index.html) — 소스는 src/·content/로 나누고 빌드로 합침(아래 '빌드와 모듈 규칙'). 같은 소스에서 관리자 도구 admin.html도 만들어짐(같이 배포, 아래 '빌드와 모듈 규칙').
+버블챗 스타일의 캐릭터 대화형 에피소드 플랫폼. 배포물은 단일 파일(index.html) — 소스는 src/·content/로 나누고 빌드로 합침(아래 '빌드와 모듈 규칙'). 같은 소스에서 관리자 도구 admin.html도 만들어짐(이 PC에서만 — 커밋·배포하지 않음, 아래 '빌드와 모듈 규칙').
 
 **이 문서는 규칙과 지도만 담는다**(2026-11-12 — 사용자 결정). 꼭 지킬 규칙(빌드와 모듈 규칙·코딩 규칙·세션 운영·원칙)은 여기에 있고, 앱이 어떻게 생겼는지는 아래 지도 표가 가리키는 문서에 있다.
 - **어느 영역을 고치기 전에 지도 표에서 그 영역의 문서를 찾아 읽는다.** 고친 뒤에는 **같은 커밋에서 그 문서의 해당 항목을 고친다**(이 문서가 아니라).
@@ -26,13 +26,13 @@
 
 ## 배포·이름
 
-- 배포: GitHub Pages https://20232497.github.io/HEARTSYNC/ (main 브랜치 루트, 병합하면 자동 갱신) · 관리자 도구 …/HEARTSYNC/admin.html. claude.ai 아티팩트 https://claude.ai/artifact/3sfDYFeJ13dHrkWwBFj1YG 는 예전 배포(지금은 publish하지 않음 — 메모리). 저장소는 공개라 키·개인 데이터·성인 수위 표를 파일에 넣지 않기
+- 배포: GitHub Pages https://20232497.github.io/HEARTSYNC/ (main 브랜치 루트, 병합하면 자동 갱신) · 관리자 도구는 배포하지 않음(이 PC의 npm run dev → http://localhost:5173/admin.html — 2026-11-26 사용자 결정 M6). claude.ai 아티팩트 https://claude.ai/artifact/3sfDYFeJ13dHrkWwBFj1YG 는 예전 배포(지금은 publish하지 않음 — 메모리). 저장소는 공개라 키·개인 데이터·성인 수위 표를 파일에 넣지 않기
 - 이름: HEART SYNC(대문자·띄어쓰기). 저장소·웹 주소는 HEARTSYNC(Pages 경로는 대소문자 구분, 예전 주소 /HeartSync/·/HeartVerse/는 404 — 주소를 바꾸면 Supabase URL Configuration·Google 브랜딩·네이버 서비스 URL도). 내부 이름은 데이터 호환 때문에 그대로: localStorage hv1_ 접두사, IndexedDB "heartverse", window.HEARTVERSE_CONFIG
 
 ## 빌드와 모듈 규칙
 
-- index.html(사용자 사이트) · admin.html(관리자 도구) — 둘 다 커밋·배포. 같은 src/에서 진입점만 다름(src/js/main.js ↔ src/js/admin.js, 뼈대 src/page.html ↔ src/admin.html, 공통 모듈 묶음 src/js/app.js의 USER_VIEWS·USER_NAVS)
-- **index.html·admin.html은 빌드 결과물 — 직접 고치지 않기.** src/·content/를 고친 뒤 npm run build(둘 다 만듦), 바뀐 결과를 같이 커밋. npm run check(병합 전 검사)는 둘이 소스 빌드 결과와 같은지에 더해 순서 잠금·코드 정렬·긴 줄 예외·문서(이 문서의 크기와 지도 표의 경로)까지. GitHub Actions '빌드 확인'(.github/workflows/build.yml)이 PR·main마다 npm ci → npm run check → npm test, '흐름 시험'(e2e.yml)이 PR마다 npm run e2e -- --retry(실패한 시험만 한 번 더 · 2026-11-26부터 필수 검사 — 사용자 결정, tests/README.md 'CI')
+- index.html(사용자 사이트) · admin.html(관리자 도구) — index.html만 커밋·배포, admin.html은 빌드가 만들되 .gitignore(이 PC에서만 연다). 같은 src/에서 진입점만 다름(src/js/main.js ↔ src/js/admin.js, 뼈대 src/page.html ↔ src/admin.html, 공통 모듈 묶음 src/js/app.js의 USER_VIEWS·USER_NAVS)
+- **index.html·admin.html은 빌드 결과물 — 직접 고치지 않기.** src/·content/를 고친 뒤 npm run build(둘 다 만듦), 바뀐 index.html을 같이 커밋. npm run check(병합 전 검사)는 index.html이 소스 빌드 결과와 같은지(admin.html은 만들어지는지와 git에 없는지)에 더해 순서 잠금·코드 정렬·긴 줄 예외·문서(이 문서의 크기와 지도 표의 경로)까지. GitHub Actions '빌드 확인'(.github/workflows/build.yml)이 PR·main마다 npm ci → npm run check → npm test, '흐름 시험'(e2e.yml)이 PR마다 npm run build → npm run e2e -- --retry(실패한 시험만 한 번 더 · 2026-11-26부터 필수 검사 — 사용자 결정, tests/README.md 'CI')
 - npm install은 devDependencies만(빌드 검사용 espree·eslint-scope, 흐름 시험용 playwright, 코드 정렬용 prettier — 버전 고정). 앱 런타임 의존성 0. package.json "type": "module"은 지우지 않기(src/js와 content/**/work.js를 Node가 ESM으로 읽음)
 - 뼈대 src/page.html(사용자)·src/admin.html(관리자): doctype·메타·마크업·부팅 안내 ES5 스크립트. `<!-- @include css/*.css -->` 자리에 CSS 조각(이름 순), `<!-- @script js/main.js -->` 자리에 모듈 번들. 맨 위 <!doctype html>·<html lang="ko">·charset·viewport는 지우지 않기(없으면 쿼크 모드)
 - 주석 정책: 소스에는 설명을 자세히. 사용자 빌드는 주석·빈 줄을 벗기고(`//!`·`/*!`·`<!--!`만 남김) 모듈마다 `/* ── 파일 — 첫 줄 주석의 첫 문장 */` 한 줄 → **모듈 첫 줄 주석의 첫 문장이 곧 사용자 빌드에 남는 설명**. 관리자 빌드는 주석을 모두 남기고 모듈마다 가져옴·내보냄·쓰는 곳 머리를 붙임. 결과 파일은 둘 다 직접 고치지 않음

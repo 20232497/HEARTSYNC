@@ -4611,12 +4611,26 @@ function multiPairs(v, strict = true) {
 function multiMax(c) {
   return clamp(((c && c.cast) || []).filter((x) => !x.of).length, 12, 30);
 }
+function castMulti(v, c) {
+  const p = multiPairs(v),
+    names = ((c && c.cast) || []).map((x) => String(x.name || "").replace(/\s+/g, ""));
+  const hit = p.filter(([k]) => {
+    const s = k.replace(/\s+/g, "");
+    return names.some((n) => n === s || (s.length >= 2 && n.includes(s)));
+  }).length;
+  return p.length >= 2 && hit * 2 > p.length;
+}
+function castField(c, f, v) {
+  if (multiPairs(v).length < 2) return false;
+  const starts = [c.status, ...(c.openings || []).map((o) => o && o.status)].map((st) => st && st[f]).filter((x) => multiPairs(x).length >= 2);
+  return starts.length ? starts.some((x) => castMulti(x, c)) : castMulti(v, c);
+}
 function firstMulti(v, max) {
   const p = multiPairs(v);
   return p.length >= 2
     ? p
         .slice(0, max)
-        .map(([k, n]) => `${k} ${n}`)
+        .map(([k, n]) => `${k} ${clamp(Math.round(n), 0, 100)}`)
         .join(" · ")
     : null;
 }
@@ -4650,8 +4664,9 @@ function parseState(text, c, before) {
     for (const f of c.fields) {
       const nv = st[f];
       if (nv === undefined || nv === null || nv === "") continue;
-      out.status[f] =
-        mergeMulti(before?.[f], nv, max) ?? firstMulti(nv, max) ?? (typeof nv === "string" ? nv.slice(0, 200) : typeof nv === "object" ? flatValue(nv) : nv);
+      const pv = before?.[f],
+        merged = castField(c, f, multiPairs(pv).length >= 2 ? pv : nv) ? (mergeMulti(pv, nv, max) ?? firstMulti(nv, max)) : null;
+      out.status[f] = merged ?? (typeof nv === "string" ? nv.slice(0, 200) : typeof nv === "object" ? flatValue(nv) : nv);
     }
     if (typeof before?.[c.gauge] === "number") {
       const g = Number(st[c.gauge]),
@@ -5323,7 +5338,7 @@ ${epProgress(c.episode, r.ep, ep)}${used.length ? `\n[이미 쓴 문장 — 이�
 3) JSON 한 개 (코드블록 금지)
 {"status":{${fields}}${sug ? ',"suggestions":["…","…","…"]' : ""}${ep && !ep.ending ? `,"_ep":{"done":false${ep.ask ? ',"pick":""' : ""}}` : ""}}${ep && !ep.ending ? `\n- _ep.done: 이번 응답에서 지금 장의 목표가 이뤄졌으면 true, 아니면 false.${ep.ask ? ' _ep.pick: 위 [에피소드 진행]의 갈림길에서 유저의 이번 입력에 가까운 보기 id(어느 쪽도 아니면 "").' : ""}` : ""}
 - status는 이번 장면이 끝난 시점의 값. 모든 항목을 채운다.${typeof r.status?.[c.gauge] === "number" ? ` "${c.gauge}"는 0~100 정수이고 한 턴에 -10~+8 범위에서만 움직인다.` : ""}${c.fields.some((f) => f.includes("속마음")) ? ' "속마음"은 인물의 진짜 속마음 한 문장.' : ""}${(() => {
-    const mf = c.fields.filter((f) => multiPairs(r.status?.[f]).length >= 2);
+    const mf = c.fields.filter((f) => castField(c, f, r.status?.[f]));
     return mf.length
       ? ` ${mf.map((f) => `"${f}"`).join("·")}는 '이름 숫자 · 이름 숫자' 형식과 인물 순서를 그대로 지키고 한 명도 빼지 않는다(한 사람당 한 턴에 -10~+8).`
       : "";

@@ -119,13 +119,37 @@ export function multiPairs(v, strict = true) {
 export function multiMax(c) {
   return clamp(((c && c.cast) || []).filter((x) => !x.of).length, 12, 30);
 }
-/* 처음 채우는 다인원 값(직전 값이 그 형식이 아님) — 글자 수(200자)가 아니라 인물 수로 자름: 200자에서 자르면 인물이 많은 작품은 뒤쪽 이름이 빠짐. 그 형식이 아니면 null */
+/**
+ * 인물 수치 칸인지 — '이름 숫자'가 둘 이상이고 그 이름의 절반 넘게가 출연진 이름(같거나 두 글자 이상으로 출연진 이름의 일부 — '레나'↔'홍레나')일 때만.
+ * 💰 골드·스탯·📖 명부처럼 이름이 사람이 아닌 칸은 합치지 않고 AI가 쓴 그대로(골드가 0~100에 묶이고 명부가 늘어나던 문제 — 2026-11-26).
+ * @param {unknown} v 칸 값 @param {Work} c @returns {boolean}
+ */
+export function castMulti(v, c) {
+  const p = multiPairs(v),
+    names = ((c && c.cast) || []).map((x) => String(x.name || "").replace(/\s+/g, ""));
+  const hit = p.filter(([k]) => {
+    const s = k.replace(/\s+/g, "");
+    return names.some((n) => n === s || (s.length >= 2 && n.includes(s)));
+  }).length;
+  return p.length >= 2 && hit * 2 > p.length;
+}
+/**
+ * 칸 f(지금 값 v)를 인물 수치 칸으로 합칠지 — v가 '이름 숫자' 둘 이상이고, 작품의 시작 값(status·시작 상황 openings[].status)에 그 꼴이 있으면 그것으로, 없으면 v로 castMulti.
+ * 시작 값을 먼저 보는 까닭: 새로 나온 사람이 쌓여 절반을 넘으면 합치기가 꺼지고, 명부가 '메아르 39 · 미록 36'처럼 오면 켜지던 빈틈(Codex 검토 2026-11-26).
+ * @param {Work} c @param {string} f 칸 이름 @param {unknown} v @returns {boolean}
+ */
+export function castField(c, f, v) {
+  if (multiPairs(v).length < 2) return false;
+  const starts = [c.status, ...(c.openings || []).map((o) => o && o.status)].map((st) => st && st[f]).filter((x) => multiPairs(x).length >= 2);
+  return starts.length ? starts.some((x) => castMulti(x, c)) : castMulti(v, c);
+}
+/* 처음 채우는 다인원 값(직전 값이 그 형식이 아님) — 글자 수(200자)가 아니라 인물 수로 자름: 200자에서 자르면 인물이 많은 작품은 뒤쪽 이름이 빠짐. 0~100(합칠 때와 같게). 그 형식이 아니면 null */
 function firstMulti(v, max) {
   const p = multiPairs(v);
   return p.length >= 2
     ? p
         .slice(0, max)
-        .map(([k, n]) => `${k} ${n}`)
+        .map(([k, n]) => `${k} ${clamp(Math.round(n), 0, 100)}`)
         .join(" · ")
     : null;
 }
@@ -167,8 +191,9 @@ export function parseState(text, c, before) {
     for (const f of c.fields) {
       const nv = st[f];
       if (nv === undefined || nv === null || nv === "") continue;
-      out.status[f] =
-        mergeMulti(before?.[f], nv, max) ?? firstMulti(nv, max) ?? (typeof nv === "string" ? nv.slice(0, 200) : typeof nv === "object" ? flatValue(nv) : nv);
+      const pv = before?.[f],
+        merged = castField(c, f, multiPairs(pv).length >= 2 ? pv : nv) ? (mergeMulti(pv, nv, max) ?? firstMulti(nv, max)) : null;
+      out.status[f] = merged ?? (typeof nv === "string" ? nv.slice(0, 200) : typeof nv === "object" ? flatValue(nv) : nv);
     }
     if (typeof before?.[c.gauge] === "number") {
       const g = Number(st[c.gauge]),
