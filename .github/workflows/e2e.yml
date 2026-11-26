@@ -1,4 +1,5 @@
 # 흐름 시험(npm run e2e — Playwright WebKit·Chromium으로 빌드된 index.html·admin.html의 실제 화면 흐름)을 PR마다 돌린다.
+# admin.html은 커밋하지 않으므로(M6, 2026-11-26) 시험 전에 npm run build로 둘 다 만든다(index.html이 커밋된 것과 같은지는 빌드 확인 build.yml이 봄).
 # 실패한 시험만 한 번 더 돌리고(헛실패 대비), 그래도 실패하면 스크린샷(tests/.shots)을 올려 둔다.
 # 2026-11-26부터 필수 검사(사용자 결정 — 처음 두 주는 '알림만'이었음). 실패하면 병합하지 않는다(docs/TEAM.md 'main 병합').
 # 헛실패가 드물다는 것이 확인되면 사용자가 GitHub 설정에서 필수 검사로 지정한다(tests/README.md 'CI').
@@ -26,6 +27,8 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: 빌드 (npm run build — 커밋하지 않는 admin.html을 만듦)
+        run: npm run build
       - name: 브라우저 두 종(WebKit·Chromium)과 시스템 라이브러리, 한글 글꼴
         run: |
           npx playwright install --with-deps webkit chromium

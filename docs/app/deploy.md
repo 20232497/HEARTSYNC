@@ -4,7 +4,7 @@
 
 > CLAUDE.md의 지도 표가 가리키는 **영역 문서**예요. 이 영역의 코드를 고치기 전에 읽고, 고친 뒤에는 같은 커밋에서 이 문서의 해당 항목을 고쳐요. 항목은 2026-11-12에 CLAUDE.md의 '앱 구조'·'소스 구조·빌드' 절에서 문장 그대로 옮긴 것이고, 결정의 날짜와 경위를 모은 색인은 [docs/DECISIONS.md](../DECISIONS.md)에 있어요.
 
-**이 문서가 다루는 모듈**: `icons/` · `tools/icons.mjs` · `privacy.html` · `terms.html` · `src/js/admin/gate.js` · `src/js/core/config.js` · `vercel.json` · `docs/legal/`
+**이 문서가 다루는 모듈**: `icons/` · `tools/icons.mjs` · `privacy.html` · `terms.html` · `src/js/admin/gate.js` · `src/js/core/config.js` · `vercel.json` · `.gitignore` · `docs/legal/`
 
 ## 아이콘·정책 문서
 
@@ -14,7 +14,9 @@
 ## 관리자 관문
 
 - 관리자 도구 비밀번호 관문 admin/gate.js: 웹 주소에서만 SHA-256 해시 비교, 맞으면 localStorage hv1_admin, MY의 '관리자 잠그기'로 해제. localhost·127.0.0.1·file://은 묻지 않음. 클라이언트 관문이라 무심코 들어오는 것만 막음 — 비밀번호를 바꾸려면 gate.js의 HASH
-- 출시판 제외(work.js `hold` — content/README.md 칸 표): 그 작품은 index.html에 실리지 않지만 admin.html에는 남음. 관리자 빌드는 같은 공개 주소에 함께 배포되고 관리자 관문의 막는 힘이 약해서, 관리자 도구를 출시 배포에서 빼기(M6 — docs/legal/README.md) 전에는 공개 주소로 열릴 수 있음
+- **관리자 도구는 이 PC에서만**(M6 — 2026-11-26 사용자 "이 PC에서만", docs/legal/README.md): admin.html은 빌드가 만들되 커밋·배포하지 않음(.gitignore `/admin.html`). `npm run dev`의 http://localhost:5173/admin.html로 엶. GitHub Pages(main 루트)에도 Vercel 미리보기(vercel.json `node tools/build.mjs --only user`)에도 없음. 그래서 비밀번호 관문은 남은 안전장치일 뿐이고, 휴대폰에서 관리자 일(문의 답·신고 처리)을 하는 길은 없음
+- 관리자 로그인: 이메일·비밀번호 로그인은 localhost에서 그대로 됨. 소셜 로그인·인증 메일은 redirect_to가 지금 주소(localhost:5173)라서, Supabase URL Configuration의 Redirect URLs에 `http://localhost:5173/**`가 있어야 이 PC로 돌아옴(없으면 Site URL인 공개 사이트로 감 — 넣는 것은 사용자가 대시보드에서, docs/SETUP.md)
+- 출시판 제외(work.js `hold` — content/README.md 칸 표): 그 작품은 index.html에 실리지 않고 admin.html(이 PC에서만)에만 남음
 
 ## 배포 확장
 

@@ -27,7 +27,7 @@ const webp = (tag) => {
 };
 const walk = (d) =>
   fs.existsSync(d) ? fs.readdirSync(d, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(path.join(d, e.name)) : [path.join(d, e.name)])) : [];
-/** 빌드 흉내: 실린 그림 목록을 두 결과 파일에 적는다(진짜 빌드처럼 그림이 바뀌면 결과도 바뀜) */
+/** 빌드 흉내: 실린 그림 목록을 두 결과 파일에 적는다(진짜 빌드처럼 그림이 바뀌면 결과도 바뀜). admin.html은 진짜 저장소처럼 .gitignore — 만들어져도 올라가지 않아야 함 */
 const buildIn = (root) => {
   const list = walk(path.join(root, "content"))
     .map((f) => path.relative(root, f).replace(/\\/g, "/"))
@@ -61,6 +61,7 @@ function world(name, o = {}) {
   git(dir, "init", "-q", "--bare", origin);
   git(dir, "init", "-q", other);
   put(other, "README.md", "작품\n");
+  put(other, ".gitignore", "/admin.html\n");
   buildIn(other);
   git(other, "add", "-A");
   git(other, "commit", "-q", "-m", "처음");
@@ -215,6 +216,7 @@ test("올리기: 실은 그림만 커밋해 올리고, 그 커밋의 워크플�
   assert.match(fs.readFileSync(path.join(w.site, "index.html"), "utf8"), /hwanghu\/images\/KAS0\.webp\ncontent\/f\/hwanghu\/images\/cover\.webp/);
   const files = git(w.site, "show", "--stat", "--format=", "HEAD^2").replace(/\r/g, "");
   assert.ok(/cover\.webp/.test(files) && /index\.html/.test(files) && !/README/.test(files), "커밋에는 그림과 빌드 결과만");
+  assert.equal(git(w.site, "ls-tree", "--name-only", "origin/main", "admin.html"), "", "관리자 빌드는 만들어져도 올라가지 않음(M6)");
   assert.equal(git(w.site, "log", "-1", "--format=%an <%ae>", "HEAD^2"), "시험 <test@example.invalid>", "작성자 설정이 없으면 main의 최근 커밋 작성자");
   assert.ok(count(w, "api runs") >= 3, "두 워크플로가 모두 성공할 때까지 다시 봄");
   assert.equal(count(w, "pr merge"), 1);

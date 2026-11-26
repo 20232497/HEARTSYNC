@@ -21,7 +21,7 @@ export const MARK = "hs-art-site";
 export const REQUIRED = [".github/workflows/build.yml", ".github/workflows/e2e.yml"];
 const UPLOAD = /^art\/upload-\d{8}-\d{6}$/;
 const IMG = /^content\/[\w/.-]+\/images\/[\w.-]+\.(webp|png|jpe?g)$/i;
-const BUILT = ["index.html", "admin.html"];
+const BUILT = ["index.html"]; // 커밋되는 빌드 결과 — admin.html은 커밋하지 않음(.gitignore, M6 2026-11-26)
 const isBuilt = (p) => BUILT.includes(p);
 const rows = (s) => String(s).trim().split(/\r?\n/).filter(Boolean);
 
@@ -119,7 +119,7 @@ export async function publish(ctx) {
       into.add(p);
     }
   };
-  /** 빌드는 작업 폴더의 파일로 한다 — 커밋하지 않은 변경(그림이든 소스든)이 있으면 그것이 빌드 결과에 섞여 올라가므로 빌드 전에 멈춘다(빌드 결과 두 파일은 빼고 봄) */
+  /** 빌드는 작업 폴더의 파일로 한다 — 커밋하지 않은 변경(그림이든 소스든)이 있으면 그것이 빌드 결과에 섞여 올라가므로 빌드 전에 멈춘다(빌드 결과 index.html은 빼고 봄 — admin.html은 .gitignore라 안 보임) */
   const clean = async () => {
     const left = await status(run, root);
     if (left.images.length || left.others.length)

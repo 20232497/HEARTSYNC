@@ -11,7 +11,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { serve, ROOT } from "./serve.mjs";
 
-const ADMIN = "admin.html"; // 관리자 도구 빌드(npm run build가 함께 만듦)
+const ADMIN = "admin.html"; // 관리자 도구 빌드(npm run build가 함께 만듦 — 커밋하지 않음)
 const PAGE = { admin: ADMIN };
 const SUITES = {
   gate: "관리자 관문: 가짜 https 호스트에서 비밀번호 관문이 서고(레일 숨김), 틀리면 거부, 기억하면 바로 부팅, MY의 잠그기 버튼, 사용자 사이트에는 없음(HS_ADMIN_PW가 있으면 맞는 비밀번호 입력도)",
@@ -54,8 +54,9 @@ if (!fs.existsSync(path.join(ROOT, "index.html"))) {
   console.error("index.html이 없어요 — 먼저 npm run build");
   process.exit(2);
 }
-if (names.some((n) => PAGE[n]) && !fs.existsSync(path.join(ROOT, ADMIN))) {
-  console.error(`${ADMIN}이 없어요 — 먼저 npm run build`);
+// admin.html은 커밋하지 않아(M6) 새로 받은 사본에는 없음 — admin 말고도 gate·help·inject가 같은 서버의 /admin.html을 열어서 늘 확인
+if (!fs.existsSync(path.join(ROOT, ADMIN))) {
+  console.error(`${ADMIN}이 없어요(커밋하지 않는 관리자 빌드) — 먼저 npm run build`);
   process.exit(2);
 }
 const shots = path.join(ROOT, "tests", ".shots");
