@@ -29,9 +29,8 @@ const SUBJ = {
 const FIN =
   "(shiny hair:1.1), (hair strands:1.4), (detailed hair:1.3), (detailed face:1.3), (detailed skin:0.9), (semi-realistic:1.15), (manhwa:1.0), (digital painting:1.2), " +
   "(painterly:1.1), (realistic shading:1.0), (soft skin shading:1.0), (depth of field:1.1), (bokeh:0.7), (sharp focus:0.9)";
-/* 몸: 여성은 가녀리게(가슴·허리 문구 대신 slender·slim), 소매 길이를 적지 않은 옷은 긴소매(문구는 노출 정책의 sleeves) */
+/* 몸: 여성은 가녀리게(가슴·허리 문구 대신 slender·slim). 소매 길이는 옷 설정대로(2026-11-26까지 붙이던 긴소매 강제는 뺌 — exposure.js) */
 const BODY = { f: { profile: "slender, (slim:1.1)", emotion: "slender, (slim:1.2)" }, m: "slender, (bishounen:1.0)", elder: "(broad shoulders:0.5), (bishounen:0.5)" };
-const SLEEVE_TAG = /sleeves|sleeveless/;
 /* 남성의 감정 그림 비율: 어깨가 넓고 머리가 작게(류건이 기준 — 사용자 2026-11-13). 태그에 broad shoulders가 없는 인물에만 붙인다. 프로필은 얼굴 구도라 그대로 */
 const SHOULDERS = "(broad shoulders:1.1)";
 const BODY_M_EMOTION = { m: "slender, (bishounen:1.0)", elder: "slender, (bishounen:0.5)" };
@@ -331,9 +330,7 @@ export function emotionJob(c, place, slot, o = {}) {
   if (E.lowBlush) face = face.replace("(blush:0.3)", "(blush:0.1)"); // 화난 얼굴의 홍조는 수줍어 보임
   face += ", " + skinOf(p.tier) + ", " + LIPS[g];
   const day = TIME.test(place.tags) && !DARK.test(place.tags);
-  // 소매 길이를 적지 않은 옷은 긴소매(여·남 모두) — 어깨·팔을 드러내는 옷을 적어 그 네거티브를 푼 그림은 뺌
-  const sleeves = SLEEVE_TAG.test(c.tags) || lift.includes("bare arms") || lift.includes("bare shoulders") ? "" : P.sleeves;
-  const body = p.man ? [/broad shoulders/.test(c.tags) ? "" : SHOULDERS, BODY_M_EMOTION[p.tier], sleeves].filter(Boolean).join(", ") : BODY.f.emotion + (sleeves ? ", " + sleeves : "");
+  const body = p.man ? [/broad shoulders/.test(c.tags) ? "" : SHOULDERS, BODY_M_EMOTION[p.tier]].filter(Boolean).join(", ") : BODY.f.emotion;
   let pos = [SUBJ[p.tier], p.pos, emo, frame, placeBlock(place.tags), eyes + ", " + face, body, FIN, day ? BG.emotion.replace("(dim lighting:0.8), ", "") : BG.emotion, Q]
     .filter(Boolean)
     .join(", ");
