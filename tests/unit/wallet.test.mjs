@@ -65,6 +65,14 @@ test("charge·refund: 무료 턴은 턴 수를, 추천 값은 하트를 — 실�
   refund(s, "작품 · 스토리");
   assert.equal(S.wallet.hearts, 30);
 });
+test("refund: 자정 전에 쓴 무료 턴이 자정 뒤에 실패하면 새 날의 수는 줄이지 않음(무료 턴이 하나 더 생기지 않게) — 추천 값은 그대로 되돌림", () => {
+  const q = quote(set("lite", true));
+  charge(q, "작품 · 라이트");
+  assert.equal(q.day, today(), "charge가 센 날을 적음");
+  Object.assign(S.wallet, { freeDay: "9999-12-31", freeUsed: 1 }); // 자정이 지나 새 날로 세기 시작했고, 새 날에 한 턴을 씀
+  refund(q, "작품 · 라이트");
+  assert.deepEqual([S.wallet.freeUsed, S.wallet.hearts, q.sug], [1, 30, 0]);
+});
 test("refundSug: 답은 왔는데 추천이 안 온 턴은 추천 값만 되돌림 — 두 번 되돌리지 않고, 그 뒤의 값 표시는 실제 낸 값", () => {
   const q = quote(set("story", true));
   charge(q, "작품 · 스토리");

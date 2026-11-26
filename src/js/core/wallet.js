@@ -79,9 +79,11 @@ export function qShort(q) {
   if (q.type === "heart") return "♥" + heartsOf(q);
   return (q.type === "free" ? "무료" : "PLUS") + (q.sug ? "+♥" + q.sug : "");
 }
-/** 견적대로 차감하고 저장("wallet" 이벤트). @param {Quote} q @param {string} label 장부 설명 @returns {void} */
+/** 견적대로 차감하고 저장("wallet" 이벤트). 무료 턴은 센 날(q.day)을 적어 둠 — 환불이 그날의 수만 되돌리게. @param {Quote} q @param {string} label 장부 설명 @returns {void} */
 export function charge(q, label) {
   if (q.type === "free") {
+    refreshFree();
+    q.day = S.wallet.freeDay;
     S.wallet.freeUsed++;
     ledger(0, label + " · 무료 턴");
   } else if (q.type === "heart") {
@@ -94,10 +96,15 @@ export function charge(q, label) {
   }
   saveWallet();
 }
-/** 실패한 턴 되돌리기(무료 턴·하트 — 추천 값도). @param {Quote} q @param {string} label @returns {void} */
+/**
+ * 실패한 턴 되돌리기(무료 턴·하트 — 추천 값도). 무료 턴은 쓴 날과 지금 세는 날이 같을 때만 — 자정 전에 쓰고 자정 뒤에 실패하면
+ * 새 날의 수를 줄여 무료 턴이 하나 더 생기던 것(2026-11-27). 그날이 이미 지났으면 지난 날의 수는 어차피 새로 셈.
+ * @param {Quote} q @param {string} label @returns {void}
+ */
 export function refund(q, label) {
-  if (q.type === "free") S.wallet.freeUsed = Math.max(0, S.wallet.freeUsed - 1);
-  else if (q.type === "heart") {
+  if (q.type === "free") {
+    if (!q.day || q.day === S.wallet.freeDay) S.wallet.freeUsed = Math.max(0, S.wallet.freeUsed - 1);
+  } else if (q.type === "heart") {
     S.wallet.hearts += q.n;
     ledger(q.n, label + " · 실패 환불");
   }
