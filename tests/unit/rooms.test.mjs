@@ -7,7 +7,7 @@ import { on } from "../../src/js/core/events.js";
 import { migrateRoom } from "../../src/js/core/room-read.js";
 import { findOpening, forkRoom, openingIndex } from "../../src/js/core/room-fork.js";
 import { deletedRooms, newRoom, removeRoom, roomGone, roomKey, roomUnsaved, saveRoom, setFav, sortRooms, storableRooms } from "../../src/js/core/rooms.js";
-import { S, holdRoom, releaseRoom, roomInUse } from "../../src/js/core/state.js";
+import { S, heldRoom, holdRoom, releaseRoom, roomInUse } from "../../src/js/core/state.js";
 import { KV } from "../../src/js/core/storage.js";
 
 const P = { id: "p1", name: "지호", memo: "", desc: "" };
@@ -196,6 +196,17 @@ test("쓰고 있는 방(holdRoom·releaseRoom): 생성과 요약이 겹쳐도 �
   holdRoom("r-x");
   assert.equal(roomInUse("r-x"), true);
   releaseRoom("r-x");
+});
+test("heldRoom: 쓰고 있는 방 객체를 돌려줌(대화방을 다시 열 때 저장본 대신) — 요약이 객체 없이 잡아도 앞의 객체를 지키고, 다 놓으면 null", () => {
+  const r = { id: "r-y" };
+  assert.equal(heldRoom("r-y"), null);
+  holdRoom("r-y", r);
+  holdRoom("r-y");
+  assert.equal(heldRoom("r-y"), r);
+  releaseRoom("r-y");
+  assert.equal(heldRoom("r-y"), r);
+  releaseRoom("r-y");
+  assert.equal(heldRoom("r-y"), null);
 });
 test("방 저장이 실패하면(본문이 저장소에 들어가지 못함) 목록을 마지막으로 저장된 모양으로 되돌리고 저장 안 됨으로 적음 — 다음 저장이 되면 풀림", async () => {
   S.rooms = [];

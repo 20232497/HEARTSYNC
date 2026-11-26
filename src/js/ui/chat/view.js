@@ -1,21 +1,21 @@
 /* 대화방 화면 뼈대·입력창·게이지. 머리(뒤로·제목·AI 배지·무료 턴과 하트·게이지·모델 칩·대화 검색·방 메뉴) → 대화 → 한 줄 입력창([✦ 추천] [입력] [보내기 — 빈 입력이면 이어서 쓰기]).
    추천 패널과 ! 명령어 목록은 입력창 바로 위에 끼움. 안내 줄은 알릴 것이 있을 때만 */
 import { MODELS } from "../../ai/models.js";
-import { liveWork } from "../../core/character.js";
-import { commandHelp, findCommand, parseCommand } from "../../core/commands.js";
 import { on } from "../../core/events.js";
 import { migrateRoom } from "../../core/room-read.js";
 import { goneRooms, roomKey, roomUnsaved, saveRoom } from "../../core/rooms.js";
-import { S, gen, room, setRoom } from "../../core/state.js";
+import { S, gen, heldRoom, room, setRoom } from "../../core/state.js";
 import { KV } from "../../core/storage.js";
-import { $, esc, num, toast, uid } from "../../core/util.js";
+import { $, esc, num, toast } from "../../core/util.js";
 import { FREE_DAILY, freeLeft, heartsOf, isPro, listPrice, qShort, quote } from "../../core/wallet.js";
 import { sendTurn, stopGen } from "./generate.js";
 import { cmdKey, updateCmdList } from "./cmdlist.js";
+import { runCommand } from "./command-run.js";
+import { fitKeyboard } from "./keyboard.js";
 import { bindStick, renderLog } from "./log.js";
 import { barPct } from "./render.js";
 import { openSearch } from "./search.js";
-import { hideSug, sugLabel, toggleSug } from "./suggest.js";
+import { sugLabel, toggleSug } from "./suggest.js";
 import { AI_BADGE, AI_NOTICE, AI_NOTICE_OK, ackAiNotice, aiNoticeNeeded } from "../ai-notice.js";
 import { coverHTML } from "../cover.js";
 import { ICON } from "../icons.js";
@@ -26,6 +26,7 @@ import { bindGo, go, topbar } from "../shell.js";
 
 export async function viewChat(id) {
   const v = $("#view");
+  if ((!room || room.id !== id) && heldRoom(id)) setRoom(heldRoom(id)); // 답을 쓰거나 요약하는 중인 방은 그 객체 그대로(core/state.js heldRoom)
   if (!room || room.id !== id) {
     v.innerHTML = `<div class="page"><p class="note">대화를 불러오는 중…</p></div>`;
     // 읽는 사이 계정에서 받은 것이 쓰였으면 다시 읽음 — 먼저 시작한 읽기가 옛 본문을 돌려주면, 그것을 메모리에 올렸다가 저장할 때 받은 것을 덮음
@@ -78,6 +79,7 @@ export async function viewChat(id) {
       <div class="cmd-panel" id="cmdPanel" role="listbox" aria-label="명령어" hidden></div>
       <form class="inputrow" id="form">
         <button class="sugbtn" id="sugBtn" type="button" aria-expanded="false"></button>
+        <span class="inp-mode" id="inpMode" aria-live="polite" hidden></span>
         <label class="sr" for="inp">메시지</label>
         <textarea id="inp" rows="1" maxlength="1500" placeholder="행동·대사 입력 · // 연출 지시 · ! 명령어"></textarea>
         <button class="stopbtn" id="stopBtn" type="button" hidden>■ 중지</button>
@@ -113,6 +115,12 @@ export async function viewChat(id) {
     inp.style.height = "auto";
     inp.style.height = Math.min(160, inp.scrollHeight) + "px";
     updateCmdList(inp);
+    // 입력 모드 표시(프레임 7차 C5): //로 시작하면 연출 지시, !로 시작하면 명령어 — 입력칸 테두리 위에 작게(안내 줄이 늘 자리를 차지하지 않게)
+    const lead = inp.value.trimStart(), // 보낼 때 앞 공백을 자르므로 표시도 같게
+      mode = lead.startsWith("//") ? "연출 지시" : lead.startsWith("!") ? "명령어" : "",
+      tag = $("#inpMode");
+    if (tag.textContent !== mode) tag.textContent = mode;
+    tag.hidden = !mode;
     // 입력이 비었는지가 바뀌면 보내기 버튼의 모양을 바꿈(빈 입력 = 이어서 쓰기)
     if (!inp.value.trim() !== empty) {
       empty = !empty;
@@ -121,7 +129,7 @@ export async function viewChat(id) {
   };
   // 보내기: 명령어(앱 화면형·즉답)는 AI 없이, 그 밖은 한 턴. Enter와 버튼이 같은 길로 옴(오래된 iOS에는 form.requestSubmit이 없어 직접 부름)
   const submit = async () => {
-    if (gen) return;
+    if (genBusy()) return;
     const t = inp.value.trim();
     if (!t) return;
     if (runCommand(t)) {
@@ -138,7 +146,7 @@ export async function viewChat(id) {
   // 보내기 버튼: 입력이 있으면 보내고, 비어 있으면 '이어서 쓰기'(버튼의 글과 모양이 그렇게 바뀌어 있음 — updateComposer).
   // 답이 막 끝난 직후의 누름은 이어서 쓰기로 받지 않음(보내려던 손이 한 번 더 닿아 값이 나가지 않게). Enter는 빈 입력에서 아무 일도 하지 않음
   $("#sendBtn").onclick = () => {
-    if (gen) return;
+    if (genBusy()) return;
     if (inp.value.trim()) return submit();
     if (Date.now() < contLock) return;
     sendTurn("", { cont: true });
@@ -149,10 +157,6 @@ export async function viewChat(id) {
     const send = S.settings.enterSend !== false ? !e.shiftKey : e.ctrlKey || e.metaKey;
     if (e.key === "Enter" && send && !e.isComposing && e.keyCode !== 229) {
       e.preventDefault();
-      if (gen) {
-        flashHint("응답을 쓰는 중이에요. 끝나면 보낼 수 있고, 입력은 미리 써 둘 수 있어요.");
-        return;
-      }
       submit();
     }
   };
@@ -161,42 +165,10 @@ export async function viewChat(id) {
     submit();
   };
   bindStick($("#log"));
+  fitKeyboard($(".chat", v)); // 휴대폰 자판 위에 맞춤(visualViewport가 있을 때만 — ui/chat/keyboard.js)
   renderLog(true);
   updateMeter();
   updateComposer();
-}
-/* !명령어(core/commands.js): 앱 화면형 명령어(view가 있는 것 — !상태창·!갤러리·!지도·!도움말)는 AI를 부르지 않고 드로어를 엶(하트·턴을 쓰지 않음).
-   작품의 즉답 명령어(commands의 text)는 AI 없이 정해진 글을 방에 남김(replyNow). 이 둘은 이름 뒤에 덧붙인 말이 있어도 같음(덧붙인 말은 쓰지 않음).
-   앱 연출형(prompt — !시간경과 등)·작품 명령어(work.js commands의 prompt)·모르는 !글은 false → 그대로 AI에 보냄(연출 지시로 바꾸고 덧붙인 말을 붙이는 건 buildInput의 commandText) */
-function runCommand(t) {
-  const live = liveWork(room.char),
-    f = findCommand(parseCommand(t), live);
-  if (f && f.work && f.work.text) {
-    replyNow(t, f.work);
-    return true;
-  }
-  if (!f || !f.app || !f.app.view) return false;
-  if (f.app.view === "help") {
-    flashHint("명령어: " + commandHelp(live) + " — 이름 뒤에 말을 덧붙여도 되고, // 로 시작하면 연출 지시");
-    return true;
-  }
-  openRoomDrawer(f.app.view);
-  return true;
-}
-/* 즉답: 유저 말풍선과 정해진 글의 AI 메시지를 방에 남김 — 하트·턴을 쓰지 않고 상태창은 직전 값 그대로. 두 메시지에 canned 표시
-   (다시 쓰기·좋아요 없음, 분기의 턴 계산에서 빠짐). 다음 턴의 대화 기록에는 그대로 들어가 AI가 그 글을 본 것으로 이어 감 */
-function replyNow(t, cmd) {
-  const a = lastAi(room),
-    st = a ? (a.alts[a.idx] || {}).status || a.statusBefore : room.status;
-  room.lastErr = "";
-  room.msgs.push(
-    { id: uid("m"), role: "user", text: t, canned: true },
-    { id: uid("m"), role: "ai", idx: 0, canned: true, alts: [{ text: cmd.text, status: st, suggestions: [], cost: "무료" }], statusBefore: st }
-  );
-  saveRoom(room);
-  collectSeen(room);
-  hideSug();
-  renderLog(true);
 }
 let hintTimer = null;
 /* '이어서 쓰기'를 받지 않는 시각(답이 막 끝난 직후)과 직전에 응답 중이었는지 — updateComposer가 응답이 끝나는 순간을 잡음 */
@@ -214,31 +186,52 @@ export function flashHint(msg) {
     updateComposer();
   }, 2600);
 }
+/* 답을 쓰는 중이면 안내하고 true — 생성은 한 번에 하나라, 다른 방에서 쓰는 중이어도 보내지 않음(그 방은 떠나도 계속 씀 — 프레임 7차 C10) */
+function genBusy() {
+  if (!gen) return false;
+  flashHint(
+    gen.roomId === room.id
+      ? "응답을 쓰는 중이에요. 끝나면 보낼 수 있고, 입력은 미리 써 둘 수 있어요."
+      : "다른 대화방에서 답을 쓰는 중이에요. 그 답이 끝나면 보낼 수 있고, 입력은 미리 써 둘 수 있어요."
+  );
+  return true;
+}
+/**
+ * 이번 턴 값의 설명 — 보내기 버튼과 다시 쓰기 버튼의 title. 누르기 전에 값이 보이게: 보내기 값에는 추천 자동 받기(q.sug)가 더해져 있음.
+ * 풀어 씀 — 버튼의 '무료+♥1'만 보면 '무료'가 먼저 읽히므로(법률 세션 권고, docs/legal/ui-copy.md §3). @param {ReturnType<typeof quote>} q @returns {string}
+ */
+export function costNote(q) {
+  const sugNote = q.sug ? ` · 답변 추천 자동 받기로 하트 ${q.sug}개가 사용돼요` : "";
+  return q.type === "heart"
+    ? `이번 턴에 하트 ${heartsOf(q)}개가 사용돼요` + (q.sug ? ` · 답변 추천 자동 받기 ♥${q.sug} 포함` : "")
+    : q.type === "free"
+      ? (q.sug ? "이번 턴은 무료 턴이에요" : "오늘의 무료 턴으로 보내요") + sugNote
+      : "이번 턴은 PLUS로 보내요" + (q.sug ? sugNote : " — 하트가 나가지 않아요"); // '무제한'은 스토어·결제 시트에만(ui-copy §3 유지 조건 — 법률 세션 2026-11-26)
+}
+/**
+ * 마지막 답 아래 '다시 쓰기' 버튼의 [글, 설명] — 값은 보내기 버튼·다시 쓰기 창의 실행 버튼과 같은 견적(qShort). 옆의 '‹ 2/3 ›'는 저장된 답이라 값이 없음(프레임 7차 C4).
+ * @param {ReturnType<typeof quote>} q @returns {[string, string]}
+ */
+export const regenText = (q) => ["↻ 다시 쓰기 · " + qShort(q), "새로 한 번 더 써요 — " + costNote(q)];
 export function updateComposer() {
   if (!room || !$("#sendBtn")) return;
   const q = quote(room.set),
     m = MODELS[room.set.model];
   const send = $("#sendBtn"),
-    stop = $("#stopBtn");
-  if (wasGen && !gen) contLock = Date.now() + 700; // 답이 막 끝남 — 잠깐은 빈 입력의 누름을 이어서 쓰기로 받지 않음
-  wasGen = !!gen;
-  send.disabled = !!gen;
-  stop.hidden = !gen;
+    stop = $("#stopBtn"),
+    here = !!gen && gen.roomId === room.id; // 이 방에서 쓰는 중(다른 방의 답은 중지 버튼을 보이지 않고, 보내기를 누르면 genBusy가 안내)
+  if (wasGen && !here) contLock = Date.now() + 700; // 답이 막 끝남 — 잠깐은 빈 입력의 누름을 이어서 쓰기로 받지 않음
+  wasGen = here;
+  send.disabled = here;
+  stop.hidden = !here;
   // 보내기 버튼은 입력이 비어 있으면 '이어서 쓰기'가 됨 — 글과 모양(.cont)이 달라 무엇을 하는지, 값이 얼마인지 누르기 전에 보임
-  const cont = !gen && !$("#inp").value.trim();
+  const cont = !here && !$("#inp").value.trim();
   send.classList.toggle("cont", cont);
   send.innerHTML = (cont ? "이어서" : ICON.send) + `<small>${qShort(q)}</small>`;
   send.setAttribute("aria-label", cont ? "이어서 쓰기" : "보내기");
-  // 누르기 전에 값이 보이게: 보내기 버튼의 값에는 추천 자동 받기(q.sug)가 더해져 있고, 추천 버튼은 저장된 추천이 없을 때만 값을 보임
-  // 설명 글은 풀어 씀 — 버튼의 '무료+♥1'만 보면 '무료'가 먼저 읽히므로(법률 세션 권고, docs/legal/ui-copy.md §3)
-  const sugNote = q.sug ? ` · 답변 추천 자동 받기로 하트 ${q.sug}개가 사용돼요` : "";
-  send.title =
-    (cont ? "입력 없이 이어서 쓰기 — " : "") +
-    (q.type === "heart"
-      ? `이번 턴에 하트 ${heartsOf(q)}개가 사용돼요` + (q.sug ? ` · 답변 추천 자동 받기 ♥${q.sug} 포함` : "")
-      : q.type === "free"
-        ? (q.sug ? "이번 턴은 무료 턴이에요" : "오늘의 무료 턴으로 보내요") + sugNote
-        : (q.sug ? "이번 턴은 PLUS로 보내요" : "PLUS 무제한") + sugNote);
+  send.title = (cont ? "입력 없이 이어서 쓰기 — " : "") + costNote(q);
+  const rg = $('#logInner [data-act="regen"]'); // 마지막 답의 다시 쓰기 — 값이 바뀌면(무료 턴을 다 씀·PLUS·모델) 버튼의 값도 같이
+  if (rg) [rg.textContent, rg.title] = regenText(q);
   // 키 안내는 입력 칸의 title로 — 방 안의 표시 설정에서 'Enter로 보내기'를 바꾸면 여기서 같이 바뀜
   $("#inp").title = S.settings.enterSend !== false ? "Enter 전송 · Shift+Enter 줄바꿈" : "Ctrl+Enter 전송 · Enter 줄바꿈";
   const sug = $("#sugBtn");

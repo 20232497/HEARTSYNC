@@ -11,6 +11,7 @@ test("뼈대 둘의 뷰포트 메타가 같고 화면 확대를 잠가 둠", () 
     admin = meta("admin.html"),
     parts = user.split(",");
   assert.equal(user, admin, "사용자 사이트와 관리자 도구의 뷰포트 메타가 다름");
-  for (const p of ["width=device-width", "initial-scale=1", "maximum-scale=1", "viewport-fit=cover"])
+  // interactive-widget=resizes-content: 안드로이드 크롬은 자판이 열리면 레이아웃을 줄임(아이폰은 받지 않아 ui/chat/keyboard.js가 맞춤 — 2026-11-26 프레임 7차 C1)
+  for (const p of ["width=device-width", "initial-scale=1", "maximum-scale=1", "viewport-fit=cover", "interactive-widget=resizes-content"])
     assert.ok(parts.includes(p), `뷰포트 메타에 ${p}가 없음: ${user}`);
 });

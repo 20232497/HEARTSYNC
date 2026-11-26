@@ -187,6 +187,100 @@ for (const [dev, engine] of targets) {
       errs.push("끊긴 답의 글을 남기고 값을 돌려주는 것이 다름: " + JSON.stringify(res.empty.cut));
     if (res.empty.added !== 1 || res.empty.last !== "user" || res.empty.blank || res.empty.free !== 0 || !res.empty.err)
       errs.push("본문 없는 답이 저장되거나 값이 나감: " + JSON.stringify(res.empty));
+    // 답을 쓰는 중에 방을 떠나도(프레임 7차 C10): 멈추지 않고 왼쪽 메뉴·대화 목록에 '쓰는 중', 다른 방에서는 보내지 않고 안내(생성은 한 번에 하나),
+    // 돌아오면 같은 방 객체(저장본을 새로 읽으면 끝난 답이 화면에 안 오고 다음 저장이 덮음), 끝나면 화면·저장본에 답, 화면 꺼짐 방지는 쓰는 동안만
+    res.away = await p.evaluate(async () => {
+      const { __nap: nap, __idle: idle } = window;
+      Object.assign(S.wallet, { freeUsed: 0, hearts: 0 });
+      saveWallet();
+      room.lastErr = "";
+      const A = room,
+        n0 = A.msgs.length,
+        wl = { req: 0, rel: 0 };
+      Object.defineProperty(navigator, "wakeLock", {
+        configurable: true,
+        value: { request: async () => (wl.req++, { release: async () => void wl.rel++ }) }
+      });
+      let release;
+      const hold = new Promise((r) => (release = r));
+      window.llm = async (input, opt) => {
+        if (opt.json) return { suggestions: [] };
+        opt.onText({ text: "*쓰는 중인 글.*" });
+        await new Promise((ok, no) => {
+          hold.then(ok);
+          opt.signal.addEventListener("abort", () => no({ code: "cancelled", text: "*쓰는 중인 글.*" })); // 멈추면 진짜 모델처럼 끝남
+        });
+        const full = `*다 쓴 글.*\n\n"끝났어요."\n===STATE===\n` + JSON.stringify({ status: {}, suggestions: [] });
+        opt.onText({ text: full });
+        return full;
+      };
+      await window.__turn("떠나도 이어질 말");
+      await nap(200);
+      const mark = (sel) => !!document.querySelector(`${sel} [data-room="${A.id}"] .writing`);
+      const out = { started: !!gen, wake: wl.req };
+      location.hash = "home";
+      await nap(500);
+      out.home = { gen: !!gen, rail: mark("#railRecent") };
+      location.hash = "chats";
+      await nap(400);
+      out.list = mark("#view");
+      const other = ORIGINALS.find((c) => c.id !== A.char.id && !c.episode),
+        B = newRoom(normalizeChar(other), 0, S.personas[0]);
+      location.hash = "r-" + B.id;
+      await nap(900);
+      const inp = $("#inp");
+      inp.value = "다른 방의 말";
+      inp.oninput();
+      $("#sendBtn").click();
+      await nap(250);
+      out.other = { room: room.id === B.id, sent: room.msgs.some((m) => m.text === "다른 방의 말"), hint: $("#hint").textContent, stop: !$("#stopBtn").hidden };
+      location.hash = "r-" + A.id;
+      await nap(900);
+      out.back = { same: room === A, live: !!$("#liveBubble"), stop: !$("#stopBtn").hidden };
+      release();
+      await idle();
+      const kept = await KV.get(roomKey(A.id)),
+        last = A.msgs[A.msgs.length - 1];
+      out.done = {
+        n: A.msgs.length - n0,
+        text: last.role === "ai" ? last.alts[last.idx].text : "",
+        shown: ($("#logInner").textContent || "").includes("끝났어요."),
+        stored: kept.msgs.length === A.msgs.length,
+        rail: mark("#railRecent"),
+        wake: [wl.req, wl.rel]
+      };
+      // 화면을 내려 둔 사이 연결이 끊긴 답: 받은 글은 남기고 값은 돌려주며, 돌아오면 '이어서'를 안내
+      window.llm = async (input, opt) => {
+        opt.onText({ text: "*내려 둔 사이 받은 글.*" });
+        Object.defineProperty(document, "hidden", { configurable: true, get: () => true });
+        document.dispatchEvent(new Event("visibilitychange"));
+        await nap(50);
+        delete document.hidden;
+        throw { code: "upstream_error", text: "*내려 둔 사이 받은 글.*" };
+      };
+      const f0 = S.wallet.freeUsed;
+      await window.__turn("내려 둘 말");
+      await idle();
+      out.hidden = { err: room.lastErr || "", free: S.wallet.freeUsed - f0 };
+      room.lastErr = "";
+      delete navigator.wakeLock;
+      window.llm = window.__ok;
+      return out;
+    });
+    {
+      const a = res.away;
+      if (!a.started || !a.home.gen || !a.home.rail || !a.list) errs.push("답을 쓰는 중에 방을 떠나면 멈추거나 '쓰는 중' 표시가 없음: " + JSON.stringify(a));
+      if (!a.other.room || a.other.sent || !/다른 대화방/.test(a.other.hint) || a.other.stop)
+        errs.push("다른 방에서 답을 쓰는 중에 보내기가 됨(또는 안내·중지 버튼이 다름): " + JSON.stringify(a.other));
+      if (!a.back.same || !a.back.live || !a.back.stop) errs.push("쓰는 중인 방으로 돌아왔을 때 같은 방이 아님: " + JSON.stringify(a.back));
+      const d = a.done;
+      if (d.n !== 2 || !/끝났어요/.test(d.text) || !d.shown || !d.stored || d.rail)
+        errs.push("떠났다 돌아온 방의 답이 화면·저장본에 없음: " + JSON.stringify(d));
+      if (a.wake !== 1 || d.wake[0] !== 1 || d.wake[1] !== 1)
+        errs.push("화면 꺼짐 방지가 쓰는 동안만이 아님: " + JSON.stringify({ start: a.wake, end: d.wake }));
+      if (!/이어서/.test(a.hidden.err) || a.hidden.free !== 0)
+        errs.push("내려 둔 사이 끊긴 답에 '이어서' 안내가 없거나 값이 나감: " + JSON.stringify(a.hidden));
+    }
     // 무료 턴 소진 안내에서 PLUS를 사면: 같은 방에 머물고 쓰던 글이 그대로(전에는 화면을 통째로 다시 그려 글이 사라졌음)
     res.plus = await p.evaluate(async () => {
       const { __nap: nap } = window;

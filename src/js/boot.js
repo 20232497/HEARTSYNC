@@ -2,7 +2,6 @@
 import { migrateSettings } from "./core/migrate.js";
 import { applySettings } from "./core/settings.js";
 import { gen } from "./core/state.js";
-import { $ } from "./core/util.js";
 import { CLOUD } from "./services/cloud.js";
 import { loadAll } from "./services/load.js";
 import { SB } from "./services/supabase.js";
@@ -10,7 +9,7 @@ import { reloadFromCloud } from "./services/sync.js";
 import { stopGen } from "./ui/chat/generate.js";
 import { askAud } from "./ui/home.js";
 import { afterLogin, bootBack, newPasswordSheet } from "./ui/login.js";
-import { closeOverlays } from "./ui/sheet.js";
+import { escapeLayer } from "./ui/sheet.js";
 import { renderShell, route } from "./ui/shell.js";
 
 /* 부팅이 던지면 '불러오는 중…'에 머물지 않게 이유를 보여 줌 — 뼈대의 앞쪽 ES5 스크립트는 error 이벤트만 받아, 약속이 거부된 것은 못 봄.
@@ -56,9 +55,7 @@ export async function boot() {
         .catch(() => {});
   });
   document.addEventListener("keydown", (e) => {
-    if (e.key !== "Escape") return;
-    if ($(".lightbox")) $(".lightbox").remove();
-    else if ($(".overlay")) closeOverlays();
-    else if (gen) stopGen();
+    if (e.key !== "Escape" || escapeLayer()) return; // 크게 보기·맨 위 겹을 먼저 닫음(ui/sheet.js — 겹의 키보드는 한 곳에서)
+    if (gen && location.hash === "#r-" + gen.roomId) stopGen(); // 그 방을 보고 있을 때만 — 떠난 방의 답은 다른 화면의 Esc로 멈추지 않음
   });
 }

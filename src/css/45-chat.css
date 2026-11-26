@@ -80,6 +80,10 @@
 .tools-row button:disabled { opacity:.35; cursor:default; }
 .tools-row button.on { color:var(--accent); }
 .tools-row .sw { font-variant-numeric:tabular-nums; padding:0 2px; }
+/* 저장된 답 넘기기 '‹ 2/3 ›'를 한 묶음으로(값 없음) — 옆의 '다시 쓰기 · ♥n'(값이 나감)과 구별(프레임 7차 C4) */
+.tools-row .pager { display:inline-flex; align-items:center; border:1px solid var(--line); border-radius:9px; margin-right:4px; }
+.tools-row .pager button { padding:4px 8px; }
+.tools-row .regen { font-weight:600; }
 .tools-row .rcpt { margin-left:auto; font-size:11.5px; font-variant-numeric:tabular-nums; padding:0 4px; }
 .tools-row .lore-used { margin-left:auto; font-size:11.5px; color:var(--sys); padding:0 4px; max-width:50%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .tools-row .lore-used + .rcpt { margin-left:0; }
@@ -108,6 +112,8 @@ details.stat[open] summary::after { content:"▴"; }
 .composer { position:relative; z-index:2; padding:10px max(12px, env(safe-area-inset-right,0px)) calc(12px + env(safe-area-inset-bottom,0px)) max(12px, env(safe-area-inset-left,0px)); border-top:1px solid var(--line); background:var(--surface); -webkit-backdrop-filter:blur(12px); backdrop-filter:blur(12px); }
 @supports (color:color-mix(in srgb, red, blue)) { .composer { background:color-mix(in srgb, var(--surface) 92%, transparent); } }
 .composer .inner { max-width:760px; margin:0 auto; }
+/* 자판이 열린 동안(ui/chat/keyboard.js): 입력창 아래의 안전 영역은 자판이 덮으므로 빼지 않음 — 두 번 비지 않게 */
+.chat.kb-open .composer { padding-bottom:10px; }
 /* 한 줄 입력창: [✦ 추천] [입력] [중지] [보내기 — 빈 입력이면 '이어서'(.cont: 테두리만 — 보내기와 다른 일이라는 것이 보이게)] */
 .sugbtn { flex:none; height:40px; border-radius:12px; border:1px solid var(--line); background:var(--surface); padding:0 10px; font-size:13px; font-weight:600; color:var(--muted); white-space:nowrap; display:flex; align-items:center; }
 .sugbtn.on { background:var(--accent-soft); color:var(--accent); border-color:var(--accent); }
@@ -142,11 +148,21 @@ details.stat[open] summary::after { content:"▴"; }
 .cmd-panel button.c.on, .cmd-panel button.c:hover { border-color:var(--accent); background:var(--accent-soft); }
 .inputrow { display:flex; gap:8px; align-items:flex-end; background:var(--bg); border:1px solid var(--line); border-radius:16px; padding:6px; }
 .inputrow:focus-within { border-color:var(--accent); }
+/* 입력 모드 표시 — //(연출 지시)·!(명령어)로 시작하면 입력칸 테두리 위에 작게(ui/chat/view.js, 프레임 7차 C5) */
+.inputrow { position:relative; }
+.inp-mode { position:absolute; top:-9px; left:14px; z-index:1; font-size:10.5px; font-weight:700; line-height:16px; padding:0 7px; border-radius:8px; background:var(--accent); color:var(--accent-ink); pointer-events:none; }
+.inp-mode[hidden] { display:none; }
 .inputrow textarea { flex:1; min-width:0; border:0; background:none; outline:none; resize:none; max-height:160px; min-height:24px; padding:7px 0; line-height:1.55; }
 .send { height:40px; border-radius:12px; border:0; background:var(--accent); color:var(--accent-ink); padding:0 14px; font-weight:700; display:flex; align-items:center; gap:6px; white-space:nowrap; font-variant-numeric:tabular-nums; }
 .send small { font-weight:700; font-size:12px; }
 .send:disabled { opacity:.4; cursor:not-allowed; }
 .stopbtn { height:40px; border-radius:12px; border:1px solid var(--line); background:var(--surface); padding:0 12px; font-weight:600; font-size:13px; white-space:nowrap; }
+/* 손가락으로 누르는 화면: 보내기·중지·추천은 44px, 답 넘기기 화살표는 넓게(보이는 높이 32 + 누르는 자리 위아래 6px — 위 말풍선을 밀지 않게) — 프레임 7차 C2 */
+@media (pointer:coarse) {
+  .send, .stopbtn, .sugbtn { height:44px; }
+  .tools-row .pager button { position:relative; min-width:44px; min-height:32px; justify-content:center; }
+  .tools-row .pager button::after { content:""; position:absolute; top:-6px; right:0; bottom:-6px; left:0; }
+}
 .hint { font-size:11.5px; color:var(--muted); margin-top:6px; display:flex; gap:10px; flex-wrap:wrap; min-height:1.5em; }
 .hint:empty { display:none; } /* 알릴 것이 없으면 줄을 차지하지 않음 */
 .hint.warn { color:var(--accent); font-weight:600; }

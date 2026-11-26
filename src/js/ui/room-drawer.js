@@ -13,7 +13,7 @@ import { drawerMemory } from "./drawer/memory.js";
 import { drawerDisplay, drawerNote, drawerOutput, drawerPersona } from "./drawer/settings.js";
 import { ICON } from "./icons.js";
 import { plusSheet } from "./pay.js";
-import { closeOverlays, confirmSheet } from "./sheet.js";
+import { closeOverlays, confirmSheet, holdFocus } from "./sheet.js";
 import { go } from "./shell.js";
 
 /* ---------------------------------------------------------------- 대화방 관리 드로어 */
@@ -46,10 +46,11 @@ export function openRoomDrawer(view = "main") {
     lore: "세계관 수첩"
   };
   ov.innerHTML =
-    `<aside class="drawer" role="dialog" aria-label="${titles[view]}">` +
+    `<aside class="drawer" role="dialog" aria-modal="true" aria-label="${titles[view]}">` +
     `<div class="sheet-head">${view !== "main" ? `<button class="icon-btn" id="dBack" aria-label="뒤로">${ICON.back}</button>` : ""}` +
     `<h2>${titles[view]}</h2><button class="icon-btn" data-x aria-label="닫기">${ICON.close}</button></div><div id="dBody"></div></aside>`;
   document.body.append(ov);
+  holdFocus(ov, $(".drawer", ov)); // 포커스를 안으로·Tab은 안에서만·닫히면 연 자리로(ui/sheet.js — Esc는 boot.js가 escapeLayer로)
   ov.addEventListener("click", (e) => {
     if (e.target === ov || e.target.closest("[data-x]")) ov.remove();
   });
