@@ -56,7 +56,7 @@ export async function pushAll(keys) {
 }
 // 이 기기의 KV 키 중 계정과 주고받는 것(그림은 pushAll이 따로, 설정은 "settings" 키로 따로). 방 본문은 저장소를 훑지 않고 **이 기기의 목록(S.rooms)에 있는 방만** —
 // 목록에 없는 본문(지우다 남은 것, '계정 것만 쓰기'로 목록에서 뺀 것)이 계정으로 올라가지 않게
-function localKVKeys() {
+export function localKVKeys() {
   let ls = [];
   try {
     ls = Object.keys(localStorage)

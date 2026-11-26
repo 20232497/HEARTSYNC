@@ -244,17 +244,24 @@ export async function generate(target, q, direction = "", opt = {}) {
       if (lost) refund(q, label);
       else refundSug(q, label); // 본문만 남긴 답에는 추천이 없음 — 추천 값은 되돌림
       Object.assign(msg.alts[altIdx], { text: keep, status: msg.statusBefore, cost: lost ? "" : qShort(q) });
-      if (lost) r.lastErr = "응답이 오는 중에 끊겨 여기까지만 남겼어요. 값은 돌려드렸어요. '다시 시도'를 누르면 다시 써요.";
+      if (lost) {
+        r.lastErr = "응답이 오는 중에 끊겨 여기까지만 남겼어요. 값은 돌려드렸어요. '다시 시도'를 누르면 다시 써요.";
+        r.lastErrEdit = false;
+      }
     } else {
       msg.alts.splice(altIdx, 1);
       if (!msg.alts.length) r.msgs.splice(r.msgs.indexOf(msg), 1);
       else msg.idx = msg.alts.length - 1;
       refund(q, label);
-      // 메시지 수정·다시 쓰기는 자르기 전 대화로 되돌림(opt.undo). 수정은 '다시 시도' 줄 대신 토스트로 알림 — 그 줄의 버튼은 마지막 답을 다시 쓰는 것이라 뜻이 달라짐
+      // 메시지 수정·다시 쓰기는 자르기 전 대화로 되돌림(opt.undo — 수정은 '되돌렸어요'를 토스트로). 까닭은 오류 줄에 남김 — 로그인·키처럼 할 일을 알려 주는
+      // 긴 글이 토스트로만 지나가지 않게. 수정의 실패는 그 줄에 '다시 시도'를 두지 않음(lastErrEdit — 그 버튼은 마지막 답을 다시 쓰는 것이라 뜻이 달라짐)
       const copy = errCopy(e),
         note = opt.undo ? opt.undo() : "";
-      if (note) toast([copy, note].filter(Boolean).join(" "));
-      else if (copy) r.lastErr = copy;
+      if (note) toast(note);
+      if (copy) {
+        r.lastErr = copy;
+        r.lastErrEdit = !!note;
+      }
     }
   } finally {
     try {

@@ -1,5 +1,5 @@
 /* 일상 화풍 두 개의 프롬프트 조립 — 남성향 일상(여성 인물)·여성향 일상(남성 인물). 작품 데이터(cast[]·places[])를 칸에 끼워 긍정·부정 프롬프트와 생성 값을 만든다.
-   그림 값(화풍 문구·네거티브·LoRA·후처리)은 값 파일에서 읽는다: ../mdaily-v11.json(여성) · ../../style-fdaily/fdaily-v13.json(남성) — 앞 판(여성 v6~v10, 남성 v7~v12)은 보관 · 고정 태그는 ../mdaily.json.
+   그림 값(화풍 문구·네거티브·LoRA·후처리)은 값 파일에서 읽는다: ../mdaily-v12.json(여성) · ../../style-fdaily/fdaily-v13.json(남성) — 앞 판(여성 v6~v11, 남성 v7~v12)은 보관 · 고정 태그는 ../mdaily.json.
    값 파일이 정할 수 있는 것: prompt·coolPrompt·neg·fits·lora·post + lightDay·lightNight(낮·밤 빛 문구) · bgTag(배경 문구) · act(연기 문구 손질 — drop·scale·soften)
    · draw("anime"면 그 성별의 인물을 애니 화풍의 작업으로 그리고 이 화풍의 후처리만 한 겹 입힘 — 아래 '애니 화풍으로 그리는 인물') · anime(그때 애니 문구를 손질하는 값).
    이 파일은 그 값을 인물마다 손대지 않고 쓰는 규칙이다 — 2026-11-13 사용자와 비교 생성으로 정함(경위와 표는 ../README.md '조립 규칙').
@@ -29,7 +29,7 @@ const load = (rel) => {
 };
 const BASE = J("../mdaily.json");
 export const FIX = BASE.fixed; // 품질·수위·규격·미성년 금지 태그
-export const STYLE = { f: load("../mdaily-v11.json"), m: load("../../style-fdaily/fdaily-v13.json") };
+export const STYLE = { f: load("../mdaily-v12.json"), m: load("../../style-fdaily/fdaily-v13.json") };
 /* 그림 규격(tools/content-art.mjs ART_SPECS) — 프로필 768×1152, 감정 1024×1024. 멀리 잡는 휴식 칸만 1536으로 키워 다시 그린다(얼굴이 작아져 무너짐) */
 export const SIZE = { profile: { width: 768, height: 1152 }, emotion: { width: 1024, height: 1024 } };
 const HIRES = { w: 1536, h: 1536, strength: 0.4 };
@@ -126,7 +126,7 @@ const UNDER = /overalls|apron|suspenders/,
 /** 셔츠라고만 적힌 인물(종류가 안 적힘) — 본 그림(build)과 애니 밑그림(underJob)이 같은 규칙으로 깃 달린 셔츠를 보탠다 */
 const plainShirt = (c) => /\bshirt\b/.test(c.tags) && !/t-shirt|v-neck|turtleneck|collared shirt/.test(c.tags);
 const FACIAL = /stubble|beard|mustache|goatee|facial hair/;
-const NEG_CLOTHES_M = "(bare shoulders:1.4), (off shoulder:1.4), (sleeveless:1.3), (pectorals:1.3), (collarbone:1.2), (open collar:1.3), (unbuttoned shirt:1.3)";
+const NEG_CLOTHES_M = "(sleeveless:1.3), (pectorals:1.3), (open collar:1.3), (unbuttoned shirt:1.3)"; // 가슴만 막음 — 어깨·쇄골은 2026-11-26부터 막지 않음(sleeveless는 옷을 지키는 값)
 
 /* ── 장소 ── 작품의 places[].tags → 사람 낱말과 그림에서 또렷해지는 센 낱말을 빼고, 모델이 모르는 낱말을 바꾸고, 앞에서 다섯 개를 0.8로. 실내면 indoors.
    밤 장소(night·evening…)는 밤으로: 밤 낱말을 더하고 화풍의 밝은 빛 문구를 전등빛으로 바꾸고 낮 네거티브를 넣는다 */

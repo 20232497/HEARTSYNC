@@ -27,6 +27,9 @@ export function setStick(v) {
   return (stick = v);
 }
 export const autoScroll = () => !!(room && room.set.autoScroll);
+// 수정 칸에 고쳐 쓰던 글(메시지 id → 글) — 값 확인을 닫거나 하트가 모자라도 남게. 방 객체 밖에 둠: 계정 올리기 대기열이 방 객체를 그대로 들고 있다가
+// 보낼 때 글로 바꾸므로, 메시지에 두면 승인하지 않은 글이 계정에 올라갈 수 있음(Codex 검토)
+const drafts = new Map();
 export function followLog() {
   const log = $("#log");
   if (log && stick && autoScroll()) log.scrollTop = log.scrollHeight;
@@ -104,7 +107,7 @@ export function renderLog(scroll) {
       html += `<div class="msg me ${ooc ? "ooc" : ""}" data-id="${esc(m.id)}">${ooc ? "" : pavHTML(r.persona)}<div class="col">
         ${
           m.editing
-            ? editBox(m.text, i)
+            ? editBox(drafts.has(m.id) ? drafts.get(m.id) : m.text, i)
             : `<div class="bubble">${ooc ? esc(m.text) : fmt(m.text, c, r.persona)}</div>
         <div class="tools-row">${m.canned ? "" : `<button data-act="edit" data-i="${i}">수정</button>`}` +
               `<button data-act="del" data-i="${i}">삭제</button>${
@@ -154,7 +157,9 @@ export function renderLog(scroll) {
     html += `</div></div>`;
   });
   if (r.side && r.msgs.length && r.msgs[r.msgs.length - 1].id === r.sideAfter) html += sidePill(r);
-  if (r.lastErr) html += `<div class="err-line" role="alert">${esc(r.lastErr)} <button class="btn sm" id="retry">다시 시도</button></div>`;
+  // 메시지 수정의 실패(lastErrEdit)는 '다시 시도'를 숨김 — 그 버튼은 마지막 답을 다시 쓰는 것이라 고친 글을 다시 보내는 것과 뜻이 다름
+  if (r.lastErr)
+    html += `<div class="err-line" role="alert">${esc(r.lastErr)}${r.lastErrEdit ? "" : ` <button class="btn sm" id="retry">다시 시도</button>`}</div>`;
   html += epTailHTML(r); // 에피소드: 갈림길 카드 또는 결말 카드
   box.innerHTML = html;
   const lb = $("#liveBubble", box),
@@ -266,20 +271,25 @@ function bindLog(box) {
           });
         } else if (act === "edit" || act === "editai") {
           m.editing = true;
+          drafts.delete(m.id);
           renderLog();
           $("#ed" + i)?.focus();
         } else if (act === "cancel") {
           delete m.editing;
+          drafts.delete(m.id);
           renderLog();
         } else if (act === "save") {
           const t = $("#ed" + i).value.trim();
-          delete m.editing;
+          if (!t || m.role !== "user") delete m.editing;
           if (!t) return renderLog();
           if (m.role === "user") {
-            // 값 확인이 끝난 뒤에만 고침 — 그 창을 닫으면 아무것도 바뀌지 않음
+            // 값 확인이 끝난 뒤에만 고침 — 그 창을 닫거나 하트가 모자라면 대화는 그대로, 고쳐 쓴 글은 수정 칸에 그대로 남김(쓰던 글 그대로 — 하트를 사고 와서 다시 누르게)
             const r = room;
+            drafts.set(m.id, t);
             ensurePay(r).then((q) => {
               if (!q || r !== room) return renderLog();
+              delete m.editing;
+              drafts.delete(m.id);
               // 새 답이 본문 하나 없이 실패하면 되돌릴 것: 원문·뒤 메시지·상태창·에피소드 진행(generate가 undo를 부름).
               // 자른 대화는 여기서 저장하지 않음 — 응답이 끝날 때 한 번(그 전에 창이 닫히면 저장된 것은 고치기 전 대화)
               const was = { text: m.text, msgs: r.msgs, status: r.status, ep: r.ep ? epCopy(r.ep) : null, err: r.lastErr },
