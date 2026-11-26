@@ -69,6 +69,14 @@ function setNav(k) {
 export function favMark(r) {
   return r.fav ? '<i class="fav-mark" title="즐겨찾기">★</i>' : "";
 }
+/**
+ * 방 목록 항목의 '시작 상황 · 페르소나' 한 줄(같은 작품의 방 여러 개를 구별) — 대화 목록·상세의 내 대화방. 예전 항목처럼 둘 다 없으면 빈 문자열.
+ * @param {import("../core/types.js").RoomIndex} r @returns {string}
+ */
+export function roomSetupHTML(r) {
+  const t = [r.opening, r.personaName].filter(Boolean).map(esc).join(" · ");
+  return t ? `<span class="r-setup">${t}</span>` : "";
+}
 export function renderRailRecent() {
   const el = $("#railRecent");
   if (!el) return;
@@ -80,11 +88,10 @@ export function renderRailRecent() {
   $$("[data-room]", el).forEach((b) => (b.onclick = () => go("r-" + b.dataset.room)));
   IMG.hydrate(el);
 }
-/** 최근 본 작품 — 방금 본 것 먼저, 관심있는 대화로 거름(없어진 작품은 빠짐). 왼쪽 메뉴와 대화 탭(ui/chats.js)이 같이 씀. @returns {Work[]} */
-export const viewedWorks = () =>
-  recentIds()
-    .map((id) => getChar(id))
-    .filter((c) => c && audOK(c));
+/** 작품 id 목록 → 지금 보이는 작품(관심있는 대화로 거름, 없어진 작품은 빠짐, 순서 그대로) — 방이 없는 목록(최근 본·MY의 찜한 작품)이 씀. @param {string[]} ids @returns {Work[]} */
+export const shownWorks = (ids) => ids.map((id) => getChar(id)).filter((c) => c && audOK(c));
+/** 최근 본 작품 — 방금 본 것 먼저. 왼쪽 메뉴와 대화 탭(ui/chats.js)이 같이 씀. @returns {Work[]} */
+export const viewedWorks = () => shownWorks(recentIds());
 /** 왼쪽 메뉴의 '최근 본 작품' — 작게 네 개까지(없으면 제목도 숨김). 홈의 줄을 여기로 옮김(2026-11-21 사용자 결정) — 좁은 화면에는 레일이 없어 대화 탭 아래에 보임 */
 export function renderRailViewed() {
   const el = $("#railViewed");

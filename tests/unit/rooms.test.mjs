@@ -5,7 +5,7 @@ import { ORIGINALS } from "../../src/js/content/index.js";
 import { LIMITS, OPENING_ID_RE } from "../../src/js/core/constants.js";
 import { on } from "../../src/js/core/events.js";
 import { migrateRoom } from "../../src/js/core/room-read.js";
-import { forkRoom, openingIndex } from "../../src/js/core/room-fork.js";
+import { findOpening, forkRoom, openingIndex } from "../../src/js/core/room-fork.js";
 import { deletedRooms, newRoom, removeRoom, roomGone, roomKey, roomUnsaved, saveRoom, setFav, sortRooms, storableRooms } from "../../src/js/core/rooms.js";
 import { S, heldRoom, holdRoom, releaseRoom, roomInUse } from "../../src/js/core/state.js";
 import { KV } from "../../src/js/core/storage.js";
@@ -37,6 +37,23 @@ test("openingIndex: id가 없던 예전 방·id를 못 찾는 방은 제목으�
   assert.equal(openingIndex(c, { openingId: "gone", opening: "없는 제목" }), 0);
   assert.equal(openingIndex(c, {}), 0);
   assert.equal(openingIndex({ openings: [] }, { openingId: "a-one" }), 0);
+});
+test("findOpening: openingIndex와 같은 찾기 순서지만 못 찾으면 -1(첫째로 물러나지 않음 — 시작 창의 '지난번 설정'이 없어진 시작 상황을 고르지 않게)", () => {
+  const c = work();
+  assert.equal(findOpening(c, { openingId: "b-two", opening: "다른 제목" }), 1);
+  assert.equal(findOpening(c, { openingId: "gone", opening: "제목 3 (분기)" }), 2);
+  assert.equal(findOpening(c, { openingId: "gone", opening: "없는 제목" }), -1);
+  assert.equal(findOpening(c, {}), -1);
+});
+test("방 목록 항목에 시작 상황·페르소나(같은 작품의 방 구별·시작 창의 '지난번 설정') — 저장할 때마다 방에서 다시 적음", () => {
+  S.rooms = [];
+  const r = newRoom(work(), 2, P);
+  saveRoom(r);
+  const e = S.rooms.find((x) => x.id === r.id);
+  assert.deepEqual([e.opening, e.openingId, e.personaId, e.personaName], ["제목 3", "c-three", "p1", "지호"]);
+  r.persona = { ...P, id: "p2", name: "새 이름" };
+  saveRoom(r);
+  assert.deepEqual((({ personaId, personaName }) => [personaId, personaName])(S.rooms.find((x) => x.id === r.id)), ["p2", "새 이름"]);
 });
 test("분기한 방은 시작 상황 id를 그대로 가져가고, id가 없는 작품(예전 사본)으로 만든 방에는 칸을 만들지 않음", () => {
   const c = work(),

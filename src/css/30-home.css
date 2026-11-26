@@ -73,9 +73,11 @@
 /* 대화 탭 맨 아래의 최근 본 작품 — 왼쪽 메뉴(레일)가 없는 좁은 화면에서만. 넓은 화면은 레일의 같은 목록(15-shell.css의 899px과 같은 경계) */
 .chats-viewed { display:none; }
 @media (max-width:899px) { .chats-viewed { display:block; } }
-.chats-viewed .chip { display:inline-flex; align-items:center; gap:7px; padding:4px 12px 4px 5px; color:var(--fg); }
-.chats-viewed .chip .cover { width:26px; height:26px; border-radius:50%; flex:none; }
+.chats-viewed .chip, .me-shelf .chip { display:inline-flex; align-items:center; gap:7px; padding:4px 12px 4px 5px; color:var(--fg); }
+.chats-viewed .chip .cover, .me-shelf .chip .cover { width:26px; height:26px; border-radius:50%; flex:none; }
+.me-shelf h3 { margin:12px 0 8px; font-size:13px; color:var(--muted); }
 .cont .cover { width:52px; height:52px; border-radius:12px; flex:none; }
 .cont .x { min-width:0; flex:1; }
 .cont .x b { display:block; font-size:14px; }
 .cont .x span { display:block; color:var(--muted); font-size:12.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.cont .x .r-setup { font-size:11.5px; margin:1px 0 2px; } /* 시작 상황 · 페르소나(같은 작품의 방 구별 — ui/shell.js roomSetupHTML) */

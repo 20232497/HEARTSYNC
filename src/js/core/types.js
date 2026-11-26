@@ -281,6 +281,11 @@
  * @property {string} [ep] 에피소드 방의 진행 표시("2장" · "결말") — 대화 목록 카드
  * @property {boolean} [side] 외전 방
  * @property {boolean} [fav] 즐겨찾기 — 목록의 순서는 즐겨찾기 먼저, 그 안에서 최근 순(core/rooms.js sortRooms 한 곳)
+ * @property {string} [opening] 시작 상황 제목(방의 opening 사본 — 분기한 방은 끝에 ' (분기)') · 대화 목록·상세의 내 대화방이 같은 작품의 방을 구별
+ * @property {string} [openingId] 시작 상황 id · [personaId] [personaName] 페르소나 — 시작 창의 '지난번 설정'(ui/start-sheet.js)이 아직 있는지 확인해 골라 둠.
+ * @property {string} [personaId]
+ * @property {string} [personaName]
+ *   이 넷은 2026-11-26에 더함 — 예전 항목에는 없고(있는 값만 보임) 그 방을 다음에 저장할 때 채워짐
  */
 /** @typedef {{ at: number, d: number, label: string }} LedgerItem 하트 장부 한 줄(d는 변화량) */
 /**

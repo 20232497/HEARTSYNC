@@ -298,6 +298,107 @@ for (const [dev, engine, opts] of [
       )
         errs.push("대화방 즐겨찾기가 다름: " + JSON.stringify(f));
     }
+    // 길 찾기(2026-11-26 프레임 7차 C6~C9): 대화 목록·상세의 방 줄에 '시작 상황 · 페르소나', 상세 시작 줄의 '이어하기'(방이 여럿이면 고르는 창 — 무조건 최근 방으로 보내지 않음),
+    // 시작 창은 이 작품의 최근 방의 시작 상황·페르소나를 골라 둠(그 시작 상황이 없어지면 골라 두지 않음), MY의 내 서재(찜·도감), 홈 검색은 입력칸을 새로 만들지 않음,
+    // 장기기억 화면의 '지금 AI에게 보내는 것'은 프롬프트와 같은 함수로 센 수(한도를 넘은 고정 기억은 안 보낸다고)
+    res.nav = await p.evaluate(async () => {
+      // 시작 상황이 둘 이상이고 방이 가장 적은 작품 — 무료 요금제의 작품당 방 한도(plan().rooms)에 닿으면 시작 창 대신 PLUS 안내가 뜸
+      const nap = (ms) => new Promise((r) => setTimeout(r, ms)),
+        count = (c) => S.rooms.filter((x) => x.charId === c.id).length,
+        w = normalizeChar(ORIGINALS.filter((c) => c.openings.length > 1 && audOK(c)).sort((a, b) => count(a) - count(b))[0]),
+        last = newRoom(w, 1, S.personas[0]),
+        wasLiked = liked(w.id);
+      await saveRoom(last);
+      const mine = S.rooms.filter((x) => x.charId === w.id),
+        e = S.rooms.find((x) => x.id === last.id),
+        out = { n: mine.length, entry: [e.opening === w.openings[1].title, e.openingId === w.openings[1].id, e.personaName === S.personas[0].name] };
+      location.hash = "chats";
+      await nap(300);
+      out.listSetup = ($(`[data-room="${last.id}"] .r-setup`) || {}).textContent || "";
+      location.hash = "c-" + w.id;
+      await nap(300);
+      out.cta = { resume: !!$("#resume"), startPri: $("#start").classList.contains("pri"), sideSetup: !!$(`.d-rooms [data-room="${last.id}"] .r-setup`) };
+      $("#resume").click();
+      await nap(200);
+      out.pick = $$(".overlay [data-room]").length;
+      $(`.overlay [data-room="${last.id}"]`).click();
+      await nap(500);
+      out.went = location.hash === "#r-" + last.id && !$(".overlay");
+      location.hash = "c-" + w.id;
+      await nap(300);
+      $("#start").click();
+      await nap(300);
+      if ($("#aiOk")) {
+        $("#aiOk").click();
+        await nap(200);
+      }
+      out.start = {
+        note: !!$("#stLast"),
+        op: ($('.overlay input[name="op"]:checked') || {}).value,
+        pp: ($('.overlay input[name="pp"]:checked') || {}).value === S.personas[0].id
+      };
+      closeOverlays();
+      out.gone = lastSetup({ ...w, openings: w.openings.filter((o, i) => i !== 1) }) === null;
+      if (!wasLiked) toggleLike(w.id);
+      location.hash = "me";
+      await nap(300);
+      out.shelf = {
+        codex: !!$('#meShelf [data-go="codex"]'),
+        liked: $$("#meShelf [data-char]")
+          .map((b) => b.dataset.char)
+          .includes(w.id)
+      };
+      $(`#meShelf [data-char="${w.id}"]`).click();
+      await nap(300);
+      out.shelf.went = location.hash === "#c-" + w.id;
+      if (!wasLiked) toggleLike(w.id); // 뒤의 찜 시험이 처음 상태에서 시작하게 되돌림
+      location.hash = "home";
+      await nap(300);
+      const q = $("#q");
+      q.value = w.title.slice(0, 2);
+      q.oninput();
+      out.search = { same: $("#q") === q, head: ($("#homeBody .grid") || {}).previousElementSibling?.textContent || "" };
+      q.value = "";
+      q.oninput();
+      location.hash = "r-" + last.id;
+      await nap(500);
+      room.pins = Array.from({ length: plan().pins + 2 }, (_, i) => ({ id: "x" + i, text: "표 " + i, at: i }));
+      openRoomDrawer("memory");
+      await nap(200);
+      out.mem = ($("#memSent") || {}).textContent || "";
+      out.memWant = [
+        pinsSent(room).length + "줄",
+        "2줄은 한도를 넘어",
+        "보낼 말 포함 메시지 " + recentOf(room, room.msgs.filter((m) => curText(m)).concat([{}])).length + "개"
+      ];
+      room.pins = [];
+      closeOverlays();
+      return out;
+    });
+    {
+      const n = res.nav;
+      if (
+        n.n < 2 ||
+        n.entry.some((x) => !x) ||
+        !n.listSetup.includes(" · ") ||
+        !n.cta.resume ||
+        n.cta.startPri ||
+        !n.cta.sideSetup ||
+        n.pick !== n.n ||
+        !n.went ||
+        !n.start.note ||
+        n.start.op !== "1" ||
+        !n.start.pp ||
+        !n.gone ||
+        !n.shelf.codex ||
+        !n.shelf.liked ||
+        !n.shelf.went ||
+        !n.search.same ||
+        !/검색 결과/.test(n.search.head) ||
+        n.memWant.some((s) => !n.mem.includes(s))
+      )
+        errs.push("길 찾기(방 구별·이어하기·지난번 설정·내 서재·검색·보내는 기억)가 다름: " + JSON.stringify(n));
+    }
     // 방 안의 표시 설정 — 방 메뉴 → 표시 설정에서 글자 크기를 바꾸면 뒤의 대화 글에 바로 반영되고(CSS 변수) 저장됨. MY의 채팅 설정과 같은 조각이라 같은 값이 보임.
     // 'Enter로 보내기'를 끄면 입력 칸의 키 안내가 바뀜. 방 안에서는 보기 말풍선이 없고(뒤의 대화가 보기) MY에는 있음
     res.display = await p.evaluate(async () => {
