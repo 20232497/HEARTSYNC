@@ -169,9 +169,10 @@
 | Hassaku XL | Illustrious | O | O | 필요 | Illustrious 모델 카드: 비공개 병합 모델 수익화 금지 |
 | WAI (여성향 일상의 사람 없는 그림) · semILust | Illustrious | O | X | 불필요 | 위와 같음 |
 | ToonyStark | Pony | O | O | 불필요 | Pony 라이선스 |
-| Animagine XL 4.0 (후보, 아직 안 씀) | SDXL | O | O | 불필요 | 없음 — CreativeML Open RAIL++-M 그대로, 상업 이용 허용을 모델 설명에 명시(불법·유해 생성 금지 조항은 있음) |
+| Nova Orange XL v6.0 (남성향 애니·모든 작품 표지·장소 그림·일상 화풍의 밑그림 — 2026-11-26 더함) | Illustrious(판 설명 "Noob 1.0 Epred") | Civitai 표시 O — 모델 설명 규칙은 "편집하지 않은 그림은 상업 이용 불가" | O | 불필요 | 바탕 NoobAI-XL 라이선스(FAIPL-1.0-SD + 추가 조항)가 모델·파생 모델·생성물의 상업 이용을 금지, 그 위 Illustrious-XL v0.1은 Civitai 표시에 그림 판매 없음 — 교체 여부는 사용자 결정 전·법률 검토 전 |
+| Animagine XL 4.0 (교체 1순위 후보 — 2026-11-25~26 비교 시험, 아직 안 씀) | SDXL | O | O | 불필요 | 없음 — CreativeML Open RAIL++-M 그대로, 상업 이용 허용을 모델 설명에 명시(불법·유해 생성 금지 조항은 있음) |
 
-즉 남성향 일상(Run七八造 + LoRA 둘)과 여성향 일상(Run七八造 + LoRA 셋)은 PurpleSmart의 허가를 받거나 모델을 바꿔야 유료로 낼 수 있음. Civitai 표기와 달리 Hugging Face의 Pony V6 페이지는 creativeml-openrail-m이라 적혀 있어 어느 쪽이 맞는지 허가 문의 때 함께 확인. 출력물 자체는 FAIPL의 적용 대상이 아니지만 **서비스에서 모델을 돌리는 일**이 문제임. YabaL Mix는 이미지 판매가 허용되지 않으므로 이 모델을 쓰는 화풍은 유료 출시 전에 모두 다른 모델로 바꿔야 함.
+즉 남성향 일상(Run七八造 + LoRA 둘)과 여성향 일상(Run七八造 + LoRA 셋)은 PurpleSmart의 허가를 받거나 모델을 바꿔야 유료로 낼 수 있음. Civitai 표기와 달리 Hugging Face의 Pony V6 페이지는 creativeml-openrail-m이라 적혀 있어 어느 쪽이 맞는지 허가 문의 때 함께 확인. 출력물 자체는 FAIPL의 적용 대상이 아니지만 **서비스에서 모델을 돌리는 일**이 문제임. YabaL Mix는 이미지 판매가 허용되지 않으므로 이 모델을 쓰는 화풍은 유료 출시 전에 모두 다른 모델로 바꿔야 함. Nova Orange로 그린 그림(남성향 애니·모든 작품 표지·장소·일상 화풍 밑그림)도 바탕 모델 조항 때문에 유료 출시 전에 교체 여부를 정해야 함(2026-11-26 — Civitai 표시만 보던 2026-11-06 표에는 빠져 있었음).
 - [ ] 호스팅 이전(GitHub Pages 상업 이용 제한)
 
 ### 8-1. 청소년 보호 흐름(2026-11-09 조사 — 문서만, 코드 없음)
