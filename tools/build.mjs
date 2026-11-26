@@ -1,9 +1,10 @@
 // HEART SYNC 빌드: src/(뼈대·CSS·ES 모듈)와 content/(작품 폴더)를 합쳐 저장소 루트에 한 파일씩 만든다 — 대상(TARGETS) 둘:
 //   user  → index.html  사용자 사이트. GitHub Pages·로컬 파일(file://)·claude.ai artifact가 그대로 띄우는 배포물. 주석을 벗기고 빈 줄을 지워 작게(아래 '주석 정책')
-//   admin → admin.html  관리자 도구(커밋·배포됨 — 웹에서는 비밀번호 관문 src/js/admin/gate.js). 같은 소스 + src/js/admin/ 모듈. 주석을 모두 남기고 모듈마다 설명 머리(가져옴·내보냄·쓰는 곳)를 붙임
+//   admin → admin.html  관리자 도구(이 PC에서만 — 커밋·배포하지 않음, npm run dev의 http://localhost:5173/admin.html로 엶. M6 2026-11-26). 같은 소스 + src/js/admin/ 모듈.
+//                       주석을 모두 남기고 모듈마다 설명 머리(가져옴·내보냄·쓰는 곳)를 붙임
 //   node tools/build.mjs                 둘 다 만들기 (npm run build)
-//   node tools/build.mjs --only user     하나만 (Vercel은 사용자 사이트만)
-//   node tools/build.mjs --check         병합 전 검사: 결과 파일이 지금 소스로 만든 것과 같은지 + 순서 잠금·코드 정렬·긴 줄 예외·문서 (npm run check, GitHub Actions)
+//   node tools/build.mjs --only user     하나만 (Vercel 미리보기는 사용자 사이트만 — vercel.json)
+//   node tools/build.mjs --check         병합 전 검사: index.html이 지금 소스로 만든 것과 같은지(admin.html은 만들어지는지만) + 순서 잠금·코드 정렬·긴 줄 예외·문서 (npm run check, GitHub Actions)
 //
 // 모듈 번들: 진입점(src/js/main.js 또는 admin.js)에서 import를 따라가며 모듈을 읽고, 의존 모듈이 먼저 오도록 순서를 정한 뒤 import/export 줄만 벗겨
 // 이어 붙인다(모듈 안의 줄 번호는 그대로 — 사용자 빌드는 빈 줄을 지우므로 .build/linemap.json으로 원본 줄을 찾는다). 그 전에 검사한다 —
@@ -23,6 +24,7 @@
 //   work-check.mjs    작품 하나의 검사(checkWork) · episode-check.mjs 에피소드 진행표 · images-scan.mjs 그림 파일 이름
 //   output-check.mjs  결과 검사(스크립트 문법·오래된 iOS 문법·들어가면 안 되는 것)
 // 다른 도구와 시험이 가져다 쓰는 이름(ROOT·TARGETS·AUD_DIRS·BuildError·appRules·buildContent·checkWork·scanImages·checkForbidden·build·buildAll)은 전처럼 이 파일에서 내보냄
+import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -97,6 +99,14 @@ export function longLineErrors(sizes) {
       return `${s.rel}: ${SIZE_LIMITS.lineChars}자를 넘는 줄이 ${s.long}개예요(둬도 되는 수 ${ok}개) — 새로 쓴 줄을 나눠 주세요. 긴 HTML 템플릿은 \`…\` + \`…\`로 이어 붙이면 글이 바뀌지 않아요(tools/build/common.mjs SIZE_LIMITS)`;
     });
 }
+/** 그 파일이 git에 들어 있는지(git ls-files) — git이 없는 폴더면 false. @param {string} file 저장소 루트 기준 @returns {boolean} */
+function tracked(file) {
+  try {
+    return execFileSync("git", ["ls-files", "--", file], { cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim() !== "";
+  } catch {
+    return false;
+  }
+}
 /* content/ 검사·생성 한 번 + 대상들 */
 export async function buildAll(names = Object.keys(TARGETS)) {
   const content = await buildContent(appRules());
@@ -155,7 +165,13 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
       const cur = fs.existsSync(o.out) ? readText(o.out) : null,
         same = cur === o.html;
       const info = `${(Buffer.byteLength(o.html) / 1024).toFixed(0)}KB · CSS ${o.css}개 · 모듈 ${o.modules}개`;
-      if (check) {
+      if (check && TARGETS[o.name].local) {
+        // .gitignore는 git add -f나 오래된 가지를 합칠 때 되살린 파일을 막지 못함 — 커밋돼 있으면 Pages(main 루트)에 그대로 올라가므로 실패로(Codex 검토)
+        if (tracked(o.file)) {
+          fail = true;
+          console.error(`✗ ${o.file}이 git에 들어 있어요 — 이 PC에서만 여는 빌드라 커밋하지 않아요(M6). git rm --cached ${o.file} 후 커밋하세요.`);
+        } else console.log(`✓ ${o.file}이 만들어져요 (${info} · 커밋하지 않는 파일이라 견주지 않음)`);
+      } else if (check) {
         if (!same) {
           fail = true;
           console.error(

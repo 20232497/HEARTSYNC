@@ -10,7 +10,7 @@
                  src/js (ES 모듈) + src/css + content/
                               │  npm run build (tools/build.mjs — 모듈 수·크기를 출력)
             ┌─────────────────┴──────────────────┐
-   index.html  사용자 사이트(배포)          admin.html  관리자 도구(커밋·배포, /admin.html)
+   index.html  사용자 사이트(배포)          admin.html  관리자 도구(이 PC에서만 — 커밋·배포 안 함)
    main.js → app.js(사용자 모듈)            admin.js → app.js + admin/gate·support
    주석·빈 줄 없음, 모듈마다 한 줄 설명      주석 전부 + 모듈 머리(가져옴·내보냄·쓰는 곳)
    메뉴: 홈·대화·스토어·MY                   메뉴: 같음(+ 고객센터 관리, 웹 주소에서는 비밀번호 관문)

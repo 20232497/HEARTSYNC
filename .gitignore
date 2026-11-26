@@ -1,5 +1,7 @@
 node_modules/
 .build/
+# 관리자 도구 빌드 결과 — 이 PC에서만 연다(npm run dev → http://localhost:5173/admin.html). 커밋·배포하지 않음(M6, 2026-11-26 사용자 "이 PC에서만"). 앞의 /는 루트 것만 — 뼈대 src/admin.html은 소스라 커밋함
+/admin.html
 tests/.shots/
 # 빌드가 content/ 폴더로 만드는 작품 데이터 모듈(소스는 content/**/work.js)
 src/js/content/generated.js

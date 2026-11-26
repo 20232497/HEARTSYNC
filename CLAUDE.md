@@ -1,6 +1,6 @@
 # HEART SYNC
 
-버블챗 스타일의 캐릭터 대화형 에피소드 플랫폼. 배포물은 단일 파일(index.html) — 소스는 src/·content/로 나누고 빌드로 합침(아래 '빌드와 모듈 규칙'). 같은 소스에서 관리자 도구 admin.html도 만들어짐(같이 배포, 아래 '빌드와 모듈 규칙').
+버블챗 스타일의 캐릭터 대화형 에피소드 플랫폼. 배포물은 단일 파일(index.html) — 소스는 src/·content/로 나누고 빌드로 합침(아래 '빌드와 모듈 규칙'). 같은 소스에서 관리자 도구 admin.html도 만들어짐(이 PC에서만 — 커밋·배포하지 않음, 아래 '빌드와 모듈 규칙').
 
 **이 문서는 규칙과 지도만 담는다**(2026-11-12 — 사용자 결정). 꼭 지킬 규칙(빌드와 모듈 규칙·코딩 규칙·세션 운영·원칙)은 여기에 있고, 앱이 어떻게 생겼는지는 아래 지도 표가 가리키는 문서에 있다.
 - **어느 영역을 고치기 전에 지도 표에서 그 영역의 문서를 찾아 읽는다.** 고친 뒤에는 **같은 커밋에서 그 문서의 해당 항목을 고친다**(이 문서가 아니라).
@@ -26,20 +26,20 @@
 
 ## 배포·이름
 
-- 배포: GitHub Pages https://20232497.github.io/HEARTSYNC/ (main 브랜치 루트, 병합하면 자동 갱신) · 관리자 도구 …/HEARTSYNC/admin.html. claude.ai 아티팩트 https://claude.ai/artifact/3sfDYFeJ13dHrkWwBFj1YG 는 예전 배포(지금은 publish하지 않음 — 메모리). 저장소는 공개라 키·개인 데이터·성인 수위 표를 파일에 넣지 않기
+- 배포: GitHub Pages https://20232497.github.io/HEARTSYNC/ (main 브랜치 루트, 병합하면 자동 갱신) · 관리자 도구는 배포하지 않음(이 PC의 npm run dev → http://localhost:5173/admin.html — 2026-11-26 사용자 결정 M6). claude.ai 아티팩트 https://claude.ai/artifact/3sfDYFeJ13dHrkWwBFj1YG 는 예전 배포(지금은 publish하지 않음 — 메모리). 저장소는 공개라 키·개인 데이터·성인 수위 표를 파일에 넣지 않기
 - 이름: HEART SYNC(대문자·띄어쓰기). 저장소·웹 주소는 HEARTSYNC(Pages 경로는 대소문자 구분, 예전 주소 /HeartSync/·/HeartVerse/는 404 — 주소를 바꾸면 Supabase URL Configuration·Google 브랜딩·네이버 서비스 URL도). 내부 이름은 데이터 호환 때문에 그대로: localStorage hv1_ 접두사, IndexedDB "heartverse", window.HEARTVERSE_CONFIG
 
 ## 빌드와 모듈 규칙
 
-- index.html(사용자 사이트) · admin.html(관리자 도구) — 둘 다 커밋·배포. 같은 src/에서 진입점만 다름(src/js/main.js ↔ src/js/admin.js, 뼈대 src/page.html ↔ src/admin.html, 공통 모듈 묶음 src/js/app.js의 USER_VIEWS·USER_NAVS)
-- **index.html·admin.html은 빌드 결과물 — 직접 고치지 않기.** src/·content/를 고친 뒤 npm run build(둘 다 만듦), 바뀐 결과를 같이 커밋. npm run check(병합 전 검사)는 둘이 소스 빌드 결과와 같은지에 더해 순서 잠금·코드 정렬·긴 줄 예외·문서(이 문서의 크기와 지도 표의 경로)까지. GitHub Actions '빌드 확인'(.github/workflows/build.yml)이 PR·main마다 npm ci → npm run check → npm test, '흐름 시험'(e2e.yml)이 PR마다 npm run e2e -- --retry(실패한 시험만 한 번 더 · 2026-11-26부터 필수 검사 — 사용자 결정, tests/README.md 'CI')
+- index.html(사용자 사이트) · admin.html(관리자 도구) — index.html만 커밋·배포, admin.html은 빌드가 만들되 .gitignore(이 PC에서만 연다). 같은 src/에서 진입점만 다름(src/js/main.js ↔ src/js/admin.js, 뼈대 src/page.html ↔ src/admin.html, 공통 모듈 묶음 src/js/app.js의 USER_VIEWS·USER_NAVS)
+- **index.html·admin.html은 빌드 결과물 — 직접 고치지 않기.** src/·content/를 고친 뒤 npm run build(둘 다 만듦), 바뀐 index.html을 같이 커밋. npm run check(병합 전 검사)는 index.html이 소스 빌드 결과와 같은지(admin.html은 만들어지는지와 git에 없는지)에 더해 순서 잠금·코드 정렬·긴 줄 예외·문서(이 문서의 크기와 지도 표의 경로)까지. GitHub Actions '빌드 확인'(.github/workflows/build.yml)이 PR·main마다 npm ci → npm run check → npm test, '흐름 시험'(e2e.yml)이 PR마다 npm run build → npm run e2e -- --retry(실패한 시험만 한 번 더 · 2026-11-26부터 필수 검사 — 사용자 결정, tests/README.md 'CI')
 - npm install은 devDependencies만(빌드 검사용 espree·eslint-scope, 흐름 시험용 playwright, 코드 정렬용 prettier — 버전 고정). 앱 런타임 의존성 0. package.json "type": "module"은 지우지 않기(src/js와 content/**/work.js를 Node가 ESM으로 읽음)
 - 뼈대 src/page.html(사용자)·src/admin.html(관리자): doctype·메타·마크업·부팅 안내 ES5 스크립트. `<!-- @include css/*.css -->` 자리에 CSS 조각(이름 순), `<!-- @script js/main.js -->` 자리에 모듈 번들. 맨 위 <!doctype html>·<html lang="ko">·charset·viewport는 지우지 않기(없으면 쿼크 모드)
 - 주석 정책: 소스에는 설명을 자세히. 사용자 빌드는 주석·빈 줄을 벗기고(`//!`·`/*!`·`<!--!`만 남김) 모듈마다 `/* ── 파일 — 첫 줄 주석의 첫 문장 */` 한 줄 → **모듈 첫 줄 주석의 첫 문장이 곧 사용자 빌드에 남는 설명**. 관리자 빌드는 주석을 모두 남기고 모듈마다 가져옴·내보냄·쓰는 곳 머리를 붙임. 결과 파일은 둘 다 직접 고치지 않음
 - JSDoc 타입: 데이터 모양은 src/js/core/types.js의 @typedef(아무도 import하지 않아 번들에 안 들어감 — 문서). 모듈은 `/** @typedef {import("../core/types.js").Room} Room */`로 끌어 씀. jsconfig.json(checkJs false). 칸이 바뀌면 types.js와 만드는 곳(core/state.js S 기본값·core/rooms.js newRoom·content/README.md)을 같이
 - 층 규칙(빌드가 검사): 아래층은 윗층을 import하지 않음 — core·services가 화면을 갱신할 땐 core/events.js의 emit("rooms"·"wallet"·"settings"·"cloud"·"route"·"session"), ui가 on()으로 받음. 화면은 ui/shell.js의 registerViews·setNavs로 진입점이 등록. core/storage.js는 KV.remote 고리로 CLOUD에 연결. **모델 고도화는 ai/만 건드림** — 프롬프트 ai/prompt/, 모델 등급·출력량 ai/models.js, 응답 파싱 ai/parse.js, 호출 ai/llm.js
 - 모듈 규칙(빌드가 강제): 상대 경로 "./…/이름.js"의 **이름 있는 import만** — default·namespace·as·export default·export * 금지(합치면 이름이 그대로 전역). 다른 모듈의 let에는 대입 불가 → 소유 모듈의 set…()(core/state.js setRoom·setGen, ui/chat/log.js setStick). 한 모듈이 쓰는 이름은 그 모듈에 선언·import돼 있어야 하고(브라우저 전역은 tools/globals.mjs), 전체에서 같은 이름을 두 번 선언할 수 없음. 모듈 맨 윗단에서 window·document를 쓰면 Node import(단위 테스트)가 깨짐 — typeof로 감싸기
-- 빌드 검사(원본 파일:줄로 안내): 모듈 문법, 선언·import 안 된 이름, export 안 된 이름 import, 같은 이름 두 번 선언, import 바인딩에 대입, 순환 초기화 순서, 쓰지 않는 import(경고), 결과 스크립트 문법, 오래된 iOS 문법(||=·&&=·??=·.at(·lookbehind·structuredClone·findLast·Object.hasOwn), checkForbidden, 작품 폴더 규칙. .build/linemap.json·linemap-admin.json(결과 줄 → 원본 파일:줄)
+- 빌드 검사(원본 파일:줄로 안내): 모듈 문법, 선언·import 안 된 이름, export 안 된 이름 import, 같은 이름 두 번 선언, import 바인딩에 대입, 순환 초기화 순서, 쓰지 않는 import(경고), 결과 스크립트 문법, 층 방향(tools/build/layers.mjs — 아래층이 윗층을 import하지 않음), 오래된 iOS 문법(||=·&&=·??=·.at(·lookbehind·structuredClone·findLast·Object.hasOwn), checkForbidden, 작품 폴더 규칙. .build/linemap.json·linemap-admin.json(결과 줄 → 원본 파일:줄)
 - 방의 작품 사본(2026-11-12 프레임 5차 — 규칙을 한 곳으로): 방은 만들 때의 작품을 통째로 복사해 둠(r.char). **어느 칸을 최신 작품에서 읽는지는 core/character.js의 LIVE_FIELDS 한 곳**(lore·places·cuts·commands·guide·noteTemplate·recommend·images·loreImages — 작품을 고치면 열린 방에도 바로), 나머지(인물 cast·설정·상태창 칸·제목·에피소드 진행표·트랙)는 방 사본 그대로. 방의 작품이 필요한 모듈은 getChar를 직접 부르지 않고 **liveWork(r.char)**(그 칸만 최신에서 덮은 모양 — 작품이 content/에서 빠지면 방 사본 그대로), '처음부터 다시'의 새 방만 latestWork(최신 작품 통째로). getChar는 방이 없는 화면(상세·로그인 뒤 돌아갈 곳)과 예전 방 옮기기에서만 — 단위 시험 live-work가 지킴. 표와 예외는 core/types.js의 Room.char
 - vercel.json: Vercel PR 미리보기 연동(사용자가 유지) — outputDirectory "."를 지우면 PR 체크 실패
 - 작업 사본 줄바꿈은 CRLF일 수 있음 — 빌드는 LF로 읽고 씀
@@ -66,7 +66,9 @@
 ## 원칙
 
 - 답변과 UI 문구는 한국어
-- 수위: **전체이용가(일반 트랙)는 등장인물 나이 제한 없음, 성인용(성인 트랙)에만 '모든 등장인물은 성인'**(2026-11-11 사용자 결정 — 약관 terms.html(11-23 시행본)의 한눈에 보기·제8조와 docs/legal(terms.md 제9조 5항 · youth-protection §1 · operation-policy §2 B)에 반영됨, 작품 검사 minorFlags(출연진은 성인)는 그대로). 일반 트랙에서도 미성년(성인이 아니거나 그렇게 보이는 인물)의 성적 묘사는 어떤 경우에도 금지, 성인과 미성년 사이의 연애·성적 장면 금지(유저 캐릭터도 — 나이를 밝히지 않았으면 성인으로 봄), 미성년끼리의 연애는 고백·데이트·손잡기·포옹까지(같은 날 사용자 결정 — 약관과 docs/legal의 같은 자리에 반영됨). 지금 앱은 노골적 성적 묘사를 하지 않음(암전 처리). 미성년(또는 미성년으로 보이는) 인물의 성적 묘사·그림은 어떤 경우에도 막음. 성인 지시를 Claude에 보내지 않기. 성인 기능은 서버 쪽에 다시 세움(docs/ROADMAP.md — 대화 경로의 틀은 docs/app/ai.md '대화 트랙') — 성인 수위 글·프롬프트·코드 표는 Claude가 쓰지 않고 공개 저장소·배포물에 넣지 않음
+- 수위 — **모든 회원 공통(지금 적용 — 기준은 src/js/ai/prompt/rating.js와 docs/legal/operation-policy.md §2 D)**: 전체이용가(일반 트랙)는 등장인물 나이 제한 없음, 성인용(성인 트랙)에만 '모든 등장인물은 성인'(2026-11-11 사용자 결정 — 약관 terms.html(11-23 시행본)의 한눈에 보기·제8조와 docs/legal(terms.md 제9조 5항 · youth-protection §1 · operation-policy §2 B)에 반영됨, 작품 검사 minorFlags(출연진은 성인)는 그대로). 성적 장면은 암전·장면 전환으로 넘기고, 신체 부위 노골 묘사와 성적 욕망을 자극하는 대화는 쓰지 않음. 미성년(성인이 아니거나 그렇게 보이는 인물 — 그렇게 보이는지는 나이·학년·옷차림·체형을 함께 봄)의 성적 묘사·그림은 어떤 경우에도 금지, 성인과 미성년 사이의 연애·성적 장면 금지, 미성년 인물끼리의 연애는 고백·데이트·손잡기·포옹까지(입맞춤 이상·포옹의 감각 묘사 금지 — 운영정책에 반영, 약관은 출시판에서). 유저 캐릭터는 나이를 밝히지 않았으면 성인으로 봄 — 단 아래 청소년 회원은 예외(2026-11-26 사용자 "두 갈래로 바꾸기")
+- 수위 — **청소년 회원(출시판 목표, 서버 — 아직 코드 없음)**: 페르소나가 아니라 회원의 실제 나이(청소년보호법 연 나이, 본인인증 전에는 가입 때 받은 출생연도)로 — 성인 캐릭터(성인이거나 성인으로 보이는 인물)와 연인 진행·성적 관계 암시(암전 포함)·입맞춤 이상 금지, 고립·의존·독점·질투를 부르는 말과 실제 만남·연락처·학교·사진 요구 금지, 응답은 다 받은 뒤 검사해 전달, 답변 추천 자동 받기 끔(법률 세션 대조 — docs/legal/youth-protection.md §3·operation-policy §2 D)
+- 성인 지시를 Claude에 보내지 않기. 성인 기능은 서버 쪽에 다시 세움(docs/ROADMAP.md — 대화 경로의 틀은 docs/app/ai.md '대화 트랙') — 성인 수위 글·프롬프트·코드 표는 Claude가 쓰지 않고 공개 저장소·배포물에 넣지 않음
 - 수정 후: npm run format(코드 정렬 — 줄 모양만 맞춤) → npm run build(모듈·문법·작품 규칙 검사 포함) → (작품을 고쳤으면) npm run content:lock → npm test → npm run e2e(화면이 바뀌었을 때 — 관리자 화면은 admin·gate·help) → npm run check → 커밋(lock.json도 같이). 아티팩트 publish처럼 사용자 승인이 필요한 일은 위 '세션 운영' ④
 - 모바일: **제대로 보이는 기준은 iOS 16.4 이상**, 그 아래(오래된 iOS·인앱 브라우저)는 읽고 누를 수 있게만(2026-11-24 사용자 결정). 그래서 아주 새 JS 문법(||=, Array.at, lookbehind, structuredClone 등)은 쓰지 않고, CSS의 새 기능에는 물러날 길을 둠 — inset 약칭 대신 top·right·bottom·left, backdrop-filter 앞에 -webkit-backdrop-filter, color-mix()는 `@supports (color:color-mix(…))` 블록 안에만 두고 밖에 평범한 선언, 규칙 안의 규칙(CSS 중첩)은 쓰지 않기(빌드가 검사 — tools/build/css-check.mjs). #view의 bootMsg와 앞쪽 ES5 스크립트가 앱 스크립트가 멈추면 이유를 보여 줌. 휴대폰은 파일이 아니라 웹 주소로. 시험은 Playwright WebKit(iPhone 13·SE)·Chromium(Galaxy)
 - 배포물은 늘 빌드로 합친 단일 index.html. 파일(file://)로 열면 <script type="module" src>가 막히므로 다른 js·css 파일을 불러오게 바꾸지 않기. 빌드 도구는 의존성 없는 Node(tools/) 그대로
