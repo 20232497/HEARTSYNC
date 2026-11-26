@@ -1,5 +1,6 @@
 // 하트의 쓰임(2026-11-27 사용자 결정 "사이트 내의 하트 구매로는 오직 이야기 대화에만 사용할 수 있도록 고정해줘"): 하트를 빼는 길은 AI 대화(답 받기·다시 쓰기 — ui/chat/generate.js,
-// 답변 추천 — ui/chat/suggest.js)뿐이어야 함. 새 모듈이 charge를 부르거나 하트를 직접 줄이면 이 시험이 실패 — 대화가 아닌 곳에 하트를 쓰려면 먼저 사용자 결정(docs/DECISIONS.md)부터
+// 답변 추천 — ui/chat/suggest.js)뿐이어야 함. 새 모듈이 charge를 부르거나 하트를 직접 줄이면 이 시험이 실패.
+// 아래 두 모듈 목록은 늘리는 것이 아님: 뽑기·작품 속 재화·아이템은 하트·돈·턴 수와 끊어 둠(이야기 속 재화만 — 사용자 결정과 법률 조건). 여기서 실패하면 설계가 결정과 어긋난 것
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
