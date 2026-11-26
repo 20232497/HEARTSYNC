@@ -166,6 +166,7 @@ h2.sec small, h1.sec small { font-family:var(--sans); font-size:12.5px; color:va
 .card .d { color:var(--muted); font-size:12.5px; line-height:1.45; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; min-height:2.9em; }
 .card .meta { display:flex; gap:6px; font-size:11.5px; color:var(--muted); flex-wrap:wrap; }
 .card .meta .aud-tag { color:var(--accent); font-weight:700; }
+.card .meta .hold-tag { color:var(--err); font-weight:700; }
 .login-page { min-height:calc(100vh - 140px); display:flex; align-items:center; justify-content:center; padding:24px 0; }
 .login-card { width:100%; max-width:400px; background:var(--surface); border:1px solid var(--line); border-radius:20px; padding:26px 20px 20px; }
 .login-card .logo { flex-direction:column; justify-content:center; gap:10px; font-size:26px; padding:0 0 6px; }
@@ -249,6 +250,7 @@ h2.sec small, h1.sec small { font-family:var(--sans); font-size:12.5px; color:va
 .d-tab.on { background:var(--accent-soft); color:var(--accent); }
 .d-main > section + section, .d-main section > * + *, .d-main [data-fold] > * + * { margin-top:12px; }
 .d-price { margin:0 0 4px; }
+.d-hold { margin:6px 0 0; font-size:12.5px; font-weight:700; color:var(--err); }
 .d-desc.clamp { display:-webkit-box; -webkit-line-clamp:7; -webkit-box-orient:vertical; overflow:hidden; }
 .d-more { margin-top:8px; }
 .d-fields { margin-top:10px; }
@@ -1401,7 +1403,7 @@ function refundSug(q, label) {
   q.sug = 0;
   saveWallet();
 }
-/* ── src/js/content/generated.js — 빌드가 content/ 폴더로 만든 작품 데이터 — 직접 고치지 말고 content/<f|m|all>/…/work.js를 고치세요(content/README.md) */
+/* ── src/js/content/generated.js — 빌드가 content/ 폴더로 만든 작품 데이터(사용자 빌드 — 출시판 제외 작품은 뺌) — 직접 고치지 말고 content/<f|m|all>/…/work.js를… */
 const ORIGINALS = [
  {
   "id": "hwanghu",
@@ -3433,9 +3435,11 @@ async function wipeAccount() {
   const uid = C.uid,
     at = Date.now(),
     q = "/rest/v1/kv?user_id=eq." + encodeURIComponent(uid) + "&key=";
+  let refused = false;
   const call = async (path, opts) => {
     const r = await SB.req(path, opts);
     if (C.uid !== uid) throw 0;
+    refused = !r.ok && r.status < 500;
     await C.check(r);
   };
   C.wiped = true;
@@ -3459,7 +3463,7 @@ async function wipeAccount() {
     C.wiped = false;
     C.pending = Object.assign(kept, C.pending);
     if (Object.keys(C.pending).length) C.timer = setTimeout(() => C.flush(), 800);
-    return step ? "half" : "fail";
+    return step ? "half" : refused ? "fail" : "unsure";
   }
   C.pending = {};
   seen(at);
@@ -4556,25 +4560,34 @@ function parseState(text, c, before) {
 async function readSSE(body, onData, onChunk) {
   const reader = body.getReader(),
     dec = new TextDecoder();
-  let buf = "";
-  for (;;) {
-    const { value, done } = await reader.read();
-    if (done) break;
-    buf += dec.decode(value, { stream: true });
-    let i;
-    while ((i = buf.indexOf("\n")) >= 0) {
-      const line = buf.slice(0, i).trim();
-      buf = buf.slice(i + 1);
-      if (!line.startsWith("data:")) continue;
-      onChunk && onChunk();
-      let ev;
-      try {
-        ev = JSON.parse(line.slice(5));
-      } catch {
-        continue;
+  let buf = "",
+    ended = false;
+  try {
+    for (;;) {
+      const { value, done } = await reader.read();
+      if (done) {
+        ended = true;
+        break;
       }
-      onData(ev);
+      buf += dec.decode(value, { stream: true });
+      let i;
+      while ((i = buf.indexOf("\n")) >= 0) {
+        const line = buf.slice(0, i).trim();
+        buf = buf.slice(i + 1);
+        if (!line.startsWith("data:")) continue;
+        onChunk && onChunk();
+        let ev;
+        try {
+          ev = JSON.parse(line.slice(5));
+        } catch {
+          continue;
+        }
+        if (!ev || typeof ev !== "object") continue;
+        onData(ev);
+      }
     }
+  } finally {
+    if (!ended) reader.cancel().catch(() => {});
   }
 }
 function anthropicEvent(ev) {
@@ -7439,7 +7452,7 @@ function cardHTML(c) {
   const aud = audience() === "all" && audOf(c) !== "all" ? `<span class="aud-tag">${AUDS[audOf(c)].name}</span>` : "";
   return `<button class="card" data-char="${esc(c.id)}"><div style="position:relative">${coverHTML(c, "", { vt: true, cat: true })}${info}</div>
     <span class="t">${esc(c.name)}</span><span class="d">${esc(c.oneLiner)}</span>
-    <span class="meta">${aud}${(c.tags || [])
+    <span class="meta">${c.hold ? `<span class="hold-tag">출시판 제외</span>` : ""}${aud}${(c.tags || [])
       .slice(0, 3)
       .map((t) => `<span>#${esc(t)}</span>`)
       .join("")}</span></button>`;
@@ -7754,9 +7767,9 @@ async function wipeNow() {
   const uid = CLOUD.uid,
     got = CLOUD.on && !accountWiped ? await wipeAccount() : "ok";
   if (got !== "ok") {
-    if (got === "half" && CLOUD.on && CLOUD.uid === uid)
+    if (got !== "fail" && CLOUD.on && CLOUD.uid === uid)
       try {
-        await pushAll();
+        await pushAll(got === "unsure" ? localKVKeys().filter((k) => !/^room-/.test(k)) : undefined);
       } catch {}
     return wipeFailed("계정의 데이터를 지우지 못했어요", "네트워크를 확인하고 다시 시도해 주세요. 이 기기의 데이터도 아직 그대로예요.");
   }
@@ -8846,6 +8859,7 @@ function setStick(v) {
   return (stick = v);
 }
 const autoScroll = () => !!(room && room.set.autoScroll);
+const drafts = new Map();
 function followLog() {
   const log = $("#log");
   if (log && stick && autoScroll()) log.scrollTop = log.scrollHeight;
@@ -8922,7 +8936,7 @@ function renderLog(scroll) {
       html += `<div class="msg me ${ooc ? "ooc" : ""}" data-id="${esc(m.id)}">${ooc ? "" : pavHTML(r.persona)}<div class="col">
         ${
           m.editing
-            ? editBox(m.text, i)
+            ? editBox(drafts.has(m.id) ? drafts.get(m.id) : m.text, i)
             : `<div class="bubble">${ooc ? esc(m.text) : fmt(m.text, c, r.persona)}</div>
         <div class="tools-row">${m.canned ? "" : `<button data-act="edit" data-i="${i}">수정</button>`}` +
               `<button data-act="del" data-i="${i}">삭제</button>${
@@ -8972,7 +8986,8 @@ function renderLog(scroll) {
     html += `</div></div>`;
   });
   if (r.side && r.msgs.length && r.msgs[r.msgs.length - 1].id === r.sideAfter) html += sidePill(r);
-  if (r.lastErr) html += `<div class="err-line" role="alert">${esc(r.lastErr)} <button class="btn sm" id="retry">다시 시도</button></div>`;
+  if (r.lastErr)
+    html += `<div class="err-line" role="alert">${esc(r.lastErr)}${r.lastErrEdit ? "" : ` <button class="btn sm" id="retry">다시 시도</button>`}</div>`;
   html += epTailHTML(r);
   box.innerHTML = html;
   const lb = $("#liveBubble", box),
@@ -9082,19 +9097,24 @@ function bindLog(box) {
           });
         } else if (act === "edit" || act === "editai") {
           m.editing = true;
+          drafts.delete(m.id);
           renderLog();
           $("#ed" + i)?.focus();
         } else if (act === "cancel") {
           delete m.editing;
+          drafts.delete(m.id);
           renderLog();
         } else if (act === "save") {
           const t = $("#ed" + i).value.trim();
-          delete m.editing;
+          if (!t || m.role !== "user") delete m.editing;
           if (!t) return renderLog();
           if (m.role === "user") {
             const r = room;
+            drafts.set(m.id, t);
             ensurePay(r).then((q) => {
               if (!q || r !== room) return renderLog();
+              delete m.editing;
+              drafts.delete(m.id);
               const was = { text: m.text, msgs: r.msgs, status: r.status, ep: r.ep ? epCopy(r.ep) : null, err: r.lastErr },
                 gone = r.msgs[i + 1];
               m.text = t;
@@ -9352,7 +9372,10 @@ async function generate(target, q, direction = "", opt = {}) {
       if (lost) refund(q, label);
       else refundSug(q, label);
       Object.assign(msg.alts[altIdx], { text: keep, status: msg.statusBefore, cost: lost ? "" : qShort(q) });
-      if (lost) r.lastErr = "응답이 오는 중에 끊겨 여기까지만 남겼어요. 값은 돌려드렸어요. '다시 시도'를 누르면 다시 써요.";
+      if (lost) {
+        r.lastErr = "응답이 오는 중에 끊겨 여기까지만 남겼어요. 값은 돌려드렸어요. '다시 시도'를 누르면 다시 써요.";
+        r.lastErrEdit = false;
+      }
     } else {
       msg.alts.splice(altIdx, 1);
       if (!msg.alts.length) r.msgs.splice(r.msgs.indexOf(msg), 1);
@@ -9360,8 +9383,11 @@ async function generate(target, q, direction = "", opt = {}) {
       refund(q, label);
       const copy = errCopy(e),
         note = opt.undo ? opt.undo() : "";
-      if (note) toast([copy, note].filter(Boolean).join(" "));
-      else if (copy) r.lastErr = copy;
+      if (note) toast(note);
+      if (copy) {
+        r.lastErr = copy;
+        r.lastErrEdit = !!note;
+      }
     }
   } finally {
     try {
@@ -9608,7 +9634,8 @@ function viewDetail(id) {
       <div class="d-side">
         <div class="d-top">${coverHTML(c, "", { vt: true })}
           <div class="d-info"><span class="note">${esc(c.cat)}${c.world_mode ? " · 세계관" : ""} · ${metaHTML(c)}</span>
-          <h1>${esc(c.title)}</h1><p class="lead">${esc(c.oneLiner)}</p></div>
+          <h1>${esc(c.title)}</h1><p class="lead">${esc(c.oneLiner)}</p>` +
+    `${c.hold ? `<p class="d-hold" id="dHold">출시판 제외 — ${esc(c.hold)}</p>` : ""}</div>
         </div>
         <div class="tags">${(c.tags || []).map((t) => `<span>#${esc(t)}</span>`).join("")}</div>
         <div class="d-cta${rooms.length ? " has-resume" : ""}">` +

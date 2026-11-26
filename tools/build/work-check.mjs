@@ -195,6 +195,8 @@ export function checkWork(mod, { aud, row, id, wrel, R, errors, warnings }) {
     e(
       `noteTemplate(유저노트 양식)는 ${R.LIMITS.userNote}자 이내의 글이어야 해요${typeof c.noteTemplate === "string" ? `(지금 ${c.noteTemplate.length}자)` : ""}`
     );
+  // 출시판 제외(선택): 까닭을 적으면 사용자 빌드(index.html)에는 싣지 않고 관리자 빌드에만 '출시판 제외 — 까닭'으로(tools/build/content.mjs)
+  if (c.hold !== undefined && !str(c.hold)) e('hold(출시판 제외)는 까닭을 적은 글이어야 해요 — 예: hold: "게임위 회신 대기" · 빼지 않으려면 칸을 지우세요');
   if (c.lookTags !== undefined && (typeof c.lookTags !== "string" || /[가-힣]/.test(c.lookTags))) e("lookTags는 영문 Danbooru 태그 글이어야 해요");
   if (c.lookTags !== undefined && c.cast !== undefined) w("cast가 있으면 lookTags는 쓰이지 않아요 — cast[].tags에 적어 주세요");
   if (

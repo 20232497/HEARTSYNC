@@ -105,6 +105,9 @@ async function handler(route) {
     if (m === "POST" && db.failKv) return json(route, 500, { message: "mock: 저장 실패" });
     // '모든 데이터 초기화' 시험용: 계정 쪽 지우기(고치기·지우기 요청)만 실패시킴
     if ((m === "PATCH" || m === "DELETE") && (db.failWipe === true || db.failWipe === m)) return json(route, 500, { message: "mock: 지우기 실패" });
+    // 지우기를 서버가 거절(4xx — 적용 안 됨) · 지우기는 적용했는데 답만 잃음(5xx로 돌려줌 — 적용됐는지 모르는 경우)
+    if (m === "DELETE" && db.failWipe === "DELETE-refused") return json(route, 400, { message: "mock: 지우기 거절" });
+    const lostDelete = m === "DELETE" && db.failWipe === "DELETE-lost";
     // '전부 지움' 표식 올리기만 정한 횟수만큼 실패시킴(한 번 더 해 보는지)
     if (m === "POST" && db.failMark > 0 && body && body.some((x) => x.key === "wipe")) {
       db.failMark--;
@@ -160,7 +163,7 @@ async function handler(route) {
     }
     if (m === "DELETE") {
       db.rows = db.rows.filter((r) => !(r.user_id === uid && match(r, q)));
-      return json(route, 204);
+      return lostDelete ? json(route, 502, { message: "mock: 답을 잃음" }) : json(route, 204);
     }
   }
   return json(route, 404, { message: "mock: unknown " + p });
@@ -789,6 +792,46 @@ try {
   await B.page.click("#lgo");
   await B.page.waitForTimeout(2500);
   const w0 = { rooms: await A.page.evaluate(() => S.rooms.length), rows: mine().length, live: liveRooms(), phone: await B.page.evaluate(() => S.rooms.length) };
+  // 첫 지우기(방이 아닌 행)의 실패 둘 — 서버가 거절하면(4xx) 지워진 것이 없으니 다시 올리지 않고(다른 기기가 올린 더 새 값을 덮지 않게),
+  // 적용됐는데 답만 잃으면(5xx) 방이 아닌 행만 다시 올려 계정을 되돌림(방 행은 건드리기 전이라 다시 올리지 않음 — 다른 기기의 더 새 본문을 덮지 않게)
+  const wipeOnce = async () => {
+    await A.page.click("#reset");
+    await A.page.waitForTimeout(200);
+    await A.page.click(".overlay #ok");
+    await A.page.waitForTimeout(3000);
+    const title = await A.page.evaluate(() => (document.querySelector(".overlay h2") || {}).textContent || "");
+    await A.page.evaluate(() => closeOverlays());
+    await A.page.waitForTimeout(200);
+    return title;
+  };
+  const mark = (k) => {
+    const r = mine().find((x) => x.key === k || (k === "room" && x.key.indexOf("room-") === 0 && x.value && x.value.msgs));
+    r.value = { ...r.value, srvNewer: 1 }; // 다른 기기가 올린 더 새 값인 셈 — 이 기기가 다시 올리면 사라짐
+    return r.key;
+  };
+  const kept = (k) => !!((mine().find((x) => x.key === k) || {}).value || {}).srvNewer;
+  {
+    const wk = mark("wallet");
+    db.failWipe = "DELETE-refused";
+    const title = await wipeOnce();
+    res.wipeRefused = { title, kept: kept(wk), alive: await A.page.evaluate(() => window.__alive === 1) };
+    if (!/지우지 못했어요/.test(title) || !res.wipeRefused.kept || !res.wipeRefused.alive)
+      errs.push("모든 데이터 초기화: 서버가 거절한 지우기 뒤에 계정을 다시 올림(더 새 값을 덮음): " + JSON.stringify(res.wipeRefused));
+    const rk = mark("room");
+    db.failWipe = "DELETE-lost";
+    const title2 = await wipeOnce();
+    res.wipeLost = {
+      title: title2,
+      healed: ["rooms", "wallet", "personas"].filter((k) => mine().some((r) => r.key === k)).length,
+      roomKept: kept(rk),
+      alive: await A.page.evaluate(() => window.__alive === 1)
+    };
+    if (!/지우지 못했어요/.test(title2) || res.wipeLost.healed !== 3 || !res.wipeLost.roomKept || !res.wipeLost.alive)
+      errs.push("모든 데이터 초기화: 답을 잃은 지우기 뒤에 방이 아닌 행만 되돌리지 않음: " + JSON.stringify(res.wipeLost));
+    const r = mine().find((x) => x.key === rk);
+    delete r.value.srvNewer;
+    db.failWipe = false;
+  }
   // 가장 까다로운 실패: 방이 아닌 행은 지워졌는데 방을 표식으로 바꾸는 마지막 요청이 실패 — 방은 어디서도 사라지지 않고, 이 기기의 것을 다시 올려 계정을 되돌림
   db.failWipe = "PATCH";
   await A.page.click("#reset");

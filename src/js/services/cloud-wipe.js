@@ -35,7 +35,9 @@ function seen(at) {
  * 시작부터 이 화면은 더 올리지 않음(CLOUD.wiped) — 지우는 사이의 저장(늦게 끝난 요약 등)이나 이어지는 기기 지우기가 방금 쓴 표식을 덮거나 지우지 않게. 실패하면 다시 풂.
  * 알려진 한계: 아직 표식을 받지 못한 다른 기기가 그 사이 방 본문이나 페르소나·지갑을 올리면 계정에 다시 생김 — 서버 쪽 확인(docs/supabase.sql 끝의 트리거 초안)이 들어가야 막힘.
  * 방의 표식 요청이 서버에는 적용됐는데 응답만 잃으면 "half"로 보여 다시 올리게 됨(그 사이 표식을 받은 다른 기기는 방을 지운 뒤 — 다시 시도하면 맞춰짐).
- * @returns {Promise<"ok"|"fail"|"half">} fail: 아무것도 못 지움 · half: 방이 아닌 행만 지워짐
+ * 첫 DELETE가 서버의 답 없이 끊기면(연결 실패·시간 초과·5xx) 적용됐는지 알 수 없어 "unsure" — 부른 쪽(ui/me.js wipeNow)이 방이 아닌 행을 다시 올림.
+ * 서버가 받지 않는다고 답했으면(4xx) 적용되지 않은 것이 확실해 "fail" — 다시 올리지 않음(다른 기기가 올린 더 새 지갑·페르소나를 옛 값으로 덮지 않게, Codex 검토).
+ * @returns {Promise<"ok"|"fail"|"unsure"|"half">} fail: 아무것도 못 지움 · unsure: 방이 아닌 행이 지워졌는지 모름 · half: 방이 아닌 행만 지워짐
  */
 export async function wipeAccount() {
   const C = CLOUD;
@@ -43,9 +45,11 @@ export async function wipeAccount() {
   const uid = C.uid,
     at = Date.now(),
     q = "/rest/v1/kv?user_id=eq." + encodeURIComponent(uid) + "&key=";
+  let refused = false; // 마지막 요청에 서버가 받지 않는다고 답함(4xx) — 적용되지 않은 것이 확실
   const call = async (path, opts) => {
     const r = await SB.req(path, opts);
     if (C.uid !== uid) throw 0;
+    refused = !r.ok && r.status < 500;
     await C.check(r);
   };
   C.wiped = true;
@@ -69,7 +73,7 @@ export async function wipeAccount() {
     C.wiped = false;
     C.pending = Object.assign(kept, C.pending); // 기다리던 변경을 되돌려 놓고 다시 올림
     if (Object.keys(C.pending).length) C.timer = setTimeout(() => C.flush(), 800);
-    return step ? "half" : "fail";
+    return step ? "half" : refused ? "fail" : "unsure";
   }
   C.pending = {};
   seen(at); // 스스로 올린 표식은 따르지 않음(새로고침 뒤의 받기가 이 기기를 또 지우지 않게)

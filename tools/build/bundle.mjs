@@ -5,7 +5,7 @@ import path from "node:path";
 import * as espree from "espree";
 import * as scope from "eslint-scope";
 import { BROWSER_GLOBALS } from "../globals.mjs";
-import { BuildError, GEN_FILE, SIZE_LIMITS, SRC, readText, rel, visible } from "./common.mjs";
+import { BuildError, GEN_FILE, GEN_USER_FILE, SIZE_LIMITS, SRC, readText, rel, visible } from "./common.mjs";
 import { cssErrors } from "./css-check.mjs";
 import { layerErrors } from "./layers.mjs";
 
@@ -97,7 +97,7 @@ export async function assemble(t) {
       bundle = bundleModules(path.join(SRC, scr[1]), t, page);
       bundle.pieces.forEach((p) => {
         push(p.header, "(모듈 머리)");
-        pushMapped(p.text, p.src, p.rel);
+        pushMapped(p.text, p.src, p.read);
       });
     } else {
       let l = tpl[i];
@@ -143,18 +143,25 @@ const declOf = (d) =>
         ? d.declarations.flatMap((x) => patNames(x.id).map((n) => [n, "var"]))
         : [];
 
-function loadModule(file, mods, errors, chain) {
+function loadModule(file, mods, errors, chain, t) {
   if (mods.has(file)) return mods.get(file);
   if (!fs.existsSync(file)) {
     errors.push(`${chain}: ${rel(file)} 파일이 없어요`);
     return null;
   }
-  const code = readText(file),
-    ast = parseModule(code, file),
+  // 사용자 빌드는 작품 목록 자리에 출시판 제외(hold) 작품을 뺀 목록을 읽음 — 모듈 이름·import는 그대로(tools/build/content.mjs genModules). 없으면 전부 든 목록으로 물러나지 않고 멈춤
+  const src = file === GEN_FILE && !(t && t.admin) ? GEN_USER_FILE : file;
+  if (!fs.existsSync(src)) {
+    errors.push(`${chain}: ${rel(src)} 파일이 없어요 — npm run build로 작품 목록을 다시 만드세요`);
+    return null;
+  }
+  const code = readText(src),
+    ast = parseModule(code, src),
     r = rel(file);
   const info = {
     file,
     rel: r,
+    read: rel(src), // 실제로 읽은 파일 — 줄 지도(.build/linemap*.json)와 문법 오류가 가리킴
     code,
     ast,
     comments: ast.comments || [],
@@ -242,7 +249,7 @@ function loadModule(file, mods, errors, chain) {
     for (const ref of s.references)
       if (ref.resolved?.defs[0]?.type === "ImportBinding") info.evalRefs.push({ name: ref.identifier.name, line: ref.identifier.loc.start.line });
   }
-  for (const t of info.importOrder) loadModule(t, mods, errors, `${r}`);
+  for (const x of info.importOrder) loadModule(x, mods, errors, `${r}`, t);
   return info;
 }
 
@@ -277,7 +284,7 @@ export function bundleModules(entry, t, page) {
     warnings = [],
     mods = new Map();
   if (!fs.existsSync(entry)) throw new BuildError([`진입 모듈 ${rel(entry)}이 없어요`]);
-  loadModule(entry, mods, errors, page);
+  loadModule(entry, mods, errors, page, t);
   if (errors.length) throw new BuildError(errors);
   // 순서: 진입점에서 import 순서대로 깊이 우선, 의존 모듈이 먼저(진입점이 맨 뒤)
   const order = [],
@@ -345,9 +352,9 @@ export function bundleModules(entry, t, page) {
     if (t.strip) {
       const c = compact(text),
         s = summaryOf(m);
-      return { rel: m.rel, header: `/* ── ${m.rel}${s ? " — " + s : ""} */\n`, text: c.text, src: c.src };
+      return { rel: m.rel, read: m.read, header: `/* ── ${m.rel}${s ? " — " + s : ""} */\n`, text: c.text, src: c.src };
     }
-    return { rel: m.rel, header: t.doc ? docHeader(m, order) : `/* ── ${m.rel} */\n`, text, src: null };
+    return { rel: m.rel, read: m.read, header: t.doc ? docHeader(m, order) : `/* ── ${m.rel} */\n`, text, src: null };
   });
   // 크기 재기(common.mjs SIZE_LIMITS — 알림용): 모듈마다 용량과 기준보다 긴 줄 수. 빌드가 만든 작품 데이터(generated.js)는 빼고
   const sizes = order

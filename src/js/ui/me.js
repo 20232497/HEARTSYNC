@@ -9,7 +9,7 @@ import { KV } from "../core/storage.js";
 import { $, $$, esc, num, toast, uid } from "../core/util.js";
 import { isPro } from "../core/wallet.js";
 import { CLOUD } from "../services/cloud.js";
-import { pushAll } from "../services/cloud-push.js";
+import { localKVKeys, pushAll } from "../services/cloud-push.js";
 import { wipeAccount } from "../services/cloud-wipe.js";
 import { IMG } from "../services/images.js";
 import { clearDevice } from "../services/sync.js";
@@ -152,10 +152,12 @@ async function wipeNow() {
   const uid = CLOUD.uid,
     got = CLOUD.on && !accountWiped ? await wipeAccount() : "ok";
   if (got !== "ok") {
-    // 계정 쪽이 중간까지만 지워졌으면(방이 아닌 행) 이 기기에 그대로 있는 것을 다시 올려 둠 — 대화는 어느 쪽에서도 지워지지 않았음
-    if (got === "half" && CLOUD.on && CLOUD.uid === uid)
+    // 계정 쪽이 실패하면 이 기기에 그대로 있는 것을 다시 올려 둠 — 대화는 어느 쪽에서도 지워지지 않았음. "half"(방이 아닌 행만 지워짐)는 방의 표식 요청이 서버에
+    // 적용됐을 수 있어 방 본문까지. "unsure"(첫 DELETE의 답을 잃음 — 2026-11-25 디렉터 검토: 전에는 목록·지갑·페르소나가 빠진 계정이 남았음)는 방 행을 건드리기
+    // 전이라 방이 아닌 행만(다른 기기가 올린 더 새 방 본문을 옛 본문으로 덮지 않게). "fail"(서버가 거절 — 지워진 것 없음)은 올리지 않음(Codex 검토)
+    if (got !== "fail" && CLOUD.on && CLOUD.uid === uid)
       try {
-        await pushAll();
+        await pushAll(got === "unsure" ? localKVKeys().filter((k) => !/^room-/.test(k)) : undefined);
       } catch {}
     return wipeFailed("계정의 데이터를 지우지 못했어요", "네트워크를 확인하고 다시 시도해 주세요. 이 기기의 데이터도 아직 그대로예요.");
   }
