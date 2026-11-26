@@ -17,7 +17,7 @@
 | **빌드 확인**(`.github/workflows/build.yml`) | PR마다 · main에 들어갈 때 | `npm ci` → `npm run check`(모듈·작품 검사, `index.html`·`admin.html`이 소스와 같은지, 순서 잠금이 최신인지, **기준 가지의 잠금과 맞는지**, 코드 정렬(`npm run format`)이 맞는지와 긴 줄이 예외 표 안인지, CLAUDE.md 상한과 지도 표의 경로 — `LOCK_BASE`로 PR이 들어갈 가지를 알려 줌) → `npm test` |
 | **흐름 시험**(`.github/workflows/e2e.yml`) | PR마다 · 직접 실행 | `npm ci` → 브라우저 두 종과 한글 글꼴 설치 → `npm run e2e -- --retry`(실패한 시험만 한 번 더 — 두 번 다 실패해야 실패, 다시 돌려 통과한 시험은 경고 줄로 남음). 실패하면 `tests/.shots`의 스크린샷을 `e2e-shots`로 올려 둠(7일). 시간대는 `Asia/Seoul` |
 
-- **흐름 시험은 처음 두 주(2026-11-26쯤까지) '알림만'** 이에요(2026-11-11 사용자 결정) — 필수 검사가 아니라 실패해도 병합을 막지 않고, 병합 담당이 실패 내용을 보고 판단해요. 헛실패가 드물다는 것이 확인되면 필수 검사로 바꿔요. 지정은 GitHub 저장소 설정이라 **사용자가 직접** 해요: 저장소 → Settings → Branches(또는 Rules → Rulesets) → `main` 규칙 → *Require status checks to pass* → 검사 이름 `e2e`(흐름 시험)와 `check`(빌드 확인)를 고름.
+- **흐름 시험은 2026-11-26부터 필수 검사**예요(사용자 결정). 처음 두 주(11-12~11-26)는 '알림만'이었고, 그동안 CI 86번 중 다시 돌려 통과한 헛실패가 4번(cloud2 셋·social 하나 — 모두 --retry가 받아 냄), 실패 14번 중 12번은 11-22 하루 main 자체의 cloud2 시험 문제, 2번은 실제 문제였어요. 지정은 GitHub 저장소 설정이라 **사용자가 직접** 해요: 저장소 → Settings → Branches(또는 Rules → Rulesets) → `main` 규칙 → *Require status checks to pass* → 검사 이름 `e2e`(흐름 시험)와 `check`(빌드 확인)를 고름.
 - 흐름 시험의 실행 환경은 `ubuntu-24.04`로 고정해 뒀어요 — `ubuntu-latest`(26.04)에는 지금 Playwright(1.56.1)가 WebKit을 깔지 못해요. Playwright를 올릴 때 워크플로의 `runs-on`도 그 판이 지원하는 ubuntu로 같이 올려요. 빌드 확인은 node와 git만 써서 `ubuntu-latest` 그대로예요.
 - 이 PC와 CI의 차이: CI는 리눅스(ubuntu)·`HS_ADMIN_PW` 없음(`gate`의 맞는 비밀번호 입력은 건너뜀). CI에서만 깨지는 시험이 나오면 시험을 느슨하게 고치지 말고 CI 환경 값을 맞춰요(시간대·글꼴 — 워크플로의 `env`).
 
