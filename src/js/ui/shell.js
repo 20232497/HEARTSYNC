@@ -9,7 +9,6 @@ import { isAdmin } from "../core/target.js";
 import { $, $$, esc, num } from "../core/util.js";
 import { freeLeft, isPro } from "../core/wallet.js";
 import { IMG } from "../services/images.js";
-import { stopGen } from "./chat/generate.js";
 import { coverHTML } from "./cover.js";
 import { ICON } from "./icons.js";
 import { closeOverlays } from "./sheet.js";
@@ -36,8 +35,7 @@ export function route() {
     moved = h !== routed;
   if (moved && routed === "home") homeY = v.scrollTop;
   routed = h;
-  closeOverlays();
-  if (gen && !h.startsWith("r-")) stopGen();
+  closeOverlays(); // 쓰던 답은 다른 화면으로 가도 멈추지 않음(프레임 7차 C10 — 끝나면 그 방에 저장되고, 왼쪽 메뉴·대화 목록에 '쓰는 중')
   document.body.classList.toggle("in-chat", h.startsWith("r-"));
   document.body.classList.toggle("in-detail", h.startsWith("c-")); // 상세: 좁은 화면에서 아래에 고정된 시작 버튼 줄 위로 토스트를 올림(35-detail.css)
   const [base, ...rest] = h.split("-");
@@ -85,7 +83,7 @@ export function renderRailRecent() {
   el.innerHTML =
     S.rooms
       .slice(0, 6)
-      .map((r) => `<button class="recent" data-room="${esc(r.id)}">${coverHTML(r)}<span>${favMark(r)}${esc(r.name)}</span></button>`)
+      .map((r) => `<button class="recent" data-room="${esc(r.id)}">${coverHTML(r)}<span>${favMark(r)}${esc(r.name)}${writingMark(r)}</span></button>`)
       .join("") || `<p class="note" style="padding:0 12px">아직 대화가 없어요.</p>`;
   $$("[data-room]", el).forEach((b) => (b.onclick = () => go("r-" + b.dataset.room)));
   IMG.hydrate(el);
@@ -104,6 +102,10 @@ export function renderRailViewed() {
     : "";
   $$("[data-char]", el).forEach((b) => (b.onclick = () => go("c-" + b.dataset.char)));
   IMG.hydrate(el);
+}
+/** 답을 쓰는 중인 방의 표시 — 왼쪽 메뉴의 최근 대화·대화 목록(그 방을 떠나도 답은 계속 씀). @param {{ id: string }} r @returns {string} HTML */
+export function writingMark(r) {
+  return gen && gen.roomId === r.id ? ' <i class="writing">쓰는 중</i>' : "";
 }
 function walletHTML() {
   return isPro()

@@ -13,6 +13,8 @@
 .drawer-ov { justify-content:flex-end; align-items:stretch; }
 .drawer { background:var(--surface); width:min(420px, 100%); height:100%; overflow-y:auto; padding:calc(14px + env(safe-area-inset-top,0px)) max(18px, env(safe-area-inset-right,0px)) calc(24px + env(safe-area-inset-bottom,0px)) 18px; animation:slide .22s ease-out; border-left:1px solid var(--line); }
 @keyframes slide { from { transform:translateX(30px); opacity:.5; } }
+/* 열 때 포커스를 창 상자에 둠(ui/sheet.js holdFocus) — 상자 둘레에는 표시를 그리지 않음(안의 버튼·입력칸은 :focus-visible 그대로) */
+.sheet:focus, .drawer:focus { outline:none; }
 .drawer h2 { margin:0; font-family:var(--display); font-size:19px; flex:1; }
 .quick { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin:12px 0 16px; }
 .quick button { border:0; background:none; display:grid; justify-items:center; gap:4px; font-size:12px; color:var(--muted); padding:8px 0; border-radius:12px; }

@@ -1,18 +1,19 @@
 /* 대화 목록: 즐겨찾기한 방이 맨 위 묶음(별 버튼으로 켜고 끔 — core/rooms.js setFav, LIMITS.favRooms개까지), 그 아래 최근 대화. 순서는 S.rooms 그대로(sortRooms).
    맨 아래에 최근 본 작품을 작게 — 왼쪽 메뉴가 없는 좁은 화면에서만 보임(넓은 화면은 왼쪽 메뉴에 있음, 2026-11-21 사용자 결정) */
 import { LIMITS } from "../core/constants.js";
+import { on } from "../core/events.js";
 import { setFav } from "../core/rooms.js";
 import { S } from "../core/state.js";
 import { $, $$, ago, esc, toast } from "../core/util.js";
 import { IMG } from "../services/images.js";
 import { coverHTML } from "./cover.js";
-import { bindGo, go, roomSetupHTML, topbar, viewedWorks } from "./shell.js";
+import { bindGo, go, roomSetupHTML, topbar, viewedWorks, writingMark } from "./shell.js";
 
 /* 방 한 줄: 방으로 가는 버튼 + 즐겨찾기 별(버튼 안에 버튼을 넣지 않으려고 나란히 둠) */
 const chatRowHTML = (r) =>
   `<div class="crow"><button data-room="${esc(r.id)}">${coverHTML(r)}<span class="x"><b>${esc(r.title)} ` +
   `<span class="note" style="display:inline;font-weight:400">· ${esc(r.name)}</span>` +
-  `${r.fork ? ' <span class="pill">분기</span>' : ""}` +
+  `${writingMark(r)}${r.fork ? ' <span class="pill">분기</span>' : ""}` +
   `${r.ep ? ` <span class="pill">${r.ep === "결말" ? "결말" : "에피소드 · " + esc(r.ep)}</span>` : ""}` +
   `${r.side ? ' <span class="pill">외전</span>' : ""}</b>${roomSetupHTML(r)}` +
   `<span>${esc(r.last) || "대화를 시작해 보세요"}</span></span><span class="note">${ago(r.at)}</span></button>` +
@@ -52,3 +53,7 @@ export function viewChats() {
       })
   );
 }
+// 목록을 보는 사이 방이 바뀜 — 떠난 방의 답이 끝났거나(마지막 말·'쓰는 중' 표시) 계정에서 받음. 스크롤 자리는 그대로
+on("rooms", () => {
+  if (location.hash.slice(1) === "chats") viewChats();
+});
