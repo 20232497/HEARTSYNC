@@ -9,7 +9,7 @@ import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-export const FORMAT_GLOBS = ["src/js/**/*.js", "tools/**/*.mjs", "tests/**/*.mjs"];
+export const FORMAT_GLOBS = ["src/js/**/*.js", "tools/**/*.mjs", "tools/**/*.js", "tests/**/*.mjs"]; // tools의 .js = 그림 총괄 페이지의 브라우저 모듈(tools/art/)
 /**
  * prettier를 돌림. @param {boolean} write 참이면 고쳐 쓰고, 거짓이면 정렬 안 된 파일을 찾기만
  * @returns {{ ok: boolean, files: string[], missing: boolean, err: string }} files = 정렬 안 된 파일(찾기만 할 때), missing = prettier가 깔려 있지 않음
