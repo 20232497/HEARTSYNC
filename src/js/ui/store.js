@@ -29,7 +29,7 @@ export function viewStore() {
   v.innerHTML =
     `<div class="page">${topbar()}
     <h1 class="sec" style="margin-top:4px">스토어</h1>
-    <div class="statline">
+    <div class="statline store-stat">
       <div class="box"><h3>오늘 무료 턴</h3><b>${pro ? "무제한" : freeLeft() + " / " + FREE_DAILY}</b><span class="note">라이트 모델 · 매일 자정에 다시 채워져요</span></div>
       <div class="box"><h3>보유 하트</h3><b>♥ ${num(S.wallet.hearts)}</b>` +
     `<span class="note">스토리 모델 약 ${Math.floor(S.wallet.hearts / story)}턴</span></div>
@@ -38,7 +38,7 @@ export function viewStore() {
     </div>
 
     <h2 class="sec">한 턴에 얼마나 드나요? <small>기억력 10턴 기준 · 10턴 늘 때마다 스토리 +♥1, 마스터 +♥2</small></h2>
-    <div class="tbl-wrap"><table class="tbl"><thead><tr><th>모델</th><th class="num">적게</th><th class="num">보통</th>` +
+    <div class="tbl-wrap"><table class="tbl price-tbl"><thead><tr><th>모델</th><th class="num">적게</th><th class="num">보통</th>` +
     `<th class="num">많게</th><th class="num plus">PLUS</th></tr></thead><tbody>
       <tr><td><b>라이트</b> <span class="pill ok">매일 ${FREE_DAILY}턴 무료</span><div class="note">빠르고 가벼운 일상 대화</div></td>` +
     `<td class="num">${cell("lite", "short")}</td><td class="num">${cell("lite", "mid")}</td><td class="num">${cell("lite", "long")}</td>` +

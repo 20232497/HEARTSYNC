@@ -38,6 +38,11 @@ function indexRoom(r) {
     ep: r.ep ? (r.ep.end ? "결말" : r.ep.beat + 1 + "장") : "",
     side: !!r.side,
     ...(r.fav ? { fav: true } : {}),
+    // 같은 작품의 방 여러 개를 목록에서 구별(대화 목록·상세의 내 대화방) + 시작 창의 '지난번 설정'(ui/start-sheet.js) — 예전 항목에는 없고 다음 저장 때 채워짐
+    opening: r.opening || "",
+    openingId: r.openingId || "",
+    personaId: (r.persona && r.persona.id) || "",
+    personaName: (r.persona && r.persona.name) || "",
     last: (lastAi ? curText(lastAi) : "")
       .replace(/\[\[[^\]]*\]\]/g, "")
       .replace(/[*"\[\]]/g, "")

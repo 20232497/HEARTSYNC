@@ -6,12 +6,27 @@ import { liveWork } from "../../core/character.js";
 import { commandText } from "../../core/commands.js";
 import { LORE, MARK } from "../../core/constants.js";
 import { curText } from "../../core/rooms.js";
+import { plan } from "../../core/wallet.js";
 import { sitHints } from "../../images/situations.js";
 /** @typedef {import("../../core/types.js").LLMMessage} LLMMessage */
 /** @typedef {import("../../core/types.js").Message} Message */
 /** @typedef {import("../../core/types.js").Room} Room */
 /** @typedef {import("../../core/types.js").StatusMap} StatusMap */
 
+/**
+ * 한 턴에 그대로 보내는 최근 대화 — 기억력(r.set.mem)턴의 주고받음 + 이번 유저 메시지. 장기기억 화면(ui/drawer/memory.js '지금 AI에게 보내는 것')도 이 함수로 셈.
+ * @param {Room} r @param {Message[]} hist 글이 있는 메시지(오래된 것부터) @returns {Message[]}
+ */
+export function recentOf(r, hist) {
+  return hist.slice(-(r.set.mem * 2 + 1));
+}
+/**
+ * 한 턴에 보내는 고정 기억 — 지금 요금제 한도(plan().pins) 안의 앞쪽 줄만. 한도가 줄면(PLUS가 끝남) 넘는 줄은 방에 남기되 보내지 않음(2026-11-10 사용자 결정).
+ * 프롬프트(rules.js rulesParts)와 장기기억 화면이 같이 씀. @param {Room} r @returns {import("../../core/types.js").Pin[]}
+ */
+export function pinsSent(r) {
+  return (r.pins || []).slice(0, plan().pins);
+}
 /* 최근 AI 응답 2개의 단락 첫머리(앞 24자): 모델이 같은 시작·묘사를 되풀이하지 않게 rulesPrompt에 보여 줌. 시스템 메시지([…])는 형식이라 뺌 */
 /** 직전 AI 응답 2개의 단락 첫머리(최대 12개) — [이미 쓴 문장]으로 반복을 막음. @param {Message[]} hist @returns {string[]} */
 export function usedOpeners(hist) {
@@ -38,7 +53,7 @@ export function usedOpeners(hist) {
  */
 export function buildInput(r, uptoIdx, statusBefore, direction, sug = !!r.set.autoSug) {
   const hist = r.msgs.slice(0, uptoIdx).filter((m) => curText(m));
-  const recent = hist.slice(-(r.set.mem * 2 + 1));
+  const recent = recentOf(r, hist);
   const lore = matchLore(
     liveWork(r.char).lore || r.char.lore,
     recent.slice(-LORE.scan).map((m) => (m.role === "ai" ? curText(m) : m.text) || "")

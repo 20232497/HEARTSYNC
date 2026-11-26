@@ -88,6 +88,13 @@ for (const url of urls) {
       await goto("me", 600);
       await check("me");
       await fit("me");
+      // 스토어: 모델과 턴 값 표가 PLUS 칸까지 옆으로 밀지 않고 보이고, 첫 화면 안에서 시작(2026-11-26 프레임 7차 C9 — 전에는 375px에서 PLUS 칸이 화면 밖)
+      await goto("store");
+      res.store = await page.evaluate(() => {
+        const w = $(".price-tbl").closest(".tbl-wrap");
+        return { over: w.scrollWidth - w.clientWidth, top: Math.round(w.getBoundingClientRect().top), h: innerHeight };
+      });
+      if (res.store.over > 1 || res.store.top > res.store.h - 160) errors.push("휴대폰 스토어의 턴 값 표가 다름: " + JSON.stringify(res.store));
       // 작품 상세는 전부 — '다른 작품' 줄이 있는 작품(같은 묶음의 작품이 여럿)에서만 칸이 밀려 잘린 적이 있음(2026-11-21)
       const ids = await page.evaluate(() => ORIGINALS.map((c) => c.id));
       for (const id of ids.slice(1)) {
@@ -257,6 +264,14 @@ for (const url of urls) {
         const b = res.badgeLow;
         if (!b.scrolled || b.t < 0 || b.b > b.H || !b.hit) errors.push("대화를 맨 아래로 내리면 AI 배지가 보이지 않음: " + JSON.stringify(b));
       }
+      // 하던 방이 있는 상세: 아래 고정 줄이 찜·이어하기·새 대화 시작 셋이 되어도 넘치지 않고(좁은 폰은 찜이 아이콘만), 셋 다 한 줄·화면 안(2026-11-26 프레임 7차 C6)
+      await goto("c-" + ids[0]);
+      await fit("상세 — 이어하기");
+      res.resume = await page.evaluate(() => {
+        const bs = $$(".d-cta > button").map((b) => b.getBoundingClientRect());
+        return { n: bs.length, row: bs.every((b) => Math.abs(b.top - bs[0].top) < 2), inside: bs.every((b) => b.left >= 0 && b.right <= innerWidth) };
+      });
+      if (res.resume.n !== 3 || !res.resume.row || !res.resume.inside) errors.push("하던 방이 있는 상세의 시작 줄이 다름: " + JSON.stringify(res.resume));
     } catch (e) {
       res.fail = String(e).slice(0, 200);
     }
