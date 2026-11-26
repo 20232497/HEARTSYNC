@@ -43,7 +43,7 @@ HEART SYNC가 처리하는 개인정보를 안전하게 관리하기 위한 조�
 ## 6. 접근 통제
 - 데이터베이스는 RLS로 행 단위 접근을 막아요. 표를 새로 만들면 RLS를 켜고 정책을 검토한 뒤 배포해요(Security Advisor 확인).
 - `service_role` 키, Anthropic 키, PortOne API·웹훅 비밀은 Edge Function Secrets에만 두고, 앱·저장소·메모·채팅에 붙여 넣지 않아요.
-- 관리자 도구는 출시 배포에서 빼고 Cloudflare Access 뒤 또는 로컬에서만 열어요(M6).
+- 관리자 도구(`admin.html`)는 커밋·배포하지 않고 운영자 PC의 로컬(`npm run dev` → localhost)에서만 열어요(M6, 2026-11-26부터 — 공개 주소 …/admin.html은 404).
 - 일정 시간(30분) 쓰지 않으면 관리자 세션을 끝내요.
 
 ## 7. 암호화
