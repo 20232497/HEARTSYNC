@@ -4,6 +4,7 @@ import { gen, room } from "../../core/state.js";
 import { $, esc, toast } from "../../core/util.js";
 import { imgTags } from "../../images/codes.js";
 import { IMG } from "../../services/images.js";
+import { crisisHTML } from "./crisis.js";
 import { bindEp, epBarHTML, epEventHTML, epTailHTML } from "./episode.js";
 import { bindLog } from "./log-acts.js";
 import { fmt, liveFill, statusBlock } from "./render.js";
@@ -107,7 +108,7 @@ export function renderLog(scroll) {
                 ooc || m.canned ? "" : `<button data-act="pin" data-i="${i}" ` + `title="이 내용을 고정 기억으로 — 매 턴 그대로 AI에게 전해요">📌 고정</button>`
               }</div>`
         }
-      </div></div>`;
+      </div></div>${crisisHTML(r.id, m.id, i)}`;
       return;
     }
     const alt = m.alts[m.idx] || {},

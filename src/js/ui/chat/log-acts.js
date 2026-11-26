@@ -4,6 +4,7 @@ import { curText, saveRoom } from "../../core/rooms.js";
 import { S, gen, room, setRoom } from "../../core/state.js";
 import { $, $$, clamp, toast } from "../../core/util.js";
 import { plan } from "../../core/wallet.js";
+import { closeCrisis, markCrisis } from "./crisis.js";
 import { epCopy, generate, regen, regenAsk, sendTurn } from "./generate.js";
 import { copyText, drafts, renderLog } from "./log.js";
 import { hideSug } from "./suggest.js";
@@ -38,7 +39,7 @@ export function bindLog(box) {
       const u = room.msgs.pop();
       renderLog();
       if (u) {
-        const ok = await sendTurn(u.sys ? "" : u.text, { cont: !!u.sys });
+        const ok = await sendTurn(u.sys ? "" : u.text, { cont: !!u.sys, id: u.id }); // 같은 id로 — 위기 안내 카드가 그대로 남게
         if (!ok) {
           room.msgs.push(u);
           renderLog();
@@ -51,8 +52,11 @@ export function bindLog(box) {
         const i = +b.dataset.i,
           m = room.msgs[i],
           act = b.dataset.act;
-        if (gen && !["copy", "bm", "up", "down", "pin"].includes(act)) return flashHint("응답이 끝난 뒤에 할 수 있어요.");
-        if (act === "prev" || act === "next") {
+        if (gen && !["copy", "bm", "up", "down", "pin", "crisis-x"].includes(act)) return flashHint("응답이 끝난 뒤에 할 수 있어요.");
+        if (act === "crisis-x") {
+          closeCrisis(room.id, m.id);
+          renderLog();
+        } else if (act === "prev" || act === "next") {
           m.idx = clamp(m.idx + (act === "next" ? 1 : -1), 0, m.alts.length - 1);
           restoreStatus();
           if (room.ep && i === room.msgs.length - 1 && (m.alts[m.idx].ep1 || m.ep0)) room.ep = epCopy(m.alts[m.idx].ep1 || m.ep0); // 에피소드: 그 버전 뒤의 진행 상태로
@@ -112,6 +116,7 @@ export function bindLog(box) {
               const was = { text: m.text, msgs: r.msgs, status: r.status, ep: r.ep ? epCopy(r.ep) : null, err: r.lastErr },
                 gone = r.msgs[i + 1];
               m.text = t;
+              markCrisis(r, m);
               r.lastErr = "";
               r.msgs = r.msgs.slice(0, i + 1);
               restoreStatus();

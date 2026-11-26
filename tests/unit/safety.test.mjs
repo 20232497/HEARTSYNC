@@ -4,7 +4,8 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { minorFlags, minorHint, roomMinorHint, settingHint } from "../../src/js/core/safety.js";
+import { crisisDue, crisisLevel, minorFlags, minorHint, roomMinorHint, settingHint } from "../../src/js/core/safety.js";
+import { closeCrisis, crisisHTML, markCrisis } from "../../src/js/ui/chat/crisis.js";
 
 test("minorFlags: 출연진 외모의 19세 미만 나이·학생 신분, 설정 첫머리의 '이름(나이'를 잡는다", () => {
   assert.deepEqual(
@@ -413,8 +414,90 @@ test("오리지널 작품의 실제 요청(프롬프트 틀 포함)은 서버 �
         assert.equal(/입맞춤 이상의 신체 접촉은 쓰지 않고/.test(g), !track, `${c.id}: 입맞춤 이상 금지`);
         assert.equal(/신체 부위를 노골적으로 묘사하거나 성적 욕망을 자극하는 대화도 쓰지 않는다/.test(g), !track, `${c.id}: 노골적 묘사 금지`);
         assert.equal(/나이뿐 아니라 학년·옷차림·체형 묘사를 함께 보고 판단한다/.test(g), !track, `${c.id}: 보이는지의 판단 근거`);
-        // ai-policy 6-4 세 규칙은 두 트랙 모두
-        for (const re of [/AI라는 사실을 부정하지 않는다/, /자해·자살을 부추기거나 그 방법을 알려 주지 않는다/, /캐릭터에게만 기대게 만드는 말/])
+        // ai-policy 6-4 세 규칙과 실제 정보 줄(2026-11-27 사용자 "이대로 넣기" — 자해 줄의 '캐릭터를 내려놓고 109 안내'도)은 두 트랙 모두
+        for (const re of [
+          /AI라는 사실을 부정하지 않는다/,
+          /자해·자살을 부추기거나 그 방법을 알려 주지 않는다/,
+          /이야기를 잠시 멈추고 캐릭터를 내려놓은 채 짧게, 자살예방상담전화 109[(]24시간[)]나 위급하면 112·119에 바로 연락하도록 안내한다/,
+          /유저의 실제 사진·연락처·주소·학교를 묻지 않고, 현실에서 만나자고 제안하지 않는다/,
+          /캐릭터에게만 기대게 만드는 말/
+        ])
           assert.ok(re.test(g), `${c.id} · ${track || "general"}: 공통 안전 줄 ${re}`);
       }
+});
+
+test("위기 신호(ai-policy 6-4): 바라는 꼴과 자해는 신호, 방법·때가 같이 나오면 구체적, 이야기 속에서 흔한 말은 아님", () => {
+  for (const t of [
+    "요즘 너무 힘들어서 죽고 싶어",
+    "그냥 살기 싫다",
+    "// 진짜로 자살하고 싶어요",
+    "자해를 또 했어",
+    "더 이상 살 이유가 없어",
+    "I want to die",
+    "더는 못 살겠어",
+    "죽고 싶어? 도와줘",
+    "나 그냥 죽어버릴래"
+  ])
+    assert.equal(crisisLevel(t), 1, t);
+  for (const t of [
+    "오늘 밤에 죽고 싶어",
+    "수면제를 모아 뒀어. 죽고 싶어",
+    "옥상에 올라왔어, 그만 살고 싶어",
+    "유서를 썼어",
+    "I want to kill myself tonight",
+    "오늘 죽을 거야",
+    "나 오늘 죽을 거야"
+  ])
+    assert.equal(crisisLevel(t), 2, t);
+  for (const t of [
+    "죽고 싶냐? 칼을 겨눴다",
+    "죽고 싶으면 덤벼",
+    "창피해서 죽고 싶어",
+    "이건 자살로 위장한 살인이야",
+    "자살 사건을 조사한다",
+    "그가 자살할 리 없어",
+    "자해공갈단을 잡았다",
+    "유서 깊은 가문",
+    "배고파 죽겠다",
+    "죽고 싶지 않아!",
+    "오늘 밤, 범인은 자살을 선택했다",
+    "그는 자살한 채 발견됐다",
+    "자살은 생각해 본 적 없어",
+    "죽고 싶은 건 아니야",
+    "더워서 못 살겠어",
+    "내가 죽을게, 너는 살아",
+    "저 녀석 곧 죽을 거야",
+    "너 오늘 죽을 거야",
+    "나 오늘 죽을 거 같아, 너무 웃겨",
+    "오늘은 죽고 싶은 생각이 없어",
+    "자해한 적 없어",
+    "나 자살 사건 조사 중이야",
+    ""
+  ])
+    assert.equal(crisisLevel(t), 0, t);
+});
+test("위기 안내 카드는 신호만이면 같은 방에서 24시간에 한 번, 구체적이면 매번", () => {
+  const now = 2e12,
+    day = 864e5;
+  assert.equal(crisisDue("죽고 싶어", 0, now), true, "처음");
+  assert.equal(crisisDue("죽고 싶어", now - day + 1, now), false, "24시간 안");
+  assert.equal(crisisDue("죽고 싶어", now - day, now), true, "24시간 뒤");
+  assert.equal(crisisDue("오늘 밤 죽고 싶어", now - 1, now), true, "구체적이면 매번");
+  assert.equal(crisisDue("안녕", 0, now), false);
+});
+test("위기 안내 카드의 상태는 방마다(분기한 방과 섞이지 않음), 떠 있는 카드는 고쳐 보내도 남음", () => {
+  const a = { id: "roomA" },
+    b = { id: "roomB" },
+    u = { id: "m1", text: "죽고 싶어" };
+  markCrisis(a, u);
+  markCrisis(b, u); // 분기한 방: 같은 메시지 id
+  assert.ok(crisisHTML("roomA", "m1", 0).includes("자살예방상담전화") && crisisHTML("roomB", "m1", 0).includes("109"));
+  closeCrisis("roomB", "m1");
+  assert.equal(crisisHTML("roomB", "m1", 0), "", "닫은 방만");
+  assert.ok(crisisHTML("roomA", "m1", 0), "다른 방은 그대로");
+  markCrisis(a, { id: "m1", text: "그래도 죽고 싶어" }); // 고쳐 보냄 — 24시간 안의 같은 신호
+  assert.ok(crisisHTML("roomA", "m1", 0), "떠 있던 카드는 남음");
+  markCrisis(a, { id: "m2", text: "또 죽고 싶어" });
+  assert.equal(crisisHTML("roomA", "m2", 1), "", "24시간 안의 신호만으로는 새 카드 없음");
+  closeCrisis("roomA", "m1");
 });

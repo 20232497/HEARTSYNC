@@ -16,6 +16,7 @@ import { imgTag, imgTags } from "../../images/codes.js";
 import { imagesOf } from "../../images/pick.js";
 import { sitScores } from "../../images/situations.js";
 import { IMG, validRef } from "../../services/images.js";
+import { markCrisis } from "./crisis.js";
 import { autoScroll, followLog, renderLog, setStick, stick, syncJump } from "./log.js";
 import { liveFill } from "./render.js";
 import { hideSug, showSug } from "./suggest.js";
@@ -27,12 +28,14 @@ import { closeOverlays, sheet } from "../sheet.js";
 /* 에피소드 진행 상태의 사본 — 메시지마다 ep0(그 메시지 직전)·ep1(그 응답 뒤)로 적어 두고 다시 쓰기·삭제·버전 바꾸기가 되돌림 */
 export const epCopy = (st) => JSON.parse(JSON.stringify(st));
 /* 한 턴 보내기. pick: 에피소드 갈림길 카드로 보낸 것이면 그 보기 id — 진행 상태를 먼저 고른 뒤로 바꿔 놓고 응답을 받음(이번 응답은 다음 장에서 시작). 끝난 에피소드 방에서는 보내지 않음 */
-export async function sendTurn(text, { cont = false, pick = "" } = {}) {
+export async function sendTurn(text, { cont = false, pick = "", id = "" } = {}) {
   if (gen || (room.ep && room.ep.over)) return false;
   const q = await ensurePay(room);
   if (!q) return false;
   room.lastErr = "";
-  const u = cont ? { id: uid("m"), role: "user", text: "(이어서)", sys: true } : { id: uid("m"), role: "user", text };
+  id = id || uid("m"); // id: '다시 시도'가 빼 둔 메시지를 다시 보낼 때 그 id
+  const u = cont ? { id, role: "user", text: "(이어서)", sys: true } : { id, role: "user", text };
+  if (!cont) markCrisis(room, u);
   if (room.ep) {
     u.ep0 = epCopy(room.ep);
     if (pick) room.ep = epPick(room.char.episode, room.ep, pick, room.status?.[room.char.gauge]);

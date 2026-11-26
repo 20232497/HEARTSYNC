@@ -1,4 +1,4 @@
-// 채팅 흐름: 입력창 ! 명령어 목록, 자동 스크롤 끔/켬, 고정 기억, 즉답 명령어, 좋아요·분기, 추천 답변 수동, 출력 설정 카드, 설정 페이지(이미지 기본 수위 칸 없음)
+// 채팅 흐름: 입력창 ! 명령어 목록, 위기 안내 카드·크게 보기의 AI 표기, 자동 스크롤 끔/켬, 고정 기억, 즉답 명령어, 좋아요·분기, 추천 답변 수동, 출력 설정 카드, 설정 페이지(이미지 기본 수위 칸 없음)
 import { webkit, chromium, devices } from "playwright";
 import { noSupabase } from "./_offline.mjs";
 const url = process.argv[2],
@@ -772,6 +772,65 @@ for (const [dev, engine] of targets) {
         return { moved, opened: !!room && room.id === id && !!document.querySelector("#inp") };
       }, id);
       if (!res.sweep.moved || !res.sweep.opened) errs.push("부팅 뒤 예전 방 본문 옮기기가 다름: " + JSON.stringify(res.sweep));
+    }
+    // 위기 안내 카드(docs/legal/ui-copy.md §7): 위기 신호가 보인 유저 메시지 바로 아래·그 턴 AI 답의 위, 번호는 눌러서 거는 링크, 닫으면 사라지고
+    // 같은 방에서 24시간 안의 신호만으로는 다시 안 뜨고 방법·때가 나오면 다시 뜸 · 그림 크게 보기의 오른쪽 아래 'AI로 만든 그림'(§6)
+    res.crisis = await p.evaluate(async () => {
+      const nap = (ms) => new Promise((r) => setTimeout(r, ms)),
+        turn = async (t) => {
+          await sendTurn(t);
+          while (gen) await nap(50);
+          await nap(50);
+        };
+      S.wallet.hearts = 99999;
+      S.wallet.ack["m-" + room.set.model] = true;
+      S.wallet.ack["lite-" + today()] = true;
+      window.llm = async (input, { onText, json }) => {
+        if (json) return "{}";
+        const full = '*바람이 분다.*\n\n"괜찮아?"\n===STATE===\n' + JSON.stringify({ status: {}, suggestions: [] });
+        onText({ text: full });
+        return full;
+      };
+      await turn("요즘 너무 힘들어서 죽고 싶어");
+      const card = $("#logInner .crisis"),
+        prev = card && card.previousElementSibling,
+        next = card && card.nextElementSibling;
+      const out = {
+        card: !!card,
+        afterMe: !!prev && prev.matches(".msg.me"),
+        beforeAi: !!next && next.matches(".msg[role=group]"),
+        head: card ? card.querySelector("b").textContent : "",
+        tels: card ? [...card.querySelectorAll("a")].map((a) => a.getAttribute("href")).join(" ") : ""
+      };
+      if (card) card.querySelector("[data-act=crisis-x]").click();
+      out.closed = !$("#logInner .crisis");
+      await turn("그래도 죽고 싶어");
+      out.again = $$("#logInner .crisis").length;
+      await turn("오늘 밤에 죽고 싶어");
+      out.specific = $$("#logInner .crisis").length;
+      lightbox("data:image/gif;base64,R0lGODlhAQABAAAAACw=");
+      const mark = $(".lightbox .ai-mark"),
+        mr = mark && mark.getBoundingClientRect();
+      out.zoom = mark ? mark.textContent : "";
+      out.corner = !!mr && mr.right > innerWidth - 40 && mr.bottom > innerHeight - 40;
+      $(".lightbox").click();
+      return out;
+    });
+    {
+      const x = res.crisis;
+      if (
+        !x.card ||
+        !x.afterMe ||
+        !x.beforeAi ||
+        x.head !== "혹시 많이 힘드신가요?" ||
+        x.tels !== "tel:109 tel:1577-0199 tel:112 tel:119" ||
+        !x.closed ||
+        x.again !== 0 ||
+        x.specific !== 1 ||
+        x.zoom !== "AI로 만든 그림" ||
+        !x.corner
+      )
+        errs.push("위기 안내 카드·크게 보기의 AI 표기가 다름: " + JSON.stringify(x));
     }
     // 장기기억 설정의 원본은 설정(settings.memCfg) 하나 — 예전 빌드가 따로 두던 사본(hv1_memcfg)과 값이 달라도 설정의 값을 쓰고,
     // 설정에 그 칸이 없는 예전 설치에서만 따로 둔 사본을 읽어 설정으로 옮김. 저장할 때 따로 둔 사본은 더 쓰지 않음
