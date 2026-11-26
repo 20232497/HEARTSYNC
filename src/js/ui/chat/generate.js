@@ -7,6 +7,7 @@ import { maybeSummarize } from "../../ai/prompt/memory.js";
 import { exampleCast } from "../../core/character.js";
 import { epAfter, epPick } from "../../core/episode.js";
 import { markEnding } from "../../core/shelf.js";
+import { emit } from "../../core/events.js";
 import { curText, saveRoom } from "../../core/rooms.js";
 import { gen, holdRoom, releaseRoom, room, setGen } from "../../core/state.js";
 import { $, esc, toast, uid } from "../../core/util.js";
@@ -172,6 +173,12 @@ export async function generate(target, q, direction = "", opt = {}) {
   charge(q, label);
   const ctl = new AbortController();
   setGen({ ctl, msgId: msg.id, roomId: r.id });
+  emit("rooms"); // 왼쪽 메뉴·대화 목록의 '쓰는 중'(ui/shell.js writingMark) — 끝날 때는 saveRoom이 알림
+  keepAwake(true);
+  // 화면을 내려 둔 적이 있는지 — 그사이 연결이 끊긴 답이면 돌아와서 '이어서'를 안내(브라우저가 뒤로 가 있는 동안 끝까지 쓰는 것은 서버가 있어야 함 — ROADMAP)
+  let away = document.hidden;
+  const onVis = () => (away = away || document.hidden);
+  document.addEventListener("visibilitychange", onVis);
   hideSug(); // 추천 답변은 '✦ AI 추천'을 눌렀을 때만 펼침
   setStick(true);
   renderLog(true);
@@ -200,7 +207,7 @@ export async function generate(target, q, direction = "", opt = {}) {
       syncJump();
     }
   };
-  holdRoom(r.id); // 응답이 끝나 이 방 객체를 저장할 때까지, 계정에서 받은 것으로 이 방을 덮지 않게(services/cloud.js)
+  holdRoom(r.id, r); // 응답이 끝나 이 방 객체를 저장할 때까지, 계정에서 받은 것으로 이 방을 덮지 않게(services/cloud.js) — 다시 열면 이 객체로(view.js)
   try {
     const text = await llm(input, {
       tier: MODELS[model].tier,
@@ -245,7 +252,9 @@ export async function generate(target, q, direction = "", opt = {}) {
       else refundSug(q, label); // 본문만 남긴 답에는 추천이 없음 — 추천 값은 되돌림
       Object.assign(msg.alts[altIdx], { text: keep, status: msg.statusBefore, cost: lost ? "" : qShort(q) });
       if (lost) {
-        r.lastErr = "응답이 오는 중에 끊겨 여기까지만 남겼어요. 값은 돌려드렸어요. '다시 시도'를 누르면 다시 써요.";
+        r.lastErr = away
+          ? "화면을 내려 둔 사이 연결이 끊겨 여기까지만 남겼어요. 값은 돌려드렸어요. 입력칸을 비운 채 '이어서'를 누르면 이어서 써요."
+          : "응답이 오는 중에 끊겨 여기까지만 남겼어요. 값은 돌려드렸어요. '다시 시도'를 누르면 다시 써요.";
         r.lastErrEdit = false;
       }
     } else {
@@ -266,6 +275,8 @@ export async function generate(target, q, direction = "", opt = {}) {
   } finally {
     try {
       setGen(null);
+      keepAwake(false);
+      document.removeEventListener("visibilitychange", onVis);
       saveRoom(r);
       collectSeen(r);
       if (room === r && $("#logInner")) {
@@ -284,4 +295,16 @@ export async function generate(target, q, direction = "", opt = {}) {
 }
 export function stopGen() {
   if (gen) gen.ctl.abort();
+}
+/* 답을 쓰는 동안 화면이 꺼지지 않게 — navigator.wakeLock이 있는 브라우저만(없거나 거절되면 그대로). 요청이 늦게 오면 이미 끝난 답이므로 바로 풂 */
+let wake = null;
+function keepAwake(on) {
+  if (!on) {
+    if (wake) wake.release().catch(() => {});
+    wake = null;
+  } else if (typeof navigator !== "undefined" && navigator.wakeLock)
+    navigator.wakeLock.request("screen").then(
+      (w) => (gen ? (wake = w) : w.release().catch(() => {})),
+      () => {}
+    );
 }

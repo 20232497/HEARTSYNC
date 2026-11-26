@@ -40,17 +40,21 @@ export function setRoom(v) {
   return (room = v);
 }
 /* 응답 생성·요약이 아직 쓰고 있는 방 — 그 일이 끝나면 들고 있던 방 객체를 저장하므로, 그사이 계정에서 받은 것으로 그 방을 덮으면 곧 옛 사본에 다시 덮임.
-   계정 받기(services/cloud.js)가 이 표를 보고 그 방을 미룸. 생성과 요약이 겹칠 수 있어 수를 셈 */
+   계정 받기(services/cloud.js)가 이 표를 보고 그 방을 미룸. 생성과 요약이 겹칠 수 있어 수를 셈.
+   쓰고 있는 방 객체도 같이 둠 — 그 방을 다시 열 때 저장본을 새로 읽지 않고 이 객체를 씀(heldRoom — 새로 읽으면 끝난 답이 화면에 안 오고, 그 화면의 다음 저장이 답을 덮음) */
 const inUse = new Map();
-/** 이 방을 쓰기 시작함(끝나면 꼭 releaseRoom). @param {string} id @returns {void} */
-export function holdRoom(id) {
-  inUse.set(id, (inUse.get(id) || 0) + 1);
+/** 이 방을 쓰기 시작함(끝나면 꼭 releaseRoom). @param {string} id @param {Room} [r] 쓰고 있는 방 객체 @returns {void} */
+export function holdRoom(id, r) {
+  const h = inUse.get(id);
+  inUse.set(id, { n: (h ? h.n : 0) + 1, r: r || (h && h.r) || null });
 }
 /** 이 방을 다 씀. @param {string} id @returns {void} */
 export function releaseRoom(id) {
-  const n = (inUse.get(id) || 0) - 1;
-  if (n > 0) inUse.set(id, n);
+  const h = inUse.get(id);
+  if (h && h.n > 1) h.n--;
   else inUse.delete(id);
 }
 /** 응답 생성·요약이 아직 쓰고 있는 방인지. @param {string} id @returns {boolean} */
 export const roomInUse = (id) => inUse.has(id);
+/** 응답 생성·요약이 쓰고 있는 방 객체(없으면 null) — 대화방 화면이 그 방을 다시 열 때 씀(ui/chat/view.js). @param {string} id @returns {Room|null} */
+export const heldRoom = (id) => (inUse.has(id) && inUse.get(id).r) || null;

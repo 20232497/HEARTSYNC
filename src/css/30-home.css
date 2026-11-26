@@ -68,6 +68,8 @@
 .fav-btn { flex:none; width:44px; border:1px solid var(--line); border-radius:14px; background:var(--surface); color:var(--muted); font-size:17px; line-height:1; }
 .fav-btn[aria-pressed="true"] { color:var(--gold); border-color:var(--gold); }
 .fav-mark { color:var(--gold); font-style:normal; margin-right:3px; }
+/* 답을 쓰는 중인 방(ui/shell.js writingMark) — 왼쪽 메뉴의 최근 대화·대화 목록. 다른 화면으로 가도 답은 계속 씀 */
+.writing { font-style:normal; font-size:11px; font-weight:600; color:var(--accent); white-space:nowrap; }
 /* 대화 탭 맨 아래의 최근 본 작품 — 왼쪽 메뉴(레일)가 없는 좁은 화면에서만. 넓은 화면은 레일의 같은 목록(15-shell.css의 899px과 같은 경계) */
 .chats-viewed { display:none; }
 @media (max-width:899px) { .chats-viewed { display:block; } }

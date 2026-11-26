@@ -6,7 +6,7 @@ import { commandHelp, findCommand, parseCommand } from "../../core/commands.js";
 import { on } from "../../core/events.js";
 import { migrateRoom } from "../../core/room-read.js";
 import { goneRooms, roomKey, roomUnsaved, saveRoom } from "../../core/rooms.js";
-import { S, gen, room, setRoom } from "../../core/state.js";
+import { S, gen, heldRoom, room, setRoom } from "../../core/state.js";
 import { KV } from "../../core/storage.js";
 import { $, esc, num, toast, uid } from "../../core/util.js";
 import { FREE_DAILY, freeLeft, heartsOf, isPro, listPrice, qShort, quote } from "../../core/wallet.js";
@@ -26,6 +26,7 @@ import { bindGo, go, topbar } from "../shell.js";
 
 export async function viewChat(id) {
   const v = $("#view");
+  if ((!room || room.id !== id) && heldRoom(id)) setRoom(heldRoom(id)); // 답을 쓰거나 요약하는 중인 방은 그 객체 그대로(core/state.js heldRoom)
   if (!room || room.id !== id) {
     v.innerHTML = `<div class="page"><p class="note">대화를 불러오는 중…</p></div>`;
     // 읽는 사이 계정에서 받은 것이 쓰였으면 다시 읽음 — 먼저 시작한 읽기가 옛 본문을 돌려주면, 그것을 메모리에 올렸다가 저장할 때 받은 것을 덮음
@@ -121,7 +122,7 @@ export async function viewChat(id) {
   };
   // 보내기: 명령어(앱 화면형·즉답)는 AI 없이, 그 밖은 한 턴. Enter와 버튼이 같은 길로 옴(오래된 iOS에는 form.requestSubmit이 없어 직접 부름)
   const submit = async () => {
-    if (gen) return;
+    if (genBusy()) return;
     const t = inp.value.trim();
     if (!t) return;
     if (runCommand(t)) {
@@ -138,7 +139,7 @@ export async function viewChat(id) {
   // 보내기 버튼: 입력이 있으면 보내고, 비어 있으면 '이어서 쓰기'(버튼의 글과 모양이 그렇게 바뀌어 있음 — updateComposer).
   // 답이 막 끝난 직후의 누름은 이어서 쓰기로 받지 않음(보내려던 손이 한 번 더 닿아 값이 나가지 않게). Enter는 빈 입력에서 아무 일도 하지 않음
   $("#sendBtn").onclick = () => {
-    if (gen) return;
+    if (genBusy()) return;
     if (inp.value.trim()) return submit();
     if (Date.now() < contLock) return;
     sendTurn("", { cont: true });
@@ -149,10 +150,6 @@ export async function viewChat(id) {
     const send = S.settings.enterSend !== false ? !e.shiftKey : e.ctrlKey || e.metaKey;
     if (e.key === "Enter" && send && !e.isComposing && e.keyCode !== 229) {
       e.preventDefault();
-      if (gen) {
-        flashHint("응답을 쓰는 중이에요. 끝나면 보낼 수 있고, 입력은 미리 써 둘 수 있어요.");
-        return;
-      }
       submit();
     }
   };
@@ -214,18 +211,29 @@ export function flashHint(msg) {
     updateComposer();
   }, 2600);
 }
+/* 답을 쓰는 중이면 안내하고 true — 생성은 한 번에 하나라, 다른 방에서 쓰는 중이어도 보내지 않음(그 방은 떠나도 계속 씀 — 프레임 7차 C10) */
+function genBusy() {
+  if (!gen) return false;
+  flashHint(
+    gen.roomId === room.id
+      ? "응답을 쓰는 중이에요. 끝나면 보낼 수 있고, 입력은 미리 써 둘 수 있어요."
+      : "다른 대화방에서 답을 쓰는 중이에요. 그 답이 끝나면 보낼 수 있고, 입력은 미리 써 둘 수 있어요."
+  );
+  return true;
+}
 export function updateComposer() {
   if (!room || !$("#sendBtn")) return;
   const q = quote(room.set),
     m = MODELS[room.set.model];
   const send = $("#sendBtn"),
-    stop = $("#stopBtn");
-  if (wasGen && !gen) contLock = Date.now() + 700; // 답이 막 끝남 — 잠깐은 빈 입력의 누름을 이어서 쓰기로 받지 않음
-  wasGen = !!gen;
-  send.disabled = !!gen;
-  stop.hidden = !gen;
+    stop = $("#stopBtn"),
+    here = !!gen && gen.roomId === room.id; // 이 방에서 쓰는 중(다른 방의 답은 중지 버튼을 보이지 않고, 보내기를 누르면 genBusy가 안내)
+  if (wasGen && !here) contLock = Date.now() + 700; // 답이 막 끝남 — 잠깐은 빈 입력의 누름을 이어서 쓰기로 받지 않음
+  wasGen = here;
+  send.disabled = here;
+  stop.hidden = !here;
   // 보내기 버튼은 입력이 비어 있으면 '이어서 쓰기'가 됨 — 글과 모양(.cont)이 달라 무엇을 하는지, 값이 얼마인지 누르기 전에 보임
-  const cont = !gen && !$("#inp").value.trim();
+  const cont = !here && !$("#inp").value.trim();
   send.classList.toggle("cont", cont);
   send.innerHTML = (cont ? "이어서" : ICON.send) + `<small>${qShort(q)}</small>`;
   send.setAttribute("aria-label", cont ? "이어서 쓰기" : "보내기");

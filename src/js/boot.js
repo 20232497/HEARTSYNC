@@ -59,6 +59,6 @@ export async function boot() {
     if (e.key !== "Escape") return;
     if ($(".lightbox")) $(".lightbox").remove();
     else if ($(".overlay")) closeOverlays();
-    else if (gen) stopGen();
+    else if (gen && location.hash === "#r-" + gen.roomId) stopGen(); // 그 방을 보고 있을 때만 — 떠난 방의 답은 다른 화면의 Esc로 멈추지 않음
   });
 }
