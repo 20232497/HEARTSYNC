@@ -1,6 +1,7 @@
-/* 대화방 드로어의 장기기억 화면: 현재 기억(자동 업데이트·지금 요약하기)·고정 기억·히스토리·요약 설정 네 탭. 틀은 ../room-drawer.js */
+/* 대화방 드로어의 장기기억 화면: 현재 기억(맨 위에 지금 AI에게 보내는 것·자동 업데이트·지금 요약하기)·고정 기억·히스토리·요약 설정 네 탭. 틀은 ../room-drawer.js */
+import { pinsSent, recentOf } from "../../ai/prompt/input.js";
 import { maybeSummarize, pushHist } from "../../ai/prompt/memory.js";
-import { saveRoom } from "../../core/rooms.js";
+import { curText, saveRoom } from "../../core/rooms.js";
 import { saveSettings } from "../../core/settings.js";
 import { S } from "../../core/state.js";
 import { $, $$, clamp, esc, num, toast } from "../../core/util.js";
@@ -9,6 +10,26 @@ import { plusSheet } from "../pay.js";
 import { bindPins, pinsHTML } from "../pins.js";
 import { openRoomDrawer } from "../room-drawer.js";
 
+/* '지금 AI에게 매 턴 보내는 것' — 실제 프롬프트와 같은 함수·같은 순서로 셈(ai/prompt/input.js recentOf·pinsSent, 순서는 rules.js 변동부: 페르소나 → 유저노트 →
+   고정 기억 → 장기기억, 그 뒤에 최근 대화). 화면 표시와 실제가 어긋나지 않게(2026-11-21 프레임 7차 C9) */
+function sentHTML(r) {
+  const pins = (r.pins || []).length,
+    sent = pinsSent(r).length,
+    recent = recentOf(
+      r,
+      r.msgs.filter((m) => curText(m)).concat([{}]) // 다음 턴: 지금 대화 + 이번에 보낼 말(buildInput은 새 유저 메시지까지 셈)
+    ).length;
+  const row = (k, v) => `<li><span>${k}</span><b>${v}</b></li>`;
+  return (
+    `<div class="setcard mem-sent" id="memSent"><h4>지금 AI에게 매 턴 보내는 것 <small>이 순서로</small></h4><ol>` +
+    row("내 페르소나", esc(r.persona.name)) +
+    row("유저노트", r.userNote ? num(r.userNote.length) + "자" : "없음") +
+    row("고정 기억", sent + "줄" + (pins > sent ? ` · ${pins - sent}줄은 한도를 넘어 안 보내요` : "")) +
+    row("장기기억 <small>아래 내용</small>", r.memory ? num(r.memory.length) + "자" : "아직 없음") +
+    row("최근 대화", `보낼 말 포함 메시지 ${recent}개 · 기억력 ${esc(String(r.set.mem))}턴`) +
+    `</ol></div>`
+  );
+}
 /** 드로어 화면 'memory'. @param {import("../room-drawer.js").DrawerCtx} x */
 export function drawerMemory({ r, ov, body, cfg }) {
   let tab = "cur";
@@ -24,6 +45,7 @@ export function drawerMemory({ r, ov, body, cfg }) {
     if (tab === "cur") {
       body.innerHTML =
         tabs +
+        sentHTML(r) +
         (`<b>현재 대화방에 적용 중인 기억이에요</b><p class="note" style="margin:4px 0 12px">설정한 요약 주기마다 지금까지 나눈 대화를 자동으로 요약해 업데이트해요.</p>
           <div class="setcard"><div class="toggle"><label for="mAuto">자동 업데이트</label><input type="checkbox" id="mAuto" ${cfg.auto ? "checked" : ""}></div>
             <div class="toggle" style="border-top:1px solid var(--line);padding-top:9px"><span>다음 업데이트까지</span>` +

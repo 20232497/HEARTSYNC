@@ -35,7 +35,7 @@ export async function maybeSummarize(r, manual = false) {
   const msgs = r.msgs.filter((m) => !m.sys && curText(m)).slice(-(n * 2));
   if (!msgs.length) return;
   summarizing = true;
-  holdRoom(r.id); // 요약이 끝나 이 방 객체를 저장할 때까지, 계정에서 받은 것으로 이 방을 덮지 않게(services/cloud.js)
+  holdRoom(r.id, r); // 요약이 끝나 이 방 객체를 저장할 때까지, 계정에서 받은 것으로 이 방을 덮지 않게(services/cloud.js) — 다시 열면 이 객체로
   flagMemo(true, "장기기억을 정리하는 중…");
   const to = r.turn || 0,
     from = Math.max(1, to - n + 1);

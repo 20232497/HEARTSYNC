@@ -9,7 +9,6 @@ import { isAdmin } from "../core/target.js";
 import { $, $$, esc, num } from "../core/util.js";
 import { freeLeft, isPro } from "../core/wallet.js";
 import { IMG } from "../services/images.js";
-import { stopGen } from "./chat/generate.js";
 import { coverHTML } from "./cover.js";
 import { ICON } from "./icons.js";
 import { closeOverlays } from "./sheet.js";
@@ -36,8 +35,7 @@ export function route() {
     moved = h !== routed;
   if (moved && routed === "home") homeY = v.scrollTop;
   routed = h;
-  closeOverlays();
-  if (gen && !h.startsWith("r-")) stopGen();
+  closeOverlays(); // 쓰던 답은 다른 화면으로 가도 멈추지 않음(프레임 7차 C10 — 끝나면 그 방에 저장되고, 왼쪽 메뉴·대화 목록에 '쓰는 중')
   document.body.classList.toggle("in-chat", h.startsWith("r-"));
   document.body.classList.toggle("in-detail", h.startsWith("c-")); // 상세: 좁은 화면에서 아래에 고정된 시작 버튼 줄 위로 토스트를 올림(35-detail.css)
   const [base, ...rest] = h.split("-");
@@ -71,22 +69,29 @@ function setNav(k) {
 export function favMark(r) {
   return r.fav ? '<i class="fav-mark" title="즐겨찾기">★</i>' : "";
 }
+/**
+ * 방 목록 항목의 '시작 상황 · 페르소나' 한 줄(같은 작품의 방 여러 개를 구별) — 대화 목록·상세의 내 대화방. 예전 항목처럼 둘 다 없으면 빈 문자열.
+ * @param {import("../core/types.js").RoomIndex} r @returns {string}
+ */
+export function roomSetupHTML(r) {
+  const t = [r.opening, r.personaName].filter(Boolean).map(esc).join(" · ");
+  return t ? `<span class="r-setup">${t}</span>` : "";
+}
 export function renderRailRecent() {
   const el = $("#railRecent");
   if (!el) return;
   el.innerHTML =
     S.rooms
       .slice(0, 6)
-      .map((r) => `<button class="recent" data-room="${esc(r.id)}">${coverHTML(r)}<span>${favMark(r)}${esc(r.name)}</span></button>`)
+      .map((r) => `<button class="recent" data-room="${esc(r.id)}">${coverHTML(r)}<span>${favMark(r)}${esc(r.name)}${writingMark(r)}</span></button>`)
       .join("") || `<p class="note" style="padding:0 12px">아직 대화가 없어요.</p>`;
   $$("[data-room]", el).forEach((b) => (b.onclick = () => go("r-" + b.dataset.room)));
   IMG.hydrate(el);
 }
-/** 최근 본 작품 — 방금 본 것 먼저, 관심있는 대화로 거름(없어진 작품은 빠짐). 왼쪽 메뉴와 대화 탭(ui/chats.js)이 같이 씀. @returns {Work[]} */
-export const viewedWorks = () =>
-  recentIds()
-    .map((id) => getChar(id))
-    .filter((c) => c && audOK(c));
+/** 작품 id 목록 → 지금 보이는 작품(관심있는 대화로 거름, 없어진 작품은 빠짐, 순서 그대로) — 방이 없는 목록(최근 본·MY의 찜한 작품)이 씀. @param {string[]} ids @returns {Work[]} */
+export const shownWorks = (ids) => ids.map((id) => getChar(id)).filter((c) => c && audOK(c));
+/** 최근 본 작품 — 방금 본 것 먼저. 왼쪽 메뉴와 대화 탭(ui/chats.js)이 같이 씀. @returns {Work[]} */
+export const viewedWorks = () => shownWorks(recentIds());
 /** 왼쪽 메뉴의 '최근 본 작품' — 작게 네 개까지(없으면 제목도 숨김). 홈의 줄을 여기로 옮김(2026-11-21 사용자 결정) — 좁은 화면에는 레일이 없어 대화 탭 아래에 보임 */
 export function renderRailViewed() {
   const el = $("#railViewed");
@@ -97,6 +102,10 @@ export function renderRailViewed() {
     : "";
   $$("[data-char]", el).forEach((b) => (b.onclick = () => go("c-" + b.dataset.char)));
   IMG.hydrate(el);
+}
+/** 답을 쓰는 중인 방의 표시 — 왼쪽 메뉴의 최근 대화·대화 목록(그 방을 떠나도 답은 계속 씀). @param {{ id: string }} r @returns {string} HTML */
+export function writingMark(r) {
+  return gen && gen.roomId === r.id ? ' <i class="writing">쓰는 중</i>' : "";
 }
 function walletHTML() {
   return isPro()

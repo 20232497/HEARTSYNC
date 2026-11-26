@@ -91,7 +91,7 @@ export async function exportRoom(r) {
 export function deleteRoom(id) {
   const mine = !!room && room.id === id;
   removeRoom(id);
-  if (gen && mine) stopGen();
+  if (gen && gen.roomId === id) stopGen(); // 이 방에 쓰던 답만(다른 방에서 쓰는 중인 답은 그대로)
   if (mine) setRoom(null);
   go("chats");
 }

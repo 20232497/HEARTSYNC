@@ -1,4 +1,4 @@
-/* MY: 페르소나·관심있는 대화·채팅 설정·AI 연결·계정·고객센터·약관 및 정책. #meExt 자리는 관리자 빌드가 EXT.me로 채움(답변 대기 문의 수) */
+/* MY: 내 서재(찜·도감 — ui/me-shelf.js)·페르소나·관심있는 대화·채팅 설정·AI 연결·계정·고객센터·약관 및 정책. #meExt 자리는 관리자 빌드가 EXT.me로 채움(답변 대기 문의 수) */
 import { engineName } from "../ai/llm.js";
 import { AUDS, audience } from "../core/audience.js";
 import { LIMITS } from "../core/constants.js";
@@ -21,6 +21,7 @@ import { runExt } from "./ext.js";
 import { checkNotices, docUrl, hasNewNotice } from "./help.js";
 import { audSegHTML, setAudience } from "./home.js";
 import { ICON } from "./icons.js";
+import { bindShelf, shelfHTML } from "./me-shelf.js";
 import { confirmSheet, sheet } from "./sheet.js";
 import { bindGo, topbar } from "./shell.js";
 
@@ -36,6 +37,7 @@ export function viewMe() {
       <div class="box"><h3>요금제</h3><b>${isPro() ? "PLUS" : "무료"}</b></div>
     </div>
     ${accountBoxHTML()}
+    ${shelfHTML()}
     <h2 class="sec">내 페르소나 <small>대화에서 내가 연기하는 캐릭터</small></h2>
     <div class="box">
       <div class="avatar-pick">${pavHTML(cur)}<div style="min-width:0"><b style="font-size:17px">${esc(cur.name)}</b> ` +
@@ -82,6 +84,7 @@ export function viewMe() {
       <a href="${esc(docUrl("privacy.html"))}" target="_blank" rel="noopener">개인정보처리방침</a></div></div>
   </div>`;
   bindGo(v);
+  bindShelf(v);
   IMG.hydrate(v);
   checkNotices();
   runExt("me", v);
