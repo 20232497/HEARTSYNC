@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ko">
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover,interactive-widget=resizes-content">
 <!-- admin.html은 관리자 도구 빌드 결과물(npm run build)이에요 — git에 넣지 않고 로컬에서 열어요. 고칠 땐 src/·content/를 고치세요 (docs/ARCHITECTURE.md) -->
 <!-- 사용자 사이트(index.html)와 같은 소스에서 관리자 모듈(src/js/admin/)을 더해 만들어요. 주석은 모두 남기고 모듈마다 설명 머리를 붙여요 -->
 <title>HEART SYNC 관리자</title>
@@ -126,6 +126,13 @@ h2.sec small, h1.sec small { font-family:var(--sans); font-size:12.5px; color:va
 .icon-btn { width:38px; height:38px; display:inline-flex; align-items:center; justify-content:center; border-radius:10px; border:0; background:none; color:var(--muted); flex:none; }
 .icon-btn:hover { background:var(--surface2); color:var(--fg); }
 .icon-btn svg { width:20px; height:20px; }
+/* 손가락으로 누르는 화면에서 누를 곳 44px(프레임 7차 C2) — 아이콘 버튼은 보이는 크기를 그대로 두고 누르는 자리만 넓힘(대화방 머리 버튼을 키우면 360px에서 제목이 잘림).
+   시트·서랍 닫기(.sheet-head의 닫기·뒤로)도 이 버튼. 시트 아래 버튼 줄(취소·확인)은 높이를 44px로 */
+@media (pointer:coarse) {
+  .icon-btn { position:relative; }
+  .icon-btn::after { content:""; position:absolute; top:-3px; right:-3px; bottom:-3px; left:-3px; }
+  .sheet .cta-row .btn:not(.sm) { height:44px; }
+}
 
 /* ── 커버 아트 */
 .cover { position:relative; overflow:hidden; isolation:isolate; color:#fff; container-type:inline-size;
@@ -506,6 +513,10 @@ img.img-miss { background:var(--surface2); }
 .tools-row button:disabled { opacity:.35; cursor:default; }
 .tools-row button.on { color:var(--accent); }
 .tools-row .sw { font-variant-numeric:tabular-nums; padding:0 2px; }
+/* 저장된 답 넘기기 '‹ 2/3 ›'를 한 묶음으로(값 없음) — 옆의 '다시 쓰기 · ♥n'(값이 나감)과 구별(프레임 7차 C4) */
+.tools-row .pager { display:inline-flex; align-items:center; border:1px solid var(--line); border-radius:9px; margin-right:4px; }
+.tools-row .pager button { padding:4px 8px; }
+.tools-row .regen { font-weight:600; }
 .tools-row .rcpt { margin-left:auto; font-size:11.5px; font-variant-numeric:tabular-nums; padding:0 4px; }
 .tools-row .lore-used { margin-left:auto; font-size:11.5px; color:var(--sys); padding:0 4px; max-width:50%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .tools-row .lore-used + .rcpt { margin-left:0; }
@@ -534,6 +545,8 @@ details.stat[open] summary::after { content:"▴"; }
 .composer { position:relative; z-index:2; padding:10px max(12px, env(safe-area-inset-right,0px)) calc(12px + env(safe-area-inset-bottom,0px)) max(12px, env(safe-area-inset-left,0px)); border-top:1px solid var(--line); background:var(--surface); -webkit-backdrop-filter:blur(12px); backdrop-filter:blur(12px); }
 @supports (color:color-mix(in srgb, red, blue)) { .composer { background:color-mix(in srgb, var(--surface) 92%, transparent); } }
 .composer .inner { max-width:760px; margin:0 auto; }
+/* 자판이 열린 동안(ui/chat/keyboard.js): 입력창 아래의 안전 영역은 자판이 덮으므로 빼지 않음 — 두 번 비지 않게 */
+.chat.kb-open .composer { padding-bottom:10px; }
 /* 한 줄 입력창: [✦ 추천] [입력] [중지] [보내기 — 빈 입력이면 '이어서'(.cont: 테두리만 — 보내기와 다른 일이라는 것이 보이게)] */
 .sugbtn { flex:none; height:40px; border-radius:12px; border:1px solid var(--line); background:var(--surface); padding:0 10px; font-size:13px; font-weight:600; color:var(--muted); white-space:nowrap; display:flex; align-items:center; }
 .sugbtn.on { background:var(--accent-soft); color:var(--accent); border-color:var(--accent); }
@@ -568,11 +581,21 @@ details.stat[open] summary::after { content:"▴"; }
 .cmd-panel button.c.on, .cmd-panel button.c:hover { border-color:var(--accent); background:var(--accent-soft); }
 .inputrow { display:flex; gap:8px; align-items:flex-end; background:var(--bg); border:1px solid var(--line); border-radius:16px; padding:6px; }
 .inputrow:focus-within { border-color:var(--accent); }
+/* 입력 모드 표시 — //(연출 지시)·!(명령어)로 시작하면 입력칸 테두리 위에 작게(ui/chat/view.js, 프레임 7차 C5) */
+.inputrow { position:relative; }
+.inp-mode { position:absolute; top:-9px; left:14px; z-index:1; font-size:10.5px; font-weight:700; line-height:16px; padding:0 7px; border-radius:8px; background:var(--accent); color:var(--accent-ink); pointer-events:none; }
+.inp-mode[hidden] { display:none; }
 .inputrow textarea { flex:1; min-width:0; border:0; background:none; outline:none; resize:none; max-height:160px; min-height:24px; padding:7px 0; line-height:1.55; }
 .send { height:40px; border-radius:12px; border:0; background:var(--accent); color:var(--accent-ink); padding:0 14px; font-weight:700; display:flex; align-items:center; gap:6px; white-space:nowrap; font-variant-numeric:tabular-nums; }
 .send small { font-weight:700; font-size:12px; }
 .send:disabled { opacity:.4; cursor:not-allowed; }
 .stopbtn { height:40px; border-radius:12px; border:1px solid var(--line); background:var(--surface); padding:0 12px; font-weight:600; font-size:13px; white-space:nowrap; }
+/* 손가락으로 누르는 화면: 보내기·중지·추천은 44px, 답 넘기기 화살표는 넓게(보이는 높이 32 + 누르는 자리 위아래 6px — 위 말풍선을 밀지 않게) — 프레임 7차 C2 */
+@media (pointer:coarse) {
+  .send, .stopbtn, .sugbtn { height:44px; }
+  .tools-row .pager button { position:relative; min-width:44px; min-height:32px; justify-content:center; }
+  .tools-row .pager button::after { content:""; position:absolute; top:-6px; right:0; bottom:-6px; left:0; }
+}
 .hint { font-size:11.5px; color:var(--muted); margin-top:6px; display:flex; gap:10px; flex-wrap:wrap; min-height:1.5em; }
 .hint:empty { display:none; } /* 알릴 것이 없으면 줄을 차지하지 않음 */
 .hint.warn { color:var(--accent); font-weight:600; }
@@ -630,6 +653,8 @@ details.stat[open] summary::after { content:"▴"; }
 .drawer-ov { justify-content:flex-end; align-items:stretch; }
 .drawer { background:var(--surface); width:min(420px, 100%); height:100%; overflow-y:auto; padding:calc(14px + env(safe-area-inset-top,0px)) max(18px, env(safe-area-inset-right,0px)) calc(24px + env(safe-area-inset-bottom,0px)) 18px; animation:slide .22s ease-out; border-left:1px solid var(--line); }
 @keyframes slide { from { transform:translateX(30px); opacity:.5; } }
+/* 열 때 포커스를 창 상자에 둠(ui/sheet.js holdFocus) — 상자 둘레에는 표시를 그리지 않음(안의 버튼·입력칸은 :focus-visible 그대로) */
+.sheet:focus, .drawer:focus { outline:none; }
 .drawer h2 { margin:0; font-family:var(--display); font-size:19px; flex:1; }
 .quick { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin:12px 0 16px; }
 .quick button { border:0; background:none; display:grid; justify-items:center; gap:4px; font-size:12px; color:var(--muted); padding:8px 0; border-radius:12px; }
@@ -954,7 +979,7 @@ const LIMITS = {
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/core/util.js
    내보냄: $, $$, esc, uid, clamp, today, won, num, ago, timeoutSignal, abortCode, toast
-   쓰는 곳: src/js/core/storage.js, src/js/core/state.js, src/js/core/wallet.js, src/js/core/rooms.js, src/js/core/room-read.js, src/js/core/room-fork.js, src/js/services/images.js, src/js/services/cloud-wipe.js, src/js/services/cloud.js, src/js/services/supabase.js, src/js/ai/parse.js, src/js/ai/llm.js, src/js/ai/prompt/memory.js, src/js/ui/sheet.js, src/js/ui/cover.js, src/js/ui/shell.js, src/js/ui/home.js, src/js/ui/chat/cmdlist.js, src/js/ui/room-tools.js, src/js/ui/chat/search.js, src/js/ui/worldart.js, src/js/ui/drawer/browse.js, src/js/ui/drawer/main.js, src/js/ui/pins.js, src/js/ui/drawer/memory.js, src/js/ui/chat-settings.js, src/js/ui/account.js, src/js/ui/store.js, src/js/ui/faq.js, src/js/ui/help.js, src/js/ui/me.js, src/js/ui/drawer/settings.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/pay.js, src/js/ui/chat/suggest.js, src/js/ui/chat/view.js, src/js/ui/chat/render.js, src/js/ui/chat/generate.js, src/js/ui/chat/episode.js, src/js/ui/report.js, src/js/ui/chat/log.js, src/js/ui/codex.js, src/js/ui/start-sheet.js, src/js/ui/detail.js, src/js/ui/chats.js, src/js/ui/login.js, src/js/app.js, src/js/admin/support.js, src/js/admin/gate.js, src/js/core/migrate.js, src/js/boot.js
+   쓰는 곳: src/js/core/storage.js, src/js/core/state.js, src/js/core/wallet.js, src/js/core/rooms.js, src/js/core/room-read.js, src/js/core/room-fork.js, src/js/services/images.js, src/js/services/cloud-wipe.js, src/js/services/cloud.js, src/js/services/supabase.js, src/js/ai/parse.js, src/js/ai/llm.js, src/js/ai/prompt/memory.js, src/js/ui/sheet.js, src/js/ui/cover.js, src/js/ui/shell.js, src/js/ui/home.js, src/js/ui/chat/cmdlist.js, src/js/ui/room-tools.js, src/js/ui/worldart.js, src/js/ui/drawer/browse.js, src/js/ui/chat/search.js, src/js/ui/drawer/main.js, src/js/ui/pins.js, src/js/ui/drawer/memory.js, src/js/ui/chat-settings.js, src/js/ui/account.js, src/js/ui/store.js, src/js/ui/faq.js, src/js/ui/help.js, src/js/ui/me.js, src/js/ui/drawer/settings.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/pay.js, src/js/ui/chat/suggest.js, src/js/ui/chat/command-run.js, src/js/ui/chat/keyboard.js, src/js/ui/chat/view.js, src/js/ui/chat/render.js, src/js/ui/chat/generate.js, src/js/ui/chat/episode.js, src/js/ui/report.js, src/js/ui/chat/log-acts.js, src/js/ui/chat/log.js, src/js/ui/codex.js, src/js/ui/start-sheet.js, src/js/ui/detail.js, src/js/ui/chats.js, src/js/ui/login.js, src/js/app.js, src/js/admin/support.js, src/js/admin/gate.js, src/js/core/migrate.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* DOM·문자열·숫자 유틸, toast, 예상 못 한 오류 기록(reportError) */
 /** @typedef {import("./types.js").TimeoutSignal} TimeoutSignal */
@@ -1379,7 +1404,7 @@ const KV = {
            src/js/core/constants.js { LIMITS }
            src/js/core/util.js { today }
    내보냄: hasClaudeKey, S, room, gen, setGen, setRoom, holdRoom, releaseRoom, roomInUse, heldRoom
-   쓰는 곳: src/js/core/audience.js, src/js/core/wallet.js, src/js/core/rooms.js, src/js/core/settings.js, src/js/core/shelf.js, src/js/services/cloud-settings.js, src/js/services/load.js, src/js/services/sync.js, src/js/services/cloud-shelf.js, src/js/services/cloud-pull.js, src/js/ai/llm.js, src/js/ai/prompt/memory.js, src/js/ui/shell.js, src/js/ui/home.js, src/js/ui/chat/cmdlist.js, src/js/ui/ai-notice.js, src/js/ui/room-tools.js, src/js/ui/chat/search.js, src/js/ui/drawer/main.js, src/js/ui/drawer/memory.js, src/js/ui/chat-settings.js, src/js/services/cloud-push.js, src/js/ui/account.js, src/js/ui/store.js, src/js/ui/help.js, src/js/ui/me.js, src/js/ui/drawer/settings.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/pay.js, src/js/ui/chat/suggest.js, src/js/ui/chat/view.js, src/js/ui/chat/generate.js, src/js/ui/chat/episode.js, src/js/ui/chat/log.js, src/js/ui/start-sheet.js, src/js/ui/detail.js, src/js/ui/chats.js, src/js/app.js, src/js/core/migrate.js, src/js/boot.js
+   쓰는 곳: src/js/core/audience.js, src/js/core/wallet.js, src/js/core/rooms.js, src/js/core/settings.js, src/js/core/shelf.js, src/js/services/cloud-settings.js, src/js/services/load.js, src/js/services/sync.js, src/js/services/cloud-shelf.js, src/js/services/cloud-pull.js, src/js/ai/llm.js, src/js/ai/prompt/memory.js, src/js/ui/shell.js, src/js/ui/home.js, src/js/ui/chat/cmdlist.js, src/js/ui/ai-notice.js, src/js/ui/room-tools.js, src/js/ui/chat/search.js, src/js/ui/drawer/main.js, src/js/ui/drawer/memory.js, src/js/ui/chat-settings.js, src/js/services/cloud-push.js, src/js/ui/account.js, src/js/ui/store.js, src/js/ui/help.js, src/js/ui/me.js, src/js/ui/drawer/settings.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/pay.js, src/js/ui/chat/suggest.js, src/js/ui/chat/command-run.js, src/js/ui/chat/view.js, src/js/ui/chat/generate.js, src/js/ui/chat/episode.js, src/js/ui/chat/log-acts.js, src/js/ui/chat/log.js, src/js/ui/start-sheet.js, src/js/ui/detail.js, src/js/ui/chats.js, src/js/app.js, src/js/core/migrate.js, src/js/boot.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 전역 상태 S(지갑·페르소나·대화방·설정), 현재 대화방·진행 중 생성(다른 모듈은 set…()로만 바꿈), API 키 유무(hasClaudeKey — S와 CFG.serverKeys를 함께 봄) */
 
@@ -1597,7 +1622,7 @@ function emit(name, v) {
            src/js/core/storage.js { KV }
            src/js/core/util.js { today }
    내보냄: FREE_DAILY, PLUS_MONTHLY, SUGGEST_COST, WELCOME, PLAN, isPro, plan, refreshFree, freeLeft, saveWallet, ledger, listPrice, quote, sugQuote, heartsOf, qShort, charge, refund, refundSug
-   쓰는 곳: src/js/services/load.js, src/js/ai/prompt/rules.js, src/js/ai/prompt/memory.js, src/js/ui/shell.js, src/js/ui/drawer/main.js, src/js/ui/pins.js, src/js/ui/drawer/memory.js, src/js/ui/store.js, src/js/ui/faq.js, src/js/ui/me.js, src/js/ui/drawer/settings.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/pay.js, src/js/ui/chat/suggest.js, src/js/ui/chat/view.js, src/js/ui/chat/generate.js, src/js/ui/chat/episode.js, src/js/ui/chat/log.js, src/js/ui/start-sheet.js, src/js/app.js
+   쓰는 곳: src/js/services/load.js, src/js/ai/prompt/rules.js, src/js/ai/prompt/memory.js, src/js/ui/shell.js, src/js/ui/drawer/main.js, src/js/ui/pins.js, src/js/ui/drawer/memory.js, src/js/ui/store.js, src/js/ui/faq.js, src/js/ui/me.js, src/js/ui/drawer/settings.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/pay.js, src/js/ui/chat/suggest.js, src/js/ui/chat/view.js, src/js/ui/chat/generate.js, src/js/ui/chat/episode.js, src/js/ui/chat/log-acts.js, src/js/ui/chat/log.js, src/js/ui/start-sheet.js, src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 요금: 무료 턴·PLUS·하트 차감/환불, 가격 계산(listPrice·quote) */
 
@@ -2754,7 +2779,7 @@ for (const c of ORIGINALS) {
            src/js/core/audience.js { audOK }
            src/js/core/constants.js { EXAMPLE_CAST }
    내보냄: normalizeChar, getChar, LIVE_FIELDS, liveWork, latestWork, exampleCast
-   쓰는 곳: src/js/core/rooms.js, src/js/core/room-read.js, src/js/images/pick.js, src/js/ai/llm.js, src/js/ai/prompt/input.js, src/js/ai/prompt/rules.js, src/js/ui/cover.js, src/js/ui/shell.js, src/js/ui/chat/cmdlist.js, src/js/ui/worldart.js, src/js/ui/drawer/browse.js, src/js/ui/drawer/main.js, src/js/ui/chat-settings.js, src/js/ui/faq.js, src/js/ui/drawer/settings.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/chat/generate.js, src/js/ui/codex.js, src/js/ui/detail.js, src/js/ui/login.js, src/js/app.js
+   쓰는 곳: src/js/core/rooms.js, src/js/core/room-read.js, src/js/images/pick.js, src/js/ai/llm.js, src/js/ai/prompt/input.js, src/js/ai/prompt/rules.js, src/js/ui/cover.js, src/js/ui/shell.js, src/js/ui/chat/cmdlist.js, src/js/ui/worldart.js, src/js/ui/drawer/browse.js, src/js/ui/drawer/main.js, src/js/ui/chat-settings.js, src/js/ui/faq.js, src/js/ui/drawer/settings.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/command-run.js, src/js/ui/chat/generate.js, src/js/ui/codex.js, src/js/ui/detail.js, src/js/ui/login.js, src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 작품 찾기·정규화: normalizeChar, id로 찾기(getChar — 오리지널), 방의 작품을 지금 읽을 모양으로(liveWork — 어느 칸을 최신 작품에서 읽는지는 LIVE_FIELDS 한 곳), 화면 예시 문구에 쓸 인물(exampleCast) */
 
@@ -3133,7 +3158,7 @@ const epLength = (ep) => ep.beats[ep.beats.length - 1].at[1];
            src/js/core/storage.js { KV }
            src/js/core/util.js { uid }
    내보냄: curText, roomKey, sortRooms, setFav, roomUnsaved, storableRooms, saveRoom, goneRooms, removeRoom, roomGone, deletedRooms, defaultSet, fixSet, newRoom, memoryMark
-   쓰는 곳: src/js/core/room-read.js, src/js/core/room-fork.js, src/js/core/room-list.js, src/js/services/load.js, src/js/services/sync.js, src/js/services/cloud-pull.js, src/js/services/cloud.js, src/js/ai/prompt/input.js, src/js/ai/prompt/rules.js, src/js/ai/prompt/memory.js, src/js/ui/room-tools.js, src/js/ui/chat/search.js, src/js/ui/drawer/browse.js, src/js/ui/drawer/main.js, src/js/ui/pins.js, src/js/ui/drawer/memory.js, src/js/services/cloud-push.js, src/js/ui/account.js, src/js/ui/me.js, src/js/ui/drawer/settings.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/suggest.js, src/js/ui/chat/view.js, src/js/ui/chat/generate.js, src/js/ui/report.js, src/js/ui/chat/log.js, src/js/ui/start-sheet.js, src/js/ui/chats.js, src/js/app.js
+   쓰는 곳: src/js/core/room-read.js, src/js/core/room-fork.js, src/js/core/room-list.js, src/js/services/load.js, src/js/services/sync.js, src/js/services/cloud-pull.js, src/js/services/cloud.js, src/js/ai/prompt/input.js, src/js/ai/prompt/rules.js, src/js/ai/prompt/memory.js, src/js/ui/room-tools.js, src/js/ui/drawer/browse.js, src/js/ui/chat/search.js, src/js/ui/drawer/main.js, src/js/ui/pins.js, src/js/ui/drawer/memory.js, src/js/services/cloud-push.js, src/js/ui/account.js, src/js/ui/me.js, src/js/ui/drawer/settings.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/suggest.js, src/js/ui/chat/command-run.js, src/js/ui/chat/view.js, src/js/ui/chat/generate.js, src/js/ui/report.js, src/js/ui/chat/log-acts.js, src/js/ui/start-sheet.js, src/js/ui/chats.js, src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 대화방 저장·목록·삭제(removeRoom)·새 방 만들기(newRoom), 메시지의 현재 버전 글(curText). 저장된 방을 여는 쪽은 core/room-read.js, 분기·외전·시작 상황 찾기는 core/room-fork.js */
 
@@ -3542,7 +3567,7 @@ function upgradeCodes(r) {
            src/js/core/rooms.js { saveRoom }
            src/js/core/util.js { uid }
    내보냄: baseOpening, openingIndex, forkRoom, sideRoom
-   쓰는 곳: src/js/ui/drawer/main.js, src/js/ui/room-drawer.js, src/js/ui/chat/episode.js, src/js/ui/chat/log.js, src/js/app.js
+   쓰는 곳: src/js/ui/drawer/main.js, src/js/ui/room-drawer.js, src/js/ui/chat/episode.js, src/js/ui/chat/log-acts.js, src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 분기(forkRoom)·외전(sideRoom)과, 방의 시작 상황이 작품의 몇 번째인지 찾기(openingIndex·baseOpening). 새 방을 저장하는 것은 core/rooms.js saveRoom */
 
@@ -6121,7 +6146,7 @@ function epProgress(ep, st, plan) {
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/core/commands.js
    내보냄: APP_COMMANDS, COMMAND_KINDS, allCommands, parseCommand, commandArg, findCommand, commandText, commandHelp, commandList
-   쓰는 곳: src/js/ai/prompt/input.js, src/js/ui/chat/cmdlist.js, src/js/ui/faq.js, src/js/ui/chat/view.js, src/js/ui/codex.js
+   쓰는 곳: src/js/ai/prompt/input.js, src/js/ui/chat/cmdlist.js, src/js/ui/faq.js, src/js/ui/chat/command-run.js, src/js/ui/codex.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 대화방 명령어(순수): 앱 명령어(APP_COMMANDS — 화면형 !상태창·!갤러리·!지도·!도움말은 앱이 바로 처리, 연출형 !시간경과·!새사건·!조연등장·!반복금지는 AI에 연출 지시)와
    작품 명령어(work.js commands — prompt가 있으면 AI에 연출 지시로, text가 있으면 AI 없이 그 글을 바로 보여 주는 '즉답'), 한 모양으로 모은 목록(allCommands·commandList), 입력 글
@@ -6393,7 +6418,7 @@ function ratingRules(r) {
            src/js/images/pick.js { imagesOf }
            src/js/services/images.js { validRef }
    내보냄: speakerName, rulesParts, rulesPrompt
-   쓰는 곳: src/js/ai/prompt/input.js, src/js/ai/prompt/memory.js, src/js/ui/room-tools.js, src/js/ui/chat/search.js, src/js/ui/drawer/browse.js, src/js/ui/chat/suggest.js, src/js/ui/chat/log.js, src/js/app.js
+   쓰는 곳: src/js/ai/prompt/input.js, src/js/ai/prompt/memory.js, src/js/ui/room-tools.js, src/js/ui/drawer/browse.js, src/js/ui/chat/search.js, src/js/ui/chat/suggest.js, src/js/ui/chat/log.js, src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 시스템 프롬프트(rulesParts·rulesPrompt): 세 블록 — 고정부(작품 설정·연기 규칙·서사 원칙·장면 이미지 규칙) · 변동부(유저 캐릭터·유저노트·기억·키워드북·지금 상태) · 꼬리(안전 재확인 + 출력 형식), 관계 단계(relStage).
    고정부는 같은 방에서 턴이 바뀌어도 글자 하나까지 같아야 함(프롬프트 캐시의 앞머리 — ai/llm.js가 고정부 끝에 캐시 표시를 붙임). 턴마다 달라지는 것은 모두 변동부에 */
@@ -6732,10 +6757,10 @@ const ICON = {
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/ui/sheet.js
    가져옴: src/js/core/util.js { $, $$, esc }
-   내보냄: sheet, closeOverlays, confirmSheet
-   쓰는 곳: src/js/ui/shell.js, src/js/ui/home.js, src/js/ui/chat/search.js, src/js/ui/drawer/main.js, src/js/ui/pins.js, src/js/ui/account.js, src/js/ui/store.js, src/js/ui/help.js, src/js/ui/me.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/pay.js, src/js/ui/chat/generate.js, src/js/ui/chat/episode.js, src/js/ui/report.js, src/js/ui/chat/log.js, src/js/ui/codex.js, src/js/ui/start-sheet.js, src/js/ui/login.js, src/js/app.js, src/js/admin/support.js, src/js/boot.js
+   내보냄: sheet, closeOverlays, holdFocus, escapeLayer, confirmSheet
+   쓰는 곳: src/js/ui/shell.js, src/js/ui/home.js, src/js/ui/chat/search.js, src/js/ui/drawer/main.js, src/js/ui/pins.js, src/js/ui/account.js, src/js/ui/store.js, src/js/ui/help.js, src/js/ui/me.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/pay.js, src/js/ui/chat/generate.js, src/js/ui/chat/episode.js, src/js/ui/report.js, src/js/ui/chat/log-acts.js, src/js/ui/codex.js, src/js/ui/start-sheet.js, src/js/ui/login.js, src/js/app.js, src/js/admin/support.js, src/js/boot.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
-/* 바닥 시트·확인 창(sheet·confirmSheet), 오버레이 닫기 */
+/* 바닥 시트·확인 창(sheet·confirmSheet), 오버레이 닫기, 겹(시트·서랍)의 키보드 — 포커스를 안으로·Tab은 안에서만·Esc는 맨 위 겹만·닫히면 연 자리로 */
 
 
 function sheet(html, cls = "") {
@@ -6744,6 +6769,7 @@ function sheet(html, cls = "") {
   ov.className = "overlay";
   ov.innerHTML = `<div class="sheet ${cls}" role="dialog" aria-modal="true">${html}</div>`;
   document.body.append(ov);
+  holdFocus(ov, $(".sheet", ov));
   ov.addEventListener("click", (e) => {
     if (e.target === ov || e.target.closest("[data-x]")) shut(ov);
   });
@@ -6759,6 +6785,41 @@ function shut(ov) {
 }
 function closeOverlays() {
   $$(".overlay").forEach(shut);
+}
+const FOCUSABLE = "button:not([disabled]),[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex='-1'])";
+/**
+ * 겹(시트·방 서랍)의 키보드(2026-11-26 프레임 7차 C3): 열면 포커스를 겹 안으로(상자 자체 — 입력칸에 바로 두지 않아 휴대폰 자판이 뜨지 않음),
+ * Tab·Shift+Tab은 겹 안에서만 돎(브라우저마다 Tab이 건너뛰는 것이 달라 — 사파리는 버튼을 건너뜀 — 직접 옮김), 닫히면 연 자리로 포커스를 돌려줌.
+ * 닫는 길이 여럿이라(배경·닫기 버튼·Esc·화면 이동·버튼이 직접 ov.remove()) remove에 돌려주기를 붙임 — 그사이 다른 곳에 포커스가 갔으면 건드리지 않음.
+ * @param {HTMLElement} ov 겹(.overlay) @param {HTMLElement} box 그 안의 창(.sheet·.drawer)
+ */
+function holdFocus(ov, box) {
+  const back = document.activeElement,
+    rm = ov.remove.bind(ov);
+  box.tabIndex = -1;
+  box.focus({ preventScroll: true });
+  ov.remove = () => {
+    rm();
+    const now = document.activeElement;
+    if (back && back.isConnected && back.focus && (!now || now === document.body)) back.focus({ preventScroll: true });
+  };
+  ov.addEventListener("keydown", (e) => {
+    if (e.key !== "Tab") return;
+    e.preventDefault();
+    const f = $$(FOCUSABLE, box).filter((x) => x.getClientRects().length);
+    if (!f.length) return box.focus({ preventScroll: true });
+    const i = f.indexOf(document.activeElement),
+      n = f.length; // 상자 자체에 있으면 i가 -1 — 앞으로는 첫째, 뒤로는 마지막
+    f[e.shiftKey ? (i <= 0 ? n - 1 : i - 1) : (i + 1) % n].focus();
+  });
+}
+/** Esc 한 번 — 크게 보기가 떠 있으면 그것을, 아니면 맨 위 겹 하나를 닫음. 닫은 것이 있으면 true(boot.js의 키 처리가 부름 — 없으면 쓰던 답 중지로). @returns {boolean} */
+function escapeLayer() {
+  const lb = $(".lightbox"),
+    all = $$(".overlay");
+  if (lb) lb.remove();
+  else if (all.length) shut(all[all.length - 1]);
+  return !!(lb || all.length);
 }
 function confirmSheet(title, sub, okLabel, onOk) {
   const ov = sheet(
@@ -6812,7 +6873,7 @@ const isAdmin = () => TARGET === "admin";
            src/js/images/situations.js { sitName }
            src/js/services/images.js { IMG }
    내보냄: coverHTML, artHTML, tagInfo, figHTML, portraitHTML, lightbox, zoomPic, pavHTML
-   쓰는 곳: src/js/ui/shell.js, src/js/ui/home.js, src/js/ui/room-tools.js, src/js/ui/drawer/browse.js, src/js/ui/drawer/main.js, src/js/ui/me.js, src/js/ui/drawer/settings.js, src/js/ui/chat/view.js, src/js/ui/chat/render.js, src/js/ui/chat/log.js, src/js/ui/codex.js, src/js/ui/detail.js, src/js/ui/chats.js, src/js/app.js
+   쓰는 곳: src/js/ui/shell.js, src/js/ui/home.js, src/js/ui/room-tools.js, src/js/ui/drawer/browse.js, src/js/ui/drawer/main.js, src/js/ui/me.js, src/js/ui/drawer/settings.js, src/js/ui/chat/view.js, src/js/ui/chat/render.js, src/js/ui/chat/log-acts.js, src/js/ui/chat/log.js, src/js/ui/codex.js, src/js/ui/detail.js, src/js/ui/chats.js, src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 표지·장면 그림 HTML(coverHTML·figHTML·portraitHTML·artHTML — 그림이 없으면 색 카드), 그림 태그 해석(tagInfo), 라이트박스 */
 
@@ -6910,7 +6971,7 @@ function pavHTML(p) {
            src/js/ui/icons.js { ICON }
            src/js/ui/sheet.js { closeOverlays }
    내보냄: registerViews, setNavs, go, route, LOGO, renderShell, favMark, renderRailRecent, viewedWorks, renderRailViewed, writingMark, renderWalletChips, topbar, bindGo
-   쓰는 곳: src/js/ui/home.js, src/js/ui/room-tools.js, src/js/ui/drawer/main.js, src/js/ui/store.js, src/js/ui/help.js, src/js/ui/me.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/chat/episode.js, src/js/ui/report.js, src/js/ui/chat/log.js, src/js/ui/codex.js, src/js/ui/start-sheet.js, src/js/ui/detail.js, src/js/ui/chats.js, src/js/ui/login.js, src/js/app.js, src/js/admin/support.js, src/js/admin/gate.js, src/js/boot.js, src/js/admin.js
+   쓰는 곳: src/js/ui/home.js, src/js/ui/room-tools.js, src/js/ui/drawer/main.js, src/js/ui/store.js, src/js/ui/help.js, src/js/ui/me.js, src/js/ui/room-drawer.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/chat/episode.js, src/js/ui/report.js, src/js/ui/chat/log-acts.js, src/js/ui/codex.js, src/js/ui/start-sheet.js, src/js/ui/detail.js, src/js/ui/chats.js, src/js/ui/login.js, src/js/app.js, src/js/admin/support.js, src/js/admin/gate.js, src/js/boot.js, src/js/admin.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 라우팅(go·route)·레일(메뉴·최근 대화·최근 본 작품)·탭바·상단바·지갑 칩. 화면은 진입점(main.js·admin.js)이 registerViews·setNavs로 등록한다 — 셸은 어떤 화면이 있는지 모른다.
    아래층의 "rooms"·"wallet"·"settings"·"route" 이벤트를 받아 레일·칩·화면을 다시 그림 */
@@ -7369,7 +7430,7 @@ function ackAiNotice() {
            src/js/ui/cover.js { tagInfo }
            src/js/ui/shell.js { go }
    내보냄: galleryItems, collectSeen, jumpTo, exportText, exportRoom, deleteRoom
-   쓰는 곳: src/js/ui/chat/search.js, src/js/ui/drawer/browse.js, src/js/ui/drawer/main.js, src/js/ui/chat/view.js, src/js/ui/chat/generate.js, src/js/app.js
+   쓰는 곳: src/js/ui/drawer/browse.js, src/js/ui/chat/search.js, src/js/ui/drawer/main.js, src/js/ui/chat/command-run.js, src/js/ui/chat/view.js, src/js/ui/chat/generate.js, src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 대화방 도구(드로어가 씀): 대화에 나온 그림 모으기(galleryItems)·수집 기록에 적기(collectSeen)·그 장면으로 가기(jumpTo)·대화 내보내기(exportText·exportRoom)·대화방 삭제(deleteRoom) */
 
@@ -7467,110 +7528,6 @@ function deleteRoom(id) {
   if (gen && gen.roomId === id) stopGen(); // 이 방에 쓰던 답만(다른 방에서 쓰는 중인 답은 그대로)
   if (mine) setRoom(null);
   go("chats");
-}
-/* ════════════════════════════════════════════════════════════════════════════════════════════════════
-   src/js/ui/chat/search.js
-   가져옴: src/js/ai/prompt/rules.js { speakerName }
-           src/js/core/rooms.js { curText }
-           src/js/core/state.js { room }
-           src/js/core/util.js { $, $$, esc }
-           src/js/ui/icons.js { ICON }
-           src/js/ui/room-tools.js { jumpTo }
-           src/js/ui/sheet.js { closeOverlays, sheet }
-   내보냄: searchRoom, openSearch
-   쓰는 곳: src/js/ui/drawer/main.js, src/js/ui/chat/view.js
-   ════════════════════════════════════════════════════════════════════════════════════════════════════ */
-/* 대화 검색: 이 대화방의 메시지에서 낱말을 찾아 결과 목록을 보여 주고, 누르면 그 메시지로 감(ui/room-tools.js jumpTo).
-   이 기기에 있는 메시지에서만 찾음(서버 호출 없음). 지금 보이는 버전의 본문만 봄 — 상태창 글과 다시 쓰기 전의 다른 버전은 보지 않음 */
-
-
-
-
-
-
-
-/** @typedef {import("../../core/types.js").Room} Room */
-
-/* 결과 수 상한 · 찾은 말 앞에 보여 줄 글자 수(뒤는 그 두 배) */
-const FIND_MAX = 60,
-  FIND_SIDE = 30;
-
-/* 대소문자를 가리지 않고 찾기 위한 소문자 글 — 글자 수(자리)를 원문과 똑같이 둠: 소문자로 바꾸면 길이가 달라지는 글자(İ 등)는 그대로 둠.
-   찾은 자리로 원문을 자르기 때문에 자리가 어긋나면 강조가 틀어짐 */
-function foldCase(s) {
-  let out = "";
-  for (let i = 0; i < s.length; i++) {
-    const low = s[i].toLowerCase();
-    out += low.length === 1 ? low : s[i];
-  }
-  return out;
-}
-/**
- * 방의 메시지에서 낱말을 찾음 — 대소문자를 가리지 않고, 그림 태그는 빼고, 최근 메시지부터 FIND_MAX건까지. 메시지 하나에 한 건(처음 나온 자리).
- * @param {Room} r @param {string} q 찾을 말
- * @returns {{ id: string, who: string, pre: string, hit: string, post: string }[]} who는 말한 쪽 이름, pre·hit·post는 찾은 말과 그 앞뒤 글
- */
-function searchRoom(r, q) {
-  const key = foldCase(String(q || "").trim());
-  const out = [];
-  if (!key) return out;
-  for (let i = r.msgs.length - 1; i >= 0 && out.length < FIND_MAX; i--) {
-    const m = r.msgs[i];
-    if (m.sys) continue;
-    const text = (curText(m) || "")
-        .replace(/\[\[[^\]]*\]\]/g, "")
-        .replace(/\s+/g, " ")
-        .trim(),
-      at = foldCase(text).indexOf(key);
-    if (at < 0) continue;
-    const end = at + key.length;
-    out.push({
-      id: m.id,
-      who: m.role === "ai" ? speakerName(r) : r.persona.name,
-      pre: (at > FIND_SIDE ? "…" : "") + text.slice(Math.max(0, at - FIND_SIDE), at),
-      hit: text.slice(at, end),
-      post: text.slice(end, end + FIND_SIDE * 2) + (text.length > end + FIND_SIDE * 2 ? "…" : "")
-    });
-  }
-  return out;
-}
-/** 대화 검색 창을 엶 — 치는 대로 결과가 바뀌고, 결과를 누르면 창을 닫고 그 메시지로 감. 글은 모두 esc 뒤에 강조 표시를 감쌈. */
-function openSearch() {
-  const r = room;
-  if (!r) return;
-  const ov = sheet(
-    `<div class="sheet-head"><h2>대화 검색</h2><button class="icon-btn" data-x aria-label="닫기">${ICON.close}</button></div>` +
-      `<p class="sub">이 대화방의 메시지에서 찾아요 — 지금 보이는 글만, 이 기기에 있는 대화에서.</p>` +
-      `<label class="sr" for="csQ">찾을 말</label><input class="inp" id="csQ" type="search" maxlength="40" placeholder="찾을 말" autocomplete="off">` +
-      `<div class="cs-list" id="csList" aria-live="polite"></div>`,
-    "search-sheet"
-  );
-  const inp = $("#csQ", ov),
-    list = $("#csList", ov);
-  inp.oninput = () => {
-    const q = inp.value.trim(),
-      hits = searchRoom(r, q);
-    list.innerHTML = !q
-      ? ""
-      : !hits.length
-        ? `<p class="note">찾는 말이 없어요.</p>`
-        : `<p class="note">${hits.length}${hits.length >= FIND_MAX ? "건 이상" : "건"} · 최근 것부터</p>` +
-          hits
-            .map(
-              (h) =>
-                `<button type="button" class="cs-hit" data-id="${esc(h.id)}"><b>${esc(h.who)}</b>` +
-                `<span>${esc(h.pre)}<mark>${esc(h.hit)}</mark>${esc(h.post)}</span></button>`
-            )
-            .join("");
-    $$("[data-id]", list).forEach(
-      (b) =>
-        (b.onclick = () => {
-          closeOverlays();
-          jumpTo(b.dataset.id);
-        })
-    );
-  };
-  inp.focus();
 }
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/ui/worldart.js
@@ -7776,6 +7733,110 @@ function drawerLore({ r, c, body }) {
   );
 }
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
+   src/js/ui/chat/search.js
+   가져옴: src/js/ai/prompt/rules.js { speakerName }
+           src/js/core/rooms.js { curText }
+           src/js/core/state.js { room }
+           src/js/core/util.js { $, $$, esc }
+           src/js/ui/icons.js { ICON }
+           src/js/ui/room-tools.js { jumpTo }
+           src/js/ui/sheet.js { closeOverlays, sheet }
+   내보냄: searchRoom, openSearch
+   쓰는 곳: src/js/ui/drawer/main.js, src/js/ui/chat/view.js
+   ════════════════════════════════════════════════════════════════════════════════════════════════════ */
+/* 대화 검색: 이 대화방의 메시지에서 낱말을 찾아 결과 목록을 보여 주고, 누르면 그 메시지로 감(ui/room-tools.js jumpTo).
+   이 기기에 있는 메시지에서만 찾음(서버 호출 없음). 지금 보이는 버전의 본문만 봄 — 상태창 글과 다시 쓰기 전의 다른 버전은 보지 않음 */
+
+
+
+
+
+
+
+/** @typedef {import("../../core/types.js").Room} Room */
+
+/* 결과 수 상한 · 찾은 말 앞에 보여 줄 글자 수(뒤는 그 두 배) */
+const FIND_MAX = 60,
+  FIND_SIDE = 30;
+
+/* 대소문자를 가리지 않고 찾기 위한 소문자 글 — 글자 수(자리)를 원문과 똑같이 둠: 소문자로 바꾸면 길이가 달라지는 글자(İ 등)는 그대로 둠.
+   찾은 자리로 원문을 자르기 때문에 자리가 어긋나면 강조가 틀어짐 */
+function foldCase(s) {
+  let out = "";
+  for (let i = 0; i < s.length; i++) {
+    const low = s[i].toLowerCase();
+    out += low.length === 1 ? low : s[i];
+  }
+  return out;
+}
+/**
+ * 방의 메시지에서 낱말을 찾음 — 대소문자를 가리지 않고, 그림 태그는 빼고, 최근 메시지부터 FIND_MAX건까지. 메시지 하나에 한 건(처음 나온 자리).
+ * @param {Room} r @param {string} q 찾을 말
+ * @returns {{ id: string, who: string, pre: string, hit: string, post: string }[]} who는 말한 쪽 이름, pre·hit·post는 찾은 말과 그 앞뒤 글
+ */
+function searchRoom(r, q) {
+  const key = foldCase(String(q || "").trim());
+  const out = [];
+  if (!key) return out;
+  for (let i = r.msgs.length - 1; i >= 0 && out.length < FIND_MAX; i--) {
+    const m = r.msgs[i];
+    if (m.sys) continue;
+    const text = (curText(m) || "")
+        .replace(/\[\[[^\]]*\]\]/g, "")
+        .replace(/\s+/g, " ")
+        .trim(),
+      at = foldCase(text).indexOf(key);
+    if (at < 0) continue;
+    const end = at + key.length;
+    out.push({
+      id: m.id,
+      who: m.role === "ai" ? speakerName(r) : r.persona.name,
+      pre: (at > FIND_SIDE ? "…" : "") + text.slice(Math.max(0, at - FIND_SIDE), at),
+      hit: text.slice(at, end),
+      post: text.slice(end, end + FIND_SIDE * 2) + (text.length > end + FIND_SIDE * 2 ? "…" : "")
+    });
+  }
+  return out;
+}
+/** 대화 검색 창을 엶 — 치는 대로 결과가 바뀌고, 결과를 누르면 창을 닫고 그 메시지로 감. 글은 모두 esc 뒤에 강조 표시를 감쌈. */
+function openSearch() {
+  const r = room;
+  if (!r) return;
+  const ov = sheet(
+    `<div class="sheet-head"><h2>대화 검색</h2><button class="icon-btn" data-x aria-label="닫기">${ICON.close}</button></div>` +
+      `<p class="sub">이 대화방의 메시지에서 찾아요 — 지금 보이는 글만, 이 기기에 있는 대화에서.</p>` +
+      `<label class="sr" for="csQ">찾을 말</label><input class="inp" id="csQ" type="search" maxlength="40" placeholder="찾을 말" autocomplete="off">` +
+      `<div class="cs-list" id="csList" aria-live="polite"></div>`,
+    "search-sheet"
+  );
+  const inp = $("#csQ", ov),
+    list = $("#csList", ov);
+  inp.oninput = () => {
+    const q = inp.value.trim(),
+      hits = searchRoom(r, q);
+    list.innerHTML = !q
+      ? ""
+      : !hits.length
+        ? `<p class="note">찾는 말이 없어요.</p>`
+        : `<p class="note">${hits.length}${hits.length >= FIND_MAX ? "건 이상" : "건"} · 최근 것부터</p>` +
+          hits
+            .map(
+              (h) =>
+                `<button type="button" class="cs-hit" data-id="${esc(h.id)}"><b>${esc(h.who)}</b>` +
+                `<span>${esc(h.pre)}<mark>${esc(h.hit)}</mark>${esc(h.post)}</span></button>`
+            )
+            .join("");
+    $$("[data-id]", list).forEach(
+      (b) =>
+        (b.onclick = () => {
+          closeOverlays();
+          jumpTo(b.dataset.id);
+        })
+    );
+  };
+  inp.focus();
+}
+/* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/ui/drawer/main.js
    가져옴: src/js/ai/llm.js { engineName }
            src/js/ai/models.js { LEN, MODELS }
@@ -7903,7 +7964,7 @@ function drawerMain({ r, c, body, cfg, q }) {
            src/js/ui/pay.js { plusSheet }
            src/js/ui/sheet.js { sheet }
    내보냄: pinSheet, pinsHTML, bindPins
-   쓰는 곳: src/js/ui/drawer/memory.js, src/js/ui/chat/log.js, src/js/app.js
+   쓰는 곳: src/js/ui/drawer/memory.js, src/js/ui/chat/log-acts.js, src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 고정 기억(핀): 이용자가 한 줄로 박아 두는 '꼭 기억할 것' — 고정 시트(pinSheet)와 드로어 장기기억의 목록(pinsHTML·bindPins).
    방의 r.pins [{ id, text, at, msgId? }]에 저장하고 프롬프트 변동부의 [고정 기억]으로 매 턴 그대로 보냄(요약·압축은 건드리지 않음). 한도는 글자 LIMITS.pin, 개수 plan().pins —
@@ -9838,10 +9899,10 @@ function drawerOutput({ r, body }) {
            src/js/ui/drawer/settings.js { drawerDisplay, drawerNote, drawerOutput, drawerPersona }
            src/js/ui/icons.js { ICON }
            src/js/ui/pay.js { plusSheet }
-           src/js/ui/sheet.js { closeOverlays, confirmSheet }
+           src/js/ui/sheet.js { closeOverlays, confirmSheet, holdFocus }
            src/js/ui/shell.js { go }
    내보냄: restartRoom, openRoomDrawer
-   쓰는 곳: src/js/ui/drawer/main.js, src/js/ui/drawer/memory.js, src/js/ui/drawer/settings.js, src/js/ui/model-sheet.js, src/js/ui/chat/view.js, src/js/ui/chat/episode.js, src/js/app.js
+   쓰는 곳: src/js/ui/drawer/main.js, src/js/ui/drawer/memory.js, src/js/ui/drawer/settings.js, src/js/ui/model-sheet.js, src/js/ui/chat/command-run.js, src/js/ui/chat/view.js, src/js/ui/chat/episode.js, src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 대화방 관리 드로어의 틀: 드로어를 열고(openRoomDrawer) 화면마다의 그리기는 ui/drawer/의 모듈(main 대화방 관리 · memory 장기기억 · settings 페르소나·유저노트·출력 설정 · browse 상태창·갤러리·장소·북마크·세계관 수첩)에 맡김,
    '처음부터 다시'(restartRoom) — 내보내기·삭제·그림 모으기는 room-tools.js */
@@ -9891,10 +9952,11 @@ function openRoomDrawer(view = "main") {
     lore: "세계관 수첩"
   };
   ov.innerHTML =
-    `<aside class="drawer" role="dialog" aria-label="${titles[view]}">` +
+    `<aside class="drawer" role="dialog" aria-modal="true" aria-label="${titles[view]}">` +
     `<div class="sheet-head">${view !== "main" ? `<button class="icon-btn" id="dBack" aria-label="뒤로">${ICON.back}</button>` : ""}` +
     `<h2>${titles[view]}</h2><button class="icon-btn" data-x aria-label="닫기">${ICON.close}</button></div><div id="dBody"></div></aside>`;
   document.body.append(ov);
+  holdFocus(ov, $(".drawer", ov)); // 포커스를 안으로·Tab은 안에서만·닫히면 연 자리로(ui/sheet.js — Esc는 boot.js가 escapeLayer로)
   ov.addEventListener("click", (e) => {
     if (e.target === ov || e.target.closest("[data-x]")) ov.remove();
   });
@@ -10017,7 +10079,7 @@ function openModelSheet() {
            src/js/ui/sheet.js { sheet }
            src/js/ui/store.js { PACKS, PLUS, PLUS_SUG_NOTE, buyPack, checkout }
    내보냄: ensurePay, needHearts, plusSheet
-   쓰는 곳: src/js/ui/pins.js, src/js/ui/drawer/memory.js, src/js/ui/drawer/settings.js, src/js/ui/room-drawer.js, src/js/ui/chat/suggest.js, src/js/ui/chat/generate.js, src/js/ui/chat/episode.js, src/js/ui/chat/log.js, src/js/ui/start-sheet.js, src/js/app.js
+   쓰는 곳: src/js/ui/pins.js, src/js/ui/drawer/memory.js, src/js/ui/drawer/settings.js, src/js/ui/room-drawer.js, src/js/ui/chat/suggest.js, src/js/ui/chat/generate.js, src/js/ui/chat/episode.js, src/js/ui/chat/log-acts.js, src/js/ui/start-sheet.js, src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 결제 안내: 하트 부족·PLUS 시트, 보내기 전 요금 확인(ensurePay) */
 
@@ -10194,7 +10256,7 @@ function plusSheet(reason) {
            src/js/ui/icons.js { ICON }
            src/js/ui/pay.js { needHearts }
    내보냄: sugLabel, setAutoSug, hideSug, showSug, toggleSug
-   쓰는 곳: src/js/ui/chat/view.js, src/js/ui/chat/generate.js, src/js/ui/chat/log.js, src/js/app.js
+   쓰는 곳: src/js/ui/chat/command-run.js, src/js/ui/chat/view.js, src/js/ui/chat/generate.js, src/js/ui/chat/log-acts.js, src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* ✦ 답변 추천: 저장된 추천은 값 없이 펼치고, 없으면 눌러서 받음(추천 한 번의 값 — wallet sugQuote). 방마다 '자동 받기'(r.set.autoSug)를 켜면 답마다 같이 옴.
    값이 드는 버튼에는 누르기 전에 값이 보이고(sugLabel·'새로 추천'), 만들지 못하면 되돌림. 저장된 추천 = 작가가 시작 장면에 써 둔 것 · 자동 받기로 온 것 · 눌러서 받은 것 · 예전 방의 것 */
@@ -10356,23 +10418,151 @@ ${recent}`
   fetchSug();
 }
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
+   src/js/ui/chat/command-run.js
+   가져옴: src/js/core/character.js { liveWork }
+           src/js/core/commands.js { commandHelp, findCommand, parseCommand }
+           src/js/core/rooms.js { saveRoom }
+           src/js/core/state.js { room }
+           src/js/core/util.js { uid }
+           src/js/ui/chat/log.js { renderLog }
+           src/js/ui/chat/suggest.js { hideSug }
+           src/js/ui/chat/view.js { flashHint, lastAi }
+           src/js/ui/room-drawer.js { openRoomDrawer }
+           src/js/ui/room-tools.js { collectSeen }
+   내보냄: runCommand
+   쓰는 곳: src/js/ui/chat/view.js
+   ════════════════════════════════════════════════════════════════════════════════════════════════════ */
+/* AI를 부르지 않는 !명령어 처리 — 앱 화면형은 드로어를 열고, 작품의 즉답은 정해진 글을 방에 남김. 대화방 입력창(ui/chat/view.js)이 보내기 전에 부름 */
+
+
+
+
+
+
+
+
+
+
+
+/* !명령어(core/commands.js): 앱 화면형 명령어(view가 있는 것 — !상태창·!갤러리·!지도·!도움말)는 AI를 부르지 않고 드로어를 엶(하트·턴을 쓰지 않음).
+   작품의 즉답 명령어(commands의 text)는 AI 없이 정해진 글을 방에 남김(replyNow). 이 둘은 이름 뒤에 덧붙인 말이 있어도 같음(덧붙인 말은 쓰지 않음).
+   앱 연출형(prompt — !시간경과 등)·작품 명령어(work.js commands의 prompt)·모르는 !글은 false → 그대로 AI에 보냄(연출 지시로 바꾸고 덧붙인 말을 붙이는 건 buildInput의 commandText) */
+function runCommand(t) {
+  const live = liveWork(room.char),
+    f = findCommand(parseCommand(t), live);
+  if (f && f.work && f.work.text) {
+    replyNow(t, f.work);
+    return true;
+  }
+  if (!f || !f.app || !f.app.view) return false;
+  if (f.app.view === "help") {
+    flashHint("명령어: " + commandHelp(live) + " — 이름 뒤에 말을 덧붙여도 되고, // 로 시작하면 연출 지시");
+    return true;
+  }
+  openRoomDrawer(f.app.view);
+  return true;
+}
+/* 즉답: 유저 말풍선과 정해진 글의 AI 메시지를 방에 남김 — 하트·턴을 쓰지 않고 상태창은 직전 값 그대로. 두 메시지에 canned 표시
+   (다시 쓰기·좋아요 없음, 분기의 턴 계산에서 빠짐). 다음 턴의 대화 기록에는 그대로 들어가 AI가 그 글을 본 것으로 이어 감 */
+function replyNow(t, cmd) {
+  const a = lastAi(room),
+    st = a ? (a.alts[a.idx] || {}).status || a.statusBefore : room.status;
+  room.lastErr = "";
+  room.msgs.push(
+    { id: uid("m"), role: "user", text: t, canned: true },
+    { id: uid("m"), role: "ai", idx: 0, canned: true, alts: [{ text: cmd.text, status: st, suggestions: [], cost: "무료" }], statusBefore: st }
+  );
+  saveRoom(room);
+  collectSeen(room);
+  hideSug();
+  renderLog(true);
+}
+/* ════════════════════════════════════════════════════════════════════════════════════════════════════
+   src/js/ui/chat/keyboard.js
+   가져옴: src/js/core/util.js { $ }
+           src/js/ui/chat/log.js { stick }
+   내보냄: fitKeyboard
+   쓰는 곳: src/js/ui/chat/view.js
+   ════════════════════════════════════════════════════════════════════════════════════════════════════ */
+/* 휴대폰 자판 위에 대화방을 맞춤(2026-11-26 프레임 7차 C1) — visualViewport가 있는 브라우저만, 없으면 지금 그대로. 대화방 화면(ui/chat/view.js)이 그린 뒤 부름.
+   아이폰은 자판이 열려도 레이아웃 높이가 그대로라(뼈대의 interactive-widget=resizes-content는 안드로이드 크롬만 받음) 머리가 밀려 올라가고 입력창이 가려짐 →
+   자판이 열린 동안 대화방을 보이는 영역(visualViewport)에 고정. 함정 셋: ① 레이아웃이 이미 줄어든 브라우저(resizes-content)에서는 한 번 더 줄이지 않음 —
+   가린 높이(innerHeight − 보이는 높이)가 작으면 손대지 않고, 입력창 아래의 안전 영역은 자판이 덮으므로 그때만 빼지 않음(.kb-open) ② 확대(scale ≠ 1)하면 풀고, resize와
+   scroll을 같이 봄 ③ 높이가 바뀔 때마다 맨 아래로 보내지 않음 — 맨 아래를 따라가던 중(ui/chat/log.js stick)일 때만. 방을 나가면 리스너와 임시 스타일을 치움 */
+
+
+
+const KB_MIN = 100; // 이만큼 넘게 가려져야 자판으로 봄(주소창이 접히고 펴지는 정도는 무시)
+let kbChat = null,
+  kbBound = null; // 맞추는 대화방 요소 · 리스너를 단 visualViewport
+/** 대화방 요소를 자판 위에 맞추기 시작 — 같은 방을 다시 그려도 새 요소로 바꿔 끼움. @param {HTMLElement|null} chat */
+function fitKeyboard(chat) {
+  const vv = typeof window !== "undefined" ? window.visualViewport : null;
+  if (!vv || !chat) return;
+  kbChat = chat;
+  if (kbBound !== vv) {
+    kbStop();
+    kbChat = chat;
+    kbBound = vv;
+    vv.addEventListener("resize", kbFit);
+    vv.addEventListener("scroll", kbFit);
+    window.addEventListener("hashchange", kbLeave);
+  }
+  kbFit();
+}
+function kbFit() {
+  const vv = kbBound,
+    c = kbChat;
+  if (!vv || !c || !c.isConnected) return kbStop();
+  const hidden = window.innerHeight - vv.height;
+  if (vv.scale !== 1 || hidden < KB_MIN) return kbClear(c);
+  const box = $("#view").getBoundingClientRect(); // 넓은 화면(태블릿)은 왼쪽 메뉴 옆 자리 그대로
+  c.style.position = "fixed";
+  c.style.top = vv.offsetTop + "px";
+  c.style.left = box.left + "px";
+  c.style.width = box.width + "px";
+  c.style.height = vv.height + "px";
+  c.classList.add("kb-open");
+  const log = $("#log", c);
+  if (log && stick) log.scrollTop = log.scrollHeight;
+}
+function kbClear(c) {
+  if (!c.classList.contains("kb-open")) return;
+  ["position", "top", "left", "width", "height"].forEach((k) => c.style.removeProperty(k));
+  c.classList.remove("kb-open");
+  const log = $("#log", c);
+  if (log && stick) log.scrollTop = log.scrollHeight;
+}
+function kbLeave() {
+  if (!location.hash.startsWith("#r-")) kbStop();
+}
+function kbStop() {
+  if (kbChat) kbClear(kbChat);
+  if (kbBound) {
+    kbBound.removeEventListener("resize", kbFit);
+    kbBound.removeEventListener("scroll", kbFit);
+    window.removeEventListener("hashchange", kbLeave);
+  }
+  kbChat = kbBound = null;
+}
+/* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/ui/chat/view.js
    가져옴: src/js/ai/models.js { MODELS }
-           src/js/core/character.js { liveWork }
-           src/js/core/commands.js { commandHelp, findCommand, parseCommand }
            src/js/core/events.js { on }
            src/js/core/room-read.js { migrateRoom }
            src/js/core/rooms.js { goneRooms, roomKey, roomUnsaved, saveRoom }
            src/js/core/state.js { S, gen, heldRoom, room, setRoom }
            src/js/core/storage.js { KV }
-           src/js/core/util.js { $, esc, num, toast, uid }
+           src/js/core/util.js { $, esc, num, toast }
            src/js/core/wallet.js { FREE_DAILY, freeLeft, heartsOf, isPro, listPrice, qShort, quote }
            src/js/ui/chat/generate.js { sendTurn, stopGen }
            src/js/ui/chat/cmdlist.js { cmdKey, updateCmdList }
+           src/js/ui/chat/command-run.js { runCommand }
+           src/js/ui/chat/keyboard.js { fitKeyboard }
            src/js/ui/chat/log.js { bindStick, renderLog }
            src/js/ui/chat/render.js { barPct }
            src/js/ui/chat/search.js { openSearch }
-           src/js/ui/chat/suggest.js { hideSug, sugLabel, toggleSug }
+           src/js/ui/chat/suggest.js { sugLabel, toggleSug }
            src/js/ui/ai-notice.js { AI_BADGE, AI_NOTICE, AI_NOTICE_OK, ackAiNotice, aiNoticeNeeded }
            src/js/ui/cover.js { coverHTML }
            src/js/ui/icons.js { ICON }
@@ -10380,8 +10570,8 @@ ${recent}`
            src/js/ui/room-drawer.js { openRoomDrawer }
            src/js/ui/room-tools.js { collectSeen }
            src/js/ui/shell.js { bindGo, go, topbar }
-   내보냄: viewChat, flashHint, updateComposer, lastAi, gaugeView, updateMeter
-   쓰는 곳: src/js/ui/drawer/browse.js, src/js/ui/drawer/settings.js, src/js/ui/model-sheet.js, src/js/ui/pay.js, src/js/ui/chat/suggest.js, src/js/ui/chat/render.js, src/js/ui/chat/generate.js, src/js/ui/chat/episode.js, src/js/ui/chat/log.js, src/js/app.js
+   내보냄: viewChat, flashHint, costNote, regenText, updateComposer, lastAi, gaugeView, updateMeter
+   쓰는 곳: src/js/ui/drawer/browse.js, src/js/ui/drawer/settings.js, src/js/ui/model-sheet.js, src/js/ui/pay.js, src/js/ui/chat/suggest.js, src/js/ui/chat/command-run.js, src/js/ui/chat/render.js, src/js/ui/chat/generate.js, src/js/ui/chat/episode.js, src/js/ui/chat/log-acts.js, src/js/ui/chat/log.js, src/js/app.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 대화방 화면 뼈대·입력창·게이지. 머리(뒤로·제목·AI 배지·무료 턴과 하트·게이지·모델 칩·대화 검색·방 메뉴) → 대화 → 한 줄 입력창([✦ 추천] [입력] [보내기 — 빈 입력이면 이어서 쓰기]).
    추천 패널과 ! 명령어 목록은 입력창 바로 위에 끼움. 안내 줄은 알릴 것이 있을 때만 */
@@ -10464,6 +10654,7 @@ async function viewChat(id) {
       <div class="cmd-panel" id="cmdPanel" role="listbox" aria-label="명령어" hidden></div>
       <form class="inputrow" id="form">
         <button class="sugbtn" id="sugBtn" type="button" aria-expanded="false"></button>
+        <span class="inp-mode" id="inpMode" aria-live="polite" hidden></span>
         <label class="sr" for="inp">메시지</label>
         <textarea id="inp" rows="1" maxlength="1500" placeholder="행동·대사 입력 · // 연출 지시 · ! 명령어"></textarea>
         <button class="stopbtn" id="stopBtn" type="button" hidden>■ 중지</button>
@@ -10499,6 +10690,12 @@ async function viewChat(id) {
     inp.style.height = "auto";
     inp.style.height = Math.min(160, inp.scrollHeight) + "px";
     updateCmdList(inp);
+    // 입력 모드 표시(프레임 7차 C5): //로 시작하면 연출 지시, !로 시작하면 명령어 — 입력칸 테두리 위에 작게(안내 줄이 늘 자리를 차지하지 않게)
+    const lead = inp.value.trimStart(), // 보낼 때 앞 공백을 자르므로 표시도 같게
+      mode = lead.startsWith("//") ? "연출 지시" : lead.startsWith("!") ? "명령어" : "",
+      tag = $("#inpMode");
+    if (tag.textContent !== mode) tag.textContent = mode;
+    tag.hidden = !mode;
     // 입력이 비었는지가 바뀌면 보내기 버튼의 모양을 바꿈(빈 입력 = 이어서 쓰기)
     if (!inp.value.trim() !== empty) {
       empty = !empty;
@@ -10543,42 +10740,10 @@ async function viewChat(id) {
     submit();
   };
   bindStick($("#log"));
+  fitKeyboard($(".chat", v)); // 휴대폰 자판 위에 맞춤(visualViewport가 있을 때만 — ui/chat/keyboard.js)
   renderLog(true);
   updateMeter();
   updateComposer();
-}
-/* !명령어(core/commands.js): 앱 화면형 명령어(view가 있는 것 — !상태창·!갤러리·!지도·!도움말)는 AI를 부르지 않고 드로어를 엶(하트·턴을 쓰지 않음).
-   작품의 즉답 명령어(commands의 text)는 AI 없이 정해진 글을 방에 남김(replyNow). 이 둘은 이름 뒤에 덧붙인 말이 있어도 같음(덧붙인 말은 쓰지 않음).
-   앱 연출형(prompt — !시간경과 등)·작품 명령어(work.js commands의 prompt)·모르는 !글은 false → 그대로 AI에 보냄(연출 지시로 바꾸고 덧붙인 말을 붙이는 건 buildInput의 commandText) */
-function runCommand(t) {
-  const live = liveWork(room.char),
-    f = findCommand(parseCommand(t), live);
-  if (f && f.work && f.work.text) {
-    replyNow(t, f.work);
-    return true;
-  }
-  if (!f || !f.app || !f.app.view) return false;
-  if (f.app.view === "help") {
-    flashHint("명령어: " + commandHelp(live) + " — 이름 뒤에 말을 덧붙여도 되고, // 로 시작하면 연출 지시");
-    return true;
-  }
-  openRoomDrawer(f.app.view);
-  return true;
-}
-/* 즉답: 유저 말풍선과 정해진 글의 AI 메시지를 방에 남김 — 하트·턴을 쓰지 않고 상태창은 직전 값 그대로. 두 메시지에 canned 표시
-   (다시 쓰기·좋아요 없음, 분기의 턴 계산에서 빠짐). 다음 턴의 대화 기록에는 그대로 들어가 AI가 그 글을 본 것으로 이어 감 */
-function replyNow(t, cmd) {
-  const a = lastAi(room),
-    st = a ? (a.alts[a.idx] || {}).status || a.statusBefore : room.status;
-  room.lastErr = "";
-  room.msgs.push(
-    { id: uid("m"), role: "user", text: t, canned: true },
-    { id: uid("m"), role: "ai", idx: 0, canned: true, alts: [{ text: cmd.text, status: st, suggestions: [], cost: "무료" }], statusBefore: st }
-  );
-  saveRoom(room);
-  collectSeen(room);
-  hideSug();
-  renderLog(true);
 }
 let hintTimer = null;
 /* '이어서 쓰기'를 받지 않는 시각(답이 막 끝난 직후)과 직전에 응답 중이었는지 — updateComposer가 응답이 끝나는 순간을 잡음 */
@@ -10606,6 +10771,23 @@ function genBusy() {
   );
   return true;
 }
+/**
+ * 이번 턴 값의 설명 — 보내기 버튼과 다시 쓰기 버튼의 title. 누르기 전에 값이 보이게: 보내기 값에는 추천 자동 받기(q.sug)가 더해져 있음.
+ * 풀어 씀 — 버튼의 '무료+♥1'만 보면 '무료'가 먼저 읽히므로(법률 세션 권고, docs/legal/ui-copy.md §3). @param {ReturnType<typeof quote>} q @returns {string}
+ */
+function costNote(q) {
+  const sugNote = q.sug ? ` · 답변 추천 자동 받기로 하트 ${q.sug}개가 사용돼요` : "";
+  return q.type === "heart"
+    ? `이번 턴에 하트 ${heartsOf(q)}개가 사용돼요` + (q.sug ? ` · 답변 추천 자동 받기 ♥${q.sug} 포함` : "")
+    : q.type === "free"
+      ? (q.sug ? "이번 턴은 무료 턴이에요" : "오늘의 무료 턴으로 보내요") + sugNote
+      : (q.sug ? "이번 턴은 PLUS로 보내요" : "PLUS 무제한") + sugNote;
+}
+/**
+ * 마지막 답 아래 '다시 쓰기' 버튼의 [글, 설명] — 값은 보내기 버튼·다시 쓰기 창의 실행 버튼과 같은 견적(qShort). 옆의 '‹ 2/3 ›'는 저장된 답이라 값이 없음(프레임 7차 C4).
+ * @param {ReturnType<typeof quote>} q @returns {[string, string]}
+ */
+const regenText = (q) => ["↻ 다시 쓰기 · " + qShort(q), "새로 한 번 더 써요 — " + costNote(q)];
 function updateComposer() {
   if (!room || !$("#sendBtn")) return;
   const q = quote(room.set),
@@ -10622,16 +10804,9 @@ function updateComposer() {
   send.classList.toggle("cont", cont);
   send.innerHTML = (cont ? "이어서" : ICON.send) + `<small>${qShort(q)}</small>`;
   send.setAttribute("aria-label", cont ? "이어서 쓰기" : "보내기");
-  // 누르기 전에 값이 보이게: 보내기 버튼의 값에는 추천 자동 받기(q.sug)가 더해져 있고, 추천 버튼은 저장된 추천이 없을 때만 값을 보임
-  // 설명 글은 풀어 씀 — 버튼의 '무료+♥1'만 보면 '무료'가 먼저 읽히므로(법률 세션 권고, docs/legal/ui-copy.md §3)
-  const sugNote = q.sug ? ` · 답변 추천 자동 받기로 하트 ${q.sug}개가 사용돼요` : "";
-  send.title =
-    (cont ? "입력 없이 이어서 쓰기 — " : "") +
-    (q.type === "heart"
-      ? `이번 턴에 하트 ${heartsOf(q)}개가 사용돼요` + (q.sug ? ` · 답변 추천 자동 받기 ♥${q.sug} 포함` : "")
-      : q.type === "free"
-        ? (q.sug ? "이번 턴은 무료 턴이에요" : "오늘의 무료 턴으로 보내요") + sugNote
-        : (q.sug ? "이번 턴은 PLUS로 보내요" : "PLUS 무제한") + sugNote);
+  send.title = (cont ? "입력 없이 이어서 쓰기 — " : "") + costNote(q);
+  const rg = $('#logInner [data-act="regen"]'); // 마지막 답의 다시 쓰기 — 값이 바뀌면(무료 턴을 다 씀·PLUS·모델) 버튼의 값도 같이
+  if (rg) [rg.textContent, rg.title] = regenText(q);
   // 키 안내는 입력 칸의 title로 — 방 안의 표시 설정에서 'Enter로 보내기'를 바꾸면 여기서 같이 바뀜
   $("#inp").title = S.settings.enterSend !== false ? "Enter 전송 · Shift+Enter 줄바꿈" : "Ctrl+Enter 전송 · Enter 줄바꿈";
   const sug = $("#sugBtn");
@@ -10870,7 +11045,7 @@ function liveFill(el, text, c, persona, anim = true) {
            src/js/ui/room-tools.js { collectSeen }
            src/js/ui/sheet.js { closeOverlays, sheet }
    내보냄: epCopy, sendTurn, regenAsk, regen, generate, stopGen
-   쓰는 곳: src/js/ui/room-tools.js, src/js/ui/chat/view.js, src/js/ui/chat/episode.js, src/js/ui/chat/log.js, src/js/app.js, src/js/boot.js
+   쓰는 곳: src/js/ui/room-tools.js, src/js/ui/chat/view.js, src/js/ui/chat/episode.js, src/js/ui/chat/log-acts.js, src/js/app.js, src/js/boot.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 한 턴 보내기 → 응답 생성(generate)·다시 쓰기·빠진 인물 그림 태그 채우기(addCastImages) */
 
@@ -11354,7 +11529,7 @@ function sideSheet(r) {
            src/js/ui/sheet.js { closeOverlays, sheet }
            src/js/ui/shell.js { bindGo }
    내보냄: reportQuote, reportSheet
-   쓰는 곳: src/js/ui/chat/log.js
+   쓰는 곳: src/js/ui/chat/log-acts.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 메시지 신고(reportSheet): AI 말풍선 메뉴의 '신고' → 사유(일곱 가지 가운데 하나를 골라야 보냄 — 미리 골라 두지 않음)·덧붙일 말·'이 메시지 앞부분을 함께 보내기'(기본 켜짐, 끌 수 있음) → 문의 표에 '신고' 분류로 접수(SUPPORT.report).
    로그인하지 않았으면 메일 안내 */
@@ -11449,31 +11624,26 @@ function reportSheet(r, m) {
   };
 }
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
-   src/js/ui/chat/log.js
-   가져옴: src/js/ai/prompt/rules.js { speakerName }
-           src/js/core/room-fork.js { forkRoom }
+   src/js/ui/chat/log-acts.js
+   가져옴: src/js/core/room-fork.js { forkRoom }
            src/js/core/rooms.js { curText, saveRoom }
            src/js/core/state.js { S, gen, room, setRoom }
-           src/js/core/util.js { $, $$, clamp, esc, toast }
-           src/js/images/codes.js { imgTags }
-           src/js/services/images.js { IMG }
-           src/js/ui/chat/episode.js { bindEp, epBarHTML, epEventHTML, epTailHTML }
+           src/js/core/util.js { $, $$, clamp, toast }
+           src/js/core/wallet.js { plan }
            src/js/ui/chat/generate.js { epCopy, generate, regen, regenAsk, sendTurn }
-           src/js/ui/chat/render.js { fmt, liveFill, statusBlock }
+           src/js/ui/chat/log.js { copyText, drafts, renderLog }
            src/js/ui/chat/suggest.js { hideSug }
            src/js/ui/chat/view.js { flashHint, lastAi, updateComposer, updateMeter }
-           src/js/ui/ai-notice.js { aiLabel }
-           src/js/ui/cover.js { coverHTML, pavHTML, zoomPic }
-           src/js/core/wallet.js { plan }
+           src/js/ui/cover.js { zoomPic }
            src/js/ui/pay.js { ensurePay, plusSheet }
            src/js/ui/pins.js { pinSheet }
            src/js/ui/report.js { reportSheet }
            src/js/ui/sheet.js { confirmSheet }
            src/js/ui/shell.js { go }
-   내보냄: stick, setStick, autoScroll, followLog, syncJump, bindStick, renderLog, copyText
-   쓰는 곳: src/js/ui/room-tools.js, src/js/ui/drawer/main.js, src/js/ui/me.js, src/js/ui/drawer/settings.js, src/js/ui/pay.js, src/js/ui/chat/view.js, src/js/ui/chat/generate.js, src/js/ui/codex.js, src/js/app.js
+   내보냄: bindLog
+   쓰는 곳: src/js/ui/chat/log.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
-/* 메시지 로그 그리기·스크롤 따라가기·말풍선 메뉴(수정·삭제·북마크·고정·좋아요/아쉬워요·분기) */
+/* 말풍선 메뉴 처리 — 버전 넘기기·다시 쓰기·복사·북마크·고정·신고·좋아요/아쉬워요·분기·수정·삭제, 상태창 펼치기·그림 크게 보기·다시 시도. 메시지 로그(ui/chat/log.js renderLog)가 그린 뒤 붙임 */
 
 
 
@@ -11490,189 +11660,6 @@ function reportSheet(r, m) {
 
 
 
-
-
-
-
-
-/* 응답 중 스크롤: 대화방 출력 설정의 '자동 스크롤'(r.set.autoScroll, 기본 꺼짐)이 켜져 있고 맨 아래에 있을 때만 따라 내려감.
-   사용자가 위로 올리면 멈춤. 꺼져 있으면 보낼 때 한 번만 맨 아래로 가고, 답은 읽는 자리에서 아래로 자라남 */
-let stick = true;
-function setStick(v) {
-  return (stick = v);
-}
-const autoScroll = () => !!(room && room.set.autoScroll);
-// 수정 칸에 고쳐 쓰던 글(메시지 id → 글) — 값 확인을 닫거나 하트가 모자라도 남게. 방 객체 밖에 둠: 계정 올리기 대기열이 방 객체를 그대로 들고 있다가
-// 보낼 때 글로 바꾸므로, 메시지에 두면 승인하지 않은 글이 계정에 올라갈 수 있음(Codex 검토)
-const drafts = new Map();
-function followLog() {
-  const log = $("#log");
-  if (log && stick && autoScroll()) log.scrollTop = log.scrollHeight;
-  syncJump();
-}
-// 글이 늘어나는 것만으로는 scroll 이벤트가 안 나서 '맨 아래로' 버튼을 따로 맞춤
-function syncJump() {
-  const log = $("#log"),
-    jump = log && $("#jumpBtn", log);
-  if (jump) jump.hidden = log.scrollHeight - log.scrollTop - log.clientHeight < 160;
-}
-function bindStick(log) {
-  if (!log) return;
-  stick = true;
-  let ty = 0;
-  const jump = $("#jumpBtn", log);
-  log.addEventListener(
-    "scroll",
-    () => {
-      const d = log.scrollHeight - log.scrollTop - log.clientHeight;
-      if (d < 8) stick = true;
-      else if (d > 24) stick = false;
-      if (jump) jump.hidden = d < 160;
-    },
-    { passive: true }
-  );
-  log.addEventListener(
-    "wheel",
-    (e) => {
-      if (e.deltaY < 0) stick = false;
-    },
-    { passive: true }
-  );
-  log.addEventListener(
-    "touchstart",
-    (e) => {
-      ty = e.touches[0].clientY;
-    },
-    { passive: true }
-  );
-  log.addEventListener(
-    "touchmove",
-    (e) => {
-      const y = e.touches[0].clientY;
-      if (y > ty + 4) stick = false;
-      ty = y;
-    },
-    { passive: true }
-  );
-  log.addEventListener("keydown", (e) => {
-    if (["ArrowUp", "PageUp", "Home"].includes(e.key)) stick = false;
-  });
-  if (jump)
-    jump.onclick = () => {
-      stick = true;
-      log.scrollTo({ top: log.scrollHeight, behavior: "smooth" });
-    };
-}
-function renderLog(scroll) {
-  const box = $("#logInner");
-  if (!box) return;
-  const r = room,
-    c = r.char,
-    lastIdx = r.msgs.map((m) => m.role).lastIndexOf("ai");
-  let html = `<div class="scene-card">${coverHTML(c)}<b>${esc(c.title)}</b><span>${esc(r.opening || "")} · ${esc(r.persona.name)}(으)로 플레이 중</span></div>`;
-  r.msgs.forEach((m, i) => {
-    if (r.side && i > 0 && r.msgs[i - 1].id === r.sideAfter) html += sidePill(r);
-    const bm = (r.bookmarks || []).includes(m.id);
-    if (m.role === "user") {
-      if (m.sys) {
-        html += `<div class="sys-pill">이어서 쓰기</div>`;
-        return;
-      }
-      const ooc = m.text.startsWith("//");
-      html += `<div class="msg me ${ooc ? "ooc" : ""}" data-id="${esc(m.id)}">${ooc ? "" : pavHTML(r.persona)}<div class="col">
-        ${
-          m.editing
-            ? editBox(drafts.has(m.id) ? drafts.get(m.id) : m.text, i)
-            : `<div class="bubble">${ooc ? esc(m.text) : fmt(m.text, c, r.persona)}</div>
-        <div class="tools-row">${m.canned ? "" : `<button data-act="edit" data-i="${i}">수정</button>`}` +
-              `<button data-act="del" data-i="${i}">삭제</button>${
-                ooc || m.canned ? "" : `<button data-act="pin" data-i="${i}" ` + `title="이 내용을 고정 기억으로 — 매 턴 그대로 AI에게 전해요">📌 고정</button>`
-              }</div>`
-        }
-      </div></div>`;
-      return;
-    }
-    const alt = m.alts[m.idx] || {},
-      isLast = i === lastIdx,
-      pending = gen && gen.msgId === m.id;
-    let body;
-    if (m.editing) body = editBox(alt.text, i);
-    else if (pending && !alt.text) body = `<div class="bubble"><span class="thinking" aria-label="응답 생성 중"><i></i><i></i><i></i></span></div>`;
-    else
-      body = pending
-        ? `<div class="bubble typing" id="liveBubble"></div>`
-        : `<div class="bubble${imgTags(alt.text || "").length >= 2 ? " many-img" : ""}">${fmt(alt.text || "", c, r.persona)}</div>`;
-    html +=
-      `<div class="msg" data-id="${esc(m.id)}" role="group" aria-label="${esc(aiLabel(speakerName(r)))}">${coverHTML(c)}<div class="col">` +
-      `<span class="nm">${esc(speakerName(r))}</span>${pending ? "" : epEventHTML(r, alt)}${body}`;
-    if (!pending && !m.editing) {
-      html += statusBlock(c, alt.status, m.statusBefore, { open: isLast, live: isLast });
-      html +=
-        `<div class="tools-row">
-        ${
-          m.alts.length > 1
-            ? `<button data-act="prev" data-i="${i}" ${m.idx === 0 ? "disabled" : ""} aria-label="이전 버전">‹</button>` +
-              `<span class="sw">${m.idx + 1}/${m.alts.length}</span>` +
-              `<button data-act="next" data-i="${i}" ${m.idx === m.alts.length - 1 ? "disabled" : ""} aria-label="다음 버전">›</button>`
-            : ""
-        }
-        ${isLast && !alt.opening && !m.canned ? `<button data-act="regen" data-i="${i}">↻ 다시 쓰기</button>` : ""}
-        <button data-act="bm" data-i="${i}" class="${bm ? "on" : ""}" aria-pressed="${bm}">${bm ? "★" : "☆"} 북마크</button>
-        <button data-act="pin" data-i="${i}" title="이 장면을 고정 기억으로 — 매 턴 그대로 AI에게 전해요">📌 고정</button>
-        <button data-act="editai" data-i="${i}">수정</button><button data-act="copy" data-i="${i}">복사</button>` +
-        `<button data-act="report" data-i="${i}" title="이 메시지를 운영자에게 신고해요">신고</button>
-        ${
-          i > 0 && !r.ep ? `<button data-act="fork" data-i="${i}" title="이 ` + `메시지까지를 새 대화방으로 복사해요">분기</button>` : ""
-        }${i > 0 ? `<button data-act="del" data-i="${i}">삭제</button>` : ""}
-        ${alt.opening || m.canned ? "" : fbBtn(i, 1, alt.fb) + fbBtn(i, -1, alt.fb)}
-        ${alt.lore?.length ? `<span class="lore-used" title="이 응답에 반영된 키워드북">📖 ${esc(alt.lore.join(" · "))}</span>` : ""}
-        ${alt.cost ? `<span class="rcpt" title="이 응답에 쓴 비용">${esc(alt.cost)}</span>` : ""}
-      </div>`;
-    }
-    html += `</div></div>`;
-  });
-  if (r.side && r.msgs.length && r.msgs[r.msgs.length - 1].id === r.sideAfter) html += sidePill(r);
-  // 메시지 수정의 실패(lastErrEdit)는 '다시 시도'를 숨김 — 그 버튼은 마지막 답을 다시 쓰는 것이라 고친 글을 다시 보내는 것과 뜻이 다름
-  if (r.lastErr)
-    html += `<div class="err-line" role="alert">${esc(r.lastErr)}${r.lastErrEdit ? "" : ` <button class="btn sm" id="retry">다시 시도</button>`}</div>`;
-  html += epTailHTML(r); // 에피소드: 갈림길 카드 또는 결말 카드
-  box.innerHTML = html;
-  const lb = $("#liveBubble", box),
-    gm = gen && r.msgs.find((m) => m.id === gen.msgId);
-  if (lb && gm) liveFill(lb, gm.alts[gm.idx]?.text || "", c, r.persona, false);
-  bindLog(box);
-  bindEp(box, r);
-  IMG.hydrate(box);
-  const bar = $("#epBar");
-  if (bar) {
-    bar.innerHTML = epBarHTML(r);
-    bar.hidden = !bar.innerHTML;
-  }
-  const chat = box.closest(".chat");
-  if (chat) chat.classList.toggle("ep-over", !!(r.ep && r.ep.over)); // 끝난 에피소드 방은 입력창을 숨김(결말 카드의 버튼으로)
-  if (scroll) {
-    const log = $("#log");
-    log.scrollTop = log.scrollHeight;
-  }
-}
-/* 외전 방: 이어받은 대화와 외전이 시작되는 자리 사이의 구분선(방 제목 = 외전 갈래) */
-const sidePill = (r) => `<div class="sys-pill side-pill">${esc(r.opening || "외전")} — 여기부터 외전</div>`;
-/* 좋아요(1)·아쉬워요(-1) 토글 — Alt.fb(0이면 없음). 이 기기·계정에 저장만 하고 프롬프트에는 쓰지 않음 */
-function fbBtn(i, v, cur) {
-  const on = cur === v,
-    label = v > 0 ? "좋아요" : "아쉬워요";
-  return (
-    `<button data-act="${v > 0 ? "up" : "down"}" data-i="${i}" class="${on ? "on" : ""}" aria-pressed="${on}" aria-label="` +
-    `${label}" title="${label}">${v > 0 ? "👍" : "👎"}</button>`
-  );
-}
-function editBox(text, i) {
-  return (
-    `<div class="edit-box"><label class="sr" for="ed${i}">메시지 수정</label><textarea id="ed${i}">${esc(text)}</textarea>
-    <div class="row"><button class="btn sm ghost" data-act="cancel" data-i="${i}">취소</button>` +
-    `<button class="btn sm pri" data-act="save" data-i="${i}">${room.msgs[i].role === "user" ? "수정하고 다시 생성" : "저장"}</button></div></div>`
-  );
-}
 function bindLog(box) {
   $$(".status .inner:not(.open)", box).forEach((el) => {
     const open = () => el.classList.add("open");
@@ -11810,16 +11797,227 @@ function syncSug() {
   hideSug();
   updateComposer();
 }
+function restoreStatus() {
+  const a = lastAi(room);
+  room.status = a ? a.alts[a.idx].status || a.statusBefore : room.status;
+  updateMeter();
+}
+/* ════════════════════════════════════════════════════════════════════════════════════════════════════
+   src/js/ui/chat/log.js
+   가져옴: src/js/ai/prompt/rules.js { speakerName }
+           src/js/core/state.js { gen, room }
+           src/js/core/util.js { $, esc, toast }
+           src/js/images/codes.js { imgTags }
+           src/js/services/images.js { IMG }
+           src/js/ui/chat/episode.js { bindEp, epBarHTML, epEventHTML, epTailHTML }
+           src/js/ui/chat/log-acts.js { bindLog }
+           src/js/ui/chat/render.js { fmt, liveFill, statusBlock }
+           src/js/ui/chat/view.js { regenText }
+           src/js/core/wallet.js { quote }
+           src/js/ui/ai-notice.js { aiLabel }
+           src/js/ui/cover.js { coverHTML, pavHTML }
+   내보냄: stick, setStick, autoScroll, drafts, followLog, syncJump, bindStick, renderLog, copyText
+   쓰는 곳: src/js/ui/room-tools.js, src/js/ui/drawer/main.js, src/js/ui/me.js, src/js/ui/drawer/settings.js, src/js/ui/pay.js, src/js/ui/chat/command-run.js, src/js/ui/chat/keyboard.js, src/js/ui/chat/view.js, src/js/ui/chat/generate.js, src/js/ui/chat/log-acts.js, src/js/ui/codex.js, src/js/app.js
+   ════════════════════════════════════════════════════════════════════════════════════════════════════ */
+/* 메시지 로그 그리기·스크롤 따라가기 — 말풍선 메뉴(수정·삭제·북마크·고정·좋아요/아쉬워요·분기)의 처리는 ui/chat/log-acts.js */
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* 응답 중 스크롤: 대화방 출력 설정의 '자동 스크롤'(r.set.autoScroll, 기본 꺼짐)이 켜져 있고 맨 아래에 있을 때만 따라 내려감.
+   사용자가 위로 올리면 멈춤. 꺼져 있으면 보낼 때 한 번만 맨 아래로 가고, 답은 읽는 자리에서 아래로 자라남 */
+let stick = true;
+function setStick(v) {
+  return (stick = v);
+}
+const autoScroll = () => !!(room && room.set.autoScroll);
+// 수정 칸에 고쳐 쓰던 글(메시지 id → 글) — 값 확인을 닫거나 하트가 모자라도 남게. 방 객체 밖에 둠: 계정 올리기 대기열이 방 객체를 그대로 들고 있다가
+// 보낼 때 글로 바꾸므로, 메시지에 두면 승인하지 않은 글이 계정에 올라갈 수 있음(Codex 검토)
+const drafts = new Map();
+function followLog() {
+  const log = $("#log");
+  if (log && stick && autoScroll()) log.scrollTop = log.scrollHeight;
+  syncJump();
+}
+// 글이 늘어나는 것만으로는 scroll 이벤트가 안 나서 '맨 아래로' 버튼을 따로 맞춤
+function syncJump() {
+  const log = $("#log"),
+    jump = log && $("#jumpBtn", log);
+  if (jump) jump.hidden = log.scrollHeight - log.scrollTop - log.clientHeight < 160;
+}
+function bindStick(log) {
+  if (!log) return;
+  stick = true;
+  let ty = 0;
+  const jump = $("#jumpBtn", log);
+  log.addEventListener(
+    "scroll",
+    () => {
+      const d = log.scrollHeight - log.scrollTop - log.clientHeight;
+      if (d < 8) stick = true;
+      else if (d > 24) stick = false;
+      if (jump) jump.hidden = d < 160;
+    },
+    { passive: true }
+  );
+  log.addEventListener(
+    "wheel",
+    (e) => {
+      if (e.deltaY < 0) stick = false;
+    },
+    { passive: true }
+  );
+  log.addEventListener(
+    "touchstart",
+    (e) => {
+      ty = e.touches[0].clientY;
+    },
+    { passive: true }
+  );
+  log.addEventListener(
+    "touchmove",
+    (e) => {
+      const y = e.touches[0].clientY;
+      if (y > ty + 4) stick = false;
+      ty = y;
+    },
+    { passive: true }
+  );
+  log.addEventListener("keydown", (e) => {
+    if (["ArrowUp", "PageUp", "Home"].includes(e.key)) stick = false;
+  });
+  if (jump)
+    jump.onclick = () => {
+      stick = true;
+      log.scrollTo({ top: log.scrollHeight, behavior: "smooth" });
+    };
+}
+function renderLog(scroll) {
+  const box = $("#logInner");
+  if (!box) return;
+  const r = room,
+    c = r.char,
+    lastIdx = r.msgs.map((m) => m.role).lastIndexOf("ai"),
+    [rl, rt] = regenText(quote(r.set)); // 다시 쓰기 버튼의 값과 설명 — 보내기 버튼과 같은 견적(ui/chat/view.js)
+  let html = `<div class="scene-card">${coverHTML(c)}<b>${esc(c.title)}</b><span>${esc(r.opening || "")} · ${esc(r.persona.name)}(으)로 플레이 중</span></div>`;
+  r.msgs.forEach((m, i) => {
+    if (r.side && i > 0 && r.msgs[i - 1].id === r.sideAfter) html += sidePill(r);
+    const bm = (r.bookmarks || []).includes(m.id);
+    if (m.role === "user") {
+      if (m.sys) {
+        html += `<div class="sys-pill">이어서 쓰기</div>`;
+        return;
+      }
+      const ooc = m.text.startsWith("//");
+      html += `<div class="msg me ${ooc ? "ooc" : ""}" data-id="${esc(m.id)}">${ooc ? "" : pavHTML(r.persona)}<div class="col">
+        ${
+          m.editing
+            ? editBox(drafts.has(m.id) ? drafts.get(m.id) : m.text, i)
+            : `<div class="bubble">${ooc ? esc(m.text) : fmt(m.text, c, r.persona)}</div>
+        <div class="tools-row">${m.canned ? "" : `<button data-act="edit" data-i="${i}">수정</button>`}` +
+              `<button data-act="del" data-i="${i}">삭제</button>${
+                ooc || m.canned ? "" : `<button data-act="pin" data-i="${i}" ` + `title="이 내용을 고정 기억으로 — 매 턴 그대로 AI에게 전해요">📌 고정</button>`
+              }</div>`
+        }
+      </div></div>`;
+      return;
+    }
+    const alt = m.alts[m.idx] || {},
+      isLast = i === lastIdx,
+      pending = gen && gen.msgId === m.id;
+    let body;
+    if (m.editing) body = editBox(alt.text, i);
+    else if (pending && !alt.text) body = `<div class="bubble"><span class="thinking" aria-label="응답 생성 중"><i></i><i></i><i></i></span></div>`;
+    else
+      body = pending
+        ? `<div class="bubble typing" id="liveBubble"></div>`
+        : `<div class="bubble${imgTags(alt.text || "").length >= 2 ? " many-img" : ""}">${fmt(alt.text || "", c, r.persona)}</div>`;
+    html +=
+      `<div class="msg" data-id="${esc(m.id)}" role="group" aria-label="${esc(aiLabel(speakerName(r)))}">${coverHTML(c)}<div class="col">` +
+      `<span class="nm">${esc(speakerName(r))}</span>${pending ? "" : epEventHTML(r, alt)}${body}`;
+    if (!pending && !m.editing) {
+      html += statusBlock(c, alt.status, m.statusBefore, { open: isLast, live: isLast });
+      html +=
+        `<div class="tools-row">
+        ${
+          m.alts.length > 1
+            ? `<span class="pager" role="group" aria-label="저장된 답 ${m.alts.length}개 — 넘겨 봐도 값이 나가지 않아요">` +
+              `<button data-act="prev" data-i="${i}" ${m.idx === 0 ? "disabled" : ""} aria-label="이전 답">‹</button>` +
+              `<span class="sw">${m.idx + 1}/${m.alts.length}</span>` +
+              `<button data-act="next" data-i="${i}" ${m.idx === m.alts.length - 1 ? "disabled" : ""} aria-label="다음 답">›</button></span>`
+            : ""
+        }
+        ${isLast && !alt.opening && !m.canned ? `<button data-act="regen" data-i="${i}" class="regen" title="${esc(rt)}">${esc(rl)}</button>` : ""}
+        <button data-act="bm" data-i="${i}" class="${bm ? "on" : ""}" aria-pressed="${bm}">${bm ? "★" : "☆"} 북마크</button>
+        <button data-act="pin" data-i="${i}" title="이 장면을 고정 기억으로 — 매 턴 그대로 AI에게 전해요">📌 고정</button>
+        <button data-act="editai" data-i="${i}">수정</button><button data-act="copy" data-i="${i}">복사</button>` +
+        `<button data-act="report" data-i="${i}" title="이 메시지를 운영자에게 신고해요">신고</button>
+        ${
+          i > 0 && !r.ep ? `<button data-act="fork" data-i="${i}" title="이 ` + `메시지까지를 새 대화방으로 복사해요">분기</button>` : ""
+        }${i > 0 ? `<button data-act="del" data-i="${i}">삭제</button>` : ""}
+        ${alt.opening || m.canned ? "" : fbBtn(i, 1, alt.fb) + fbBtn(i, -1, alt.fb)}
+        ${alt.lore?.length ? `<span class="lore-used" title="이 응답에 반영된 키워드북">📖 ${esc(alt.lore.join(" · "))}</span>` : ""}
+        ${alt.cost ? `<span class="rcpt" title="이 응답에 쓴 비용">${esc(alt.cost)}</span>` : ""}
+      </div>`;
+    }
+    html += `</div></div>`;
+  });
+  if (r.side && r.msgs.length && r.msgs[r.msgs.length - 1].id === r.sideAfter) html += sidePill(r);
+  // 메시지 수정의 실패(lastErrEdit)는 '다시 시도'를 숨김 — 그 버튼은 마지막 답을 다시 쓰는 것이라 고친 글을 다시 보내는 것과 뜻이 다름
+  if (r.lastErr)
+    html += `<div class="err-line" role="alert">${esc(r.lastErr)}${r.lastErrEdit ? "" : ` <button class="btn sm" id="retry">다시 시도</button>`}</div>`;
+  html += epTailHTML(r); // 에피소드: 갈림길 카드 또는 결말 카드
+  box.innerHTML = html;
+  const lb = $("#liveBubble", box),
+    gm = gen && r.msgs.find((m) => m.id === gen.msgId);
+  if (lb && gm) liveFill(lb, gm.alts[gm.idx]?.text || "", c, r.persona, false);
+  bindLog(box);
+  bindEp(box, r);
+  IMG.hydrate(box);
+  const bar = $("#epBar");
+  if (bar) {
+    bar.innerHTML = epBarHTML(r);
+    bar.hidden = !bar.innerHTML;
+  }
+  const chat = box.closest(".chat");
+  if (chat) chat.classList.toggle("ep-over", !!(r.ep && r.ep.over)); // 끝난 에피소드 방은 입력창을 숨김(결말 카드의 버튼으로)
+  if (scroll) {
+    const log = $("#log");
+    log.scrollTop = log.scrollHeight;
+  }
+}
+/* 외전 방: 이어받은 대화와 외전이 시작되는 자리 사이의 구분선(방 제목 = 외전 갈래) */
+const sidePill = (r) => `<div class="sys-pill side-pill">${esc(r.opening || "외전")} — 여기부터 외전</div>`;
+/* 좋아요(1)·아쉬워요(-1) 토글 — Alt.fb(0이면 없음). 이 기기·계정에 저장만 하고 프롬프트에는 쓰지 않음 */
+function fbBtn(i, v, cur) {
+  const on = cur === v,
+    label = v > 0 ? "좋아요" : "아쉬워요";
+  return (
+    `<button data-act="${v > 0 ? "up" : "down"}" data-i="${i}" class="${on ? "on" : ""}" aria-pressed="${on}" aria-label="` +
+    `${label}" title="${label}">${v > 0 ? "👍" : "👎"}</button>`
+  );
+}
+function editBox(text, i) {
+  return (
+    `<div class="edit-box"><label class="sr" for="ed${i}">메시지 수정</label><textarea id="ed${i}">${esc(text)}</textarea>
+    <div class="row"><button class="btn sm ghost" data-act="cancel" data-i="${i}">취소</button>` +
+    `<button class="btn sm pri" data-act="save" data-i="${i}">${room.msgs[i].role === "user" ? "수정하고 다시 생성" : "저장"}</button></div></div>`
+  );
+}
 function copyText(t, ok) {
   (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(
     () => toast(ok),
     () => toast("복사할 수 없었어요. 길게 눌러 선택해 주세요.")
   );
-}
-function restoreStatus() {
-  const a = lastAi(room);
-  room.status = a ? a.alts[a.idx].status || a.statusBefore : room.status;
-  updateMeter();
 }
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════
    src/js/ui/codex.js
@@ -13264,7 +13462,6 @@ function migrateSettings() {
    가져옴: src/js/core/migrate.js { migrateSettings }
            src/js/core/settings.js { applySettings }
            src/js/core/state.js { gen }
-           src/js/core/util.js { $ }
            src/js/services/cloud.js { CLOUD }
            src/js/services/load.js { loadAll }
            src/js/services/supabase.js { SB }
@@ -13272,13 +13469,12 @@ function migrateSettings() {
            src/js/ui/chat/generate.js { stopGen }
            src/js/ui/home.js { askAud }
            src/js/ui/login.js { afterLogin, bootBack, newPasswordSheet }
-           src/js/ui/sheet.js { closeOverlays }
+           src/js/ui/sheet.js { escapeLayer }
            src/js/ui/shell.js { renderShell, route }
    내보냄: bootFail, boot
    쓰는 곳: src/js/admin.js
    ════════════════════════════════════════════════════════════════════════════════════════════════════ */
 /* 부팅(boot): 설정 이전 → 저장 데이터 읽기 → 셸·첫 화면 → 계정 연결. 진입점(main.js·admin.js)이 부른다 */
-
 
 
 
@@ -13335,10 +13531,8 @@ async function boot() {
         .catch(() => {});
   });
   document.addEventListener("keydown", (e) => {
-    if (e.key !== "Escape") return;
-    if ($(".lightbox")) $(".lightbox").remove();
-    else if ($(".overlay")) closeOverlays();
-    else if (gen && location.hash === "#r-" + gen.roomId) stopGen(); // 그 방을 보고 있을 때만 — 떠난 방의 답은 다른 화면의 Esc로 멈추지 않음
+    if (e.key !== "Escape" || escapeLayer()) return; // 크게 보기·맨 위 겹을 먼저 닫음(ui/sheet.js — 겹의 키보드는 한 곳에서)
+    if (gen && location.hash === "#r-" + gen.roomId) stopGen(); // 그 방을 보고 있을 때만 — 떠난 방의 답은 다른 화면의 Esc로 멈추지 않음
   });
 }
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════

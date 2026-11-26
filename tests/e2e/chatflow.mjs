@@ -500,7 +500,7 @@ for (const [dev, engine] of targets) {
       const typed = look();
       inp.value = "";
       inp.oninput();
-      setGen({ ctl: new AbortController(), msgId: "x" }); // 응답이 끝나는 순간을 흉내 — updateComposer가 그 순간을 잡아 잠깐 잠금
+      setGen({ ctl: new AbortController(), msgId: "x", roomId: room.id }); // 이 방의 응답이 끝나는 순간을 흉내 — updateComposer가 그 순간을 잡아 잠깐 잠금
       updateComposer();
       setGen(null);
       updateComposer();
@@ -523,6 +523,94 @@ for (const [dev, engine] of targets) {
         errs.push("빈 입력의 보내기 버튼(이어서 쓰기)이 다름: " + JSON.stringify(w.empty));
       if (w.typed.cont || w.typed.label !== "보내기" || !w.locked) errs.push("보내기 버튼 전환·잘못 누름 막기가 다름: " + JSON.stringify(w));
       if (!w.head.includes("♥") || w.oldRow || w.hint || w.composer > 96) errs.push("머리·입력창 묶음이 다름: " + JSON.stringify(w));
+    }
+    // 대화방 묶음(프레임 7차): C5 입력 모드 표시 · C2 누를 곳 44px(손가락 화면) · C4 저장된 답 넘기기 묶음과 값이 붙은 다시 쓰기 ·
+    // C1 자판 위에 맞춤(가짜 visualViewport — 자판이 열림·확대·레이아웃이 이미 줄어듦·맨 아래 따라가기·방을 나가면 리스너 치움)
+    res.c7 = await p.evaluate(async () => {
+      const nap = (ms) => new Promise((r) => setTimeout(r, ms)),
+        h = (el) => Math.round(el.getBoundingClientRect().height),
+        out = { coarse: matchMedia("(pointer:coarse)").matches };
+      const inp = $("#inp"),
+        tag = $("#inpMode"),
+        modeOf = (v) => {
+          inp.value = v;
+          inp.oninput();
+          return tag.hidden ? "" : tag.textContent;
+        };
+      out.mode = [modeOf("//비가 온다"), modeOf("!상태"), modeOf("안녕"), modeOf(""), modeOf("  !상태")];
+      openRoomDrawer("main");
+      await nap(200);
+      const x = $(".drawer [data-x]"),
+        xa = getComputedStyle(x, "::after");
+      out.touch = { send: h($("#sendBtn")), sug: h($("#sugBtn")), close: h(x) - (parseFloat(xa.top) || 0) - (parseFloat(xa.bottom) || 0) };
+      closeOverlays();
+      const a = lastAi(room);
+      a.alts.push({ ...a.alts[a.idx], text: "*둘째로 쓴 답.*" });
+      a.idx = a.alts.length - 1;
+      renderLog();
+      const last = $$("#logInner .msg[role=group]").pop(),
+        pager = $(".pager", last),
+        rg = $('[data-act="regen"]', last),
+        q = quote(room.set);
+      out.c4 = {
+        pager: pager ? pager.textContent.replace(/\s+/g, "") : "",
+        role: pager ? pager.getAttribute("role") : "",
+        regen: rg ? rg.textContent : "",
+        want: "↻ 다시 쓰기 · " + qShort(q),
+        title: !!rg && rg.title.includes(costNote(q)),
+        arrow: pager ? h($("button", pager)) - parseFloat(getComputedStyle($("button", pager), "::after").top || 0) * 2 : 0,
+        arrowW: pager ? Math.round($("button", pager).getBoundingClientRect().width) : 0
+      };
+      a.alts.pop();
+      a.idx = a.alts.length - 1;
+      renderLog();
+      // C1: 가짜 visualViewport로 자판을 흉내
+      const real = window.visualViewport,
+        vv = new EventTarget(),
+        calls = { add: 0, rm: 0 },
+        add = vv.addEventListener.bind(vv),
+        rm = vv.removeEventListener.bind(vv);
+      vv.addEventListener = (...g) => (calls.add++, add(...g));
+      vv.removeEventListener = (...g) => (calls.rm++, rm(...g));
+      Object.assign(vv, { height: innerHeight - 300, offsetTop: 40, scale: 1 });
+      Object.defineProperty(window, "visualViewport", { configurable: true, value: vv });
+      const chat = $(".chat"),
+        log = $("#log"),
+        fire = () => vv.dispatchEvent(new Event("resize")),
+        fitted = () => chat.classList.contains("kb-open") || !!chat.style.height;
+      fitKeyboard(chat);
+      out.kb = { open: chat.classList.contains("kb-open"), top: chat.style.top, height: chat.style.height, want: vv.height + "px" };
+      vv.scale = 1.5;
+      fire();
+      out.kb.zoom = fitted();
+      vv.scale = 1;
+      vv.height = innerHeight - 20; // 레이아웃이 이미 줄어든 브라우저(resizes-content)와 같음 — 가린 높이가 작음
+      fire();
+      out.kb.shrunk = fitted();
+      setStick(true);
+      vv.height = innerHeight - 300;
+      fire();
+      out.kb.bottom = log.scrollHeight - log.scrollTop - log.clientHeight < 8;
+      const id = room.id;
+      location.hash = "home";
+      await nap(400);
+      out.kb.removed = calls.rm >= 2;
+      Object.defineProperty(window, "visualViewport", { configurable: true, value: real });
+      location.hash = "r-" + id;
+      await nap(900);
+      out.kb.back = !!$(".chat") && !$(".chat").classList.contains("kb-open");
+      return out;
+    });
+    {
+      const c = res.c7;
+      if (c.mode.join("|") !== "연출 지시|명령어|||명령어") errs.push("입력 모드 표시(//·!)가 다름: " + JSON.stringify(c.mode));
+      if (c.coarse && (c.touch.send < 44 || c.touch.sug < 44 || c.touch.close < 44 || c.c4.arrow < 44 || c.c4.arrowW < 44))
+        errs.push("손가락 화면에서 누를 곳이 44px보다 작음: " + JSON.stringify({ ...c.touch, arrow: c.c4.arrow, arrowW: c.c4.arrowW }));
+      if (c.c4.pager !== "‹2/2›" || c.c4.role !== "group" || c.c4.regen !== c.c4.want || !c.c4.title)
+        errs.push("답 넘기기 묶음·다시 쓰기의 값이 다름: " + JSON.stringify(c.c4));
+      const k = c.kb;
+      if (!k.open || k.top !== "40px" || k.height !== k.want || k.zoom || k.shrunk || !k.bottom || !k.removed || !k.back)
+        errs.push("자판 위에 맞추기가 다름: " + JSON.stringify(k));
     }
     // 지갑 알림("wallet") 하나로 틀의 지갑 칩과 대화방 머리가 같이 바뀜 — 대화방 화면이 알림을 직접 받음(틀 ui/shell.js가 대화방을 부르지 않음)
     res.walletSync = await p.evaluate(() => {

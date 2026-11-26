@@ -110,6 +110,36 @@ for (const [dev, engine, opts] of [
       res.sheets[name] = r;
       if (typeof r !== "number" || r < 10) errs.push(`시트 ${name}: ${r}`);
     }
+    // 겹의 키보드(프레임 7차 C3): 열면 포커스가 창 안으로, Tab·Shift+Tab은 창 안에서만 돌고, Esc는 맨 위 겹만 닫고 연 버튼으로 포커스를 돌려줌 — 시트와 방 서랍
+    res.keys = {};
+    for (const [name, opener, open] of [
+      ["sheet", "#findBtn", "confirmSheet('정말 지울까요?', '이 대화방의 메시지가 모두 사라져요.', '지우기', () => {})"],
+      ["drawer", "#info", "$('#info').click()"]
+    ]) {
+      await p.evaluate(
+        ([sel, code]) => {
+          $(sel).focus();
+          (0, eval)(code);
+        },
+        [opener, open]
+      );
+      await p.waitForTimeout(250);
+      const inside = () => p.evaluate(() => !!document.activeElement && !!document.activeElement.closest(".overlay"));
+      const k = { open: await inside(), tab: 0, back: 0 };
+      for (let i = 0; i < 7; i++) {
+        await p.keyboard.press("Tab");
+        if (await inside()) k.tab++;
+      }
+      for (let i = 0; i < 3; i++) {
+        await p.keyboard.press("Shift+Tab");
+        if (await inside()) k.back++;
+      }
+      await p.keyboard.press("Escape");
+      await p.waitForTimeout(150);
+      Object.assign(k, await p.evaluate((sel) => ({ closed: !$(".overlay"), focus: document.activeElement === $(sel) }), opener));
+      res.keys[name] = k;
+      if (!k.open || k.tab !== 7 || k.back !== 3 || !k.closed || !k.focus) errs.push(`겹의 키보드(${name}): ` + JSON.stringify(k));
+    }
     // 비공개(스포일러) 플래그 — 가짜 데이터로 틀만 확인: 인물의 hidden 칸은 잠긴 칩, hidden 장소는 도감 칸에서 그림만 가림(이름은 보임)
     res.hidden = await p.evaluate(() => {
       const c = {
