@@ -55,7 +55,8 @@ export async function refreshSite() {
 export function initSite(done) {
   onDone = done || onDone;
   $("#publish").addEventListener("click", async () => {
-    if (!confirm("실은 그림을 사이트에 올려요. GitHub 검사가 통과하면 바로 main에 병합되고, 몇 분 뒤 공개 사이트에 보여요. 그림을 눈으로 확인하셨나요?")) return;
+    if (!confirm("실은 그림을 사이트에 올려요. GitHub 검사가 통과하면 바로 main에 병합되고, 몇 분 뒤 공개 사이트에 보여요. 그림을 눈으로 확인하셨나요?"))
+      return;
     try {
       await api("/api/site", { method: "POST", headers: { "x-hs-art": "1" } });
     } catch (e) {
