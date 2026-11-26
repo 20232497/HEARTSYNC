@@ -9,8 +9,8 @@ import assert from "node:assert/strict";
 import { ROOT, appRules, checkWork, scanImages, checkForbidden } from "../../tools/build.mjs";
 
 const R = appRules();
-/* 검사 함수 안의 오류 자리 수(맨 아래 '규칙 자리 수' 시험) — 2026-11-12에 자리마다 번호를 달아 재 보니 아래 표가 110곳(작품 70 · 그림 6 · 에피소드 34)을 모두 한 번 이상 건드림. 그 뒤 더한 것: 인물의 성격·나이 칸 3곳(2026-11-13) */
-const WORK_SITES = 74,
+/* 검사 함수 안의 오류 자리 수(맨 아래 '규칙 자리 수' 시험) — 2026-11-12에 자리마다 번호를 달아 재 보니 아래 표가 110곳(작품 70 · 그림 6 · 에피소드 34)을 모두 한 번 이상 건드림. 그 뒤 더한 것: 인물의 성격·나이 칸 3곳(2026-11-13), 작품 글의 '하트' 1곳(2026-11-27) */
+const WORK_SITES = 75,
   IMAGE_SITES = 6,
   EP_SITES = 34;
 const KIND = Object.keys(R.LORE_KINDS)[0],
@@ -850,6 +850,20 @@ const RULES = [
       c.track = "adult";
     },
     /track: "adult" — content\/의 작품은 일반 트랙만/
+  ],
+  [
+    "작품 글에 '하트'(결제 재화 이름)",
+    (c) => {
+      op(c).text = "상점 주인이 말했다. 하트 세 개면 이 검을 주지.";
+    },
+    /작품 글에 '하트'가 있어요: 작품\.openings\[0\]\.text — 하트\(결제 재화\)는 AI 대화에만/
+  ],
+  [
+    "작품 칸 이름(키)에 '하트'",
+    (c) => {
+      op(c).status = { "하트 잔액": "3" };
+    },
+    /작품 글에 '하트'가 있어요: 작품\.openings\[0\]\.status\.하트 잔액 —/
   ],
   [
     "19세 미만 출연진(외모)",
