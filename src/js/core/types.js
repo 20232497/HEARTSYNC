@@ -299,7 +299,7 @@
  * @property {LedgerItem[]} ledger
  * @property {Record<string, boolean>} ack
  */
-/** @typedef {{ type: "free"|"plus"|"heart", n: number, list: number, sug?: number }} Quote 한 턴 견적 — n은 턴 값으로 낼 하트, list는 정가, sug는 답변 추천 자동 받기로 더 내는 하트(0이면 추천 없이 — 나가는 하트는 wallet의 heartsOf) */
+/** @typedef {{ type: "free"|"plus"|"heart", n: number, list: number, sug?: number, day?: string }} Quote 한 턴 견적 — n은 턴 값으로 낼 하트, list는 정가, sug는 답변 추천 자동 받기로 더 내는 하트(0이면 추천 없이 — 나가는 하트는 wallet의 heartsOf), day는 무료 턴을 센 날(charge가 적음 — refund가 그날일 때만 되돌림) */
 /** @typedef {{ memTurns: number, memoMax: number, hist: number, rooms: number, pins: number }} Plan 요금제 한도(core/wallet.js PLAN) — pins는 대화방마다 고정 기억 개수 */
 /** @typedef {{ auto: boolean, every: number, limit: number, guide: "auto"|"custom", custom: string }} MemCfg 장기기억 요약 설정 */
 /**
