@@ -21,7 +21,9 @@ test("quote: 자동 받기가 꺼진 방은 예전과 같은 값(추천 값 0) �
   assert.equal(quote(set("lite")).type, "heart", "무료 턴을 다 쓰면 라이트도 하트");
   wallet({ pro: true });
   assert.deepEqual([quote(set("lite")).type, qShort(quote(set("lite")))], ["plus", "PLUS"]);
-  assert.equal(quote(set("story")).n, Math.ceil(quote(set("story")).list / 2), "PLUS는 스토리 반값");
+  for (const m of ["story", "master"]) assert.equal(quote(set(m)).n, quote(set(m)).list, `PLUS도 ${m}는 정가(할인 없음 — 2026-11-26)`);
+  wallet({ pro: true, freeUsed: FREE_DAILY });
+  assert.equal(quote(set("lite")).type, "plus", "PLUS는 무료 턴을 다 써도 라이트 무제한");
 });
 test("quote: 자동 받기를 켠 방은 턴 값에 추천 값이 더해짐 — 무료 턴에서도, PLUS에서도 추천 값은 그대로", () => {
   const free = quote(set("lite", true));
@@ -31,7 +33,8 @@ test("quote: 자동 받기를 켠 방은 턴 값에 추천 값이 더해짐 — 
   wallet({ pro: true });
   const plus = quote(set("lite", true));
   assert.deepEqual([plus.type, plus.sug, qShort(plus)], ["plus", SUGGEST_COST, "PLUS+♥" + SUGGEST_COST]);
-  assert.equal(quote(set("story", true)).sug, SUGGEST_COST, "PLUS의 반값은 턴 값에만");
+  const pStory = quote(set("story", true));
+  assert.deepEqual([pStory.n, pStory.sug], [pStory.list, SUGGEST_COST], "PLUS의 스토리는 정가 + 추천 값");
 });
 test("quote: 하트가 모자라면 자동 받기는 그 턴만 쉼(보이는 값만 냄) — 턴 자체는 막지 않음", () => {
   wallet({ hearts: 0 });
